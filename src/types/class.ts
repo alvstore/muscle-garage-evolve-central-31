@@ -1,3 +1,4 @@
+
 // Add this to the existing file
 
 export interface ClassBooking {
@@ -6,6 +7,10 @@ export interface ClassBooking {
   memberName: string;
   memberAvatar?: string;
   status: "booked" | "confirmed" | "attended" | "missed" | "cancelled" | "pending";
+  classId: string;  // Add this field
+  bookingDate: string;  // Add this field
+  attendanceTime?: string;  // Add this field
+  notes?: string;  // Add this field
 }
 
 export interface ProgressMetrics {
@@ -32,3 +37,8 @@ export interface Class {
   recurring: boolean;
   daysOfWeek?: number[];
 }
+
+// Add missing type definitions
+export type GymClass = Class;
+export type ClassDifficulty = "beginner" | "intermediate" | "advanced" | "all";
+export type BookingStatus = "booked" | "confirmed" | "attended" | "missed" | "cancelled" | "pending" | "no-show";

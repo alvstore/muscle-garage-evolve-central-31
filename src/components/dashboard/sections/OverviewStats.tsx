@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Clock, DollarSign, Heart, Users } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
+import { Users, CreditCard, Calendar, CheckSquare } from 'lucide-react';
 
 interface OverviewStatsProps {
   data: {
@@ -15,39 +15,67 @@ interface OverviewStatsProps {
       thisMonth: number;
       lastMonth: number;
     };
-  };
+    pendingPayments: {
+      count: number;
+      total: number;
+    };
+    upcomingRenewals: {
+      today: number;
+      thisWeek: number;
+      thisMonth: number;
+    };
+    classAttendance: {
+      today: number;
+      yesterday: number;
+      lastWeek: number;
+    }
+  }
 }
 
 const OverviewStats = ({ data }: OverviewStatsProps) => {
+  const calculatePercentChange = (current: number, previous: number): { direction: "up" | "down" | "neutral", value: string } => {
+    if (previous === 0) return { direction: "neutral", value: "0%" };
+    const change = ((current - previous) / previous) * 100;
+    return {
+      direction: change > 0 ? "up" : change < 0 ? "down" : "neutral",
+      value: `${Math.abs(change).toFixed(1)}%`
+    };
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Members"
         value={data.totalMembers}
-        description={`+${data.newMembersToday} today`}
-        trend="up"
-        icon={<Users className="h-4 w-4 text-muted-foreground" />}
+        change={{
+          direction: "up",
+          value: `+${data.newMembersToday} today`
+        }}
+        icon={Users}
       />
+      
       <StatCard
-        title="Today's Attendance"
+        title="Revenue This Month"
+        value={`₹${data.revenue.thisMonth.toLocaleString()}`}
+        change={calculatePercentChange(data.revenue.thisMonth, data.revenue.lastMonth)}
+        icon={CreditCard}
+      />
+      
+      <StatCard
+        title="Today's Check-ins"
         value={data.attendanceToday}
-        description={`${Math.round((data.attendanceToday / data.activeMembers) * 100)}% of active members`}
-        trend="up"
-        icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+        change={calculatePercentChange(data.classAttendance.today, data.classAttendance.yesterday)}
+        icon={CheckSquare}
       />
+      
       <StatCard
-        title="Revenue (Month)"
-        value={`₹${data.revenue.thisMonth}`}
-        description={`+${Math.round(((data.revenue.thisMonth - data.revenue.lastMonth) / data.revenue.lastMonth) * 100)}% from last month`}
-        trend="up"
-        icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-      />
-      <StatCard
-        title="Active Members"
-        value={data.activeMembers}
-        description={`${Math.round((data.activeMembers / data.totalMembers) * 100)}% of total members`}
-        trend="up"
-        icon={<Heart className="h-4 w-4 text-muted-foreground" />}
+        title="Renewals This Week"
+        value={data.upcomingRenewals.thisWeek}
+        change={{
+          direction: "neutral",
+          value: `${data.upcomingRenewals.today} today`
+        }}
+        icon={Calendar}
       />
     </div>
   );
