@@ -10,6 +10,9 @@ import Login from "./pages/auth/Login";
 import NotFound from "./pages/NotFound";
 import MemberProfilePage from "./pages/members/MemberProfilePage";
 import FitnessPlanPage from "./pages/fitness/FitnessPlanPage";
+import MembershipPage from "./pages/membership/MembershipPage";
+import InvoicePage from "./pages/finance/InvoicePage";
+import TransactionPage from "./pages/finance/TransactionPage";
 import { useEffect, useState } from "react";
 import { User } from "./types";
 
@@ -60,6 +63,13 @@ const App = () => {
               <Route path="fitness-plans" element={<FitnessPlanPage />} />
               <Route path="fitness-plans/workout" element={<FitnessPlanPage />} />
               <Route path="fitness-plans/diet" element={<FitnessPlanPage />} />
+              
+              {/* Membership management */}
+              <Route path="memberships" element={<MembershipPage />} />
+              
+              {/* Finance management */}
+              <Route path="invoices" element={<InvoicePage />} />
+              <Route path="transactions" element={<TransactionPage />} />
               
               {/* Add additional routes for other modules */}
             </Route>

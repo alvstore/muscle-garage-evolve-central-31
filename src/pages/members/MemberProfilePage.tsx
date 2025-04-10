@@ -1,77 +1,73 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { MemberProfile } from "@/components/members/MemberProfile";
-import { FitnessPlanManager } from "@/components/fitness";
-import { mockMembers } from "@/data/mockData";
-import { Member, User } from "@/types";
+import { Container } from "@/components/ui/container";
+import MemberProfile from "@/components/members/MemberProfile";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Member } from "@/types";
 import { toast } from "sonner";
 
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get current user
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-
     // Simulate API call to fetch member data
     setTimeout(() => {
-      const foundMember = mockMembers.find(m => m.id === id);
-      if (foundMember) {
-        setMember(foundMember as Member);
-      } else {
-        toast.error("Member not found");
-      }
+      // Mock data - in a real app, you would fetch this from an API
+      const mockMember: Member = {
+        id: id || "1",
+        email: "john.doe@example.com",
+        name: "John Doe",
+        role: "member",
+        phone: "+1 (555) 123-4567",
+        dateOfBirth: "1990-05-15",
+        goal: "Build muscle and improve overall fitness",
+        trainerId: "trainer-123",
+        membershipId: "platinum-12m",
+        membershipStatus: "active",
+        membershipStartDate: "2023-01-15",
+        membershipEndDate: "2024-01-15",
+      };
+      
+      setMember(mockMember);
       setLoading(false);
     }, 1000);
   }, [id]);
 
   const handleUpdateMember = (updatedMember: Member) => {
-    // In a real app, this would make an API call
-    setMember(updatedMember);
-    toast.success("Member profile updated successfully");
+    // Simulate API call to update member data
+    setLoading(true);
+    setTimeout(() => {
+      setMember(updatedMember);
+      setLoading(false);
+      toast.success("Member profile updated successfully");
+    }, 1000);
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-12 w-12 rounded-full border-4 border-t-accent mx-auto animate-spin"></div>
-          <p className="mt-4 text-lg font-medium">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!member) {
-    return (
-      <div className="container py-8">
-        <div className="text-center py-16">
-          <h2 className="text-2xl font-bold mb-2">Member Not Found</h2>
-          <p className="text-muted-foreground">The member you're looking for doesn't exist or has been removed.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container py-8 space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Member Profile</h1>
-      
-      <MemberProfile member={member} onUpdate={handleUpdateMember} />
-      
-      {currentUser?.role === "trainer" && (
-        <div className="mt-8">
-          <FitnessPlanManager members={[member]} trainerId={currentUser.id} />
-        </div>
-      )}
-    </div>
+    <Container>
+      <div className="py-6">
+        <h1 className="text-2xl font-bold mb-6">Member Profile</h1>
+        
+        {loading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        ) : member ? (
+          <MemberProfile 
+            member={member} 
+            onUpdate={handleUpdateMember} 
+          />
+        ) : (
+          <div className="p-4 border rounded bg-yellow-50 text-yellow-700">
+            Member not found
+          </div>
+        )}
+      </div>
+    </Container>
   );
 };
 
