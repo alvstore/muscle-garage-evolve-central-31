@@ -45,6 +45,40 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   
   // Resource access based on ownership
   'access_own_resources': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  
+  // Menu Access Permissions
+  'view_all_users': { roles: ['admin'] },
+  'view_all_trainers': { roles: ['admin'] },
+  'view_all_classes': { roles: ['admin', 'staff', 'trainer'] },
+  'view_all_attendance': { roles: ['admin', 'staff'] },
+  'create_edit_plans': { roles: ['admin'] },
+  'view_invoices': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'manage_integrations': { roles: ['admin'] },
+  'access_analytics': { roles: ['admin'] },
+  'manage_roles': { roles: ['admin'] },
+  'manage_members': { roles: ['admin', 'staff'] },
+  'manage_fitness_data': { roles: ['admin', 'staff', 'trainer'] },
+  'manage_classes': { roles: ['admin', 'staff'] },
+  'manage_payments': { roles: ['admin', 'staff'] },
+  'access_communication': { roles: ['admin', 'staff'] },
+  'access_inventory': { roles: ['admin', 'staff'] },
+  'access_store': { roles: ['admin', 'staff', 'member'] },
+  'access_crm': { roles: ['admin', 'staff'] },
+  'access_marketing': { roles: ['admin', 'staff'] },
+  
+  // Trainer-specific permissions
+  'trainer_view_members': { roles: ['admin', 'trainer'] },
+  'trainer_edit_fitness': { roles: ['admin', 'trainer'] },
+  'trainer_view_attendance': { roles: ['admin', 'trainer'] },
+  'trainer_view_classes': { roles: ['admin', 'staff', 'trainer'] },
+  
+  // Member-specific permissions
+  'member_view_profile': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'member_view_invoices': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'member_make_payments': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'member_view_plans': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'member_book_classes': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'member_view_attendance': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
 };
 
 /**

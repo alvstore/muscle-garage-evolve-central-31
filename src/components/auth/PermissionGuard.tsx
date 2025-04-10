@@ -62,4 +62,25 @@ export const PermissionButton = ({
   );
 };
 
+/**
+ * Checks if a user has permission to view a specific route/link
+ */
+export const RoutePermissionGuard = ({ 
+  permission, 
+  isOwner = false, 
+  children 
+}: { 
+  permission: Permission; 
+  isOwner?: boolean; 
+  children: ReactNode 
+}) => {
+  const { can } = usePermissions();
+  
+  if (can(permission, isOwner)) {
+    return <>{children}</>;
+  }
+  
+  return null;
+};
+
 export default PermissionGuard;

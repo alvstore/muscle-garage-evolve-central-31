@@ -53,6 +53,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@/types";
 import Logo from "@/components/Logo";
+import { usePermissions, Permission } from "@/hooks/use-permissions";
+import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -66,14 +68,14 @@ interface NavItem {
   activeIcon?: React.ReactNode;
   badge?: number | string;
   children?: NavItem[];
-  allowedRoles: UserRole[];
+  permission: Permission;
 }
 
 export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
-  const userRole = user?.role as UserRole;
+  const { userRole, can } = usePermissions();
   
   // State to track expanded menu sections
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
@@ -98,12 +100,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     }
   };
 
-  // Check if user has permission to access a feature
-  const canAccess = (allowedRoles: UserRole[]): boolean => {
-    if (!userRole) return false;
-    return allowedRoles.includes(userRole);
-  };
-
   // Define navigation links grouped by sections with role-based permissions
   const navSections: { name: string; icon: React.ReactNode; items: NavItem[] }[] = [
     {
@@ -114,7 +110,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/dashboard", 
           label: "Overview", 
           icon: <Home className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "access_dashboards",
         },
       ],
     },
@@ -126,25 +122,25 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/store", 
           label: "Store", 
           icon: <ShoppingBag className="h-5 w-5" />,
-          allowedRoles: ["admin", "staff", "member"],
+          permission: "access_store",
         },
         { 
           href: "/inventory", 
           label: "Inventory", 
           icon: <Package className="h-5 w-5" />,
-          allowedRoles: ["admin", "staff"],
+          permission: "access_inventory",
         },
         { 
           href: "/marketing/promo", 
           label: "Promotions", 
           icon: <Tag className="h-5 w-5" />,
-          allowedRoles: ["admin", "staff"],
+          permission: "access_marketing",
         },
         { 
           href: "/marketing/referral", 
           label: "Referral Program", 
           icon: <Gift className="h-5 w-5" />,
-          allowedRoles: ["admin", "staff"],
+          permission: "access_marketing",
         },
       ]
     },
@@ -156,19 +152,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/members", 
           label: "Members", 
           icon: <Users className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer"],
+          permission: "manage_members",
         },
         { 
           href: "/trainers", 
           label: "Trainers", 
           icon: <Dumbbell className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "view_all_trainers",
         },
         { 
           href: "/attendance", 
           label: "Attendance", 
           icon: <CalendarCheck className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "view_all_attendance",
         },
       ],
     },
@@ -180,19 +176,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/classes", 
           label: "Classes", 
           icon: <ClipboardList className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "trainer_view_classes",
         },
         { 
           href: "/memberships", 
           label: "Memberships", 
           icon: <CreditCard className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "member"],
+          permission: "member_view_plans",
         },
         { 
           href: "/fitness-plans", 
           label: "Fitness Plans", 
           icon: <ActivityIcon className="h-5 w-5" />, 
-          allowedRoles: ["admin", "trainer", "member"],
+          permission: "trainer_edit_fitness",
         },
       ],
     },
@@ -204,19 +200,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/finance/dashboard", 
           label: "Finance Dashboard", 
           icon: <DollarSign className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_analytics",
         },
         { 
           href: "/finance/invoices", 
           label: "Invoices", 
           icon: <Receipt className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "view_invoices",
         },
         { 
           href: "/finance/transactions", 
           label: "Transactions", 
           icon: <ArrowLeftRight className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "manage_payments",
         },
       ],
     },
@@ -228,19 +224,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/crm/leads", 
           label: "Leads", 
           icon: <UserPlus className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_crm",
         },
         { 
           href: "/crm/funnel", 
           label: "Funnel", 
           icon: <Filter className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_crm",
         },
         { 
           href: "/crm/follow-up", 
           label: "Follow-up", 
           icon: <MessageCircle className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_crm",
         },
       ],
     },
@@ -252,25 +248,25 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/communication/announcements", 
           label: "Announcements", 
           icon: <Bell className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_communication",
         },
         { 
           href: "/communication/feedback", 
           label: "Feedback", 
           icon: <MessageSquare className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "access_own_resources",
         },
         { 
           href: "/communication/motivational", 
           label: "Motivational", 
           icon: <Heart className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer"],
+          permission: "trainer_edit_fitness",
         },
         { 
           href: "/communication/reminders", 
           label: "Reminders", 
           icon: <AlarmClock className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff"],
+          permission: "access_communication",
         },
       ],
     },
@@ -282,19 +278,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/settings/roles", 
           label: "Roles & Permissions", 
           icon: <Shield className="h-5 w-5" />, 
-          allowedRoles: ["admin"],
+          permission: "manage_roles",
         },
         { 
           href: "/settings/users", 
           label: "User List", 
           icon: <Users className="h-5 w-5" />, 
-          allowedRoles: ["admin"],
+          permission: "view_all_users",
         },
         { 
           href: "/profile", 
           label: "My Profile", 
           icon: <User className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "access_own_resources",
         },
       ],
     },
@@ -306,19 +302,25 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/settings", 
           label: "General Settings", 
           icon: <Settings className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "access_own_resources",
         },
         { 
           href: "/settings/security", 
           label: "Security", 
           icon: <Lock className="h-5 w-5" />, 
-          allowedRoles: ["admin", "staff", "trainer", "member"],
+          permission: "access_own_resources",
         },
         { 
           href: "/settings/api", 
           label: "API Keys", 
           icon: <Key className="h-5 w-5" />, 
-          allowedRoles: ["admin"],
+          permission: "manage_integrations",
+        },
+        { 
+          href: "/settings/integrations", 
+          label: "Integrations", 
+          icon: <ActivityIcon className="h-5 w-5" />, 
+          permission: "manage_integrations",
         },
       ],
     },
@@ -335,8 +337,8 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           
           <div className="flex-1 overflow-y-auto py-2">
             {navSections.map((section, index) => {
-              // Filter items based on user role
-              const filteredItems = section.items.filter(item => canAccess(item.allowedRoles));
+              // Filter items based on user permissions
+              const filteredItems = section.items.filter(item => can(item.permission));
               
               // Only show sections that have at least one accessible item
               if (filteredItems.length === 0) return null;
@@ -363,25 +365,30 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                   {isExpanded && (
                     <div className="mt-1 pl-4">
                       {filteredItems.map((item, itemIndex) => (
-                        <SheetClose asChild key={itemIndex}>
-                          <NavLink
-                            to={item.href}
-                            className={({ isActive }) => `
-                              flex items-center gap-2 py-2 px-3 text-sm rounded-md my-1 transition-colors
-                              ${isActive 
-                                ? 'bg-indigo-600 text-white' 
-                                : 'text-white/70 hover:text-white hover:bg-white/10'}
-                            `}
-                          >
-                            {item.icon}
-                            <span>{item.label}</span>
-                            {item.badge && (
-                              <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                {item.badge}
-                              </span>
-                            )}
-                          </NavLink>
-                        </SheetClose>
+                        <RoutePermissionGuard 
+                          key={itemIndex} 
+                          permission={item.permission}
+                        >
+                          <SheetClose asChild>
+                            <NavLink
+                              to={item.href}
+                              className={({ isActive }) => `
+                                flex items-center gap-2 py-2 px-3 text-sm rounded-md my-1 transition-colors
+                                ${isActive 
+                                  ? 'bg-indigo-600 text-white' 
+                                  : 'text-white/70 hover:text-white hover:bg-white/10'}
+                              `}
+                            >
+                              {item.icon}
+                              <span>{item.label}</span>
+                              {item.badge && (
+                                <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </NavLink>
+                          </SheetClose>
+                        </RoutePermissionGuard>
                       ))}
                     </div>
                   )}

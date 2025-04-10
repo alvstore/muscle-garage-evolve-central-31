@@ -26,7 +26,36 @@ export type Permission =
   | "manage_branches"
   | "view_branch_data"
   | "switch_branches"
-  | "access_own_resources";
+  | "access_own_resources"
+  // New permissions for menu access
+  | "view_all_users"
+  | "view_all_trainers"
+  | "view_all_classes"
+  | "view_all_attendance"
+  | "create_edit_plans"
+  | "view_invoices"
+  | "manage_integrations"
+  | "access_analytics"
+  | "manage_roles"
+  | "manage_members"
+  | "manage_fitness_data"
+  | "manage_classes"
+  | "manage_payments"
+  | "access_communication"
+  | "access_inventory"
+  | "access_store"
+  | "access_crm"
+  | "access_marketing"
+  | "trainer_view_members"
+  | "trainer_edit_fitness"
+  | "trainer_view_attendance"
+  | "trainer_view_classes"
+  | "member_view_profile"
+  | "member_view_invoices"
+  | "member_make_payments"
+  | "member_view_plans"
+  | "member_book_classes"
+  | "member_view_attendance";
 
 export const usePermissions = () => {
   const { user } = useAuth();

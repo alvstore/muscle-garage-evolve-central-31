@@ -1,30 +1,22 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import AdminDashboard from "./AdminDashboard";
 import StaffDashboard from "./StaffDashboard";
 import TrainerDashboard from "./TrainerDashboard";
 import MemberDashboard from "./MemberDashboard";
-import { User, UserRole } from "@/types";
+import { UserRole } from "@/types";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    // Get user from localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-12 w-12 rounded-full border-4 border-t-accent mx-auto animate-spin"></div>
+          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
           <p className="mt-4 text-lg font-medium">Loading...</p>
         </div>
       </div>
