@@ -32,7 +32,7 @@ import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
 import PrivateRoute from './components/auth/PrivateRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
-import { useAuth } from './hooks/use-auth';
+import { UserRole } from './types';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -43,17 +43,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Wrapper component to provide the user to the DashboardLayout
-const DashboardLayoutWrapper = () => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <DashboardLayout user={user} />;
-};
 
 export default function App() {
   return (
@@ -69,46 +58,118 @@ export default function App() {
               
               {/* Protected Dashboard Routes */}
               <Route element={<PrivateRoute />}>
-                <Route element={<DashboardLayoutWrapper />}>
+                <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   
                   {/* CRM Routes */}
-                  <Route path="/crm/leads" element={<LeadsPage />} />
-                  <Route path="/crm/funnel" element={<FunnelPage />} />
-                  <Route path="/crm/follow-up" element={<FollowUpPage />} />
+                  <Route path="/crm/leads" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <LeadsPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/crm/funnel" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <FunnelPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/crm/follow-up" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <FollowUpPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Marketing Routes */}
-                  <Route path="/marketing/promo" element={<PromoPage />} />
-                  <Route path="/marketing/referral" element={<ReferralPage />} />
+                  <Route path="/marketing/promo" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <PromoPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/marketing/referral" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <ReferralPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Inventory Route */}
-                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/inventory" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <InventoryPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Store Route */}
-                  <Route path="/store" element={<StorePage />} />
+                  <Route path="/store" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
+                      <StorePage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Class Route */}
-                  <Route path="/classes" element={<ClassPage />} />
+                  <Route path="/classes" element={
+                    <PrivateRoute>
+                      <ClassPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Membership Route */}
-                  <Route path="/membership" element={<MembershipPage />} />
+                  <Route path="/membership" element={
+                    <PrivateRoute>
+                      <MembershipPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Communication Routes */}
-                  <Route path="/communication/feedback" element={<FeedbackPage />} />
-                  <Route path="/communication/announcements" element={<AnnouncementPage />} />
-                  <Route path="/communication/reminders" element={<ReminderPage />} />
-                  <Route path="/communication/motivational" element={<MotivationalPage />} />
+                  <Route path="/communication/feedback" element={
+                    <PrivateRoute>
+                      <FeedbackPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/communication/announcements" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <AnnouncementPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/communication/reminders" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <ReminderPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/communication/motivational" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <MotivationalPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Branch Management Route */}
-                  <Route path="/branches" element={<BranchesPage />} />
+                  <Route path="/branches" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                      <BranchesPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Finance Routes */}
-                  <Route path="/finance/invoices" element={<InvoicePage />} />
-                  <Route path="/finance/transactions" element={<TransactionPage />} />
+                  <Route path="/finance/invoices" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
+                      <InvoicePage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/finance/transactions" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <TransactionPage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* Settings & Integrations Routes */}
-                  <Route path="/settings/integrations" element={<IntegrationsPage />} />
-                  <Route path="/settings/integrations/hikvision" element={<HikvisionIntegrationPage />} />
+                  <Route path="/settings/integrations" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                      <IntegrationsPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/settings/integrations/hikvision" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                      <HikvisionIntegrationPage />
+                    </PrivateRoute>
+                  } />
                   <Route path="/settings/integrations/hikvision-partner" element={
                     <PrivateRoute allowedRoles={['admin']} requiredPermission="manage_integrations">
                       <HikvisionPartnerPage />

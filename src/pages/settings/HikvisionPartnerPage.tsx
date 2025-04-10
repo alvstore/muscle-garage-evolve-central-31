@@ -1,711 +1,766 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Trash2, RefreshCw, Plus, Search, FolderPlus, Users, Lock, BellRing, Download, Settings } from 'lucide-react';
-import { toast } from 'sonner';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, Plus, RefreshCw, Trash, Settings2, User, Clock, Link, CameraOff, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 import { hikvisionPartnerService } from '@/services/integrations/hikvisionPartnerService';
-import { 
-  HikvisionDevice, 
-  HikvisionDeviceChannel, 
-  HikvisionPerson, 
-  HikvisionAuthCredentials,
-  HikvisionDeviceRequest 
-} from '@/types/hikvision';
-
-// Schema for Hikvision authentication credentials
-const authFormSchema = z.object({
-  appKey: z.string().min(1, "API Key is required"),
-  secretKey: z.string().min(1, "Secret Key is required"),
-});
-
-// Schema for adding a device
-const deviceFormSchema = z.object({
-  deviceName: z.string().min(1, "Device name is required"),
-  deviceAddress: z.string().min(1, "Device IP/address is required"),
-  devicePort: z.coerce.number().int().positive("Port must be a positive number"),
-  deviceUsername: z.string().min(1, "Username is required"),
-  devicePassword: z.string().min(1, "Password is required"),
-  deviceType: z.string().optional(),
-});
+import { HikvisionDevice, HikvisionDeviceStatus } from '@/types/hikvision';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const HikvisionPartnerPage = () => {
-  const [activeTab, setActiveTab] = useState('authentication');
-  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
-  const [channels, setChannels] = useState<HikvisionDeviceChannel[]>([]);
-  const [persons, setPersons] = useState<HikvisionPerson[]>([]);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [refreshingStatus, setRefreshingStatus] = useState(false);
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<HikvisionDevice | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Initialize forms
-  const authForm = useForm<HikvisionAuthCredentials>({
-    resolver: zodResolver(authFormSchema),
-    defaultValues: {
-      appKey: '',
-      secretKey: '',
-    },
+  const [apiKey, setApiKey] = useState('');
+  const [secretKey, setSecretKey] = useState('');
+  const [isKeyConfigured, setIsKeyConfigured] = useState(false);
+  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isAddingDevice, setIsAddingDevice] = useState(false);
+  const [newDevice, setNewDevice] = useState({
+    deviceSerial: '',
+    deviceName: '',
+    deviceCode: '',
+    userName: 'admin',
+    password: '',
+    channelNos: '1',
+    isVideoSupported: true
   });
+  const { can } = usePermissions();
 
-  const deviceForm = useForm<HikvisionDeviceRequest>({
-    resolver: zodResolver(deviceFormSchema),
-    defaultValues: {
-      deviceName: '',
-      deviceAddress: '',
-      devicePort: 80,
-      deviceUsername: '',
-      devicePassword: '',
-      deviceType: 'IPC',
-    },
-  });
-
-  // Check connection status on component mount
   useEffect(() => {
-    checkConnectionStatus();
+    const checkApiKey = async () => {
+      try {
+        const credentials = await hikvisionPartnerService.getCredentials();
+        if (credentials?.appKey) {
+          setApiKey(credentials.appKey);
+          setSecretKey(credentials.secretKey || '');
+          setIsKeyConfigured(true);
+          // If keys are configured, fetch devices
+          fetchDevices();
+        }
+      } catch (error) {
+        console.error('Error fetching API credentials:', error);
+      }
+    };
+
+    checkApiKey();
   }, []);
 
-  // Function to check connection with Hikvision API
-  const checkConnectionStatus = async () => {
-    setRefreshingStatus(true);
-    try {
-      const result = await hikvisionPartnerService.testConnection();
-      setIsConnected(result);
-      if (result) {
-        toast.success("Successfully connected to Hikvision API");
-        loadDevices();
-      } else {
-        toast.error("Failed to connect to Hikvision API");
-      }
-    } catch (error: any) {
-      toast.error(`Connection error: ${error.message || 'Unknown error'}`);
-      setIsConnected(false);
-    } finally {
-      setRefreshingStatus(false);
-    }
-  };
-
-  // Load devices from Hikvision API
-  const loadDevices = async () => {
-    if (!isConnected) return;
-    
+  const fetchDevices = async () => {
     setIsLoading(true);
     try {
       const devicesList = await hikvisionPartnerService.listDevices();
-      setDevices(devicesList);
-    } catch (error: any) {
-      toast.error(`Error loading devices: ${error.message || 'Unknown error'}`);
+      setDevices(devicesList || []);
+    } catch (error) {
+      console.error('Error fetching devices:', error);
+      toast.error('Failed to fetch devices');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle authentication form submission
-  const handleAuthSubmit = async (data: HikvisionAuthCredentials) => {
+  const saveApiCredentials = async () => {
+    if (!apiKey || !secretKey) {
+      toast.error('API Key and Secret Key are required');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const success = await hikvisionPartnerService.authenticate(data);
-      if (success) {
-        toast.success("Authentication successful");
-        setIsConnected(true);
-        setAuthDialogOpen(false);
-        loadDevices();
+      await hikvisionPartnerService.saveCredentials(apiKey, secretKey);
+      setIsKeyConfigured(true);
+      toast('API credentials saved successfully', {
+        variant: 'default',
+        description: 'Your Hikvision Partner API credentials have been saved securely.',
+      });
+      fetchDevices();
+    } catch (error) {
+      console.error('Error saving API credentials:', error);
+      toast.error('Failed to save API credentials');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      const result = await hikvisionPartnerService.testConnection();
+      if (result.success) {
+        toast('Connection successful', {
+          variant: 'default',
+          description: 'Successfully connected to Hikvision Partner API.',
+        });
       } else {
-        toast.error("Authentication failed");
+        toast('Connection failed', {
+          variant: 'destructive',
+          description: result.message || 'Failed to connect to Hikvision Partner API.',
+        });
       }
-    } catch (error: any) {
-      toast.error(`Authentication error: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error('Connection test failed');
     } finally {
-      setIsLoading(false);
+      setIsTestingConnection(false);
     }
   };
 
-  // Handle device form submission
-  const handleDeviceSubmit = async (data: HikvisionDeviceRequest) => {
-    setIsLoading(true);
+  const addDevice = async () => {
+    if (!newDevice.deviceSerial || !newDevice.deviceName) {
+      toast('Missing required fields', {
+        variant: 'destructive',
+        description: 'Device serial and name are required.',
+      });
+      return;
+    }
+
+    setIsAddingDevice(true);
     try {
-      const success = await hikvisionPartnerService.addDevice(data);
-      if (success) {
-        toast.success("Device added successfully");
-        setDeviceDialogOpen(false);
-        deviceForm.reset();
-        loadDevices();
+      const result = await hikvisionPartnerService.addDevice(newDevice);
+      if (result.success) {
+        toast('Device added successfully', {
+          variant: 'default',
+          description: `Device ${newDevice.deviceName} has been added.`,
+        });
+        fetchDevices();
+        setNewDevice({
+          deviceSerial: '',
+          deviceName: '',
+          deviceCode: '',
+          userName: 'admin',
+          password: '',
+          channelNos: '1',
+          isVideoSupported: true
+        });
       } else {
-        toast.error("Failed to add device");
+        toast('Failed to add device', {
+          variant: 'destructive',
+          description: result.message || 'An error occurred while adding the device.',
+        });
       }
-    } catch (error: any) {
-      toast.error(`Error adding device: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      console.error('Error adding device:', error);
+      toast.error('Failed to add device');
     } finally {
-      setIsLoading(false);
+      setIsAddingDevice(false);
     }
   };
 
-  // Load device channels
-  const handleViewDeviceChannels = async (device: HikvisionDevice) => {
-    setSelectedDevice(device);
-    setIsLoading(true);
-    try {
-      const deviceChannels = await hikvisionPartnerService.listDeviceChannels(device.deviceId);
-      setChannels(deviceChannels);
-      setActiveTab('channels');
-    } catch (error: any) {
-      toast.error(`Error loading channels: ${error.message || 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
+  const deleteDevice = async (deviceSerial: string, deviceName: string) => {
+    if (!confirm(`Are you sure you want to delete device ${deviceName}?`)) {
+      return;
     }
-  };
 
-  // Delete a device
-  const handleDeleteDevice = async (deviceId: string) => {
-    if (!confirm("Are you sure you want to delete this device?")) return;
-    
     setIsLoading(true);
     try {
-      const success = await hikvisionPartnerService.deleteDevice(deviceId);
-      if (success) {
-        toast.success("Device deleted successfully");
-        loadDevices();
+      const result = await hikvisionPartnerService.deleteDevice(deviceSerial);
+      if (result.success) {
+        setDevices(devices.filter(device => device.deviceSerial !== deviceSerial));
+        toast('Device deleted successfully', {
+          variant: 'default',
+          description: `Device ${deviceName} has been removed.`,
+        });
       } else {
-        toast.error("Failed to delete device");
+        toast('Failed to delete device', {
+          variant: 'destructive',
+          description: result.message || 'An error occurred while deleting the device.',
+        });
       }
-    } catch (error: any) {
-      toast.error(`Error deleting device: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      console.error('Error deleting device:', error);
+      toast.error('Failed to delete device');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Function to toggle alarm subscription
-  const handleToggleAlarmSubscription = async (subscribed: boolean) => {
-    setIsLoading(true);
+  const refreshDeviceStatus = async (deviceSerial: string) => {
     try {
-      if (subscribed) {
-        // Subscribe to alarms
-        const success = await hikvisionPartnerService.subscribeToEvents(['alarm.motion', 'alarm.line', 'alarm.field']);
-        if (success) {
-          toast.success("Successfully subscribed to alarm events");
-        } else {
-          toast.error("Failed to subscribe to alarm events");
-        }
+      const updatedDevice = await hikvisionPartnerService.getDeviceStatus(deviceSerial);
+      if (updatedDevice) {
+        setDevices(devices.map(device => 
+          device.deviceSerial === deviceSerial ? { ...device, ...updatedDevice } : device
+        ));
+        toast('Device status refreshed', {
+          variant: 'default',
+          description: 'Device status has been updated.',
+        });
       } else {
-        // Unsubscribe from alarms
-        const success = await hikvisionPartnerService.unsubscribeFromEvents();
-        if (success) {
-          toast.success("Successfully unsubscribed from alarm events");
-        } else {
-          toast.error("Failed to unsubscribe from alarm events");
-        }
+        toast('Failed to refresh device status', {
+          variant: 'destructive',
+          description: 'Could not get the latest device status.',
+        });
       }
-    } catch (error: any) {
-      toast.error(`Subscription error: ${error.message || 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error refreshing device status:', error);
+      toast.error('Failed to refresh device status');
     }
   };
 
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Hikvision Partner Pro Integration</h1>
-          <p className="text-muted-foreground">
-            Manage Hikvision devices, cameras, and attendance integrations
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button 
-            onClick={checkConnectionStatus} 
-            variant="outline" 
-            disabled={refreshingStatus}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshingStatus ? 'animate-spin' : ''}`} />
-            Refresh Status
-          </Button>
-          
-          <Dialog open={authDialogOpen} onOpenChange={setAuthDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Configure Connection</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Hikvision API Credentials</DialogTitle>
-                <DialogDescription>
-                  Enter your Hikvision Partner Pro API credentials to establish connection.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Form {...authForm}>
-                <form onSubmit={authForm.handleSubmit(handleAuthSubmit)} className="space-y-4">
-                  <FormField
-                    control={authForm.control}
-                    name="appKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>API Key (App Key)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter API Key" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={authForm.control}
-                    name="secretKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Secret Key</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="Enter Secret Key" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="show-password"
-                      checked={showPassword}
-                      onCheckedChange={setShowPassword}
-                    />
-                    <Label htmlFor="show-password">Show credentials</Label>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? 'Connecting...' : 'Connect'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+  const deviceStatusBadge = (status?: HikvisionDeviceStatus) => {
+    switch(status) {
+      case 'online':
+        return <Badge className="bg-green-500">Online</Badge>;
+      case 'offline':
+        return <Badge variant="destructive">Offline</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  if (!can('manage_integrations')) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <XCircle className="mx-auto h-12 w-12 text-destructive" />
+          <h3 className="mt-2 text-lg font-semibold">Access Denied</h3>
+          <p className="text-sm text-muted-foreground">You don't have permission to access this page.</p>
         </div>
       </div>
-      
-      <div className="p-4 mb-6 bg-muted rounded-lg flex items-center justify-between">
-        <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span>
-            Status: <strong>{isConnected ? 'Connected' : 'Disconnected'}</strong>
-          </span>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Hikvision Partner Integration</h1>
+          <p className="text-muted-foreground">
+            Connect and manage your Hikvision devices using the Partner Pro OpenAPI.
+          </p>
         </div>
-        
-        {isConnected && (
-          <div className="flex gap-2">
-            <Dialog open={deviceDialogOpen} onOpenChange={setDeviceDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="devices">Devices</TabsTrigger>
+          <TabsTrigger value="settings">API Settings</TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Connected Devices</CardTitle>
+                <CardDescription>Total Hikvision devices registered</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold">{devices.length}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {devices.filter(d => d.status === 'online').length} online
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab('devices')}>
+                  Manage Devices
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>API Status</CardTitle>
+                <CardDescription>Hikvision Partner API connection</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2">
+                  {isKeyConfigured ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  )}
+                  <span className="font-medium">
+                    {isKeyConfigured ? "Connected" : "Not Configured"}
+                  </span>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={isKeyConfigured ? testConnection : () => setActiveTab('settings')}
+                  disabled={isTestingConnection}
+                >
+                  {isTestingConnection ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Testing...
+                    </>
+                  ) : isKeyConfigured ? (
+                    "Test Connection"
+                  ) : (
+                    "Configure API"
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common integration tasks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start" 
+                  onClick={() => setActiveTab('devices')}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Device
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => fetchDevices()}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh Device Status
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => setActiveTab('events')}
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  View Recent Events
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2">Loading devices...</span>
+            </div>
+          ) : devices.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Device Overview</CardTitle>
+                <CardDescription>
+                  Status overview of your connected Hikvision devices
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {devices.slice(0, 6).map((device) => (
+                    <div key={device.deviceSerial} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{device.deviceName}</h3>
+                          <p className="text-xs text-muted-foreground">SN: {device.deviceSerial}</p>
+                        </div>
+                        {deviceStatusBadge(device.status)}
+                      </div>
+                      <div className="mt-4 space-y-1 text-sm">
+                        <div className="flex items-center">
+                          <Link className="h-4 w-4 mr-2 opacity-70" />
+                          <span>Channels: {device.channelNos || '1'}</span>
+                        </div>
+                        <div className="flex items-center">
+                          {device.isVideoSupported ? (
+                            <Camera className="h-4 w-4 mr-2 opacity-70" />
+                          ) : (
+                            <CameraOff className="h-4 w-4 mr-2 opacity-70" />
+                          )}
+                          <span>{device.isVideoSupported ? 'Video Supported' : 'No Video Support'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {devices.length > 6 && (
+                  <div className="mt-4 text-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab('devices')}
+                    >
+                      View All {devices.length} Devices
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-10">
+                <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Devices Connected</h3>
+                <p className="text-center text-muted-foreground mb-6">
+                  You haven't added any Hikvision devices yet. Add your first device to start monitoring.
+                </p>
+                <Button onClick={() => setActiveTab('devices')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Device
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Hikvision Device</DialogTitle>
-                  <DialogDescription>
-                    Enter device details to add a new Hikvision device to your system.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <Form {...deviceForm}>
-                  <form onSubmit={deviceForm.handleSubmit(handleDeviceSubmit)} className="space-y-4">
-                    <FormField
-                      control={deviceForm.control}
-                      name="deviceName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Device Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter device name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={deviceForm.control}
-                        name="deviceAddress"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>IP Address</FormLabel>
-                            <FormControl>
-                              <Input placeholder="192.168.1.100" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={deviceForm.control}
-                        name="devicePort"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Port</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="80" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={deviceForm.control}
-                      name="deviceUsername"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="admin" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={deviceForm.control}
-                      name="devicePassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type={showPassword ? "text" : "password"} 
-                              placeholder="Device password" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={deviceForm.control}
-                      name="deviceType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Device Type</FormLabel>
-                          <FormControl>
-                            <Input placeholder="IPC, NVR, etc." {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Examples: IPC (camera), NVR, DVR, etc.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <DialogFooter>
-                      <Button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Adding...' : 'Add Device'}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="devices">Devices</TabsTrigger>
-          <TabsTrigger value="channels">Channels</TabsTrigger>
-          <TabsTrigger value="events">Events & Alarms</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-        </TabsList>
-        
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="devices" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Device Management</CardTitle>
+              <CardTitle>Add New Device</CardTitle>
               <CardDescription>
-                View and manage all connected Hikvision devices
+                Register a Hikvision device with your Partner API account
               </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="deviceSerial">Device Serial Number *</Label>
+                  <Input 
+                    id="deviceSerial" 
+                    value={newDevice.deviceSerial}
+                    onChange={(e) => setNewDevice({...newDevice, deviceSerial: e.target.value})}
+                    placeholder="Enter device serial number"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deviceName">Device Name *</Label>
+                  <Input 
+                    id="deviceName" 
+                    value={newDevice.deviceName}
+                    onChange={(e) => setNewDevice({...newDevice, deviceName: e.target.value})}
+                    placeholder="Enter a friendly name for the device"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deviceCode">Device Code (Optional)</Label>
+                  <Input 
+                    id="deviceCode" 
+                    value={newDevice.deviceCode}
+                    onChange={(e) => setNewDevice({...newDevice, deviceCode: e.target.value})}
+                    placeholder="Enter device code if available"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="userName">Username</Label>
+                  <Input 
+                    id="userName" 
+                    value={newDevice.userName}
+                    onChange={(e) => setNewDevice({...newDevice, userName: e.target.value})}
+                    placeholder="Default: admin"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password"
+                    value={newDevice.password}
+                    onChange={(e) => setNewDevice({...newDevice, password: e.target.value})}
+                    placeholder="Enter device password"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="channelNos">Channel Numbers</Label>
+                  <Input 
+                    id="channelNos" 
+                    value={newDevice.channelNos}
+                    onChange={(e) => setNewDevice({...newDevice, channelNos: e.target.value})}
+                    placeholder="Default: 1"
+                    disabled={isAddingDevice}
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-6">
+                  <Switch 
+                    id="isVideoSupported" 
+                    checked={newDevice.isVideoSupported}
+                    onCheckedChange={(checked) => setNewDevice({...newDevice, isVideoSupported: checked})}
+                    disabled={isAddingDevice}
+                  />
+                  <Label htmlFor="isVideoSupported">Device supports video streaming</Label>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={addDevice} 
+                disabled={!isKeyConfigured || isAddingDevice || !newDevice.deviceSerial || !newDevice.deviceName}
+              >
+                {isAddingDevice ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding Device...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Device
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Registered Devices</CardTitle>
+                <CardDescription>
+                  All Hikvision devices connected to your account
+                </CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchDevices}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span className="ml-2 hidden md:inline">Refresh</span>
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="flex justify-center p-8">
-                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading devices...</span>
                 </div>
               ) : devices.length > 0 ? (
-                <Table>
-                  <TableCaption>List of connected Hikvision devices</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Device Name</TableHead>
-                      <TableHead>IP / Address</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <ScrollArea className="h-[500px] rounded-md">
+                  <div className="space-y-4">
                     {devices.map((device) => (
-                      <TableRow key={device.deviceId}>
-                        <TableCell className="font-medium">{device.deviceName || device.deviceId}</TableCell>
-                        <TableCell>{device.deviceAddress}:{device.devicePort}</TableCell>
-                        <TableCell>{device.deviceType || 'Unknown'}</TableCell>
-                        <TableCell>
-                          <Badge variant={device.deviceStatus === 'online' ? 'success' : 'destructive'}>
-                            {device.deviceStatus || 'unknown'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleViewDeviceChannels(device)}
-                            >
-                              Channels
-                            </Button>
-                            
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteDevice(device.deviceId)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                      <div key={device.deviceSerial} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{device.deviceName}</h3>
+                            <p className="text-xs text-muted-foreground">SN: {device.deviceSerial}</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                          {deviceStatusBadge(device.status)}
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Device Code:</span>{' '}
+                            {device.deviceCode || 'N/A'}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Channels:</span>{' '}
+                            {device.channelNos || '1'}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Username:</span>{' '}
+                            {device.userName || 'admin'}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Video Support:</span>{' '}
+                            {device.isVideoSupported ? 'Yes' : 'No'}
+                          </div>
+                        </div>
+                        <div className="mt-4 flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => refreshDeviceStatus(device.deviceSerial)}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Refresh Status
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                          >
+                            <Settings2 className="h-4 w-4 mr-2" />
+                            Configure
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => deleteDevice(device.deviceSerial, device.deviceName)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </ScrollArea>
               ) : (
-                <div className="text-center p-8">
-                  <FolderPlus className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-lg font-semibold">No devices found</h3>
-                  <p className="text-muted-foreground">
-                    {isConnected 
-                      ? "Add your first Hikvision device to get started" 
-                      : "Connect to Hikvision API first to view devices"}
-                  </p>
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No devices found. Add your first device above.</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="channels" className="space-y-4">
+
+        <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>
-                {selectedDevice ? (
-                  <div className="flex items-center">
-                    <span>Channels for {selectedDevice.deviceName || selectedDevice.deviceId}</span>
-                  </div>
-                ) : 'Device Channels'}
-              </CardTitle>
+              <CardTitle>Hikvision Partner API Credentials</CardTitle>
               <CardDescription>
-                View cameras and other channels from your devices
+                Enter your Hikvision Partner Pro OpenAPI credentials
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {!selectedDevice ? (
-                <div className="text-center p-8">
-                  <p>Select a device to view its channels</p>
-                </div>
-              ) : isLoading ? (
-                <div className="flex justify-center p-8">
-                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : channels.length > 0 ? (
-                <Table>
-                  <TableCaption>Channels for {selectedDevice.deviceName || selectedDevice.deviceId}</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Channel Name</TableHead>
-                      <TableHead>Channel Number</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {channels.map((channel) => (
-                      <TableRow key={channel.channelId}>
-                        <TableCell className="font-medium">{channel.channelName || 'Unnamed Channel'}</TableCell>
-                        <TableCell>{channel.channelNo || 'N/A'}</TableCell>
-                        <TableCell>{channel.channelType || 'Unknown'}</TableCell>
-                        <TableCell>
-                          <Badge variant={channel.status === 'online' ? 'success' : 'destructive'}>
-                            {channel.status || 'unknown'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center p-8">
-                  <p>No channels found for this device</p>
-                </div>
-              )}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="apiKey">API Key (appKey)</Label>
+                <Input 
+                  id="apiKey" 
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter your Hikvision Partner API Key"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="secretKey">Secret Key</Label>
+                <Input 
+                  id="secretKey" 
+                  type="password"
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                  placeholder="Enter your Hikvision Partner Secret Key"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-md text-sm">
+                <h4 className="font-medium text-amber-800 dark:text-amber-300 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Important Security Note
+                </h4>
+                <p className="mt-1 text-amber-700 dark:text-amber-400">
+                  These API credentials are stored securely and are used to authenticate with the Hikvision Partner Pro OpenAPI. 
+                  Never share these credentials with unauthorized individuals.
+                </p>
+              </div>
             </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={testConnection}
+                disabled={!isKeyConfigured || isTestingConnection}
+              >
+                {isTestingConnection ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  "Test Connection"
+                )}
+              </Button>
+              <Button 
+                onClick={saveApiCredentials}
+                disabled={isLoading || !apiKey || !secretKey}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Credentials"
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Settings</CardTitle>
+              <CardDescription>
+                Configure how the Hikvision integration works with your gym management system
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch id="automateAttendance" />
+                <div>
+                  <Label htmlFor="automateAttendance">Automate Attendance Tracking</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically record attendance when members are detected by cameras
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center space-x-2">
+                <Switch id="syncMembers" />
+                <div>
+                  <Label htmlFor="syncMembers">Sync Members with Hikvision</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically sync member data with Hikvision Cloud Attendance
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex items-center space-x-2">
+                <Switch id="eventNotifications" />
+                <div>
+                  <Label htmlFor="eventNotifications">Event Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications for device events and alarms
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button>Save Settings</Button>
+            </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="events" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Events & Alarms</CardTitle>
+              <CardTitle>Event Monitoring</CardTitle>
               <CardDescription>
-                Subscribe to events and alarms from your Hikvision devices
+                This feature will be available in a future update
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <BellRing className="h-5 w-5" />
-                  <span className="font-medium">Alarm Subscription</span>
-                </div>
-                <Switch
-                  onCheckedChange={handleToggleAlarmSubscription}
-                  disabled={!isConnected || isLoading}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Available Event Types</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 border rounded-md">
-                    <span className="font-medium">Motion Detection</span>
-                    <p className="text-sm text-muted-foreground">Detects motion in camera view</p>
-                  </div>
-                  <div className="p-3 border rounded-md">
-                    <span className="font-medium">Line Crossing</span>
-                    <p className="text-sm text-muted-foreground">Detects crossing of virtual lines</p>
-                  </div>
-                  <div className="p-3 border rounded-md">
-                    <span className="font-medium">Intrusion Detection</span>
-                    <p className="text-sm text-muted-foreground">Detects intrusion in defined areas</p>
-                  </div>
-                  <div className="p-3 border rounded-md">
-                    <span className="font-medium">Face Detection</span>
-                    <p className="text-sm text-muted-foreground">Detects human faces in view</p>
-                  </div>
-                </div>
-              </div>
-              
-              <Alert>
-                <BellRing className="h-4 w-4" />
-                <AlertTitle>Event Configuration</AlertTitle>
-                <AlertDescription>
-                  Events and alarms must be configured on each device before they can be received here.
-                </AlertDescription>
-              </Alert>
+            <CardContent className="py-10 text-center">
+              <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Event monitoring functionality is under development. This will allow you to subscribe to and view device events and alarms from your Hikvision devices.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="attendance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Attendance System Integration</CardTitle>
+              <CardTitle>Cloud Attendance Integration</CardTitle>
               <CardDescription>
-                Manage person recognition and access control for attendance tracking
+                This feature will be available in a future update
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <Users className="h-8 w-8 mb-2" />
-                  <h3 className="text-lg font-medium">Member Registration</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Register members' faces and credentials for access control and attendance
-                  </p>
-                  <Button disabled={!isConnected}>Manage Members</Button>
-                </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <Lock className="h-8 w-8 mb-2" />
-                  <h3 className="text-lg font-medium">Access Privileges</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Configure access rules and permissions for members
-                  </p>
-                  <Button disabled={!isConnected}>Set Privileges</Button>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Integration Status</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center p-3 border rounded-md">
-                    <div className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <div>
-                      <p className="font-medium">API Connection</p>
-                      <p className="text-sm text-muted-foreground">
-                        {isConnected ? 'Connected' : 'Disconnected'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center p-3 border rounded-md">
-                    <div className="w-3 h-3 rounded-full mr-2 bg-yellow-500"></div>
-                    <div>
-                      <p className="font-medium">Attendance Sync</p>
-                      <p className="text-sm text-muted-foreground">Not configured</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <Alert>
-                <Download className="h-4 w-4" />
-                <AlertTitle>Attendance Data</AlertTitle>
-                <AlertDescription>
-                  Attendance data from Hikvision devices can be synchronized with your gym management system.
-                </AlertDescription>
-              </Alert>
+            <CardContent className="py-10 text-center">
+              <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Cloud Attendance integration is under development. This will allow you to synchronize member data with Hikvision's attendance system and manage access privileges.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

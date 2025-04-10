@@ -23,6 +23,7 @@ const PrivateRoute = ({
   const { can } = usePermissions();
   const location = useLocation();
 
+  // Show a loading indicator while checking authentication status
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -40,7 +41,7 @@ const PrivateRoute = ({
   // If allowedRoles is specified, check if user has an allowed role
   if (allowedRoles && allowedRoles.length > 0 && user) {
     if (!allowedRoles.includes(user.role as UserRole)) {
-      // Redirect to unauthorized page or dashboard based on role
+      // Redirect to unauthorized page if user doesn't have an allowed role
       return <Navigate to="/unauthorized" replace />;
     }
   }
