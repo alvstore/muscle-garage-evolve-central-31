@@ -33,17 +33,17 @@ interface AllocationFormProps {
 }
 
 const AllocationForm = ({ branches, trainers, unassignedMembers, onAllocate }: AllocationFormProps) => {
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [selectedTrainer, setSelectedTrainer] = useState<string>('');
   const [selectedMember, setSelectedMember] = useState<string>('');
   
-  const filteredTrainers = selectedBranch 
-    ? trainers.filter(trainer => trainer.branches.includes(selectedBranch))
-    : trainers;
+  const filteredTrainers = selectedBranch === 'all'
+    ? trainers
+    : trainers.filter(trainer => trainer.branches.includes(selectedBranch));
     
-  const filteredMembers = selectedBranch
-    ? unassignedMembers.filter(member => member.branchId === selectedBranch)
-    : unassignedMembers;
+  const filteredMembers = selectedBranch === 'all'
+    ? unassignedMembers
+    : unassignedMembers.filter(member => member.branchId === selectedBranch);
     
   const handleAllocate = () => {
     if (!selectedTrainer || !selectedMember) {
@@ -67,7 +67,7 @@ const AllocationForm = ({ branches, trainers, unassignedMembers, onAllocate }: A
             <SelectValue placeholder="Select branch" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Branches</SelectItem>
+            <SelectItem value="all">All Branches</SelectItem>
             {branches.map(branch => (
               <SelectItem key={branch.id} value={branch.id}>
                 {branch.name}
