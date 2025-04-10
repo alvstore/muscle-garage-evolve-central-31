@@ -29,7 +29,7 @@ export interface Member {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
-  primaryBranchId?: string; // Added this property
+  primaryBranchId?: string; // Ensure this property is present
   // Body measurements
   height?: number;
   weight?: number;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,7 +41,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-// Define the form schema
 const formSchema = z.object({
   name: z.string().min(2, { message: "Template name must be at least 2 characters." }),
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
@@ -55,7 +53,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Mock data for SMS templates
 const mockTemplates: SmsTemplate[] = [
   {
     id: "template-1",
@@ -108,7 +105,6 @@ const mockTemplates: SmsTemplate[] = [
   },
 ];
 
-// Available trigger events
 const availableTriggerEvents = [
   { value: "member_registration", label: "Member Registration" },
   { value: "payment_success", label: "Payment Success" },
@@ -141,7 +137,6 @@ const SmsTemplateManager: React.FC = () => {
     },
   });
 
-  // Reset form when selected template changes
   useEffect(() => {
     if (selectedTemplate) {
       form.reset({
@@ -178,7 +173,6 @@ const SmsTemplateManager: React.FC = () => {
 
   const handleDeleteTemplate = (templateId: string) => {
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setTemplates(templates.filter((t) => t.id !== templateId));
       toast.success("Template deleted successfully");
@@ -189,15 +183,12 @@ const SmsTemplateManager: React.FC = () => {
   const onSubmit = (formData: FormValues) => {
     setIsLoading(true);
     
-    // Extract variables from content using regex
     const variableRegex = /{{([^}]+)}}/g;
     const matches = [...formData.content.matchAll(variableRegex)];
     const variables = matches.map((match) => match[1]);
     
-    // Simulate API call
     setTimeout(() => {
       if (selectedTemplate) {
-        // Update existing template
         const updatedTemplates = templates.map((t) =>
           t.id === selectedTemplate.id
             ? {
@@ -208,16 +199,22 @@ const SmsTemplateManager: React.FC = () => {
               }
             : t
         );
-        setTemplates(updatedTemplates as SmsTemplate[]);
+        setTemplates(updatedTemplates);
         toast.success("Template updated successfully");
       } else {
-        // Create new template
         const newTemplate: SmsTemplate = {
           id: `template-${Date.now()}`,
-          ...formData,
+          name: formData.name,
+          content: formData.content,
+          description: formData.description || "",
+          dltTemplateId: formData.dltTemplateId,
+          provider: formData.provider,
+          triggerEvents: formData.triggerEvents as TriggerEvent[],
+          enabled: formData.enabled,
           variables,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          createdBy: "admin"
         };
         setTemplates([...templates, newTemplate]);
         toast.success("Template created successfully");
@@ -242,7 +239,7 @@ const SmsTemplateManager: React.FC = () => {
             Manage SMS templates for automated notifications
           </p>
         </div>
-        {can("manage_sms_templates" as Permission) && (
+        {can("manage_sms_templates") && (
           <Button onClick={handleCreateTemplate}>
             <Plus className="mr-2 h-4 w-4" /> Create Template
           </Button>
@@ -263,7 +260,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates" as Permission)}
+                canEdit={can("manage_sms_templates")}
               />
             ))}
           </div>
@@ -276,7 +273,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates" as Permission)}
+                canEdit={can("manage_sms_templates")}
               />
             ))}
           </div>
@@ -289,7 +286,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates" as Permission)}
+                canEdit={can("manage_sms_templates")}
               />
             ))}
           </div>

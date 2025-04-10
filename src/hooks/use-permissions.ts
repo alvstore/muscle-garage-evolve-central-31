@@ -65,26 +65,22 @@ export type Permission =
   | "feature_whatsapp_campaigns"
   | "feature_social_media_integration"
   | "member_submit_feedback"
-  | "member_view_feedback";
+  | "member_view_feedback"
+  | "manage_sms_templates";
 
 export const usePermissions = () => {
   const { user } = useAuth();
   
-  // Basic user role determination
   const userRole = user?.role || "member";
   
-  // Check if user has a specific permission
   const can = (permission: Permission, isOwner = false): boolean => {
-    // Simple permission logic based on roles for now
     switch (permission) {
-      // Admin permissions
       case "full_system_access":
       case "manage_branches":
       case "manage_roles":
       case "feature_admin_dashboard":
         return userRole === "admin";
       
-      // Admin/Staff permissions
       case "register_member":
       case "view_all_users":
       case "view_all_trainers":
@@ -98,7 +94,6 @@ export const usePermissions = () => {
       case "feature_reporting":
         return userRole === "admin" || userRole === "staff";
       
-      // Admin/Staff/Trainer permissions
       case "view_member_profiles":
       case "edit_member_fitness_data":
       case "assign_diet_plan":
@@ -109,7 +104,6 @@ export const usePermissions = () => {
       case "feature_trainer_dashboard":
         return userRole === "admin" || userRole === "staff" || userRole === "trainer";
       
-      // Member permissions
       case "member_view_profile":
       case "member_view_invoices":
       case "member_make_payments":
@@ -119,9 +113,8 @@ export const usePermissions = () => {
       case "feature_member_dashboard":
       case "member_submit_feedback":
       case "member_view_feedback":
-        return true; // All users can access these
+        return true;
       
-      // Other permissions
       case "log_attendance":
       case "manage_classes":
       case "view_all_classes":
@@ -131,13 +124,11 @@ export const usePermissions = () => {
         return userRole === "admin" || userRole === "staff";
       
       default:
-        return userRole === "admin"; // By default, only admins have access
+        return userRole === "admin";
     }
   };
   
-  // Check if user can access a specific route
   const canAccess = (route: string): boolean => {
-    // For demo, just check basic role access
     if (route.startsWith("/admin")) {
       return userRole === "admin";
     } else if (route.startsWith("/trainer")) {
@@ -146,17 +137,14 @@ export const usePermissions = () => {
     return true;
   };
   
-  // Check if user has one of the specified roles
   const hasRole = (roles: string[]): boolean => {
     return roles.includes(userRole);
   };
   
-  // Check if user is a system admin
   const isSystemAdmin = (): boolean => {
     return userRole === "admin";
   };
   
-  // Check if user is a branch admin (staff with branch manager privileges)
   const isBranchAdmin = (): boolean => {
     return userRole === "admin" || (userRole === "staff" && user?.isBranchManager === true);
   };
