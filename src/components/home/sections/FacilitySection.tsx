@@ -1,5 +1,5 @@
 import React from 'react';
-import { Water, Lock, Cloud, Car, Heart, Dumbbell } from 'lucide-react';
+import { Waves, Lock, Cloud, Car, Heart, Dumbbell } from 'lucide-react';
 
 interface FacilityCardProps {
   icon: React.ReactNode;
@@ -25,7 +25,7 @@ const FacilitySection = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FacilityCard
-            icon={<Water className="h-7 w-7" />}
+            icon={<Waves className="h-7 w-7" />}
             title="Swimming Pool & Ice Bath"
             description="Olympic-sized swimming pool and therapeutic ice bath for recovery."
           />
