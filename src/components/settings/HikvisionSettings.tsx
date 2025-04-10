@@ -15,7 +15,7 @@ import { Loader2, EyeOff, Eye, HelpCircle, Building } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { hikvisionPartnerService } from "@/services/integrations/hikvisionPartnerService";
-import settingsService from "@/services/settingsService";
+import settingsService, { AccessControlSettings } from "@/services/settingsService";
 
 // Define the form schema with Zod
 const hikvisionSchema = z.object({
@@ -23,10 +23,10 @@ const hikvisionSchema = z.object({
   secretKey: z.string().min(1, { message: "SecretKey is required" }),
   siteId: z.string().min(1, { message: "Please select a site" }),
   deviceSerials: z.object({
-    entryDevice1: z.string().optional(),
-    entryDevice2: z.string().optional(),
-    entryDevice3: z.string().optional(),
-    swimmingDevice: z.string().optional(),
+    entryDevice1: z.string().default(""),
+    entryDevice2: z.string().default(""),
+    entryDevice3: z.string().default(""),
+    swimmingDevice: z.string().default(""),
   }),
   planBasedAccess: z.object({
     gymOnlyAccess: z.boolean().default(true),
@@ -49,7 +49,7 @@ const HikvisionSettings = () => {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   
   // Default values for the form
-  const defaultValues: Partial<HikvisionFormValues> = {
+  const defaultValues: HikvisionFormValues = {
     appKey: "",
     secretKey: "",
     siteId: "",
@@ -103,7 +103,25 @@ const HikvisionSettings = () => {
       await hikvisionPartnerService.saveCredentials(data.appKey, data.secretKey);
       
       // Then save all settings to the settings service
-      await settingsService.updateAccessControlSettings(data);
+      // Explicitly cast the form data to AccessControlSettings to ensure all required fields are present
+      const accessControlSettings: AccessControlSettings = {
+        appKey: data.appKey,
+        secretKey: data.secretKey,
+        siteId: data.siteId,
+        deviceSerials: {
+          entryDevice1: data.deviceSerials.entryDevice1,
+          entryDevice2: data.deviceSerials.entryDevice2,
+          entryDevice3: data.deviceSerials.entryDevice3,
+          swimmingDevice: data.deviceSerials.swimmingDevice,
+        },
+        planBasedAccess: {
+          gymOnlyAccess: data.planBasedAccess.gymOnlyAccess,
+          swimmingOnlyAccess: data.planBasedAccess.swimmingOnlyAccess,
+          bothAccess: data.planBasedAccess.bothAccess,
+        }
+      };
+      
+      await settingsService.updateAccessControlSettings(accessControlSettings);
       
       toast.success("Hikvision access control settings saved successfully!");
     } catch (error) {
