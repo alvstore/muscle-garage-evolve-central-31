@@ -9,18 +9,20 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MemberProgressPage from "./pages/members/MemberProgressPage";
+import Dashboard from "./pages/dashboard/Dashboard";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
-// Creating a minimal app for development that only shows the member progress page
 function App() {
   return (
     <Router>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <Routes>
-        <Route
-          path="/fitness/progress"
-          element={<MemberProgressPage />}
-        />
-        <Route path="*" element={<Navigate to="/fitness/progress" />} />
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="fitness/progress" element={<MemberProgressPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
   );

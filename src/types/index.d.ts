@@ -12,3 +12,4 @@ export interface DashboardSummary {
   upcomingRenewals: number;
   attendanceTrend: Array<{ date: string; count: number }>;
 }
+

@@ -1,73 +1,178 @@
-# Welcome to your Lovable project
 
-## Project info
+# Muscle Garage CRM System
 
-**URL**: https://lovable.dev/projects/27bfd57f-4306-4e1b-8a9a-d9518a5244d9
+A comprehensive gym management system for Muscle Garage with MongoDB backend.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Member Management
+- Trainer Management
+- Class Scheduling
+- Payments & Invoicing
+- Attendance Tracking
+- Progress Monitoring
+- Communication Tools
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/27bfd57f-4306-4e1b-8a9a-d9518a5244d9) and start prompting.
+- Frontend: React, Tailwind CSS, Shadcn UI
+- Backend: Node.js, Express, MongoDB with Mongoose ODM
+- Authentication: JWT
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup Instructions
 
-**Use your preferred IDE**
+### Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. **Clone the repository**
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+   ```bash
+   git clone <repository-url>
+   cd muscle-garage-crm
+   ```
 
-Follow these steps:
+2. **Install dependencies**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **Set up environment variables**
 
-# Step 3: Install the necessary dependencies.
-npm i
+   Create a `.env` file in the root directory with the following variables:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+   ```
+   MONGO_URI=mongodb://localhost:27017/musclegarage
+   NODE_ENV=development
+   PORT=5000
+   JWT_SECRET=your_jwt_secret
+   JWT_EXPIRE=30d
+   JWT_COOKIE_EXPIRE=30
+   ```
 
-**Edit a file directly in GitHub**
+4. **Start MongoDB**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+   Make sure MongoDB is installed and running on your local machine.
 
-**Use GitHub Codespaces**
+   ```bash
+   mongod
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+5. **Run the application**
 
-## What technologies are used for this project?
+   ```bash
+   # Run frontend and backend concurrently
+   npm run dev
+   
+   # Or run separately
+   npm run server
+   npm run client
+   ```
 
-This project is built with:
+### VPS Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. **Set up a VPS** (Digital Ocean, Linode, AWS EC2, etc.)
 
-## How can I deploy this project?
+2. **Install required software**
 
-Simply open [Lovable](https://lovable.dev/projects/27bfd57f-4306-4e1b-8a9a-d9518a5244d9) and click on Share -> Publish.
+   ```bash
+   # Update system
+   sudo apt update && sudo apt upgrade -y
+   
+   # Install Node.js
+   curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+   sudo apt install -y nodejs
+   
+   # Install MongoDB
+   wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+   echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+   sudo apt update
+   sudo apt install -y mongodb-org
+   sudo systemctl start mongod
+   sudo systemctl enable mongod
+   ```
 
-## Can I connect a custom domain to my Lovable project?
+3. **Clone and configure the application**
 
-Yes it is!
+   ```bash
+   git clone <repository-url>
+   cd muscle-garage-crm
+   npm install
+   
+   # Create .env file
+   touch .env
+   nano .env
+   # Add environment variables as mentioned above
+   ```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+4. **Set up reverse proxy with Nginx**
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+   ```bash
+   sudo apt install -y nginx
+   
+   # Configure Nginx
+   sudo nano /etc/nginx/sites-available/musclegarage
+   
+   # Add the following configuration
+   server {
+       listen 80;
+       server_name yourdomain.com www.yourdomain.com;
+       
+       location / {
+           proxy_pass http://localhost:5000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   
+   # Enable the site
+   sudo ln -s /etc/nginx/sites-available/musclegarage /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
+
+5. **Set up SSL with Let's Encrypt**
+
+   ```bash
+   sudo apt install certbot python3-certbot-nginx
+   sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+   ```
+
+6. **Run the application with PM2**
+
+   ```bash
+   # Install PM2
+   sudo npm install -g pm2
+   
+   # Start the application
+   pm2 start server.js --name "musclegarage"
+   pm2 startup
+   pm2 save
+   ```
+
+## Database Connection
+
+The application uses Mongoose to connect to MongoDB. The connection is established in `config/db.js` with the following features:
+
+- Connection pooling
+- Automatic reconnection
+- Error handling
+- Connection event listeners
+
+## Available Scripts
+
+- `npm run dev`: Run both client and server in development mode
+- `npm run server`: Run only the backend server
+- `npm run client`: Run only the frontend client
+- `npm run build`: Build the client for production
+- `npm run start`: Start the production server
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

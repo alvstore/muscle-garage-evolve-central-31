@@ -40,7 +40,7 @@ export const memberNavSections: NavSection[] = [
         href: "/dashboard",
         icon: <LayoutDashboard className="h-4 w-4" />,
         label: "Dashboard",
-        children: [],
+        children: []
       }
     ]
   },
@@ -58,21 +58,21 @@ export const memberNavSections: NavSection[] = [
             title: "Workout Plans",
             href: "/fitness/workout",
             label: "Workout Plans",
-            children: [],
+            children: []
           },
           {
             title: "Diet Plans",
             href: "/fitness/diet",
             label: "Diet Plans",
-            children: [],
+            children: []
           },
           {
             title: "Progress Tracker",
             href: "/fitness/progress",
             label: "Progress Tracker",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       }
     ]
   },
@@ -90,15 +90,15 @@ export const memberNavSections: NavSection[] = [
             title: "Book a Class",
             href: "/classes/book",
             label: "Book a Class",
-            children: [],
+            children: []
           },
           {
             title: "My Bookings",
             href: "/classes/my-bookings",
             label: "My Bookings",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       },
       {
         title: "Payments",
@@ -110,15 +110,15 @@ export const memberNavSections: NavSection[] = [
             title: "My Invoices",
             href: "/payments/invoices",
             label: "My Invoices",
-            children: [],
+            children: []
           },
           {
             title: "Subscription",
             href: "/payments/subscription",
             label: "Subscription",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       },
       {
         title: "Shop",
@@ -130,15 +130,15 @@ export const memberNavSections: NavSection[] = [
             title: "Products",
             href: "/shop/products",
             label: "Products",
-            children: [],
+            children: []
           },
           {
             title: "My Orders",
             href: "/shop/orders",
             label: "My Orders",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       }
     ]
   },
@@ -156,15 +156,15 @@ export const memberNavSections: NavSection[] = [
             title: "Submit Feedback",
             href: "/feedback/submit",
             label: "Submit Feedback",
-            children: [],
+            children: []
           },
           {
             title: "My Feedback",
             href: "/feedback/history",
             label: "My Feedback",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       },
       {
         title: "Settings",
@@ -176,15 +176,15 @@ export const memberNavSections: NavSection[] = [
             title: "My Profile",
             href: "/settings/profile",
             label: "My Profile",
-            children: [],
+            children: []
           },
           {
             title: "Notifications",
             href: "/settings/notifications",
             label: "Notifications",
-            children: [],
-          },
-        ],
+            children: []
+          }
+        ]
       }
     ]
   }
@@ -196,7 +196,7 @@ export const memberNavigation: NavItem[] = [
     href: "/dashboard",
     icon: <LayoutDashboard className="h-4 w-4" />,
     label: "Dashboard",
-    children: [],
+    children: []
   },
   {
     title: "Fitness",
@@ -208,21 +208,21 @@ export const memberNavigation: NavItem[] = [
         title: "Workout Plans",
         href: "/fitness/workout",
         label: "Workout Plans",
-        children: [],
+        children: []
       },
       {
         title: "Diet Plans",
         href: "/fitness/diet",
         label: "Diet Plans",
-        children: [],
+        children: []
       },
       {
         title: "Progress Tracker",
         href: "/fitness/progress",
         label: "Progress Tracker",
-        children: [],
-      },
-    ],
+        children: []
+      }
+    ]
   },
   {
     title: "Classes",
@@ -234,15 +234,15 @@ export const memberNavigation: NavItem[] = [
         title: "Book a Class",
         href: "/classes/book",
         label: "Book a Class",
-        children: [],
+        children: []
       },
       {
         title: "My Bookings",
         href: "/classes/my-bookings",
         label: "My Bookings",
-        children: [],
-      },
-    ],
+        children: []
+      }
+    ]
   },
   {
     title: "Payments",
@@ -254,15 +254,15 @@ export const memberNavigation: NavItem[] = [
         title: "My Invoices",
         href: "/payments/invoices",
         label: "My Invoices",
-        children: [],
+        children: []
       },
       {
         title: "Subscription",
         href: "/payments/subscription",
         label: "Subscription",
-        children: [],
-      },
-    ],
+        children: []
+      }
+    ]
   },
   {
     title: "Shop",
@@ -274,15 +274,15 @@ export const memberNavigation: NavItem[] = [
         title: "Products",
         href: "/shop/products",
         label: "Products",
-        children: [],
+        children: []
       },
       {
         title: "My Orders",
         href: "/shop/orders",
         label: "My Orders",
-        children: [],
-      },
-    ],
+        children: []
+      }
+    ]
   },
   {
     title: "Feedback",
@@ -294,15 +294,15 @@ export const memberNavigation: NavItem[] = [
         title: "Submit Feedback",
         href: "/feedback/submit",
         label: "Submit Feedback",
-        children: [],
+        children: []
       },
       {
         title: "My Feedback",
         href: "/feedback/history",
         label: "My Feedback",
-        children: [],
-      },
-    ],
+        children: []
+      }
+    ]
   },
   {
     title: "Settings",
@@ -314,14 +314,14 @@ export const memberNavigation: NavItem[] = [
         title: "My Profile",
         href: "/settings/profile",
         label: "My Profile",
-        children: [],
+        children: []
       },
       {
         title: "Notifications",
         href: "/settings/notifications",
         label: "Notifications",
-        children: [],
-      },
-    ],
-  },
+        children: []
+      }
+    ]
+  }
 ];
