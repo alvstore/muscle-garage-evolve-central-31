@@ -1,8 +1,9 @@
 
 import { UserRole } from '@/types';
+import { Permission } from '@/hooks/use-permissions';
 
 // Define a permissions matrix according to requirements
-const permissionsMatrix = {
+const permissionsMatrix: Record<Permission, UserRole[]> = {
   // System Access
   'full_system_access': ['admin'],
   
@@ -47,7 +48,7 @@ const permissionsMatrix = {
  */
 export const hasPermission = (
   role: UserRole | undefined,
-  permission: keyof typeof permissionsMatrix,
+  permission: Permission,
   isOwner = false
 ): boolean => {
   if (!role) return false;

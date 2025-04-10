@@ -3,6 +3,25 @@ import { useAuth } from './use-auth';
 import { hasPermission, hasRouteAccess } from '@/services/permissionService';
 import { UserRole } from '@/types';
 
+// Define a union type for all possible permissions to provide proper type checking
+export type Permission = 
+  | "full_system_access"
+  | "register_member"
+  | "view_member_profiles"
+  | "edit_member_fitness_data"
+  | "assign_diet_plan"
+  | "assign_workout_plan"
+  | "create_class"
+  | "book_class"
+  | "cancel_class"
+  | "assign_plan"
+  | "purchase_plan"
+  | "create_invoice"
+  | "log_attendance"
+  | "check_in"
+  | "send_email_notification"
+  | "access_own_resources";
+
 export const usePermissions = () => {
   const { user } = useAuth();
   const userRole = user?.role as UserRole | undefined;
@@ -13,7 +32,7 @@ export const usePermissions = () => {
    * @param isOwner Whether the user owns the resource (for member-specific permissions)
    * @returns Boolean indicating if user has permission
    */
-  const can = (permission: string, isOwner = false): boolean => {
+  const can = (permission: Permission, isOwner = false): boolean => {
     return hasPermission(userRole, permission, isOwner);
   };
   

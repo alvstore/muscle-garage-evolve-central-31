@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, Calendar, Clock, RefreshCcw, FileBarChart, TrendingDown } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -15,6 +16,7 @@ import { mockDashboardSummary, mockClasses, mockAnnouncements } from "@/data/moc
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Feedback } from "@/types/notification";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);

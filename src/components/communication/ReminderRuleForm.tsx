@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +28,9 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { NotificationChannel, ReminderRule } from "@/types/notification";
 import { UserRole } from "@/types";
+
+// Define a more specific type for the reminder types to match our schema
+type ReminderType = "membership-expiry" | "attendance" | "birthday" | "renewal";
 
 const formSchema = z.object({
   name: z.string().min(5, "Name must be at least 5 characters"),
@@ -71,7 +75,7 @@ const ReminderRuleForm = ({ editRule, onComplete }: ReminderRuleFormProps) => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: "membership-expiry",
+      type: "membership-expiry" as ReminderType,
       triggerDays: 7,
       templateId: "",
       channels: ["in-app"],
@@ -84,14 +88,25 @@ const ReminderRuleForm = ({ editRule, onComplete }: ReminderRuleFormProps) => {
 
   useEffect(() => {
     if (editRule) {
+      // We need to ensure the type is one of our valid ReminderTypes
+      const validType = (editRule.type as string) || "membership-expiry";
+      let typedReminderType: ReminderType;
+      
+      // Validate the type is one of our acceptable values
+      if (["membership-expiry", "attendance", "birthday", "renewal"].includes(validType)) {
+        typedReminderType = validType as ReminderType;
+      } else {
+        typedReminderType = "membership-expiry";
+      }
+
       form.reset({
         name: editRule.name,
-        type: editRule.type,
-        triggerDays: editRule.triggerDays,
-        templateId: editRule.template,
+        type: typedReminderType,
+        triggerDays: editRule.triggerDays || 0,
+        templateId: editRule.template || "",
         channels: editRule.channels as string[],
         targetRoles: editRule.targetRoles as string[],
-        active: editRule.active,
+        active: editRule.active || false,
       });
     }
   }, [editRule, form]);
