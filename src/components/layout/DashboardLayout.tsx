@@ -98,14 +98,14 @@ const DashboardLayout = () => {
         <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
       </div>
       
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar - FIXED: Changed z-index and backdrop */}
       {isMobile && (
-        <div className={`fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className={`fixed inset-0 z-40 ${sidebarOpen ? 'block' : 'hidden'}`}>
           <div 
             className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
             onClick={closeSidebar}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-64">
+          <div className="absolute left-0 top-0 bottom-0 w-64 z-50">
             <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
           </div>
         </div>

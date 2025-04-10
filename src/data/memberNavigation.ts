@@ -62,7 +62,7 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/fitness/workout-plans", 
         label: "Workout Plans", 
-        icon: createNavIcon("Activity")
+        icon: createNavIcon("Dumbbell")
       },
       { 
         href: "/fitness/diet", 
