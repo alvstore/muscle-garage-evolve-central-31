@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -32,10 +33,9 @@ const AttendancePage = () => {
           {isMember ? "My Attendance" : "Attendance Management"}
         </h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Calendar sidebar - fixed width */}
-          <div className="md:col-span-3">
-            <Card className="dark:bg-[#2c2c44] bg-white overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-1">
+            <Card className="dark:bg-[#2c2c44] bg-white">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <button 
@@ -65,28 +65,28 @@ const AttendancePage = () => {
                   ))}
                 </div>
                 
-                <div className="calendar-container">
-                  <div className="p-1">
-                    <div className="calendar-days">
-                      <div className="calendar-grid">
-                        <div className="calendar-day-names">
-                          {/* Day names rendered above */}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  month={currentMonth}
+                  onMonthChange={setCurrentMonth}
+                  className="rounded-md border-0 p-0"
+                  classNames={{
+                    day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white",
+                    day_today: "bg-gray-200 dark:bg-gray-700 text-accent-foreground",
+                    day: "h-9 w-9 p-0 font-normal text-sm",
+                    table: "border-collapse",
+                    head_cell: "text-xs font-medium hidden",
+                    cell: "p-0 text-center"
+                  }}
+                />
               </CardContent>
             </Card>
           </div>
           
-          {/* Attendance content - flexible width */}
-          <div className="md:col-span-9">
-            <Card className="border dark:border-slate-800">
-              <CardContent className="p-6">
-                <AttendanceTracker date={selectedDate} />
-              </CardContent>
-            </Card>
+          <div className="md:col-span-3">
+            <AttendanceTracker date={selectedDate} />
           </div>
         </div>
       </div>
