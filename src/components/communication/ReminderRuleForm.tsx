@@ -22,21 +22,15 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
       id: '',
       name: '',
       description: '',
-      triggerType: "membershipExpiry",
       type: 'membership-renewal',
-      daysBeforeTrigger: 3,
       triggerDays: 3,
       message: '',
-      notificationChannels: [],
       channels: [],
-      isActive: true,
       enabled: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      appliesTo: [],
       targetRoles: [],
-      active: true,
-      createdBy: "admin"
+      active: true
     }
   );
 
@@ -51,11 +45,8 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTriggerTypeChange = (value: string) => {
-    setFormData((prev) => ({ 
-      ...prev, 
-      type: value as "membership-renewal" | "missed-attendance" | "birthday" | "payment-due"
-    }));
+  const handleTriggerTypeChange = (value: ReminderTriggerType) => {
+    setFormData((prev) => ({ ...prev, type: value }));
   };
 
   return (

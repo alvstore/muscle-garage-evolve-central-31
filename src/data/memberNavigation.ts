@@ -1,327 +1,117 @@
 
-import { 
-  BarChart3, 
-  Calendar, 
-  CreditCard, 
-  FileText, 
-  Home, 
-  LayoutDashboard, 
-  MessagesSquare, 
-  Settings, 
-  ShoppingCart, 
-  Timer, 
-  Users
-} from "lucide-react";
-import React from "react";
+import { ReactNode } from "react";
+import { createNavIcon, IconName } from "@/utils/createNavIcon";
 
-// Define the NavItem type here for export
 export interface NavItem {
-  title: string;
   href: string;
-  icon?: React.ComponentType<any>; // Changed from ReactNode to ComponentType
-  children: NavItem[];
-  label?: string;
-  badge?: string;
+  label: string;
+  icon: ReactNode;
+  activeIcon?: ReactNode;
+  badge?: number | string;
+  children?: NavItem[];
 }
 
 export interface NavSection {
-  title: string;
+  name: string;
+  icon: ReactNode;
   items: NavItem[];
-  name: string; // Made required to match component usage
 }
 
 export const memberNavSections: NavSection[] = [
   {
-    title: "Overview",
-    name: "Overview",
+    name: "Dashboard",
+    icon: createNavIcon("Home"),
     items: [
-      {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,  // Icon reference, not JSX
-        label: "Dashboard",
-        children: []
-      }
-    ]
+      { 
+        href: "/dashboard", 
+        label: "Overview", 
+        icon: createNavIcon("Home")
+      },
+    ],
   },
   {
-    title: "Fitness",
-    name: "Fitness",
+    name: "My Profile",
+    icon: createNavIcon("User"),
     items: [
-      {
-        title: "Fitness",
-        href: "/fitness",
-        icon: Timer,
-        label: "Fitness",
-        children: [
-          {
-            title: "Workout Plans",
-            href: "/fitness/workout",
-            label: "Workout Plans",
-            children: []
-          },
-          {
-            title: "Diet Plans",
-            href: "/fitness/diet",
-            label: "Diet Plans",
-            children: []
-          },
-          {
-            title: "Progress Tracker",
-            href: "/fitness/progress",
-            label: "Progress Tracker",
-            children: []
-          }
-        ]
-      }
-    ]
+      { 
+        href: "/members/profile", 
+        label: "Profile", 
+        icon: createNavIcon("User")
+      },
+    ],
   },
   {
-    title: "Services",
-    name: "Services",
+    name: "Fitness & Classes",
+    icon: createNavIcon("Activity"),
     items: [
-      {
-        title: "Classes",
-        href: "/classes",
-        icon: Calendar,
-        label: "Classes",
-        children: [
-          {
-            title: "Book a Class",
-            href: "/classes/book",
-            label: "Book a Class",
-            children: []
-          },
-          {
-            title: "My Bookings",
-            href: "/classes/my-bookings",
-            label: "My Bookings",
-            children: []
-          }
-        ]
+      { 
+        href: "/classes", 
+        label: "Book Classes", 
+        icon: createNavIcon("Calendar")
       },
-      {
-        title: "Payments",
-        href: "/payments",
-        icon: CreditCard,
-        label: "Payments",
-        children: [
-          {
-            title: "My Invoices",
-            href: "/payments/invoices",
-            label: "My Invoices",
-            children: []
-          },
-          {
-            title: "Subscription",
-            href: "/payments/subscription",
-            label: "Subscription",
-            children: []
-          }
-        ]
+      { 
+        href: "/attendance", 
+        label: "Attendance", 
+        icon: createNavIcon("Activity")
       },
-      {
-        title: "Shop",
-        href: "/shop",
-        icon: ShoppingCart,
-        label: "Shop",
-        children: [
-          {
-            title: "Products",
-            href: "/shop/products",
-            label: "Products",
-            children: []
-          },
-          {
-            title: "My Orders",
-            href: "/shop/orders",
-            label: "My Orders",
-            children: []
-          }
-        ]
-      }
-    ]
+      { 
+        href: "/fitness/progress", 
+        label: "Progress Tracker", 
+        icon: createNavIcon("TrendingUp")
+      },
+      { 
+        href: "/fitness/workout-plans", 
+        label: "Workout Plans", 
+        icon: createNavIcon("Activity")
+      },
+      { 
+        href: "/fitness/diet", 
+        label: "Diet Plan", 
+        icon: createNavIcon("Utensils")
+      },
+    ],
   },
   {
-    title: "User",
-    name: "User",
+    name: "Finance",
+    icon: createNavIcon("DollarSign"),
     items: [
-      {
-        title: "Feedback",
-        href: "/feedback",
-        icon: MessagesSquare,
-        label: "Feedback",
-        children: [
-          {
-            title: "Submit Feedback",
-            href: "/feedback/submit",
-            label: "Submit Feedback",
-            children: []
-          },
-          {
-            title: "My Feedback",
-            href: "/feedback/history",
-            label: "My Feedback",
-            children: []
-          }
-        ]
+      { 
+        href: "/finance/invoices", 
+        label: "Invoices", 
+        icon: createNavIcon("FileText")
       },
-      {
-        title: "Settings",
-        href: "/settings",
-        icon: Settings,
-        label: "Settings",
-        children: [
-          {
-            title: "My Profile",
-            href: "/settings/profile",
-            label: "My Profile",
-            children: []
-          },
-          {
-            title: "Notifications",
-            href: "/settings/notifications",
-            label: "Notifications",
-            children: []
-          }
-        ]
-      }
-    ]
-  }
-];
-
-export const memberNavigation: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,  // Icon reference, not JSX
-    label: "Dashboard",
-    children: []
+      { 
+        href: "/membership", 
+        label: "Membership", 
+        icon: createNavIcon("CreditCard")
+      },
+    ],
   },
   {
-    title: "Fitness",
-    href: "/fitness",
-    icon: Timer,
-    label: "Fitness",
-    children: [
-      {
-        title: "Workout Plans",
-        href: "/fitness/workout",
-        label: "Workout Plans",
-        children: []
+    name: "Store",
+    icon: createNavIcon("ShoppingBag"),
+    items: [
+      { 
+        href: "/store", 
+        label: "Shop", 
+        icon: createNavIcon("ShoppingBag")
       },
-      {
-        title: "Diet Plans",
-        href: "/fitness/diet",
-        label: "Diet Plans",
-        children: []
-      },
-      {
-        title: "Progress Tracker",
-        href: "/fitness/progress",
-        label: "Progress Tracker",
-        children: []
-      }
-    ]
+    ],
   },
   {
-    title: "Classes",
-    href: "/classes",
-    icon: Calendar,
-    label: "Classes",
-    children: [
-      {
-        title: "Book a Class",
-        href: "/classes/book",
-        label: "Book a Class",
-        children: []
+    name: "Communication",
+    icon: createNavIcon("Bell"),
+    items: [
+      { 
+        href: "/communication/feedback", 
+        label: "Feedback", 
+        icon: createNavIcon("Bell")
       },
-      {
-        title: "My Bookings",
-        href: "/classes/my-bookings",
-        label: "My Bookings",
-        children: []
-      }
-    ]
+      { 
+        href: "/communication/announcements", 
+        label: "Announcements", 
+        icon: createNavIcon("Bell")
+      },
+    ],
   },
-  {
-    title: "Payments",
-    href: "/payments",
-    icon: CreditCard,
-    label: "Payments",
-    children: [
-      {
-        title: "My Invoices",
-        href: "/payments/invoices",
-        label: "My Invoices",
-        children: []
-      },
-      {
-        title: "Subscription",
-        href: "/payments/subscription",
-        label: "Subscription",
-        children: []
-      }
-    ]
-  },
-  {
-    title: "Shop",
-    href: "/shop",
-    icon: ShoppingCart,
-    label: "Shop",
-    children: [
-      {
-        title: "Products",
-        href: "/shop/products",
-        label: "Products",
-        children: []
-      },
-      {
-        title: "My Orders",
-        href: "/shop/orders",
-        label: "My Orders",
-        children: []
-      }
-    ]
-  },
-  {
-    title: "Feedback",
-    href: "/feedback",
-    icon: MessagesSquare,
-    label: "Feedback",
-    children: [
-      {
-        title: "Submit Feedback",
-        href: "/feedback/submit",
-        label: "Submit Feedback",
-        children: []
-      },
-      {
-        title: "My Feedback",
-        href: "/feedback/history",
-        label: "My Feedback",
-        children: []
-      }
-    ]
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-    label: "Settings",
-    children: [
-      {
-        title: "My Profile",
-        href: "/settings/profile",
-        label: "My Profile",
-        children: []
-      },
-      {
-        title: "Notifications",
-        href: "/settings/notifications",
-        label: "Notifications",
-        children: []
-      }
-    ]
-  }
 ];

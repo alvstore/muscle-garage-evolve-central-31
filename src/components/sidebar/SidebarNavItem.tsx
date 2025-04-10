@@ -9,8 +9,6 @@ interface SidebarNavItemProps {
 }
 
 const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item }) => {
-  const Icon = item.icon;
-  
   return (
     <SheetClose asChild>
       <NavLink
@@ -22,7 +20,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item }) => {
             : 'text-white/70 hover:text-white hover:bg-white/10'}
         `}
       >
-        {Icon && <Icon className="h-4 w-4" />}
+        {item.icon}
         <span>{item.label}</span>
         {item.badge && (
           <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">

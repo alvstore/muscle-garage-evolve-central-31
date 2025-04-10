@@ -1,165 +1,215 @@
 
 import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Member, Trainer } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useBranch } from '@/hooks/use-branch';
+import { Branch } from '@/types/branch';
+import { User } from '@/types/user';
 import { toast } from 'sonner';
 
+// Mock data for trainers
+const mockTrainers = [
+  { id: 'trainer1', name: 'John Smith', specialization: 'Weight Loss', members: 8, maxMembers: 12, branches: ['branch1', 'branch2'] },
+  { id: 'trainer2', name: 'Sarah Johnson', specialization: 'Strength Training', members: 10, maxMembers: 10, branches: ['branch1'] },
+  { id: 'trainer3', name: 'Michael Lee', specialization: 'Yoga/Flexibility', members: 5, maxMembers: 8, branches: ['branch2', 'branch3'] },
+  { id: 'trainer4', name: 'Emma Wilson', specialization: 'Cardio', members: 7, maxMembers: 12, branches: ['branch3'] },
+];
+
+// Mock data for unassigned members
+const mockUnassignedMembers = [
+  { id: 'member1', name: 'Alice Brown', goal: 'Weight Loss', branchId: 'branch1' },
+  { id: 'member2', name: 'Robert Chen', goal: 'Muscle Building', branchId: 'branch2' },
+  { id: 'member3', name: 'James Wilson', goal: 'General Fitness', branchId: 'branch1' },
+  { id: 'member4', name: 'Emily Davis', goal: 'Flexibility', branchId: 'branch3' },
+];
+
+interface AllocationFormProps {
+  branches: Branch[];
+  trainers: any[];
+  unassignedMembers: any[];
+  onAllocate: (trainerId: string, memberId: string) => void;
+}
+
+const AllocationForm = ({ branches, trainers, unassignedMembers, onAllocate }: AllocationFormProps) => {
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [selectedTrainer, setSelectedTrainer] = useState<string>('');
+  const [selectedMember, setSelectedMember] = useState<string>('');
+  
+  const filteredTrainers = selectedBranch 
+    ? trainers.filter(trainer => trainer.branches.includes(selectedBranch))
+    : trainers;
+    
+  const filteredMembers = selectedBranch
+    ? unassignedMembers.filter(member => member.branchId === selectedBranch)
+    : unassignedMembers;
+    
+  const handleAllocate = () => {
+    if (!selectedTrainer || !selectedMember) {
+      toast.error("Please select both a trainer and a member");
+      return;
+    }
+    
+    onAllocate(selectedTrainer, selectedMember);
+    setSelectedMember('');
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="branch">Branch</Label>
+        <Select 
+          value={selectedBranch} 
+          onValueChange={setSelectedBranch}
+        >
+          <SelectTrigger id="branch">
+            <SelectValue placeholder="Select branch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Branches</SelectItem>
+            {branches.map(branch => (
+              <SelectItem key={branch.id} value={branch.id}>
+                {branch.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="trainer">Trainer</Label>
+        <Select 
+          value={selectedTrainer} 
+          onValueChange={setSelectedTrainer}
+        >
+          <SelectTrigger id="trainer">
+            <SelectValue placeholder="Select trainer" />
+          </SelectTrigger>
+          <SelectContent>
+            {filteredTrainers.map(trainer => (
+              <SelectItem key={trainer.id} value={trainer.id}>
+                {trainer.name} ({trainer.members}/{trainer.maxMembers})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="member">Member</Label>
+        <Select 
+          value={selectedMember} 
+          onValueChange={setSelectedMember}
+        >
+          <SelectTrigger id="member">
+            <SelectValue placeholder="Select member" />
+          </SelectTrigger>
+          <SelectContent>
+            {filteredMembers.map(member => (
+              <SelectItem key={member.id} value={member.id}>
+                {member.name} - {member.goal}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button onClick={handleAllocate} className="w-full">
+        Allocate Member to Trainer
+      </Button>
+    </div>
+  );
+};
+
 interface TrainerMemberAllocationProps {
-  member: Member;
-  trainers: Trainer[];
-  onAllocationChange: (trainerId: string | undefined) => void;
   isTrainerView?: boolean;
 }
 
-const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
-  member,
-  trainers,
-  onAllocationChange,
-  isTrainerView = false
-}) => {
-  const [selectedTrainerId, setSelectedTrainerId] = useState<string | undefined>(member.trainerId);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const TrainerMemberAllocation = ({ isTrainerView = false }: TrainerMemberAllocationProps) => {
+  const { branches } = useBranch();
+  const [trainers, setTrainers] = useState(mockTrainers);
+  const [unassignedMembers, setUnassignedMembers] = useState(mockUnassignedMembers);
   
-  // Get the current trainer object if there is one assigned
-  const currentTrainer = trainers.find(trainer => trainer.id === selectedTrainerId);
-  
-  const handleTrainerChange = (trainerId: string) => {
-    if (trainerId === 'none') {
-      setSelectedTrainerId(undefined);
-    } else {
-      setSelectedTrainerId(trainerId);
-    }
-  };
-  
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  const handleAllocate = (trainerId: string, memberId: string) => {
+    // Find the trainer and member
+    const trainer = trainers.find(t => t.id === trainerId);
+    const member = unassignedMembers.find(m => m.id === memberId);
     
-    try {
-      // In a real app, this would be an API call to update the member's trainer
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onAllocationChange(selectedTrainerId);
-      
-      toast.success(`Trainer ${selectedTrainerId ? 'assigned' : 'removed'} successfully`);
-    } catch (error) {
-      console.error('Error updating trainer allocation:', error);
-      toast.error('Failed to update trainer allocation');
-    } finally {
-      setIsSubmitting(false);
+    if (!trainer || !member) return;
+    
+    // Check if the trainer has capacity
+    if (trainer.members >= trainer.maxMembers) {
+      toast.error(`${trainer.name} has reached their maximum capacity of members`);
+      return;
     }
+    
+    // Update trainer's member count
+    setTrainers(trainers.map(t => 
+      t.id === trainerId ? { ...t, members: t.members + 1 } : t
+    ));
+    
+    // Remove member from unassigned list
+    setUnassignedMembers(unassignedMembers.filter(m => m.id !== memberId));
+    
+    toast.success(`${member.name} has been assigned to ${trainer.name}`);
   };
-  
-  // Safely access primaryBranchId with type casting to avoid errors
-  const branchId = (member as any).primaryBranchId || "Not specified";
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Trainer Allocation</CardTitle>
-        <CardDescription>
-          {isTrainerView 
-            ? "Manage your assigned members" 
-            : "Assign a personal trainer to this member"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <h3 className="text-md font-semibold mb-2">Member Details</h3>
-          <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-md">
-            <div>
-              <p className="text-sm font-medium">Name</p>
-              <p className="text-sm text-muted-foreground">{member.name}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Membership Status</p>
-              <p className="text-sm text-muted-foreground capitalize">{member.membershipStatus}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Goal</p>
-              <p className="text-sm text-muted-foreground">{member.goal || "Not specified"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Branch</p>
-              <p className="text-sm text-muted-foreground">{branchId}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="text-md font-semibold mb-2">Assigned Trainer</h3>
-          <div className="mb-4">
-            <Select 
-              value={selectedTrainerId || 'none'} 
-              onValueChange={handleTrainerChange}
-              disabled={isTrainerView}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a trainer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No trainer</SelectItem>
-                {trainers.map(trainer => (
-                  <SelectItem key={trainer.id} value={trainer.id}>
-                    {trainer.name} ({trainer.specialization?.join(", ")})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {currentTrainer && (
-          <div className="p-3 bg-muted rounded-md">
-            <h4 className="text-sm font-semibold mb-2">Trainer Details</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm font-medium">Specialization</p>
-                <p className="text-sm text-muted-foreground">
-                  {currentTrainer.specialization?.join(", ") || "Not specified"}
-                </p>
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Trainer-Member Allocation</CardTitle>
+          <CardDescription>Assign members to trainers by branch</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AllocationForm 
+            branches={branches} 
+            trainers={trainers} 
+            unassignedMembers={unassignedMembers}
+            onAllocate={handleAllocate}
+          />
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Allocations</CardTitle>
+          <CardDescription>View trainer workload by branch</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {branches.map(branch => (
+              <div key={branch.id} className="space-y-2">
+                <h3 className="font-medium">{branch.name}</h3>
+                <div className="space-y-2">
+                  {trainers
+                    .filter(trainer => trainer.branches.includes(branch.id))
+                    .map(trainer => (
+                      <div key={trainer.id} className="flex justify-between items-center p-2 bg-accent/10 rounded">
+                        <div>
+                          <p className="font-medium">{trainer.name}</p>
+                          <p className="text-sm text-muted-foreground">{trainer.specialization}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{trainer.members}/{trainer.maxMembers}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {trainer.members >= trainer.maxMembers ? "Full" : "Available"}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  }
+                  {!trainers.some(trainer => trainer.branches.includes(branch.id)) && (
+                    <p className="text-sm text-muted-foreground">No trainers assigned to this branch</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">Experience</p>
-                <p className="text-sm text-muted-foreground">
-                  {currentTrainer.experience} years
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Certifications</p>
-                <p className="text-sm text-muted-foreground">
-                  {currentTrainer.certifications?.join(", ") || "Not specified"}
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-        )}
-        
-        {!isTrainerView && (
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Save Allocation"}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,133 +1,215 @@
-// Basic device type that should be returned from the Hikvision API
+
+/**
+ * Hikvision Partner Pro OpenAPI Types
+ */
+
+// Authentication
+export interface HikvisionAuthCredentials {
+  appKey: string;
+  secretKey: string;
+}
+
+export interface HikvisionAuthResponse {
+  code: string;
+  msg: string;
+  data: {
+    accessToken: string;
+    expireTime: number;
+    areaDomain: string;
+  };
+}
+
+// Device Management
 export interface HikvisionDevice {
-  id: string;
-  name: string;
-  serialNumber: string;
-  firmwareVersion: string;
-  model: string;
-  ipAddress: string;
-  port: number;
-  status: string; // online, offline, etc.
-  deviceType: string; 
-  location?: string; 
-  type?: string; 
-  deviceId?: string;
-  deviceSerial?: string;
-  deviceName?: string;
-  deviceCode?: string;
-  userName?: string;
-  channelNos?: string;
-  isVideoSupported?: boolean;
-}
-
-// Extended device type with status for the UI
-export interface HikvisionDeviceWithStatus extends Omit<HikvisionDevice, 'status'> {
-  status?: string;
-  lastSeen?: string;
-  healthStatus?: 'healthy' | 'warning' | 'error';
-  deviceId?: string;
-  deviceSerial?: string;
-  deviceName?: string;
-  deviceCode?: string;
-  userName?: string;
-  channelNos?: string;
-  isVideoSupported?: boolean;
-}
-
-// Access Control Credentials
-export interface HikvisionCredentials {
-  username: string;
-  password: string;
-  apiKey?: string;
-  apiSecret?: string;
-  baseUrl: string;
-  isValid?: boolean;
-  appKey?: string;
-  secretKey?: string;
-}
-
-// Event data from Hikvision
-export interface HikvisionEvent {
-  id: string;
-  eventId: string;
-  eventTime: string;
-  eventType: 'entry' | 'exit' | 'denied';
-  cardNo?: string;
-  employeeNo?: string;
   deviceId: string;
-  deviceName: string;
-  doorId?: string;
-  doorName?: string;
-  personId?: string;
-  personName?: string;
-  verified: boolean;
+  deviceName?: string;
+  deviceType?: string;
+  deviceAddress?: string;
+  devicePort?: number;
+  deviceUsername?: string;
+  devicePassword?: string;
+  deviceStatus?: 'online' | 'offline' | 'unknown';
+  channelNum?: number;
+  serialNumber?: string;
+  deviceVersion?: string;
+  createdTime?: string;
+  lastOnlineTime?: string;
 }
 
-// Access level for door permissions
-export interface HikvisionAccessLevel {
-  id: string;
-  name: string;
-  doorIds: string[];
-  doors?: HikvisionDoor[];
-  scheduleId?: string;
-  description?: string;
+export interface HikvisionDeviceRequest {
+  deviceId?: string;
+  deviceName?: string;
+  deviceAddress?: string;
+  devicePort?: number;
+  deviceUsername?: string;
+  devicePassword?: string;
+  deviceType?: string;
+  deviceVersion?: string;
+  // Additional properties for device operations
+  [key: string]: any;
 }
 
-// Door information
-export interface HikvisionDoor {
-  id: string;
-  name: string;
+export interface HikvisionDeviceResponse {
+  code: string;
+  msg: string;
+  data?: {
+    deviceId?: string;
+    devices?: HikvisionDevice[];
+    total?: number;
+    [key: string]: any;
+  };
+}
+
+// Device Channels
+export interface HikvisionDeviceChannel {
+  channelId: string;
+  channelName?: string;
+  channelNo?: number;
+  channelType?: string;
   deviceId: string;
-  doorIndex: number;
-  status?: 'open' | 'closed' | 'locked' | 'unlocked' | 'unknown';
+  status?: 'online' | 'offline' | 'unknown';
 }
 
-// Person information
-export interface HikvisionPerson {
-  id: string;
-  name: string;
-  employeeNo?: string;
-  gender?: 'male' | 'female' | 'other' | 'unknown';
-  cards?: HikvisionCard[];
-  accessLevelIds?: string[];
-  accessLevels?: HikvisionAccessLevel[];
-  enabled: boolean;
-  beginTime?: string;
-  endTime?: string;
-  photos?: string[]; // Base64 encoded photos
+export interface HikvisionChannelResponse {
+  code: string;
+  msg: string;
+  data?: {
+    channels: HikvisionDeviceChannel[];
+    total: number;
+  };
 }
 
-// Card information
-export interface HikvisionCard {
-  id: string;
-  cardNo: string;
-  status: 'active' | 'inactive' | 'lost';
+// Transparent API Call
+export interface HikvisionTransparentRequest {
+  deviceId: string;
+  uri: string;
+  body?: string | object;
+  params?: Record<string, string>;
+  headers?: Record<string, string>;
 }
 
-// Webhook events
-export interface HikvisionWebhookEvent {
-  eventType: string;
-  eventTime: string;
-  eventSource: string;
+export interface HikvisionTransparentResponse {
+  code: string;
+  msg: string;
+  data?: any;
+}
+
+// Batch Operations
+export interface HikvisionPropertyItem {
+  deviceId: string;
+  deviceType?: string;
+  uri: string;
+  xpath?: string;
+  value?: any;
+}
+
+export interface HikvisionBatchPropertyRequest {
+  properties: HikvisionPropertyItem[];
+}
+
+export interface HikvisionBatchPropertyResponse {
+  code: string;
+  msg: string;
+  data?: {
+    results: Array<{
+      deviceId: string;
+      uri: string;
+      code: string;
+      msg: string;
+      value?: any;
+    }>;
+  };
+}
+
+// Event Subscription
+export interface HikvisionSubscriptionRequest {
+  topics: string[];
+  subscriptionId?: string;
+  subscriptionDuration?: number;
+}
+
+export interface HikvisionSubscriptionResponse {
+  code: string;
+  msg: string;
+  data?: {
+    subscriptionId: string;
+    expiresAt: number;
+  };
+}
+
+// Events and Alarms
+export interface HikvisionEventMessage {
+  msgId: string;
+  topic: string;
   data: any;
+  timestamp: number;
 }
 
-// Hardware sync status
-export interface HikvisionSyncStatus {
-  lastSyncTime: string;
-  pendingChanges: number;
-  syncInProgress: boolean;
-  errors?: string[];
+export interface HikvisionEventsResponse {
+  code: string;
+  msg: string;
+  data?: {
+    messages: HikvisionEventMessage[];
+    lastOffset?: string;
+  };
 }
 
-// Integration partner data
-export interface HikvisionPartner {
-  id: string;
-  name: string;
-  apiKey: string;
-  apiSecret: string;
-  baseUrl: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
+export interface HikvisionOffsetRequest {
+  subscriptionId: string;
+  topic: string;
+  offset: string;
+}
+
+// Person Management for Attendance
+export interface HikvisionPerson {
+  personId: string;
+  personName?: string;
+  gender?: string;
+  orgIndexCode?: string;
+  certificateType?: string;
+  certificateNo?: string;
+  phoneNo?: string;
+  email?: string;
+  birthday?: string;
+  address?: string;
+  faces?: Array<{
+    faceId?: string;
+    faceData?: string;
+  }>;
+  cards?: Array<{
+    cardId?: string;
+    cardNo?: string;
+  }>;
+}
+
+export interface HikvisionPersonResponse {
+  code: string;
+  msg: string;
+  data?: {
+    personId?: string;
+    total?: number;
+    persons?: HikvisionPerson[];
+  };
+}
+
+export interface HikvisionAccessPrivilege {
+  personId: string;
+  deviceIds: string[];
+  privilegeStartTime?: string;
+  privilegeEndTime?: string;
+}
+
+export interface HikvisionAccessPrivilegeResponse {
+  code: string;
+  msg: string;
+  data?: {
+    privilegeId?: string;
+  };
+}
+
+// Common API response interface
+export interface HikvisionApiResponse<T = any> {
+  code: string;
+  msg: string;
+  data?: T;
 }

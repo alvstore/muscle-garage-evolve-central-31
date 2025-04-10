@@ -1,5 +1,6 @@
 
-// Extended user type with branch information
+export type UserRole = "admin" | "staff" | "trainer" | "member";
+
 export interface User {
   id: string;
   email: string;
@@ -7,23 +8,10 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
-  branchId?: string; // Primary branch ID
-  branchIds?: string[]; // All branches the user has access to
-  isBranchManager?: boolean; // Whether the user is a branch manager
-  address?: string; // Added address field
 }
 
-export type UserRole = "member" | "admin" | "staff" | "trainer";
-
-// Extended member type with branch information
-export interface MemberWithBranch {
-  id: string;
-  email: string;
-  name: string;
+export interface Member extends User {
   role: "member";
-  avatar?: string;
-  phone?: string;
-  address?: string; // Added address field
   dateOfBirth?: string;
   goal?: string;
   trainerId?: string;
@@ -31,181 +19,84 @@ export interface MemberWithBranch {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
-  primaryBranchId: string;
-  accessibleBranchIds: string[];
-  // Body measurements
-  height?: number;
-  weight?: number;
-  chest?: number;
-  waist?: number;
-  biceps?: number;
-  thigh?: number;
-  hips?: number;
-  bodyFat?: number;
-  // Progress tracking
-  measurements?: MemberMeasurement[];
 }
 
-// New type for tracking measurement history
-export interface MemberMeasurement {
-  id: string;
-  date: string;
-  weight?: number;
-  chest?: number;
-  waist?: number;
-  biceps?: number;
-  thigh?: number;
-  hips?: number;
-  bodyFat?: number;
-  notes?: string;
-  photoUrl?: string;
-  updatedBy: string; // ID of user who updated the record
-  updatedByRole: UserRole; // Role of user who updated the record
+export interface Trainer extends User {
+  role: "trainer";
+  specialty?: string;
+  bio?: string;
+  scheduleId?: string;
+  rating?: number;
 }
 
-// Extended Member type with measurements
-export interface Member {
-  id: string;
-  email: string;
-  name: string;
-  role: "member" | "admin" | "staff" | "trainer";
-  avatar?: string;
-  phone?: string;
-  address?: string;
-  dateOfBirth?: string;
-  goal?: string;
-  trainerId?: string;
-  membershipId?: string;
-  membershipStatus: "active" | "inactive" | "expired";
-  membershipStartDate?: string;
-  membershipEndDate?: string;
-  // Body measurements
-  height?: number;
-  weight?: number;
-  chest?: number;
-  waist?: number;
-  biceps?: number;
-  thigh?: number;
-  hips?: number;
-  bodyFat?: number;
-  // Progress tracking
-  measurements?: MemberMeasurement[];
+export interface Staff extends User {
+  role: "staff";
+  position?: string;
+  department?: string;
 }
 
-// Additional types needed for other components
+export interface Admin extends User {
+  role: "admin";
+}
+
 export interface Class {
   id: string;
   name: string;
-  description: string;
-  startTime: string;
-  endTime: string;
+  description?: string;
+  trainerId: string;
   capacity: number;
   enrolled: number;
-  trainer: string;
-  trainerName?: string;
-  trainerAvatar?: string;
-  trainerId?: string;
-  difficulty: string;
+  startTime: string;
+  endTime: string;
   type: string;
   location?: string;
-  status?: string;
-}
-
-export interface Trainer {
-  id: string;
-  name: string;
-  email: string;
-  role: "trainer";
-  specialization: string[];
-  experience: number;
-  certifications: string[];
-  avatar?: string;
-  bio?: string;
-  phone?: string;
-  availability?: any[];
-  specialty?: string[]; // Added to match usage in components
-}
-
-export interface Staff {
-  id: string;
-  name: string;
-  email: string;
-  role: "staff";
-  position: string;
-  department: string;
-  hireDate: string;
-  avatar?: string;
-  phone?: string; // Added to match usage in components
-}
-
-export interface Admin {
-  id: string;
-  name: string;
-  email: string;
-  role: "admin";
-  permissions: string[];
-  avatar?: string;
-  phone?: string; // Added to match usage in components
 }
 
 export interface Membership {
   id: string;
   name: string;
   price: number;
-  duration: number;
-  features: string[];
-  isActive: boolean;
+  durationDays: number;
+  benefits: string[];
+  active: boolean;
 }
 
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: "low" | "medium" | "high";
-  createdAt: string;
-  expiresAt: string;
-  createdBy: string;
-  targetRoles?: UserRole[]; // Added to match component usage
-}
-
-// Re-export from notification.ts types for backward compatibility
-export { type TriggerEvent } from '@/types/notification';
-
-export interface DashboardSummary {
-  activeMemberships: number;
-  totalRevenue: number;
-  newMembers: number;
-  upcomingClasses: number;
-  occupancyRate: number;
-  totalMembers: number;
-  todayCheckIns: number;
-  pendingPayments: number;
-  upcomingRenewals: number;
-  attendanceTrend: Array<{ date: string; count: number }>;
-}
-
-export interface Invoice {
+export interface Attendance {
   id: string;
   memberId: string;
-  memberName: string;
-  amount: number;
-  status: "paid" | "pending" | "overdue";
-  dueDate: string;
-  items: {
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-  }[];
+  checkInTime: string;
+  checkOutTime?: string;
+  accessMethod: "rfid" | "fingerprint" | "manual";
+}
+
+export interface DietPlan {
+  id: string;
+  memberId: string;
+  trainerId: string;
+  createdAt: string;
+  updatedAt: string;
+  mealPlans: MealPlan[];
+}
+
+export interface MealPlan {
+  id: string;
+  name: string;
+  time: string;
+  items: string[];
+  macros?: {
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
 }
 
 export interface WorkoutPlan {
   id: string;
   memberId: string;
   trainerId: string;
-  workoutDays: WorkoutDay[];
   createdAt: string;
   updatedAt: string;
+  workoutDays: WorkoutDay[];
 }
 
 export interface WorkoutDay {
@@ -220,27 +111,121 @@ export interface Exercise {
   sets: number;
   reps: number;
   weight?: number;
-  rest?: number;
+  rest: number;
   notes?: string;
 }
 
-export interface DietPlan {
+export interface ProgressRecord {
   id: string;
   memberId: string;
-  trainerId: string;
-  mealPlans: MealPlan[];
-  createdAt: string;
-  updatedAt: string;
+  date: string;
+  weight?: number;
+  bodyFatPercentage?: number;
+  measurements?: {
+    chest?: number;
+    waist?: number;
+    hips?: number;
+    arms?: number;
+    thighs?: number;
+  };
+  photos?: string[];
+  notes?: string;
 }
 
-export interface MealPlan {
+export interface Inventory {
   id: string;
   name: string;
-  time: string;
-  items: string[];
-  macros: {
-    protein: number;
-    carbs: number;
-    fats: number;
+  category: "supplement" | "equipment" | "merchandise";
+  quantity: number;
+  price: number;
+  supplier?: string;
+  expiryDate?: string;
+  reorderLevel: number;
+}
+
+export interface Transaction {
+  id: string;
+  type: "income" | "expense";
+  amount: number;
+  date: string;
+  category: string;
+  description?: string;
+  recurring: boolean;
+  recurringPeriod?: "daily" | "weekly" | "monthly" | "yearly";
+}
+
+export interface Invoice {
+  id: string;
+  memberId: string;
+  amount: number;
+  status: "paid" | "pending" | "overdue";
+  dueDate: string;
+  issuedDate: string;
+  items: {
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
+  paymentId?: string;
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  source: string;
+  status: "new" | "contacted" | "trial" | "converted" | "lost";
+  assignedTo?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  followUpDate?: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdBy: string;
+  createdAt: string;
+  targetRoles: UserRole[];
+  targetBranch?: string;
+  expiresAt?: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: "system" | "payment" | "attendance" | "renewal" | "announcement";
+  read: boolean;
+  createdAt: string;
+  link?: string;
+}
+
+export interface DashboardSummary {
+  totalMembers: number;
+  todayCheckIns: number;
+  revenue: {
+    daily: number;
+    weekly: number;
+    monthly: number;
   };
+  pendingPayments: {
+    count: number;
+    total: number;
+  };
+  upcomingRenewals: number;
+  attendanceTrend: {
+    date: string;
+    count: number;
+  }[];
+  membersByStatus: {
+    active: number;
+    inactive: number;
+    expired: number;
+  };
+  recentNotifications: Notification[];
 }

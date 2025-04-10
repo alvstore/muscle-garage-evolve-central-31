@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -32,7 +31,7 @@ import { MotivationalMessage } from "@/types/notification";
 const mockMessages: MotivationalMessage[] = [
   {
     id: "1",
-    message: "The only bad workout is the one that didn't happen.",
+    title: "Workout Motivation",
     content: "The only bad workout is the one that didn't happen.",
     author: "Unknown",
     category: "motivation",
@@ -43,14 +42,11 @@ const mockMessages: MotivationalMessage[] = [
     createdAt: "2023-01-15T10:00:00Z",
     updatedAt: "2023-01-15T10:00:00Z",
     channels: ["push", "email"],
-    active: true,
-    isActive: true,
-    createdBy: "admin1",
-    title: "Workout Motivation"
+    active: true
   },
   {
     id: "2",
-    message: "Your body can stand almost anything. It's your mind that you have to convince.",
+    title: "Mind Over Matter",
     content: "Your body can stand almost anything. It's your mind that you have to convince.",
     author: "Andrew Murphy",
     category: "motivation",
@@ -61,14 +57,11 @@ const mockMessages: MotivationalMessage[] = [
     createdAt: "2023-02-10T15:30:00Z",
     updatedAt: "2023-02-10T15:30:00Z",
     channels: ["push", "email"],
-    active: true,
-    isActive: true,
-    createdBy: "admin1",
-    title: "Mind Over Matter"
+    active: true
   },
   {
     id: "3",
-    message: "Proper nutrition is the foundation of a healthy lifestyle.",
+    title: "Nutrition Basics",
     content: "Proper nutrition is the foundation of a healthy lifestyle.",
     author: "Unknown",
     category: "nutrition",
@@ -79,14 +72,11 @@ const mockMessages: MotivationalMessage[] = [
     createdAt: "2023-03-05T09:45:00Z",
     updatedAt: "2023-03-05T09:45:00Z",
     channels: ["push", "email"],
-    active: true,
-    isActive: true,
-    createdBy: "admin1",
-    title: "Nutrition Basics"
+    active: true
   },
   {
     id: "4",
-    message: "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success.",
+    title: "Consistency is Key",
     content: "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success.",
     author: "Dwayne Johnson",
     category: "motivation",
@@ -97,14 +87,11 @@ const mockMessages: MotivationalMessage[] = [
     createdAt: "2023-04-20T14:20:00Z",
     updatedAt: "2023-04-20T14:20:00Z",
     channels: ["push", "email"],
-    active: false,
-    isActive: false,
-    createdBy: "admin1",
-    title: "Consistency is Key"
+    active: false
   },
   {
     id: "5",
-    message: "To enjoy the glow of good health, you must exercise.",
+    title: "Health Benefits",
     content: "To enjoy the glow of good health, you must exercise.",
     author: "Gene Tunney",
     category: "wellness",
@@ -115,10 +102,7 @@ const mockMessages: MotivationalMessage[] = [
     createdAt: "2023-05-12T11:15:00Z",
     updatedAt: "2023-05-12T11:15:00Z",
     channels: ["push", "email"],
-    active: true,
-    isActive: true,
-    createdBy: "admin1",
-    title: "Health Benefits"
+    active: true
   }
 ];
 

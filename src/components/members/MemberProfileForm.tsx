@@ -9,8 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Member } from "@/types";
 import { toast } from "sonner";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Upload } from "lucide-react";
 
 interface MemberProfileFormProps {
   member: Member;
@@ -21,17 +19,10 @@ interface MemberProfileFormProps {
 const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps) => {
   const [formData, setFormData] = useState<Member>({ ...member });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(member.avatar);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const numValue = value === "" ? undefined : parseFloat(value);
-    setFormData(prev => ({ ...prev, [name]: numValue }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -43,17 +34,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
       ...prev, 
       [name]: date ? date.toISOString() : undefined 
     }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, this would upload to a server and return a URL
-      // For now, we'll use a local URL for the preview
-      const imageUrl = URL.createObjectURL(file);
-      setAvatarPreview(imageUrl);
-      setFormData(prev => ({ ...prev, avatar: imageUrl }));
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,29 +55,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarPreview} alt={formData.name} />
-                <AvatarFallback>{formData.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="absolute bottom-0 right-0">
-                <Label htmlFor="avatar" className="cursor-pointer">
-                  <div className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors">
-                    <Upload className="h-4 w-4" />
-                  </div>
-                </Label>
-                <Input 
-                  id="avatar" 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                />
-              </div>
-            </div>
-          </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -133,18 +90,9 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                value={formData.address || ""}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <DatePicker
+                id="dateOfBirth"
                 date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
                 onSelect={(date) => handleDateChange("dateOfBirth", date)}
               />
@@ -180,6 +128,7 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             <div className="space-y-2">
               <Label htmlFor="membershipStartDate">Start Date</Label>
               <DatePicker
+                id="membershipStartDate"
                 date={formData.membershipStartDate ? new Date(formData.membershipStartDate) : undefined}
                 onSelect={(date) => handleDateChange("membershipStartDate", date)}
               />
@@ -188,6 +137,7 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             <div className="space-y-2">
               <Label htmlFor="membershipEndDate">End Date</Label>
               <DatePicker
+                id="membershipEndDate"
                 date={formData.membershipEndDate ? new Date(formData.membershipEndDate) : undefined}
                 onSelect={(date) => handleDateChange("membershipEndDate", date)}
               />
@@ -202,118 +152,17 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 onChange={handleChange}
               />
             </div>
-          </div>
-          
-          <div className="border-t pt-4 mt-4">
-            <h3 className="text-lg font-medium mb-4">Body Measurements</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
-                <Input
-                  id="height"
-                  name="height"
-                  type="number"
-                  step="0.1"
-                  value={formData.height || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  name="weight"
-                  type="number"
-                  step="0.1"
-                  value={formData.weight || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="chest">Chest (cm)</Label>
-                <Input
-                  id="chest"
-                  name="chest"
-                  type="number"
-                  step="0.1"
-                  value={formData.chest || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="waist">Waist (cm)</Label>
-                <Input
-                  id="waist"
-                  name="waist"
-                  type="number"
-                  step="0.1"
-                  value={formData.waist || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="biceps">Biceps (cm)</Label>
-                <Input
-                  id="biceps"
-                  name="biceps"
-                  type="number"
-                  step="0.1"
-                  value={formData.biceps || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="thigh">Thigh (cm)</Label>
-                <Input
-                  id="thigh"
-                  name="thigh"
-                  type="number"
-                  step="0.1"
-                  value={formData.thigh || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="hips">Hips (cm)</Label>
-                <Input
-                  id="hips"
-                  name="hips"
-                  type="number"
-                  step="0.1"
-                  value={formData.hips || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="bodyFat">Body Fat (%)</Label>
-                <Input
-                  id="bodyFat"
-                  name="bodyFat"
-                  type="number"
-                  step="0.1"
-                  value={formData.bodyFat || ""}
-                  onChange={handleNumberChange}
-                />
-              </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="goal">Fitness Goal</Label>
+              <Textarea
+                id="goal"
+                name="goal"
+                value={formData.goal || ""}
+                onChange={handleChange}
+                className="min-h-[80px]"
+              />
             </div>
-          </div>
-          
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="goal">Fitness Goal</Label>
-            <Textarea
-              id="goal"
-              name="goal"
-              value={formData.goal || ""}
-              onChange={handleChange}
-              className="min-h-[80px]"
-            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">

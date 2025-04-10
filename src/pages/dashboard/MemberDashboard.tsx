@@ -1,230 +1,440 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, LineChart } from 'recharts';
-import { CalendarRange, Clock, DumbellIcon, Heart, TrendingUp, Users, Calendar } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { HealthStatsChart } from '@/components/dashboard/HealthStatsChart';
-import { WorkoutHistoryChart } from '@/components/dashboard/WorkoutHistoryChart';
-import { DatePickerWithRange } from '@/components/datePicker';
-import { cn } from '@/lib/utils';
-import { format, parseISO, isAfter, isBefore } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
-import { useBranch } from '@/hooks/use-branch';
-import { PendingAction } from '@/components/dashboard/PendingAction';
-import { useToast } from '@/components/ui/use-toast';
-import UpcomingClassCard from '@/components/dashboard/UpcomingClassCard';
-import { UpcomingRenewalsCard } from '@/components/dashboard/UpcomingRenewalsCard';
-import { AttendanceStats } from '@/components/dashboard/AttendanceStats';
-import { FeedbackSection } from '@/components/dashboard/sections/FeedbackSection';
-import { HealthSummary } from '@/components/dashboard/HealthSummary';
-import { MembershipSummary } from '@/components/dashboard/MembershipSummary';
-import { ProgressCard } from '@/components/dashboard/ProgressCard';
-import { Member, Class } from '@/types';
-import { Announcement } from '@/types/notification';
-import { DashboardAnnouncements } from '@/components/dashboard/DashboardAnnouncements';
 
-// Updated imports from mock data
-import { mockClasses, mockMembers, announcements } from '@/data/mockData';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Activity,
+  Calendar,
+  Clock,
+  DollarSign,
+  Dumbbell,
+  FileText,
+  User,
+  CheckSquare,
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RecentActivity from "@/components/dashboard/RecentActivity";
+import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
+import Announcements from "@/components/dashboard/Announcements";
+import { mockClasses, mockAnnouncements } from "@/data/mockData";
+import { useAuth } from "@/hooks/use-auth";
 
 const MemberDashboard = () => {
-  const [date, setDate] = useState<undefined | {
-    from?: Date;
-    to?: Date;
-  }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 7)),
-    to: new Date(),
-  });
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
-  const [dashboardAnnouncements, setDashboardAnnouncements] = useState<Announcement[]>([]);
-  const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
-  const { currentBranch } = useBranch();
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [memberData, setMemberData] = useState({
+    profile: {
+      name: "John Doe",
+      email: "john.doe@example.com",
+      avatar: "/placeholder.svg",
+      membershipPlan: "Premium Annual",
+      membershipStatus: "active",
+      startDate: "2023-01-15",
+      endDate: "2023-12-31",
+      trainer: "Sarah Johnson",
+      trainingGoal: "Weight Loss",
+      attendanceStreak: 5,
+    },
+    fitness: {
+      plan: "Fat Loss Program - Week 3",
+      progress: {
+        startWeight: 85,
+        currentWeight: 80,
+        targetWeight: 75,
+        weightProgress: 50,
+        attendanceRate: 85,
+        workoutsCompleted: 12,
+        totalWorkouts: 16,
+      },
+      upcomingSession: {
+        date: "2023-07-25",
+        time: "18:00 - 19:30",
+        trainer: "Sarah Johnson",
+        focus: "Lower Body & Core",
+      },
+    },
+    classes: {
+      booked: 3,
+      attended: 12,
+      favorite: "HIIT Extreme",
+    },
+    diet: {
+      plan: "High Protein, Low Carb",
+      nextMeal: "Protein Shake + Almonds",
+      waterIntake: 4,
+      waterGoal: 8,
+      compliance: 75,
+    },
+    payments: {
+      nextPayment: {
+        amount: 999,
+        dueDate: "2023-12-31",
+        plan: "Premium Annual",
+      },
+      lastPayment: {
+        amount: 999,
+        date: "2023-01-15",
+        receipt: "INV-2023-001",
+      },
+    },
+    attendance: {
+      today: false,
+      streak: 5,
+      lastWeek: 4,
+      thisMonth: 12,
+    }
+  });
 
   useEffect(() => {
-    // Load mock data
-    setClasses(mockClasses);
-    setMembers(mockMembers);
-    setDashboardAnnouncements(announcements);
-  }, []);
-
-  useEffect(() => {
-    // Filter classes based on the selected date range
-    if (date?.from && date?.to) {
-      const filtered = classes.filter((workout) => {
-        const workoutDate = new Date(); // Replace with actual workout date if available
-        return isAfter(workoutDate, date.from!) && isBefore(workoutDate, date.to!);
-      });
-      setFilteredClasses(filtered);
-    } else {
-      setFilteredClasses(classes);
+    // Update member data with user info when available
+    if (user) {
+      setMemberData(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          name: user.name || prev.profile.name,
+          email: user.email || prev.profile.email,
+          avatar: user.avatar || prev.profile.avatar,
+        }
+      }));
     }
+    
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  }, [user]);
 
-    // Filter members based on the selected date range
-    if (date?.from && date?.to) {
-      const filtered = members.filter((member) => {
-        const memberDate = new Date(member.membershipStartDate || ""); // Replace with actual member date if available
-        return isAfter(memberDate, date.from!) && isBefore(memberDate, date.to!);
-      });
-      setFilteredMembers(filtered);
-    } else {
-      setFilteredMembers(members);
-    }
-  }, [date, classes, members]);
+  const recentActivities = [
+    {
+      id: "1",
+      title: "Session Completed",
+      description: "You completed a personal training session with Sarah Johnson",
+      user: {
+        name: "Sarah Johnson",
+        avatar: "/placeholder.svg",
+      },
+      time: "Yesterday, 6:30 PM",
+      type: "other" as const,
+    },
+    {
+      id: "2",
+      title: "Class Attendance",
+      description: "You checked in for HIIT Extreme class",
+      user: {
+        name: user?.name || "John Doe",
+        avatar: user?.avatar || "/placeholder.svg",
+      },
+      time: "2 days ago, 7:00 PM",
+      type: "check-in" as const,
+    },
+    {
+      id: "3",
+      title: "Workout Completed",
+      description: "You completed Day 12 of your fitness plan",
+      user: {
+        name: user?.name || "John Doe",
+        avatar: user?.avatar || "/placeholder.svg",
+      },
+      time: "3 days ago, 5:45 PM",
+      type: "other" as const,
+    },
+  ];
 
-  const handleDateChange = (newDate: { from?: Date; to?: Date }) => {
-    setDate(newDate);
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
-  const handleClassRegistration = (classId: string) => {
-    // Simulate class registration
-    setClasses((prevClasses) =>
-      prevClasses.map((cls) =>
-        cls.id === classId ? { ...cls, enrolled: cls.enrolled + 1 } : cls
-      )
-    );
-    toast({
-      title: "Success",
-      description: "You have successfully registered for the class.",
-    });
-  };
-
-  const handleAnnouncementDismiss = (announcementId: string) => {
-    // Simulate announcement dismissal
-    setDashboardAnnouncements((prevAnnouncements) =>
-      prevAnnouncements.filter((announcement) => announcement.id !== announcementId)
-    );
-    toast({
-      title: "Success",
-      description: "You have dismissed the announcement.",
-    });
+  // Self check-in function
+  const handleSelfCheckIn = () => {
+    setMemberData(prev => ({
+      ...prev,
+      attendance: {
+        ...prev.attendance,
+        today: true,
+        streak: prev.attendance.streak + 1,
+        thisMonth: prev.attendance.thisMonth + 1
+      }
+    }));
   };
 
   return (
-    <Container>
-      <div className="flex justify-between items-center">
-        <div className="space-y-0.5">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Welcome back, {user?.name}
-          </h2>
-          <p className="text-muted-foreground">
-            Here is an overview of your account
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <DatePickerWithRange date={date} onDateChange={handleDateChange} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Member Dashboard</h1>
+        <div className="flex space-x-2">
+          {!memberData.attendance.today && (
+            <Button onClick={handleSelfCheckIn}>
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Check In
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/attendance">View Attendance</Link>
+          </Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+
+      {/* Quick stats cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Members
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Attendance Streak</CardTitle>
+            <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{members.length}</div>
-            <p className="text-sm text-muted-foreground">
-              {filteredMembers.length} in the selected period
+            <div className="text-2xl font-bold">{memberData.attendance.streak} days</div>
+            <p className="text-xs text-muted-foreground">
+              {memberData.attendance.lastWeek} visits last week
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Memberships
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Membership Status</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">382</div>
-            <p className="text-sm text-muted-foreground">
-              +20% from last month
+            <div className="text-2xl font-bold capitalize">{memberData.profile.membershipStatus}</div>
+            <p className="text-xs text-muted-foreground">
+              Expires: {memberData.profile.endDate}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Upcoming Classes
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Upcoming Classes</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{classes.length}</div>
-            <p className="text-sm text-muted-foreground">
-              {filteredClasses.length} in the selected period
+            <div className="text-2xl font-bold">{memberData.classes.booked}</div>
+            <p className="text-xs text-muted-foreground">
+              Attended {memberData.classes.attended} classes
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Today's Check-ins
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Next Payment</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">128</div>
-            <p className="text-sm text-muted-foreground">
-              +12% from yesterday
+            <div className="text-2xl font-bold">${memberData.payments.nextPayment.amount}</div>
+            <p className="text-xs text-muted-foreground">
+              Due: {memberData.payments.nextPayment.dueDate}
             </p>
           </CardContent>
         </Card>
       </div>
-      <Tabs defaultValue="overview" className="space-y-4 mt-4" value={activeTab} onValueChange={setActiveTab}>
+
+      <Tabs defaultValue="profile" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="fitness">Fitness</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="membership">Membership</TabsTrigger>
-          <TabsTrigger value="health">Health</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="diet">Diet</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <MembershipSummary />
-            <HealthSummary />
-            <AttendanceStats />
-          </div>
-          <DashboardAnnouncements
-            announcements={dashboardAnnouncements}
-            onDismiss={handleAnnouncementDismiss}
-          />
+        <TabsContent value="profile" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>View and manage your profile details</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={memberData.profile.avatar} alt={memberData.profile.name} />
+                  <AvatarFallback>{getInitials(memberData.profile.name)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium leading-none">{memberData.profile.name}</p>
+                  <p className="text-sm text-muted-foreground">{memberData.profile.email}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Membership Plan</p>
+                <p className="text-sm text-muted-foreground">{memberData.profile.membershipPlan}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Membership Status</p>
+                <p className="text-sm text-muted-foreground">{memberData.profile.membershipStatus}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Trainer</p>
+                <p className="text-sm text-muted-foreground">{memberData.profile.trainer}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Training Goal</p>
+                <p className="text-sm text-muted-foreground">{memberData.profile.trainingGoal}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Attendance Streak</p>
+                <p className="text-sm text-muted-foreground">{memberData.profile.attendanceStreak} days</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
+
+        <TabsContent value="fitness" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fitness Plan</CardTitle>
+              <CardDescription>Your current fitness plan and progress</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Current Plan</p>
+                <p className="text-sm text-muted-foreground">{memberData.fitness.plan}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium leading-none">Weight Progress</p>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Start: {memberData.fitness.progress.startWeight} kg</span>
+                  <span>Target: {memberData.fitness.progress.targetWeight} kg</span>
+                </div>
+                <Progress value={memberData.fitness.progress.weightProgress} />
+                <p className="text-sm text-muted-foreground">
+                  Current Weight: {memberData.fitness.progress.currentWeight} kg
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Attendance Rate</p>
+                  <p className="text-sm text-muted-foreground">
+                    {memberData.fitness.progress.attendanceRate}%
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Workouts Completed</p>
+                  <p className="text-sm text-muted-foreground">
+                    {memberData.fitness.progress.workoutsCompleted} / {memberData.fitness.progress.totalWorkouts}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Upcoming Session</p>
+                <p className="text-sm text-muted-foreground">
+                  {memberData.fitness.upcomingSession.date}, {memberData.fitness.upcomingSession.time} with{" "}
+                  {memberData.fitness.upcomingSession.trainer} (Focus: {memberData.fitness.upcomingSession.focus})
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="classes" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {classes.map((cls) => (
-              <UpcomingClassCard
-                key={cls.id}
-                cls={cls}
-                onRegister={handleClassRegistration}
-              />
-            ))}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Classes</CardTitle>
+              <CardDescription>Your class bookings and attendance</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Booked Classes</p>
+                  <p className="text-sm text-muted-foreground">{memberData.classes.booked}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Attended Classes</p>
+                  <p className="text-sm text-muted-foreground">{memberData.classes.attended}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Favorite Class</p>
+                <p className="text-sm text-muted-foreground">{memberData.classes.favorite}</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="membership" className="space-y-4">
-          <UpcomingRenewalsCard />
+
+        <TabsContent value="diet" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Diet Plan</CardTitle>
+              <CardDescription>Your current diet plan and progress</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Current Plan</p>
+                <p className="text-sm text-muted-foreground">{memberData.diet.plan}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Next Meal</p>
+                <p className="text-sm text-muted-foreground">{memberData.diet.nextMeal}</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Water Intake</p>
+                  <p className="text-sm text-muted-foreground">
+                    {memberData.diet.waterIntake} / {memberData.diet.waterGoal} liters
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Compliance</p>
+                  <p className="text-sm text-muted-foreground">{memberData.diet.compliance}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="health" className="space-y-4">
-          <HealthStatsChart />
-        </TabsContent>
-        <TabsContent value="progress" className="space-y-4">
-          <ProgressCard />
-        </TabsContent>
-        <TabsContent value="feedback" className="space-y-4">
-          <FeedbackSection />
+
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payments</CardTitle>
+              <CardDescription>Your payment history and upcoming payments</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Next Payment</p>
+                <p className="text-sm text-muted-foreground">
+                  ${memberData.payments.nextPayment.amount} due on {memberData.payments.nextPayment.dueDate} for{" "}
+                  {memberData.payments.nextPayment.plan}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Last Payment</p>
+                <p className="text-sm text-muted-foreground">
+                  ${memberData.payments.lastPayment.amount} on {memberData.payments.lastPayment.date} (Receipt:{" "}
+                  {memberData.payments.lastPayment.receipt})
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-    </Container>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div>
+          {isLoading ? (
+            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+          ) : (
+            <RecentActivity activities={recentActivities} />
+          )}
+        </div>
+        <div>
+          {isLoading ? (
+            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+          ) : (
+            <UpcomingClasses classes={mockClasses} />
+          )}
+        </div>
+        <div>
+          {isLoading ? (
+            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+          ) : (
+            <Announcements announcements={mockAnnouncements} />
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

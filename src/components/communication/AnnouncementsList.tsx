@@ -38,8 +38,7 @@ const mockAnnouncements: Announcement[] = [
     createdAt: "2023-07-10T10:00:00Z",
     targetRoles: ["member", "trainer"],
     channels: ["in-app", "email"],
-    sentCount: 120,
-    priority: "medium"
+    sentCount: 120
   },
   {
     id: "2",
@@ -50,8 +49,7 @@ const mockAnnouncements: Announcement[] = [
     targetRoles: ["member"],
     channels: ["in-app", "email", "sms"],
     expiresAt: "2023-07-26T23:59:59Z",
-    sentCount: 98,
-    priority: "low"
+    sentCount: 98
   },
   {
     id: "3", 
@@ -61,8 +59,7 @@ const mockAnnouncements: Announcement[] = [
     createdAt: "2023-07-18T09:15:00Z",
     targetRoles: ["member", "trainer", "staff"],
     channels: ["in-app", "whatsapp"],
-    sentCount: 215,
-    priority: "high"
+    sentCount: 215
   }
 ];
 

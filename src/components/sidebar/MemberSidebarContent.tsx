@@ -15,7 +15,7 @@ const MemberSidebarContent: React.FC = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
   
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Overview', 'Fitness']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleSection = (sectionName: string) => {
     if (expandedSections.includes(sectionName)) {

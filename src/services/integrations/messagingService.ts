@@ -1,9 +1,6 @@
 
 import api from '../api';
 import { toast } from 'sonner';
-import { SmsTemplate, TriggerEvent, EmailTemplate } from '@/types/finance';
-import { smsTemplateService } from './smsTemplateService';
-import { emailTemplateService } from './emailTemplateService';
 
 export type MessageChannel = 'whatsapp' | 'sms' | 'email' | 'push';
 
@@ -96,74 +93,6 @@ export const messagingService = {
   },
   
   /**
-   * Send SMS using a template
-   * @param phone Phone number with country code
-   * @param templateId ID of the SMS template to use
-   * @param data Data to populate the template with
-   */
-  async sendSMSTemplate(
-    phone: string,
-    templateId: string,
-    data: Record<string, string>
-  ): Promise<boolean> {
-    try {
-      const response = await api.post('/integrations/messaging/send-template', {
-        channel: 'sms',
-        recipient: phone,
-        templateId,
-        data
-      });
-      
-      if (response.data.success) {
-        toast.success('SMS sent successfully');
-        return true;
-      } else {
-        toast.error(response.data.message || 'Failed to send SMS');
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to send SMS template:', error);
-      toast.error('Failed to send SMS');
-      return false;
-    }
-  },
-  
-  /**
-   * Send SMS for a specific trigger event
-   * @param phone Phone number with country code
-   * @param event Trigger event type
-   * @param data Data to populate the template with
-   */
-  async sendEventSMS(
-    phone: string,
-    event: TriggerEvent,
-    data: Record<string, string>
-  ): Promise<boolean> {
-    try {
-      // Get templates for this event
-      const templates = await smsTemplateService.getTemplatesForEvent(event);
-      
-      if (templates.length === 0) {
-        console.log(`No SMS template found for event: ${event}`);
-        return false;
-      }
-      
-      // Use the first enabled template
-      const template = templates.find(t => t.enabled);
-      
-      if (!template) {
-        console.log(`No enabled SMS template found for event: ${event}`);
-        return false;
-      }
-      
-      return this.sendSMSTemplate(phone, template.id, data);
-    } catch (error) {
-      console.error(`Failed to send event SMS for ${event}:`, error);
-      return false;
-    }
-  },
-  
-  /**
    * Send email message
    * @param email Email address
    * @param subject Email subject
@@ -189,74 +118,6 @@ export const messagingService = {
       toast.error('Failed to send email');
     }
     return result;
-  },
-  
-  /**
-   * Send email using a template
-   * @param email Email address
-   * @param templateId ID of the email template to use
-   * @param data Data to populate the template with
-   */
-  async sendEmailTemplate(
-    email: string,
-    templateId: string,
-    data: Record<string, string>
-  ): Promise<boolean> {
-    try {
-      const response = await api.post('/integrations/messaging/send-template', {
-        channel: 'email',
-        recipient: email,
-        templateId,
-        data
-      });
-      
-      if (response.data.success) {
-        toast.success('Email sent successfully');
-        return true;
-      } else {
-        toast.error(response.data.message || 'Failed to send email');
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to send email template:', error);
-      toast.error('Failed to send email');
-      return false;
-    }
-  },
-  
-  /**
-   * Send email for a specific trigger event
-   * @param email Email address
-   * @param event Trigger event type
-   * @param data Data to populate the template with
-   */
-  async sendEventEmail(
-    email: string,
-    event: TriggerEvent,
-    data: Record<string, string>
-  ): Promise<boolean> {
-    try {
-      // Get templates for this event
-      const templates = await emailTemplateService.getTemplatesForEvent(event);
-      
-      if (templates.length === 0) {
-        console.log(`No email template found for event: ${event}`);
-        return false;
-      }
-      
-      // Use the first enabled template
-      const template = templates.find(t => t.enabled);
-      
-      if (!template) {
-        console.log(`No enabled email template found for event: ${event}`);
-        return false;
-      }
-      
-      return this.sendEmailTemplate(email, template.id, data);
-    } catch (error) {
-      console.error(`Failed to send event email for ${event}:`, error);
-      return false;
-    }
   },
   
   /**
@@ -347,106 +208,5 @@ export const messagingService = {
       toast.error('Failed to send broadcast');
       return { success: 0, failed: recipients.length };
     }
-  },
-  
-  /**
-   * Send a broadcast message using a template
-   * @param channel Channel to send through
-   * @param recipients Array of recipient identifiers
-   * @param templateId ID of the template to use
-   * @param dataList Array of data objects for each recipient
-   */
-  async sendTemplateBroadcast(
-    channel: MessageChannel,
-    recipients: string[],
-    templateId: string,
-    dataList: Record<string, string>[]
-  ): Promise<{ success: number; failed: number }> {
-    try {
-      const response = await api.post('/integrations/messaging/broadcast-template', {
-        channel,
-        recipients,
-        templateId,
-        dataList
-      });
-      
-      if (response.data.success) {
-        const { successCount, failedCount } = response.data;
-        
-        if (successCount > 0) {
-          toast.success(`Successfully sent to ${successCount} recipients`);
-        }
-        
-        if (failedCount > 0) {
-          toast.error(`Failed to send to ${failedCount} recipients`);
-        }
-        
-        return {
-          success: successCount,
-          failed: failedCount
-        };
-      } else {
-        toast.error(response.data.message || 'Failed to send broadcast');
-        return { success: 0, failed: recipients.length };
-      }
-    } catch (error) {
-      console.error('Failed to send template broadcast:', error);
-      toast.error('Failed to send broadcast');
-      return { success: 0, failed: recipients.length };
-    }
-  },
-  
-  /**
-   * Send notification through multiple channels based on event
-   * @param memberId Member ID
-   * @param email Member email address
-   * @param phone Member phone number
-   * @param event Trigger event
-   * @param data Data to populate the templates with
-   * @param channels Channels to send through
-   */
-  async sendMultiChannelNotification(
-    memberId: string,
-    email: string,
-    phone: string,
-    event: TriggerEvent,
-    data: Record<string, string>,
-    channels: MessageChannel[] = ['email', 'sms']
-  ): Promise<Record<MessageChannel, boolean>> {
-    const results: Record<MessageChannel, boolean> = {
-      email: false,
-      sms: false,
-      whatsapp: false,
-      push: false
-    };
-    
-    const promises: Promise<void>[] = [];
-    
-    if (channels.includes('email') && email) {
-      promises.push(
-        this.sendEventEmail(email, event, data)
-          .then(result => { results.email = result; })
-      );
-    }
-    
-    if (channels.includes('sms') && phone) {
-      promises.push(
-        this.sendEventSMS(phone, event, data)
-          .then(result => { results.sms = result; })
-      );
-    }
-    
-    if (channels.includes('whatsapp') && phone) {
-      // Implement WhatsApp event message if needed
-      // results.whatsapp = await this.sendEventWhatsApp(phone, event, data);
-    }
-    
-    if (channels.includes('push') && memberId) {
-      // Implement push notification if needed
-      // results.push = await this.sendEventPushNotification(memberId, event, data);
-    }
-    
-    await Promise.all(promises);
-    return results;
   }
 };

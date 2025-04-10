@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ReminderRule, ReminderTriggerType, NotificationChannel } from "@/types/notification";
+import { ReminderRule, ReminderTriggerType } from "@/types/notification";
 import { toast } from "sonner";
 import { 
   BellRing, 
@@ -41,81 +41,57 @@ const mockReminderRules: ReminderRule[] = [
     id: "1",
     name: "Membership Expiry Reminder",
     description: "Remind members before their membership expires",
-    triggerType: "membershipExpiry",
     type: "membership-renewal",
-    daysBeforeTrigger: 7,
     triggerDays: 7,
     message: "Your membership will expire soon. Please renew to continue enjoying our services.",
-    notificationChannels: ["email", "push"],
-    channels: ["email", "push"],
-    isActive: true,
+    channels: ["email", "in-app"],
     enabled: true,
     createdAt: "2023-05-10T09:00:00Z",
     updatedAt: "2023-05-10T09:00:00Z",
-    appliesTo: ["member"],
     targetRoles: ["member"],
-    active: true,
-    createdBy: "admin1"
+    active: true
   },
   {
     id: "2",
     name: "Birthday Wish",
     description: "Send birthday wishes to members",
-    triggerType: "birthday",
     type: "birthday",
-    daysBeforeTrigger: 0,
     triggerDays: 0,
     message: "Happy Birthday! Enjoy a special discount on your next purchase.",
-    notificationChannels: ["email", "whatsapp", "sms"],
     channels: ["email", "whatsapp", "sms"],
-    isActive: true,
     enabled: true,
     createdAt: "2023-05-15T10:00:00Z",
     updatedAt: "2023-05-15T10:00:00Z",
-    appliesTo: ["member", "trainer", "staff"],
     targetRoles: ["member", "trainer", "staff"],
-    active: true,
-    createdBy: "admin1"
+    active: true
   },
   {
     id: "3",
     name: "Missed Attendance Follow-up",
     description: "Follow up with members who haven't visited recently",
-    triggerType: "inactivity",
     type: "missed-attendance",
-    daysBeforeTrigger: 3,
     triggerDays: 3,
     message: "We've noticed you haven't visited recently. Is everything okay?",
-    notificationChannels: ["sms", "whatsapp"],
     channels: ["sms", "whatsapp"],
-    isActive: false,
     enabled: false,
     createdAt: "2023-05-20T11:00:00Z",
     updatedAt: "2023-05-20T11:00:00Z",
-    appliesTo: ["member"],
     targetRoles: ["member"],
-    active: false,
-    createdBy: "admin1"
+    active: false
   },
   {
     id: "4",
     name: "Membership Renewal Reminder",
     description: "Remind members to renew their membership",
-    triggerType: "payment",
     type: "payment-due",
-    daysBeforeTrigger: 3,
     triggerDays: 3,
     message: "Your membership is expiring soon. Renew now to avoid interruption.",
-    notificationChannels: ["email", "push", "sms"],
-    channels: ["email", "push", "sms"],
-    isActive: true,
+    channels: ["email", "in-app", "sms"],
     enabled: true,
     createdAt: "2023-05-25T12:00:00Z",
     updatedAt: "2023-05-25T12:00:00Z",
-    appliesTo: ["member"],
     targetRoles: ["member"],
-    active: true,
-    createdBy: "admin1"
+    active: true
   }
 ];
 

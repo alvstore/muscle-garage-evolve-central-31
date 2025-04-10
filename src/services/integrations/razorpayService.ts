@@ -1,6 +1,6 @@
 
 import api from '../api';
-import { Invoice, RazorpayWebhookEvent } from '@/types/finance';
+import { Invoice } from '@/types/finance';
 import { toast } from 'sonner';
 
 export interface RazorpayOptions {
@@ -160,92 +160,6 @@ export const razorpayService = {
     } catch (error) {
       console.error('Failed to send invoice:', error);
       toast.error('Failed to send invoice');
-      return false;
-    }
-  },
-  
-  /**
-   * Verify webhook signature
-   * @param payload Raw webhook payload
-   * @param signature Razorpay signature from headers
-   * @param webhookSecret Webhook secret key
-   */
-  async verifyWebhookSignature(
-    payload: string,
-    signature: string,
-    webhookSecret: string
-  ): Promise<boolean> {
-    try {
-      const response = await api.post('/integrations/razorpay/verify-webhook-signature', {
-        payload,
-        signature,
-        webhookSecret
-      });
-      
-      return response.data.valid || false;
-    } catch (error) {
-      console.error('Failed to verify webhook signature:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Process webhook event
-   * @param event Webhook event data
-   */
-  async processWebhookEvent(event: RazorpayWebhookEvent): Promise<boolean> {
-    try {
-      const response = await api.post('/integrations/razorpay/process-webhook', event);
-      
-      return response.data.success || false;
-    } catch (error) {
-      console.error('Failed to process webhook event:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Get webhook configuration
-   */
-  async getWebhookConfiguration(): Promise<{
-    url: string;
-    secret: string;
-    active: boolean;
-    events: string[];
-  } | null> {
-    try {
-      const response = await api.get('/integrations/razorpay/webhook-config');
-      
-      return response.data || null;
-    } catch (error) {
-      console.error('Failed to get webhook configuration:', error);
-      return null;
-    }
-  },
-  
-  /**
-   * Update webhook configuration
-   * @param config Webhook configuration
-   */
-  async updateWebhookConfiguration(config: {
-    url: string;
-    secret: string;
-    active: boolean;
-    events: string[];
-  }): Promise<boolean> {
-    try {
-      const response = await api.post('/integrations/razorpay/webhook-config', config);
-      
-      if (response.data.success) {
-        toast.success('Webhook configuration updated');
-        return true;
-      } else {
-        toast.error(response.data.message || 'Failed to update webhook configuration');
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to update webhook configuration:', error);
-      toast.error('Failed to update webhook configuration');
       return false;
     }
   }

@@ -1,300 +1,543 @@
-import React, { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { DataTable } from "@/components/ui/data-table";
-import { HikvisionEvent as ServiceHikvisionEvent } from "@/services/integrations/hikvisionService";
-import { HikvisionEvent, HikvisionCredentials, HikvisionDevice } from "@/types/hikvision";
-import { hikvisionService } from "@/services/integrations/hikvisionService";
+
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { CheckCircle, XCircle, RefreshCw, Clock, UserCheck, Lock, Download, UploadCloud, Server, Shield } from 'lucide-react';
+import { hikvisionService, HikvisionCredentials, HikvisionEvent } from '@/services/integrations/hikvisionService';
+import { usePermissions } from '@/hooks/use-permissions';
+import PermissionGuard from '@/components/auth/PermissionGuard';
+
+// Schema for Hikvision API credentials
+const hikvisionCredentialsSchema = z.object({
+  apiUrl: z.string().url({ message: "Please enter a valid API URL" }),
+  username: z.string().min(1, { message: "Username is required" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
 
 const HikvisionIntegrationPage = () => {
-  const [credentials, setCredentials] = useState<HikvisionCredentials>({
-    username: "",
-    password: "",
-    apiKey: "",
-    apiSecret: "",
-    baseUrl: "",
-    isValid: false
-  });
-  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
+  const [autoSync, setAutoSync] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [events, setEvents] = useState<HikvisionEvent[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [processedDevices, setProcessedDevices] = useState<HikvisionDevice[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [attendanceProcessed, setAttendanceProcessed] = useState(0);
+  const { can } = usePermissions();
 
+  // Initialize form with react-hook-form
+  const form = useForm<HikvisionCredentials>({
+    resolver: zodResolver(hikvisionCredentialsSchema),
+    defaultValues: {
+      apiUrl: '',
+      username: '',
+      password: '',
+    },
+  });
+
+  // Load saved credentials from localStorage on component mount
   useEffect(() => {
-    loadCredentials();
-    loadDevices();
-    loadEvents();
+    const savedCredentials = localStorage.getItem('hikvisionCredentials');
+    if (savedCredentials) {
+      try {
+        const parsed = JSON.parse(savedCredentials);
+        form.reset(parsed);
+        testConnection(parsed);
+      } catch (error) {
+        console.error('Failed to parse saved credentials:', error);
+      }
+    }
   }, []);
 
-  const loadCredentials = async () => {
-    setLoading(true);
+  // Test the Hikvision API connection
+  const testConnection = async (credentials: HikvisionCredentials) => {
+    setConnectionStatus('testing');
     try {
-      const creds = await hikvisionService.getCredentials();
-      setCredentials(creds);
-    } catch (error) {
-      setError("Failed to load credentials");
-      toast.error("Failed to load Hikvision credentials.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadDevices = async () => {
-    setLoading(true);
-    try {
-      const deviceList = await hikvisionService.getDevices();
-      setDevices(deviceList);
-    } catch (error) {
-      setError("Failed to load devices");
-      toast.error("Failed to load Hikvision devices.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadEvents = async () => {
-    setLoading(true);
-    try {
-      const serviceEvents = await hikvisionService.getEvents();
-      setEvents(serviceEvents as unknown as HikvisionEvent[]);
-    } catch (error) {
-      setError("Failed to load events");
-      toast.error("Failed to load Hikvision events.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveCredentials = async () => {
-    setLoading(true);
-    try {
-      const isValid = await hikvisionService.validateCredentials(credentials);
-      setCredentials({ ...credentials, isValid: isValid });
-      await hikvisionService.saveCredentials(credentials);
-      toast.success("Hikvision credentials saved successfully.");
-    } catch (error) {
-      setError("Failed to save credentials");
-      toast.error("Failed to save Hikvision credentials.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const testConnection = async () => {
-    setLoading(true);
-    try {
-      const result = await hikvisionService.testConnection(credentials);
-      if (result) {
-        setCredentials(prev => ({ ...prev, isValid: true }));
-        toast.success("Connection successful!");
+      const success = await hikvisionService.testConnection(credentials);
+      if (success) {
+        setConnectionStatus('connected');
+        toast.success('Successfully connected to Hikvision API');
+        return true;
       } else {
-        setCredentials(prev => ({ ...prev, isValid: false }));
-        toast.error("Connection failed. Please check your credentials.");
+        setConnectionStatus('disconnected');
+        toast.error('Failed to connect to Hikvision API');
+        return false;
       }
     } catch (error) {
-      console.error("Connection test error:", error);
-      setCredentials(prev => ({ ...prev, isValid: false }));
-      toast.error("Connection test failed with an error.");
-    } finally {
-      setLoading(false);
+      console.error('Connection test error:', error);
+      setConnectionStatus('disconnected');
+      toast.error('Error testing connection to Hikvision API');
+      return false;
     }
   };
 
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({ ...credentials, username: e.target.value });
+  // Save credentials and test connection
+  const onSubmit = async (data: HikvisionCredentials) => {
+    const success = await testConnection(data);
+    if (success) {
+      // Save credentials to localStorage
+      localStorage.setItem('hikvisionCredentials', JSON.stringify(data));
+    }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({ ...credentials, password: e.target.value });
-  };
-
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({ ...credentials, apiKey: e.target.value });
-  };
-
-  const handleApiSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({ ...credentials, apiSecret: e.target.value });
-  };
-
-  const handleProcessAttendance = async () => {
-    setLoading(true);
+  // Fetch recent events from Hikvision
+  const fetchEvents = async () => {
+    setIsLoadingEvents(true);
     try {
-      await hikvisionService.processAttendance(events as unknown as ServiceHikvisionEvent[]);
-      toast.success("Attendance processed successfully.");
+      // Get events from the last 24 hours
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const startTime = oneDayAgo.toISOString();
+      const endTime = now.toISOString();
+      
+      const fetchedEvents = await hikvisionService.getEvents(startTime, endTime);
+      setEvents(fetchedEvents);
+      setLastSyncTime(new Date().toISOString());
+      toast.success(`Fetched ${fetchedEvents.length} access events`);
     } catch (error) {
-      setError("Failed to process attendance");
-      toast.error("Failed to process attendance.");
+      console.error('Failed to fetch events:', error);
+      toast.error('Failed to fetch access events');
     } finally {
-      setLoading(false);
+      setIsLoadingEvents(false);
     }
   };
 
-  const columns = React.useMemo(
-    () => [
-      {
-        accessorKey: "memberName",
-        header: "Member Name",
-      },
-      {
-        accessorKey: "deviceName",
-        header: "Device Name",
-      },
-      {
-        accessorKey: "eventTime",
-        header: "Event Time",
-      },
-      {
-        accessorKey: "eventType",
-        header: "Event Type",
-      },
-    ],
-    []
-  );
+  // Process attendance from events
+  const processAttendance = async () => {
+    if (events.length === 0) {
+      toast.error('No events to process');
+      return;
+    }
+
+    try {
+      const count = await hikvisionService.processAttendance(events);
+      setAttendanceProcessed(count);
+      if (count > 0) {
+        toast.success(`Processed ${count} attendance records`);
+      } else {
+        toast.info('No new attendance records to process');
+      }
+    } catch (error) {
+      console.error('Failed to process attendance:', error);
+      toast.error('Failed to process attendance records');
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   return (
-    <Container>
-      <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Hikvision Integration</h1>
+    <div className="container mx-auto py-6">
+      <PermissionGuard permission="full_system_access">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Hikvision Access Control Integration</h1>
+          <p className="text-muted-foreground mt-2">
+            Connect to Hikvision access control system to track member attendance automatically.
+          </p>
+        </div>
 
-        {error && <div className="text-red-500 mb-4">Error: {error}</div>}
+        <Tabs defaultValue="settings" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="events">Recent Events</TabsTrigger>
+            <TabsTrigger value="sync">Attendance Sync</TabsTrigger>
+          </TabsList>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Credentials</CardTitle>
-            <CardDescription>
-              Configure your Hikvision device credentials.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={credentials.username}
-                onChange={handleUsernameChange}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                value={credentials.password}
-                onChange={handlePasswordChange}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="apiKey">API Key</Label>
-              <Input
-                id="apiKey"
-                value={credentials.apiKey}
-                onChange={handleApiKeyChange}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="apiSecret">API Secret</Label>
-              <Input
-                id="apiSecret"
-                value={credentials.apiSecret}
-                onChange={handleApiSecretChange}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="baseUrl">Base URL</Label>
-              <Input
-                id="baseUrl"
-                value={credentials.baseUrl}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, baseUrl: e.target.value })
-                }
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="isValid">Connection Status</Label>
-              {credentials.isValid ? (
-                <Badge variant="outline">Success</Badge>
-              ) : (
-                <Badge variant="destructive">Failed</Badge>
-              )}
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button onClick={testConnection} disabled={loading}>
-                Test Connection
-              </Button>
-              <Button onClick={handleSaveCredentials} disabled={loading}>
-                Save Credentials
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hikvision API Connection</CardTitle>
+                <CardDescription>
+                  Configure connection to your Hikvision access control system
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6 flex items-center space-x-2">
+                  <div className="font-medium">Connection Status:</div>
+                  {connectionStatus === 'connected' ? (
+                    <Badge variant="outline" className="flex items-center gap-1 bg-green-100 text-green-800">
+                      <CheckCircle className="h-4 w-4" /> Connected
+                    </Badge>
+                  ) : connectionStatus === 'testing' ? (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Testing Connection
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <XCircle className="h-4 w-4" /> Disconnected
+                    </Badge>
+                  )}
+                </div>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Devices</CardTitle>
-            <CardDescription>List of connected Hikvision devices.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {devices.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {devices.map((device) => (
-                    <TableRow key={device.id}>
-                      <TableCell>{device.name}</TableCell>
-                      <TableCell>{device.type}</TableCell>
-                      <TableCell>{device.location}</TableCell>
-                      <TableCell>{device.status}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div>No devices found.</div>
-            )}
-          </CardContent>
-        </Card>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="apiUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://hikvision-controller.example.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            The URL of your Hikvision access control system API endpoint
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Events</CardTitle>
-            <CardDescription>
-              List of recent events from Hikvision devices.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {events.length > 0 ? (
-              <DataTable columns={columns} data={events} />
-            ) : (
-              <div>No events found.</div>
-            )}
-            <Button onClick={handleProcessAttendance} disabled={loading} className="mt-4">
-              Process Attendance
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </Container>
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="admin" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-center space-x-2">
+                      <Button type="submit" disabled={connectionStatus === 'testing'}>
+                        {connectionStatus === 'connected' ? 'Update Connection' : 'Connect to Hikvision'}
+                      </Button>
+                      
+                      {connectionStatus === 'connected' && (
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => testConnection(form.getValues())}
+                        >
+                          Test Connection
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Automatic Sync Settings</CardTitle>
+                <CardDescription>
+                  Configure how and when attendance data is synchronized
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between space-x-2">
+                    <div>
+                      <h4 className="font-medium">Enable Auto-Sync</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically sync access events to attendance records
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={autoSync} 
+                      onCheckedChange={setAutoSync} 
+                      disabled={connectionStatus !== 'connected'} 
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Sync Frequency</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button variant={autoSync ? "outline" : "ghost"} disabled={!autoSync}>
+                        Every 15 minutes
+                      </Button>
+                      <Button variant={autoSync ? "default" : "ghost"} disabled={!autoSync}>
+                        Hourly
+                      </Button>
+                      <Button variant={autoSync ? "outline" : "ghost"} disabled={!autoSync}>
+                        Daily (midnight)
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Select how often the system should fetch new access events
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Process Settings</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="entry-as-check-in" checked={true} disabled={!autoSync} />
+                        <label htmlFor="entry-as-check-in" className="text-sm">
+                          Process "entry" events as check-ins
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="exit-as-check-out" checked={true} disabled={!autoSync} />
+                        <label htmlFor="exit-as-check-out" className="text-sm">
+                          Process "exit" events as check-outs
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="denied-access-log" checked={true} disabled={!autoSync} />
+                        <label htmlFor="denied-access-log" className="text-sm">
+                          Log denied access attempts
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" disabled={!autoSync}>
+                  Reset to Defaults
+                </Button>
+                <Button disabled={!autoSync}>Save Settings</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="events">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Recent Access Events</CardTitle>
+                  <CardDescription>
+                    Access control events from your Hikvision system
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={fetchEvents} 
+                  disabled={isLoadingEvents || connectionStatus !== 'connected'}
+                  className="flex items-center gap-1"
+                >
+                  {isLoadingEvents ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                  Refresh Events
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {lastSyncTime && (
+                  <div className="mb-4 flex items-center text-sm text-muted-foreground">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Last synchronized: {formatDate(lastSyncTime)}
+                  </div>
+                )}
+
+                {events.length > 0 ? (
+                  <div className="rounded-md border">
+                    <div className="grid grid-cols-5 gap-4 border-b bg-muted p-3 font-medium">
+                      <div>Event Time</div>
+                      <div>Type</div>
+                      <div>Person</div>
+                      <div>Door/Device</div>
+                      <div>Card/Face ID</div>
+                    </div>
+                    <div className="divide-y max-h-96 overflow-auto">
+                      {events.map((event) => (
+                        <div key={event.eventId} className="grid grid-cols-5 gap-4 p-3 text-sm">
+                          <div>{formatDate(event.eventTime)}</div>
+                          <div>
+                            <Badge 
+                              variant={
+                                event.eventType === 'entry' ? 'outline' :
+                                event.eventType === 'exit' ? 'secondary' :
+                                'destructive'
+                              }
+                              className={
+                                event.eventType === 'entry' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : event.eventType === 'exit' 
+                                  ? '' 
+                                  : ''
+                              }
+                            >
+                              {event.eventType.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <div>{event.personName || event.personId}</div>
+                          <div>{event.doorName || event.doorId}</div>
+                          <div>{event.cardNo || event.faceId || 'N/A'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium">No events found</h3>
+                    <p className="text-muted-foreground mt-2 max-w-md">
+                      Click the "Refresh Events" button to fetch recent access events from your Hikvision system.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sync">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manual Attendance Processing</CardTitle>
+                  <CardDescription>
+                    Process access events into attendance records
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Available Events</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {events.length} event(s) ready to process
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={processAttendance} 
+                        disabled={events.length === 0}
+                        className="flex items-center gap-1"
+                      >
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Process Attendance
+                      </Button>
+                    </div>
+
+                    {attendanceProcessed > 0 && (
+                      <div className="rounded-md bg-muted p-4">
+                        <h4 className="font-medium flex items-center">
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                          Processing Complete
+                        </h4>
+                        <p className="text-sm mt-2">
+                          Successfully processed {attendanceProcessed} attendance records from access events.
+                        </p>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-medium mb-2">Quick Actions</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" className="justify-start">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Events
+                        </Button>
+                        <Button variant="outline" className="justify-start" disabled={events.length === 0}>
+                          <UploadCloud className="h-4 w-4 mr-2" />
+                          Upload Events
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Configuration</CardTitle>
+                  <CardDescription>
+                    Advanced settings for Hikvision integration
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="flex flex-col space-y-2">
+                      <h4 className="font-medium">Webhook Configuration</h4>
+                      <div className="flex items-center p-2 rounded-md bg-muted">
+                        <code className="text-xs flex-1 overflow-auto">
+                          https://yourdomain.com/api/webhooks/hikvision
+                        </code>
+                        <Button size="icon" variant="ghost">
+                          <Server className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Configure your Hikvision system to send real-time events to this webhook URL
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Security Settings</h4>
+                      
+                      <div className="flex items-center justify-between space-x-2">
+                        <div>
+                          <p className="text-sm">Enable Webhook Authentication</p>
+                          <p className="text-xs text-muted-foreground">
+                            Require authentication for incoming webhook requests
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      
+                      <div className="mt-4">
+                        <Button variant="outline" className="flex items-center">
+                          <Shield className="h-4 w-4 mr-2" />
+                          Regenerate Webhook Secret
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium">API Limits & Throttling</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm block mb-1">Max API Calls</label>
+                          <Input type="number" defaultValue="100" disabled={connectionStatus !== 'connected'} />
+                        </div>
+                        <div>
+                          <label className="text-sm block mb-1">Timeout (seconds)</label>
+                          <Input type="number" defaultValue="30" disabled={connectionStatus !== 'connected'} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button className="w-full">Save Configuration</Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </PermissionGuard>
+    </div>
   );
 };
 

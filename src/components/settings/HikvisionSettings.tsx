@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { hikvisionPartnerService } from "@/services/integrations/hikvisionPartnerService";
 import settingsService, { AccessControlSettings } from "@/services/settingsService";
 
+// Define the form schema with Zod
 const hikvisionSchema = z.object({
   appKey: z.string().min(1, { message: "AppKey is required" }),
   secretKey: z.string().min(1, { message: "SecretKey is required" }),
@@ -46,6 +48,7 @@ const HikvisionSettings = () => {
   const [sites, setSites] = useState<Site[]>([]);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   
+  // Default values for the form
   const defaultValues: HikvisionFormValues = {
     appKey: "",
     secretKey: "",
@@ -68,53 +71,39 @@ const HikvisionSettings = () => {
     defaultValues,
   });
 
+  // Fetch existing settings when component mounts
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const settings = await settingsService.getAccessControlSettings();
         form.reset(settings);
         
+        // Load sites from hikvision service (this would be a real API call in production)
         const mockSites = [
           { id: "site1", name: "Main Branch" },
           { id: "site2", name: "Downtown Branch" },
           { id: "site3", name: "East Wing" },
         ];
         setSites(mockSites);
+        
       } catch (error) {
         console.error("Failed to fetch Hikvision settings:", error);
+        // Don't show error toast on initial load as it might not exist yet
       }
     };
 
     fetchSettings();
   }, [form]);
 
-  const testConnection = async () => {
-    setIsTestingConnection(true);
-    try {
-      const result = await hikvisionPartnerService.testConnection();
-      if (result.success) {
-        toast.success("Connection successful", {
-          description: "Successfully connected to Hikvision Partner API.",
-        });
-      } else {
-        toast.error("Connection failed", {
-          description: result.message || "Failed to connect to Hikvision Partner API.",
-        });
-      }
-    } catch (error) {
-      console.error("Error testing connection:", error);
-      toast.error("Connection test failed");
-    } finally {
-      setIsTestingConnection(false);
-    }
-  };
-
   async function onSubmit(data: HikvisionFormValues) {
     try {
       setIsLoading(true);
       
-      await hikvisionPartnerService.saveCredentials(data.appKey);
+      // Save credentials to the Hikvision service first
+      await hikvisionPartnerService.saveCredentials(data.appKey, data.secretKey);
       
+      // Then save all settings to the settings service
+      // Explicitly cast the form data to AccessControlSettings to ensure all required fields are present
       const accessControlSettings: AccessControlSettings = {
         appKey: data.appKey,
         secretKey: data.secretKey,
@@ -142,6 +131,27 @@ const HikvisionSettings = () => {
       setIsLoading(false);
     }
   }
+
+  const testConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      const result = await hikvisionPartnerService.testConnection();
+      if (result.success) {
+        toast.success("Connection successful", {
+          description: "Successfully connected to Hikvision Partner API.",
+        });
+      } else {
+        toast.error("Connection failed", {
+          description: result.message || "Failed to connect to Hikvision Partner API.",
+        });
+      }
+    } catch (error) {
+      console.error("Error testing connection:", error);
+      toast.error("Connection test failed");
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
 
   return (
     <Card>

@@ -1,8 +1,8 @@
 
 import React from "react";
-import { NavSection } from "@/data/memberNavigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import SidebarNavItem from "./SidebarNavItem";
+import { NavSection } from "@/data/memberNavigation";
 
 interface SidebarNavSectionProps {
   section: NavSection;
@@ -16,12 +16,15 @@ const SidebarNavSection: React.FC<SidebarNavSectionProps> = ({
   onToggle 
 }) => {
   return (
-    <div className="mb-4">
+    <div className="mb-1">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-2 px-3 rounded-md transition-colors hover:bg-white/10"
+        className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
       >
-        <span className="font-medium text-sm">{section.name}</span>
+        <div className="flex items-center gap-2">
+          {section.icon}
+          <span>{section.name}</span>
+        </div>
         {isExpanded ? (
           <ChevronDown className="h-4 w-4" />
         ) : (
@@ -30,9 +33,9 @@ const SidebarNavSection: React.FC<SidebarNavSectionProps> = ({
       </button>
       
       {isExpanded && (
-        <div className="pl-2 space-y-1 mt-1">
-          {section.items.map((item, idx) => (
-            <SidebarNavItem key={idx} item={item} />
+        <div className="mt-1 pl-4">
+          {section.items.map((item, itemIndex) => (
+            <SidebarNavItem key={itemIndex} item={item} />
           ))}
         </div>
       )}

@@ -11,16 +11,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-export interface DatePickerProps {
+interface DatePickerProps {
+  id?: string;
   date?: Date;
-  onSelect?: (date: Date | undefined) => void;
+  onSelect: (date: Date | undefined) => void;
 }
 
-export function DatePicker({ date, onSelect }: DatePickerProps) {
+export function DatePicker({ id, date, onSelect }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",

@@ -22,7 +22,6 @@ const MemberProfilePage = () => {
         name: "John Doe",
         role: "member",
         phone: "+1 (555) 123-4567",
-        address: "123 Main St, Anytown, USA",
         dateOfBirth: "1990-05-15",
         goal: "Build muscle and improve overall fitness",
         trainerId: "trainer-123",
@@ -30,60 +29,6 @@ const MemberProfilePage = () => {
         membershipStatus: "active",
         membershipStartDate: "2023-01-15",
         membershipEndDate: "2024-01-15",
-        // Body measurements
-        height: 178,
-        weight: 75,
-        chest: 95,
-        waist: 82,
-        biceps: 36,
-        thigh: 58,
-        hips: 92,
-        bodyFat: 14.5,
-        // Progress tracking
-        measurements: [
-          {
-            id: "measure-1",
-            date: "2023-12-15",
-            weight: 78,
-            chest: 93,
-            waist: 84,
-            biceps: 34,
-            thigh: 56,
-            hips: 94,
-            bodyFat: 16,
-            notes: "Starting to see some progress in arms and chest.",
-            updatedBy: "trainer-123",
-            updatedByRole: "trainer"
-          },
-          {
-            id: "measure-2",
-            date: "2024-01-15",
-            weight: 77,
-            chest: 94,
-            waist: 83,
-            biceps: 35,
-            thigh: 57,
-            hips: 93,
-            bodyFat: 15,
-            notes: "Good progress this month. Diet adherence at 90%.",
-            updatedBy: "trainer-123",
-            updatedByRole: "trainer"
-          },
-          {
-            id: "measure-3",
-            date: "2024-02-15",
-            weight: 76,
-            chest: 94.5,
-            waist: 82.5,
-            biceps: 35.5,
-            thigh: 57.5,
-            hips: 92.5,
-            bodyFat: 14.8,
-            notes: "Continuing to make good progress.",
-            updatedBy: "trainer-123",
-            updatedByRole: "trainer"
-          }
-        ]
       };
       
       setMember(mockMember);

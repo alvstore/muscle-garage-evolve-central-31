@@ -1,246 +1,122 @@
-import { 
-  BellRing, 
-  Building, 
-  CreditCard, 
-  Key, 
-  Lock, 
-  Mail, 
-  MessageCircle, // Replace MessageText with MessageCircle
-  Shield, 
-  UserCog, 
-  Users,
-  Smartphone
-} from "lucide-react";
+
+import React, { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Settings, Sliders } from "lucide-react";
+import GeneralSettings from "@/components/settings/GeneralSettings";
+import AccessControlSettings from "@/components/settings/AccessControlSettings";
+import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
+import EmailSettings from "@/components/settings/EmailSettings";
+import SmsSettings from "@/components/settings/SmsSettings";
+import NotificationSettings from "@/components/settings/NotificationSettings";
+import AutomationSettings from "@/components/settings/AutomationSettings";
+import PermissionsSettings from "@/components/settings/PermissionsSettings";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 const SettingsPage = () => {
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [twoFactorAuth, setTwoFactorAuth] = useState(false);
-  const [biometricAuth, setBiometricAuth] = useState(false);
-  
-  const handleSaveSettings = () => {
-    // Simulate saving settings
-    toast.success("Settings saved successfully!");
-  };
-  
+  const { user } = useAuth();
+  const { can, isSystemAdmin } = usePermissions();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("general");
+
+  // Redirect if user is not admin
+  if (!user || user.role !== "admin") {
+    toast.error("You don't have permission to access this page");
+    return <Navigate to="/unauthorized" replace />;
+  }
+
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
-        
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="account">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <UserCog className="h-4 w-4" />
-                <span>Account Settings</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="px-3 py-2 border rounded-md">
-                    <Mail className="h-4 w-4 mr-2 inline-block" />
-                    <span className="align-middle">contact@example.com</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Button variant="outline" size="sm">
-                    <Lock className="h-4 w-4 mr-2" />
-                    Change Password
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="notifications">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <BellRing className="h-4 w-4" />
-                <span>Notification Preferences</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
-                  <Switch 
-                    id="email-notifications"
-                    checked={emailNotifications}
-                    onCheckedChange={setEmailNotifications}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                  <Switch
-                    id="sms-notifications"
-                    checked={smsNotifications}
-                    onCheckedChange={setSmsNotifications}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="push-notifications">Push Notifications</Label>
-                  <Switch
-                    id="push-notifications"
-                    checked={pushNotifications}
-                    onCheckedChange={setPushNotifications}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="security">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span>Security Settings</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="two-factor-auth">Two-Factor Authentication</Label>
-                  <Switch 
-                    id="two-factor-auth"
-                    checked={twoFactorAuth}
-                    onCheckedChange={setTwoFactorAuth}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="biometric-auth">Biometric Authentication</Label>
-                  <Switch
-                    id="biometric-auth"
-                    checked={biometricAuth}
-                    onCheckedChange={setBiometricAuth}
-                  />
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="integrations">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <Building className="h-4 w-4" />
-                <span>Integrations</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="hikvision">Hikvision Integration</Label>
-                    <p className="text-sm text-muted-foreground">Connect to your Hikvision system for attendance tracking.</p>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/settings/hikvision" className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Configure
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="billing">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                <span>Billing & Subscription</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Current Plan</Label>
-                  <div className="px-3 py-2 border rounded-md">
-                    <span className="align-middle">Premium</span>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  Manage Subscription
-                </Button>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="team">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>Team Management</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Invite New Members</Label>
-                  <Button variant="outline" size="sm">
-                    Invite
-                  </Button>
-                </div>
-                {/* Add team management features here */}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="api">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                <span>API Keys</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Generate New API Key</Label>
-                  <Button variant="outline" size="sm">
-                    Generate Key
-                  </Button>
-                </div>
-                {/* Add API key management features here */}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="support">
-            <AccordionTrigger>
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                <span>Support</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Contact Support</Label>
-                  <Button variant="outline" size="sm">
-                    Contact Us
-                  </Button>
-                </div>
-                {/* Add support contact information here */}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        
-        <div className="mt-6">
-          <Button onClick={handleSaveSettings}>Save Settings</Button>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">System Settings</h1>
+            <p className="text-muted-foreground">Configure your Muscle Garage system settings</p>
+          </div>
         </div>
+        
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+                <TabsTrigger value="general" className="flex items-center gap-2">
+                  <Sliders className="h-4 w-4" />
+                  <span className="hidden md:inline">General</span>
+                </TabsTrigger>
+                <TabsTrigger value="access" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden md:inline">Access Control</span>
+                </TabsTrigger>
+                <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="hidden md:inline">WhatsApp</span>
+                </TabsTrigger>
+                <TabsTrigger value="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span className="hidden md:inline">Email</span>
+                </TabsTrigger>
+                <TabsTrigger value="sms" className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="hidden md:inline">SMS</span>
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  <span className="hidden md:inline">Notifications</span>
+                </TabsTrigger>
+                <TabsTrigger value="automation" className="flex items-center gap-2">
+                  <Brain className="h-4 w-4" />
+                  <span className="hidden md:inline">Automation</span>
+                </TabsTrigger>
+                <PermissionGuard permission="manage_roles">
+                  <TabsTrigger value="permissions" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline">Permissions</span>
+                  </TabsTrigger>
+                </PermissionGuard>
+              </TabsList>
+            </CardContent>
+          </Card>
+
+          <TabsContent value="general">
+            <GeneralSettings />
+          </TabsContent>
+          
+          <TabsContent value="access">
+            <AccessControlSettings />
+          </TabsContent>
+          
+          <TabsContent value="whatsapp">
+            <WhatsAppSettings />
+          </TabsContent>
+          
+          <TabsContent value="email">
+            <EmailSettings />
+          </TabsContent>
+          
+          <TabsContent value="sms">
+            <SmsSettings />
+          </TabsContent>
+          
+          <TabsContent value="notifications">
+            <NotificationSettings />
+          </TabsContent>
+          
+          <TabsContent value="automation">
+            <AutomationSettings />
+          </TabsContent>
+          
+          <TabsContent value="permissions">
+            <PermissionGuard permission="manage_roles" fallback={<Navigate to="/unauthorized" replace />}>
+              <PermissionsSettings />
+            </PermissionGuard>
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );
