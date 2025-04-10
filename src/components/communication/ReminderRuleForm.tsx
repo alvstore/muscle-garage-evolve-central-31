@@ -22,15 +22,21 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
       id: '',
       name: '',
       description: '',
+      triggerType: "membershipExpiry",
       type: 'membership-renewal',
+      daysBeforeTrigger: 3,
       triggerDays: 3,
       message: '',
+      notificationChannels: [],
       channels: [],
+      isActive: true,
       enabled: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      appliesTo: [],
       targetRoles: [],
-      active: true
+      active: true,
+      createdBy: "admin"
     }
   );
 

@@ -50,6 +50,7 @@ export interface FinancialTransaction {
   invoiceId?: string; // Associated invoice if any
   razorpayPaymentId?: string; // Associated Razorpay payment ID if any
   razorpayRefundId?: string; // Associated Razorpay refund ID if any
+  relatedInvoiceId?: string; // Added to match component usage
 }
 
 export interface FinancialReport {

@@ -57,13 +57,13 @@ export type ReminderTriggerType = "membership-renewal" | "missed-attendance" | "
 export interface MotivationalMessage {
   id: string;
   message: string;
+  content?: string; // Added to match component usage
   author?: string;
   category: "inspiration" | "fitness" | "nutrition" | "consistency" | "progress" | "motivation" | "wellness";
   isActive: boolean;
   createdAt: string;
   createdBy: string;
   // Added properties to match component usage
-  content?: string;
   tags?: string[];
   active?: boolean;
   title?: string;
