@@ -10,6 +10,8 @@ import NotFound from '@/pages/NotFound';
 import Login from '@/pages/auth/Login';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
+import ReportsPage from '@/pages/reports/ReportsPage';
+import ClassPage from '@/pages/classes/ClassPage';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -48,6 +50,14 @@ export const appRoutes: RouteObject[] = [
           {
             path: '/dashboard/overview',
             element: <Dashboard />
+          },
+          {
+            path: '/reports',
+            element: <ReportsPage />
+          },
+          {
+            path: '/classes',
+            element: <ClassPage />
           },
           
           // Include route groups
