@@ -1,419 +1,519 @@
-
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Form, 
   FormControl, 
-  FormDescription, 
   FormField, 
   FormItem, 
   FormLabel, 
   FormMessage 
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { toast } from "sonner";
-import { NotificationChannel, ReminderRule } from "@/types/notification";
-import { UserRole } from "@/types";
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, Clock, Info } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { ReminderRule } from '@/types/notification';
 
-// Define a more specific type for the reminder types to match our schema
-type ReminderType = "membership-expiry" | "attendance" | "birthday" | "renewal";
-
-const formSchema = z.object({
-  name: z.string().min(5, "Name must be at least 5 characters"),
-  type: z.enum(["membership-expiry", "attendance", "birthday", "renewal"]),
-  triggerDays: z.number().min(0).max(30),
-  templateId: z.string(),
-  channels: z.array(z.string()).min(1, "Select at least one channel"),
-  targetRoles: z.array(z.string()).min(1, "Select at least one role"),
-  active: z.boolean().default(true),
+const reminderRuleSchema = z.object({
+  name: z.string().min(3, { message: 'Name must be at least 3 characters' }),
+  type: z.enum(['attendance', 'renewal', 'membership-expiry', 'birthday']),
+  triggerDays: z.number().min(1, { message: 'Must be at least 1 day' }),
+  message: z.string().min(10, { message: 'Message must be at least 10 characters' }),
+  active: z.boolean(),
+  sendEmail: z.boolean(),
+  sendSMS: z.boolean(),
+  sendPush: z.boolean(),
+  specificDate: z.date().optional(),
+  specificTime: z.string().optional(),
+  repeatYearly: z.boolean().optional(),
+  targetGroups: z.array(z.string()).optional(),
 });
 
+type ReminderRuleFormValues = z.infer<typeof reminderRuleSchema>;
+
 interface ReminderRuleFormProps {
-  editRule?: ReminderRule | null;
-  onComplete: () => void;
+  open: boolean;
+  onClose: () => void;
+  onSave: (rule: ReminderRule) => void;
+  editingRule?: ReminderRule;
 }
 
-const notificationChannels: { value: NotificationChannel; label: string }[] = [
-  { value: "in-app", label: "In-App Notification" },
-  { value: "email", label: "Email" },
-  { value: "sms", label: "SMS" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
+const ReminderRuleForm = ({ open, onClose, onSave, editingRule }: ReminderRuleFormProps) => {
+  const [type, setType] = useState<"attendance" | "renewal" | "membership-expiry" | "birthday">('attendance');
+  const { toast } = useToast();
 
-const userRoles: { value: UserRole; label: string }[] = [
-  { value: "admin", label: "Administrators" },
-  { value: "staff", label: "Staff Members" },
-  { value: "trainer", label: "Trainers" },
-  { value: "member", label: "Members" },
-];
-
-const mockTemplates = [
-  { id: "template1", name: "Membership Expiry Notice" },
-  { id: "template2", name: "Birthday Wish Template" },
-  { id: "template3", name: "Attendance Follow-up" },
-  { id: "template4", name: "Membership Renewal Reminder" },
-];
-
-const ReminderRuleForm = ({ editRule, onComplete }: ReminderRuleFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ReminderRuleFormValues>({
+    resolver: zodResolver(reminderRuleSchema),
     defaultValues: {
-      name: "",
-      type: "membership-expiry" as ReminderType,
-      triggerDays: 7,
-      templateId: "",
-      channels: ["in-app"],
-      targetRoles: ["member"],
+      name: '',
+      type: 'attendance',
+      triggerDays: 1,
+      message: '',
       active: true,
+      sendEmail: true,
+      sendSMS: false,
+      sendPush: false,
+      repeatYearly: false,
+      targetGroups: [],
     },
   });
 
-  const reminderType = form.watch("type");
-
   useEffect(() => {
-    if (editRule) {
-      // We need to ensure the type is one of our valid ReminderTypes
-      const validType = (editRule.type as string) || "membership-expiry";
-      let typedReminderType: ReminderType;
-      
-      // Validate the type is one of our acceptable values
-      if (["membership-expiry", "attendance", "birthday", "renewal"].includes(validType)) {
-        typedReminderType = validType as ReminderType;
-      } else {
-        typedReminderType = "membership-expiry";
-      }
-
+    if (editingRule) {
       form.reset({
-        name: editRule.name,
-        type: typedReminderType,
-        triggerDays: editRule.triggerDays || 0,
-        templateId: editRule.template || "",
-        channels: editRule.channels as string[],
-        targetRoles: editRule.targetRoles as string[],
-        active: editRule.active || false,
+        name: editingRule.name,
+        type: editingRule.type,
+        triggerDays: editingRule.triggerDays,
+        message: editingRule.message,
+        active: editingRule.active,
+        sendEmail: editingRule.sendEmail,
+        sendSMS: editingRule.sendSMS,
+        sendPush: editingRule.sendPush,
+        specificDate: editingRule.specificDate ? new Date(editingRule.specificDate) : undefined,
+        specificTime: editingRule.specificTime,
+        repeatYearly: editingRule.repeatYearly,
+        targetGroups: editingRule.targetGroups,
       });
+      setType(editingRule.type);
+    } else {
+      form.reset({
+        name: '',
+        type: 'attendance',
+        triggerDays: 1,
+        message: '',
+        active: true,
+        sendEmail: true,
+        sendSMS: false,
+        sendPush: false,
+        repeatYearly: false,
+        targetGroups: [],
+      });
+      setType('attendance');
     }
-  }, [editRule, form]);
+  }, [editingRule, form]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
+  const onSubmit = (values: ReminderRuleFormValues) => {
+    const newRule: ReminderRule = {
+      id: editingRule?.id || `rule-${Date.now()}`,
+      ...values,
+      createdAt: editingRule?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     
-    try {
-      console.log("Submitting reminder rule:", values);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success(
-        editRule 
-          ? "Reminder rule updated successfully" 
-          : "Reminder rule created successfully"
-      );
-      
-      form.reset();
-      onComplete();
-    } catch (error) {
-      console.error("Error submitting reminder rule:", error);
-      toast.error("There was a problem saving the reminder rule");
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSave(newRule);
+    toast({
+      title: editingRule ? "Rule Updated" : "Rule Created",
+      description: `Reminder rule has been ${editingRule ? "updated" : "created"} successfully.`,
+    });
+    onClose();
   };
 
+  const handleTypeChange = (value: string) => {
+    setType(value as "attendance" | "renewal" | "membership-expiry" | "birthday");
+    form.setValue('type', value as any);
+  };
+
+  const memberGroups = [
+    { id: 'all', label: 'All Members' },
+    { id: 'active', label: 'Active Members' },
+    { id: 'inactive', label: 'Inactive Members' },
+    { id: 'premium', label: 'Premium Members' },
+    { id: 'standard', label: 'Standard Members' },
+    { id: 'basic', label: 'Basic Members' },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{editRule ? "Edit Reminder Rule" : "Create New Reminder Rule"}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{editingRule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</DialogTitle>
+        </DialogHeader>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rule Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter rule name" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Give this rule a descriptive name
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reminder Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Basic Information Section */}
+              <div className="space-y-4 md:col-span-2">
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rule Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
+                        <Input placeholder="Enter rule name" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="membership-expiry">Membership Expiry</SelectItem>
-                        <SelectItem value="renewal">Membership Renewal</SelectItem>
-                        <SelectItem value="attendance">Missed Attendance</SelectItem>
-                        <SelectItem value="birthday">Birthday Wishes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      The event that will trigger this reminder
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reminder Type</FormLabel>
+                      <Select 
+                        onValueChange={(value) => handleTypeChange(value)} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select reminder type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="attendance">Attendance Reminder</SelectItem>
+                          <SelectItem value="renewal">Membership Renewal</SelectItem>
+                          <SelectItem value="membership-expiry">Membership Expiry</SelectItem>
+                          <SelectItem value="birthday">Birthday Reminder</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              <FormField
-                control={form.control}
-                name="triggerDays"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {reminderType === "birthday" 
-                        ? "Days from birthday" 
-                        : reminderType === "attendance" 
-                        ? "Days after absence" 
-                        : "Days before event"}
-                    </FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        <Slider
-                          min={0}
-                          max={30}
-                          step={1}
-                          value={[field.value]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                        />
-                        <div className="flex justify-between">
-                          <span>{field.value} days</span>
+              {/* Trigger Settings Section */}
+              <div className="space-y-4 md:col-span-2">
+                <h3 className="text-lg font-medium">Trigger Settings</h3>
+                
+                {type !== 'birthday' && (
+                  <FormField
+                    control={form.control}
+                    name="triggerDays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {type === 'attendance' 
+                            ? 'Days Since Last Visit' 
+                            : type === 'renewal' 
+                              ? 'Days Before Renewal' 
+                              : 'Days Before Expiry'}
+                        </FormLabel>
+                        <FormControl>
                           <Input 
                             type="number" 
-                            className="w-20" 
-                            min={0}
-                            max={30}
-                            value={field.value}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            min={1} 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
                           />
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      {reminderType === "birthday" 
-                        ? "0 means on the birthday, negative values for days before" 
-                        : reminderType === "attendance" 
-                        ? "Days of absence before sending the reminder" 
-                        : "How many days before the event to send this reminder"}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="templateId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notification Template</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a template" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {mockTemplates.map(template => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    The notification template to use for this reminder
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="channels"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-2">
-                      <FormLabel>Notification Channels</FormLabel>
-                      <FormDescription>
-                        Select how to deliver this reminder
-                      </FormDescription>
-                    </div>
-                    {notificationChannels.map((channel) => (
-                      <FormField
-                        key={channel.value}
-                        control={form.control}
-                        name="channels"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={channel.value}
-                              className="flex flex-row items-start space-x-3 space-y-0 mb-1"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(channel.value)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...field.value, channel.value])
-                                      : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== channel.value
-                                          )
-                                        )
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal cursor-pointer">
-                                {channel.label}
-                              </FormLabel>
-                            </FormItem>
-                          )
-                        }}
-                      />
-                    ))}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="targetRoles"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-2">
-                      <FormLabel>Target Audience</FormLabel>
-                      <FormDescription>
-                        Select who should receive this reminder
-                      </FormDescription>
-                    </div>
-                    {userRoles.map((role) => (
-                      <FormField
-                        key={role.value}
-                        control={form.control}
-                        name="targetRoles"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={role.value}
-                              className="flex flex-row items-start space-x-3 space-y-0 mb-1"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(role.value)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...field.value, role.value])
-                                      : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== role.value
-                                          )
-                                        )
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal cursor-pointer">
-                                {role.label}
-                              </FormLabel>
-                            </FormItem>
-                          )
-                        }}
-                      />
-                    ))}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Active Status</FormLabel>
-                    <FormDescription>
-                      Enable or disable this reminder rule
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                
+                {type === 'birthday' && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="triggerDays"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Days Before Birthday</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={0} 
+                              max={30} 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    
+                    <FormField
+                      control={form.control}
+                      name="repeatYearly"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Repeat Yearly</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+                
+                {type === 'attendance' && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="specificDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Specific Date (Optional)</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="specificTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Specific Time (Optional)</FormLabel>
+                          <div className="flex items-center">
+                            <FormControl>
+                              <Input
+                                type="time"
+                                placeholder="Select time"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Clock className="ml-2 h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+              </div>
+              
+              {/* Message Content Section */}
+              <div className="space-y-4 md:col-span-2">
+                <h3 className="text-lg font-medium">Message Content</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Message</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter reminder message" 
+                          className="min-h-[100px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        <Info className="h-3 w-3 inline mr-1" />
+                        You can use placeholders like {'{name}'}, {'{date}'}, {'{membership_type}'} in your message.
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Notification Channels Section */}
+              <div className="space-y-4 md:col-span-1">
+                <h3 className="text-lg font-medium">Notification Channels</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="sendEmail"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Send Email</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="sendSMS"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Send SMS</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="sendPush"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Send Push Notification</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Target Groups & Status Section */}
+              <div className="space-y-4 md:col-span-1">
+                <h3 className="text-lg font-medium">Target Groups & Status</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="targetGroups"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-2">
+                        <FormLabel>Target Member Groups</FormLabel>
+                      </div>
+                      <div className="space-y-2">
+                        {memberGroups.map((group) => (
+                          <FormField
+                            key={group.id}
+                            control={form.control}
+                            name="targetGroups"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={group.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(group.id)}
+                                      onCheckedChange={(checked) => {
+                                        const currentValues = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...currentValues, group.id]);
+                                        } else {
+                                          field.onChange(
+                                            currentValues.filter((value) => value !== group.id)
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {group.label}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Rule Status</FormLabel>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={onComplete}
-                disabled={isSubmitting}
-              >
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>
-                    Saving...
-                  </span>
-                ) : editRule ? "Update Rule" : "Create Rule"}
+              <Button type="submit">
+                {editingRule ? 'Update Rule' : 'Create Rule'}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
 

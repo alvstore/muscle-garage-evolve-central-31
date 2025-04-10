@@ -23,14 +23,14 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <DashboardNavbar user={user} onToggleSidebar={toggleSidebar} />
       <div className="flex flex-1">
         <DashboardSidebar
           isSidebarOpen={sidebarOpen}
           closeSidebar={closeSidebar}
         />
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-y-auto p-0">
           <div className="container mx-auto p-4 md:p-6">
             <Outlet />
           </div>

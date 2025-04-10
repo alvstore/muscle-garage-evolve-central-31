@@ -16,7 +16,7 @@ import { mockDashboardSummary, mockClasses, mockAnnouncements } from "@/data/moc
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Feedback } from "@/types/notification";
+import { Feedback, FeedbackType } from "@/types/notification";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -201,54 +201,59 @@ const AdminDashboard = () => {
       id: "feedback1",
       memberId: "member1",
       memberName: "David Miller",
-      type: "class",
+      type: "class" as FeedbackType,
       relatedId: "class1",
       rating: 4,
       comments: "Great class, but the room was a bit crowded.",
       createdAt: "2023-06-15T10:30:00Z",
-      anonymous: false
+      anonymous: false,
+      title: "HIIT Class Review"
     },
     {
       id: "feedback2",
       memberId: "member2",
       memberName: "Sarah Parker",
-      type: "trainer",
+      type: "trainer" as FeedbackType,
       relatedId: "trainer1",
       rating: 5,
       comments: "Excellent trainer, very motivating!",
       createdAt: "2023-06-16T14:20:00Z",
-      anonymous: false
+      anonymous: false,
+      title: "Trainer Review"
     },
     {
       id: "feedback3",
       memberId: "member3",
-      type: "fitness-plan",
+      type: "fitness-plan" as FeedbackType,
       relatedId: "plan1",
       rating: 3,
       comments: "Plan is good but too challenging for beginners.",
       createdAt: "2023-06-17T09:15:00Z",
-      anonymous: true
+      anonymous: true,
+      title: "Fitness Plan Feedback"
     },
     {
       id: "feedback4",
       memberId: "member4",
       memberName: "Emily Davidson",
-      type: "general",
+      type: "general" as FeedbackType,
       rating: 2,
       comments: "The gym needs better ventilation.",
       createdAt: "2023-06-18T16:45:00Z",
-      anonymous: false
+      anonymous: false,
+      title: "Facility Feedback"
     },
     {
       id: "feedback5",
       memberId: "member5",
       memberName: "Michael Wong",
-      type: "class",
+      type: "class" as FeedbackType,
       relatedId: "class2",
       rating: 5,
       comments: "Best HIIT class I've ever taken!",
       createdAt: "2023-06-19T11:30:00Z",
-      anonymous: false
+      anonymous: false,
+      title: "Yoga Class Review"
     }
   ];
 
