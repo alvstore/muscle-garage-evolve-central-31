@@ -1,195 +1,198 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+// Reimplementation to fix type errors
+
+import { useState } from "react";
+import { 
+  Card, 
+  CardContent,
+  CardDescription, 
+  CardHeader, 
+  CardTitle
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ClassBooking } from "@/types/class";
-import { CalendarIcon, CheckIcon, XIcon } from "lucide-react";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { format, parseISO } from "date-fns";
+import { MoreVertical, Calendar, UserCheck, X, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
+import { ClassBooking, BookingStatus } from "@/types/class";
 
 interface ClassBookingListProps {
-  classId?: string;
+  classId: string;
 }
 
+// Mock data for class bookings
+const mockBookings: ClassBooking[] = [
+  {
+    id: "booking1",
+    classId: "class1",
+    memberId: "member1",
+    memberName: "John Smith",
+    memberAvatar: "/placeholder.svg",
+    bookingDate: "2023-07-20T10:00:00Z",
+    status: "confirmed",
+    createdAt: "2023-07-15T14:30:00Z",
+    updatedAt: "2023-07-15T14:30:00Z"
+  },
+  {
+    id: "booking2",
+    classId: "class1",
+    memberId: "member2",
+    memberName: "Emily Davis",
+    memberAvatar: "/placeholder.svg",
+    bookingDate: "2023-07-20T10:00:00Z",
+    status: "attended",
+    attendanceTime: "2023-07-20T09:55:00Z",
+    createdAt: "2023-07-14T11:20:00Z",
+    updatedAt: "2023-07-20T09:55:00Z"
+  },
+  {
+    id: "booking3",
+    classId: "class1",
+    memberId: "member3",
+    memberName: "Michael Brown",
+    memberAvatar: "/placeholder.svg",
+    bookingDate: "2023-07-20T10:00:00Z",
+    status: "cancelled",
+    createdAt: "2023-07-16T09:45:00Z",
+    updatedAt: "2023-07-18T16:30:00Z",
+    notes: "Schedule conflict"
+  }
+];
+
 const ClassBookingList = ({ classId }: ClassBookingListProps) => {
-  const [bookings, setBookings] = useState<ClassBooking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<ClassBooking[]>(mockBookings);
 
-  useEffect(() => {
-    // Simulate API call to fetch bookings
-    setLoading(true);
+  // Function to mark attendance
+  const markAttendance = (bookingId: string) => {
+    const updatedBookings = bookings.map(booking => 
+      booking.id === bookingId 
+        ? { 
+            ...booking, 
+            status: "attended" as BookingStatus, 
+            attendanceTime: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          } 
+        : booking
+    );
     
-    setTimeout(() => {
-      // Mock data
-      const mockBookings: ClassBooking[] = [
-        {
-          id: "booking-1",
-          classId: "class-1",
-          memberId: "member-1",
-          memberName: "John Doe",
-          memberAvatar: "",
-          bookingDate: "2025-04-08T10:30:00.000Z",
-          status: "booked",
-          createdAt: "2025-04-05T10:30:00.000Z",
-          updatedAt: "2025-04-05T10:30:00.000Z"
-        },
-        {
-          id: "booking-2",
-          classId: "class-2",
-          memberId: "member-2",
-          memberName: "Jane Smith",
-          memberAvatar: "",
-          bookingDate: "2025-04-09T15:00:00.000Z",
-          status: "attended",
-          attendanceTime: "2025-04-09T15:05:00.000Z",
-          createdAt: "2025-04-07T09:30:00.000Z",
-          updatedAt: "2025-04-09T15:05:00.000Z"
-        },
-        {
-          id: "booking-3",
-          classId: "class-1",
-          memberId: "member-3",
-          memberName: "Mike Johnson",
-          memberAvatar: "",
-          bookingDate: "2025-04-08T10:30:00.000Z",
-          status: "cancelled",
-          notes: "Family emergency",
-          createdAt: "2025-04-06T14:20:00.000Z",
-          updatedAt: "2025-04-07T08:15:00.000Z"
-        },
-        {
-          id: "booking-4",
-          classId: "class-3",
-          memberId: "member-4",
-          memberName: "Sarah Wilson",
-          memberAvatar: "",
-          bookingDate: "2025-04-10T17:00:00.000Z",
-          status: "booked",
-          createdAt: "2025-04-08T11:45:00.000Z",
-          updatedAt: "2025-04-08T11:45:00.000Z"
-        },
-        {
-          id: "booking-5",
-          classId: "class-2",
-          memberId: "member-5",
-          memberName: "Alex Brown",
-          memberAvatar: "",
-          bookingDate: "2025-04-09T15:00:00.000Z",
-          status: "no-show",
-          createdAt: "2025-04-07T16:30:00.000Z",
-          updatedAt: "2025-04-09T16:00:00.000Z"
-        }
-      ].filter(booking => classId ? booking.classId === classId : true);
-      
-      setBookings(mockBookings);
-      setLoading(false);
-    }, 1000);
-  }, [classId]);
+    setBookings(updatedBookings);
+    toast.success("Attendance marked successfully");
+  };
 
-  const getStatusBadge = (status: string) => {
+  // Function to cancel booking
+  const cancelBooking = (bookingId: string) => {
+    const updatedBookings = bookings.map(booking => 
+      booking.id === bookingId 
+        ? { 
+            ...booking, 
+            status: "cancelled" as BookingStatus,
+            updatedAt: new Date().toISOString()
+          } 
+        : booking
+    );
+    
+    setBookings(updatedBookings);
+    toast.success("Booking cancelled successfully");
+  };
+
+  const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
-      case "booked":
-        return <Badge variant="outline">Booked</Badge>;
+      case "confirmed":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmed</Badge>;
       case "attended":
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Attended</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Attended</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case "no-show":
-        return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">No Show</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
+      case "missed":
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Missed</Badge>;
+      case "pending":
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Pending</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const markAttendance = (bookingId: string) => {
-    setBookings(prev => 
-      prev.map(booking => 
-        booking.id === bookingId 
-          ? { 
-              ...booking, 
-              status: "attended", 
-              attendanceTime: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            } 
-          : booking
-      )
-    );
-  };
-
-  const cancelBooking = (bookingId: string) => {
-    setBookings(prev => 
-      prev.map(booking => 
-        booking.id === bookingId 
-          ? { 
-              ...booking, 
-              status: "cancelled", 
-              updatedAt: new Date().toISOString()
-            } 
-          : booking
-      )
-    );
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Class Bookings</CardTitle>
+        <CardTitle>Bookings</CardTitle>
+        <CardDescription>Manage member bookings for this class</CardDescription>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="h-8 w-8 rounded-full border-4 border-t-accent animate-spin"></div>
+        {bookings.length === 0 ? (
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No bookings</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              There are no bookings for this class yet.
+            </p>
           </div>
-        ) : bookings.length > 0 ? (
+        ) : (
           <div className="space-y-4">
-            {bookings.map(booking => (
-              <div key={booking.id} className="flex flex-col sm:flex-row justify-between border-b pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{booking.memberName}</h3>
-                    {getStatusBadge(booking.status)}
+            {bookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="flex items-center justify-between p-4 rounded-lg border"
+              >
+                <div className="flex items-center space-x-4">
+                  <Avatar>
+                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
+                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{booking.memberName}</p>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 mr-1" />
+                      <span>
+                        Booked for {format(parseISO(booking.bookingDate), "MMM dd, h:mm a")}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    <span>
-                      {format(new Date(booking.bookingDate), "MMM dd, yyyy 'at' h:mm a")}
-                    </span>
-                  </div>
-                  {booking.notes && (
-                    <p className="text-sm mt-1 italic">{booking.notes}</p>
-                  )}
                 </div>
-                
-                <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                  {booking.status === "booked" && (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-8"
-                        onClick={() => markAttendance(booking.id)}
-                      >
-                        <CheckIcon className="h-3 w-3 mr-1" />
-                        Mark Attended
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-8"
-                        onClick={() => cancelBooking(booking.id)}
-                      >
-                        <XIcon className="h-3 w-3 mr-1" />
-                        Cancel
-                      </Button>
-                    </>
+                <div className="flex items-center space-x-2">
+                  {getStatusBadge(booking.status)}
+                  
+                  {booking.status === "confirmed" && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => markAttendance(booking.id)}>
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Mark Attendance
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => cancelBooking(booking.id)}>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel Booking
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  
+                  {booking.status === "attended" && (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
                   )}
                 </div>
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-10 text-muted-foreground">
-            No bookings found
           </div>
         )}
       </CardContent>

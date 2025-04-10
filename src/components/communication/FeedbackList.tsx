@@ -1,0 +1,319 @@
+
+import { useState, useEffect } from "react";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format, parseISO } from "date-fns";
+import { Feedback } from "@/types/notification";
+import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+
+// Mock data for feedback responses
+const mockFeedback: Feedback[] = [
+  {
+    id: "1",
+    memberId: "member1",
+    memberName: "John Smith",
+    type: "class",
+    relatedId: "class1",
+    rating: 5,
+    comments: "Great class! Really enjoyed the intensity and instructor's energy.",
+    createdAt: "2023-07-18T14:30:00Z",
+    anonymous: false
+  },
+  {
+    id: "2",
+    memberId: "member2",
+    memberName: "Emma Wilson",
+    type: "trainer",
+    relatedId: "trainer1",
+    rating: 4,
+    comments: "Very knowledgeable trainer, but sometimes sessions feel rushed.",
+    createdAt: "2023-07-17T10:45:00Z",
+    anonymous: false
+  },
+  {
+    id: "3",
+    memberId: "member3",
+    memberName: "Anonymous",
+    type: "fitness-plan",
+    relatedId: "plan1",
+    rating: 2,
+    comments: "I'm not seeing results with this plan. Need more personalization.",
+    createdAt: "2023-07-16T16:20:00Z",
+    anonymous: true
+  },
+  {
+    id: "4",
+    memberId: "member4",
+    memberName: "Mike Johnson",
+    type: "general",
+    rating: 3,
+    comments: "The gym equipment is good but the locker rooms need better maintenance.",
+    createdAt: "2023-07-15T08:10:00Z",
+    anonymous: false
+  }
+];
+
+const FeedbackList = () => {
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setFeedback(mockFeedback);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const handleViewDetails = (feedback: Feedback) => {
+    setSelectedFeedback(feedback);
+    setIsDialogOpen(true);
+  };
+
+  const handleExportCSV = () => {
+    // In a real app, this would generate and download a CSV
+    toast.success("Feedback data exported to CSV");
+  };
+
+  const filteredFeedback = filter === "all" 
+    ? feedback 
+    : feedback.filter(item => item.type === filter);
+
+  // Function to render stars based on rating
+  const renderStars = (rating: number) => {
+    return Array(5)
+      .fill(0)
+      .map((_, i) => (
+        <Star 
+          key={i} 
+          className={`h-4 w-4 ${i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} 
+        />
+      ));
+  };
+
+  // Function to get the initials from a name
+  const getInitials = (name: string) => {
+    if (name === "Anonymous") return "A";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Feedback Responses</CardTitle>
+              <CardDescription>Review feedback from members and trainers</CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant={filter === "all" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilter("all")}
+              >
+                All
+              </Button>
+              <Button 
+                variant={filter === "class" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilter("class")}
+              >
+                Classes
+              </Button>
+              <Button 
+                variant={filter === "trainer" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilter("trainer")}
+              >
+                Trainers
+              </Button>
+              <Button 
+                variant={filter === "fitness-plan" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilter("fitness-plan")}
+              >
+                Fitness Plans
+              </Button>
+              <Button 
+                variant={filter === "general" ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setFilter("general")}
+              >
+                General
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExportCSV}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="h-80 flex items-center justify-center">
+              <div className="text-center">
+                <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading feedback...</p>
+              </div>
+            </div>
+          ) : filteredFeedback.length === 0 ? (
+            <div className="text-center py-10">
+              <MessageSquareOff className="h-10 w-10 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No feedback found</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {filter === "all" 
+                  ? "No feedback has been submitted yet." 
+                  : `No feedback found for the "${filter}" category.`}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Comment Preview</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFeedback.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src="/placeholder.svg" alt={item.memberName} />
+                            <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
+                          </Avatar>
+                          <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {item.type === "fitness-plan" ? "Fitness Plan" : item.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex">
+                          {renderStars(item.rating)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{format(parseISO(item.createdAt), "MMM dd, yyyy")}</TableCell>
+                      <TableCell>
+                        {item.comments 
+                          ? item.comments.length > 30 
+                            ? `${item.comments.substring(0, 30)}...` 
+                            : item.comments
+                          : "No comment provided"
+                        }
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewDetails(item)}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {selectedFeedback && (
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Feedback Details</DialogTitle>
+              <DialogDescription>
+                Submitted on {format(parseISO(selectedFeedback.createdAt), "PPP")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src="/placeholder.svg" alt={selectedFeedback.memberName} />
+                    <AvatarFallback>
+                      {getInitials(selectedFeedback.memberName || "Anonymous")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">
+                      {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.memberName}
+                    </p>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {selectedFeedback.type === "fitness-plan" ? "Fitness Plan Feedback" : `${selectedFeedback.type} Feedback`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex">
+                  {renderStars(selectedFeedback.rating)}
+                </div>
+              </div>
+              
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-sm">
+                  {selectedFeedback.comments || "No comments provided."}
+                </p>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
+    </>
+  );
+};
+
+export default FeedbackList;

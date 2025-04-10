@@ -17,6 +17,10 @@ import TransactionPage from "./pages/finance/TransactionPage";
 import ClassPage from "./pages/classes/ClassPage";
 import TrainerPage from "./pages/trainers/TrainerPage";
 import AttendancePage from "./pages/attendance/AttendancePage";
+import AnnouncementPage from "./pages/communication/AnnouncementPage";
+import ReminderPage from "./pages/communication/ReminderPage";
+import FeedbackPage from "./pages/communication/FeedbackPage";
+import MotivationalPage from "./pages/communication/MotivationalPage";
 import { useEffect, useState } from "react";
 import { User } from "./types";
 
@@ -85,7 +89,11 @@ const App = () => {
               <Route path="invoices" element={<InvoicePage />} />
               <Route path="transactions" element={<TransactionPage />} />
               
-              {/* Add additional routes for other modules */}
+              {/* Communication & Engagement */}
+              <Route path="announcements" element={<AnnouncementPage />} />
+              <Route path="reminders" element={<ReminderPage />} />
+              <Route path="feedback" element={<FeedbackPage />} />
+              <Route path="motivational" element={<MotivationalPage />} />
             </Route>
             
             {/* Catch-all route */}
