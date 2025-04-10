@@ -10,7 +10,32 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import Logo from '@/components/Logo';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
+
+// Mock user data for demo login
+const MOCK_USERS = {
+  admin: {
+    email: "admin@example.com",
+    password: "admin123",
+    role: "admin"
+  },
+  staff: {
+    email: "staff@example.com",
+    password: "staff123",
+    role: "staff"
+  },
+  trainer: {
+    email: "trainer@example.com",
+    password: "trainer123",
+    role: "trainer"
+  },
+  member: {
+    email: "member@example.com",
+    password: "member123",
+    role: "member"
+  }
+};
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -24,6 +49,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,24 +64,28 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const response = await authService.login({
-        email: values.email,
-        password: values.password,
-      });
+      // For demo purposes, we'll use mock login instead of real API
+      // This is temporary and would be replaced with the real API in production
+      const { email, password } = values;
       
-      if (response) {
-        // Navigate based on user role
-        const role = response.user.role;
-        if (role === 'admin') {
-          navigate('/dashboard');
-        } else if (role === 'trainer') {
-          navigate('/dashboard');
-        } else {
-          navigate('/');
-        }
+      // Find the matching mock user
+      const foundUser = Object.values(MOCK_USERS).find(
+        user => user.email.toLowerCase() === email.toLowerCase() && user.password === password
+      );
+      
+      if (foundUser) {
+        // Call the login function from AuthContext
+        await login(email, password);
+        
+        toast.success(`Logged in successfully as ${foundUser.role}`);
+        navigate('/dashboard');
+      } else {
+        // Show error for invalid credentials
+        toast.error("Invalid email or password");
       }
     } catch (error) {
       console.error('Login error:', error);
+      toast.error("Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +150,8 @@ const LoginForm = () => {
           <div className="mb-6 p-4 bg-indigo-50 rounded-lg text-sm">
             <div className="font-medium">Admin Email: <span className="text-indigo-600">admin@example.com</span> / Pass: <span className="text-indigo-600">admin123</span></div>
             <div className="mt-1">Member Email: <span className="text-indigo-600">member@example.com</span> / Pass: <span className="text-indigo-600">member123</span></div>
+            <div className="mt-1">Staff Email: <span className="text-indigo-600">staff@example.com</span> / Pass: <span className="text-indigo-600">staff123</span></div>
+            <div className="mt-1">Trainer Email: <span className="text-indigo-600">trainer@example.com</span> / Pass: <span className="text-indigo-600">trainer123</span></div>
           </div>
           
           <Form {...form}>

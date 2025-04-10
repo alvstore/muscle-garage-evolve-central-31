@@ -1,561 +1,639 @@
 
 import api from '../api';
 import { toast } from 'sonner';
+import { hikvisionProxyService } from './hikvisionProxyService';
 import {
   HikvisionAuthCredentials,
   HikvisionAuthResponse,
   HikvisionDeviceRequest,
   HikvisionDeviceResponse,
+  HikvisionDevice,
+  HikvisionDeviceChannel,
   HikvisionChannelResponse,
   HikvisionTransparentRequest,
   HikvisionTransparentResponse,
+  HikvisionPropertyItem,
   HikvisionBatchPropertyRequest,
   HikvisionBatchPropertyResponse,
   HikvisionSubscriptionRequest,
   HikvisionSubscriptionResponse,
+  HikvisionEventMessage,
   HikvisionEventsResponse,
-  HikvisionOffsetRequest,
   HikvisionPerson,
-  HikvisionPersonResponse,
   HikvisionAccessPrivilege,
-  HikvisionAccessPrivilegeResponse,
   HikvisionApiResponse
 } from '@/types/hikvision';
 
 /**
- * Service for interacting with Hikvision Partner Pro OpenAPI
+ * Service for managing communications with the Hikvision Partner Pro OpenAPI
  */
 class HikvisionPartnerService {
   private accessToken: string | null = null;
-  private tokenExpiry: number | null = null;
   private areaDomain: string | null = null;
-  private baseUrl: string = '/hikvision-proxy'; // Proxy URL to avoid CORS issues
-  private credentials: HikvisionAuthCredentials | null = null;
-
+  private expireTime: number | null = null;
+  private subscriptionId: string | null = null;
+  
+  /**
+   * Initialize the service and check for saved credentials
+   */
   constructor() {
-    // Try to load cached token from localStorage
-    const cachedToken = localStorage.getItem('hikvision_partner_token');
-    const cachedExpiry = localStorage.getItem('hikvision_partner_expiry');
-    const cachedDomain = localStorage.getItem('hikvision_partner_domain');
-    const cachedCredentials = localStorage.getItem('hikvision_partner_credentials');
-
-    if (cachedToken && cachedExpiry && cachedDomain) {
-      this.accessToken = cachedToken;
-      this.tokenExpiry = parseInt(cachedExpiry);
-      this.areaDomain = cachedDomain;
-    }
-
-    if (cachedCredentials) {
-      try {
-        this.credentials = JSON.parse(cachedCredentials);
-      } catch (error) {
-        console.error('Failed to parse Hikvision credentials:', error);
-      }
-    }
-  }
-
-  /**
-   * Set API credentials
-   * @param credentials Hikvision API credentials
-   */
-  setCredentials(credentials: HikvisionAuthCredentials): void {
-    this.credentials = credentials;
-    localStorage.setItem('hikvision_partner_credentials', JSON.stringify(credentials));
-  }
-
-  /**
-   * Get current auth status
-   * @returns Boolean indicating if service is authenticated
-   */
-  isAuthenticated(): boolean {
-    if (!this.accessToken || !this.tokenExpiry) return false;
+    // Check for saved token in localStorage or session
+    const savedToken = localStorage.getItem('hikvision_token');
+    const savedDomain = localStorage.getItem('hikvision_domain');
+    const savedExpireTime = localStorage.getItem('hikvision_expire');
     
-    // Check if token is expired (add a 1-hour buffer)
-    const currentTime = Date.now();
-    return this.tokenExpiry > (currentTime + 3600000);
+    if (savedToken && savedDomain && savedExpireTime) {
+      const expireTimeNum = parseInt(savedExpireTime, 10);
+      // Only use the saved token if it's not expired
+      if (expireTimeNum > Date.now()) {
+        this.accessToken = savedToken;
+        this.areaDomain = savedDomain;
+        this.expireTime = expireTimeNum;
+      } else {
+        // Clean up expired tokens
+        this.clearAuthData();
+      }
+    }
   }
-
+  
   /**
-   * Authenticate with Hikvision Partner API
-   * @param credentials Optional credentials (uses stored ones if not provided)
+   * Test if the service can connect to the Hikvision API
    */
-  async authenticate(credentials?: HikvisionAuthCredentials): Promise<boolean> {
+  async testConnection(): Promise<boolean> {
     try {
-      const creds = credentials || this.credentials;
-      if (!creds) {
-        throw new Error('No credentials provided for authentication');
+      // If we have a token, test if it's still valid
+      if (this.accessToken) {
+        // Try to make a simple API call to check token validity
+        await this.listDevices();
+        return true;
       }
-
-      const response = await api.post<HikvisionAuthResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/token/get`,
-        creds
-      );
-
-      if (response.data.code !== '0' || !response.data.data?.accessToken) {
-        throw new Error(`Authentication failed: ${response.data.msg}`);
-      }
-
-      this.accessToken = response.data.data.accessToken;
-      this.tokenExpiry = response.data.data.expireTime;
-      this.areaDomain = response.data.data.areaDomain;
-
-      // Cache token in localStorage
-      localStorage.setItem('hikvision_partner_token', this.accessToken);
-      localStorage.setItem('hikvision_partner_expiry', this.tokenExpiry.toString());
-      localStorage.setItem('hikvision_partner_domain', this.areaDomain);
-
-      return true;
+      return false;
     } catch (error) {
-      console.error('Hikvision authentication error:', error);
-      toast.error('Failed to authenticate with Hikvision API');
+      console.error('Hikvision connection test failed:', error);
       return false;
     }
   }
-
+  
   /**
-   * Ensure authentication before making API calls
+   * Clear authentication data from memory and storage
    */
-  private async ensureAuthenticated(): Promise<boolean> {
-    if (!this.isAuthenticated()) {
-      return await this.authenticate();
-    }
-    return true;
+  private clearAuthData(): void {
+    this.accessToken = null;
+    this.areaDomain = null;
+    this.expireTime = null;
+    localStorage.removeItem('hikvision_token');
+    localStorage.removeItem('hikvision_domain');
+    localStorage.removeItem('hikvision_expire');
   }
-
+  
   /**
-   * Get authorization headers for API requests
+   * Save authentication data to memory and storage
+   */
+  private saveAuthData(token: string, domain: string, expireTime: number): void {
+    this.accessToken = token;
+    this.areaDomain = domain;
+    this.expireTime = expireTime;
+    localStorage.setItem('hikvision_token', token);
+    localStorage.setItem('hikvision_domain', domain);
+    localStorage.setItem('hikvision_expire', expireTime.toString());
+  }
+  
+  /**
+   * Authenticate with the Hikvision API using the provided credentials
+   * @param credentials API credentials
+   */
+  async authenticate(credentials: HikvisionAuthCredentials): Promise<boolean> {
+    try {
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/token/get',
+        credentials,
+        'POST'
+      );
+      
+      if (response.code === '0' && response.data?.accessToken) {
+        const { accessToken, areaDomain, expireTime } = response.data;
+        // Convert expireTime to milliseconds and store
+        const expiryTimeMs = Date.now() + (expireTime * 1000);
+        this.saveAuthData(accessToken, areaDomain, expiryTimeMs);
+        return true;
+      } else {
+        toast.error(`Authentication failed: ${response.msg}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Hikvision authentication error:', error);
+      toast.error(`Authentication error: ${error.message || 'Unknown error'}`);
+      return false;
+    }
+  }
+  
+  /**
+   * Check if currently authenticated
+   */
+  isAuthenticated(): boolean {
+    return !!(this.accessToken && this.expireTime && this.expireTime > Date.now());
+  }
+  
+  /**
+   * Get the current authentication headers
    */
   private getAuthHeaders(): Record<string, string> {
     if (!this.accessToken) {
       throw new Error('Not authenticated with Hikvision API');
     }
-
+    
     return {
       'Authorization': `Bearer ${this.accessToken}`,
-      'Content-Type': 'application/json'
     };
   }
-
+  
   /**
-   * Add a new device
-   * @param deviceData Device information to add
+   * Add a new device to the system
+   * @param device Device information
    */
-  async addDevice(deviceData: HikvisionDeviceRequest): Promise<string | null> {
+  async addDevice(device: HikvisionDeviceRequest): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) return null;
-
-      const response = await api.post<HikvisionDeviceResponse>(
-        `${this.baseUrl}/api/hpcgw/v2/device/add`,
-        deviceData,
-        { headers: this.getAuthHeaders() }
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v2/device/add',
+        device,
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to add device: ${response.data.msg}`);
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to add device: ${response.msg}`);
+        return false;
       }
-
-      toast.success('Device added successfully');
-      return response.data.data?.deviceId || null;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding device:', error);
-      toast.error('Failed to add device');
-      return null;
-    }
-  }
-
-  /**
-   * Update device information
-   * @param deviceData Updated device data
-   */
-  async updateDevice(deviceData: HikvisionDeviceRequest): Promise<boolean> {
-    try {
-      if (!await this.ensureAuthenticated()) return false;
-      if (!deviceData.deviceId) {
-        throw new Error('Device ID is required for updating a device');
-      }
-
-      const response = await api.post<HikvisionApiResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/device/update`,
-        deviceData,
-        { headers: this.getAuthHeaders() }
-      );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to update device: ${response.data.msg}`);
-      }
-
-      toast.success('Device updated successfully');
-      return true;
-    } catch (error) {
-      console.error('Error updating device:', error);
-      toast.error('Failed to update device');
+      toast.error(`Error adding device: ${error.message || 'Unknown error'}`);
       return false;
     }
   }
-
+  
   /**
-   * Delete a device
-   * @param deviceId ID of the device to delete
+   * Delete a device from the system
+   * @param deviceId Device ID to delete
    */
   async deleteDevice(deviceId: string): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) return false;
-
-      const response = await api.post<HikvisionApiResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/device/delete`,
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/device/delete',
         { deviceId },
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to delete device: ${response.data.msg}`);
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to delete device: ${response.msg}`);
+        return false;
       }
-
-      toast.success('Device deleted successfully');
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting device:', error);
-      toast.error('Failed to delete device');
+      toast.error(`Error deleting device: ${error.message || 'Unknown error'}`);
       return false;
     }
   }
-
+  
   /**
-   * List all devices
-   * @param pageNo Page number for pagination
-   * @param pageSize Number of items per page
+   * Update device information
+   * @param device Device information to update
    */
-  async listDevices(pageNo = 1, pageSize = 20): Promise<HikvisionDevice[]> {
+  async updateDevice(device: HikvisionDeviceRequest): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) return [];
-
-      const response = await api.post<HikvisionDeviceResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/device/list`,
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/device/update',
+        device,
+        'POST',
+        this.getAuthHeaders()
+      );
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to update device: ${response.msg}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Error updating device:', error);
+      toast.error(`Error updating device: ${error.message || 'Unknown error'}`);
+      return false;
+    }
+  }
+  
+  /**
+   * List all devices in the system
+   * @param pageNo Optional page number for pagination
+   * @param pageSize Optional page size for pagination
+   */
+  async listDevices(pageNo: number = 1, pageSize: number = 100): Promise<HikvisionDevice[]> {
+    try {
+      const response: HikvisionDeviceResponse = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/device/list',
         { pageNo, pageSize },
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to list devices: ${response.data.msg}`);
+      
+      if (response.code === '0' && response.data?.devices) {
+        return response.data.devices;
+      } else {
+        toast.error(`Failed to list devices: ${response.msg}`);
+        return [];
       }
-
-      return response.data.data?.devices || [];
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error listing devices:', error);
-      toast.error('Failed to retrieve device list');
+      toast.error(`Error listing devices: ${error.message || 'Unknown error'}`);
       return [];
     }
   }
-
+  
   /**
-   * Get device channels
-   * @param deviceId ID of the device
+   * List all channels for a specific device
+   * @param deviceId Device ID to get channels for
    */
-  async getDeviceChannels(deviceId: string): Promise<HikvisionDeviceChannel[]> {
+  async listDeviceChannels(deviceId: string): Promise<HikvisionDeviceChannel[]> {
     try {
-      if (!await this.ensureAuthenticated()) return [];
-
-      const response = await api.post<HikvisionChannelResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/device/camera/list`,
+      const response: HikvisionChannelResponse = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/device/camera/list',
         { deviceId },
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to get device channels: ${response.data.msg}`);
+      
+      if (response.code === '0' && response.data?.channels) {
+        return response.data.channels;
+      } else {
+        toast.error(`Failed to list channels: ${response.msg}`);
+        return [];
       }
-
-      return response.data.data?.channels || [];
-    } catch (error) {
-      console.error('Error getting device channels:', error);
-      toast.error('Failed to retrieve device channels');
+    } catch (error: any) {
+      console.error('Error listing channels:', error);
+      toast.error(`Error listing channels: ${error.message || 'Unknown error'}`);
       return [];
     }
   }
-
+  
   /**
    * Make a transparent API call to a device
-   * @param request Transparent request parameters
-   * @param method HTTP method to use
+   * @param request Transparent API request
+   * @param method HTTP method
    */
   async transparentApiCall(
-    request: HikvisionTransparentRequest,
+    request: HikvisionTransparentRequest, 
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET'
   ): Promise<HikvisionTransparentResponse> {
     try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
-      }
-
-      const { deviceId, uri, body, params } = request;
-      const apiUri = `${this.baseUrl}/api/hpcgw/v1/device/transparent/${uri}`;
+      const uri = encodeURIComponent(request.uri);
+      const endpoint = `/api/hpcgw/v1/device/transparent/${uri}`;
       
-      const requestConfig = {
-        headers: this.getAuthHeaders(),
-        params: { ...params, deviceId }
-      };
-
-      let response;
-      switch (method) {
-        case 'POST':
-          response = await api.post(apiUri, body, requestConfig);
-          break;
-        case 'PUT':
-          response = await api.put(apiUri, body, requestConfig);
-          break;
-        case 'DELETE':
-          response = await api.delete(apiUri, requestConfig);
-          break;
-        default:
-          response = await api.get(apiUri, requestConfig);
-      }
-
-      return response.data;
-    } catch (error) {
+      const response = await hikvisionProxyService.forwardRequest(
+        endpoint,
+        { 
+          deviceId: request.deviceId,
+          body: request.body,
+          params: request.params
+        },
+        method,
+        {
+          ...this.getAuthHeaders(),
+          ...(request.headers || {})
+        }
+      );
+      
+      return response;
+    } catch (error: any) {
       console.error('Error in transparent API call:', error);
-      toast.error('Device command failed');
-      return { code: '500', msg: 'Internal error during API call' };
+      toast.error(`API call error: ${error.message || 'Unknown error'}`);
+      throw error;
     }
   }
-
+  
   /**
-   * Get multiple device properties in batch
-   * @param request Batch property request
+   * Get properties from multiple devices in batch
+   * @param properties Property items to retrieve
    */
-  async getBatchProperties(request: HikvisionBatchPropertyRequest): Promise<HikvisionBatchPropertyResponse> {
+  async getBatchProperties(properties: HikvisionPropertyItem[]): Promise<HikvisionBatchPropertyResponse> {
     try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
-      }
-
-      const response = await api.post<HikvisionBatchPropertyResponse>(
-        `${this.baseUrl}/api/hpcgw/v2/device/transparent/otap/multi/prop/get/by/shadow`,
+      const request: HikvisionBatchPropertyRequest = {
+        properties
+      };
+      
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v2/device/transparent/otap/multi/prop/get/by/shadow',
         request,
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      return response.data;
-    } catch (error) {
+      
+      return response;
+    } catch (error: any) {
       console.error('Error getting batch properties:', error);
-      toast.error('Failed to retrieve device properties');
-      return { code: '500', msg: 'Internal error during batch property retrieval' };
+      toast.error(`Batch properties error: ${error.message || 'Unknown error'}`);
+      throw error;
     }
   }
-
+  
   /**
-   * Set multiple device properties in batch
-   * @param request Batch property request
+   * Set properties on multiple devices in batch
+   * @param properties Property items to set
    */
-  async setBatchProperties(request: HikvisionBatchPropertyRequest): Promise<HikvisionBatchPropertyResponse> {
+  async setBatchProperties(properties: HikvisionPropertyItem[]): Promise<HikvisionBatchPropertyResponse> {
     try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
-      }
-
-      const response = await api.put<HikvisionBatchPropertyResponse>(
-        `${this.baseUrl}/api/hpcgw/v2/device/transparent/otap/multi/prop/put/by/shadow`,
+      const request: HikvisionBatchPropertyRequest = {
+        properties
+      };
+      
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v2/device/transparent/otap/multi/prop/put/by/shadow',
         request,
-        { headers: this.getAuthHeaders() }
+        'PUT',
+        this.getAuthHeaders()
       );
-
-      return response.data;
-    } catch (error) {
+      
+      return response;
+    } catch (error: any) {
       console.error('Error setting batch properties:', error);
-      toast.error('Failed to update device properties');
-      return { code: '500', msg: 'Internal error during batch property update' };
+      toast.error(`Batch properties error: ${error.message || 'Unknown error'}`);
+      throw error;
     }
   }
-
+  
   /**
    * Subscribe to device events
-   * @param request Subscription request
+   * @param topics Event topics to subscribe to
+   * @param duration Subscription duration in seconds (default: 7 days)
    */
-  async subscribeToEvents(request: HikvisionSubscriptionRequest): Promise<HikvisionSubscriptionResponse> {
+  async subscribeToEvents(
+    topics: string[], 
+    duration: number = 604800 // 7 days in seconds
+  ): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
-      }
-
-      const response = await api.post<HikvisionSubscriptionResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/mq/subscribe`,
+      const request: HikvisionSubscriptionRequest = {
+        topics,
+        subscriptionDuration: duration
+      };
+      
+      const response: HikvisionSubscriptionResponse = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/mq/subscribe',
         request,
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code === '0') {
-        toast.success('Successfully subscribed to device events');
+      
+      if (response.code === '0' && response.data?.subscriptionId) {
+        this.subscriptionId = response.data.subscriptionId;
+        return true;
+      } else {
+        toast.error(`Failed to subscribe to events: ${response.msg}`);
+        return false;
       }
-
-      return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error subscribing to events:', error);
-      toast.error('Failed to subscribe to device events');
-      return { code: '500', msg: 'Internal error during event subscription' };
+      toast.error(`Subscription error: ${error.message || 'Unknown error'}`);
+      return false;
     }
   }
-
+  
   /**
-   * Get event messages
-   * @param subscriptionId Subscription ID
+   * Unsubscribe from events
+   */
+  async unsubscribeFromEvents(): Promise<boolean> {
+    if (!this.subscriptionId) {
+      return true; // No subscription to cancel
+    }
+    
+    try {
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/mq/unsubscribe',
+        { subscriptionId: this.subscriptionId },
+        'POST',
+        this.getAuthHeaders()
+      );
+      
+      if (response.code === '0') {
+        this.subscriptionId = null;
+        return true;
+      } else {
+        toast.error(`Failed to unsubscribe: ${response.msg}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Error unsubscribing from events:', error);
+      toast.error(`Unsubscribe error: ${error.message || 'Unknown error'}`);
+      return false;
+    }
+  }
+  
+  /**
+   * Get events from the subscription
+   * @param lastOffset Last offset for pagination
    * @param maxMessages Maximum number of messages to retrieve
    */
-  async getEventMessages(subscriptionId: string, maxMessages = 10): Promise<HikvisionEventsResponse> {
-    try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
-      }
-
-      const response = await api.post<HikvisionEventsResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/mq/messages`,
-        { 
-          subscriptionId,
-          maxMessages 
-        },
-        { headers: this.getAuthHeaders() }
-      );
-
-      return response.data;
-    } catch (error) {
-      console.error('Error getting event messages:', error);
-      return { code: '500', msg: 'Internal error retrieving event messages' };
+  async getEvents(
+    lastOffset?: string, 
+    maxMessages: number = 10
+  ): Promise<HikvisionEventMessage[]> {
+    if (!this.subscriptionId) {
+      toast.error('No active subscription for events');
+      return [];
     }
-  }
-
-  /**
-   * Acknowledge message offset
-   * @param request Offset request
-   */
-  async acknowledgeMessageOffset(request: HikvisionOffsetRequest): Promise<HikvisionApiResponse> {
+    
     try {
-      if (!await this.ensureAuthenticated()) {
-        return { code: '401', msg: 'Not authenticated' };
+      const request: any = {
+        subscriptionId: this.subscriptionId,
+        maxMessages
+      };
+      
+      if (lastOffset) {
+        request.lastOffset = lastOffset;
       }
-
-      const response = await api.post<HikvisionApiResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/mq/offset`,
+      
+      const response: HikvisionEventsResponse = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/mq/messages',
         request,
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      return response.data;
-    } catch (error) {
-      console.error('Error acknowledging message offset:', error);
-      return { code: '500', msg: 'Internal error acknowledging messages' };
+      
+      if (response.code === '0' && response.data?.messages) {
+        return response.data.messages;
+      } else {
+        if (response.code !== '1460') { // 1460 is "no new messages", don't show error for this
+          toast.error(`Failed to get events: ${response.msg}`);
+        }
+        return [];
+      }
+    } catch (error: any) {
+      console.error('Error getting events:', error);
+      toast.error(`Events error: ${error.message || 'Unknown error'}`);
+      return [];
     }
   }
-
+  
   /**
-   * Add a person to cloud attendance
-   * @param person Person data
+   * Acknowledge the processing of an event to update the offset
+   */
+  async acknowledgeEvent(topic: string, offset: string): Promise<boolean> {
+    if (!this.subscriptionId) {
+      toast.error('No active subscription for events');
+      return false;
+    }
+    
+    try {
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/mq/offset',
+        {
+          subscriptionId: this.subscriptionId,
+          topic,
+          offset
+        },
+        'POST',
+        this.getAuthHeaders()
+      );
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to acknowledge event: ${response.msg}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Error acknowledging event:', error);
+      toast.error(`Acknowledge error: ${error.message || 'Unknown error'}`);
+      return false;
+    }
+  }
+  
+  /**
+   * Add a person to the attendance system
    */
   async addPerson(person: HikvisionPerson): Promise<string | null> {
     try {
-      if (!await this.ensureAuthenticated()) return null;
-
-      const response = await api.post<HikvisionPersonResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/person/add`,
+      const response: HikvisionApiResponse<{personId: string}> = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/person/add',
         person,
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to add person: ${response.data.msg}`);
+      
+      if (response.code === '0' && response.data?.personId) {
+        return response.data.personId;
+      } else {
+        toast.error(`Failed to add person: ${response.msg}`);
+        return null;
       }
-
-      toast.success('Person added successfully');
-      return response.data.data?.personId || null;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding person:', error);
-      toast.error('Failed to add person');
+      toast.error(`Person error: ${error.message || 'Unknown error'}`);
       return null;
     }
   }
-
+  
   /**
-   * Update a person in cloud attendance
-   * @param person Updated person data
+   * Update a person in the attendance system
    */
   async updatePerson(person: HikvisionPerson): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) return false;
-      if (!person.personId) {
-        throw new Error('Person ID is required for updating a person');
-      }
-
-      const response = await api.post<HikvisionApiResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/person/update`,
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/person/update',
         person,
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to update person: ${response.data.msg}`);
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to update person: ${response.msg}`);
+        return false;
       }
-
-      toast.success('Person updated successfully');
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating person:', error);
-      toast.error('Failed to update person');
+      toast.error(`Person update error: ${error.message || 'Unknown error'}`);
       return false;
     }
   }
-
+  
   /**
-   * Delete a person from cloud attendance
-   * @param personId ID of the person to delete
+   * Delete a person from the attendance system
    */
   async deletePerson(personId: string): Promise<boolean> {
     try {
-      if (!await this.ensureAuthenticated()) return false;
-
-      const response = await api.post<HikvisionApiResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/person/delete`,
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/person/delete',
         { personId },
-        { headers: this.getAuthHeaders() }
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to delete person: ${response.data.msg}`);
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to delete person: ${response.msg}`);
+        return false;
       }
-
-      toast.success('Person deleted successfully');
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting person:', error);
-      toast.error('Failed to delete person');
+      toast.error(`Person delete error: ${error.message || 'Unknown error'}`);
       return false;
     }
   }
-
+  
   /**
-   * Configure access control privileges
-   * @param privilege Access privilege configuration
+   * Get a list of persons from the attendance system
    */
-  async configureAccessPrivilege(privilege: HikvisionAccessPrivilege): Promise<string | null> {
+  async listPersons(pageNo: number = 1, pageSize: number = 20): Promise<HikvisionPerson[]> {
     try {
-      if (!await this.ensureAuthenticated()) return null;
-
-      const response = await api.post<HikvisionAccessPrivilegeResponse>(
-        `${this.baseUrl}/api/hpcgw/v1/acs/privilege/config`,
-        privilege,
-        { headers: this.getAuthHeaders() }
+      const response: HikvisionApiResponse<{persons: HikvisionPerson[], total: number}> = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/person/list',
+        { pageNo, pageSize },
+        'POST',
+        this.getAuthHeaders()
       );
-
-      if (response.data.code !== '0') {
-        throw new Error(`Failed to configure access privilege: ${response.data.msg}`);
+      
+      if (response.code === '0' && response.data?.persons) {
+        return response.data.persons;
+      } else {
+        toast.error(`Failed to list persons: ${response.msg}`);
+        return [];
       }
-
-      toast.success('Access privilege configured successfully');
-      return response.data.data?.privilegeId || null;
-    } catch (error) {
-      console.error('Error configuring access privilege:', error);
-      toast.error('Failed to configure access privilege');
-      return null;
+    } catch (error: any) {
+      console.error('Error listing persons:', error);
+      toast.error(`Person list error: ${error.message || 'Unknown error'}`);
+      return [];
+    }
+  }
+  
+  /**
+   * Set access privileges for a person
+   */
+  async setAccessPrivilege(privilege: HikvisionAccessPrivilege): Promise<boolean> {
+    try {
+      const response = await hikvisionProxyService.forwardRequest(
+        '/api/hpcgw/v1/acs/privilege/config',
+        privilege,
+        'POST',
+        this.getAuthHeaders()
+      );
+      
+      if (response.code === '0') {
+        return true;
+      } else {
+        toast.error(`Failed to set access privilege: ${response.msg}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Error setting access privilege:', error);
+      toast.error(`Privilege error: ${error.message || 'Unknown error'}`);
+      return false;
     }
   }
 }
 
-// Export as singleton instance
 export const hikvisionPartnerService = new HikvisionPartnerService();
 export default hikvisionPartnerService;

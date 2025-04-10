@@ -1,4 +1,5 @@
 
+import React, { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -9,12 +10,14 @@ interface PrivateRouteProps {
   allowedRoles?: UserRole[];
   requiresAuth?: boolean;
   requiredPermission?: string;
+  children?: ReactNode;
 }
 
 const PrivateRoute = ({ 
   allowedRoles, 
   requiresAuth = true, 
-  requiredPermission 
+  requiredPermission,
+  children
 }: PrivateRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { can } = usePermissions();
@@ -47,8 +50,8 @@ const PrivateRoute = ({
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Render the protected route
-  return <Outlet />;
+  // If children are provided, render them, otherwise use Outlet
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default PrivateRoute;

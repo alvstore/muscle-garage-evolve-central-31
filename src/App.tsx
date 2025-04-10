@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -110,9 +111,7 @@ export default function App() {
                   <Route path="/settings/integrations/hikvision" element={<HikvisionIntegrationPage />} />
                   <Route path="/settings/integrations/hikvision-partner" element={
                     <PrivateRoute allowedRoles={['admin']} requiredPermission="manage_integrations">
-                      <DashboardLayout>
-                        <HikvisionPartnerPage />
-                      </DashboardLayout>
+                      <HikvisionPartnerPage />
                     </PrivateRoute>
                   } />
                 </Route>
