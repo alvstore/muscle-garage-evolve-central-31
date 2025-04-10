@@ -8,7 +8,7 @@ export interface ProgressMetrics {
 }
 
 // Class and booking related types
-export type ClassDifficulty = "beginner" | "intermediate" | "advanced";
+export type ClassDifficulty = "beginner" | "intermediate" | "advanced" | "all";
 
 export interface GymClass {
   id: string;
@@ -20,13 +20,20 @@ export interface GymClass {
   enrolled: number;
   trainer: string;
   trainerName?: string;
+  trainerAvatar?: string;
+  trainerId?: string;
   difficulty: ClassDifficulty;
   type: string;
   location?: string;
   image?: string;
+  status?: string;
+  level?: string;
+  duration?: number;
+  recurring?: boolean;
+  recurringPattern?: string;
 }
 
-export type BookingStatus = "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked";
+export type BookingStatus = "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show";
 
 export interface ClassBooking {
   id: string;
@@ -39,4 +46,8 @@ export interface ClassBooking {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  attendanceTime?: string;
+  paidAmount?: number;
+  paymentStatus?: string;
+  razorpayOrderId?: string;
 }
