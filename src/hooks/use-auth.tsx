@@ -7,9 +7,10 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, branchId?: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (userData: any) => Promise<void>;
+  updateUserBranch: (branchId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   register: async () => {},
+  updateUserBranch: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -58,16 +60,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return ['admin', 'staff', 'trainer', 'member'].includes(role);
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, branchId?: string) => {
     setIsLoading(true);
     try {
       // In a real app, this would be an API call
-      // Mock authentication
+      // Mock authentication with branch data
       const userData = {
         id: "user1",
         name: "John Doe",
         email: email,
-        role: "admin" as UserRole, // Explicitly type as UserRole
+        role: "admin" as UserRole,
+        branchId: branchId || "branch1", // Default branch or selected branch
+        branchIds: ["branch1", "branch2", "branch3"], // All branches the admin can access
+        isBranchManager: true,
       };
       
       // Store user data in localStorage
@@ -83,12 +88,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserBranch = (branchId: string) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      branchId
+    };
+    
+    // Update localStorage
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    
+    // Update state
+    setUser(updatedUser);
+  };
+
   const logout = async () => {
     setIsLoading(true);
     try {
       // In a real app, this would be an API call to invalidate token
       // For now, just remove from localStorage
       localStorage.removeItem('user');
+      localStorage.removeItem('currentBranchId');
       setUser(null);
     } catch (error) {
       console.error("Logout failed:", error);
@@ -121,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         register,
+        updateUserBranch,
       }}
     >
       {children}

@@ -2,6 +2,7 @@
 import { useAuth } from './use-auth';
 import { hasPermission, hasRouteAccess } from '@/services/permissionService';
 import { UserRole } from '@/types';
+import { useBranch } from './use-branch';
 
 // Define a union type for all possible permissions to provide proper type checking
 export type Permission = 
@@ -20,10 +21,15 @@ export type Permission =
   | "log_attendance"
   | "check_in"
   | "send_email_notification"
+  | "access_dashboards"
+  | "manage_branches"
+  | "view_branch_data"
+  | "switch_branches"
   | "access_own_resources";
 
 export const usePermissions = () => {
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const userRole = user?.role as UserRole | undefined;
   
   /**
@@ -33,7 +39,7 @@ export const usePermissions = () => {
    * @returns Boolean indicating if user has permission
    */
   const can = (permission: Permission, isOwner = false): boolean => {
-    return hasPermission(userRole, permission, isOwner);
+    return hasPermission(userRole, permission, isOwner, currentBranch?.id);
   };
   
   /**
@@ -55,10 +61,19 @@ export const usePermissions = () => {
     return roles.includes(userRole);
   };
   
+  /**
+   * Check if current user is branch admin
+   * @returns Boolean indicating if user is branch admin
+   */
+  const isBranchAdmin = (): boolean => {
+    return userRole === 'admin' || (userRole === 'staff' && user?.isBranchManager === true);
+  };
+  
   return {
     can,
     canAccess,
     hasRole,
+    isBranchAdmin,
     userRole,
   };
 };

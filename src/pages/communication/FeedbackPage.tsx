@@ -11,6 +11,7 @@ import { Feedback, FeedbackType } from '@/types/notification';
 import FeedbackList from '@/components/communication/FeedbackList';
 import FeedbackForm from '@/components/communication/FeedbackForm';
 import { useAuth } from '@/hooks/use-auth';
+import { useBranch } from '@/hooks/use-branch';
 
 const mockFeedbacks: Feedback[] = [
   {
@@ -78,11 +79,13 @@ const FeedbackPage = () => {
   const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
 
   const { data: feedbacks, isLoading, refetch } = useQuery({
-    queryKey: ['feedbacks'],
+    queryKey: ['feedbacks', currentBranch?.id],
     queryFn: async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
+      // In a real app, you would filter by branch ID
       return mockFeedbacks;
     }
   });
@@ -90,7 +93,11 @@ const FeedbackPage = () => {
   const addFeedbackMutation = useMutation({
     mutationFn: async (newFeedback: Feedback) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return { ...newFeedback, id: `feedback${Date.now()}` };
+      return { 
+        ...newFeedback, 
+        id: `feedback${Date.now()}`,
+        branchId: currentBranch?.id // Add branch ID to feedback
+      };
     },
     onSuccess: () => {
       toast({
@@ -124,6 +131,14 @@ const FeedbackPage = () => {
           </Button>
         </div>
 
+        {currentBranch && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-md text-blue-700">
+            <p className="text-sm font-medium">
+              Viewing feedback for branch: {currentBranch.name}
+            </p>
+          </div>
+        )}
+
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">All Feedback</TabsTrigger>
@@ -154,7 +169,6 @@ const FeedbackPage = () => {
           <FeedbackForm
             onComplete={() => {
               setIsModalOpen(false);
-              handleSubmitFeedback;
             }}
           />
         )}

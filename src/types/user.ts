@@ -1,0 +1,34 @@
+
+import { UserRole } from './index';
+
+// Extended user type with branch information
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  avatar?: string;
+  phone?: string;
+  branchId?: string; // Primary branch ID
+  branchIds?: string[]; // All branches the user has access to
+  isBranchManager?: boolean; // Whether the user is a branch manager
+}
+
+// Extended member type with branch information
+export interface MemberWithBranch {
+  id: string;
+  email: string;
+  name: string;
+  role: "member";
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  goal?: string;
+  trainerId?: string;
+  membershipId?: string;
+  membershipStatus: "active" | "inactive" | "expired";
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  primaryBranchId: string;
+  accessibleBranchIds: string[];
+}

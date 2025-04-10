@@ -21,8 +21,10 @@ import MotivationalPage from './pages/communication/MotivationalPage';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import Unauthorized from './pages/auth/Unauthorized';
+import BranchesPage from './pages/branches/BranchesPage';
 
 import { AuthProvider } from './hooks/use-auth';
+import { BranchProvider } from './hooks/use-branch';
 import PrivateRoute from './components/auth/PrivateRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { useAuth } from './hooks/use-auth';
@@ -53,49 +55,54 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Protected Dashboard Routes */}
-            <Route element={<PrivateRoute />}>
-              <Route element={<DashboardLayoutWrapper />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                
-                {/* CRM Routes */}
-                <Route path="/crm/leads" element={<LeadsPage />} />
-                <Route path="/crm/funnel" element={<FunnelPage />} />
-                <Route path="/crm/follow-up" element={<FollowUpPage />} />
-                
-                {/* Marketing Routes */}
-                <Route path="/marketing/promo" element={<PromoPage />} />
-                <Route path="/marketing/referral" element={<ReferralPage />} />
-                
-                {/* Inventory Route */}
-                <Route path="/inventory" element={<InventoryPage />} />
-                
-                {/* Store Route */}
-                <Route path="/store" element={<StorePage />} />
-                
-                {/* Class Route */}
-                <Route path="/classes" element={<ClassPage />} />
-                
-                {/* Membership Route */}
-                <Route path="/membership" element={<MembershipPage />} />
-                
-                {/* Communication Routes */}
-                <Route path="/communication/feedback" element={<FeedbackPage />} />
-                <Route path="/communication/announcements" element={<AnnouncementPage />} />
-                <Route path="/communication/reminders" element={<ReminderPage />} />
-                <Route path="/communication/motivational" element={<MotivationalPage />} />
+          <BranchProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              
+              {/* Protected Dashboard Routes */}
+              <Route element={<PrivateRoute />}>
+                <Route element={<DashboardLayoutWrapper />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  
+                  {/* CRM Routes */}
+                  <Route path="/crm/leads" element={<LeadsPage />} />
+                  <Route path="/crm/funnel" element={<FunnelPage />} />
+                  <Route path="/crm/follow-up" element={<FollowUpPage />} />
+                  
+                  {/* Marketing Routes */}
+                  <Route path="/marketing/promo" element={<PromoPage />} />
+                  <Route path="/marketing/referral" element={<ReferralPage />} />
+                  
+                  {/* Inventory Route */}
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  
+                  {/* Store Route */}
+                  <Route path="/store" element={<StorePage />} />
+                  
+                  {/* Class Route */}
+                  <Route path="/classes" element={<ClassPage />} />
+                  
+                  {/* Membership Route */}
+                  <Route path="/membership" element={<MembershipPage />} />
+                  
+                  {/* Communication Routes */}
+                  <Route path="/communication/feedback" element={<FeedbackPage />} />
+                  <Route path="/communication/announcements" element={<AnnouncementPage />} />
+                  <Route path="/communication/reminders" element={<ReminderPage />} />
+                  <Route path="/communication/motivational" element={<MotivationalPage />} />
+                  
+                  {/* Branch Management Route */}
+                  <Route path="/branches" element={<BranchesPage />} />
+                </Route>
               </Route>
-            </Route>
-            
-            {/* Catch all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              
+              {/* Catch all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BranchProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

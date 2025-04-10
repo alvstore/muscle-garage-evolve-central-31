@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -28,7 +27,8 @@ import {
   BarChartHorizontal,
   Package2,
   Gauge,
-  ChevronRight
+  ChevronRight,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/Logo";
@@ -48,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import BranchSelector from '@/components/branch/BranchSelector';
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -134,7 +135,6 @@ const NavItemGroup = ({ title, children }: NavItemGroupProps) => {
 
 const DashboardLayout = ({ user }: DashboardLayoutProps) => {
   const [darkMode, setDarkMode] = useState(() => {
-    // Get theme from localStorage or use system preference
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
@@ -156,7 +156,6 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
   };
 
   useEffect(() => {
-    // Apply the theme to the document
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -260,6 +259,11 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
       icon: Settings,
       path: "/settings",
     },
+    {
+      title: "Branches",
+      icon: Building2,
+      path: "/branches",
+    },
   ];
 
   const Sidebar = () => (
@@ -277,6 +281,11 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
           />
         </div>
       </div>
+      
+      <div className="px-4 py-2">
+        <BranchSelector />
+      </div>
+      
       <div className="flex-1 overflow-auto px-4 py-2">
         <NavItemGroup title="MAIN">
           {navigationItems.slice(0, 6).map((item, index) => (
@@ -361,12 +370,10 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Desktop sidebar */}
       <div className="hidden md:block md:w-64 fixed inset-y-0">
         <Sidebar />
       </div>
       
-      {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-gray-800 text-white">
           <Sidebar />
@@ -374,7 +381,6 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
       </Sheet>
       
       <div className="flex flex-1 flex-col w-full md:pl-64">
-        {/* Header */}
         <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-sm">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
@@ -446,7 +452,6 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
           </div>
         </header>
         
-        {/* Main content */}
         <main className="flex-1 overflow-auto p-4">
           <Outlet />
         </main>
