@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,7 +38,7 @@ const mockScheduledFollowUps = [
     scheduledFor: addDays(new Date(), 1).toISOString(),
     subject: "Membership Plan Inquiry",
     content: "Follow up about the Gold Membership plan discussion",
-    status: "scheduled"
+    status: "scheduled" as const
   },
   {
     id: "2",
@@ -49,7 +48,7 @@ const mockScheduledFollowUps = [
     scheduledFor: addDays(new Date(), 2).toISOString(),
     subject: "Personal Training Interest",
     content: "Call to discuss personal training options",
-    status: "scheduled"
+    status: "scheduled" as const
   },
   {
     id: "3",
@@ -59,7 +58,7 @@ const mockScheduledFollowUps = [
     scheduledFor: addDays(new Date(), 3).toISOString(),
     subject: "Gym Tour Reminder",
     content: "Reminder about the scheduled gym tour on Friday",
-    status: "scheduled"
+    status: "scheduled" as const
   }
 ];
 

@@ -44,7 +44,7 @@ export interface InventoryAlert {
   id: string;
   itemId: string;
   itemName: string;
-  type: "low-stock" | "expiring-soon" | "expired";
+  type: "low-stock" | "expiring-soon" | "expired" | "out-of-stock"; // Added out-of-stock
   message: string;
   status: "active" | "acknowledged" | "resolved";
   createdAt: string;

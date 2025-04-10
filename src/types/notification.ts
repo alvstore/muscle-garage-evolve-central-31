@@ -21,11 +21,11 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
-  date: string;
-  priority: "low" | "medium" | "high";
-  author: string;
-  authorId: string;
-  authorRole: string;
+  date?: string;
+  priority?: "low" | "medium" | "high";
+  author?: string;
+  authorId?: string;
+  authorRole?: string;
   targetRoles?: string[];
   attachments?: string[];
   read?: boolean;
@@ -33,6 +33,7 @@ export interface Announcement {
   channels?: NotificationChannel[];
   createdAt?: string;
   createdBy?: string;
+  sentCount?: number; // Added to support existing code
 }
 
 export interface Feedback {
@@ -76,10 +77,10 @@ export interface ReminderRule {
   id: string;
   name: string;
   description: string;
-  triggerType: "membership-expiry" | "missed-attendance" | "birthday" | "payment-due" | "class-booking" | "custom";
+  triggerType: "membership-expiry" | "missed-attendance" | "birthday" | "payment-due" | "class-booking" | "custom" | string;
   daysInAdvance: number;
   message: string;
-  channels: ("email" | "sms" | "whatsapp" | "in-app")[];
+  channels: NotificationChannel[];
   enabled: boolean;
   createdBy: string;
   createdAt: string;

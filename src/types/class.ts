@@ -18,26 +18,27 @@ export interface ClassBooking {
 export interface GymClass {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   trainerId: string;
   trainerName: string;
   trainerAvatar?: string;
   startTime: string;
   endTime: string;
-  duration: number; // in minutes
+  duration?: number; // in minutes
   capacity: number;
   enrolled: number;
   location: string;
   type: string;
-  level: ClassDifficulty;
+  level?: ClassDifficulty;
   difficulty?: ClassDifficulty; // Alias for level to maintain compatibility
   image?: string;
-  isRecurring: boolean;
+  isRecurring?: boolean;
   recurring?: boolean; // Alias for isRecurring to maintain compatibility
-  recurringDays?: number[]; // 0 = Sunday, 1 = Monday, etc.
-  recurringPattern?: number[]; // Alias for recurringDays to maintain compatibility
-  createdAt: string;
-  updatedAt: string;
+  recurringDays?: string; // Changed from number[] to string to match existing code
+  recurringPattern?: string; // Alias for recurringDays to maintain compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  status?: string; // Added status field to match existing code
 }
 
 export type ClassDifficulty = "beginner" | "intermediate" | "advanced" | "all";
