@@ -1,198 +1,171 @@
 
-import api from "./api";
-import { BodyMeasurement, PTPlan } from "@/types/measurements";
-
-// In a real application, these would be actual API calls
-// For now, we'll use mock data and simulated responses
-
-// Mock data storage (would be replaced by actual API calls)
-let mockMeasurements: BodyMeasurement[] = [];
-let mockPTPlans: PTPlan[] = [];
+import { BodyMeasurement, PTPlan } from '@/types/measurements';
+import api from './api';
+import { toast } from 'sonner';
 
 export const measurementService = {
-  // Body measurement methods
+  /**
+   * Get all measurements for a member
+   */
   getAllMeasurements: async (memberId: string): Promise<BodyMeasurement[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(mockMeasurements.filter(m => m.memberId === memberId));
-      }, 500);
-    });
+    try {
+      const response = await api.get(`/measurements/${memberId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching measurements:', error);
+      throw error;
+    }
   },
-  
-  getMeasurement: async (id: string): Promise<BodyMeasurement | null> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const measurement = mockMeasurements.find(m => m.id === id);
-        resolve(measurement || null);
-      }, 300);
-    });
+
+  /**
+   * Get measurement history for a member (alias for getAllMeasurements)
+   */
+  getMeasurementHistory: async (memberId: string): Promise<BodyMeasurement[]> => {
+    return measurementService.getAllMeasurements(memberId);
   },
-  
-  getLatestMeasurement: async (memberId: string): Promise<BodyMeasurement | null> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const memberMeasurements = mockMeasurements.filter(m => m.memberId === memberId);
-        if (memberMeasurements.length === 0) {
-          resolve(null);
-          return;
-        }
-        
-        // Sort by date descending and get the first one
-        const latestMeasurement = [...memberMeasurements].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        )[0];
-        
-        resolve(latestMeasurement);
-      }, 300);
-    });
+
+  /**
+   * Get a specific measurement by ID
+   */
+  getMeasurement: async (id: string): Promise<BodyMeasurement> => {
+    try {
+      const response = await api.get(`/measurements/detail/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching measurement:', error);
+      throw error;
+    }
   },
-  
-  addMeasurement: async (measurement: Omit<BodyMeasurement, "id">): Promise<BodyMeasurement> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newMeasurement: BodyMeasurement = {
-          ...measurement,
-          id: `measurement-${Date.now()}`
-        };
-        
-        mockMeasurements.push(newMeasurement);
-        resolve(newMeasurement);
-      }, 500);
-    });
+
+  /**
+   * Create a new measurement
+   */
+  addMeasurement: async (measurement: Omit<BodyMeasurement, 'id'>): Promise<BodyMeasurement> => {
+    try {
+      const response = await api.post('/measurements', measurement);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding measurement:', error);
+      throw error;
+    }
   },
-  
+
+  /**
+   * Save a measurement (create or update)
+   */
+  saveMeasurement: async (measurement: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
+    try {
+      if (measurement.id) {
+        // Update existing measurement
+        const response = await api.put(`/measurements/${measurement.id}`, measurement);
+        return response.data;
+      } else {
+        // Create new measurement
+        const response = await api.post('/measurements', measurement);
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error saving measurement:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing measurement
+   */
   updateMeasurement: async (id: string, measurement: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = mockMeasurements.findIndex(m => m.id === id);
-        if (index === -1) {
-          reject(new Error("Measurement not found"));
-          return;
-        }
-        
-        const updatedMeasurement = {
-          ...mockMeasurements[index],
-          ...measurement
-        };
-        
-        mockMeasurements[index] = updatedMeasurement;
-        resolve(updatedMeasurement);
-      }, 500);
-    });
+    try {
+      const response = await api.put(`/measurements/${id}`, measurement);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating measurement:', error);
+      throw error;
+    }
   },
-  
-  deleteMeasurement: async (id: string): Promise<void> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = mockMeasurements.findIndex(m => m.id === id);
-        if (index === -1) {
-          reject(new Error("Measurement not found"));
-          return;
-        }
-        
-        mockMeasurements.splice(index, 1);
-        resolve();
-      }, 500);
-    });
+
+  /**
+   * Delete a measurement
+   */
+  deleteMeasurement: async (id: string): Promise<boolean> => {
+    try {
+      await api.delete(`/measurements/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting measurement:', error);
+      return false;
+    }
   },
-  
+
   // PT Plan methods
-  getAllPTPlans: async (trainerId?: string, memberId?: string): Promise<PTPlan[]> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let plans = [...mockPTPlans];
-        
-        if (trainerId) {
-          plans = plans.filter(p => p.trainerId === trainerId);
-        }
-        
-        if (memberId) {
-          plans = plans.filter(p => p.memberId === memberId);
-        }
-        
-        resolve(plans);
-      }, 500);
-    });
+  
+  /**
+   * Get all PT plans for a member
+   */
+  getPTPlans: async (memberId: string): Promise<PTPlan[]> => {
+    try {
+      const response = await api.get(`/pt-plans/${memberId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching PT plans:', error);
+      return [];
+    }
   },
   
-  getPTPlan: async (id: string): Promise<PTPlan | null> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const plan = mockPTPlans.find(p => p.id === id);
-        resolve(plan || null);
-      }, 300);
-    });
+  /**
+   * Check if a member has an active PT plan
+   */
+  hasActivePTPlan: async (memberId: string): Promise<boolean> => {
+    try {
+      const plans = await measurementService.getPTPlans(memberId);
+      return plans.some(plan => plan.isActive);
+    } catch (error) {
+      console.error('Error checking PT plan status:', error);
+      return false;
+    }
   },
   
-  getActivePTPlan: async (memberId: string): Promise<PTPlan | null> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const plan = mockPTPlans.find(p => p.memberId === memberId && p.isActive);
-        resolve(plan || null);
-      }, 300);
-    });
+  /**
+   * Add a new PT plan
+   */
+  addPTPlan: async (plan: Omit<PTPlan, 'id'>): Promise<PTPlan> => {
+    try {
+      const response = await api.post('/pt-plans', plan);
+      toast.success('PT plan created successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error creating PT plan:', error);
+      toast.error('Failed to create PT plan');
+      throw error;
+    }
   },
   
-  addPTPlan: async (plan: Omit<PTPlan, "id">): Promise<PTPlan> => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newPlan: PTPlan = {
-          ...plan,
-          id: `ptplan-${Date.now()}`
-        };
-        
-        mockPTPlans.push(newPlan);
-        resolve(newPlan);
-      }, 500);
-    });
-  },
-  
+  /**
+   * Update a PT plan
+   */
   updatePTPlan: async (id: string, plan: Partial<PTPlan>): Promise<PTPlan> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = mockPTPlans.findIndex(p => p.id === id);
-        if (index === -1) {
-          reject(new Error("PT Plan not found"));
-          return;
-        }
-        
-        const updatedPlan = {
-          ...mockPTPlans[index],
-          ...plan
-        };
-        
-        mockPTPlans[index] = updatedPlan;
-        resolve(updatedPlan);
-      }, 500);
-    });
+    try {
+      const response = await api.put(`/pt-plans/${id}`, plan);
+      toast.success('PT plan updated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating PT plan:', error);
+      toast.error('Failed to update PT plan');
+      throw error;
+    }
   },
   
-  deletePTPlan: async (id: string): Promise<void> => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = mockPTPlans.findIndex(p => p.id === id);
-        if (index === -1) {
-          reject(new Error("PT Plan not found"));
-          return;
-        }
-        
-        mockPTPlans.splice(index, 1);
-        resolve();
-      }, 500);
-    });
+  /**
+   * Delete a PT plan
+   */
+  deletePTPlan: async (id: string): Promise<boolean> => {
+    try {
+      await api.delete(`/pt-plans/${id}`);
+      toast.success('PT plan deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting PT plan:', error);
+      toast.error('Failed to delete PT plan');
+      return false;
+    }
   }
 };
-
-export default measurementService;
