@@ -2,6 +2,7 @@
 import api from '../api';
 import { RazorpayWebhookEvent, WebhookLog } from '@/types/finance';
 import { toast } from 'sonner';
+import { messagingService } from './messagingService';
 
 /**
  * Service for managing Razorpay webhooks
@@ -127,6 +128,51 @@ export const webhookService = {
     } catch (error) {
       console.error('Failed to update webhook settings:', error);
       toast.error('Failed to update webhook settings');
+      return false;
+    }
+  },
+  
+  /**
+   * Send notifications for webhook events
+   * This is used to send SMS, email, or WhatsApp notifications based on webhook events
+   * @param event Webhook event
+   * @param memberPhone Member's phone number
+   * @param data Additional data for the notification
+   */
+  async sendWebhookNotifications(
+    event: RazorpayWebhookEvent,
+    memberPhone: string,
+    data: Record<string, string>
+  ): Promise<boolean> {
+    try {
+      const eventType = event.event;
+      
+      // Map Razorpay event types to our trigger events
+      const triggerEventMap: Record<string, any> = {
+        'payment.captured': 'payment_success',
+        'payment.failed': 'payment_failure',
+        'order.paid': 'payment_success',
+        'subscription.activated': 'payment_success',
+        'subscription.charged': 'payment_success',
+        'subscription.cancelled': 'payment_failure',
+        'refund.processed': 'payment_failure',
+      };
+      
+      const triggerEvent = triggerEventMap[eventType];
+      
+      if (!triggerEvent) {
+        // No matching trigger event for this Razorpay event
+        return false;
+      }
+      
+      // Send SMS notification using our template system
+      return await messagingService.sendEventSMS(
+        memberPhone,
+        triggerEvent,
+        data
+      );
+    } catch (error) {
+      console.error('Failed to send webhook notifications:', error);
       return false;
     }
   }

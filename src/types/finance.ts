@@ -112,3 +112,46 @@ export interface WebhookSettings {
   retryAttempts: number; // Maximum number of retry attempts
   notifyAdminOnFailure: boolean; // Whether to notify admin on webhook failure
 }
+
+// SMS Template Types
+export type SmsProvider = "msg91" | "twilio";
+export type TriggerEvent = 
+  | "member_registration" 
+  | "payment_success" 
+  | "payment_failure" 
+  | "class_booking" 
+  | "class_cancellation" 
+  | "plan_expiry" 
+  | "birthday" 
+  | "motivation";
+
+export interface SmsTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  dltTemplateId: string;
+  provider: SmsProvider;
+  content: string;
+  variables: string[]; // List of variables used in the template
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  triggerEvents: TriggerEvent[]; // When this template should be triggered
+}
+
+export interface SmsLog {
+  id: string;
+  templateId: string;
+  templateName: string;
+  recipient: string;
+  content: string;
+  status: "sent" | "failed" | "pending";
+  provider: SmsProvider;
+  error?: string;
+  sentAt?: string;
+  createdAt: string;
+  retryCount?: number;
+  memberData?: Record<string, string>; // Data used to populate template
+  triggeredBy?: TriggerEvent;
+  triggeredByUserId?: string; // If manually triggered by a user
+}

@@ -1,6 +1,8 @@
 
 import api from '../api';
 import { toast } from 'sonner';
+import { SmsTemplate, TriggerEvent } from '@/types/finance';
+import { smsTemplateService } from './smsTemplateService';
 
 export type MessageChannel = 'whatsapp' | 'sms' | 'email' | 'push';
 
@@ -90,6 +92,74 @@ export const messagingService = {
       toast.error('Failed to send SMS');
     }
     return result;
+  },
+  
+  /**
+   * Send SMS using a template
+   * @param phone Phone number with country code
+   * @param templateId ID of the SMS template to use
+   * @param data Data to populate the template with
+   */
+  async sendSMSTemplate(
+    phone: string,
+    templateId: string,
+    data: Record<string, string>
+  ): Promise<boolean> {
+    try {
+      const response = await api.post('/integrations/messaging/send-template', {
+        channel: 'sms',
+        recipient: phone,
+        templateId,
+        data
+      });
+      
+      if (response.data.success) {
+        toast.success('SMS sent successfully');
+        return true;
+      } else {
+        toast.error(response.data.message || 'Failed to send SMS');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to send SMS template:', error);
+      toast.error('Failed to send SMS');
+      return false;
+    }
+  },
+  
+  /**
+   * Send SMS for a specific trigger event
+   * @param phone Phone number with country code
+   * @param event Trigger event type
+   * @param data Data to populate the template with
+   */
+  async sendEventSMS(
+    phone: string,
+    event: TriggerEvent,
+    data: Record<string, string>
+  ): Promise<boolean> {
+    try {
+      // Get templates for this event
+      const templates = await smsTemplateService.getTemplatesForEvent(event);
+      
+      if (templates.length === 0) {
+        console.log(`No SMS template found for event: ${event}`);
+        return false;
+      }
+      
+      // Use the first enabled template
+      const template = templates.find(t => t.enabled);
+      
+      if (!template) {
+        console.log(`No enabled SMS template found for event: ${event}`);
+        return false;
+      }
+      
+      return this.sendSMSTemplate(phone, template.id, data);
+    } catch (error) {
+      console.error(`Failed to send event SMS for ${event}:`, error);
+      return false;
+    }
   },
   
   /**
@@ -205,6 +275,53 @@ export const messagingService = {
       }
     } catch (error) {
       console.error('Failed to send broadcast:', error);
+      toast.error('Failed to send broadcast');
+      return { success: 0, failed: recipients.length };
+    }
+  },
+  
+  /**
+   * Send a broadcast message using a template
+   * @param channel Channel to send through
+   * @param recipients Array of recipient identifiers
+   * @param templateId ID of the template to use
+   * @param dataList Array of data objects for each recipient
+   */
+  async sendTemplateBroadcast(
+    channel: MessageChannel,
+    recipients: string[],
+    templateId: string,
+    dataList: Record<string, string>[]
+  ): Promise<{ success: number; failed: number }> {
+    try {
+      const response = await api.post('/integrations/messaging/broadcast-template', {
+        channel,
+        recipients,
+        templateId,
+        dataList
+      });
+      
+      if (response.data.success) {
+        const { successCount, failedCount } = response.data;
+        
+        if (successCount > 0) {
+          toast.success(`Successfully sent to ${successCount} recipients`);
+        }
+        
+        if (failedCount > 0) {
+          toast.error(`Failed to send to ${failedCount} recipients`);
+        }
+        
+        return {
+          success: successCount,
+          failed: failedCount
+        };
+      } else {
+        toast.error(response.data.message || 'Failed to send broadcast');
+        return { success: 0, failed: recipients.length };
+      }
+    } catch (error) {
+      console.error('Failed to send template broadcast:', error);
       toast.error('Failed to send broadcast');
       return { success: 0, failed: recipients.length };
     }

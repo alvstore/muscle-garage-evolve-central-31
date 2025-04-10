@@ -6,12 +6,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Settings, Sliders } from "lucide-react";
+import { 
+  BookOpen, 
+  Shield, 
+  MessageSquare, 
+  Mail, 
+  MessageCircle, 
+  Bell, 
+  Brain, 
+  Settings, 
+  Sliders, 
+  MessageText 
+} from "lucide-react";
 import GeneralSettings from "@/components/settings/GeneralSettings";
 import AccessControlSettings from "@/components/settings/AccessControlSettings";
 import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
 import EmailSettings from "@/components/settings/EmailSettings";
 import SmsSettings from "@/components/settings/SmsSettings";
+import SmsTemplateManager from "@/components/settings/SmsTemplateManager";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
@@ -44,7 +56,7 @@ const SettingsPage = () => {
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-2">
                 <TabsTrigger value="general" className="flex items-center gap-2">
                   <Sliders className="h-4 w-4" />
                   <span className="hidden md:inline">General</span>
@@ -64,6 +76,10 @@ const SettingsPage = () => {
                 <TabsTrigger value="sms" className="flex items-center gap-2">
                   <MessageCircle className="h-4 w-4" />
                   <span className="hidden md:inline">SMS</span>
+                </TabsTrigger>
+                <TabsTrigger value="sms-templates" className="flex items-center gap-2">
+                  <MessageText className="h-4 w-4" />
+                  <span className="hidden md:inline">SMS Templates</span>
                 </TabsTrigger>
                 <TabsTrigger value="notifications" className="flex items-center gap-2">
                   <Bell className="h-4 w-4" />
@@ -101,6 +117,10 @@ const SettingsPage = () => {
           
           <TabsContent value="sms">
             <SmsSettings />
+          </TabsContent>
+          
+          <TabsContent value="sms-templates">
+            <SmsTemplateManager />
           </TabsContent>
           
           <TabsContent value="notifications">
