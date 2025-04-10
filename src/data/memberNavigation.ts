@@ -1,116 +1,88 @@
+import {
+  BarChart3,
+  Calendar,
+  Dumbbell,
+  DumbbellIcon,
+  LayoutDashboard,
+  LineChart,
+  ListChecks,
+  LucideIcon,
+  MessageSquare,
+  Settings,
+  User,
+  Users,
+  Apple,
+} from "lucide-react";
 
-import { ReactNode } from "react";
-import { createNavIcon, IconName } from "@/utils/createNavIcon";
-
-export interface NavItem {
-  href: string;
-  label: string;
-  icon: ReactNode;
-  activeIcon?: ReactNode;
-  badge?: number | string;
-  children?: NavItem[];
-}
-
-export interface NavSection {
+interface SidebarNavItem {
   name: string;
-  icon: ReactNode;
-  items: NavItem[];
+  href: string;
+  icon: LucideIcon;
 }
 
-export const memberNavSections: NavSection[] = [
+interface SidebarNavGroup {
+  name: string;
+  items: SidebarNavItem[];
+}
+
+export const memberNavigation: SidebarNavGroup[] = [
   {
-    name: "Dashboard",
-    icon: createNavIcon("Home"),
+    name: "General",
     items: [
-      { 
-        href: "/dashboard", 
-        label: "Overview", 
-        icon: createNavIcon("Home")
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
       },
     ],
   },
   {
-    name: "My Profile",
-    icon: createNavIcon("User"),
+    name: "Classes",
     items: [
-      { 
-        href: "/members/profile", 
-        label: "Profile", 
-        icon: createNavIcon("User")
+      {
+        name: "Book a Class",
+        href: "/classes/book",
+        icon: Calendar,
+      },
+      {
+        name: "My Classes",
+        href: "/classes/my-classes",
+        icon: ListChecks,
       },
     ],
   },
   {
-    name: "Fitness & Classes",
-    icon: createNavIcon("Activity"),
+    name: "Fitness",
     items: [
-      { 
-        href: "/classes", 
-        label: "Book Classes", 
-        icon: createNavIcon("Calendar")
+      {
+        name: "Workout Plans",
+        href: "/fitness/workout-plans",
+        icon: Dumbbell,
       },
-      { 
-        href: "/attendance", 
-        label: "Attendance", 
-        icon: createNavIcon("Activity")
+      {
+        name: "Diet Plans",
+        href: "/fitness/diet-plans",
+        icon: Apple,
       },
-      { 
-        href: "/fitness/progress", 
-        label: "Progress Tracker", 
-        icon: createNavIcon("TrendingUp")
-      },
-      { 
-        href: "/fitness/workout-plans", 
-        label: "Workout Plans", 
-        icon: createNavIcon("Dumbbell")
-      },
-      { 
-        href: "/fitness/diet", 
-        label: "Diet Plan", 
-        icon: createNavIcon("Utensils")
+      {
+        name: "Progress Tracker",
+        href: "/fitness/progress",
+        icon: LineChart,
       },
     ],
   },
   {
-    name: "Finance",
-    icon: createNavIcon("DollarSign"),
+    name: "Account",
     items: [
-      { 
-        href: "/finance/invoices", 
-        label: "Invoices", 
-        icon: createNavIcon("FileText")
+      {
+        name: "Profile",
+        href: "/profile",
+        icon: User,
       },
-      { 
-        href: "/membership", 
-        label: "Membership", 
-        icon: createNavIcon("CreditCard")
-      },
-    ],
-  },
-  {
-    name: "Store",
-    icon: createNavIcon("ShoppingBag"),
-    items: [
-      { 
-        href: "/store", 
-        label: "Shop", 
-        icon: createNavIcon("ShoppingBag")
-      },
-    ],
-  },
-  {
-    name: "Communication",
-    icon: createNavIcon("Bell"),
-    items: [
-      { 
-        href: "/communication/feedback", 
-        label: "Feedback", 
-        icon: createNavIcon("Bell")
-      },
-      { 
-        href: "/communication/announcements", 
-        label: "Announcements", 
-        icon: createNavIcon("Bell")
+      {
+        name: "Settings",
+        href: "/settings",
+        icon: Settings,
       },
     ],
   },

@@ -1,256 +1,201 @@
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
+import { useAuth } from "./hooks/use-auth";
+import { Roles } from "./utils/Constants";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import DashboardPage from "./pages/DashboardPage";
+import ClassesPage from "./pages/classes/ClassesPage";
+import ClassDetailPage from "./pages/classes/ClassDetailPage";
+import BookClassPage from "./pages/classes/BookClassPage";
+import WorkoutPlansPage from "./pages/fitness/WorkoutPlansPage";
+import DietPlansPage from "./pages/fitness/DietPlansPage";
+import MembersPage from "./pages/members/MembersPage";
+import MemberProfilePage from "./pages/members/MemberProfilePage";
+import TrainersPage from "./pages/trainers/TrainersPage";
+import StaffPage from "./pages/staff/StaffPage";
+import AnalyticsPage from "./pages/analytics/AnalyticsPage";
+import SettingsPage from "./pages/settings/SettingsPage";
+import BranchManagementPage from "./pages/branches/BranchManagementPage";
+import PrivateRoute from "./components/routes/PrivateRoute";
+import AdminRoute from "./components/routes/AdminRoute";
+import TrainerRoute from "./components/routes/TrainerRoute";
+import MemberRoute from "./components/routes/MemberRoute";
+import AccessDeniedPage from "./pages/auth/AccessDeniedPage";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import BookingManagementPage from "./pages/bookings/BookingManagementPage";
+import MemberProgressPage from "./pages/members/MemberProgressPage";
 
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+function App() {
+  const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isTrainer, setIsTrainer] = useState(false);
+  const [isMember, setIsMember] = useState(false);
 
-import Index from './pages/Index';
-import NotFound from './pages/NotFound';
-import InventoryPage from './pages/inventory/InventoryPage';
-import LeadsPage from './pages/crm/LeadsPage';
-import FunnelPage from './pages/crm/FunnelPage';
-import FollowUpPage from './pages/crm/FollowUpPage';
-import StorePage from './pages/store/StorePage';
-import PromoPage from './pages/marketing/PromoPage';
-import ReferralPage from './pages/marketing/ReferralPage';
-import ClassPage from './pages/classes/ClassPage';
-import MembershipPage from './pages/membership/MembershipPage';
-import FeedbackPage from './pages/communication/FeedbackPage';
-import AnnouncementPage from './pages/communication/AnnouncementPage';
-import ReminderPage from './pages/communication/ReminderPage'; 
-import MotivationalPage from './pages/communication/MotivationalPage';
-import Login from './pages/auth/Login';
-import Dashboard from './pages/dashboard/Dashboard';
-import Unauthorized from './pages/auth/Unauthorized';
-import BranchesPage from './pages/branches/BranchesPage';
-import IntegrationsPage from './pages/settings/IntegrationsPage';
-import HikvisionIntegrationPage from './pages/settings/HikvisionIntegrationPage';
-import HikvisionPartnerPage from './pages/settings/HikvisionPartnerPage';
-import InvoicePage from './pages/finance/InvoicePage';
-import TransactionPage from './pages/finance/TransactionPage';
-import AttendancePage from './pages/attendance/AttendancePage';
-import MembersListPage from './pages/members/MembersListPage';
-import MemberProfilePage from './pages/members/MemberProfilePage';
-import NewMemberPage from './pages/members/NewMemberPage';
-import ReportsPage from './pages/reports/ReportsPage';
-import SettingsPage from './pages/settings/SettingsPage';
-import FrontPagesManager from './pages/frontpages/FrontPagesManager';
-import FitnessPlanPage from './pages/fitness/FitnessPlanPage';
-import FitnessProgressPage from './pages/fitness/FitnessProgressPage';
-import DietPlanPage from './pages/fitness/DietPlanPage';
-import WorkoutPlansPage from './pages/fitness/WorkoutPlansPage';
-import TrainerAllocationPage from './pages/trainers/TrainerAllocationPage';
+  useEffect(() => {
+    if (user) {
+      setIsAdmin(user.role === Roles.Admin);
+      setIsTrainer(user.role === Roles.Trainer);
+      setIsMember(user.role === Roles.Member);
+    } else {
+      setIsAdmin(false);
+      setIsTrainer(false);
+      setIsMember(false);
+    }
+  }, [user]);
 
-import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './hooks/use-branch';
-import PrivateRoute from './components/auth/PrivateRoute';
-import DashboardLayout from './components/layout/DashboardLayout';
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
-    },
-  },
-});
-
-export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <BranchProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              
-              <Route element={<PrivateRoute />}>
-                <Route element={<DashboardLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  
-                  <Route path="/members" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-                      <MembersListPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/members/new" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <NewMemberPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/members/profile" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-                      <MemberProfilePage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/members/:id" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-                      <MemberProfilePage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/fitness-plans" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-                      <FitnessPlanPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/fitness/progress" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-                      <FitnessProgressPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/fitness/diet" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-                      <DietPlanPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/fitness/workout-plans" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-                      <WorkoutPlansPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/trainers/allocation" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-                      <TrainerAllocationPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/frontpages" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <FrontPagesManager />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/attendance" element={
-                    <PrivateRoute>
-                      <AttendancePage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/crm/leads" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <LeadsPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/crm/funnel" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <FunnelPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/crm/follow-up" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <FollowUpPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/marketing/promo" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <PromoPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/marketing/referral" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <ReferralPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/inventory" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <InventoryPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/store" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
-                      <StorePage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/classes" element={
-                    <PrivateRoute>
-                      <ClassPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/membership" element={
-                    <PrivateRoute>
-                      <MembershipPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/communication/feedback" element={
-                    <PrivateRoute>
-                      <FeedbackPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/communication/announcements" element={
-                    <PrivateRoute>
-                      <AnnouncementPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/communication/reminders" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <ReminderPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/communication/motivational" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-                      <MotivationalPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/branches" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <BranchesPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/finance/invoices" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
-                      <InvoicePage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/finance/transactions" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
-                      <TransactionPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/reports" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-                      <ReportsPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/settings" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <SettingsPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <IntegrationsPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations/hikvision" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <HikvisionIntegrationPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations/hikvision-partner" element={
-                    <PrivateRoute allowedRoles={['admin']} requiredPermission="manage_integrations">
-                      <HikvisionPartnerPage />
-                    </PrivateRoute>
-                  } />
-                </Route>
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BranchProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <Router>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      <Routes>
+        <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
+        <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
+        <Route
+          path="/forgot-password"
+          element={user ? <Navigate to="/" /> : <ForgotPasswordPage />}
+        />
+        <Route
+          path="/reset-password/:token"
+          element={user ? <Navigate to="/" /> : <ResetPasswordPage />}
+        />
+        <Route path="/access-denied" element={<AccessDeniedPage />} />
+
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <DashboardPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/classes"
+          element={
+            <PrivateRoute>
+              <ClassesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/classes/:id"
+          element={
+            <PrivateRoute>
+              <ClassDetailPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/classes/:id/book"
+          element={
+            <PrivateRoute>
+              <BookClassPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fitness/workout-plans"
+          element={
+            <PrivateRoute>
+              <WorkoutPlansPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fitness/diet-plans"
+          element={
+            <PrivateRoute>
+              <DietPlansPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/members"
+          element={
+            <PrivateRoute>
+              <MembersPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/members/:id"
+          element={
+            <PrivateRoute>
+              <MemberProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/trainers"
+          element={
+            <PrivateRoute>
+              <TrainersPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <AdminRoute>
+              <StaffPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <AdminRoute>
+              <AnalyticsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <SettingsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/branches"
+          element={
+            <AdminRoute>
+              <BranchManagementPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <PrivateRoute>
+              <BookingManagementPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fitness/progress"
+          element={
+            <PrivateRoute>
+              <MemberProgressPage />
+            </PrivateRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
+
+export default App;
