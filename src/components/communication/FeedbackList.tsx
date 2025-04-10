@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -29,7 +30,7 @@ import { Feedback } from "@/types/notification";
 import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-// Mock feedback data
+// Mock feedback data - this won't be used as we'll get data from props
 const mockFeedbackData: Feedback[] = [
   {
     id: "feedback1",
@@ -94,9 +95,14 @@ const mockFeedbackData: Feedback[] = [
 interface FeedbackListProps {
   feedbacks?: Feedback[];
   isLoading?: boolean;
+  isMemberView?: boolean;  // New prop to indicate if the view is for a member
 }
 
-const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: FeedbackListProps) => {
+const FeedbackList = ({ 
+  feedbacks = mockFeedbackData, 
+  isLoading = false,
+  isMemberView = false
+}: FeedbackListProps) => {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
@@ -153,8 +159,15 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle>Feedback Responses</CardTitle>
-              <CardDescription>Review feedback from members and trainers</CardDescription>
+              <CardTitle>
+                {isMemberView ? "Your Feedback Responses" : "Feedback Responses"}
+              </CardTitle>
+              <CardDescription>
+                {isMemberView 
+                  ? "View your submitted feedback" 
+                  : "Review feedback from members and trainers"
+                }
+              </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button 
@@ -192,14 +205,16 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
               >
                 General
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportCSV}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              {!isMemberView && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExportCSV}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -217,7 +232,9 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
               <h3 className="mt-4 text-lg font-medium">No feedback found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {filter === "all" 
-                  ? "No feedback has been submitted yet." 
+                  ? isMemberView
+                    ? "You haven't submitted any feedback yet."
+                    : "No feedback has been submitted yet."
                   : `No feedback found for the "${filter}" category.`}
               </p>
             </div>
@@ -226,7 +243,9 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Member</TableHead>
+                    <TableHead>
+                      {isMemberView ? "Feedback Title" : "Member"}
+                    </TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead>Date</TableHead>
@@ -238,13 +257,17 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
                   {filteredFeedback.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="/placeholder.svg" alt={item.memberName} />
-                            <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
-                          </Avatar>
-                          <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
-                        </div>
+                        {isMemberView ? (
+                          <div className="font-medium">{item.title}</div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src="/placeholder.svg" alt={item.memberName} />
+                              <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
+                            </Avatar>
+                            <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
@@ -294,27 +317,43 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder.svg" alt={selectedFeedback.memberName} />
-                    <AvatarFallback>
-                      {getInitials(selectedFeedback.memberName || "Anonymous")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.memberName}
-                    </p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {selectedFeedback.type === "fitness-plan" ? "Fitness Plan Feedback" : `${selectedFeedback.type} Feedback`}
-                    </p>
+              {!isMemberView && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="/placeholder.svg" alt={selectedFeedback.memberName} />
+                      <AvatarFallback>
+                        {getInitials(selectedFeedback.memberName || "Anonymous")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">
+                        {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.memberName}
+                      </p>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {selectedFeedback.type === "fitness-plan" ? "Fitness Plan Feedback" : `${selectedFeedback.type} Feedback`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    {renderStars(selectedFeedback.rating)}
                   </div>
                 </div>
-                <div className="flex">
-                  {renderStars(selectedFeedback.rating)}
+              )}
+              
+              {isMemberView && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium">{selectedFeedback.title}</h3>
+                  <div className="flex mt-1">
+                    <span className="text-sm text-muted-foreground capitalize mr-3">
+                      {selectedFeedback.type === "fitness-plan" ? "Fitness Plan" : selectedFeedback.type}
+                    </span>
+                    <div className="flex">
+                      {renderStars(selectedFeedback.rating)}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div className="rounded-md bg-muted p-3">
                 <p className="text-sm">

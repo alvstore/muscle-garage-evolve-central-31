@@ -12,6 +12,9 @@ import FeedbackList from '@/components/communication/FeedbackList';
 import FeedbackForm from '@/components/communication/FeedbackForm';
 import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const mockFeedbacks: Feedback[] = [
   {
@@ -80,12 +83,22 @@ const FeedbackPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentBranch } = useBranch();
+  const { userRole, can } = usePermissions();
+  
+  // Check if user is a member
+  const isMember = userRole === 'member';
 
   const { data: feedbacks, isLoading, refetch } = useQuery({
-    queryKey: ['feedbacks', currentBranch?.id],
+    queryKey: ['feedbacks', currentBranch?.id, user?.id],
     queryFn: async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // In a real app, you would filter by branch ID
+      
+      // For members, only return their own feedback
+      if (isMember) {
+        return mockFeedbacks.filter(feedback => feedback.memberId === user?.id);
+      }
+      
+      // For staff/admin/trainers, return all feedback
       return mockFeedbacks;
     }
   });
@@ -96,7 +109,9 @@ const FeedbackPage = () => {
       return { 
         ...newFeedback, 
         id: `feedback${Date.now()}`,
-        branchId: currentBranch?.id // Add branch ID to feedback
+        memberId: user?.id || '',
+        branchId: currentBranch?.id,
+        memberName: user?.name
       };
     },
     onSuccess: () => {
@@ -124,7 +139,9 @@ const FeedbackPage = () => {
     <Container>
       <div className="py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Feedback Management</h1>
+          <h1 className="text-2xl font-bold">
+            {isMember ? "Submit Your Feedback" : "Feedback Management"}
+          </h1>
           <Button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
             <PlusCircle className="h-4 w-4 mr-2" />
             Submit Feedback
@@ -134,14 +151,30 @@ const FeedbackPage = () => {
         {currentBranch && (
           <div className="mb-4 p-3 bg-blue-50 rounded-md text-blue-700">
             <p className="text-sm font-medium">
-              Viewing feedback for branch: {currentBranch.name}
+              {isMember 
+                ? "You can provide feedback about classes, trainers, or the gym management"
+                : `Viewing feedback for branch: ${currentBranch.name}`
+              }
             </p>
           </div>
         )}
 
+        {isMember && (
+          <Alert className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Your Feedback Matters</AlertTitle>
+            <AlertDescription>
+              You can provide feedback about classes you've attended, trainers you've worked with,
+              or general suggestions for improving the gym. Your feedback helps us provide better service.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="all">All Feedback</TabsTrigger>
+            <TabsTrigger value="all">
+              {isMember ? "Your Feedback" : "All Feedback"}
+            </TabsTrigger>
             <TabsTrigger value="class">Class</TabsTrigger>
             <TabsTrigger value="trainer">Trainer</TabsTrigger>
             <TabsTrigger value="fitness-plan">Fitness Plan</TabsTrigger>
@@ -152,6 +185,7 @@ const FeedbackPage = () => {
             <FeedbackList
               feedbacks={feedbacks || []}
               isLoading={isLoading}
+              isMemberView={isMember}
             />
           </TabsContent>
 
@@ -160,6 +194,7 @@ const FeedbackPage = () => {
               <FeedbackList
                 feedbacks={(feedbacks || []).filter(f => f.type === type as FeedbackType)}
                 isLoading={isLoading}
+                isMemberView={isMember}
               />
             </TabsContent>
           ))}
@@ -170,6 +205,8 @@ const FeedbackPage = () => {
             onComplete={() => {
               setIsModalOpen(false);
             }}
+            memberId={user?.id}
+            memberName={user?.name}
           />
         )}
       </div>

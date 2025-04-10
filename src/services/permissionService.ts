@@ -95,6 +95,10 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'feature_sms_campaigns': { roles: ['admin'] },
   'feature_whatsapp_campaigns': { roles: ['admin'] },
   'feature_social_media_integration': { roles: ['admin'] },
+  
+  // Add this new permission for feedback
+  'member_submit_feedback': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'member_view_feedback': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
 };
 
 /**
@@ -340,7 +344,9 @@ export const getPermissionDescription = (permission: Permission): string => {
     'feature_email_campaigns': 'Access to email campaigns',
     'feature_sms_campaigns': 'Access to SMS campaigns',
     'feature_whatsapp_campaigns': 'Access to WhatsApp campaigns',
-    'feature_social_media_integration': 'Access to social media integration'
+    'feature_social_media_integration': 'Access to social media integration',
+    'member_submit_feedback': 'Members can submit feedback',
+    'member_view_feedback': 'Members can view their own feedback'
   };
   
   return descriptionMap[permission] || `Permission to ${permission.replace(/_/g, ' ')}`;
