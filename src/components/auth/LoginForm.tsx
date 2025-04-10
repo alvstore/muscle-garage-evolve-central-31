@@ -8,11 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { mockUsers } from "@/data/mockData";
 import Logo from "@/components/Logo";
 import { toast } from "sonner";
+import OTPForm from "./OTPForm";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [useOTP, setUseOTP] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,6 +36,22 @@ const LoginForm = () => {
       setLoading(false);
     }, 1000);
   };
+
+  const handleRequestOTP = () => {
+    const user = mockUsers.find((user) => user.email === email);
+    
+    if (!user) {
+      toast.error("Email not found. Please use one of the demo email addresses.");
+      return;
+    }
+    
+    toast.success("OTP sent to your email (for demo, use 123456)");
+    setUseOTP(true);
+  };
+
+  if (useOTP) {
+    return <OTPForm email={email} onBack={() => setUseOTP(false)} />;
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -86,9 +104,26 @@ const LoginForm = () => {
             <p className="mt-1">Password: "password" for all users</p>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col">
+        <CardFooter className="flex flex-col space-y-2">
           <Button className="w-full" type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
+          </Button>
+          <div className="relative w-full">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full"
+            onClick={handleRequestOTP}
+            disabled={!email}
+          >
+            Login with OTP
           </Button>
         </CardFooter>
       </form>
