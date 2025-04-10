@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -6,11 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Invoice } from "@/types";
+import { Invoice } from "@/types/finance";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// This is a mock component for Razorpay integration
-// In a real app, you would use the Razorpay SDK and API
 
 interface PaymentIntegrationProps {
   invoice: Invoice;
@@ -31,9 +27,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
   const generatePaymentLink = () => {
     setGeneratingLink(true);
     
-    // In a real app, this would be an API call to Razorpay
     setTimeout(() => {
-      // Mock payment link
       const mockPaymentLink = `https://rzp.io/i/gym${invoice.id}`;
       setPaymentLink(mockPaymentLink);
       setGeneratingLink(false);
@@ -44,14 +38,12 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
   const simulatePayment = () => {
     setProcessing(true);
     
-    // In a real app, this would be handled by Razorpay callback
     setTimeout(() => {
       const mockPaymentId = `pay_${Date.now()}`;
       onPaymentComplete(mockPaymentId);
       setProcessing(false);
       setShowPaymentModal(false);
       
-      // Show success toast with notification details
       const notificationSent = (sendSms || sendWhatsapp || sendEmail);
       const notificationMethods = [];
       if (sendSms) notificationMethods.push("SMS");
@@ -65,7 +57,6 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
       );
       
       if (webhookEvents) {
-        // Simulate webhook events
         toast.info("Webhook events will be processed automatically", {
           description: "Payment captured webhook will update the invoice status",
           duration: 5000
@@ -75,7 +66,6 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
   };
 
   const handleSendLink = () => {
-    // In a real app, this would send SMS/WhatsApp with the payment link
     if (!sendSms && !sendWhatsapp && !sendEmail) {
       toast.error("Please select at least one notification method");
       return;
@@ -138,7 +128,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                 <div className="space-y-2 rounded-md bg-muted p-3">
                   <h4 className="font-medium">Invoice Summary</h4>
                   <p>Amount: ₹{invoice.amount.toFixed(2)}</p>
-                  <p>Member: {invoice.memberName}</p>
+                  <p>Member: {invoice.memberId}</p>
                   <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
                 </div>
                 

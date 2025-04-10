@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { BodyMeasurement, PTPlan } from "@/types/measurements";
-import measurementService from "@/services/measurementService";
+import { measurementService } from "@/services/measurementService";
 import { toast } from "sonner";
 
 export const useBodyMeasurements = (memberId?: string) => {
