@@ -1,132 +1,147 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockUsers } from "@/data/mockData";
-import Logo from "@/components/Logo";
-import { toast } from "sonner";
-import OTPForm from "./OTPForm";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import Logo from '@/components/Logo';
+import { authService } from '@/services/authService';
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [useOTP, setUseOTP] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-    // Simulate API call
-    setTimeout(() => {
-      const user = mockUsers.find((user) => user.email === email);
-
-      if (user && password === "password") {
-        // Store user in localStorage (in a real app, you'd store a token)
-        localStorage.setItem("user", JSON.stringify(user));
-        navigate("/dashboard");
-        toast.success("Login successful!");
-      } else {
-        toast.error("Invalid email or password. Try using one of the mock user emails with 'password'.");
+  const onSubmit = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    
+    try {
+      const response = await authService.login({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (response) {
+        // Navigate based on user role
+        const role = response.user.role;
+        if (role === 'admin') {
+          navigate('/dashboard');
+        } else if (role === 'trainer') {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
       }
-      setLoading(false);
-    }, 1000);
-  };
-
-  const handleRequestOTP = () => {
-    const user = mockUsers.find((user) => user.email === email);
-    
-    if (!user) {
-      toast.error("Email not found. Please use one of the demo email addresses.");
-      return;
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    toast.success("OTP sent to your email (for demo, use 123456)");
-    setUseOTP(true);
   };
-
-  if (useOTP) {
-    return <OTPForm email={email} onBack={() => setUseOTP(false)} />;
-  }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1 flex flex-col items-center justify-center">
-        <div className="mb-2">
-          <Logo size="lg" />
+    <Card className="w-full max-w-md border-none shadow-lg">
+      <CardHeader className="space-y-2 text-center">
+        <div className="mx-auto mb-4">
+          <Logo />
         </div>
         <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
-        </CardDescription>
+        <p className="text-sm text-muted-foreground">Enter your email and password to sign in</p>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="you@example.com"
+                      type="email"
+                      autoComplete="email"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Button variant="link" className="px-0" type="button">
-                Forgot password?
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="Enter your password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="text-right">
+              <Button variant="link" className="p-0 h-auto font-normal" type="button" size="sm">
+                Forgot Password?
               </Button>
             </div>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          
-          <div className="text-sm text-muted-foreground">
-            <p>Demo login credentials:</p>
-            <ul className="list-disc list-inside">
-              <li>Admin: admin@musclegarage.com</li>
-              <li>Staff: staff@musclegarage.com</li>
-              <li>Trainer: trainer@musclegarage.com</li>
-              <li>Member: member@example.com</li>
-            </ul>
-            <p className="mt-1">Password: "password" for all users</p>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <Button className="w-full" type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+      <CardFooter className="flex flex-col">
+        <div className="mt-2 text-center text-sm">
+          Don't have an account?{' '}
+          <Button variant="link" className="p-0 h-auto font-normal" type="button">
+            Sign Up
           </Button>
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-full"
-            onClick={handleRequestOTP}
-            disabled={!email}
-          >
-            Login with OTP
-          </Button>
-        </CardFooter>
-      </form>
+        </div>
+      </CardFooter>
     </Card>
   );
 };
