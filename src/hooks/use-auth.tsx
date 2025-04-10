@@ -14,7 +14,8 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1", "branch2", "branch3"],
     isBranchManager: true,
-    avatar: "/admin-avatar.png", // Changed from null to a placeholder path
+    avatar: "/admin-avatar.png", 
+    primaryBranchId: "branch1"
   },
   staff: {
     id: "staff1",
@@ -25,7 +26,8 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/staff-avatar.png", // Changed from null to a placeholder path
+    avatar: "/staff-avatar.png",
+    primaryBranchId: "branch1"
   },
   trainer: {
     id: "trainer1",
@@ -36,7 +38,8 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/trainer-avatar.png", // Changed from null to a placeholder path
+    avatar: "/trainer-avatar.png",
+    primaryBranchId: "branch1"
   },
   member: {
     id: "member1",
@@ -47,7 +50,9 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/member-avatar.png", // Changed from null to a placeholder path
+    avatar: "/member-avatar.png",
+    primaryBranchId: "branch1",
+    membershipStatus: "active"
   }
 };
 
@@ -87,14 +92,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Ensure the role is a valid UserRole
           if (isValidUserRole(parsedUser.role)) {
             // Make sure the user object has all required fields
-            setUser({
+            const validatedUser = {
               ...parsedUser,
-              avatar: parsedUser.avatar || null // Ensure avatar field exists
-            } as User);
+              avatar: parsedUser.avatar || null, // Ensure avatar field exists
+              primaryBranchId: parsedUser.primaryBranchId || parsedUser.branchId || "branch1",
+              membershipStatus: parsedUser.membershipStatus || (parsedUser.role === "member" ? "active" : undefined)
+            } as User;
+            
+            setUser(validatedUser);
+            
+            // Store the updated user data to ensure all required fields are present
+            localStorage.setItem('user', JSON.stringify(validatedUser));
           } else {
             console.error("Invalid user role stored in localStorage");
             localStorage.removeItem('user');
           }
+        } else {
+          // Automatically log in the member user for demo purposes
+          // In a real app, you would redirect to login page
+          const demoUser = MOCK_USERS.member;
+          localStorage.setItem('user', JSON.stringify(demoUser));
+          setUser(demoUser as User);
         }
       } catch (error) {
         console.error("Auth status check failed:", error);
@@ -135,6 +153,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         branchIds: foundUser.branchIds,
         isBranchManager: foundUser.isBranchManager,
         avatar: foundUser.avatar,
+        primaryBranchId: foundUser.primaryBranchId || foundUser.branchId,
+        membershipStatus: foundUser.membershipStatus || (foundUser.role === "member" ? "active" : undefined)
       };
       
       // Store user data in localStorage
@@ -157,7 +177,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const updatedUser = {
       ...user,
-      branchId
+      branchId,
+      primaryBranchId: branchId
     };
     
     // Update localStorage

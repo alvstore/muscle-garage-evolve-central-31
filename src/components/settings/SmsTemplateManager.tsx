@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { SmsTemplate, SmsProvider, TriggerEvent, Permission } from "@/types/notification";
+import { SmsTemplate, SmsProvider, TriggerEvent } from "@/types/notification";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -105,7 +105,7 @@ const mockTemplates: SmsTemplate[] = [
   },
 ];
 
-const availableTriggerEvents = [
+const availableTriggerEvents: {value: TriggerEvent, label: string}[] = [
   { value: "member_registration", label: "Member Registration" },
   { value: "payment_success", label: "Payment Success" },
   { value: "payment_failure", label: "Payment Failure" },
