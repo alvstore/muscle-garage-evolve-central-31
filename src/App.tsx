@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import MemberProgressPage from "./pages/members/MemberProgressPage";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import FitnessProgressPage from "./pages/fitness/FitnessProgressPage";
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="fitness/progress" element={<MemberProgressPage />} />
+          <Route path="fitness/progress" element={<FitnessProgressPage />} />
+          <Route path="members/progress" element={<MemberProgressPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
