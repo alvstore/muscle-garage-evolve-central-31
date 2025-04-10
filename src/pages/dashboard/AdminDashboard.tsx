@@ -19,51 +19,52 @@ import { useBranch } from "@/hooks/use-branch";
 const mockData = {
   stats: {
     totalMembers: 250,
-    activeMembers: 210, 
-    newMembers: 15,
-    revenue: 12500,
-    attendance: 85,
-    classes: 24,
-    retentionRate: 92,
-    leadConversion: 28
+    activeMembers: 210,
+    newMembersToday: 15,
+    attendanceToday: 85,
+    revenue: {
+      today: 1250,
+      thisWeek: 8500,
+      thisMonth: 12500,
+      lastMonth: 11500
+    },
+    pendingPayments: {
+      count: 12,
+      total: 4800
+    },
+    upcomingRenewals: {
+      today: 3,
+      thisWeek: 15,
+      thisMonth: 42
+    },
+    classAttendance: {
+      today: 85,
+      yesterday: 78,
+      lastWeek: 74
+    }
   },
-  revenueData: {
-    monthly: [
-      { month: 'Jan', revenue: 8000 },
-      { month: 'Feb', revenue: 9200 },
-      { month: 'Mar', revenue: 8800 },
-      { month: 'Apr', revenue: 10000 },
-      { month: 'May', revenue: 11500 },
-      { month: 'Jun', revenue: 12500 }
-    ],
-    forecast: 15000,
-    lastMonth: 11500,
-    growth: 8.7
-  },
+  revenueData: [
+    { month: 'Jan', revenue: 8000, expenses: 5500, profit: 2500 },
+    { month: 'Feb', revenue: 9200, expenses: 6000, profit: 3200 },
+    { month: 'Mar', revenue: 8800, expenses: 5800, profit: 3000 },
+    { month: 'Apr', revenue: 10000, expenses: 6200, profit: 3800 },
+    { month: 'May', revenue: 11500, expenses: 7000, profit: 4500 },
+    { month: 'Jun', revenue: 12500, expenses: 7500, profit: 5000 }
+  ],
   memberData: {
     active: 210,
     inactive: 40,
-    trial: 15,
-    expired: 25,
-    distribution: [
-      { name: 'Premium', value: 90 },
-      { name: 'Standard', value: 120 },
-      { name: 'Basic', value: 40 }
-    ]
+    expired: 25
   },
-  attendanceData: {
-    weeklyData: [
-      { day: 'Mon', attendance: 45 },
-      { day: 'Tue', attendance: 52 },
-      { day: 'Wed', attendance: 49 },
-      { day: 'Thu', attendance: 63 },
-      { day: 'Fri', attendance: 55 },
-      { day: 'Sat', attendance: 70 },
-      { day: 'Sun', attendance: 40 }
-    ],
-    peak: 'Saturday, 9am-11am',
-    average: 53.4
-  }
+  attendanceData: [
+    { date: '2023-06-01', count: 45 },
+    { date: '2023-06-02', count: 52 },
+    { date: '2023-06-03', count: 49 },
+    { date: '2023-06-04', count: 63 },
+    { date: '2023-06-05', count: 55 },
+    { date: '2023-06-06', count: 70 },
+    { date: '2023-06-07', count: 40 }
+  ]
 };
 
 const AdminDashboard = () => {
