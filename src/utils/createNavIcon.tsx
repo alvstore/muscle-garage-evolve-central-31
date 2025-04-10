@@ -16,7 +16,9 @@ import {
   Dumbbell,
   Users,
   MessageCircle,
-  UserCircle
+  UserCircle,
+  ChefHat,
+  ListTodo
 } from "lucide-react";
 
 // Map of icon names to their components
@@ -36,7 +38,9 @@ const iconMap = {
   TrendingUp,
   Dumbbell,
   MessageCircle,
-  UserCircle
+  UserCircle,
+  ChefHat,
+  ListTodo
 };
 
 export type IconName = keyof typeof iconMap;

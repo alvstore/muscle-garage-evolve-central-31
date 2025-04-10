@@ -14,7 +14,7 @@ const FitnessPlanPage = () => {
   const { user } = useAuth();
   const { can, userRole } = usePermissions();
   const isMember = userRole === 'member';
-  const canManagePlans = can('assign_workout_plan') || can('assign_diet_plan');
+  const canManagePlans = userRole === 'admin' || userRole === 'trainer' || can('assign_workout_plan') || can('assign_diet_plan');
   
   // Mock data for a logged in user/member
   const mockMember: Member = {

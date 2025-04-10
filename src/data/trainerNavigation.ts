@@ -27,6 +27,11 @@ export const trainerNavSections: NavSection[] = [
         label: "Overview", 
         icon: createNavIcon("Home")
       },
+      { 
+        href: "/trainers/tasks", 
+        label: "Task Management", 
+        icon: createNavIcon("ListTodo")
+      },
     ],
   },
   {
@@ -67,7 +72,7 @@ export const trainerNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Fitness & Classes",
+    name: "Fitness & Diet",
     icon: createNavIcon("Activity"),
     items: [
       { 
@@ -83,7 +88,7 @@ export const trainerNavSections: NavSection[] = [
       { 
         href: "/fitness/diet", 
         label: "Diet Plans", 
-        icon: createNavIcon("Utensils")
+        icon: createNavIcon("ChefHat")
       },
     ],
   },
@@ -95,11 +100,6 @@ export const trainerNavSections: NavSection[] = [
         href: "/communication/announcements", 
         label: "Announcements", 
         icon: createNavIcon("Bell")
-      },
-      { 
-        href: "/communication/feedback", 
-        label: "Feedback", 
-        icon: createNavIcon("MessageCircle")
       },
       { 
         href: "/communication/motivational", 

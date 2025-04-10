@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,6 +42,7 @@ import TrainerPTPlansPage from './pages/trainers/TrainerPTPlansPage';
 import TrainerAttendancePage from './pages/trainers/TrainerAttendancePage';
 import TrainerProfilePage from './pages/trainers/TrainerProfilePage';
 import MemberProgressPage from './pages/members/MemberProgressPage';
+import TrainerTaskPage from './pages/trainers/TrainerTaskPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -140,6 +140,11 @@ export default function App() {
                       <TrainerProfilePage />
                     </PrivateRoute>
                   } />
+                  <Route path="/trainers/tasks" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <TrainerTaskPage />
+                    </PrivateRoute>
+                  } />
                   
                   <Route path="/frontpages" element={
                     <PrivateRoute allowedRoles={['admin']}>
@@ -204,7 +209,6 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Redirect /memberships to /membership */}
                   <Route path="/memberships" element={<Navigate to="/membership" replace />} />
                   
                   <Route path="/communication/feedback" element={
