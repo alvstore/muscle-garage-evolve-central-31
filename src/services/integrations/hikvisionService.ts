@@ -27,7 +27,12 @@ class HikvisionService {
         status: 'online',
         deviceType: 'access',
         location: 'Main Entrance',
-        type: 'access'
+        type: 'access',
+        deviceId: 'device1',
+        deviceSerial: 'DS-K2804',
+        deviceName: 'Main Entrance Controller',
+        channelNos: '1',
+        isVideoSupported: true
       },
       {
         id: 'device2',
@@ -40,7 +45,12 @@ class HikvisionService {
         status: 'online',
         deviceType: 'access',
         location: 'Staff Entrance',
-        type: 'access'
+        type: 'access',
+        deviceId: 'device2',
+        deviceSerial: 'DS-K2801',
+        deviceName: 'Staff Entrance Controller',
+        channelNos: '1',
+        isVideoSupported: true
       },
     ]), 1000));
   }

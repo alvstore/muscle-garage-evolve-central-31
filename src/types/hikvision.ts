@@ -1,4 +1,3 @@
-
 // Basic device type that should be returned from the Hikvision API
 export interface HikvisionDevice {
   id: string;
@@ -9,9 +8,16 @@ export interface HikvisionDevice {
   ipAddress: string;
   port: number;
   status: string; // online, offline, etc.
-  deviceType: string; // Added deviceType property
-  location?: string; // Added location property
-  type?: string; // Added type property for compatibility
+  deviceType: string; 
+  location?: string; 
+  type?: string; 
+  deviceId?: string;
+  deviceSerial?: string;
+  deviceName?: string;
+  deviceCode?: string;
+  userName?: string;
+  channelNos?: string;
+  isVideoSupported?: boolean;
 }
 
 // Extended device type with status for the UI
@@ -19,7 +25,13 @@ export interface HikvisionDeviceWithStatus extends Omit<HikvisionDevice, 'status
   status?: string;
   lastSeen?: string;
   healthStatus?: 'healthy' | 'warning' | 'error';
-  deviceId?: string; // Added to match usage
+  deviceId?: string;
+  deviceSerial?: string;
+  deviceName?: string;
+  deviceCode?: string;
+  userName?: string;
+  channelNos?: string;
+  isVideoSupported?: boolean;
 }
 
 // Access Control Credentials
@@ -29,13 +41,15 @@ export interface HikvisionCredentials {
   apiKey?: string;
   apiSecret?: string;
   baseUrl: string;
-  isValid?: boolean; // Added to match usage
+  isValid?: boolean;
+  appKey?: string;
+  secretKey?: string;
 }
 
 // Event data from Hikvision
 export interface HikvisionEvent {
   id: string;
-  eventId: string; // Added to match usage
+  eventId: string;
   eventTime: string;
   eventType: 'entry' | 'exit' | 'denied';
   cardNo?: string;

@@ -75,6 +75,7 @@ export interface Announcement {
   expiresAt?: string;
   channels?: NotificationChannel[];
   sentCount?: number;
+  createdBy?: string;
 }
 
 export interface NotificationSettings {

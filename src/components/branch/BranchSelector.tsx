@@ -1,90 +1,85 @@
 
-import { useState } from 'react';
-import { Check, ChevronDown, Building2 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useState, useEffect } from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useBranch } from '@/hooks/use-branch';
-import { useAuth } from '@/hooks/use-auth';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { cn } from '@/lib/utils';
 
-const BranchSelector = () => {
-  const { branches, currentBranch, loading, switchBranch } = useBranch();
-  const { updateUserBranch } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  
-  const handleChangeBranch = (branchId: string) => {
-    switchBranch(branchId).then(() => {
-      updateUserBranch(branchId);
-      setIsOpen(false);
-    });
-  };
-  
-  if (loading) {
+export function BranchSelector() {
+  const [open, setOpen] = useState(false);
+  const { branches, currentBranch, isLoading, selectBranch, fetchBranches } = useBranch();
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  if (isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
-        <Building2 className="mr-2 h-4 w-4" />
-        <span>Loading branches...</span>
+      <Button variant="outline" className="w-[200px] justify-start">
+        <span className="animate-pulse">Loading branches...</span>
       </Button>
     );
   }
-  
+
   if (!currentBranch) {
     return (
-      <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
-        <Building2 className="mr-2 h-4 w-4" />
-        <span>No branches available</span>
+      <Button variant="outline" className="w-[200px] justify-start">
+        No branches available
       </Button>
     );
   }
-  
-  return (
-    <PermissionGuard permission="view_branch_data" fallback={
-      <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
-        <Building2 className="h-4 w-4" />
-        <span>{currentBranch?.name || 'No branch selected'}</span>
-      </div>
-    }>
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-[200px] justify-start">
-            <Building2 className="mr-2 h-4 w-4" />
-            <span className="truncate">{currentBranch?.name}</span>
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[200px]">
-          <DropdownMenuLabel>Select Branch</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {branches.map((branch) => (
-            <DropdownMenuItem 
-              key={branch.id}
-              onClick={() => handleChangeBranch(branch.id)}
-              className="flex items-center justify-between"
-            >
-              <span className="truncate">{branch.name}</span>
-              {currentBranch?.id === branch.id && <Check className="h-4 w-4" />}
-            </DropdownMenuItem>
-          ))}
-          
-          <PermissionGuard permission="manage_branches">
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <a href="/branches" className="cursor-pointer">
-                Manage Branches
-              </a>
-            </DropdownMenuItem>
-          </PermissionGuard>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </PermissionGuard>
-  );
-};
 
-export default BranchSelector;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-[200px] justify-between"
+        >
+          {currentBranch.name}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search branch..." />
+          <CommandEmpty>No branch found.</CommandEmpty>
+          <CommandGroup>
+            {branches.map((branch) => (
+              <CommandItem
+                key={branch.id}
+                value={branch.id}
+                onSelect={() => {
+                  selectBranch(branch.id);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    currentBranch.id === branch.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {branch.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}

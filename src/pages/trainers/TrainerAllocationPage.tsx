@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import TrainerMemberAllocation from '@/components/trainers/TrainerMemberAllocation';
@@ -7,12 +6,12 @@ import { Member, Trainer } from '@/types';
 
 // Mock data for the example
 const mockMember: Member = {
-  id: "member-1",
-  email: "john@example.com",
+  id: "member1",
   name: "John Doe",
+  email: "john.doe@example.com",
   role: "member",
   membershipStatus: "active",
-  primaryBranchId: "branch-1"
+  primaryBranchId: "branch1",
 };
 
 const mockTrainers: Trainer[] = [

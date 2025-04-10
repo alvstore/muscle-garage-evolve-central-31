@@ -30,7 +30,13 @@ class HikvisionPartnerService {
         healthStatus: 'healthy',
         lastSeen: new Date().toISOString(),
         deviceId: 'device1', 
-        type: 'access'
+        type: 'access',
+        deviceSerial: 'DS-K2804',
+        deviceName: 'Main Entrance Controller',
+        deviceCode: 'D001',
+        userName: 'admin',
+        channelNos: '1',
+        isVideoSupported: true
       },
       {
         id: 'device2',
@@ -46,9 +52,20 @@ class HikvisionPartnerService {
         healthStatus: 'warning',
         lastSeen: new Date(Date.now() - 86400000).toISOString(),
         deviceId: 'device2',
-        type: 'access'
+        type: 'access',
+        deviceSerial: 'DS-K2801',
+        deviceName: 'Staff Entrance Controller',
+        deviceCode: 'D002',
+        userName: 'admin',
+        channelNos: '1',
+        isVideoSupported: true
       },
     ];
+  }
+
+  // List devices (alias for getAllDevices for compatibility)
+  async listDevices(): Promise<HikvisionDeviceWithStatus[]> {
+    return this.getAllDevices();
   }
 
   // Get device by ID
@@ -70,7 +87,13 @@ class HikvisionPartnerService {
       healthStatus: 'healthy',
       lastSeen: new Date().toISOString(),
       deviceId: deviceId,
-      type: 'access'
+      type: 'access',
+      deviceSerial: 'DS-K2804',
+      deviceName: 'Main Entrance Controller',
+      deviceCode: 'D001',
+      userName: 'admin',
+      channelNos: '1',
+      isVideoSupported: true
     };
   }
 
@@ -96,7 +119,13 @@ class HikvisionPartnerService {
         healthStatus: 'warning',
         lastSeen: new Date().toISOString(),
         deviceId: `device-${Date.now()}`,
-        type: device.type || 'access'
+        type: device.type || 'access',
+        deviceSerial: device.deviceSerial || `dev-${Date.now()}`,
+        deviceName: device.deviceName || 'New Device',
+        deviceCode: device.deviceCode || '',
+        userName: device.userName || 'admin',
+        channelNos: device.channelNos || '1',
+        isVideoSupported: device.isVideoSupported || false
       }
     };
   }
@@ -205,21 +234,19 @@ class HikvisionPartnerService {
       apiKey: '',
       apiSecret: '',
       baseUrl: 'https://hikvision.example.com',
-      isValid: false
+      isValid: false,
+      appKey: '',
+      secretKey: ''
     };
   }
 
-  async saveCredentials(credentials: HikvisionCredentials): Promise<void> {
-    console.log('Saving credentials:', credentials);
+  async saveCredentials(apiKey: string, secretKey?: string): Promise<void> {
+    console.log('Saving credentials:', apiKey, secretKey);
   }
 
-  async testConnection(credentials: HikvisionCredentials): Promise<boolean> {
-    console.log('Testing connection with credentials:', credentials);
-    return true;
-  }
-
-  async listDevices(): Promise<HikvisionDeviceWithStatus[]> {
-    return this.getAllDevices();
+  async testConnection(): Promise<{ success: boolean; message?: string }> {
+    console.log('Testing connection');
+    return { success: true, message: 'Connection successful' };
   }
 }
 

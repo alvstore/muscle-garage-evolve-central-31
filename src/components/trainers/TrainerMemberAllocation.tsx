@@ -66,14 +66,12 @@ const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
   return (
     <Card>
       <CardHeader>
-        <div>
-          <CardTitle>Trainer Allocation</CardTitle>
-          <CardDescription>
-            {isTrainerView 
-              ? "Manage your assigned members" 
-              : "Assign a personal trainer to this member"}
-          </CardDescription>
-        </div>
+        <CardTitle>Trainer Allocation</CardTitle>
+        <CardDescription>
+          {isTrainerView 
+            ? "Manage your assigned members" 
+            : "Assign a personal trainer to this member"}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>

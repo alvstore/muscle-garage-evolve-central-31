@@ -13,7 +13,7 @@ export interface DashboardSummary {
   attendanceTrend: Array<{ date: string; count: number }>;
 }
 
-// Updated Member interface to explicitly include primaryBranchId
+// Updated Member interface with primaryBranchId
 export interface Member {
   id: string;
   email: string;
@@ -29,7 +29,7 @@ export interface Member {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
-  primaryBranchId: string; // Now required field
+  primaryBranchId: string; // Now explicitly required
   // Body measurements
   height?: number;
   weight?: number;
@@ -60,17 +60,20 @@ export interface MemberMeasurement {
   updatedByRole: UserRole; // Role of user who updated the record
 }
 
+export type UserRole = "admin" | "staff" | "trainer" | "member";
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "staff" | "trainer" | "member";
+  role: UserRole;
   branchIds?: string[]; 
   primaryBranchId?: string;
   updateUserBranch?: (branchId: string) => Promise<void>;
 }
 
-export type Announcement = {
+// Updated Announcement interface with required fields
+export interface Announcement {
   id: string;
   title: string;
   content: string;
@@ -79,9 +82,10 @@ export type Announcement = {
   priority?: "low" | "medium" | "high";
   targetRoles: string[];
   channels?: string[];
-};
+  createdBy?: string;
+}
 
-// Add Payment interface
+// Payment interface
 export interface Payment {
   id: string;
   memberId: string;
@@ -91,7 +95,7 @@ export interface Payment {
   status: "Paid" | "Pending" | "Failed";
 }
 
-// Update Class interface to include schedule
+// Updated Class interface with schedule property
 export interface Class {
   id: string;
   name: string;
@@ -108,5 +112,23 @@ export interface Class {
   type: string;
   location?: string;
   status?: string;
-  schedule?: string; // Added schedule field
+  schedule?: string;
 }
+
+export interface Trainer {
+  id: string;
+  name: string;
+  specialization?: string[];
+  experience: number;
+  certifications?: string[];
+  bio?: string;
+  profileImage?: string;
+  contactNumber?: string;
+  email?: string;
+  availability?: string[];
+  rating?: number;
+  reviewCount?: number;
+  branchId?: string;
+  schedule?: any[];
+}
+

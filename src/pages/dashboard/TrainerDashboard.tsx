@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from 'react';
+import { mockClasses, mockMembers, announcements } from '@/data/mockData';
 import { Users, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
@@ -7,25 +8,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockClasses, mockAnnouncements, mockMembers } from "@/data/mockData";
 
 const TrainerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   
-  // Simulate fetching data
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
   }, []);
 
-  // Filter classes for this trainer (using trainer1 ID)
   const trainerClasses = mockClasses.filter(c => c.trainerId === "trainer1");
   
-  // Filter members assigned to this trainer
   const assignedMembers = mockMembers.filter(m => m.trainerId === "trainer1");
 
-  // Upcoming appointments
   const appointments = [
     {
       id: "appt1",
@@ -61,7 +57,6 @@ const TrainerDashboard = () => {
     }
   ];
 
-  // Tasks
   const tasks = [
     {
       id: "task1",
@@ -107,11 +102,10 @@ const TrainerDashboard = () => {
       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
   };
 
-  // Fix the announcement type issue
   const notificationAnnouncements = announcements.map(announcement => ({
     ...announcement,
-    targetRoles: announcement.targetRoles || ['member', 'trainer'], // Ensure targetRoles exists
-    priority: announcement.priority || 'medium' // Ensure priority exists
+    targetRoles: announcement.targetRoles || ['member', 'trainer'],
+    priority: announcement.priority || 'medium'
   }));
 
   return (
