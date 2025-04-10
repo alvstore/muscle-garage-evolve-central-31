@@ -39,6 +39,10 @@ import FitnessProgressPage from './pages/fitness/FitnessProgressPage';
 import DietPlanPage from './pages/fitness/DietPlanPage';
 import WorkoutPlansPage from './pages/fitness/WorkoutPlansPage';
 import TrainerAllocationPage from './pages/trainers/TrainerAllocationPage';
+import TrainerPTPlansPage from './pages/trainers/TrainerPTPlansPage';
+import TrainerAttendancePage from './pages/trainers/TrainerAttendancePage';
+import TrainerProfilePage from './pages/trainers/TrainerProfilePage';
+import MemberProgressPage from './pages/members/MemberProgressPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -68,6 +72,7 @@ export default function App() {
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard/overview" element={<Dashboard />} />
                   
                   <Route path="/members" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
@@ -87,6 +92,11 @@ export default function App() {
                   <Route path="/members/:id" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <MemberProfilePage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/members/progress/:id" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <MemberProgressPage />
                     </PrivateRoute>
                   } />
                   
@@ -113,6 +123,21 @@ export default function App() {
                   <Route path="/trainers/allocation" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <TrainerAllocationPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/trainers/pt-plans" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <TrainerPTPlansPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/trainers/attendance" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <TrainerAttendancePage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/trainers/profile" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <TrainerProfilePage />
                     </PrivateRoute>
                   } />
                   
@@ -179,6 +204,9 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
+                  {/* Redirect /memberships to /membership */}
+                  <Route path="/memberships" element={<Navigate to="/membership" replace />} />
+                  
                   <Route path="/communication/feedback" element={
                     <PrivateRoute>
                       <FeedbackPage />
@@ -223,26 +251,6 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  <Route path="/settings" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <SettingsPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <IntegrationsPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations/hikvision" element={
-                    <PrivateRoute allowedRoles={['admin']}>
-                      <HikvisionIntegrationPage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="/settings/integrations/hikvision-partner" element={
-                    <PrivateRoute allowedRoles={['admin']} requiredPermission="manage_integrations">
-                      <HikvisionPartnerPage />
-                    </PrivateRoute>
-                  } />
                 </Route>
               </Route>
               

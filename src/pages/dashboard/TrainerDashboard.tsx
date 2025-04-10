@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { Users, Calendar, Clock, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Users, Calendar, Clock, CheckCircle2, UserCircle, BarChart3, ActivitySquare } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
 import Announcements from "@/components/dashboard/Announcements";
@@ -10,9 +11,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockClasses, mockAnnouncements, mockMembers } from "@/data/mockData";
+import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/use-auth";
+import MemberProgressChart from "@/components/dashboard/MemberProgressChart";
 
 const TrainerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Simulate fetching data
   useEffect(() => {
@@ -22,10 +28,13 @@ const TrainerDashboard = () => {
   }, []);
 
   // Filter classes for this trainer (using trainer1 ID)
-  const trainerClasses = mockClasses.filter(c => c.trainerId === "trainer1");
+  const trainerClasses = mockClasses.filter(c => c.trainerId === user?.id || c.trainerId === "trainer1");
   
   // Filter members assigned to this trainer
-  const assignedMembers = mockMembers.filter(m => m.trainerId === "trainer1");
+  const assignedMembers = mockMembers.filter(m => m.trainerId === user?.id || m.trainerId === "trainer1");
+
+  // Personal Training Members - those who have PT subscriptions
+  const ptMembers = assignedMembers.filter(m => m.hasPTSubscription === true || m.id === "member-1");
 
   // Upcoming appointments
   const appointments = [
@@ -61,6 +70,16 @@ const TrainerDashboard = () => {
       time: "09:30 AM - 10:15 AM",
       date: "Tomorrow"
     }
+  ];
+
+  // Mock progress data for a PT member
+  const progressData = [
+    { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
+    { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
+    { date: '2025-03-01', metrics: { weight: 77, bodyFatPercentage: 20, bmi: 25.4, muscleGain: 2.2 } },
+    { date: '2025-04-01', metrics: { weight: 76, bodyFatPercentage: 19, bmi: 25.1, muscleGain: 2.8 } },
+    { date: '2025-05-01', metrics: { weight: 75, bodyFatPercentage: 18, bmi: 24.8, muscleGain: 3.5 } },
+    { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
   ];
 
   const getInitials = (name: string) => {
@@ -162,9 +181,10 @@ const TrainerDashboard = () => {
       </div>
 
       <Tabs defaultValue="members">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="members">Assigned Members</TabsTrigger>
           <TabsTrigger value="classes">My Classes</TabsTrigger>
+          <TabsTrigger value="pt-members">PT Members</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
         </TabsList>
         <TabsContent value="members" className="pt-4">
@@ -205,14 +225,101 @@ const TrainerDashboard = () => {
                       </div>
                       
                       <div className="pt-2 flex gap-2">
-                        <Button variant="secondary" size="sm">Workout Plan</Button>
-                        <Button variant="outline" size="sm">Diet Plan</Button>
+                        <Button variant="secondary" size="sm" onClick={() => navigate("/fitness/workout-plans")}>Workout Plan</Button>
+                        <Button variant="outline" size="sm" onClick={() => navigate("/fitness/diet")}>Diet Plan</Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-6">No members assigned to you yet</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="pt-members" className="pt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Personal Training Members</CardTitle>
+                  <CardDescription>Members with PT subscription</CardDescription>
+                </div>
+                <Button onClick={() => navigate("/trainers/pt-plans")}>Manage PT Plans</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {ptMembers.length > 0 ? (
+                <div className="space-y-6">
+                  {ptMembers.map(member => (
+                    <div key={member.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-medium text-lg">{member.name}</h3>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                                PT Member
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Since {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/members/progress/${member.id}`)}>
+                            View Progress
+                          </Button>
+                          <Button size="sm" onClick={() => navigate(`/members/${member.id}`)}>
+                            Profile
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Progress Overview</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Weight Loss</span>
+                              <span>75%</span>
+                            </div>
+                            <Progress value={75} className="h-2" />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Muscle Gain</span>
+                              <span>60%</span>
+                            </div>
+                            <Progress value={60} className="h-2" />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Overall Goal</span>
+                              <span>68%</span>
+                            </div>
+                            <Progress value={68} className="h-2" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <UserCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No PT Members</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    You don't have any personal training members assigned yet.
+                  </p>
+                  <Button onClick={() => navigate("/trainers/pt-plans")}>Manage PT Plans</Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -226,6 +333,80 @@ const TrainerDashboard = () => {
           <Announcements announcements={mockAnnouncements.filter(a => a.targetRoles.includes('trainer'))} />
         </TabsContent>
       </Tabs>
+
+      {ptMembers.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Member Progress</CardTitle>
+              <CardDescription>Recent progress of your PT members</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MemberProgressChart 
+                data={progressData}
+                memberId={ptMembers[0].id}
+                memberName={ptMembers[0].name}
+              />
+              <div className="mt-4 text-center">
+                <Button variant="outline" onClick={() => navigate(`/members/progress/${ptMembers[0].id}`)}>
+                  View Detailed Progress
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>My Attendance</CardTitle>
+              <CardDescription>Your attendance record</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <CheckCircle2 className="h-8 w-8 text-green-500 mr-2" />
+                      <span className="text-2xl font-bold">24</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Days Present</p>
+                  </div>
+                  <div className="border rounded-lg p-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <Clock className="h-8 w-8 text-amber-500 mr-2" />
+                      <span className="text-2xl font-bold">2</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">Days Absent</p>
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-medium mb-2">Recent Attendance</h3>
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => {
+                      const date = new Date();
+                      date.setDate(date.getDate() - i);
+                      return (
+                        <div key={i} className="flex justify-between items-center p-2 bg-muted/40 rounded">
+                          <span>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${i === 3 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'}`}>
+                            {i === 3 ? 'Absent' : 'Present'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <Button onClick={() => navigate("/trainers/attendance")}>
+                    View Full Attendance
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
