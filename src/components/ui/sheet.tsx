@@ -1,4 +1,3 @@
-
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
@@ -24,8 +23,10 @@ const SheetOverlay = React.forwardRef<
       "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
-    // Remove any pointer-events from inline styles that might override the class
-    style={{ ...style, pointerEvents: undefined }}
+    style={{ 
+      ...style, 
+      display: 'none' // Directly set display to none
+    }}
     {...props}
   />
 ))
