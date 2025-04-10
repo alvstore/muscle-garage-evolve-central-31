@@ -1,25 +1,16 @@
 
-import React from 'react';
-import ClassPage from '@/pages/classes/ClassPage';
-import AttendancePage from '@/pages/attendance/AttendancePage';
-import InventoryPage from '@/pages/inventory/InventoryPage';
-import ReportsPage from '@/pages/reports/ReportsPage';
+import React from "react";
+import { RouteObject } from "react-router-dom";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import FrontPagesManager from "@/pages/frontpages/FrontPagesManager";
 
-export const miscRoutes = [
+export const miscRoutes: RouteObject[] = [
   {
-    path: '/classes',
-    element: <ClassPage />
+    path: "/frontpages",
+    element: (
+      <PermissionGuard permission="manage_content">
+        <FrontPagesManager />
+      </PermissionGuard>
+    ),
   },
-  {
-    path: '/attendance',
-    element: <AttendancePage />
-  },
-  {
-    path: '/inventory',
-    element: <InventoryPage />
-  },
-  {
-    path: '/reports',
-    element: <ReportsPage />
-  }
 ];
