@@ -55,6 +55,11 @@ export const memberNavSections: NavSection[] = [
         icon: createNavIcon("Activity")
       },
       { 
+        href: "/fitness/progress", 
+        label: "Progress Tracker", 
+        icon: createNavIcon("TrendingUp")
+      },
+      { 
         href: "/fitness/diet", 
         label: "Diet Plan", 
         icon: createNavIcon("Utensils")
