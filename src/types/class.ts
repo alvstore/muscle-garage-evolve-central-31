@@ -43,6 +43,8 @@ export interface Class {
   recurringPattern?: string;
   daysOfWeek?: number[];
   status?: "scheduled" | "completed" | "cancelled";
+  createdAt?: string; // Add this property
+  updatedAt?: string; // Add this property
 }
 
 // Add missing type definitions

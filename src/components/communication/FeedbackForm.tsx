@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
+import { Feedback } from "@/types/notification";
 
 const formSchema = z.object({
   type: z.enum(["class", "trainer", "fitness-plan", "general"]),
@@ -32,6 +32,7 @@ const formSchema = z.object({
   rating: z.string().min(1, "Please select a rating"),
   comments: z.string().min(10, "Please provide comments (min 10 characters)").max(500, "Comments must be less than 500 characters"),
   anonymous: z.boolean().default(false),
+  title: z.string().min(3, "Please provide a title for your feedback")
 });
 
 interface FeedbackFormProps {
@@ -67,6 +68,7 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
       rating: "",
       comments: "",
       anonymous: false,
+      title: ""
     },
   });
 
@@ -104,6 +106,7 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
         rating: "",
         comments: "",
         anonymous: false,
+        title: ""
       });
       
       onComplete();
@@ -126,6 +129,24 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Feedback Title</FormLabel>
+                  <FormControl>
+                    <input
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Enter a title for your feedback"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="type"

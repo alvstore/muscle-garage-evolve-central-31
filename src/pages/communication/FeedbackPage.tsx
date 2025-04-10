@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,18 +10,6 @@ import { Feedback, FeedbackType } from '@/types/notification';
 import FeedbackList from '@/components/communication/FeedbackList';
 import FeedbackForm from '@/components/communication/FeedbackForm';
 import { useAuth } from '@/hooks/use-auth';
-
-// Define the props that match what FeedbackList requires
-interface CustomFeedbackListProps {
-  feedbacks: Feedback[];
-  isLoading: boolean;
-}
-
-// Define the props that match what FeedbackForm requires
-interface CustomFeedbackFormProps {
-  onComplete: () => void;
-  onSubmitFeedback: (newFeedback: Feedback) => void;
-}
 
 const mockFeedbacks: Feedback[] = [
   {
@@ -94,7 +81,6 @@ const FeedbackPage = () => {
   const { data: feedbacks, isLoading, refetch } = useQuery({
     queryKey: ['feedbacks'],
     queryFn: async () => {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       return mockFeedbacks;
     }
@@ -102,7 +88,6 @@ const FeedbackPage = () => {
 
   const addFeedbackMutation = useMutation({
     mutationFn: async (newFeedback: Feedback) => {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       return { ...newFeedback, id: `feedback${Date.now()}` };
     },
@@ -127,15 +112,6 @@ const FeedbackPage = () => {
     addFeedbackMutation.mutate(newFeedback);
   };
 
-  // Custom components that match what FeedbackList and FeedbackForm expect
-  const CustomFeedbackList: React.FC<CustomFeedbackListProps> = ({ feedbacks, isLoading }) => (
-    <FeedbackList feedbacks={feedbacks} isLoading={isLoading} />
-  );
-
-  const CustomFeedbackForm: React.FC<CustomFeedbackFormProps> = ({ onComplete, onSubmitFeedback }) => (
-    <FeedbackForm onComplete={onComplete} onSubmitFeedback={onSubmitFeedback} />
-  );
-
   return (
     <Container>
       <div className="py-6">
@@ -157,7 +133,7 @@ const FeedbackPage = () => {
           </TabsList>
 
           <TabsContent value="all">
-            <CustomFeedbackList
+            <FeedbackList
               feedbacks={feedbacks || []}
               isLoading={isLoading}
             />
@@ -165,7 +141,7 @@ const FeedbackPage = () => {
 
           {['class', 'trainer', 'fitness-plan', 'general'].map((type) => (
             <TabsContent key={type} value={type}>
-              <CustomFeedbackList
+              <FeedbackList
                 feedbacks={(feedbacks || []).filter(f => f.type === type as FeedbackType)}
                 isLoading={isLoading}
               />
@@ -174,9 +150,8 @@ const FeedbackPage = () => {
         </Tabs>
 
         {isModalOpen && (
-          <CustomFeedbackForm
+          <FeedbackForm
             onComplete={() => setIsModalOpen(false)}
-            onSubmitFeedback={handleSubmitFeedback}
           />
         )}
       </div>

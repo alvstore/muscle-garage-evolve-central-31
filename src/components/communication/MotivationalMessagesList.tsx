@@ -36,10 +36,12 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "motivation",
     tags: ["workout", "consistency"],
-    createdBy: "admin1",
+    targetRoles: ["member"],
+    frequency: "daily",
+    enabled: true,
     createdAt: "2023-01-15T10:00:00Z",
     updatedAt: "2023-01-15T10:00:00Z",
-    status: "active",
+    channels: ["push", "email"],
     active: true
   },
   {
@@ -49,10 +51,12 @@ const mockMessages: MotivationalMessage[] = [
     author: "Andrew Murphy",
     category: "motivation",
     tags: ["mindset", "strength"],
-    createdBy: "admin1",
+    targetRoles: ["member"],
+    frequency: "weekly",
+    enabled: true,
     createdAt: "2023-02-10T15:30:00Z",
     updatedAt: "2023-02-10T15:30:00Z",
-    status: "active",
+    channels: ["push", "email"],
     active: true
   },
   {
@@ -62,10 +66,12 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "nutrition",
     tags: ["food", "health"],
-    createdBy: "trainer1",
+    targetRoles: ["member"],
+    frequency: "weekly",
+    enabled: true,
     createdAt: "2023-03-05T09:45:00Z",
     updatedAt: "2023-03-05T09:45:00Z",
-    status: "active",
+    channels: ["push", "email"],
     active: true
   },
   {
@@ -75,10 +81,12 @@ const mockMessages: MotivationalMessage[] = [
     author: "Dwayne Johnson",
     category: "motivation",
     tags: ["consistency", "success"],
-    createdBy: "admin2",
+    targetRoles: ["member"],
+    frequency: "monthly",
+    enabled: false,
     createdAt: "2023-04-20T14:20:00Z",
     updatedAt: "2023-04-20T14:20:00Z",
-    status: "paused",
+    channels: ["push", "email"],
     active: false
   },
   {
@@ -88,10 +96,12 @@ const mockMessages: MotivationalMessage[] = [
     author: "Gene Tunney",
     category: "wellness",
     tags: ["health", "exercise"],
-    createdBy: "trainer2",
+    targetRoles: ["member"],
+    frequency: "weekly",
+    enabled: true,
     createdAt: "2023-05-12T11:15:00Z",
     updatedAt: "2023-05-12T11:15:00Z",
-    status: "active",
+    channels: ["push", "email"],
     active: true
   }
 ];

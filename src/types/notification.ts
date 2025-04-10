@@ -70,4 +70,7 @@ export interface MotivationalMessage {
   channels: NotificationChannel[];
   author?: string;
   tags?: string[];
+  category?: string; // Add this property
+  active?: boolean;  // Add this property
+  status?: string;   // Add this property
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -30,54 +29,12 @@ import { Feedback } from "@/types/notification";
 import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-// Mock data for feedback responses
-const mockFeedback: Feedback[] = [
-  {
-    id: "1",
-    memberId: "member1",
-    memberName: "John Smith",
-    type: "class",
-    relatedId: "class1",
-    rating: 5,
-    comments: "Great class! Really enjoyed the intensity and instructor's energy.",
-    createdAt: "2023-07-18T14:30:00Z",
-    anonymous: false
-  },
-  {
-    id: "2",
-    memberId: "member2",
-    memberName: "Emma Wilson",
-    type: "trainer",
-    relatedId: "trainer1",
-    rating: 4,
-    comments: "Very knowledgeable trainer, but sometimes sessions feel rushed.",
-    createdAt: "2023-07-17T10:45:00Z",
-    anonymous: false
-  },
-  {
-    id: "3",
-    memberId: "member3",
-    memberName: "Anonymous",
-    type: "fitness-plan",
-    relatedId: "plan1",
-    rating: 2,
-    comments: "I'm not seeing results with this plan. Need more personalization.",
-    createdAt: "2023-07-16T16:20:00Z",
-    anonymous: true
-  },
-  {
-    id: "4",
-    memberId: "member4",
-    memberName: "Mike Johnson",
-    type: "general",
-    rating: 3,
-    comments: "The gym equipment is good but the locker rooms need better maintenance.",
-    createdAt: "2023-07-15T08:10:00Z",
-    anonymous: false
-  }
-];
+interface FeedbackListProps {
+  feedbacks?: Feedback[];
+  isLoading?: boolean;
+}
 
-const FeedbackList = () => {
+const FeedbackList = ({ feedbacks = mockFeedback, isLoading = false }: FeedbackListProps) => {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
@@ -85,12 +42,12 @@ const FeedbackList = () => {
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate API call or use provided feedbacks
     setTimeout(() => {
-      setFeedback(mockFeedback);
-      setLoading(false);
+      setFeedback(feedbacks);
+      setLoading(isLoading);
     }, 1000);
-  }, []);
+  }, [feedbacks, isLoading]);
 
   const handleViewDetails = (feedback: Feedback) => {
     setSelectedFeedback(feedback);
