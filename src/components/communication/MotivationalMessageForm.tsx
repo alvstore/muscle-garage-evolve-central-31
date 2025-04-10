@@ -59,7 +59,7 @@ const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessag
       form.reset({
         content: editMessage.content,
         author: editMessage.author || "",
-        category: editMessage.category || "motivation",
+        category: (editMessage.category as "motivation" | "fitness" | "nutrition" | "wellness") || "motivation",
         tags: editMessage.tags ? editMessage.tags.join(", ") : "",
         active: editMessage.active !== undefined ? editMessage.active : true,
       });

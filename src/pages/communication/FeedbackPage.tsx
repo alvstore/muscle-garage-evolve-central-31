@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -152,6 +153,7 @@ const FeedbackPage = () => {
         {isModalOpen && (
           <FeedbackForm
             onComplete={() => setIsModalOpen(false)}
+            onSubmit={handleSubmitFeedback}
           />
         )}
       </div>
