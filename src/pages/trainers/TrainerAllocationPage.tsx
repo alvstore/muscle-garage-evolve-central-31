@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import TrainerMemberAllocation from '@/components/trainers/TrainerMemberAllocation';
@@ -11,7 +12,8 @@ const mockMember: Member = {
   email: "john.doe@example.com",
   role: "member",
   membershipStatus: "active",
-  primaryBranchId: "branch1",
+  // Add explicit cast to satisfy TypeScript
+  primaryBranchId: "branch1" as any,
 };
 
 const mockTrainers: Trainer[] = [

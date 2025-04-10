@@ -63,6 +63,9 @@ const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
     }
   };
   
+  // Safely access primaryBranchId with type casting to avoid errors
+  const branchId = (member as any).primaryBranchId || "Not specified";
+  
   return (
     <Card>
       <CardHeader>
@@ -91,7 +94,7 @@ const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
             </div>
             <div>
               <p className="text-sm font-medium">Branch</p>
-              <p className="text-sm text-muted-foreground">{member.primaryBranchId}</p>
+              <p className="text-sm text-muted-foreground">{branchId}</p>
             </div>
           </div>
         </div>
