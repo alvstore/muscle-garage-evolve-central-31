@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ const whatsAppSchema = z.object({
 type WhatsAppFormValues = z.infer<typeof whatsAppSchema>;
 
 const WhatsAppSettings = () => {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Initialize the form with useForm
   const form = useForm<WhatsAppFormValues>({
@@ -88,7 +89,7 @@ const WhatsAppSettings = () => {
           communication.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <div className="rounded-md bg-blue-50 p-4 border border-blue-200 text-blue-800">
           <div className="flex gap-2">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -284,23 +285,22 @@ const WhatsAppSettings = () => {
                   )}
                 </Button>
 
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => onSendTestMessage()}
-                    disabled={isLoading || !formState.isValid}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Send Test Message
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => onSendTestMessage()}
+                  disabled={isLoading || !formState.isValid}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Send Test Message
+                </Button>
               </div>
             </div>
           </form>
-        )}
-      </Form>
-    </CardContent>
-  </Card>
-);
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default WhatsAppSettings;
