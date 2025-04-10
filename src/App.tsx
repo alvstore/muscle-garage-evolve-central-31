@@ -31,6 +31,7 @@ import AttendancePage from './pages/attendance/AttendancePage';
 import MembersListPage from './pages/members/MembersListPage';
 import MemberProfilePage from './pages/members/MemberProfilePage';
 import NewMemberPage from './pages/members/NewMemberPage';
+import ReportsPage from './pages/reports/ReportsPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -158,7 +159,7 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   <Route path="/communication/announcements" element={
-                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                    <PrivateRoute>
                       <AnnouncementPage />
                     </PrivateRoute>
                   } />
@@ -189,6 +190,13 @@ export default function App() {
                   <Route path="/finance/transactions" element={
                     <PrivateRoute allowedRoles={['admin', 'staff']}>
                       <TransactionPage />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Reports Route */}
+                  <Route path="/reports" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <ReportsPage />
                     </PrivateRoute>
                   } />
                   
