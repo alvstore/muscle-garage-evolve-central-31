@@ -83,4 +83,25 @@ export const RoutePermissionGuard = ({
   return null;
 };
 
+/**
+ * Component for UI elements that require specific feature permissions
+ */
+export const FeaturePermissionGuard = ({
+  permission,
+  fallback = null,
+  children
+}: {
+  permission: Permission;
+  fallback?: ReactNode;
+  children: ReactNode;
+}) => {
+  const { can } = usePermissions();
+  
+  if (can(permission, false)) {
+    return <>{children}</>;
+  }
+  
+  return <>{fallback}</>;
+};
+
 export default PermissionGuard;

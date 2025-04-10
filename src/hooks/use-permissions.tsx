@@ -27,7 +27,7 @@ export type Permission =
   | "view_branch_data"
   | "switch_branches"
   | "access_own_resources"
-  // New permissions for menu access
+  // Menu access permissions
   | "view_all_users"
   | "view_all_trainers"
   | "view_all_classes"
@@ -55,7 +55,23 @@ export type Permission =
   | "member_make_payments"
   | "member_view_plans"
   | "member_book_classes"
-  | "member_view_attendance";
+  | "member_view_attendance"
+  // Enhanced role-specific feature permissions
+  | "feature_trainer_dashboard"
+  | "feature_staff_dashboard"
+  | "feature_member_dashboard"
+  | "feature_admin_dashboard"
+  | "feature_pos_system"
+  | "feature_reporting"
+  | "feature_inventory_management"
+  | "feature_class_scheduling"
+  | "feature_attendance_tracking"
+  | "feature_membership_management"
+  | "feature_payment_processing"
+  | "feature_email_campaigns"
+  | "feature_sms_campaigns"
+  | "feature_whatsapp_campaigns"
+  | "feature_social_media_integration";
 
 export const usePermissions = () => {
   const { user } = useAuth();
@@ -101,11 +117,20 @@ export const usePermissions = () => {
     return userRole === 'admin' || (userRole === 'staff' && extendedUser?.isBranchManager === true);
   };
   
+  /**
+   * Check if current user is system admin
+   * @returns Boolean indicating if user is system admin
+   */
+  const isSystemAdmin = (): boolean => {
+    return userRole === 'admin';
+  };
+  
   return {
     can,
     canAccess,
     hasRole,
     isBranchAdmin,
+    isSystemAdmin,
     userRole,
   };
 };

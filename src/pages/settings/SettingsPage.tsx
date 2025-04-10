@@ -16,9 +16,12 @@ import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 const SettingsPage = () => {
   const { user } = useAuth();
+  const { can, isSystemAdmin } = usePermissions();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
 
@@ -70,10 +73,12 @@ const SettingsPage = () => {
                   <Brain className="h-4 w-4" />
                   <span className="hidden md:inline">Automation</span>
                 </TabsTrigger>
-                <TabsTrigger value="permissions" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  <span className="hidden md:inline">Permissions</span>
-                </TabsTrigger>
+                <PermissionGuard permission="manage_roles">
+                  <TabsTrigger value="permissions" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline">Permissions</span>
+                  </TabsTrigger>
+                </PermissionGuard>
               </TabsList>
             </CardContent>
           </Card>
@@ -107,7 +112,9 @@ const SettingsPage = () => {
           </TabsContent>
           
           <TabsContent value="permissions">
-            <PermissionsSettings />
+            <PermissionGuard permission="manage_roles" fallback={<Navigate to="/unauthorized" replace />}>
+              <PermissionsSettings />
+            </PermissionGuard>
           </TabsContent>
         </Tabs>
       </div>
