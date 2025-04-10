@@ -14,6 +14,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1", "branch2", "branch3"],
     isBranchManager: true,
+    avatar: null, // Add avatar field with null value
   },
   staff: {
     id: "staff1",
@@ -24,6 +25,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
+    avatar: null, // Add avatar field with null value
   },
   trainer: {
     id: "trainer1",
@@ -34,6 +36,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
+    avatar: null, // Add avatar field with null value
   },
   member: {
     id: "member1",
@@ -44,6 +47,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
+    avatar: null, // Add avatar field with null value
   }
 };
 
@@ -82,7 +86,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const parsedUser = JSON.parse(storedUser);
           // Ensure the role is a valid UserRole
           if (isValidUserRole(parsedUser.role)) {
-            setUser(parsedUser as User);
+            // Make sure the user object has all required fields
+            setUser({
+              ...parsedUser,
+              avatar: parsedUser.avatar || null // Ensure avatar field exists
+            } as User);
           } else {
             console.error("Invalid user role stored in localStorage");
             localStorage.removeItem('user');
@@ -126,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         branchId: branchId || foundUser.branchId,
         branchIds: foundUser.branchIds,
         isBranchManager: foundUser.isBranchManager,
+        avatar: foundUser.avatar,
       };
       
       // Store user data in localStorage

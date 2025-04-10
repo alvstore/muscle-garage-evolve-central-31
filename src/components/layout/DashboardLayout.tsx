@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -49,6 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import BranchSelector from '@/components/branch/BranchSelector';
+import { useAuth } from "@/hooks/use-auth";
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -65,7 +67,7 @@ interface NavItemGroupProps {
 }
 
 interface DashboardLayoutProps {
-  user: User;
+  user?: User;
 }
 
 const NavItem = ({ icon: Icon, title, path, active, children, onClick }: NavItemProps) => {
@@ -133,7 +135,10 @@ const NavItemGroup = ({ title, children }: NavItemGroupProps) => {
   );
 };
 
-const DashboardLayout = ({ user }: DashboardLayoutProps) => {
+const DashboardLayout = () => {
+  // Get the user from useAuth hook instead of props
+  const { user } = useAuth();
+  
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -141,6 +146,7 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -154,6 +160,17 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
     setDarkMode(!darkMode);
     localStorage.setItem('theme', !darkMode ? 'dark' : 'light');
   };
+  
+  const { logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -162,6 +179,18 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+  
+  // If there's no user, don't render the dashboard yet
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
+          <p className="mt-4 text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const navigationItems = [
     {
@@ -330,14 +359,14 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
             <AvatarFallback className="bg-indigo-600 text-white">
-              {user.name?.split(' ').map(n => n[0]).join('')}
+              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="ml-3">
-            <p className="text-sm font-medium text-white">{user.name}</p>
-            <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+            <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
+            <p className="text-xs text-gray-400 capitalize">{user?.role || 'User'}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -357,7 +386,7 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -375,7 +404,7 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
       </div>
       
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-gray-800 text-white">
+        <SheetContent side="left" className="p-0 w-64 bg-gray-800 text-white border-none">
           <Sidebar />
         </SheetContent>
       </Sheet>
@@ -418,14 +447,14 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 pl-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
                       <AvatarFallback className="bg-indigo-600 text-white text-xs">
-                        {user.name?.split(' ').map(n => n[0]).join('')}
+                        {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start">
-                      <span className="text-sm font-medium text-gray-800 dark:text-white">{user.name}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role}</span>
+                      <span className="text-sm font-medium text-gray-800 dark:text-white">{user?.name || 'User'}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role || 'User'}</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </Button>
@@ -442,7 +471,7 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -459,5 +488,8 @@ const DashboardLayout = ({ user }: DashboardLayoutProps) => {
     </div>
   );
 };
+
+// Missing Loader2 component import
+import { Loader2 } from "lucide-react";
 
 export default DashboardLayout;
