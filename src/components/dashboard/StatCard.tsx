@@ -1,42 +1,60 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
+type StatChange = {
+  direction: 'up' | 'down' | 'neutral';
+  value: string;
+};
 
 interface StatCardProps {
-  icon: LucideIcon;
   title: string;
   value: string | number;
-  description?: string;
-  iconColor?: string;
-  change?: {
-    direction: "up" | "down" | "neutral";
-    value: string;
-  };
+  icon: LucideIcon;
+  change: StatChange;
 }
 
-const StatCard = ({ icon: Icon, title, value, description, iconColor, change }: StatCardProps) => {
+const StatCard = ({ title, value, icon: Icon, change }: StatCardProps) => {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={cn("h-4 w-4 text-muted-foreground", iconColor)} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {change && (
-          <div className={cn(
-            "text-xs font-medium mt-1",
-            change.direction === "up" ? "text-green-500" : 
-            change.direction === "down" ? "text-red-500" : "text-gray-500"
-          )}>
-            {change.direction === "up" && "↑ "}
-            {change.direction === "down" && "↓ "}
-            {change.value}
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+            <h3 className="text-2xl font-bold mt-1">{value}</h3>
+            
+            <div className="flex items-center mt-1">
+              {change.direction === 'up' && (
+                <span className="text-green-500 text-xs font-medium flex items-center">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  {change.value}
+                </span>
+              )}
+              
+              {change.direction === 'down' && (
+                <span className="text-red-500 text-xs font-medium flex items-center">
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  {change.value}
+                </span>
+              )}
+              
+              {change.direction === 'neutral' && (
+                <span className="text-gray-500 text-xs font-medium">
+                  {change.value}
+                </span>
+              )}
+            </div>
           </div>
-        )}
-        {description && <CardDescription className="text-xs text-muted-foreground">{description}</CardDescription>}
+          
+          <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+            <Icon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

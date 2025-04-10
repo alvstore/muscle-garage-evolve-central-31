@@ -11,7 +11,9 @@ import {
   Search,
   Menu,
   UserCircle,
-  Loader2
+  Loader2,
+  Settings,
+  Languages
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { User } from "@/types";
@@ -28,7 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import BranchSelector from '@/components/branch/BranchSelector';
 import { useAuth } from "@/hooks/use-auth";
 import DashboardSidebar from "./DashboardSidebar";
@@ -101,7 +102,7 @@ const DashboardLayout = () => {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
+          <Loader2 className="h-12 w-12 mx-auto animate-spin text-indigo-600" />
           <p className="mt-4 text-lg font-medium">Loading...</p>
         </div>
       </div>
@@ -129,7 +130,7 @@ const DashboardLayout = () => {
   const SidebarComponent = user.role === 'member' ? MemberSidebar : DashboardSidebar;
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar for desktop */}
       <div className="hidden md:block md:w-64 fixed inset-y-0">
         <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
@@ -150,10 +151,21 @@ const DashboardLayout = () => {
               >
                 <Menu className="h-6 w-6" />
               </Button>
-              <h1 className="ml-4 text-xl font-semibold text-gray-800 dark:text-white">
-                {getPageTitle()}
-              </h1>
+              
+              <div className="ml-4 mr-8 hidden md:block">
+                <form>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input 
+                      type="search" 
+                      placeholder="Search..." 
+                      className="pl-8 w-64 bg-gray-50 border-gray-200 focus:bg-white"
+                    />
+                  </div>
+                </form>
+              </div>
             </div>
+            
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost"
@@ -163,13 +175,16 @@ const DashboardLayout = () => {
               >
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
+              
               <Button variant="ghost" size="icon" className="text-gray-600 dark:text-gray-300 relative">
                 <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-indigo-600 text-white">
                   3
                 </Badge>
               </Button>
+              
               <Separator orientation="vertical" className="h-8" />
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 pl-2">
@@ -186,7 +201,7 @@ const DashboardLayout = () => {
                     <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/members/profile")}>
@@ -194,7 +209,7 @@ const DashboardLayout = () => {
                     <span>Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/settings")}>
-                    <UserCircle className="mr-2 h-4 w-4" />
+                    <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -208,7 +223,7 @@ const DashboardLayout = () => {
           </div>
         </header>
         
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>

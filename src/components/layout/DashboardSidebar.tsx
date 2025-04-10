@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Sheet,
@@ -32,20 +33,11 @@ import {
   Tag,
   Gift,
   Home,
-  FileText,
   ChevronRight,
   ChevronDown,
   ShoppingCart,
-  Briefcase,
-  Bookmark,
-  GraduationCap,
-  Truck,
-  Mail,
-  Calendar,
-  Trello,
-  Lock,
-  Shield,
-  Key
+  LogOut,
+  CircleDot
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -112,36 +104,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           permission: "access_dashboards",
         },
       ],
-    },
-    {
-      name: "E-commerce",
-      icon: <ShoppingCart className="h-5 w-5" />,
-      items: [
-        { 
-          href: "/store", 
-          label: "Store", 
-          icon: <ShoppingBag className="h-5 w-5" />,
-          permission: "access_store",
-        },
-        { 
-          href: "/inventory", 
-          label: "Inventory", 
-          icon: <Package className="h-5 w-5" />,
-          permission: "access_inventory",
-        },
-        { 
-          href: "/marketing/promo", 
-          label: "Promotions", 
-          icon: <Tag className="h-5 w-5" />,
-          permission: "access_marketing",
-        },
-        { 
-          href: "/marketing/referral", 
-          label: "Referral Program", 
-          icon: <Gift className="h-5 w-5" />,
-          permission: "access_marketing",
-        },
-      ]
     },
     {
       name: "Members & Trainers",
@@ -216,8 +178,38 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       ],
     },
     {
+      name: "E-commerce",
+      icon: <ShoppingCart className="h-5 w-5" />,
+      items: [
+        { 
+          href: "/store", 
+          label: "Store", 
+          icon: <ShoppingBag className="h-5 w-5" />,
+          permission: "access_store",
+        },
+        { 
+          href: "/inventory", 
+          label: "Inventory", 
+          icon: <Package className="h-5 w-5" />,
+          permission: "access_inventory",
+        },
+        { 
+          href: "/marketing/promo", 
+          label: "Promotions", 
+          icon: <Tag className="h-5 w-5" />,
+          permission: "access_marketing",
+        },
+        { 
+          href: "/marketing/referral", 
+          label: "Referral Program", 
+          icon: <Gift className="h-5 w-5" />,
+          permission: "access_marketing",
+        },
+      ]
+    },
+    {
       name: "CRM",
-      icon: <Briefcase className="h-5 w-5" />,
+      icon: <UserPlus className="h-5 w-5" />,
       items: [
         { 
           href: "/crm/leads", 
@@ -270,18 +262,18 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       ],
     },
     {
-      name: "User Management",
-      icon: <User className="h-5 w-5" />,
+      name: "Settings",
+      icon: <Settings className="h-5 w-5" />,
       items: [
         { 
-          href: "/settings/roles", 
-          label: "Roles & Permissions", 
-          icon: <Shield className="h-5 w-5" />, 
-          permission: "manage_roles",
+          href: "/settings", 
+          label: "General Settings", 
+          icon: <Settings className="h-5 w-5" />, 
+          permission: "access_own_resources",
         },
         { 
           href: "/settings/users", 
-          label: "User List", 
+          label: "User Management", 
           icon: <Users className="h-5 w-5" />, 
           permission: "view_all_users",
         },
@@ -293,45 +285,17 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
         },
       ],
     },
-    {
-      name: "Settings",
-      icon: <Settings className="h-5 w-5" />,
-      items: [
-        { 
-          href: "/settings", 
-          label: "General Settings", 
-          icon: <Settings className="h-5 w-5" />, 
-          permission: "access_own_resources",
-        },
-        { 
-          href: "/settings/security", 
-          label: "Security", 
-          icon: <Lock className="h-5 w-5" />, 
-          permission: "access_own_resources",
-        },
-        { 
-          href: "/settings/api", 
-          label: "API Keys", 
-          icon: <Key className="h-5 w-5" />, 
-          permission: "manage_integrations",
-        },
-        { 
-          href: "/settings/integrations", 
-          label: "Integrations", 
-          icon: <ActivityIcon className="h-5 w-5" />, 
-          permission: "manage_integrations",
-        },
-      ],
-    },
   ];
 
   return (
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
-      <SheetContent side="left" className="w-64 p-0 bg-[#2c2c44] text-white border-none">
+      <SheetContent side="left" className="w-64 p-0 bg-[#283046] text-white border-none">
         <div className="flex flex-col h-full">
-          <div className="p-4 flex items-center gap-3">
-            <Logo variant="white" />
-            <h1 className="text-lg font-semibold">Muscle Garage</h1>
+          <div className="p-4 flex items-center gap-3 border-b border-gray-700">
+            <div className="bg-indigo-600 p-2 rounded-md">
+              <Logo variant="white" />
+            </div>
+            <h1 className="text-lg font-semibold text-white">Muscle Garage</h1>
           </div>
           
           <div className="flex-1 overflow-y-auto py-2">
@@ -348,7 +312,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                 <div key={index} className="mb-1">
                   <button
                     onClick={() => toggleSection(section.name)}
-                    className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       {section.icon}
@@ -375,7 +339,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                                 flex items-center gap-2 py-2 px-3 text-sm rounded-md my-1 transition-colors
                                 ${isActive 
                                   ? 'bg-indigo-600 text-white' 
-                                  : 'text-white/70 hover:text-white hover:bg-white/10'}
+                                  : 'text-gray-300 hover:text-white hover:bg-[#1e2740]'}
                               `}
                             >
                               {item.icon}
@@ -397,13 +361,14 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           </div>
           
           <div className="mt-auto p-4">
-            <Separator className="my-2 bg-white/10" />
+            <Separator className="my-2 bg-gray-700" />
             <Button
               variant="ghost"
-              className="w-full justify-start text-white/70 hover:text-white hover:bg-white/10"
+              className="w-full justify-start text-gray-300 hover:text-white hover:bg-[#1e2740]"
               onClick={handleLogout}
               disabled={isLoggingOut}
             >
+              <LogOut className="mr-2 h-5 w-5" />
               {isLoggingOut ? "Logging out..." : "Logout"}
             </Button>
           </div>

@@ -1,7 +1,24 @@
+
 import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from 'lucide-react';
+import { 
+  FileText, 
+  CreditCard, 
+  Users, 
+  CalendarCheck, 
+  DollarSign, 
+  TrendingUp, 
+  Gift, 
+  Home, 
+  Activity 
+} from 'lucide-react';
 import { Feedback } from '@/types/notification';
 
 import DashboardHeader from '@/components/dashboard/sections/DashboardHeader';
@@ -9,16 +26,8 @@ import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';
 import MemberStatusSection from '@/components/dashboard/sections/MemberStatusSection';
 import AttendanceSection from '@/components/dashboard/sections/AttendanceSection';
-import RenewalsSection from '@/components/dashboard/sections/RenewalsSection';
-import ActivitySection from '@/components/dashboard/sections/ActivitySection';
-import MemberProgressSection from '@/components/dashboard/sections/MemberProgressSection';
-import ChurnPredictionSection from '@/components/dashboard/sections/ChurnPredictionSection';
-import FeedbackSection from '@/components/dashboard/sections/FeedbackSection';
-import ClassesSection from '@/components/dashboard/sections/ClassesSection';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-
   // Mock data for dashboard
   const dashboardData = {
     totalMembers: 328,
@@ -72,121 +81,120 @@ const AdminDashboard = () => {
     { month: 'Jun', revenue: 21000, expenses: 5600, profit: 15400 }
   ];
 
-  const recentFeedback: Feedback[] = [
+  const featuredActions = [
     {
-      id: "feedback1",
-      memberId: "member1",
-      memberName: "David Miller",
-      type: "class",
-      relatedId: "class1",
-      rating: 4,
-      comments: "Great class, but the room was a bit crowded.",
-      createdAt: "2023-06-15T10:30:00Z",
-      anonymous: false,
-      title: "HIIT Class Review"
+      title: "Member Registration",
+      description: "Quickly register new members with form validation",
+      icon: <Users className="h-10 w-10 text-indigo-500" />,
+      url: "/members/new"
     },
     {
-      id: "feedback2",
-      memberId: "member2",
-      memberName: "Sarah Parker",
-      type: "trainer",
-      relatedId: "trainer1",
-      rating: 5,
-      comments: "Excellent trainer, very motivating!",
-      createdAt: "2023-06-16T14:20:00Z",
-      anonymous: false,
-      title: "Trainer Review"
+      title: "Add New Class",
+      description: "Create and schedule new fitness classes",
+      icon: <CalendarCheck className="h-10 w-10 text-indigo-500" />,
+      url: "/classes"
     },
     {
-      id: "feedback3",
-      memberId: "member3",
-      type: "fitness-plan",
-      relatedId: "plan1",
-      rating: 3,
-      comments: "Plan is good but too challenging for beginners.",
-      createdAt: "2023-06-17T09:15:00Z",
-      anonymous: true,
-      title: "Fitness Plan Feedback"
+      title: "Process Payment",
+      description: "Process membership payments and invoices",
+      icon: <CreditCard className="h-10 w-10 text-indigo-500" />,
+      url: "/finance/transactions"
     },
     {
-      id: "feedback4",
-      memberId: "member4",
-      memberName: "Emily Davidson",
-      type: "general",
-      rating: 2,
-      comments: "The gym needs better ventilation.",
-      createdAt: "2023-06-18T16:45:00Z",
-      anonymous: false,
-      title: "Facility Feedback"
+      title: "Attendance Tracking",
+      description: "Track member check-ins and attendance",
+      icon: <Activity className="h-10 w-10 text-indigo-500" />,
+      url: "/attendance"
     },
     {
-      id: "feedback5",
-      memberId: "member5",
-      memberName: "Michael Wong",
-      type: "class",
-      relatedId: "class2",
-      rating: 5,
-      comments: "Best HIIT class I've ever taken!",
-      createdAt: "2023-06-19T11:30:00Z",
-      anonymous: false,
-      title: "Yoga Class Review"
+      title: "Create Promotion",
+      description: "Set up referral programs and special offers",
+      icon: <Gift className="h-10 w-10 text-indigo-500" />,
+      url: "/marketing/promo"
+    },
+    {
+      title: "Financial Reports",
+      description: "View revenue and financial analytics",
+      icon: <DollarSign className="h-10 w-10 text-indigo-500" />,
+      url: "/finance/dashboard"
     }
   ];
 
   return (
-    <div className="space-y-6 p-2">
+    <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-900">
       <DashboardHeader />
-
-      <Tabs
-        defaultValue={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="classes">Classes</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="trainers">Trainers</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <OverviewStats data={dashboardData} />
+      
+      <div className="space-y-6">
+        {/* Overview Stats */}
+        <OverviewStats data={dashboardData} />
+        
+        {/* Featured Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {featuredActions.map((action, index) => (
+            <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
+                    {action.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-1">{action.title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
+                    <Button variant="ghost" className="mt-3 px-0 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-transparent" asChild>
+                      <a href={action.url}>Show</a>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Analytics Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <RevenueSection data={revenueData} />
+          <MemberStatusSection data={membersByStatus} />
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          <AttendanceSection data={attendanceTrend} />
           
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <RevenueSection data={revenueData} />
-            <MemberStatusSection data={membersByStatus} />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <AttendanceSection data={attendanceTrend} />
-            <RenewalsSection />
-          </div>
-
-          <ActivitySection />
-        </TabsContent>
-
-        <TabsContent value="members" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <MemberProgressSection />
-            <ChurnPredictionSection />
-          </div>
-          
-          <FeedbackSection data={recentFeedback} />
-        </TabsContent>
-
-        <TabsContent value="classes" className="space-y-4">
-          <ClassesSection />
-        </TabsContent>
-
-        <TabsContent value="payments" className="space-y-4">
-          {/* Similar content for payments tab */}
-        </TabsContent>
-
-        <TabsContent value="trainers" className="space-y-4">
-          {/* Similar content for trainers tab */}
-        </TabsContent>
-      </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Commonly used gym management tools</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
+                  <a href="/inventory">
+                    <FileText className="h-5 w-5 text-indigo-500" />
+                    <span>Inventory</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
+                  <a href="/communication/announcements">
+                    <TrendingUp className="h-5 w-5 text-indigo-500" />
+                    <span>Announcements</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
+                  <a href="/store">
+                    <Home className="h-5 w-5 text-indigo-500" />
+                    <span>Store</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
+                  <a href="/settings">
+                    <DollarSign className="h-5 w-5 text-indigo-500" />
+                    <span>Settings</span>
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
