@@ -16,12 +16,9 @@ import {
   DollarSign, 
   TrendingUp, 
   Gift, 
-  Home, 
   Activity 
 } from 'lucide-react';
-import { Feedback } from '@/types/notification';
 
-import DashboardHeader from '@/components/dashboard/sections/DashboardHeader';
 import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';
 import MemberStatusSection from '@/components/dashboard/sections/MemberStatusSection';
@@ -121,8 +118,21 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to Muscle Garage management system</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="h-8">
+            Date Range
+          </Button>
+          <Button variant="default" className="h-8 bg-indigo-600 hover:bg-indigo-700">
+            Export
+          </Button>
+        </div>
+      </div>
       
       <div className="space-y-6">
         {/* Overview Stats */}
@@ -180,7 +190,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
                   <a href="/store">
-                    <Home className="h-5 w-5 text-indigo-500" />
+                    <CreditCard className="h-5 w-5 text-indigo-500" />
                     <span>Store</span>
                   </a>
                 </Button>

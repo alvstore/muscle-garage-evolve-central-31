@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Sheet,
@@ -12,40 +13,29 @@ import {
   Dumbbell,
   ClipboardList,
   CreditCard,
-  Activity as ActivityIcon,
+  Activity,
   DollarSign,
   Receipt,
   ArrowLeftRight,
   Package,
   Bell,
   MessageSquare,
-  Heart,
-  AlarmClock,
-  Settings,
-  User as UserIcon,
   CalendarCheck,
   UserPlus,
-  Filter,
-  MessageCircle,
   ShoppingBag,
-  Tag,
   Gift,
   Home,
   ChevronRight,
   ChevronDown,
-  ShoppingCart,
   LogOut,
   Circle,
-  FileText,
   BarChart3,
-  Calendar,
-  Mail,
-  MessageCircleMore,
-  Kanban,
-  Plus,
-  FileEdit,
-  List,
-  Eye
+  CalendarDays,
+  Settings,
+  Eye,
+  FileText,
+  Store,
+  MessageCircle
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -83,7 +73,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
   const { user, logout } = useAuth();
   const { userRole, can } = usePermissions();
   
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboards']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleSection = (sectionName: string) => {
@@ -120,83 +110,51 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       items: [
         { 
           href: "/dashboard", 
-          label: "Dashboards", 
+          label: "Dashboard", 
           icon: <LayoutDashboard className="h-5 w-5" />, 
-          badge: "5",
-          permission: "access_dashboards",
-          children: [
-            { 
-              href: "/dashboard", 
-              label: "Analytics", 
-              icon: <BarChart3 className="h-5 w-5" />, 
-              permission: "access_dashboards" 
-            },
-            { 
-              href: "/crm", 
-              label: "CRM", 
-              icon: <UserPlus className="h-5 w-5" />, 
-              permission: "access_crm" 
-            },
-            { 
-              href: "/store", 
-              label: "Ecommerce", 
-              icon: <ShoppingBag className="h-5 w-5" />,
-              permission: "access_store",
-            },
-            { 
-              href: "/classes", 
-              label: "Academy", 
-              icon: <Dumbbell className="h-5 w-5" />, 
-              permission: "trainer_view_classes",
-            },
-            { 
-              href: "/inventory", 
-              label: "Logistics", 
-              icon: <Package className="h-5 w-5" />,
-              permission: "access_inventory",
-            },
-          ]
+          permission: "access_dashboards"
         },
         { 
-          href: "/pages", 
-          label: "Front Pages", 
-          icon: <FileText className="h-5 w-5" />, 
+          href: "/dashboard/overview", 
+          label: "Overview", 
+          icon: <Eye className="h-5 w-5" />, 
           permission: "access_dashboards" 
         },
       ]
     },
     {
-      name: "APPS & PAGES",
+      name: "GYM MANAGEMENT",
       items: [
         { 
-          href: "/store", 
-          label: "Ecommerce", 
-          icon: <ShoppingCart className="h-5 w-5" />,
-          permission: "access_store",
+          href: "/members", 
+          label: "Members & Trainers", 
+          icon: <Users className="h-5 w-5" />,
+          badge: "328",
+          permission: "manage_members",
           children: [
             { 
-              href: "/store", 
-              label: "Store", 
-              icon: <ShoppingBag className="h-5 w-5" />,
-              permission: "access_store",
+              href: "/members", 
+              label: "Members List", 
+              icon: <Users className="h-5 w-5" />, 
+              permission: "manage_members" 
             },
             { 
-              href: "/inventory", 
-              label: "Inventory", 
-              icon: <Package className="h-5 w-5" />,
-              permission: "access_inventory",
+              href: "/members/new", 
+              label: "Add Member", 
+              icon: <UserPlus className="h-5 w-5" />, 
+              permission: "register_member" 
             },
             { 
-              href: "/marketing/promo", 
-              label: "Promotions", 
-              icon: <Tag className="h-5 w-5" />,
-              permission: "access_marketing",
-            },
+              href: "/trainers", 
+              label: "Trainers", 
+              icon: <Dumbbell className="h-5 w-5" />, 
+              permission: "view_all_trainers" 
+            }
           ]
         },
         { 
           href: "/classes", 
-          label: "Academy", 
+          label: "Programs", 
           icon: <Dumbbell className="h-5 w-5" />, 
           permission: "trainer_view_classes",
           children: [
@@ -209,113 +167,154 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             { 
               href: "/fitness-plans", 
               label: "Fitness Plans", 
-              icon: <ActivityIcon className="h-5 w-5" />, 
+              icon: <Activity className="h-5 w-5" />, 
               permission: "trainer_edit_fitness",
+            },
+            { 
+              href: "/memberships", 
+              label: "Membership Plans", 
+              icon: <CreditCard className="h-5 w-5" />, 
+              permission: "member_view_plans" 
             },
           ]
         },
         { 
-          href: "/inventory", 
-          label: "Logistics", 
-          icon: <Package className="h-5 w-5" />,
-          permission: "access_inventory",
+          href: "/finance/invoices", 
+          label: "Finance", 
+          icon: <DollarSign className="h-5 w-5" />, 
+          permission: "view_invoices",
           children: [
+            { 
+              href: "/finance/invoices", 
+              label: "Invoices", 
+              icon: <Receipt className="h-5 w-5" />, 
+              permission: "view_invoices" 
+            },
+            { 
+              href: "/finance/transactions", 
+              label: "Transactions", 
+              icon: <ArrowLeftRight className="h-5 w-5" />, 
+              permission: "manage_payments" 
+            },
+          ]
+        },
+        { 
+          href: "/store", 
+          label: "E-commerce", 
+          icon: <ShoppingBag className="h-5 w-5" />,
+          permission: "access_store",
+          children: [
+            { 
+              href: "/store", 
+              label: "Store", 
+              icon: <Store className="h-5 w-5" />,
+              permission: "access_store",
+            },
             { 
               href: "/inventory", 
               label: "Inventory", 
               icon: <Package className="h-5 w-5" />,
               permission: "access_inventory",
+            }
+          ]
+        },
+        { 
+          href: "/crm/leads", 
+          label: "CRM", 
+          icon: <UserPlus className="h-5 w-5" />, 
+          permission: "access_crm",
+          children: [
+            { 
+              href: "/crm/leads", 
+              label: "Leads", 
+              icon: <UserPlus className="h-5 w-5" />, 
+              permission: "access_crm" 
+            },
+            { 
+              href: "/crm/funnel", 
+              label: "Sales Funnel", 
+              icon: <BarChart3 className="h-5 w-5" />, 
+              permission: "access_crm" 
+            },
+            { 
+              href: "/crm/follow-up", 
+              label: "Follow-up", 
+              icon: <CalendarCheck className="h-5 w-5" />, 
+              permission: "access_crm" 
+            }
+          ]
+        },
+        { 
+          href: "/communication/announcements", 
+          label: "Communication", 
+          icon: <MessageCircle className="h-5 w-5" />, 
+          permission: "access_communication",
+          children: [
+            { 
+              href: "/communication/announcements", 
+              label: "Announcements", 
+              icon: <Bell className="h-5 w-5" />, 
+              permission: "access_communication" 
+            },
+            { 
+              href: "/communication/feedback", 
+              label: "Feedback", 
+              icon: <MessageSquare className="h-5 w-5" />, 
+              permission: "access_communication" 
+            },
+            { 
+              href: "/communication/reminders", 
+              label: "Reminders", 
+              icon: <Bell className="h-5 w-5" />, 
+              permission: "access_communication" 
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "TOOLS",
+      items: [
+        { 
+          href: "/attendance", 
+          label: "Attendance", 
+          icon: <CalendarDays className="h-5 w-5" />, 
+          permission: "view_all_attendance" 
+        },
+        { 
+          href: "/marketing/promo", 
+          label: "Marketing", 
+          icon: <Gift className="h-5 w-5" />,
+          permission: "access_marketing",
+          children: [
+            { 
+              href: "/marketing/promo", 
+              label: "Promotions", 
+              icon: <Gift className="h-5 w-5" />,
+              permission: "access_marketing",
             },
             { 
               href: "/marketing/referral", 
               label: "Referral Program", 
               icon: <Gift className="h-5 w-5" />,
               permission: "access_marketing",
-            },
+            }
           ]
         },
         { 
-          href: "/communication", 
-          label: "Email", 
-          icon: <Mail className="h-5 w-5" />, 
-          permission: "access_communication" 
-        },
-        { 
-          href: "/communication/announcements", 
-          label: "Chat", 
-          icon: <MessageCircleMore className="h-5 w-5" />, 
-          permission: "access_communication" 
-        },
-        { 
-          href: "/attendance", 
-          label: "Calendar", 
-          icon: <Calendar className="h-5 w-5" />, 
-          permission: "view_all_attendance" 
-        },
-        { 
-          href: "/crm/funnel", 
-          label: "Kanban", 
-          icon: <Kanban className="h-5 w-5" />, 
-          permission: "access_crm" 
-        },
-        { 
-          href: "/finance/invoices", 
-          label: "Invoice", 
-          icon: <Receipt className="h-5 w-5" />, 
-          permission: "view_invoices",
-          children: [
-            { 
-              href: "/finance/invoices", 
-              label: "List", 
-              icon: <List className="h-5 w-5" />, 
-              permission: "view_invoices" 
-            },
-            { 
-              href: "/finance/invoices/preview", 
-              label: "Preview", 
-              icon: <Eye className="h-5 w-5" />, 
-              permission: "view_invoices" 
-            },
-            { 
-              href: "/finance/invoices/edit", 
-              label: "Edit", 
-              icon: <FileEdit className="h-5 w-5" />, 
-              permission: "manage_payments" 
-            },
-            { 
-              href: "/finance/invoices/add", 
-              label: "Add", 
-              icon: <Plus className="h-5 w-5" />, 
-              permission: "manage_payments" 
-            },
-          ]
-        },
-        { 
-          href: "/members", 
-          label: "Members", 
-          icon: <Users className="h-5 w-5" />, 
-          permission: "manage_members" 
-        },
-        { 
-          href: "/trainers", 
-          label: "Trainers", 
-          icon: <Dumbbell className="h-5 w-5" />, 
-          permission: "view_all_trainers" 
-        },
-        { 
-          href: "/memberships", 
-          label: "Memberships", 
-          icon: <CreditCard className="h-5 w-5" />, 
-          permission: "member_view_plans" 
+          href: "/reports", 
+          label: "Reports", 
+          icon: <FileText className="h-5 w-5" />, 
+          permission: "access_analytics" 
         },
         { 
           href: "/settings", 
           label: "Settings", 
           icon: <Settings className="h-5 w-5" />, 
           permission: "access_own_resources" 
-        },
+        }
       ]
-    },
+    }
   ];
   
   const filteredCategories = navCategories.map(category => {
@@ -341,14 +340,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             <div className="bg-indigo-600 p-1 rounded-md">
               <Logo variant="white" />
             </div>
-            <h1 className="text-xl font-semibold text-white">Vuexy</h1>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="ml-auto text-gray-400 hover:text-white hover:bg-transparent"
-            >
-              <Circle className="h-5 w-5 fill-current" />
-            </Button>
+            <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>
           </div>
           
           <div className="flex-1 overflow-y-auto py-2">

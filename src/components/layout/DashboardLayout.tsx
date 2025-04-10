@@ -17,7 +17,7 @@ const DashboardLayout = () => {
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
   const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -26,7 +26,9 @@ const DashboardLayout = () => {
   };
 
   const closeSidebar = () => {
-    setSidebarOpen(false);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
   };
 
   const toggleTheme = () => {
@@ -50,6 +52,13 @@ const DashboardLayout = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Close mobile sidebar when navigating
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile]);
   
   if (isLoading) {
     return (
@@ -85,18 +94,21 @@ const DashboardLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-[#161d31]">
       {/* Sidebar for desktop */}
-      <div className="hidden md:block md:w-64 fixed inset-y-0">
+      <div className={`hidden md:block md:w-64 fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'md:left-0' : 'md:-left-64'}`}>
         <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
       </div>
       
       {/* Mobile sidebar */}
-      <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+      {isMobile && (
+        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+      )}
       
-      <div className="flex flex-1 flex-col w-full md:pl-64">
+      <div className={`flex flex-1 flex-col w-full transition-all duration-300 ${sidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
         <DashboardHeader 
           toggleSidebar={toggleSidebar} 
           toggleTheme={toggleTheme} 
-          isDarkMode={darkMode} 
+          isDarkMode={darkMode}
+          sidebarOpen={sidebarOpen}
         />
         
         <main className="flex-1 overflow-auto p-4">

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Search, Bell, Settings, Download, Menu, Moon, Sun } from 'lucide-react';
+import { Calendar, Search, Bell, Menu, Moon, Sun, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +20,10 @@ interface DashboardHeaderProps {
   toggleSidebar?: () => void;
   toggleTheme?: () => void;
   isDarkMode?: boolean;
+  sidebarOpen?: boolean;
 }
 
-const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode }: DashboardHeaderProps) => {
+const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode, sidebarOpen }: DashboardHeaderProps) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
 
@@ -30,8 +31,8 @@ const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode }: DashboardHe
     <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-[#283046] dark:border-gray-700">
       <div className="flex items-center gap-4">
         {toggleSidebar && (
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-            <Menu className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-gray-600 dark:text-gray-300">
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         )}
         
@@ -81,7 +82,10 @@ const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode }: DashboardHe
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="flex flex-col">
+              <span>{user?.name || 'User'}</span>
+              <span className="text-xs text-gray-500">{user?.role || 'User'}</span>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
