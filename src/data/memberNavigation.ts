@@ -18,7 +18,7 @@ import React from "react";
 export interface NavItem {
   title: string;
   href: string;
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<any>;
   children: NavItem[];
   label?: string;
   badge?: string;
@@ -38,7 +38,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Dashboard",
         href: "/dashboard",
-        icon: <LayoutDashboard className="h-4 w-4" />,
+        icon: LayoutDashboard,
         label: "Dashboard",
         children: []
       }
@@ -51,7 +51,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Fitness",
         href: "/fitness",
-        icon: <Timer className="h-4 w-4" />,
+        icon: Timer,
         label: "Fitness",
         children: [
           {
@@ -83,7 +83,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Classes",
         href: "/classes",
-        icon: <Calendar className="h-4 w-4" />,
+        icon: Calendar,
         label: "Classes",
         children: [
           {
@@ -103,7 +103,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Payments",
         href: "/payments",
-        icon: <CreditCard className="h-4 w-4" />,
+        icon: CreditCard,
         label: "Payments",
         children: [
           {
@@ -123,7 +123,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Shop",
         href: "/shop",
-        icon: <ShoppingCart className="h-4 w-4" />,
+        icon: ShoppingCart,
         label: "Shop",
         children: [
           {
@@ -149,7 +149,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Feedback",
         href: "/feedback",
-        icon: <MessagesSquare className="h-4 w-4" />,
+        icon: MessagesSquare,
         label: "Feedback",
         children: [
           {
@@ -169,7 +169,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Settings",
         href: "/settings",
-        icon: <Settings className="h-4 w-4" />,
+        icon: Settings,
         label: "Settings",
         children: [
           {
@@ -194,14 +194,14 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
-    icon: <LayoutDashboard className="h-4 w-4" />,
+    icon: LayoutDashboard,
     label: "Dashboard",
     children: []
   },
   {
     title: "Fitness",
     href: "/fitness",
-    icon: <Timer className="h-4 w-4" />,
+    icon: Timer,
     label: "Fitness",
     children: [
       {
@@ -227,7 +227,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Classes",
     href: "/classes",
-    icon: <Calendar className="h-4 w-4" />,
+    icon: Calendar,
     label: "Classes",
     children: [
       {
@@ -247,7 +247,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Payments",
     href: "/payments",
-    icon: <CreditCard className="h-4 w-4" />,
+    icon: CreditCard,
     label: "Payments",
     children: [
       {
@@ -267,7 +267,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Shop",
     href: "/shop",
-    icon: <ShoppingCart className="h-4 w-4" />,
+    icon: ShoppingCart,
     label: "Shop",
     children: [
       {
@@ -287,7 +287,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Feedback",
     href: "/feedback",
-    icon: <MessagesSquare className="h-4 w-4" />,
+    icon: MessagesSquare,
     label: "Feedback",
     children: [
       {
@@ -307,7 +307,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Settings",
     href: "/settings",
-    icon: <Settings className="h-4 w-4" />,
+    icon: Settings,
     label: "Settings",
     children: [
       {
