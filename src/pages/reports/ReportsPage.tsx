@@ -128,7 +128,7 @@ const ReportsPage = () => {
                       </div>
                       <div className="border-t px-4 py-3 bg-muted/50">
                         <div className="flex justify-between items-center">
-                          <Badge variant={member.membershipStatus === "active" ? "success" : "destructive"}>
+                          <Badge variant={member.membershipStatus === "active" ? "default" : "destructive"}>
                             {member.membershipStatus}
                           </Badge>
                           <Button
@@ -197,47 +197,303 @@ const ReportsPage = () => {
     );
   }
 
-  // For admin/staff, show the original reports view
+  // For admin/staff, show the comprehensive admin dashboard
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Reports & Analytics</h1>
+        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
         
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Membership Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>View and analyze membership data, renewals, and churn rate.</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Users className="h-4 w-4 mr-2 text-blue-500" />
+                Total Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">487</div>
+              <p className="text-xs text-muted-foreground">+12 this month</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Dumbbell className="h-4 w-4 mr-2 text-purple-500" />
+                Trainers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">24</div>
+              <p className="text-xs text-muted-foreground">2 pending approval</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-indigo-500" />
+                Active Classes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">38</div>
+              <p className="text-xs text-muted-foreground">6 new this week</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-green-500" />
+                Pending Invoices
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$12,580</div>
+              <p className="text-xs text-muted-foreground">32 unpaid invoices</p>
+            </CardContent>
+          </Card>
+        </div>
         
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Financial Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Access revenue reports, expense tracking, and financial forecasts.</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Attendance Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Analyze check-in patterns, peak hours, and member attendance trends.</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Inventory & Sales Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Track inventory movements, product sales, and restocking needs.</p>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="classes">Classes & Programs</TabsTrigger>
+            <TabsTrigger value="finances">Finances</TabsTrigger>
+            <TabsTrigger value="reports">Analytics</TabsTrigger>
+            <TabsTrigger value="settings">System Settings</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>User Management</CardTitle>
+                  <Button 
+                    onClick={() => navigate("/members/new")}
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Add New User
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/members")}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Members
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/trainers")}
+                    >
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Manage Trainers
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/settings/roles")}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Roles & Permissions
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/attendance")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Attendance Logs
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/fitness-plans")}
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      Fitness Data
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="classes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Classes & Programs</CardTitle>
+                  <Button 
+                    onClick={() => navigate("/classes/new")}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Create New Class
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/classes")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Manage Classes
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/memberships")}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Membership Plans
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="finances" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Financial Management</CardTitle>
+                  <Button 
+                    onClick={() => navigate("/finance/invoices/new")}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Create Invoice
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/finance/invoices")}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Invoices
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/finance/transactions")}
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      Transactions
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/finance/dashboard")}
+                    >
+                      <BarChart className="h-4 w-4 mr-2" />
+                      Finance Dashboard
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="reports" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics & Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/reports/attendance")}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Attendance Analytics
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/reports/revenue")}
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Revenue Reports
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/reports/membership")}
+                    >
+                      <BarChart className="h-4 w-4 mr-2" />
+                      Membership Analysis
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/settings/integrations")}
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      Integrations & APIs
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/settings/email")}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Email Configuration
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => navigate("/settings")}
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      General Settings
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );
