@@ -12,6 +12,7 @@ export interface User {
   branchId?: string; // Primary branch ID
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
+  address?: string; // Added address field
 }
 
 // Extended member type with branch information
@@ -22,6 +23,7 @@ export interface MemberWithBranch {
   role: "member";
   avatar?: string;
   phone?: string;
+  address?: string; // Added address field
   dateOfBirth?: string;
   goal?: string;
   trainerId?: string;

@@ -1,4 +1,3 @@
-
 export type UserRole = "admin" | "staff" | "trainer" | "member";
 
 export interface User {
@@ -19,6 +18,7 @@ export interface Member extends User {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
+  address?: string;
 }
 
 export interface Trainer extends User {

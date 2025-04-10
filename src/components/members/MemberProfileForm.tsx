@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Member } from "@/types";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Upload } from "lucide-react";
 
 interface MemberProfileFormProps {
   member: Member;
@@ -19,6 +21,7 @@ interface MemberProfileFormProps {
 const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps) => {
   const [formData, setFormData] = useState<Member>({ ...member });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(member.avatar);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -34,6 +37,17 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
       ...prev, 
       [name]: date ? date.toISOString() : undefined 
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, this would upload to a server and return a URL
+      // For now, we'll use a local URL for the preview
+      const imageUrl = URL.createObjectURL(file);
+      setAvatarPreview(imageUrl);
+      setFormData(prev => ({ ...prev, avatar: imageUrl }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,6 +69,29 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={avatarPreview} alt={formData.name} />
+                <AvatarFallback>{formData.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="absolute bottom-0 right-0">
+                <Label htmlFor="avatar" className="cursor-pointer">
+                  <div className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors">
+                    <Upload className="h-4 w-4" />
+                  </div>
+                </Label>
+                <Input 
+                  id="avatar" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -85,6 +122,16 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 id="phone"
                 name="phone"
                 value={formData.phone || ""}
+                onChange={handleChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address || ""}
                 onChange={handleChange}
               />
             </div>

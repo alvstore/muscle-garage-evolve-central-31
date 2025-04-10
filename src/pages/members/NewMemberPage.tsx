@@ -10,14 +10,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Member } from "@/types";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Upload } from "lucide-react";
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    address: "",
     dateOfBirth: "",
     goal: "",
     membershipId: "gold-6m",
@@ -33,6 +37,16 @@ const NewMemberPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, this would upload to a server and return a URL
+      // For now, we'll use a local URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      setAvatarPreview(imageUrl);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -45,6 +59,8 @@ const NewMemberPage = () => {
         name: formData.name,
         role: "member",
         phone: formData.phone,
+        address: formData.address,
+        avatar: avatarPreview,
         dateOfBirth: formData.dateOfBirth,
         goal: formData.goal,
         trainerId: "trainer-123", // Default trainer
@@ -72,6 +88,35 @@ const NewMemberPage = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Profile Picture */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <Avatar className="h-24 w-24">
+                    {avatarPreview ? (
+                      <AvatarImage src={avatarPreview} alt="Profile preview" />
+                    ) : (
+                      <AvatarFallback>
+                        {formData.name ? formData.name.substring(0, 2).toUpperCase() : "?"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="absolute bottom-0 right-0">
+                    <Label htmlFor="avatar" className="cursor-pointer">
+                      <div className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors">
+                        <Upload className="h-4 w-4" />
+                      </div>
+                    </Label>
+                    <Input 
+                      id="avatar" 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              
               {/* Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Personal Information</h3>
@@ -109,6 +154,17 @@ const NewMemberPage = () => {
                       name="phone" 
                       placeholder="+1 (555) 123-4567" 
                       value={formData.phone} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input 
+                      id="address" 
+                      name="address" 
+                      placeholder="123 Main St, City, Country" 
+                      value={formData.address} 
                       onChange={handleChange} 
                     />
                   </div>
