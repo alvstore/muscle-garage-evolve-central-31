@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -83,30 +82,21 @@ const TransactionForm = ({ transaction, onSave, onCancel }: TransactionFormProps
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
-    
-    // If type changes, reset the category
     if (name === "type") {
       setFormData(prev => ({
         ...prev,
-        [name]: value,
-        category: value === "income" ? "membership" : "rent"
+        [name]: value as TransactionType,
+        category: value === "income" ? "membership" as IncomeCategory : "rent" as ExpenseCategory
       }));
-    }
-    
-    // Set recurringPeriod to none when recurring is turned off
-    if (name === "recurring" && value === "false") {
+    } else if (name === "recurring") {
       setFormData(prev => ({
         ...prev,
-        [name]: false,
-        recurringPeriod: "none"
+        [name]: value === "true",
+        recurringPeriod: value === "false" ? "none" as RecurringPeriod : 
+          prev.recurringPeriod === "none" ? "monthly" as RecurringPeriod : prev.recurringPeriod
       }));
-    } else if (name === "recurring" && value === "true") {
-      setFormData(prev => ({
-        ...prev,
-        [name]: true,
-        recurringPeriod: prev.recurringPeriod === "none" ? "monthly" : prev.recurringPeriod
-      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
