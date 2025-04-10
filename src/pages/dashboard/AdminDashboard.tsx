@@ -1,234 +1,324 @@
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { 
-  FileText, 
-  CreditCard, 
-  Users, 
-  CalendarCheck, 
-  DollarSign, 
-  TrendingUp, 
-  Gift, 
-  Activity 
-} from 'lucide-react';
 
+import React, { useState, useEffect } from 'react';
+import { Container } from "@/components/ui/container";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import OverviewStats from '@/components/dashboard/sections/OverviewStats';
-import RevenueSection from '@/components/dashboard/sections/RevenueSection';
-import MemberStatusSection from '@/components/dashboard/sections/MemberStatusSection';
-import AttendanceSection from '@/components/dashboard/sections/AttendanceSection';
-import MemberProgressSection from '@/components/dashboard/sections/MemberProgressSection';
-import ChurnPredictionSection from '@/components/dashboard/sections/ChurnPredictionSection';
-import AdminTaskManagement from '@/components/dashboard/AdminTaskManagement';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PendingPayments from '@/components/dashboard/PendingPayments';
+import UpcomingRenewals from '@/components/dashboard/UpcomingRenewals';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useBranch } from '@/hooks/use-branch';
+
+// Mock dashboard data
+const dashboardData = {
+  totalMembers: 312,
+  newMembersToday: 3,
+  activeMembers: 286,
+  attendanceToday: 78,
+  revenue: {
+    today: 2850,
+    thisWeek: 12400,
+    thisMonth: 48750,
+    lastMonth: 42300
+  },
+  pendingPayments: {
+    count: 14,
+    total: 2850
+  },
+  upcomingRenewals: {
+    today: 2,
+    thisWeek: 8,
+    thisMonth: 25
+  },
+  classAttendance: {
+    today: 78,
+    yesterday: 82,
+    lastWeek: 432
+  }
+};
+
+// Mock payments data
+const pendingPayments = [
+  {
+    id: "pay1",
+    memberId: "mem1",
+    memberName: "Alex Johnson",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Premium Monthly",
+    amount: 59.99,
+    dueDate: "2025-04-12T00:00:00Z",
+    status: "pending",
+    contactInfo: "alex.j@example.com"
+  },
+  {
+    id: "pay2",
+    memberId: "mem2",
+    memberName: "Sarah Miller",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Annual Plan",
+    amount: 499.99,
+    dueDate: "2025-04-15T00:00:00Z",
+    status: "pending",
+    contactInfo: "sarahm@example.com"
+  },
+  {
+    id: "pay3",
+    memberId: "mem3",
+    memberName: "Dave Wilson",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Basic Monthly",
+    amount: 29.99,
+    dueDate: "2025-04-05T00:00:00Z",
+    status: "overdue",
+    contactInfo: "dave.w@example.com"
+  }
+];
+
+// Mock renewals data
+const upcomingRenewals = [
+  {
+    id: "renew1",
+    memberName: "Michael Chang",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Premium Monthly",
+    expiryDate: "2025-04-11T00:00:00Z",
+    status: "active",
+    renewalAmount: 59.99
+  },
+  {
+    id: "renew2",
+    memberName: "Jennifer Lopez",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Basic Monthly",
+    expiryDate: "2025-04-15T00:00:00Z",
+    status: "active",
+    renewalAmount: 29.99
+  },
+  {
+    id: "renew3",
+    memberName: "Robert Brown",
+    memberAvatar: "/placeholder.svg",
+    membershipPlan: "Premium Monthly",
+    expiryDate: "2025-04-10T00:00:00Z",
+    status: "active",
+    renewalAmount: 59.99
+  }
+];
+
+// Mock attendance data by branch
+const attendanceByBranch = {
+  "branch1": {
+    todayCheckins: 78,
+    yesterdayCheckins: 82,
+    thisWeekCheckins: 312,
+    peakHours: ["18:00", "19:00", "17:00"],
+  },
+  "branch2": {
+    todayCheckins: 64,
+    yesterdayCheckins: 72,
+    thisWeekCheckins: 280,
+    peakHours: ["17:00", "18:00", "12:00"],
+  },
+  "branch3": {
+    todayCheckins: 53,
+    yesterdayCheckins: 61,
+    thisWeekCheckins: 245,
+    peakHours: ["18:00", "19:00", "20:00"],
+  }
+};
 
 const AdminDashboard = () => {
-  // Mock data for dashboard
-  const dashboardData = {
-    totalMembers: 328,
-    newMembersToday: 5,
-    activeMembers: 287,
-    attendanceToday: 152,
-    revenue: {
-      today: 2450,
-      thisWeek: 12780,
-      thisMonth: 45600,
-      lastMonth: 39800
-    },
-    pendingPayments: {
-      count: 23,
-      total: 8750
-    },
-    upcomingRenewals: {
-      today: 3,
-      thisWeek: 18,
-      thisMonth: 42
-    },
-    classAttendance: {
-      today: 152,
-      yesterday: 143,
-      lastWeek: 982
-    }
-  };
-
-  const membersByStatus = {
-    active: 287,
-    inactive: 24,
-    expired: 17
-  };
-
-  const attendanceTrend = [
-    { date: '2022-06-01', count: 120 },
-    { date: '2022-06-02', count: 132 },
-    { date: '2022-06-03', count: 125 },
-    { date: '2022-06-04', count: 140 },
-    { date: '2022-06-05', count: 147 },
-    { date: '2022-06-06', count: 138 },
-    { date: '2022-06-07', count: 152 }
-  ];
-
-  const revenueData = [
-    { month: 'Jan', revenue: 15000, expenses: 4000, profit: 11000 },
-    { month: 'Feb', revenue: 18000, expenses: 4200, profit: 13800 },
-    { month: 'Mar', revenue: 16500, expenses: 4800, profit: 11700 },
-    { month: 'Apr', revenue: 17800, expenses: 5100, profit: 12700 },
-    { month: 'May', revenue: 19200, expenses: 5400, profit: 13800 },
-    { month: 'Jun', revenue: 21000, expenses: 5600, profit: 15400 }
-  ];
-
-  const featuredActions = [
-    {
-      title: "Member Registration",
-      description: "Quickly register new members with form validation",
-      icon: <Users className="h-10 w-10 text-indigo-500" />,
-      url: "/members/new"
-    },
-    {
-      title: "Add New Class",
-      description: "Create and schedule new fitness classes",
-      icon: <CalendarCheck className="h-10 w-10 text-indigo-500" />,
-      url: "/classes"
-    },
-    {
-      title: "Process Payment",
-      description: "Process membership payments and invoices",
-      icon: <CreditCard className="h-10 w-10 text-indigo-500" />,
-      url: "/finance/transactions"
-    },
-    {
-      title: "Attendance Tracking",
-      description: "Track member check-ins and attendance",
-      icon: <Activity className="h-10 w-10 text-indigo-500" />,
-      url: "/attendance"
-    },
-    {
-      title: "Create Promotion",
-      description: "Set up referral programs and special offers",
-      icon: <Gift className="h-10 w-10 text-indigo-500" />,
-      url: "/marketing/promo"
-    },
-    {
-      title: "Financial Reports",
-      description: "View revenue and financial analytics",
-      icon: <DollarSign className="h-10 w-10 text-indigo-500" />,
-      url: "/finance/dashboard"
-    }
-  ];
-
+  const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
+  const branchId = currentBranch?.id || "branch1";
+  
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (isLoading) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center min-h-[500px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-2">Loading dashboard data...</p>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+  
+  // Get branch-specific data
+  const branchAttendance = attendanceByBranch[branchId] || attendanceByBranch.branch1;
+  
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to Muscle Garage management system</p>
+    <Container>
+      <div className="py-6 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Overview and analytics for {currentBranch?.name || "all branches"}
+            </p>
+          </div>
+          <Badge variant="outline" className="px-4 py-2">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="h-8">
-            Date Range
-          </Button>
-          <Button variant="default" className="h-8 bg-indigo-600 hover:bg-indigo-700">
-            Export
-          </Button>
-        </div>
-      </div>
-      
-      <div className="space-y-6">
-        {/* Overview Stats */}
+        
         <OverviewStats data={dashboardData} />
         
-        {/* Task Management Section */}
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs defaultValue="daily" className="mt-8">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="tasks">Task Management</TabsTrigger>
+            <TabsTrigger value="daily">Daily Snapshot</TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="membershipmetrics">Membership Metrics</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="overview" className="space-y-4">
-            {/* New Smart Dashboard Components */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <MemberProgressSection />
-              <ChurnPredictionSection />
-            </div>
-            
-            {/* Featured Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredActions.map((action, index) => (
-                <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
-                        {action.icon}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold mb-1">{action.title}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
-                        <Button variant="ghost" className="mt-3 px-0 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-transparent" asChild>
-                          <a href={action.url}>Show</a>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Analytics Section */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <RevenueSection data={revenueData} />
-              <MemberStatusSection data={membersByStatus} />
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <AttendanceSection data={attendanceTrend} />
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Commonly used gym management tools</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
-                      <a href="/inventory">
-                        <FileText className="h-5 w-5 text-indigo-500" />
-                        <span>Inventory</span>
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
-                      <a href="/communication/announcements">
-                        <TrendingUp className="h-5 w-5 text-indigo-500" />
-                        <span>Announcements</span>
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
-                      <a href="/store">
-                        <CreditCard className="h-5 w-5 text-indigo-500" />
-                        <span>Store</span>
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" asChild>
-                      <a href="/settings">
-                        <DollarSign className="h-5 w-5 text-indigo-500" />
-                        <span>Settings</span>
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+          <TabsContent value="daily" className="space-y-4 mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <PendingPayments payments={pendingPayments} />
+              <UpcomingRenewals renewals={upcomingRenewals} />
             </div>
           </TabsContent>
           
-          <TabsContent value="tasks">
-            <AdminTaskManagement />
+          <TabsContent value="attendance" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance Dashboard</CardTitle>
+                <CardDescription>Real-time attendance metrics for {currentBranch?.name}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="bg-primary/10 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Today's Check-ins</h3>
+                    <p className="text-3xl font-bold mt-2">{branchAttendance.todayCheckins}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {branchAttendance.todayCheckins > branchAttendance.yesterdayCheckins 
+                        ? `↑ ${branchAttendance.todayCheckins - branchAttendance.yesterdayCheckins} from yesterday` 
+                        : `↓ ${branchAttendance.yesterdayCheckins - branchAttendance.todayCheckins} from yesterday`}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-muted p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">This Week</h3>
+                    <p className="text-3xl font-bold mt-2">{branchAttendance.thisWeekCheckins}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Total check-ins</p>
+                  </div>
+                  
+                  <div className="bg-secondary/10 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Peak Hours</h3>
+                    <div className="flex justify-center gap-2 mt-3">
+                      {branchAttendance.peakHours.map((hour, i) => (
+                        <Badge key={i} variant={i === 0 ? "default" : i === 1 ? "secondary" : "outline"}>
+                          {hour}
+                        </Badge>
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-3">Based on last 7 days</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={() => window.location.href = "/attendance"}>
+                    View Detailed Attendance
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="financial" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Dashboard</CardTitle>
+                <CardDescription>Revenue and payment metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Monthly Revenue</h3>
+                    <p className="text-3xl font-bold mt-2">₹{dashboardData.revenue.thisMonth.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {Math.round((dashboardData.revenue.thisMonth - dashboardData.revenue.lastMonth) / dashboardData.revenue.lastMonth * 100)}% from last month
+                    </p>
+                  </div>
+                  
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Pending Payments</h3>
+                    <p className="text-3xl font-bold mt-2">₹{dashboardData.pendingPayments.total.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      From {dashboardData.pendingPayments.count} members
+                    </p>
+                  </div>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Weekly Revenue</h3>
+                    <p className="text-3xl font-bold mt-2">₹{dashboardData.revenue.thisWeek.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Current week</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={() => window.location.href = "/finance/reports"}>
+                    View Financial Reports
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="membershipmetrics" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Membership Metrics</CardTitle>
+                <CardDescription>Member growth and retention statistics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Total Members</h3>
+                    <p className="text-3xl font-bold mt-2">{dashboardData.totalMembers}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {dashboardData.activeMembers} active ({Math.round(dashboardData.activeMembers/dashboardData.totalMembers*100)}%)
+                    </p>
+                  </div>
+                  
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">New Members</h3>
+                    <p className="text-3xl font-bold mt-2">{dashboardData.newMembersToday}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Joined today</p>
+                  </div>
+                  
+                  <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
+                    <h3 className="text-lg font-medium">Upcoming Renewals</h3>
+                    <p className="text-3xl font-bold mt-2">{dashboardData.upcomingRenewals.thisWeek}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {dashboardData.upcomingRenewals.today} due today
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={() => window.location.href = "/reports"}>
+                    View Member Reports
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </Container>
   );
 };
 

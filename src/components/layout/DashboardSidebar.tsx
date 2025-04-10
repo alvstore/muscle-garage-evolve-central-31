@@ -35,7 +35,8 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronRight,
-  Globe
+  Globe,
+  CheckSquare
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -180,6 +181,23 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       ]
     },
     {
+      name: "TASKS & OPERATIONS",
+      items: [
+        { 
+          href: "/trainers/tasks", 
+          label: "Task Management", 
+          icon: <CheckSquare className="h-5 w-5" />,
+          permission: "access_own_resources" as Permission,
+        },
+        { 
+          href: "/attendance", 
+          label: "Attendance", 
+          icon: <CalendarDays className="h-5 w-5" />, 
+          permission: "view_all_attendance" as Permission
+        },
+      ]
+    },
+    {
       name: "INVENTORY & STORE",
       items: [
         { 
@@ -273,12 +291,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     {
       name: "REPORTS & TOOLS",
       items: [
-        { 
-          href: "/attendance", 
-          label: "Attendance", 
-          icon: <CalendarDays className="h-5 w-5" />, 
-          permission: "view_all_attendance" as Permission
-        },
         { 
           href: "/reports", 
           label: "Reports", 
