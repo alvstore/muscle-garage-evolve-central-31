@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -17,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ReminderRule } from "@/types/notification";
+import { ReminderRule, ReminderTriggerType } from "@/types/notification";
 import { toast } from "sonner";
 import { 
   BellRing, 
@@ -40,72 +41,56 @@ const mockReminderRules: ReminderRule[] = [
     id: "1",
     name: "Membership Expiry Reminder",
     description: "Remind members before their membership expires",
-    triggerType: "membership-expiry",
-    daysInAdvance: 7,
+    type: "membership-renewal",
+    triggerDays: 7,
     message: "Your membership will expire soon. Please renew to continue enjoying our services.",
     channels: ["email", "in-app"],
     enabled: true,
-    createdBy: "admin1",
     createdAt: "2023-05-10T09:00:00Z",
     updatedAt: "2023-05-10T09:00:00Z",
     targetRoles: ["member"],
-    type: "membership-expiry",
-    triggerDays: 7,
-    template: "template1",
     active: true
   },
   {
     id: "2",
     name: "Birthday Wish",
     description: "Send birthday wishes to members",
-    triggerType: "birthday",
-    daysInAdvance: 0,
+    type: "birthday",
+    triggerDays: 0,
     message: "Happy Birthday! Enjoy a special discount on your next purchase.",
     channels: ["email", "whatsapp", "sms"],
     enabled: true,
-    createdBy: "admin1",
     createdAt: "2023-05-15T10:00:00Z",
     updatedAt: "2023-05-15T10:00:00Z",
     targetRoles: ["member", "trainer", "staff"],
-    type: "birthday",
-    triggerDays: 0,
-    template: "template2",
     active: true
   },
   {
     id: "3",
     name: "Missed Attendance Follow-up",
     description: "Follow up with members who haven't visited recently",
-    triggerType: "missed-attendance",
-    daysInAdvance: 3,
+    type: "missed-attendance",
+    triggerDays: 3,
     message: "We've noticed you haven't visited recently. Is everything okay?",
     channels: ["sms", "whatsapp"],
     enabled: false,
-    createdBy: "admin2",
     createdAt: "2023-05-20T11:00:00Z",
     updatedAt: "2023-05-20T11:00:00Z",
     targetRoles: ["member"],
-    type: "attendance",
-    triggerDays: 3,
-    template: "template3",
     active: false
   },
   {
     id: "4",
     name: "Membership Renewal Reminder",
     description: "Remind members to renew their membership",
-    triggerType: "membership-expiry",
-    daysInAdvance: 3,
+    type: "payment-due",
+    triggerDays: 3,
     message: "Your membership is expiring soon. Renew now to avoid interruption.",
     channels: ["email", "in-app", "sms"],
     enabled: true,
-    createdBy: "admin1",
     createdAt: "2023-05-25T12:00:00Z",
     updatedAt: "2023-05-25T12:00:00Z",
     targetRoles: ["member"],
-    type: "renewal",
-    triggerDays: 3,
-    template: "template4",
     active: true
   }
 ];
@@ -145,6 +130,16 @@ const ReminderRulesList = ({ onEdit }: ReminderRulesListProps) => {
   const handleManualTrigger = (id: string, name: string) => {
     // Simulate sending reminders manually
     toast.success(`Manually triggered "${name}" reminders`);
+  };
+
+  const getTriggerDisplay = (rule: ReminderRule) => {
+    if (rule.type === "birthday") {
+      return "On birthday date";
+    } else if (rule.type === "missed-attendance") {
+      return `After ${rule.triggerDays} days of absence`;
+    } else {
+      return `${rule.triggerDays} days before ${rule.type === "membership-renewal" ? "expiry" : "payment"}`;
+    }
   };
 
   return (
@@ -210,14 +205,7 @@ const ReminderRulesList = ({ onEdit }: ReminderRulesListProps) => {
                         {rule.type.replace("-", " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {rule.type === "birthday" 
-                        ? "On birthday date" 
-                        : rule.type === "attendance"
-                        ? `After ${rule.triggerDays} days of absence`
-                        : `${rule.triggerDays} days before ${rule.type === "membership-expiry" ? "expiry" : "renewal"}`
-                      }
-                    </TableCell>
+                    <TableCell>{getTriggerDisplay(rule)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {rule.channels.map((channel) => (
@@ -230,7 +218,7 @@ const ReminderRulesList = ({ onEdit }: ReminderRulesListProps) => {
                     <TableCell>
                       <Switch 
                         checked={rule.active} 
-                        onCheckedChange={() => handleToggleActive(rule.id, rule.active)} 
+                        onCheckedChange={() => handleToggleActive(rule.id, rule.active || false)} 
                       />
                     </TableCell>
                     <TableCell className="text-right">

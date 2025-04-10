@@ -3,7 +3,7 @@
 
 export type FeedbackType = "class" | "trainer" | "fitness-plan" | "general" | "diet-plan";
 export type NotificationChannel = "email" | "sms" | "push" | "in-app" | "whatsapp";
-export type ReminderTriggerType = "membership-renewal" | "payment-due" | "birthday" | "class-reminder" | "missed-attendance" | "inactivity";
+export type ReminderTriggerType = "membership-renewal" | "payment-due" | "birthday" | "class-reminder" | "missed-attendance" | "inactivity" | "membership-expiry" | "attendance" | "renewal";
 
 export interface Feedback {
   id: string;
@@ -22,23 +22,52 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
-  createdBy: string;  // Add this field
+  createdBy: string;
   createdAt: string;
-  targetRoles: string[];  // Add this field
+  targetRoles: string[];
   targetBranch?: string;
-  expiresAt?: string;  // Add this field
-  channels?: NotificationChannel[]; // Add this field
+  expiresAt?: string;
+  channels?: NotificationChannel[];
+  sentCount?: number;
 }
 
 export interface ReminderRule {
   id: string;
   name: string;
   description?: string;
-  type: ReminderTriggerType;  // Add this field
-  triggerDays: number;  // Add this field
+  type: ReminderTriggerType;
+  triggerDays: number;
+  triggerType?: ReminderTriggerType;
+  daysInAdvance?: number;
   message: string;
   channels: NotificationChannel[];
-  enabled: boolean;  // Add this field
+  enabled: boolean;
+  active?: boolean;
   createdAt: string;
   updatedAt: string;
+  createdBy?: string;
+  targetRoles?: string[];
+  template?: string;
+  sendEmail?: boolean;
+  sendSMS?: boolean;
+  sendPush?: boolean;
+  specificDate?: string;
+  specificTime?: string;
+  repeatYearly?: boolean;
+  targetGroups?: string[];
+}
+
+// Adding MotivationalMessage interface that was missing
+export interface MotivationalMessage {
+  id: string;
+  title: string;
+  content: string;
+  targetRoles: string[];
+  frequency: "daily" | "weekly" | "monthly";
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  channels: NotificationChannel[];
+  author?: string;
+  tags?: string[];
 }

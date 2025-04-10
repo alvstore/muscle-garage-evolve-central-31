@@ -1,64 +1,43 @@
 
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   icon: LucideIcon;
   title: string;
   value: string | number;
   description?: string;
-  trend?: {
+  iconColor?: string;
+  change?: {
     direction: "up" | "down" | "neutral";
     value: string;
   };
-  className?: string;
-  iconColor?: string;
 }
 
-const StatCard = ({
-  icon: Icon,
-  title,
-  value,
-  description,
-  trend,
-  className,
-  iconColor = "text-primary",
-}: StatCardProps) => {
-  const trendColors = {
-    up: "text-green-600",
-    down: "text-red-600",
-    neutral: "text-gray-500",
-  };
-
+const StatCard = ({ icon: Icon, title, value, description, iconColor, change }: StatCardProps) => {
   return (
-    <Card 
-      className={cn(
-        "stat-card transition-all duration-200 hover:shadow-md", 
-        className
-      )}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          {description && (
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
-          )}
-          {trend && (
-            <div className="flex items-center mt-2">
-              <span className={cn("text-xs font-medium", trendColors[trend.direction])}>
-                {trend.direction === "up" && "↑ "}
-                {trend.direction === "down" && "↓ "}
-                {trend.value}
-              </span>
-            </div>
-          )}
-        </div>
-        <div className={cn("p-2 rounded-full bg-primary/10", iconColor.replace("text-", "bg-") + "/10")}>
-          <Icon className={cn("h-5 w-5", iconColor)} />
-        </div>
-      </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className={cn("h-4 w-4 text-muted-foreground", iconColor)} />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {change && (
+          <div className={cn(
+            "text-xs font-medium mt-1",
+            change.direction === "up" ? "text-green-500" : 
+            change.direction === "down" ? "text-red-500" : "text-gray-500"
+          )}>
+            {change.direction === "up" && "↑ "}
+            {change.direction === "down" && "↓ "}
+            {change.value}
+          </div>
+        )}
+        {description && <CardDescription className="text-xs text-muted-foreground">{description}</CardDescription>}
+      </CardContent>
     </Card>
   );
 };

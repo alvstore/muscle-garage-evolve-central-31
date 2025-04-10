@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Announcement } from "@/types";
+import { Announcement } from "@/types/notification";
 import { format, parseISO } from "date-fns";
 
 interface AnnouncementsProps {

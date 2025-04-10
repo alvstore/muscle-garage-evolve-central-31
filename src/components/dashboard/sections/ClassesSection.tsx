@@ -3,30 +3,43 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ClassAttendanceWidget from '@/components/dashboard/ClassAttendanceWidget';
 import UpcomingClasses from '@/components/dashboard/UpcomingClasses';
+import { ClassBooking } from '@/types/class';
 
 const ClassesSection = () => {
   // Mock data for class attendance
-  const classBookings = [
+  const classBookings: ClassBooking[] = [
     {
       id: "booking1",
       memberId: "member1",
       memberName: "John Doe",
       memberAvatar: "/avatars/01.png",
-      status: "attended" as const
+      status: "attended",
+      classId: "class1",
+      bookingDate: "2023-07-20T10:00:00Z",
+      createdAt: "2023-07-15T14:30:00Z",
+      updatedAt: "2023-07-15T14:30:00Z"
     },
     {
       id: "booking2",
       memberId: "member2",
       memberName: "Jane Smith",
       memberAvatar: "/avatars/02.png",
-      status: "confirmed" as const
+      status: "confirmed",
+      classId: "class1",
+      bookingDate: "2023-07-20T10:00:00Z",
+      createdAt: "2023-07-15T14:30:00Z",
+      updatedAt: "2023-07-15T14:30:00Z"
     },
     {
       id: "booking3",
       memberId: "member3",
       memberName: "Alex Johnson",
       memberAvatar: "/avatars/03.png",
-      status: "missed" as const
+      status: "missed",
+      classId: "class1",
+      bookingDate: "2023-07-20T10:00:00Z",
+      createdAt: "2023-07-15T14:30:00Z",
+      updatedAt: "2023-07-15T14:30:00Z"
     }
   ];
 

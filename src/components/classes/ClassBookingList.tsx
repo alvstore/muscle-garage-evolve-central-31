@@ -1,6 +1,4 @@
 
-// Reimplementation to fix type errors
-
 import { useState } from "react";
 import { 
   Card, 

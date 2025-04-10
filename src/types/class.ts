@@ -6,11 +6,13 @@ export interface ClassBooking {
   memberId: string;
   memberName: string;
   memberAvatar?: string;
-  status: "booked" | "confirmed" | "attended" | "missed" | "cancelled" | "pending";
-  classId: string;  // Add this field
-  bookingDate: string;  // Add this field
-  attendanceTime?: string;  // Add this field
-  notes?: string;  // Add this field
+  status: "booked" | "confirmed" | "attended" | "missed" | "cancelled" | "pending" | "no-show";
+  classId: string;
+  bookingDate: string;
+  attendanceTime?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProgressMetrics {
@@ -25,6 +27,8 @@ export interface Class {
   name: string;
   description: string;
   trainer: string;
+  trainerName?: string;
+  trainerId?: string;
   trainerAvatar?: string;
   capacity: number;
   enrolled: number;
@@ -32,10 +36,13 @@ export interface Class {
   location: string;
   type: string;
   level: "beginner" | "intermediate" | "advanced" | "all";
+  difficulty?: "beginner" | "intermediate" | "advanced" | "all";
   startTime: string;
   endTime: string;
   recurring: boolean;
+  recurringPattern?: string;
   daysOfWeek?: number[];
+  status?: "scheduled" | "completed" | "cancelled";
 }
 
 // Add missing type definitions

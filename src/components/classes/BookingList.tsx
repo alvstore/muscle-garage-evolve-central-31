@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClassBooking } from "@/types/class";
+import { ClassBooking, BookingStatus } from "@/types/class";
 
 // Mock data fetching function
 const fetchBookings = async (): Promise<ClassBooking[]> => {
@@ -57,7 +57,7 @@ const BookingList = () => {
     queryFn: fetchBookings,
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: BookingStatus) => {
     switch (status) {
       case "booked":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";

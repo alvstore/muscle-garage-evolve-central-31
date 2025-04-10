@@ -1,65 +1,90 @@
 
-import React, { useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import ReminderRulesList from '@/components/communication/ReminderRulesList';
-import ReminderRuleForm from '@/components/communication/ReminderRuleForm';
-import { ReminderRule } from '@/types/notification';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import ReminderRulesList from "@/components/communication/ReminderRulesList";
+import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
+import { ReminderRule } from "@/types/notification";
 
 const ReminderPage = () => {
-  const [activeTab, setActiveTab] = useState('all');
-  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [currentTab, setCurrentTab] = useState("all");
   const [editingRule, setEditingRule] = useState<ReminderRule | undefined>(undefined);
-
-  const handleEdit = (rule: ReminderRule) => {
-    setEditingRule(rule);
-    setIsFormVisible(true);
+  
+  const handleCreateRule = () => {
+    setEditingRule(undefined);
+    setShowForm(true);
   };
-
-  const handleCloseForm = () => {
-    setIsFormVisible(false);
+  
+  const handleEditRule = (rule: ReminderRule) => {
+    setEditingRule(rule);
+    setShowForm(true);
+  };
+  
+  const handleCompleteForm = () => {
+    toast.success(editingRule 
+      ? "Reminder rule updated successfully" 
+      : "New reminder rule created successfully"
+    );
+    setShowForm(false);
     setEditingRule(undefined);
   };
-
+  
   return (
-    <Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Reminder Rules</h1>
-          <Button onClick={() => setIsFormVisible(true)} className="bg-indigo-600 hover:bg-indigo-700">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create New Rule
-          </Button>
-        </div>
-
-        {isFormVisible ? (
-          <ReminderRuleForm
-            onComplete={handleCloseForm}
-            editRule={editingRule}
-          />
-        ) : (
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Rules</TabsTrigger>
-              <TabsTrigger value="active">Active Rules</TabsTrigger>
-              <TabsTrigger value="inactive">Inactive Rules</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all">
-              <ReminderRulesList filter="all" onEdit={handleEdit} />
-            </TabsContent>
-            <TabsContent value="active">
-              <ReminderRulesList filter="active" onEdit={handleEdit} />
-            </TabsContent>
-            <TabsContent value="inactive">
-              <ReminderRulesList filter="inactive" onEdit={handleEdit} />
-            </TabsContent>
-          </Tabs>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Reminder Rules</h1>
+        <Button 
+          onClick={handleCreateRule}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-4 w-4" />
+          Create Rule
+        </Button>
       </div>
-    </Container>
+      
+      <p className="text-muted-foreground">
+        Set up automated reminders for membership renewals, missed attendances, birthdays, and other events.
+      </p>
+      
+      {showForm ? (
+        <ReminderRuleForm
+          onComplete={handleCompleteForm}
+          editRule={editingRule}
+        />
+      ) : (
+        <Tabs 
+          defaultValue={currentTab} 
+          onValueChange={setCurrentTab}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="all">All Rules</TabsTrigger>
+            <TabsTrigger value="membership">Membership</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="other">Other</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all">
+            <ReminderRulesList onEdit={handleEditRule} />
+          </TabsContent>
+          
+          <TabsContent value="membership">
+            <ReminderRulesList onEdit={handleEditRule} />
+          </TabsContent>
+          
+          <TabsContent value="attendance">
+            <ReminderRulesList onEdit={handleEditRule} />
+          </TabsContent>
+          
+          <TabsContent value="other">
+            <ReminderRulesList onEdit={handleEditRule} />
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
   );
 };
 

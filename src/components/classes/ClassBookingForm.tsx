@@ -52,7 +52,8 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
         bookingDate: new Date().toISOString(),
         status: "booked",
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        notes: notes || undefined
       };
       
       // In a real app, this would be an API call
@@ -92,7 +93,7 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
               <p><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
               <p><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
               <p><strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled</p>
-              <p><strong>Trainer:</strong> {gymClass.trainerName}</p>
+              <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer}</p>
             </div>
           </div>
           

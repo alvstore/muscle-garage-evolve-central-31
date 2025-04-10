@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/date-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ReminderRule, ReminderTriggerType } from '@/types/notification';
 
@@ -23,21 +22,15 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
       id: '',
       name: '',
       description: '',
-      triggerType: 'membership-expiry',
-      daysInAdvance: 3,
+      type: 'membership-renewal',
+      triggerDays: 3,
       message: '',
       channels: [],
-      targetRoles: [],
-      active: true,
+      enabled: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      sendEmail: true,
-      sendSMS: false,
-      sendPush: false,
-      specificDate: '',
-      specificTime: '',
-      repeatYearly: false,
-      targetGroups: []
+      targetRoles: [],
+      active: true
     }
   );
 
@@ -53,7 +46,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
   };
 
   const handleTriggerTypeChange = (value: ReminderTriggerType) => {
-    setFormData((prev) => ({ ...prev, triggerType: value }));
+    setFormData((prev) => ({ ...prev, type: value }));
   };
 
   return (
@@ -79,7 +72,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={(e) => handleChange('description', e.target.value)}
                 placeholder="Brief description of this reminder's purpose"
                 required
@@ -89,29 +82,29 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
             <div>
               <Label htmlFor="triggerType">Trigger Type</Label>
               <Select 
-                value={formData.triggerType} 
+                value={formData.type} 
                 onValueChange={handleTriggerTypeChange}
               >
                 <SelectTrigger id="triggerType">
                   <SelectValue placeholder="Select when to trigger" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="membership-expiry">Membership Expiry</SelectItem>
-                  <SelectItem value="attendance">Attendance Reminder</SelectItem>
+                  <SelectItem value="membership-renewal">Membership Expiry</SelectItem>
+                  <SelectItem value="missed-attendance">Attendance Reminder</SelectItem>
                   <SelectItem value="birthday">Birthday Wishes</SelectItem>
-                  <SelectItem value="renewal">Renewal Reminder</SelectItem>
+                  <SelectItem value="payment-due">Renewal Reminder</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="daysInAdvance">Days In Advance</Label>
+              <Label htmlFor="triggerDays">Days In Advance</Label>
               <Input
-                id="daysInAdvance"
+                id="triggerDays"
                 type="number"
                 min="0"
-                value={formData.daysInAdvance}
-                onChange={(e) => handleChange('daysInAdvance', parseInt(e.target.value))}
+                value={formData.triggerDays}
+                onChange={(e) => handleChange('triggerDays', parseInt(e.target.value))}
                 required
               />
             </div>
@@ -133,24 +126,39 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="sendEmail" 
-                    checked={formData.sendEmail}
-                    onCheckedChange={(checked) => handleChange('sendEmail', checked)}
+                    checked={formData.channels.includes('email')}
+                    onCheckedChange={(checked) => {
+                      const newChannels = checked 
+                        ? [...formData.channels, 'email'] 
+                        : formData.channels.filter(channel => channel !== 'email');
+                      handleChange('channels', newChannels);
+                    }}
                   />
                   <Label htmlFor="sendEmail" className="cursor-pointer">Email</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="sendSMS" 
-                    checked={formData.sendSMS}
-                    onCheckedChange={(checked) => handleChange('sendSMS', checked)}
+                    checked={formData.channels.includes('sms')}
+                    onCheckedChange={(checked) => {
+                      const newChannels = checked 
+                        ? [...formData.channels, 'sms'] 
+                        : formData.channels.filter(channel => channel !== 'sms');
+                      handleChange('channels', newChannels);
+                    }}
                   />
                   <Label htmlFor="sendSMS" className="cursor-pointer">SMS</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="sendPush" 
-                    checked={formData.sendPush}
-                    onCheckedChange={(checked) => handleChange('sendPush', checked)}
+                    checked={formData.channels.includes('push')}
+                    onCheckedChange={(checked) => {
+                      const newChannels = checked 
+                        ? [...formData.channels, 'push'] 
+                        : formData.channels.filter(channel => channel !== 'push');
+                      handleChange('channels', newChannels);
+                    }}
                   />
                   <Label htmlFor="sendPush" className="cursor-pointer">Push Notification</Label>
                 </div>
@@ -163,11 +171,11 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="targetAdmins" 
-                    checked={formData.targetRoles.includes('admin')}
+                    checked={formData.targetRoles?.includes('admin')}
                     onCheckedChange={(checked) => {
                       const newTargetRoles = checked 
-                        ? [...formData.targetRoles, 'admin'] 
-                        : formData.targetRoles.filter(role => role !== 'admin');
+                        ? [...(formData.targetRoles || []), 'admin'] 
+                        : (formData.targetRoles || []).filter(role => role !== 'admin');
                       handleChange('targetRoles', newTargetRoles);
                     }}
                   />
@@ -176,11 +184,11 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="targetStaff" 
-                    checked={formData.targetRoles.includes('staff')}
+                    checked={formData.targetRoles?.includes('staff')}
                     onCheckedChange={(checked) => {
                       const newTargetRoles = checked 
-                        ? [...formData.targetRoles, 'staff'] 
-                        : formData.targetRoles.filter(role => role !== 'staff');
+                        ? [...(formData.targetRoles || []), 'staff'] 
+                        : (formData.targetRoles || []).filter(role => role !== 'staff');
                       handleChange('targetRoles', newTargetRoles);
                     }}
                   />
@@ -189,11 +197,11 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="targetTrainers" 
-                    checked={formData.targetRoles.includes('trainer')}
+                    checked={formData.targetRoles?.includes('trainer')}
                     onCheckedChange={(checked) => {
                       const newTargetRoles = checked 
-                        ? [...formData.targetRoles, 'trainer'] 
-                        : formData.targetRoles.filter(role => role !== 'trainer');
+                        ? [...(formData.targetRoles || []), 'trainer'] 
+                        : (formData.targetRoles || []).filter(role => role !== 'trainer');
                       handleChange('targetRoles', newTargetRoles);
                     }}
                   />
@@ -202,11 +210,11 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="targetMembers" 
-                    checked={formData.targetRoles.includes('member')}
+                    checked={formData.targetRoles?.includes('member')}
                     onCheckedChange={(checked) => {
                       const newTargetRoles = checked 
-                        ? [...formData.targetRoles, 'member'] 
-                        : formData.targetRoles.filter(role => role !== 'member');
+                        ? [...(formData.targetRoles || []), 'member'] 
+                        : (formData.targetRoles || []).filter(role => role !== 'member');
                       handleChange('targetRoles', newTargetRoles);
                     }}
                   />
