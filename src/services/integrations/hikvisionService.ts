@@ -1,141 +1,146 @@
 
-import { HikvisionCredentials, HikvisionDevice, HikvisionEvent, HikvisionPerson } from "@/types/hikvision";
+import { HikvisionCredentials, HikvisionDevice, HikvisionEvent, HikvisionPerson } from '@/types/hikvision';
 
-export { HikvisionEvent }; // Export HikvisionEvent for use in other modules
+// Re-export the type correctly with 'export type'
+export type { HikvisionEvent };
 
-// Mock implementation for testing
-export const hikvisionService = {
-  testConnection: async (credentials: HikvisionCredentials): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return true;
-  },
+class HikvisionService {
+  // Test connection with Hikvision API
+  async testConnection(credentials: HikvisionCredentials): Promise<boolean> {
+    console.log('Testing connection with credentials:', credentials);
+    // For demo, just return true
+    return new Promise(resolve => setTimeout(() => resolve(true), 1000));
+  }
 
-  getDevices: async (credentials: HikvisionCredentials): Promise<HikvisionDevice[]> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return [
+  // Get devices from Hikvision
+  async getDevices(credentials?: HikvisionCredentials): Promise<HikvisionDevice[]> {
+    console.log('Getting devices with credentials:', credentials);
+    return new Promise(resolve => setTimeout(() => resolve([
       {
-        id: "device1",
-        name: "Main Entrance",
-        serialNumber: "DS-K1T341BMF20220512",
-        firmwareVersion: "V3.2.2_build210427",
-        model: "DS-K1T341BMF",
-        ipAddress: "192.168.1.100",
+        id: 'device1',
+        name: 'Main Entrance Controller',
+        serialNumber: 'DS-K2804',
+        firmwareVersion: '1.4.2',
+        model: 'DS-K2804',
+        ipAddress: '192.168.1.100',
         port: 80,
-        status: "online",
-        deviceType: "access_control"
+        status: 'online',
+        deviceType: 'access',
+        location: 'Main Entrance',
+        type: 'access'
       },
       {
-        id: "device2",
-        name: "Staff Entrance",
-        serialNumber: "DS-K1T341BMF20220513",
-        firmwareVersion: "V3.2.2_build210427",
-        model: "DS-K1T341BMF",
-        ipAddress: "192.168.1.101",
+        id: 'device2',
+        name: 'Staff Entrance Controller',
+        serialNumber: 'DS-K2801',
+        firmwareVersion: '1.4.0',
+        model: 'DS-K2801',
+        ipAddress: '192.168.1.101',
         port: 80,
-        status: "online",
-        deviceType: "access_control"
+        status: 'online',
+        deviceType: 'access',
+        location: 'Staff Entrance',
+        type: 'access'
       },
-      {
-        id: "device3",
-        name: "Gym Area",
-        serialNumber: "DS-K1T341BMF20220514",
-        firmwareVersion: "V3.2.2_build210427",
-        model: "DS-K1T341BMF",
-        ipAddress: "192.168.1.102",
-        port: 80,
-        status: "offline",
-        deviceType: "access_control"
-      }
-    ];
-  },
-  
-  getEvents: async (credentials: HikvisionCredentials, params?: any): Promise<HikvisionEvent[]> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    ]), 1000));
+  }
+
+  // Get events from Hikvision
+  async getEvents(startTime?: string, credentials?: HikvisionCredentials): Promise<HikvisionEvent[]> {
+    console.log('Getting events since:', startTime);
+    console.log('With credentials:', credentials);
     
-    return [
+    return new Promise(resolve => setTimeout(() => resolve([
       {
-        id: "event1",
-        eventTime: "2023-07-10T08:30:00Z",
-        eventType: "entry",
-        cardNo: "12345",
-        employeeNo: "EMP001",
-        deviceId: "device1",
-        deviceName: "Main Entrance",
-        doorId: "door1",
-        doorName: "Front Door",
-        personId: "person1",
-        personName: "John Doe",
+        id: 'event1',
+        eventId: 'event1',
+        eventTime: new Date().toISOString(),
+        eventType: 'entry',
+        deviceId: 'device1',
+        deviceName: 'Main Entrance Controller',
+        doorId: 'door1',
+        doorName: 'Front Door',
+        personId: 'member-1',
+        personName: 'John Doe',
         verified: true
       },
       {
-        id: "event2",
-        eventTime: "2023-07-10T09:15:00Z",
-        eventType: "denied",
-        cardNo: "67890",
-        employeeNo: "EMP002",
-        deviceId: "device1",
-        deviceName: "Main Entrance",
-        doorId: "door1",
-        doorName: "Front Door",
-        personId: "person2",
-        personName: "Jane Smith",
-        verified: false
-      },
-      {
-        id: "event3",
-        eventTime: "2023-07-10T17:45:00Z",
-        eventType: "exit",
-        cardNo: "12345",
-        employeeNo: "EMP001",
-        deviceId: "device1",
-        deviceName: "Main Entrance",
-        doorId: "door1",
-        doorName: "Front Door",
-        personId: "person1",
-        personName: "John Doe",
+        id: 'event2',
+        eventId: 'event2',
+        eventTime: new Date(Date.now() - 3600000).toISOString(),
+        eventType: 'exit',
+        deviceId: 'device1',
+        deviceName: 'Main Entrance Controller',
+        doorId: 'door1',
+        doorName: 'Front Door',
+        personId: 'member-2',
+        personName: 'Jane Smith',
         verified: true
-      }
-    ];
-  },
-  
-  getPersons: async (credentials: HikvisionCredentials): Promise<HikvisionPerson[]> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return [
-      {
-        id: "person1",
-        name: "John Doe",
-        employeeNo: "EMP001",
-        gender: "male",
-        enabled: true,
-        beginTime: "2023-01-01T00:00:00Z",
-        endTime: "2024-01-01T00:00:00Z"
       },
-      {
-        id: "person2",
-        name: "Jane Smith",
-        employeeNo: "EMP002",
-        gender: "female",
-        enabled: true,
-        beginTime: "2023-01-01T00:00:00Z",
-        endTime: "2024-01-01T00:00:00Z"
-      }
-    ];
-  },
-  
-  syncMembersToHikvision: async (credentials: HikvisionCredentials, members: any[]): Promise<{ success: boolean; synced: number; errors: number }> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    ]), 1000));
+  }
+
+  // Get persons from Hikvision
+  async getPersons(credentials?: HikvisionCredentials): Promise<HikvisionPerson[]> {
+    console.log('Getting persons with credentials:', credentials);
+    return new Promise(resolve => setTimeout(() => resolve([]), 1000));
+  }
+
+  // Sync members to Hikvision
+  async syncMembersToHikvision(credentials?: HikvisionCredentials): Promise<number> {
+    console.log('Syncing members with credentials:', credentials);
+    return new Promise(resolve => setTimeout(() => resolve(5), 1000));
+  }
+
+  // Process attendance from Hikvision events
+  async processAttendance(events: HikvisionEvent[]): Promise<number> {
+    console.log('Processing attendance for events:', events);
+    return new Promise(resolve => setTimeout(() => resolve(events.length), 1000));
+  }
+
+  // Get credentials
+  async getCredentials(): Promise<HikvisionCredentials> {
+    console.log('Getting credentials');
+    return new Promise(resolve => setTimeout(() => resolve({
+      username: 'admin',
+      password: '',
+      apiKey: '',
+      apiSecret: '',
+      baseUrl: 'https://hikvision.example.com',
+      isValid: false
+    }), 1000));
+  }
+
+  // Save credentials
+  async saveCredentials(credentials: HikvisionCredentials): Promise<void> {
+    console.log('Saving credentials:', credentials);
+    return new Promise(resolve => setTimeout(() => resolve(), 1000));
+  }
+
+  // Validate credentials
+  async validateCredentials(credentials: HikvisionCredentials): Promise<boolean> {
+    console.log('Validating credentials:', credentials);
+    return this.testConnection(credentials);
+  }
+
+  // Simulate event (for demo purposes)
+  async simulateEvent(memberId: string, eventType: 'entry' | 'exit' | 'denied'): Promise<HikvisionEvent> {
+    console.log('Simulating event for member:', memberId, 'type:', eventType);
     
     return {
-      success: true,
-      synced: members.length,
-      errors: 0
+      id: `sim-${Date.now()}`,
+      eventId: `sim-${Date.now()}`,
+      eventTime: new Date().toISOString(),
+      eventType,
+      deviceId: 'device1',
+      deviceName: 'Main Entrance Controller',
+      doorId: 'door1',
+      doorName: 'Front Door',
+      personId: memberId,
+      personName: 'John Doe', // In a real app, would look up the name
+      verified: true
     };
   }
-};
+}
+
+export const hikvisionService = new HikvisionService();

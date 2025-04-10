@@ -1,3 +1,4 @@
+
 import {
   DashboardSummary,
   Member,
@@ -15,156 +16,7 @@ import {
 } from "@/types/notification";
 import { format, subDays } from "date-fns";
 
-// Mock data for trainers
-export const trainers: Trainer[] = [
-  {
-    id: "trainer1",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    role: "trainer",
-    specialization: ["Cardio", "Strength Training"],
-    experience: 5,
-    certifications: ["ACE", "NASM"],
-  },
-  {
-    id: "trainer2",
-    name: "Mike Johnson",
-    email: "mike.johnson@example.com",
-    role: "trainer",
-    specialization: ["Yoga", "Pilates"],
-    experience: 8,
-    certifications: ["RYT 200", "Balanced Body"],
-  },
-  {
-    id: "trainer3",
-    name: "Emily White",
-    email: "emily.white@example.com",
-    role: "trainer",
-    specialization: ["CrossFit", "HIIT"],
-    experience: 3,
-    certifications: ["CrossFit Level 1", "ISSA"],
-  },
-];
-
-// Mock data for classes
-export const classes: Class[] = [
-  {
-    id: "class1",
-    name: "HIIT Blast",
-    description: "High-intensity interval training for maximum calorie burn.",
-    trainerId: "trainer1",
-    schedule: "Mondays and Wednesdays at 6:00 PM",
-    capacity: 20,
-    enrolled: 15,
-  },
-  {
-    id: "class2",
-    name: "Yoga Flow",
-    description: "Vinyasa-style yoga to improve flexibility and strength.",
-    trainerId: "trainer2",
-    schedule: "Tuesdays and Thursdays at 7:00 PM",
-    capacity: 15,
-    enrolled: 12,
-  },
-  {
-    id: "class3",
-    name: "CrossFit WOD",
-    description: "Workout of the day focusing on functional movements.",
-    trainerId: "trainer3",
-    schedule: "Saturdays at 9:00 AM",
-    capacity: 10,
-    enrolled: 8,
-  },
-];
-
-// Mock data for memberships
-export const memberships: Membership[] = [
-  {
-    id: "membership1",
-    name: "Basic",
-    description: "Access to gym and basic equipment.",
-    price: 50,
-    duration: "Monthly",
-    features: ["Gym access", "Basic equipment"],
-  },
-  {
-    id: "membership2",
-    name: "Premium",
-    description: "Access to all classes and equipment.",
-    price: 100,
-    duration: "Monthly",
-    features: ["All classes", "All equipment", "Personal training session"],
-  },
-  {
-    id: "membership3",
-    name: "Annual",
-    description: "Full access for a year.",
-    price: 900,
-    duration: "Annual",
-    features: ["All classes", "All equipment", "Unlimited personal training"],
-  },
-];
-
-// Mock data for payments
-export const payments: Payment[] = [
-  {
-    id: "payment1",
-    memberId: "member1",
-    membershipId: "membership1",
-    amount: 50,
-    date: "2023-07-01",
-    status: "Paid",
-  },
-  {
-    id: "payment2",
-    memberId: "member2",
-    membershipId: "membership2",
-    amount: 100,
-    date: "2023-07-05",
-    status: "Paid",
-  },
-  {
-    id: "payment3",
-    memberId: "member3",
-    membershipId: "membership3",
-    amount: 900,
-    date: "2023-07-10",
-    status: "Paid",
-  },
-];
-
-// Mock data for announcements
-export const announcements: Announcement[] = [
-  {
-    id: "announcement1",
-    title: "New Year Promotion",
-    content: "Get 20% off on all annual memberships this January!",
-    date: "2023-01-01",
-    author: "Admin",
-    priority: "high",
-    targetRoles: ["member"],
-  },
-  {
-    id: "announcement2",
-    title: "Gym Closure",
-    content: "The gym will be closed for maintenance on July 15th.",
-    date: "2023-07-10",
-    author: "Admin",
-    priority: "medium",
-    targetRoles: ["member", "trainer"],
-  },
-  {
-    id: "announcement3",
-    title: "New Class Alert",
-    content: "A new Zumba class will be starting next week.",
-    date: "2023-07-12",
-    author: "Admin",
-    priority: "low",
-    targetRoles: ["member"],
-  },
-];
-
-// Mock data for users
+// Mock users data
 export const users: User[] = [
   {
     id: "admin1",
@@ -204,10 +56,186 @@ export const users: User[] = [
   },
 ];
 
+// Alias for dashboards to use
+export const mockUsers = users;
+
+// Mock data for trainers
+export const trainers: Trainer[] = [
+  {
+    id: "trainer1",
+    name: "Jane Smith",
+    email: "jane.smith@example.com",
+    role: "trainer",
+    specialization: ["Cardio", "Strength Training"],
+    experience: 5,
+    certifications: ["ACE", "NASM"],
+  },
+  {
+    id: "trainer2",
+    name: "Mike Johnson",
+    email: "mike.johnson@example.com",
+    role: "trainer",
+    specialization: ["Yoga", "Pilates"],
+    experience: 8,
+    certifications: ["RYT 200", "Balanced Body"],
+  },
+  {
+    id: "trainer3",
+    name: "Emily White",
+    email: "emily.white@example.com",
+    role: "trainer",
+    specialization: ["CrossFit", "HIIT"],
+    experience: 3,
+    certifications: ["CrossFit Level 1", "ISSA"],
+  },
+];
+
+// Mock data for classes
+export const classes: Class[] = [
+  {
+    id: "class1",
+    name: "HIIT Blast",
+    description: "High-intensity interval training for maximum calorie burn.",
+    trainerId: "trainer1",
+    startTime: "2023-07-10T18:00:00",
+    endTime: "2023-07-10T19:00:00",
+    capacity: 20,
+    enrolled: 15,
+    trainer: "Jane Smith",
+    difficulty: "Advanced",
+    type: "HIIT",
+    location: "Studio A",
+  },
+  {
+    id: "class2",
+    name: "Yoga Flow",
+    description: "Vinyasa-style yoga to improve flexibility and strength.",
+    trainerId: "trainer2",
+    startTime: "2023-07-11T19:00:00",
+    endTime: "2023-07-11T20:00:00",
+    capacity: 15,
+    enrolled: 12,
+    trainer: "Mike Johnson",
+    difficulty: "Intermediate",
+    type: "Yoga",
+    location: "Studio B",
+  },
+  {
+    id: "class3",
+    name: "CrossFit WOD",
+    description: "Workout of the day focusing on functional movements.",
+    trainerId: "trainer3",
+    startTime: "2023-07-15T09:00:00",
+    endTime: "2023-07-15T10:00:00",
+    capacity: 10,
+    enrolled: 8,
+    trainer: "Emily White",
+    difficulty: "Advanced",
+    type: "CrossFit",
+    location: "Main Floor",
+  },
+];
+
+// Alias for dashboards to use
+export const mockClasses = classes;
+
+// Mock data for memberships
+export const memberships: Membership[] = [
+  {
+    id: "membership1",
+    name: "Basic",
+    price: 50,
+    duration: 30,
+    features: ["Gym access", "Basic equipment"],
+    isActive: true,
+  },
+  {
+    id: "membership2",
+    name: "Premium",
+    price: 100,
+    duration: 30,
+    features: ["All classes", "All equipment", "Personal training session"],
+    isActive: true,
+  },
+  {
+    id: "membership3",
+    name: "Annual",
+    price: 900,
+    duration: 365,
+    features: ["All classes", "All equipment", "Unlimited personal training"],
+    isActive: true,
+  },
+];
+
+// Mock data for payments
+export const payments: Payment[] = [
+  {
+    id: "payment1",
+    memberId: "member1",
+    membershipId: "membership1",
+    amount: 50,
+    date: "2023-07-01",
+    status: "Paid",
+  },
+  {
+    id: "payment2",
+    memberId: "member2",
+    membershipId: "membership2",
+    amount: 100,
+    date: "2023-07-05",
+    status: "Paid",
+  },
+  {
+    id: "payment3",
+    memberId: "member3",
+    membershipId: "membership3",
+    amount: 900,
+    date: "2023-07-10",
+    status: "Paid",
+  },
+];
+
+// Mock data for announcements
+export const announcements: Announcement[] = [
+  {
+    id: "announcement1",
+    title: "New Year Promotion",
+    content: "Get 20% off on all annual memberships this January!",
+    createdAt: "2023-01-01T00:00:00Z",
+    author: "Admin",
+    priority: "high",
+    targetRoles: ["member"],
+    channels: ["email", "push"],
+  },
+  {
+    id: "announcement2",
+    title: "Gym Closure",
+    content: "The gym will be closed for maintenance on July 15th.",
+    createdAt: "2023-07-10T00:00:00Z",
+    author: "Admin",
+    priority: "medium",
+    targetRoles: ["member", "trainer"],
+    channels: ["email", "sms"],
+  },
+  {
+    id: "announcement3",
+    title: "New Class Alert",
+    content: "A new Zumba class will be starting next week.",
+    createdAt: "2023-07-12T00:00:00Z",
+    author: "Admin",
+    priority: "low",
+    targetRoles: ["member"],
+    channels: ["push"],
+  },
+];
+
+// Alias for dashboards to use
+export const mockAnnouncements = announcements;
+
 // Fix the dashboard summary to use totalRevenue instead of revenue
 export const dashboardSummary: DashboardSummary = {
   activeMemberships: 342,
-  totalRevenue: 48250, // Changed from revenue to totalRevenue
+  totalRevenue: 48250,
   newMembers: 27,
   upcomingClasses: 15,
   occupancyRate: 78,
@@ -312,3 +340,6 @@ export const members: Member[] = [
     goal: "Strength and endurance",
   },
 ];
+
+// Alias for dashboards to use
+export const mockMembers = members;

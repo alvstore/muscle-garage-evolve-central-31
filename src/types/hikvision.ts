@@ -9,12 +9,14 @@ export interface HikvisionDevice {
   ipAddress: string;
   port: number;
   status: string; // online, offline, etc.
-  deviceType?: string; // Added deviceType property
+  deviceType: string; // Added deviceType property
   location?: string; // Added location property
+  type?: string; // Added type property for compatibility
 }
 
 // Extended device type with status for the UI
-export interface HikvisionDeviceWithStatus extends HikvisionDevice {
+export interface HikvisionDeviceWithStatus extends Omit<HikvisionDevice, 'status'> {
+  status?: string;
   lastSeen?: string;
   healthStatus?: 'healthy' | 'warning' | 'error';
   deviceId?: string; // Added to match usage
@@ -33,6 +35,7 @@ export interface HikvisionCredentials {
 // Event data from Hikvision
 export interface HikvisionEvent {
   id: string;
+  eventId: string; // Added to match usage
   eventTime: string;
   eventType: 'entry' | 'exit' | 'denied';
   cardNo?: string;

@@ -51,8 +51,11 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRul
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTriggerTypeChange = (value: ReminderTriggerType) => {
-    setFormData((prev) => ({ ...prev, type: value }));
+  const handleTriggerTypeChange = (value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      type: value as "membership-renewal" | "missed-attendance" | "birthday" | "payment-due"
+    }));
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import {
@@ -30,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useBranch } from "@/hooks/use-branch";
 import { useAuth } from "@/hooks/use-auth";
 import { Announcement, DashboardSummary } from "@/types";
+import { announcements as mockAnnouncements } from "@/data/mockData";
 
 // Demo data for the example
 const revenueData = [

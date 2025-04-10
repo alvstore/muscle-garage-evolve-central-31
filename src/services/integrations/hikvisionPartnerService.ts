@@ -1,142 +1,226 @@
-import { HikvisionDeviceWithStatus, HikvisionDevice, HikvisionPartner } from "@/types/hikvision";
 
-// Mock data - replace with actual database calls
-let mockDevices: HikvisionDeviceWithStatus[] = [];
-let mockPartners: HikvisionPartner[] = [];
+import { 
+  HikvisionDevice, 
+  HikvisionDeviceWithStatus, 
+  HikvisionCredentials, 
+  HikvisionPartner 
+} from '@/types/hikvision';
 
-// Initialize mock data (for testing purposes)
-const initializeMockData = () => {
-  mockDevices = [
-    {
-      id: "device1",
-      name: "Main Entrance Camera",
-      serialNumber: "SN12345",
-      firmwareVersion: "v1.2.3",
-      model: "DS-2CD2347G2-L",
-      ipAddress: "192.168.1.10",
-      port: 8000,
-      status: "online",
-      lastSeen: new Date().toISOString(),
-      healthStatus: "healthy",
-      deviceId: "device1"
-    },
-    {
-      id: "device2",
-      name: "Back Door Camera",
-      serialNumber: "SN67890",
-      firmwareVersion: "v1.2.3",
-      model: "DS-2CD2347G2-L",
-      ipAddress: "192.168.1.11",
-      port: 8000,
-      status: "offline",
-      lastSeen: new Date().toISOString(),
-      healthStatus: "error",
-      deviceId: "device2"
-    },
-  ];
+// Re-export for usage in other files
+export type { HikvisionDeviceWithStatus };
 
-  mockPartners = [
-    {
-      id: "partner1",
-      name: "Security Solutions Inc.",
-      apiKey: "apikey123",
-      apiSecret: "secret456",
-      baseUrl: "https://securitysolutions.com/api",
-      status: "active",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ];
-};
+class HikvisionPartnerService {
+  // Get all devices
+  async getAllDevices(): Promise<HikvisionDeviceWithStatus[]> {
+    console.log('Getting all devices');
+    
+    // Mock data
+    return [
+      {
+        id: 'device1',
+        name: 'Main Entrance Controller',
+        serialNumber: 'DS-K2804',
+        firmwareVersion: '1.4.2',
+        model: 'DS-K2804',
+        ipAddress: '192.168.1.100',
+        port: 80,
+        status: 'online',
+        deviceType: 'access',
+        location: 'Main Entrance',
+        healthStatus: 'healthy',
+        lastSeen: new Date().toISOString(),
+        deviceId: 'device1', 
+        type: 'access'
+      },
+      {
+        id: 'device2',
+        name: 'Staff Entrance Controller',
+        serialNumber: 'DS-K2801',
+        firmwareVersion: '1.4.0',
+        model: 'DS-K2801',
+        ipAddress: '192.168.1.101',
+        port: 80,
+        status: 'online',
+        deviceType: 'access',
+        location: 'Staff Entrance',
+        healthStatus: 'warning',
+        lastSeen: new Date(Date.now() - 86400000).toISOString(),
+        deviceId: 'device2',
+        type: 'access'
+      },
+    ];
+  }
 
-initializeMockData();
-
-export const hikvisionPartnerService = {
-  // Device Management
-  getAllDevices: async (): Promise<HikvisionDeviceWithStatus[]> => {
-    return mockDevices;
-  },
-
-  getDeviceById: async (deviceId: string): Promise<HikvisionDeviceWithStatus | undefined> => {
-    return mockDevices.find(device => device.id === deviceId);
-  },
-
-  // Fix device creation
-  createDevice: async (deviceData: Partial<HikvisionDeviceWithStatus>): Promise<HikvisionDeviceWithStatus> => {
-    const newDevice: HikvisionDeviceWithStatus = {
-      id: `device${Date.now()}`,
-      name: deviceData.name || 'New Device',
-      serialNumber: deviceData.serialNumber || `SN${Date.now()}`,
-      firmwareVersion: deviceData.firmwareVersion || 'v1.0',
-      model: deviceData.model || 'Generic Model',
-      ipAddress: deviceData.ipAddress || '192.168.1.1',
-      port: deviceData.port || 80,
-      status: deviceData.status || 'offline',
-      lastSeen: new Date().toISOString(),
+  // Get device by ID
+  async getDeviceById(deviceId: string): Promise<HikvisionDeviceWithStatus> {
+    console.log('Getting device by ID:', deviceId);
+    
+    // Mock data
+    return {
+      id: deviceId,
+      name: 'Main Entrance Controller',
+      serialNumber: 'DS-K2804',
+      firmwareVersion: '1.4.2',
+      model: 'DS-K2804',
+      ipAddress: '192.168.1.100',
+      port: 80,
+      status: 'online',
+      deviceType: 'access',
+      location: 'Main Entrance',
       healthStatus: 'healthy',
-      // Add id as deviceId for compatibility
-      deviceId: `device${Date.now()}`
+      lastSeen: new Date().toISOString(),
+      deviceId: deviceId,
+      type: 'access'
     };
+  }
+
+  // Add a device
+  async addDevice(device: Partial<HikvisionDeviceWithStatus>): Promise<{ success: boolean; message: string; device: HikvisionDeviceWithStatus }> {
+    console.log('Adding device:', device);
     
-    mockDevices.push(newDevice);
-    return newDevice;
-  },
+    // Mock response
+    return {
+      success: true,
+      message: 'Device added successfully',
+      device: {
+        id: `device-${Date.now()}`,
+        name: device.name || 'New Device',
+        serialNumber: device.serialNumber || 'UNKNOWN',
+        firmwareVersion: device.firmwareVersion || '1.0.0',
+        model: device.model || 'UNKNOWN',
+        ipAddress: device.ipAddress || '0.0.0.0',
+        port: device.port || 80,
+        status: 'offline',
+        deviceType: device.deviceType || 'access',
+        location: device.location || 'Unknown',
+        healthStatus: 'warning',
+        lastSeen: new Date().toISOString(),
+        deviceId: `device-${Date.now()}`,
+        type: device.type || 'access'
+      }
+    };
+  }
 
-  // Fix update device
-  updateDevice: async (deviceId: string, deviceData: Partial<HikvisionDeviceWithStatus>): Promise<HikvisionDeviceWithStatus> => {
-    const index = mockDevices.findIndex(d => d.id === deviceId);
-    if (index < 0) throw new Error(`Device with ID ${deviceId} not found`);
+  // Update a device
+  async updateDevice(deviceId: string, updates: Partial<HikvisionDeviceWithStatus>): Promise<{ success: boolean; message: string }> {
+    console.log('Updating device:', deviceId, 'with:', updates);
     
-    const updatedDevice = {
-      ...mockDevices[index],
-      ...deviceData,
-      // Ensure deviceId is present
-      deviceId: deviceId
+    // Mock response
+    return {
+      success: true,
+      message: 'Device updated successfully'
     };
+  }
+
+  // Delete a device
+  async deleteDevice(deviceId: string): Promise<{ success: boolean; message: string }> {
+    console.log('Deleting device:', deviceId);
     
-    mockDevices[index] = updatedDevice;
-    return updatedDevice;
-  },
-
-  deleteDevice: async (deviceId: string): Promise<void> => {
-    mockDevices = mockDevices.filter(device => device.id !== deviceId);
-  },
-
-  // Partner Management
-  getAllPartners: async (): Promise<HikvisionPartner[]> => {
-    return mockPartners;
-  },
-
-  getPartnerById: async (partnerId: string): Promise<HikvisionPartner | undefined> => {
-    return mockPartners.find(partner => partner.id === partnerId);
-  },
-
-  createPartner: async (partnerData: HikvisionPartner): Promise<HikvisionPartner> => {
-    const newPartner: HikvisionPartner = {
-      ...partnerData,
-      id: `partner${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    // Mock response
+    return {
+      success: true,
+      message: 'Device deleted successfully'
     };
-    mockPartners.push(newPartner);
-    return newPartner;
-  },
+  }
 
-  updatePartner: async (partnerId: string, partnerData: Partial<HikvisionPartner>): Promise<HikvisionPartner> => {
-    const index = mockPartners.findIndex(partner => partner.id === partnerId);
-    if (index < 0) throw new Error(`Partner with ID ${partnerId} not found`);
-
-    const updatedPartner = {
-      ...mockPartners[index],
-      ...partnerData,
-      updatedAt: new Date().toISOString(),
+  // Get device status
+  async getDeviceStatus(deviceId: string): Promise<{ status: string; lastSeen: string; healthStatus: 'healthy' | 'warning' | 'error' }> {
+    console.log('Getting status for device:', deviceId);
+    
+    // Mock response
+    return {
+      status: 'online',
+      lastSeen: new Date().toISOString(),
+      healthStatus: 'healthy'
     };
+  }
 
-    mockPartners[index] = updatedPartner;
-    return updatedPartner;
-  },
+  // Get all partners
+  async getAllPartners(): Promise<HikvisionPartner[]> {
+    console.log('Getting all partners');
+    
+    // Mock data
+    return [
+      {
+        id: 'partner1',
+        name: 'Main Office',
+        apiKey: 'api_key_1',
+        apiSecret: 'api_secret_1',
+        baseUrl: 'https://hikvision1.example.com',
+        status: 'active',
+        createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'partner2',
+        name: 'Branch Office',
+        apiKey: 'api_key_2',
+        apiSecret: 'api_secret_2',
+        baseUrl: 'https://hikvision2.example.com',
+        status: 'inactive',
+        createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
+      }
+    ];
+  }
 
-  deletePartner: async (partnerId: string): Promise<void> => {
-    mockPartners = mockPartners.filter(partner => partner.id !== partnerId);
-  },
-};
+  // Add a partner
+  async addPartner(partner: Partial<HikvisionPartner>): Promise<{ success: boolean; message: string; partner: HikvisionPartner }> {
+    console.log('Adding partner:', partner);
+    
+    // Mock response
+    return {
+      success: true,
+      message: 'Partner added successfully',
+      partner: {
+        id: `partner-${Date.now()}`,
+        name: partner.name || 'New Partner',
+        apiKey: partner.apiKey || 'generated_api_key',
+        apiSecret: partner.apiSecret || 'generated_api_secret',
+        baseUrl: partner.baseUrl || 'https://example.com',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    };
+  }
+
+  // Delete a partner
+  async deletePartner(partnerId: string): Promise<{ success: boolean; message: string }> {
+    console.log('Deleting partner:', partnerId);
+    
+    // Mock response
+    return {
+      success: true,
+      message: 'Partner deleted successfully'
+    };
+  }
+
+  // Additional methods needed by components
+  async getCredentials(): Promise<HikvisionCredentials> {
+    console.log('Getting credentials');
+    return {
+      username: 'admin',
+      password: '',
+      apiKey: '',
+      apiSecret: '',
+      baseUrl: 'https://hikvision.example.com',
+      isValid: false
+    };
+  }
+
+  async saveCredentials(credentials: HikvisionCredentials): Promise<void> {
+    console.log('Saving credentials:', credentials);
+  }
+
+  async testConnection(credentials: HikvisionCredentials): Promise<boolean> {
+    console.log('Testing connection with credentials:', credentials);
+    return true;
+  }
+
+  async listDevices(): Promise<HikvisionDeviceWithStatus[]> {
+    return this.getAllDevices();
+  }
+}
+
+export const hikvisionPartnerService = new HikvisionPartnerService();

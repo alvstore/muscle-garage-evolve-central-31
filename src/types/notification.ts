@@ -69,7 +69,7 @@ export interface Announcement {
   title: string;
   content: string;
   priority: "low" | "medium" | "high";
-  createdBy: string;
+  author: string;
   createdAt: string;
   targetRoles: UserRole[];
   expiresAt?: string;

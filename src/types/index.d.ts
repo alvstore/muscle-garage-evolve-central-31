@@ -29,7 +29,7 @@ export interface Member {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
-  primaryBranchId?: string; // Now explicitly defined here
+  primaryBranchId: string; // Now required field
   // Body measurements
   height?: number;
   weight?: number;
@@ -54,6 +54,10 @@ export interface MemberMeasurement {
   thigh?: number;
   hips?: number;
   bodyFat?: number;
+  notes?: string;
+  photoUrl?: string;
+  updatedBy: string; // ID of user who updated the record
+  updatedByRole: UserRole; // Role of user who updated the record
 }
 
 export interface User {
@@ -70,8 +74,39 @@ export type Announcement = {
   id: string;
   title: string;
   content: string;
-  date: string;
+  createdAt: string;
   author: string;
   priority?: "low" | "medium" | "high";
-  targetRoles?: string[];
+  targetRoles: string[];
+  channels?: string[];
 };
+
+// Add Payment interface
+export interface Payment {
+  id: string;
+  memberId: string;
+  membershipId: string;
+  amount: number;
+  date: string;
+  status: "Paid" | "Pending" | "Failed";
+}
+
+// Update Class interface to include schedule
+export interface Class {
+  id: string;
+  name: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  enrolled: number;
+  trainer: string;
+  trainerName?: string;
+  trainerAvatar?: string;
+  trainerId?: string;
+  difficulty: string;
+  type: string;
+  location?: string;
+  status?: string;
+  schedule?: string; // Added schedule field
+}
