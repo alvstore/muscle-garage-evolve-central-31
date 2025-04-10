@@ -32,6 +32,7 @@ import MembersListPage from './pages/members/MembersListPage';
 import MemberProfilePage from './pages/members/MemberProfilePage';
 import NewMemberPage from './pages/members/NewMemberPage';
 import ReportsPage from './pages/reports/ReportsPage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -200,7 +201,12 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Settings & Integrations Routes */}
+                  {/* Settings Routes */}
+                  <Route path="/settings" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                      <SettingsPage />
+                    </PrivateRoute>
+                  } />
                   <Route path="/settings/integrations" element={
                     <PrivateRoute allowedRoles={['admin']}>
                       <IntegrationsPage />
