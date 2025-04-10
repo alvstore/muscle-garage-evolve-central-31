@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Calendar, Clock, CheckCircle2, UserCircle, BarChart3, ActivitySquare } from "lucide-react";
@@ -33,8 +32,13 @@ const TrainerDashboard = () => {
   // Filter members assigned to this trainer
   const assignedMembers = mockMembers.filter(m => m.trainerId === user?.id || m.trainerId === "trainer1");
 
-  // Personal Training Members - those who have PT subscriptions
-  const ptMembers = assignedMembers.filter(m => m.hasPTSubscription === true || m.id === "member-1");
+  // Personal Training Members - identify them based on membershipId or manually for demo
+  // In a real application, this would check for a specific PT membership type
+  const ptMembers = assignedMembers.filter(m => 
+    // Check for member-1 for demo purposes or check for any PT-specific data
+    m.id === "member-1" || 
+    (m.membershipId && m.membershipId.includes("pt"))
+  );
 
   // Upcoming appointments
   const appointments = [
@@ -154,8 +158,7 @@ const TrainerDashboard = () => {
                         <Button variant="secondary" size="sm">View Details</Button>
                       </div>
                     </div>
-                  ))
-                }
+                  ))}
                 
                 {appointments.filter(a => a.date === "Today").length < appointments.length && (
                   <Button variant="outline" className="w-full mt-2">
