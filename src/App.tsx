@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import Unauthorized from './pages/auth/Unauthorized';
 import BranchesPage from './pages/branches/BranchesPage';
 import IntegrationsPage from './pages/settings/IntegrationsPage';
 import HikvisionIntegrationPage from './pages/settings/HikvisionIntegrationPage';
+import HikvisionPartnerPage from './pages/settings/HikvisionPartnerPage';
 import InvoicePage from './pages/finance/InvoicePage';
 import TransactionPage from './pages/finance/TransactionPage';
 
@@ -108,6 +108,13 @@ export default function App() {
                   {/* Settings & Integrations Routes */}
                   <Route path="/settings/integrations" element={<IntegrationsPage />} />
                   <Route path="/settings/integrations/hikvision" element={<HikvisionIntegrationPage />} />
+                  <Route path="/settings/integrations/hikvision-partner" element={
+                    <PrivateRoute allowedRoles={['admin']} requiredPermission="manage_integrations">
+                      <DashboardLayout>
+                        <HikvisionPartnerPage />
+                      </DashboardLayout>
+                    </PrivateRoute>
+                  } />
                 </Route>
               </Route>
               
