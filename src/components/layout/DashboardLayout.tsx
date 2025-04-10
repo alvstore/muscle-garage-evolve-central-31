@@ -7,6 +7,7 @@ import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
+import TrainerSidebar from "./TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 
 const DashboardLayout = () => {
@@ -89,7 +90,20 @@ const DashboardLayout = () => {
   }
 
   // Determine which sidebar to show based on the user role
-  const SidebarComponent = user.role === 'member' ? MemberSidebar : DashboardSidebar;
+  const getSidebarComponent = () => {
+    switch (user.role) {
+      case 'member':
+        return MemberSidebar;
+      case 'trainer':
+        return TrainerSidebar;
+      case 'admin':
+      case 'staff':
+      default:
+        return DashboardSidebar;
+    }
+  };
+
+  const SidebarComponent = getSidebarComponent();
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-[#161d31]">
