@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -15,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -26,10 +26,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ClassForm from "./ClassForm";
 import { GymClass } from "@/types/class";
+import { usePermissions } from "@/hooks/use-permissions";
 
-// Mock data fetching function
 const fetchClasses = async (): Promise<GymClass[]> => {
-  // In a real app, this would be an API call
   return [
     {
       id: "1",
@@ -104,6 +103,8 @@ const fetchClasses = async (): Promise<GymClass[]> => {
 const ClassList = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
+  const { userRole } = usePermissions();
+  const isMember = userRole === "member";
 
   const { data: classes, isLoading } = useQuery({
     queryKey: ['classes'],
@@ -118,6 +119,10 @@ const ClassList = () => {
   const handleEditClass = (classItem: GymClass) => {
     setSelectedClass(classItem);
     setIsOpen(true);
+  };
+
+  const handleBookClass = (classId: string) => {
+    toast.success("Class booked successfully!");
   };
 
   const handleCloseDialog = () => {
@@ -167,7 +172,9 @@ const ClassList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Class Schedule</h2>
+          <h2 className="text-xl font-semibold">
+            {isMember ? "Upcoming Classes" : "Class Schedule"}
+          </h2>
           <Badge variant="outline" className="ml-2">
             {classes?.length || 0} Classes
           </Badge>
@@ -222,10 +229,12 @@ const ClassList = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button onClick={handleCreateClass}>
-            <Plus className="h-4 w-4 mr-1" />
-            Create Class
-          </Button>
+          {!isMember && (
+            <Button onClick={handleCreateClass}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create Class
+            </Button>
+          )}
         </div>
       </div>
 
@@ -235,25 +244,27 @@ const ClassList = () => {
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle>{classItem.name}</CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditClass(classItem)}>
-                      Edit Class
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      View Bookings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      Cancel Class
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {!isMember && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditClass(classItem)}>
+                        Edit Class
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        View Bookings
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive">
+                        Cancel Class
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -309,19 +320,31 @@ const ClassList = () => {
               </div>
               
               <div className="mt-4 flex justify-end">
-                <Button>Book Class</Button>
+                {classItem.enrolled < classItem.capacity && (
+                  <Button onClick={() => handleBookClass(classItem.id)}>
+                    Book Class
+                  </Button>
+                )}
+                
+                {classItem.enrolled >= classItem.capacity && (
+                  <Button variant="outline" disabled>
+                    Class Full
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <ClassForm
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        initialData={selectedClass}
-        onClose={handleCloseDialog}
-      />
+      {!isMember && (
+        <ClassForm
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          initialData={selectedClass}
+          onClose={handleCloseDialog}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -9,10 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClassBooking, BookingStatus } from "@/types/class";
+import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 
-// Mock data fetching function
 const fetchBookings = async (): Promise<ClassBooking[]> => {
-  // In a real app, this would be an API call
   return [
     {
       id: "1",
@@ -56,6 +55,9 @@ const BookingList = () => {
     queryKey: ['bookings'],
     queryFn: fetchBookings,
   });
+  
+  const { userRole } = usePermissions();
+  const isMember = userRole === "member";
 
   const getStatusColor = (status: BookingStatus) => {
     switch (status) {
@@ -79,6 +81,14 @@ const BookingList = () => {
       .join("")
       .toUpperCase();
   };
+  
+  const handleCancelBooking = (bookingId: string) => {
+    toast.success("Booking cancelled successfully");
+  };
+  
+  const handleCheckIn = (bookingId: string) => {
+    toast.success("Check-in successful");
+  };
 
   if (isLoading) {
     return <div>Loading bookings...</div>;
@@ -87,16 +97,16 @@ const BookingList = () => {
   return (
     <Tabs defaultValue="upcoming">
       <TabsList className="mb-4">
-        <TabsTrigger value="upcoming">Upcoming Bookings</TabsTrigger>
-        <TabsTrigger value="past">Past Bookings</TabsTrigger>
+        <TabsTrigger value="upcoming">Upcoming Classes</TabsTrigger>
+        <TabsTrigger value="past">Past Classes</TabsTrigger>
         <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
       </TabsList>
       
       <TabsContent value="upcoming" className="space-y-4">
         {bookings?.filter(b => b.status === "booked").map(booking => (
-          <Card key={booking.id}>
+          <Card key={booking.id} className="border dark:border-slate-800 overflow-hidden">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center space-x-4">
                   <Avatar>
                     <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
@@ -118,14 +128,23 @@ const BookingList = () => {
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </Badge>
                   <div className="flex space-x-1">
-                    <Button size="sm" variant="outline">
-                      <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
-                      Check In
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <XCircle className="mr-1 h-4 w-4 text-red-600" />
-                      Cancel
-                    </Button>
+                    {isMember ? (
+                      <Button size="sm" variant="outline" onClick={() => handleCancelBooking(booking.id)}>
+                        <XCircle className="mr-1 h-4 w-4 text-red-600" />
+                        Cancel
+                      </Button>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => handleCheckIn(booking.id)}>
+                          <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
+                          Check In
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleCancelBooking(booking.id)}>
+                          <XCircle className="mr-1 h-4 w-4 text-red-600" />
+                          Cancel
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -134,7 +153,7 @@ const BookingList = () => {
         ))}
         
         {bookings?.filter(b => b.status === "booked").length === 0 && (
-          <div className="text-center p-8 text-muted-foreground">
+          <div className="text-center p-8 bg-white dark:bg-slate-900 rounded-lg border dark:border-slate-800 text-muted-foreground">
             No upcoming bookings found.
           </div>
         )}

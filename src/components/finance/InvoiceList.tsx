@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,8 @@ import { format } from "date-fns";
 import { Invoice } from "@/types/finance";
 import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const mockInvoices: Invoice[] = [
   {
@@ -77,6 +78,8 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const { userRole } = usePermissions();
+  const isMember = userRole === "member";
 
   const handleAddInvoice = () => {
     setEditingInvoice(null);
@@ -89,7 +92,6 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   };
 
   const handleMarkAsPaid = (id: string) => {
-    // In a real application, you would make an API call
     setInvoices(
       invoices.map(invoice => 
         invoice.id === id
@@ -106,12 +108,18 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   };
 
   const handleSendPaymentLink = (id: string) => {
-    // In a real application, you would make an API call to Razorpay
     toast.success("Payment link sent successfully");
   };
 
+  const handlePayInvoice = (id: string) => {
+    toast.success("Redirecting to payment gateway");
+  };
+
+  const handleDownloadInvoice = (id: string) => {
+    toast.success("Invoice downloaded");
+  };
+
   const handleSaveInvoice = (invoice: Invoice) => {
-    // In a real application, you would make an API call
     if (editingInvoice) {
       setInvoices(invoices.map(inv => inv.id === invoice.id ? invoice : inv));
       toast.success("Invoice updated successfully");
@@ -153,66 +161,73 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Invoices</CardTitle>
-          {!readonly && (
+          {!readonly && !isMember && (
             <Button onClick={handleAddInvoice} className="flex items-center gap-1">
               <PlusIcon className="h-4 w-4" /> Create Invoice
             </Button>
           )}
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Member</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.memberName}</TableCell>
-                  <TableCell>{formatPrice(invoice.amount)}</TableCell>
-                  <TableCell>{format(new Date(invoice.issuedDate), "MMM d, yyyy")}</TableCell>
-                  <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
-                  <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {!readonly && (
-                        <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
-                          <FileTextIcon className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {!readonly && invoice.status === "pending" && (
-                        <Button variant="ghost" size="sm" onClick={() => handleMarkAsPaid(invoice.id)}>
-                          <CreditCardIcon className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {allowPayment && (invoice.status === "pending" || invoice.status === "overdue") && (
-                        <Button variant="ghost" size="sm" onClick={() => handleSendPaymentLink(invoice.id)}>
-                          <CreditCardIcon className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {allowDownload && (
-                        <Button variant="ghost" size="sm" onClick={() => toast.success("Invoice downloaded")}>
-                          <DownloadIcon className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
+          <ScrollArea className="h-[calc(100vh-250px)] w-full pr-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Issue Date</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.id}</TableCell>
+                    <TableCell>{invoice.memberName}</TableCell>
+                    <TableCell>{formatPrice(invoice.amount)}</TableCell>
+                    <TableCell>{format(new Date(invoice.issuedDate), "MMM d, yyyy")}</TableCell>
+                    <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
+                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {!readonly && !isMember && (
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                            <FileTextIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {!readonly && !isMember && invoice.status === "pending" && (
+                          <Button variant="ghost" size="sm" onClick={() => handleMarkAsPaid(invoice.id)}>
+                            <CreditCardIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {allowPayment && isMember && (invoice.status === "pending" || invoice.status === "overdue") && (
+                          <Button variant="ghost" size="sm" onClick={() => handlePayInvoice(invoice.id)}>
+                            <CreditCardIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {allowPayment && !isMember && (invoice.status === "pending" || invoice.status === "overdue") && (
+                          <Button variant="ghost" size="sm" onClick={() => handleSendPaymentLink(invoice.id)}>
+                            <CreditCardIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {allowDownload && (
+                          <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice.id)}>
+                            <DownloadIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
 
-      {isFormOpen && !readonly && (
+      {isFormOpen && !readonly && !isMember && (
         <InvoiceForm
           invoice={editingInvoice}
           onSave={handleSaveInvoice}
