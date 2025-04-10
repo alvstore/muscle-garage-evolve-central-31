@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,7 +49,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   dltTemplateId: z.string().optional(),
   provider: z.enum(["msg91", "twilio"]),
-  triggerEvents: z.array(z.string()),
+  triggerEvents: z.array(z.string()).transform(events => events as TriggerEvent[]),
   enabled: z.boolean().default(true),
 });
 
@@ -149,7 +150,7 @@ const SmsTemplateManager: React.FC = () => {
         description: selectedTemplate.description || "",
         dltTemplateId: selectedTemplate.dltTemplateId || "",
         provider: selectedTemplate.provider,
-        triggerEvents: selectedTemplate.triggerEvents as TriggerEvent[],
+        triggerEvents: selectedTemplate.triggerEvents,
         enabled: selectedTemplate.enabled,
       });
     } else {
@@ -193,10 +194,6 @@ const SmsTemplateManager: React.FC = () => {
     const matches = [...formData.content.matchAll(variableRegex)];
     const variables = matches.map((match) => match[1]);
     
-    const triggerEventString = Array.isArray(formData.triggerEvents) 
-      ? formData.triggerEvents.join(',') 
-      : '';
-
     // Simulate API call
     setTimeout(() => {
       if (selectedTemplate) {
@@ -211,7 +208,7 @@ const SmsTemplateManager: React.FC = () => {
               }
             : t
         );
-        setTemplates(updatedTemplates);
+        setTemplates(updatedTemplates as SmsTemplate[]);
         toast.success("Template updated successfully");
       } else {
         // Create new template
@@ -245,7 +242,7 @@ const SmsTemplateManager: React.FC = () => {
             Manage SMS templates for automated notifications
           </p>
         </div>
-        {can("manage_sms_templates") && (
+        {can("manage_sms_templates" as Permission) && (
           <Button onClick={handleCreateTemplate}>
             <Plus className="mr-2 h-4 w-4" /> Create Template
           </Button>
@@ -266,7 +263,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates")}
+                canEdit={can("manage_sms_templates" as Permission)}
               />
             ))}
           </div>
@@ -279,7 +276,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates")}
+                canEdit={can("manage_sms_templates" as Permission)}
               />
             ))}
           </div>
@@ -292,7 +289,7 @@ const SmsTemplateManager: React.FC = () => {
                 template={template}
                 onEdit={handleEditTemplate}
                 onDelete={handleDeleteTemplate}
-                canEdit={can("manage_sms_templates")}
+                canEdit={can("manage_sms_templates" as Permission)}
               />
             ))}
           </div>
@@ -384,7 +381,7 @@ const SmsTemplateManager: React.FC = () => {
                         />
                       </FormControl>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Use {{variable}} syntax for dynamic content (e.g., {{name}}, {{amount}})
+                        Use {"{{"}<span>variable</span>{"}}"} syntax for dynamic content (e.g., {"{{"}<span>name</span>{"}}"}, {"{{"}<span>amount</span>{"}}"})
                       </p>
                       <FormMessage />
                     </FormItem>

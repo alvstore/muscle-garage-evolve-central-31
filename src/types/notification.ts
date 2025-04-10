@@ -115,8 +115,14 @@ export type TriggerEvent =
   | "motivation";
 
 // Define Permission type for use in components
-export type Permission = "manage_members" | "manage_trainers" | "manage_classes" | 
-  "manage_payments" | "manage_sms_templates" | "view_reports" | "admin_access";
+export type Permission = 
+  | "manage_members" 
+  | "manage_trainers" 
+  | "manage_classes" 
+  | "manage_payments" 
+  | "manage_sms_templates" 
+  | "view_reports" 
+  | "admin_access";
 
 // Add SMS related interfaces
 export interface SmsTemplate {

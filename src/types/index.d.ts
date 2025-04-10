@@ -13,3 +13,32 @@ export interface DashboardSummary {
   attendanceTrend: Array<{ date: string; count: number }>;
 }
 
+// Add the Member interface to explicitly include primaryBranchId
+export interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: "member" | "admin" | "staff" | "trainer";
+  avatar?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  goal?: string;
+  trainerId?: string;
+  membershipId?: string;
+  membershipStatus: "active" | "inactive" | "expired";
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  primaryBranchId?: string; // Added this property
+  // Body measurements
+  height?: number;
+  weight?: number;
+  chest?: number;
+  waist?: number;
+  biceps?: number;
+  thigh?: number;
+  hips?: number;
+  bodyFat?: number;
+  // Progress tracking
+  measurements?: MemberMeasurement[];
+}

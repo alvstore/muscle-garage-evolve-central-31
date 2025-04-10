@@ -19,12 +19,14 @@ interface TrainerMemberAllocationProps {
   member: Member;
   trainers: Trainer[];
   onAllocationChange: (trainerId: string | undefined) => void;
+  isTrainerView?: boolean; // Make this optional
 }
 
 const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
   member,
   trainers,
   onAllocationChange,
+  isTrainerView = false, // Default value
 }) => {
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | undefined>(member.trainerId);
   const [branches, setBranches] = useState<Branch[]>([]);
