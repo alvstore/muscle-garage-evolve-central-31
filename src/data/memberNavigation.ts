@@ -1,17 +1,6 @@
 
 import { ReactNode } from "react";
-import {
-  User,
-  Calendar,
-  CreditCard,
-  Activity,
-  DollarSign,
-  ShoppingBag,
-  FileText,
-  Bell,
-  Settings,
-  Home
-} from "lucide-react";
+import { createNavIcon, IconName } from "@/utils/createNavIcon";
 
 export interface NavItem {
   href: string;
@@ -31,93 +20,93 @@ export interface NavSection {
 export const memberNavSections: NavSection[] = [
   {
     name: "Dashboard",
-    icon: <Home className="h-5 w-5" />,
+    icon: createNavIcon("Home"),
     items: [
       { 
         href: "/dashboard", 
         label: "Overview", 
-        icon: <Home className="h-5 w-5" />
+        icon: createNavIcon("Home")
       },
     ],
   },
   {
     name: "My Profile",
-    icon: <User className="h-5 w-5" />,
+    icon: createNavIcon("User"),
     items: [
       { 
         href: "/members/profile", 
         label: "Profile", 
-        icon: <User className="h-5 w-5" />
+        icon: createNavIcon("User")
       },
     ],
   },
   {
     name: "Fitness & Classes",
-    icon: <Activity className="h-5 w-5" />,
+    icon: createNavIcon("Activity"),
     items: [
       { 
         href: "/classes", 
         label: "Book Classes", 
-        icon: <Calendar className="h-5 w-5" />
+        icon: createNavIcon("Calendar")
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
-        icon: <Activity className="h-5 w-5" />
+        icon: createNavIcon("Activity")
       },
     ],
   },
   {
     name: "Finance",
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: createNavIcon("DollarSign"),
     items: [
       { 
         href: "/finance/invoices", 
         label: "Invoices", 
-        icon: <FileText className="h-5 w-5" />
+        icon: createNavIcon("FileText")
       },
       { 
         href: "/membership", 
         label: "Membership", 
-        icon: <CreditCard className="h-5 w-5" />
+        icon: createNavIcon("CreditCard")
       },
     ],
   },
   {
     name: "Store",
-    icon: <ShoppingBag className="h-5 w-5" />,
+    icon: createNavIcon("ShoppingBag"),
     items: [
       { 
         href: "/store", 
         label: "Shop", 
-        icon: <ShoppingBag className="h-5 w-5" />
+        icon: createNavIcon("ShoppingBag")
       },
     ],
   },
   {
     name: "Communication",
-    icon: <Bell className="h-5 w-5" />,
+    icon: createNavIcon("Bell"),
     items: [
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: <Bell className="h-5 w-5" />
+        icon: createNavIcon("Bell")
       },
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: <Bell className="h-5 w-5" />
+        icon: createNavIcon("Bell")
       },
     ],
   },
   {
     name: "Settings",
-    icon: <Settings className="h-5 w-5" />,
+    icon: createNavIcon("Settings"),
     items: [
       { 
         href: "/settings", 
         label: "Account Settings", 
-        icon: <Settings className="h-5 w-5" />
+        icon: createNavIcon("Settings")
       },
     ],
   },
