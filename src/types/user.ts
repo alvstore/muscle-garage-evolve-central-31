@@ -1,7 +1,7 @@
 
 import { UserRole } from './index';
 
-// Extended user type with branch information
+// Extended user type with branch and address information
 export interface User {
   id: string;
   email: string;
@@ -13,9 +13,16 @@ export interface User {
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
   primaryBranchId?: string; // Added for compatibility
+  
+  // Address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }
 
-// Extended member type with branch information
+// Extended member type with branch and address information
 export interface MemberWithBranch {
   id: string;
   email: string;
@@ -32,4 +39,11 @@ export interface MemberWithBranch {
   membershipEndDate?: string;
   primaryBranchId: string;
   accessibleBranchIds: string[];
+  
+  // Address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }

@@ -4,53 +4,40 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Member } from "@/types";
-import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera } from "lucide-react";
+import { Camera, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { User } from "@/types/user";
 
-interface MemberProfileFormProps {
-  member: Member;
-  onSave: (updatedMember: Member) => void;
+interface UserProfileFormProps {
+  user: User;
+  onSave: (updatedUser: User) => void;
   onCancel: () => void;
 }
 
-const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps) => {
-  const [formData, setFormData] = useState<Member & {
+const UserProfileForm = ({ user, onSave, onCancel }: UserProfileFormProps) => {
+  const [formData, setFormData] = useState<User & {
     address?: string;
     city?: string;
     state?: string;
     zipCode?: string;
     country?: string;
   }>({
-    ...member,
-    address: member.address || '',
-    city: member.city || '',
-    state: member.state || '',
-    zipCode: member.zipCode || '',
-    country: member.country || 'India',
+    ...user,
+    address: user.address || '',
+    city: user.city || '',
+    state: user.state || '',
+    zipCode: user.zipCode || '',
+    country: user.country || 'India',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(member.avatar);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(user.avatar);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChange = (name: string, date: Date | undefined) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: date ? date.toISOString() : undefined 
-    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +54,27 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // In a real app, here you would upload the file to a server
+    // and get back a URL to store in the user object
+
+    // Simulate API call with a delay
+    setTimeout(() => {
+      // Prepare updated user data
+      const updatedUser = {
+        ...formData,
+        avatar: avatarPreview || user.avatar,
+      };
+      
+      onSave(updatedUser as User);
+      toast.success("Profile updated successfully");
+      setIsSubmitting(false);
+    }, 1000);
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -75,26 +83,10 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
       .toUpperCase();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedMember = {
-        ...formData,
-        avatar: avatarPreview
-      };
-      onSave(updatedMember as Member);
-      toast.success("Member profile updated successfully");
-      setIsSubmitting(false);
-    }, 1000);
-  };
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit Member Profile</CardTitle>
+        <CardTitle>Edit Profile</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
@@ -102,9 +94,9 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarPreview} alt={member.name} />
+                <AvatarImage src={avatarPreview} alt={user.name} />
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {getInitials(member.name)}
+                  {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-1 bg-primary text-white rounded-full cursor-pointer">
@@ -119,7 +111,7 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               </label>
             </div>
             <div className="text-sm text-muted-foreground">
-              Click the camera icon to change profile photo
+              Click the camera icon to change your profile photo
             </div>
           </div>
 
@@ -156,13 +148,15 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 onChange={handleChange}
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <DatePicker
-                id="dateOfBirth"
-                date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
-                onSelect={(date) => handleDateChange("dateOfBirth", date)}
+              <Label htmlFor="role">Role</Label>
+              <Input
+                id="role"
+                name="role"
+                value={formData.role}
+                disabled
+                readOnly
               />
             </div>
             
@@ -214,73 +208,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                placeholder="India"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipStatus">Membership Status</Label>
-              <Select 
-                value={formData.membershipStatus} 
-                onValueChange={(value) => handleSelectChange("membershipStatus", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipId">Membership ID</Label>
-              <Input
-                id="membershipId"
-                name="membershipId"
-                value={formData.membershipId || ""}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipStartDate">Start Date</Label>
-              <DatePicker
-                id="membershipStartDate"
-                date={formData.membershipStartDate ? new Date(formData.membershipStartDate) : undefined}
-                onSelect={(date) => handleDateChange("membershipStartDate", date)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipEndDate">End Date</Label>
-              <DatePicker
-                id="membershipEndDate"
-                date={formData.membershipEndDate ? new Date(formData.membershipEndDate) : undefined}
-                onSelect={(date) => handleDateChange("membershipEndDate", date)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="trainerId">Assigned Trainer ID</Label>
-              <Input
-                id="trainerId"
-                name="trainerId"
-                value={formData.trainerId || ""}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="goal">Fitness Goal</Label>
-              <Textarea
-                id="goal"
-                name="goal"
-                value={formData.goal || ""}
-                onChange={handleChange}
-                className="min-h-[80px]"
               />
             </div>
           </div>
@@ -298,4 +225,4 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
   );
 };
 
-export default MemberProfileForm;
+export default UserProfileForm;

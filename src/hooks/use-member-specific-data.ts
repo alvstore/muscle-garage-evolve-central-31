@@ -1,0 +1,61 @@
+
+import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect, useCallback } from "react";
+
+/**
+ * A hook to filter data based on the current user's role.
+ * For admin/staff, returns all data.
+ * For members, filters to only show data belonging to the current user.
+ */
+export const useMemberSpecificData = <T extends { memberId?: string }>(
+  allData: T[],
+  filterFn?: (item: T, userId: string) => boolean
+) => {
+  const { user } = useAuth();
+  const [filteredData, setFilteredData] = useState<T[]>([]);
+
+  const filterData = useCallback(() => {
+    if (!user) {
+      setFilteredData([]);
+      return;
+    }
+
+    // For admin or staff, show all data
+    if (user.role === 'admin' || user.role === 'staff') {
+      setFilteredData(allData);
+      return;
+    }
+
+    // For members, filter to only show their own data
+    if (user.role === 'member') {
+      if (filterFn) {
+        // Use custom filter function if provided
+        setFilteredData(allData.filter(item => filterFn(item, user.id)));
+      } else {
+        // Default filter by memberId
+        setFilteredData(allData.filter(item => item.memberId === user.id));
+      }
+      return;
+    }
+
+    // For trainers, could implement specific filtering logic here
+    if (user.role === 'trainer') {
+      // For now, show all data for trainers
+      setFilteredData(allData);
+      return;
+    }
+
+    // Default to showing all data
+    setFilteredData(allData);
+  }, [allData, user, filterFn]);
+
+  useEffect(() => {
+    filterData();
+  }, [filterData, allData, user]);
+
+  return {
+    data: filteredData,
+    isFiltered: user?.role === 'member',
+    currentUserId: user?.id
+  };
+};

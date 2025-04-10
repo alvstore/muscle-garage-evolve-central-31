@@ -3,22 +3,32 @@ import { useState, useEffect, useCallback } from "react";
 import { BodyMeasurement, PTPlan } from "@/types/measurements";
 import { measurementService } from "@/services/measurementService";
 import { toast } from "sonner";
+import { useAuth } from "./use-auth";
 
 export const useBodyMeasurements = (memberId?: string) => {
+  const { user } = useAuth();
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [latestMeasurement, setLatestMeasurement] = useState<BodyMeasurement | null>(null);
   const [activePTPlan, setActivePTPlan] = useState<PTPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // If current user is a member and no memberId is provided, use the current user's ID
+  const effectiveMemberId = useCallback(() => {
+    if (memberId) return memberId;
+    if (user && user.role === 'member') return user.id;
+    return undefined;
+  }, [memberId, user]);
+
   const fetchMeasurements = useCallback(async () => {
-    if (!memberId) return;
+    const targetMemberId = effectiveMemberId();
+    if (!targetMemberId) return;
 
     setIsLoading(true);
     setError(null);
     
     try {
-      const data = await measurementService.getAllMeasurements(memberId);
+      const data = await measurementService.getAllMeasurements(targetMemberId);
       setMeasurements(data);
       
       // Get latest measurement
@@ -32,7 +42,7 @@ export const useBodyMeasurements = (memberId?: string) => {
       }
       
       // Get active PT plan
-      const plan = await measurementService.getActivePTPlan(memberId);
+      const plan = await measurementService.getActivePTPlan(targetMemberId);
       setActivePTPlan(plan);
     } catch (err) {
       setError(err as Error);
@@ -40,10 +50,10 @@ export const useBodyMeasurements = (memberId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [memberId]);
+  }, [effectiveMemberId]);
 
   useEffect(() => {
-    if (memberId) {
+    if (effectiveMemberId()) {
       fetchMeasurements();
     } else {
       setMeasurements([]);
@@ -51,7 +61,7 @@ export const useBodyMeasurements = (memberId?: string) => {
       setActivePTPlan(null);
       setIsLoading(false);
     }
-  }, [memberId, fetchMeasurements]);
+  }, [effectiveMemberId, fetchMeasurements]);
 
   const addMeasurement = async (measurement: Omit<BodyMeasurement, "id">) => {
     try {

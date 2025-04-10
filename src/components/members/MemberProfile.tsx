@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Member } from "@/types";
-import { CalendarIcon, Edit2Icon, UserIcon } from "lucide-react";
+import { CalendarIcon, Edit2Icon, MapPinIcon, UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import MemberProfileForm from "./MemberProfileForm";
 
@@ -68,6 +68,7 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
         <Tabs defaultValue="personal" className="space-y-4">
           <TabsList>
             <TabsTrigger value="personal">Personal Info</TabsTrigger>
+            <TabsTrigger value="address">Address</TabsTrigger>
             <TabsTrigger value="membership">Membership</TabsTrigger>
             <TabsTrigger value="fitness">Fitness Details</TabsTrigger>
           </TabsList>
@@ -102,6 +103,39 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                     {member.dateOfBirth ? format(new Date(member.dateOfBirth), "MMMM d, yyyy") : "Not provided"}
                   </p>
                 </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* New Address Tab */}
+          <TabsContent value="address" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Address</p>
+                <p className="font-medium flex items-start gap-1">
+                  <MapPinIcon className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                  <span>{member.address || "No address provided"}</span>
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">City</p>
+                <p className="font-medium">{member.city || "Not provided"}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">State</p>
+                <p className="font-medium">{member.state || "Not provided"}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Postal Code</p>
+                <p className="font-medium">{member.zipCode || "Not provided"}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Country</p>
+                <p className="font-medium">{member.country || "India"}</p>
               </div>
             </div>
           </TabsContent>
