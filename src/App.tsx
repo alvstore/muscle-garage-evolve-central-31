@@ -34,6 +34,7 @@ import NewMemberPage from './pages/members/NewMemberPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import FrontPagesManager from './pages/frontpages/FrontPagesManager';
+import FitnessPlanPage from './pages/fitness/FitnessPlanPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -86,6 +87,13 @@ export default function App() {
                   <Route path="/members/:id" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <MemberProfilePage />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Fitness Plans Route */}
+                  <Route path="/fitness-plans" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <FitnessPlanPage />
                     </PrivateRoute>
                   } />
                   

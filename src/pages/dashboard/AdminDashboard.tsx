@@ -23,6 +23,8 @@ import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';
 import MemberStatusSection from '@/components/dashboard/sections/MemberStatusSection';
 import AttendanceSection from '@/components/dashboard/sections/AttendanceSection';
+import MemberProgressSection from '@/components/dashboard/sections/MemberProgressSection';
+import ChurnPredictionSection from '@/components/dashboard/sections/ChurnPredictionSection';
 
 const AdminDashboard = () => {
   // Mock data for dashboard
@@ -137,6 +139,12 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         {/* Overview Stats */}
         <OverviewStats data={dashboardData} />
+        
+        {/* New Smart Dashboard Components */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <MemberProgressSection />
+          <ChurnPredictionSection />
+        </div>
         
         {/* Featured Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
