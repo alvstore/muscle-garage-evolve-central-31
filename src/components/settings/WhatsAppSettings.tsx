@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,6 +14,7 @@ import { Loader2, EyeOff, Eye, Plus, Trash2, MessageSquare } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import settingsService from "@/services/settingsService";
 
 // Define the form schema with Zod
 const whatsappSchema = z.object({
@@ -84,12 +85,26 @@ const WhatsAppSettings = () => {
     defaultValues,
   });
 
+  // Fetch existing settings when component mounts
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await settingsService.getWhatsAppSettings();
+        form.reset(settings);
+      } catch (error) {
+        console.error("Failed to fetch WhatsApp settings:", error);
+        // Don't show error toast on initial load as it might not exist yet
+      }
+    };
+
+    fetchSettings();
+  }, [form]);
+
   async function onSubmit(data: WhatsAppFormValues) {
     try {
       setIsLoading(true);
-      // In a real implementation, this would be an API call to save settings
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      console.log("WhatsApp settings saved:", data);
+      // Call API to save settings
+      await settingsService.updateWhatsAppSettings(data);
       toast.success("WhatsApp settings saved successfully!");
     } catch (error) {
       console.error("Error saving settings:", error);
