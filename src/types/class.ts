@@ -31,6 +31,8 @@ export interface GymClass {
   duration?: number;
   recurring?: boolean;
   recurringPattern?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show";
