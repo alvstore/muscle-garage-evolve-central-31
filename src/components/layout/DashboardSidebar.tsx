@@ -305,7 +305,8 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>
           </div>
           
-          <div className="flex-1 overflow-y-auto py-2">
+          {/* Apply max-height and overflow-y-auto to enable scrolling */}
+          <div className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
             {filteredNavigation.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-4">
                 {category.name && (

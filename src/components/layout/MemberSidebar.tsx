@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Sheet,
@@ -48,7 +47,6 @@ export default function MemberSidebar({ isSidebarOpen, closeSidebar }: MemberSid
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
   
-  // State to track expanded menu sections
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleSection = (sectionName: string) => {
@@ -71,7 +69,6 @@ export default function MemberSidebar({ isSidebarOpen, closeSidebar }: MemberSid
     }
   };
 
-  // Define navigation links for members only
   const navSections: { name: string; icon: React.ReactNode; items: NavItem[] }[] = [
     {
       name: "Dashboard",
@@ -176,7 +173,7 @@ export default function MemberSidebar({ isSidebarOpen, closeSidebar }: MemberSid
             <h1 className="text-lg font-semibold">Muscle Garage</h1>
           </div>
           
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
             {navSections.map((section, index) => {
               const isExpanded = expandedSections.includes(section.name);
               
