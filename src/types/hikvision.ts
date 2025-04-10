@@ -10,14 +10,14 @@ export interface HikvisionDevice {
   port: number;
   status: string; // online, offline, etc.
   deviceType?: string; // Added deviceType property
+  location?: string; // Added location property
 }
 
 // Extended device type with status for the UI
 export interface HikvisionDeviceWithStatus extends HikvisionDevice {
-  status?: string; // Optional to match usage
   lastSeen?: string;
   healthStatus?: 'healthy' | 'warning' | 'error';
-  deviceType?: string; // Added to match usage
+  deviceId?: string; // Added to match usage
 }
 
 // Access Control Credentials
@@ -27,6 +27,7 @@ export interface HikvisionCredentials {
   apiKey?: string;
   apiSecret?: string;
   baseUrl: string;
+  isValid?: boolean; // Added to match usage
 }
 
 // Event data from Hikvision

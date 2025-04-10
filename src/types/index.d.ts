@@ -55,3 +55,23 @@ export interface MemberMeasurement {
   hips?: number;
   bodyFat?: number;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "staff" | "trainer" | "member";
+  branchIds?: string[]; 
+  primaryBranchId?: string;
+  updateUserBranch?: (branchId: string) => Promise<void>;
+}
+
+export type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  author: string;
+  priority?: "low" | "medium" | "high";
+  targetRoles?: string[];
+};

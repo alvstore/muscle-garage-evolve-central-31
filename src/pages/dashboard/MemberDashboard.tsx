@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -163,6 +162,12 @@ const MemberDashboard = () => {
       }
     }));
   };
+
+  const notificationAnnouncements = announcements.map(announcement => ({
+    ...announcement,
+    targetRoles: announcement.targetRoles || ['member'], // Ensure targetRoles exists
+    priority: announcement.priority || 'medium' // Ensure priority exists
+  }));
 
   return (
     <div className="space-y-6">
@@ -430,7 +435,7 @@ const MemberDashboard = () => {
           {isLoading ? (
             <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
           ) : (
-            <Announcements announcements={mockAnnouncements} />
+            <Announcements announcements={notificationAnnouncements} />
           )}
         </div>
       </div>

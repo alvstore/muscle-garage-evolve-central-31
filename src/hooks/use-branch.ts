@@ -4,6 +4,7 @@ import { Branch } from "@/types/branch";
 import { branchService } from "@/services/branchService";
 import { useAuth } from "./use-auth";
 import { toast } from "sonner";
+import { User } from "@/types";
 
 export const useBranch = () => {
   const { user } = useAuth();
@@ -61,7 +62,7 @@ export const useBranch = () => {
       localStorage.setItem('currentBranchId', branchId);
       
       // If there's a user with updateUserBranch method, update the user's branch
-      if (user && typeof user.updateUserBranch === 'function') {
+      if (user && user.updateUserBranch) {
         await user.updateUserBranch(branchId);
       }
       

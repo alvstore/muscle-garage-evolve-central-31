@@ -1,128 +1,142 @@
+import { HikvisionDeviceWithStatus, HikvisionDevice, HikvisionPartner } from "@/types/hikvision";
 
-import { HikvisionDevice } from '@/types/hikvision';
+// Mock data - replace with actual database calls
+let mockDevices: HikvisionDeviceWithStatus[] = [];
+let mockPartners: HikvisionPartner[] = [];
 
-// Interface for the device status
-export interface HikvisionDeviceStatus {
-  online: boolean;
-  lastOnlineTime?: string;
-  ipAddress?: string;
-}
+// Initialize mock data (for testing purposes)
+const initializeMockData = () => {
+  mockDevices = [
+    {
+      id: "device1",
+      name: "Main Entrance Camera",
+      serialNumber: "SN12345",
+      firmwareVersion: "v1.2.3",
+      model: "DS-2CD2347G2-L",
+      ipAddress: "192.168.1.10",
+      port: 8000,
+      status: "online",
+      lastSeen: new Date().toISOString(),
+      healthStatus: "healthy",
+      deviceId: "device1"
+    },
+    {
+      id: "device2",
+      name: "Back Door Camera",
+      serialNumber: "SN67890",
+      firmwareVersion: "v1.2.3",
+      model: "DS-2CD2347G2-L",
+      ipAddress: "192.168.1.11",
+      port: 8000,
+      status: "offline",
+      lastSeen: new Date().toISOString(),
+      healthStatus: "error",
+      deviceId: "device2"
+    },
+  ];
 
-// Interface for the Hikvision API credentials
-export interface HikvisionCredentials {
-  appKey: string;
-  secretKey: string;
-}
+  mockPartners = [
+    {
+      id: "partner1",
+      name: "Security Solutions Inc.",
+      apiKey: "apikey123",
+      apiSecret: "secret456",
+      baseUrl: "https://securitysolutions.com/api",
+      status: "active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+};
 
-// Interface for the device object with status
-export interface HikvisionDeviceWithStatus extends HikvisionDevice {
-  status?: 'online' | 'offline' | 'unknown';
-  deviceSerial: string;
-  deviceCode?: string;
-  deviceName: string;
-  userName?: string;
-  channelNos?: string;
-  isVideoSupported?: boolean;
-}
+initializeMockData();
 
-// Response for API operations
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-}
-
-// Service class for Hikvision Partner API interactions
-class HikvisionPartnerService {
-  /**
-   * Get stored API credentials
-   */
-  async getCredentials(): Promise<HikvisionCredentials | null> {
-    // In a real app, this would get from secure storage or API
-    const credentials = localStorage.getItem('hikvision_credentials');
-    return credentials ? JSON.parse(credentials) : null;
-  }
-
-  /**
-   * Save API credentials
-   */
-  async saveCredentials(appKey: string, secretKey: string): Promise<ApiResponse> {
-    // In a real app, this would store securely or through an API
-    localStorage.setItem('hikvision_credentials', JSON.stringify({ appKey, secretKey }));
-    return { success: true };
-  }
-
-  /**
-   * Test the API connection
-   */
-  async testConnection(): Promise<ApiResponse> {
-    // Mock implementation - in a real app this would make an API call
-    const credentials = await this.getCredentials();
-    if (!credentials) {
-      return { success: false, message: 'API credentials not configured' };
-    }
-    
-    // Simulate successful connection
-    return { success: true };
-  }
-
-  /**
-   * List all registered devices
-   */
-  async listDevices(): Promise<HikvisionDeviceWithStatus[]> {
-    // Mock implementation - in a real app this would make an API call
-    const mockDevices: HikvisionDeviceWithStatus[] = [
-      {
-        deviceId: '1',
-        deviceSerial: 'DS-7608NI-E2/8P-12345',
-        deviceName: 'Main Entrance NVR',
-        status: 'online',
-        deviceType: 'NVR',
-        channelNos: '1,2,3,4',
-        userName: 'admin',
-        isVideoSupported: true
-      },
-      {
-        deviceId: '2',
-        deviceSerial: 'DS-2CD2185FWD-I-67890',
-        deviceName: 'Gym Area Camera',
-        status: 'offline',
-        deviceType: 'IPC',
-        channelNos: '1',
-        userName: 'admin',
-        isVideoSupported: true
-      }
-    ];
-    
+export const hikvisionPartnerService = {
+  // Device Management
+  getAllDevices: async (): Promise<HikvisionDeviceWithStatus[]> => {
     return mockDevices;
-  }
+  },
 
-  /**
-   * Add a new device
-   */
-  async addDevice(deviceData: any): Promise<ApiResponse> {
-    // Mock implementation - in a real app this would make an API call
-    console.log('Adding device:', deviceData);
-    return { success: true };
-  }
+  getDeviceById: async (deviceId: string): Promise<HikvisionDeviceWithStatus | undefined> => {
+    return mockDevices.find(device => device.id === deviceId);
+  },
 
-  /**
-   * Delete a device
-   */
-  async deleteDevice(deviceSerial: string): Promise<ApiResponse> {
-    // Mock implementation - in a real app this would make an API call
-    console.log('Deleting device:', deviceSerial);
-    return { success: true };
-  }
+  // Fix device creation
+  createDevice: async (deviceData: Partial<HikvisionDeviceWithStatus>): Promise<HikvisionDeviceWithStatus> => {
+    const newDevice: HikvisionDeviceWithStatus = {
+      id: `device${Date.now()}`,
+      name: deviceData.name || 'New Device',
+      serialNumber: deviceData.serialNumber || `SN${Date.now()}`,
+      firmwareVersion: deviceData.firmwareVersion || 'v1.0',
+      model: deviceData.model || 'Generic Model',
+      ipAddress: deviceData.ipAddress || '192.168.1.1',
+      port: deviceData.port || 80,
+      status: deviceData.status || 'offline',
+      lastSeen: new Date().toISOString(),
+      healthStatus: 'healthy',
+      // Add id as deviceId for compatibility
+      deviceId: `device${Date.now()}`
+    };
+    
+    mockDevices.push(newDevice);
+    return newDevice;
+  },
 
-  /**
-   * Get device status
-   */
-  async getDeviceStatus(deviceSerial: string): Promise<HikvisionDeviceWithStatus | null> {
-    // Mock implementation - in a real app this would make an API call
-    const devices = await this.listDevices();
-    return devices.find(d => d.deviceSerial === deviceSerial) || null;
-  }
-}
+  // Fix update device
+  updateDevice: async (deviceId: string, deviceData: Partial<HikvisionDeviceWithStatus>): Promise<HikvisionDeviceWithStatus> => {
+    const index = mockDevices.findIndex(d => d.id === deviceId);
+    if (index < 0) throw new Error(`Device with ID ${deviceId} not found`);
+    
+    const updatedDevice = {
+      ...mockDevices[index],
+      ...deviceData,
+      // Ensure deviceId is present
+      deviceId: deviceId
+    };
+    
+    mockDevices[index] = updatedDevice;
+    return updatedDevice;
+  },
 
-export const hikvisionPartnerService = new HikvisionPartnerService();
+  deleteDevice: async (deviceId: string): Promise<void> => {
+    mockDevices = mockDevices.filter(device => device.id !== deviceId);
+  },
+
+  // Partner Management
+  getAllPartners: async (): Promise<HikvisionPartner[]> => {
+    return mockPartners;
+  },
+
+  getPartnerById: async (partnerId: string): Promise<HikvisionPartner | undefined> => {
+    return mockPartners.find(partner => partner.id === partnerId);
+  },
+
+  createPartner: async (partnerData: HikvisionPartner): Promise<HikvisionPartner> => {
+    const newPartner: HikvisionPartner = {
+      ...partnerData,
+      id: `partner${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    mockPartners.push(newPartner);
+    return newPartner;
+  },
+
+  updatePartner: async (partnerId: string, partnerData: Partial<HikvisionPartner>): Promise<HikvisionPartner> => {
+    const index = mockPartners.findIndex(partner => partner.id === partnerId);
+    if (index < 0) throw new Error(`Partner with ID ${partnerId} not found`);
+
+    const updatedPartner = {
+      ...mockPartners[index],
+      ...partnerData,
+      updatedAt: new Date().toISOString(),
+    };
+
+    mockPartners[index] = updatedPartner;
+    return updatedPartner;
+  },
+
+  deletePartner: async (partnerId: string): Promise<void> => {
+    mockPartners = mockPartners.filter(partner => partner.id !== partnerId);
+  },
+};

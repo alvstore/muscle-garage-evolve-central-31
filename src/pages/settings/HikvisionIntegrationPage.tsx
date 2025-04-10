@@ -16,22 +16,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTable } from "@/components/ui/data-table";
-// Update the imports to avoid conflicts
 import { HikvisionEvent as ServiceHikvisionEvent } from "@/services/integrations/hikvisionService";
 import { HikvisionEvent, HikvisionCredentials, HikvisionDevice } from "@/types/hikvision";
 import { hikvisionService } from "@/services/integrations/hikvisionService";
 
 const HikvisionIntegrationPage = () => {
   const [credentials, setCredentials] = useState<HikvisionCredentials>({
-    appKey: "",
-    appSecret: "",
+    username: "",
+    password: "",
+    apiKey: "",
+    apiSecret: "",
     baseUrl: "",
-    isValid: false,
+    isValid: false
   });
   const [devices, setDevices] = useState<HikvisionDevice[]>([]);
   const [events, setEvents] = useState<HikvisionEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processedDevices, setProcessedDevices] = useState<HikvisionDevice[]>([]);
 
   useEffect(() => {
     loadCredentials();
@@ -69,7 +71,6 @@ const HikvisionIntegrationPage = () => {
     setLoading(true);
     try {
       const serviceEvents = await hikvisionService.getEvents();
-      // Cast events properly when setting state
       setEvents(serviceEvents as unknown as HikvisionEvent[]);
     } catch (error) {
       setError("Failed to load events");
@@ -94,24 +95,45 @@ const HikvisionIntegrationPage = () => {
     }
   };
 
-  const handleTestConnection = async () => {
+  const testConnection = async () => {
     setLoading(true);
     try {
-      const isValid = await hikvisionService.validateCredentials(credentials);
-      setCredentials({ ...credentials, isValid: isValid });
-      toast.success("Connection to Hikvision device is successful.");
+      const result = await hikvisionService.testConnection(credentials);
+      if (result) {
+        setCredentials(prev => ({ ...prev, isValid: true }));
+        toast.success("Connection successful!");
+      } else {
+        setCredentials(prev => ({ ...prev, isValid: false }));
+        toast.error("Connection failed. Please check your credentials.");
+      }
     } catch (error) {
-      setError("Connection failed");
-      toast.error("Connection to Hikvision device failed.");
+      console.error("Connection test error:", error);
+      setCredentials(prev => ({ ...prev, isValid: false }));
+      toast.error("Connection test failed with an error.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({ ...credentials, username: e.target.value });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({ ...credentials, password: e.target.value });
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({ ...credentials, apiKey: e.target.value });
+  };
+
+  const handleApiSecretChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({ ...credentials, apiSecret: e.target.value });
+  };
+
   const handleProcessAttendance = async () => {
     setLoading(true);
     try {
-      // For processAttendance fix
       await hikvisionService.processAttendance(events as unknown as ServiceHikvisionEvent[]);
       toast.success("Attendance processed successfully.");
     } catch (error) {
@@ -160,23 +182,35 @@ const HikvisionIntegrationPage = () => {
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="appKey">App Key</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="appKey"
-                value={credentials.appKey}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, appKey: e.target.value })
-                }
+                id="username"
+                value={credentials.username}
+                onChange={handleUsernameChange}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="appSecret">App Secret</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
-                id="appSecret"
-                value={credentials.appSecret}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, appSecret: e.target.value })
-                }
+                id="password"
+                value={credentials.password}
+                onChange={handlePasswordChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="apiKey">API Key</Label>
+              <Input
+                id="apiKey"
+                value={credentials.apiKey}
+                onChange={handleApiKeyChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="apiSecret">API Secret</Label>
+              <Input
+                id="apiSecret"
+                value={credentials.apiSecret}
+                onChange={handleApiSecretChange}
               />
             </div>
             <div className="grid gap-2">
@@ -192,14 +226,13 @@ const HikvisionIntegrationPage = () => {
             <div className="flex items-center space-x-2">
               <Label htmlFor="isValid">Connection Status</Label>
               {credentials.isValid ? (
-                // Add valid variant for badge
                 <Badge variant="outline">Success</Badge>
               ) : (
                 <Badge variant="destructive">Failed</Badge>
               )}
             </div>
             <div className="flex justify-end space-x-2">
-              <Button onClick={handleTestConnection} disabled={loading}>
+              <Button onClick={testConnection} disabled={loading}>
                 Test Connection
               </Button>
               <Button onClick={handleSaveCredentials} disabled={loading}>

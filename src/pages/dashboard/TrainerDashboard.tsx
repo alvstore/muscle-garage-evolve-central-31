@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -107,6 +106,13 @@ const TrainerDashboard = () => {
       ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" 
       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
   };
+
+  // Fix the announcement type issue
+  const notificationAnnouncements = announcements.map(announcement => ({
+    ...announcement,
+    targetRoles: announcement.targetRoles || ['member', 'trainer'], // Ensure targetRoles exists
+    priority: announcement.priority || 'medium' // Ensure priority exists
+  }));
 
   return (
     <div className="space-y-6">
@@ -289,7 +295,7 @@ const TrainerDashboard = () => {
         </TabsContent>
         
         <TabsContent value="announcements" className="pt-4">
-          <Announcements announcements={mockAnnouncements.filter(a => a.targetRoles.includes('trainer'))} />
+          <Announcements announcements={notificationAnnouncements} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,5 @@
-
 import api from '../api';
-import { SmsTemplate, SmsLog, SmsProvider, TriggerEvent } from '@/types/notification';
+import { SmsTemplate, SmsProvider, SmsLog, TriggerEvent } from '@/types/notification';
 import { toast } from 'sonner';
 
 /**

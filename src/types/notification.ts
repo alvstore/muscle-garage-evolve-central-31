@@ -72,7 +72,9 @@ export interface Announcement {
   createdBy: string;
   createdAt: string;
   targetRoles: UserRole[];
-  expiresAt: string;
+  expiresAt?: string;
+  channels?: NotificationChannel[];
+  sentCount?: number;
 }
 
 export interface NotificationSettings {
@@ -88,4 +90,82 @@ export interface UserNotificationPreferences {
     [key in TriggerEvent]?: NotificationSettings;
   };
   lastUpdated: string;
+}
+
+// Additional types needed for various components
+export type NotificationChannel = "in-app" | "email" | "sms" | "whatsapp" | "push";
+
+export type FeedbackType = "general" | "class" | "trainer" | "fitness-plan";
+
+export interface Feedback {
+  id: string;
+  memberId: string;
+  memberName?: string;
+  type: FeedbackType;
+  relatedId?: string;
+  rating: number;
+  comments?: string;
+  createdAt: string;
+  anonymous: boolean;
+  title: string;
+  branchId?: string;
+}
+
+export type ReminderTriggerType = 
+  | "membershipExpiry" 
+  | "payment" 
+  | "birthday" 
+  | "inactivity";
+
+export interface ReminderRule {
+  id: string;
+  name: string;
+  description?: string;
+  triggerType: ReminderTriggerType;
+  type: "membership-renewal" | "missed-attendance" | "birthday" | "payment-due";
+  daysBeforeTrigger: number;
+  triggerDays: number;
+  message: string;
+  notificationChannels: NotificationChannel[];
+  channels: NotificationChannel[];
+  isActive: boolean;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  appliesTo?: UserRole[];
+  targetRoles: UserRole[];
+  active: boolean;
+  createdBy: string;
+}
+
+export interface MotivationalMessage {
+  id: string;
+  content: string;
+  message: string;
+  author?: string;
+  category: "motivation" | "fitness" | "nutrition" | "wellness";
+  tags?: string[];
+  targetRoles: UserRole[];
+  frequency?: "daily" | "weekly" | "monthly";
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  channels: NotificationChannel[];
+  active: boolean;
+  isActive: boolean;
+  createdBy: string;
+  title: string;
+}
+
+export interface SmsLog {
+  id: string;
+  templateId: string;
+  recipientId: string;
+  recipientPhone: string;
+  content: string;
+  status: "sent" | "delivered" | "failed";
+  provider: SmsProvider;
+  createdAt: string;
+  deliveredAt?: string;
+  failureReason?: string;
 }
