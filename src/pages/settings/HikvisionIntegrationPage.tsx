@@ -169,7 +169,7 @@ const HikvisionIntegrationPage = () => {
                 <div className="mb-6 flex items-center space-x-2">
                   <div className="font-medium">Connection Status:</div>
                   {connectionStatus === 'connected' ? (
-                    <Badge variant="success" className="flex items-center gap-1">
+                    <Badge variant="outline" className="flex items-center gap-1 bg-green-100 text-green-800">
                       <CheckCircle className="h-4 w-4" /> Connected
                     </Badge>
                   ) : connectionStatus === 'testing' ? (
@@ -371,9 +371,16 @@ const HikvisionIntegrationPage = () => {
                           <div>
                             <Badge 
                               variant={
-                                event.eventType === 'entry' ? 'success' :
+                                event.eventType === 'entry' ? 'outline' :
                                 event.eventType === 'exit' ? 'secondary' :
                                 'destructive'
+                              }
+                              className={
+                                event.eventType === 'entry' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : event.eventType === 'exit' 
+                                  ? '' 
+                                  : ''
                               }
                             >
                               {event.eventType.toUpperCase()}
