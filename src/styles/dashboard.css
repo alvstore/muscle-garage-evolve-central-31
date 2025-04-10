@@ -1,0 +1,143 @@
+
+/* Dashboard styles with dark mode support */
+:root {
+  --stat-card-bg: #ffffff;
+  --stat-card-text: #333333;
+  --chart-grid-color: rgba(0, 0, 0, 0.1);
+  --card-border-color: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --highlight-purple: #7367F0;
+  --highlight-purple-light: rgba(115, 103, 240, 0.1);
+  --highlight-blue: #4361EE;
+  --highlight-green: #28C76F;
+  --highlight-orange: #FF9F43;
+  --highlight-red: #EA5455;
+  --text-muted: #6E6B7B;
+  --border-light: rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  --stat-card-bg: #283046;
+  --stat-card-text: #eaeaea;
+  --chart-grid-color: rgba(255, 255, 255, 0.1);
+  --card-border-color: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --text-muted: #B4B7BD;
+  --border-light: rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-card {
+  background-color: var(--stat-card-bg);
+  color: var(--stat-card-text);
+  border-radius: 0.5rem;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--card-border-color);
+  transition: all 0.2s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stats-value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.stats-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.percentage-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.percentage-badge.positive {
+  background-color: rgba(40, 199, 111, 0.2);
+  color: var(--highlight-green);
+}
+
+.percentage-badge.negative {
+  background-color: rgba(234, 84, 85, 0.2);
+  color: var(--highlight-red);
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #161D31;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3B4253;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
+}
+
+/* Animation for counter */
+@keyframes count-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-counter {
+  animation: count-up 0.5s ease-out forwards;
+}
+
+/* Card hover effects */
+.interactive-card {
+  transition: all 0.2s ease;
+}
+
+.interactive-card:hover {
+  box-shadow: 0 6px 18px rgba(115, 103, 240, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(118deg, #7367F0, #9E95F5);
+}
+
+.bg-gradient-success {
+  background: linear-gradient(118deg, #28C76F, #48DA89);
+}
+
+.bg-gradient-warning {
+  background: linear-gradient(118deg, #FF9F43, #FFB976);
+}
+
+.bg-gradient-danger {
+  background: linear-gradient(118deg, #EA5455, #F08182);
+}
+
+/* For better text readability on gradients */
+.text-on-gradient {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}

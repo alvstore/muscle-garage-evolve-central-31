@@ -1,15 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import OverviewStats from '@/components/dashboard/sections/OverviewStats';
-import PendingPayments from '@/components/dashboard/PendingPayments';
-import UpcomingRenewals from '@/components/dashboard/UpcomingRenewals';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users, CreditCard, Calendar, CheckSquare, Activity, RefreshCcw, BarChart2, DollarSign, User, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useBranch } from '@/hooks/use-branch';
 import { Payment, RenewalItem } from '@/types/dashboard';
+import StatisticsCard from '@/components/dashboard/charts/StatisticsCard';
+import RevenueChart from '@/components/dashboard/charts/RevenueChart';
+import BarChart from '@/components/dashboard/charts/BarChart';
+import RadialBarChart from '@/components/dashboard/charts/RadialBarChart';
+import DailySalesOverview from '@/components/dashboard/analytics/DailySalesOverview';
+import AnalyticsSummary from '@/components/dashboard/analytics/AnalyticsSummary';
+import PendingPayments from '@/components/dashboard/PendingPayments';
+import UpcomingRenewals from '@/components/dashboard/UpcomingRenewals';
 
 // Mock dashboard data
 const dashboardData = {
@@ -129,6 +135,26 @@ const attendanceByBranch = {
   }
 };
 
+// Mock revenue data
+const revenueData = {
+  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  values: [28000, 32000, 36000, 29000, 38000, 42000, 48750, 45000, 49000, 52000, 55000, 60000]
+};
+
+// Mock monthly attendance data
+const attendanceData = {
+  dates: ['Apr 1', 'Apr 2', 'Apr 3', 'Apr 4', 'Apr 5', 'Apr 6', 'Apr 7', 'Apr 8', 'Apr 9', 'Apr 10'],
+  values: [65, 72, 78, 69, 82, 91, 78, 85, 79, 78]
+};
+
+// Mock membership plan data
+const membershipPlans = [
+  { name: 'Basic', count: 89 },
+  { name: 'Standard', count: 125 },
+  { name: 'Premium', count: 72 },
+  { name: 'Annual', count: 26 }
+];
+
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { currentBranch } = useBranch();
@@ -169,29 +195,232 @@ const AdminDashboard = () => {
               Overview and analytics for {currentBranch?.name || "all branches"}
             </p>
           </div>
-          <Badge variant="outline" className="px-4 py-2">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="px-4 py-2">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </Badge>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex items-center gap-1"
+              onClick={() => {}}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
         
-        <OverviewStats data={dashboardData} />
-        
-        <Tabs defaultValue="daily" className="mt-8">
-          <TabsList>
-            <TabsTrigger value="daily">Daily Snapshot</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="membershipmetrics">Membership Metrics</TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="daily" className="space-y-4 mt-4">
+          <TabsContent value="overview" className="space-y-6">
+            {/* Top Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatisticsCard
+                title="Total Members"
+                value={dashboardData.totalMembers}
+                subtitle={`${dashboardData.newMembersToday} new today`}
+                icon={Users}
+                iconColor="text-blue-600"
+                iconBgColor="bg-blue-100 dark:bg-blue-900/30"
+                percentChange={1.2}
+              />
+              
+              <StatisticsCard
+                title="Today's Check-ins"
+                value={dashboardData.attendanceToday}
+                subtitle={`${((dashboardData.attendanceToday / dashboardData.activeMembers) * 100).toFixed(1)}% of active members`}
+                icon={CheckSquare}
+                iconColor="text-green-600"
+                iconBgColor="bg-green-100 dark:bg-green-900/30"
+                percentChange={-4.8}
+              />
+              
+              <StatisticsCard
+                title="Monthly Revenue"
+                value={`₹${dashboardData.revenue.thisMonth.toLocaleString()}`}
+                subtitle={`₹${dashboardData.revenue.thisWeek.toLocaleString()} this week`}
+                icon={CreditCard}
+                iconColor="text-purple-600"
+                iconBgColor="bg-purple-100 dark:bg-purple-900/30"
+                percentChange={15.3}
+              />
+              
+              <StatisticsCard
+                title="Upcoming Renewals"
+                value={dashboardData.upcomingRenewals.thisWeek}
+                subtitle={`${dashboardData.upcomingRenewals.today} due today`}
+                icon={Calendar}
+                iconColor="text-amber-600"
+                iconBgColor="bg-amber-100 dark:bg-amber-900/30"
+                percentChange={3.5}
+              />
+            </div>
+            
+            {/* Key Performance Metrics */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <DailySalesOverview 
+                salesData={{
+                  today: dashboardData.revenue.today,
+                  yesterday: dashboardData.revenue.today * 0.92,
+                  weekly: dashboardData.revenue.thisWeek,
+                  monthly: dashboardData.revenue.thisMonth,
+                  percentChange: 8.2
+                }}
+              />
+              
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Monthly Revenue</CardTitle>
+                  <CardDescription>Total revenue generated in 2023</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RevenueChart 
+                    title="Monthly Revenue"
+                    data={revenueData.values}
+                    categories={revenueData.months}
+                    percentChange={15.3}
+                    total={revenueData.values.reduce((sum, val) => sum + val, 0).toLocaleString()}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            
             <div className="grid gap-4 md:grid-cols-2">
               <PendingPayments payments={pendingPayments} />
               <UpcomingRenewals renewals={upcomingRenewals} />
             </div>
           </TabsContent>
           
-          <TabsContent value="attendance" className="space-y-4 mt-4">
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card className="md:col-span-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Membership Overview</CardTitle>
+                  <CardDescription>Summary of all member statistics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AnalyticsSummary data={{
+                    totalMembers: dashboardData.totalMembers,
+                    activeMembers: dashboardData.activeMembers,
+                    newMembersToday: dashboardData.newMembersToday,
+                    totalRevenue: dashboardData.revenue.thisMonth,
+                    revenueGrowth: 15.3,
+                    activeClasses: 8,
+                    attendanceToday: dashboardData.attendanceToday,
+                    attendanceGrowth: -4.8
+                  }} />
+                </CardContent>
+              </Card>
+              
+              <Card className="md:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Attendance Trend</CardTitle>
+                  <CardDescription>Daily check-ins for April 2025</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <BarChart 
+                      title="Daily Attendance"
+                      data={attendanceData.values}
+                      categories={attendanceData.dates}
+                      colors={['#7367F0']}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="md:col-span-1">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Membership Plans</CardTitle>
+                  <CardDescription>Distribution by plan type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {membershipPlans.map((plan, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{plan.name}</span>
+                          <span className="font-medium">{plan.count}</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary"
+                            style={{ width: `${(plan.count / dashboardData.totalMembers) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="performance" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="md:col-span-1">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Member Retention</CardTitle>
+                  <CardDescription>Current retention rate</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadialBarChart
+                    title="Retention Rate"
+                    value={92}
+                    color="#7367F0"
+                    label="Retention"
+                    additionalInfo="92% of members renewed their membership in the last month"
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card className="md:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Top Performing Trainers</CardTitle>
+                  <CardDescription>Based on member ratings and class attendance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { name: 'Sarah Johnson', rating: 4.9, members: 42, growth: 5.2 },
+                      { name: 'Michael Chang', rating: 4.8, members: 38, growth: 3.7 },
+                      { name: 'Alicia Rodriguez', rating: 4.7, members: 35, growth: 4.1 }
+                    ].map((trainer, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 rounded-md bg-accent/10">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{trainer.name}</p>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <span className="text-amber-500">★</span>
+                              <span className="ml-1">{trainer.rating}</span>
+                              <span className="mx-2">•</span>
+                              <span>{trainer.members} members</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                          +{trainer.growth}%
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="attendance" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Attendance Dashboard</CardTitle>
@@ -228,6 +457,18 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">Attendance Trend</h3>
+                  <div className="h-[300px]">
+                    <BarChart 
+                      title="Daily Attendance"
+                      data={attendanceData.values}
+                      categories={attendanceData.dates}
+                      colors={['#7367F0']}
+                    />
+                  </div>
+                </div>
+                
                 <div className="mt-6 flex justify-end">
                   <Button onClick={() => window.location.href = "/attendance"}>
                     View Detailed Attendance
@@ -237,84 +478,92 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="financial" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial Dashboard</CardTitle>
-                <CardDescription>Revenue and payment metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">Monthly Revenue</h3>
-                    <p className="text-3xl font-bold mt-2">₹{dashboardData.revenue.thisMonth.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {Math.round((dashboardData.revenue.thisMonth - dashboardData.revenue.lastMonth) / dashboardData.revenue.lastMonth * 100)}% from last month
-                    </p>
-                  </div>
-                  
-                  <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">Pending Payments</h3>
-                    <p className="text-3xl font-bold mt-2">₹{dashboardData.pendingPayments.total.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      From {dashboardData.pendingPayments.count} members
-                    </p>
-                  </div>
-                  
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">Weekly Revenue</h3>
-                    <p className="text-3xl font-bold mt-2">₹{dashboardData.revenue.thisWeek.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Current week</p>
-                  </div>
+          <TabsContent value="financial" className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg text-center md:col-span-1">
+                <h3 className="text-lg font-medium">Monthly Revenue</h3>
+                <p className="text-3xl font-bold mt-2">₹{dashboardData.revenue.thisMonth.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {Math.round((dashboardData.revenue.thisMonth - dashboardData.revenue.lastMonth) / dashboardData.revenue.lastMonth * 100)}% from last month
+                </p>
+                <div className="flex justify-center mt-4">
+                  <TrendingUp className="h-12 w-12 text-green-600" />
                 </div>
-                
-                <div className="mt-6 flex justify-end">
-                  <Button onClick={() => window.location.href = "/finance/reports"}>
-                    View Financial Reports
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="membershipmetrics" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Membership Metrics</CardTitle>
-                <CardDescription>Member growth and retention statistics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">Total Members</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardData.totalMembers}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {dashboardData.activeMembers} active ({Math.round(dashboardData.activeMembers/dashboardData.totalMembers*100)}%)
-                    </p>
+              </div>
+              
+              <div className="md:col-span-2">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Revenue Breakdown</CardTitle>
+                    <CardDescription>Revenue by category</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { name: 'Membership', amount: 38250, percentage: 78.5 },
+                        { name: 'Personal Training', amount: 6800, percentage: 13.9 },
+                        { name: 'Classes', amount: 2450, percentage: 5.0 },
+                        { name: 'Store', amount: 1250, percentage: 2.6 }
+                      ].map((category, index) => (
+                        <div key={index} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>{category.name}</span>
+                            <span className="font-medium">₹{category.amount.toLocaleString()}</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                index === 0 ? 'bg-primary' :
+                                index === 1 ? 'bg-indigo-500' :
+                                index === 2 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`}
+                              style={{ width: `${category.percentage}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-right text-muted-foreground">
+                            {category.percentage}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Pending Payments</CardTitle>
+                  <CardDescription>
+                    {pendingPayments.length} payments pending for a total of ₹{
+                      pendingPayments.reduce((sum, item) => sum + item.amount, 0).toLocaleString()
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PendingPayments payments={pendingPayments} />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Monthly Expense Breakdown</CardTitle>
+                  <CardDescription>Expenses by category</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <RadialBarChart
+                      title="Expense to Revenue Ratio"
+                      value={68}
+                      color="#FF9F43"
+                      label="Expense Ratio"
+                      additionalInfo="68% of revenue spent on expenses"
+                    />
                   </div>
-                  
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">New Members</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardData.newMembersToday}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Joined today</p>
-                  </div>
-                  
-                  <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-medium">Upcoming Renewals</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardData.upcomingRenewals.thisWeek}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {dashboardData.upcomingRenewals.today} due today
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mt-6 flex justify-end">
-                  <Button onClick={() => window.location.href = "/reports"}>
-                    View Member Reports
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
