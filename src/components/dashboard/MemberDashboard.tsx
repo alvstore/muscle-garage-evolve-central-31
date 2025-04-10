@@ -8,6 +8,7 @@ import { Calendar, Dumbbell, CreditCard, Bell, Trophy, BarChart, ChevronRight } 
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { GymClass } from '@/types/class';
+import { Badge } from '@/components/ui/badge'; // Add this import
 import MemberProgressChart from './MemberProgressChart';
 
 interface MemberDashboardProps {
