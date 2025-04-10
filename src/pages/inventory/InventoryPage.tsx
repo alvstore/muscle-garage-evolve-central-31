@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InventoryList from "@/components/inventory/InventoryList";
+import StockTransactionsList from "@/components/inventory/StockTransactionsList";
+import InventoryAlertsList from "@/components/inventory/InventoryAlertsList";
+import SuppliersList from "@/components/inventory/SuppliersList";
 
 const InventoryPage = () => {
   const [activeTab, setActiveTab] = useState("inventory");
@@ -25,21 +28,15 @@ const InventoryPage = () => {
           </TabsContent>
           
           <TabsContent value="transactions" className="mt-6">
-            <div className="h-[400px] w-full bg-muted rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">Stock Transaction History (Coming Soon)</p>
-            </div>
+            <StockTransactionsList />
           </TabsContent>
           
           <TabsContent value="alerts" className="mt-6">
-            <div className="h-[400px] w-full bg-muted rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">Inventory Alerts (Coming Soon)</p>
-            </div>
+            <InventoryAlertsList />
           </TabsContent>
           
           <TabsContent value="suppliers" className="mt-6">
-            <div className="h-[400px] w-full bg-muted rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">Supplier Management (Coming Soon)</p>
-            </div>
+            <SuppliersList />
           </TabsContent>
         </Tabs>
       </div>

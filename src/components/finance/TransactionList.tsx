@@ -1,94 +1,194 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
+} from "@/components/ui/table";
+import { 
+  Card, CardContent, CardHeader, CardTitle 
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusIcon, FileTextIcon } from "lucide-react";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+  DropdownMenuLabel, DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { 
+  SearchIcon, PlusIcon, MoreVerticalIcon, ArrowDownIcon, ArrowUpIcon,
+  FilterIcon, TrashIcon, FileIcon, RefreshCcwIcon, CalendarIcon,
+  Download
+} from "lucide-react";
 import { FinancialTransaction } from "@/types/finance";
+import { format } from "date-fns";
 import TransactionForm from "./TransactionForm";
 import { toast } from "sonner";
 
+// Mock data for transactions
 const mockTransactions: FinancialTransaction[] = [
   {
-    id: "transaction-1",
+    id: "tr-1",
     type: "income",
-    amount: 5999,
-    date: new Date(2023, 3, 15).toISOString(),
+    amount: 10500,
+    date: "2023-06-01T10:00:00Z",
     category: "membership",
-    description: "3-month membership payment - Jane Smith",
-    recurring: false,
-    recurringPeriod: "none",
-    createdBy: "staff-1",
-    createdAt: new Date(2023, 3, 15).toISOString(),
-    updatedAt: new Date(2023, 3, 15).toISOString(),
+    description: "Monthly membership fees - June 2023",
+    recurring: true,
+    recurringPeriod: "monthly",
+    paymentMethod: "bank-transfer",
+    createdBy: "admin-1",
+    createdAt: "2023-06-01T10:00:00Z",
+    updatedAt: "2023-06-01T10:00:00Z",
   },
   {
-    id: "transaction-2",
+    id: "tr-2",
     type: "expense",
-    amount: 3500,
-    date: new Date(2023, 3, 1).toISOString(),
+    amount: 3000,
+    date: "2023-06-02T14:30:00Z",
     category: "rent",
-    description: "Monthly rent payment",
+    description: "Monthly rent payment - June 2023",
     recurring: true,
     recurringPeriod: "monthly",
+    paymentMethod: "bank-transfer",
     createdBy: "admin-1",
-    createdAt: new Date(2023, 3, 1).toISOString(),
-    updatedAt: new Date(2023, 3, 1).toISOString(),
+    createdAt: "2023-06-02T14:30:00Z",
+    updatedAt: "2023-06-02T14:30:00Z",
   },
   {
-    id: "transaction-3",
-    type: "expense",
-    amount: 1200,
-    date: new Date(2023, 3, 10).toISOString(),
-    category: "utilities",
-    description: "Electricity bill",
-    recurring: true,
-    recurringPeriod: "monthly",
-    createdBy: "admin-1",
-    createdAt: new Date(2023, 3, 10).toISOString(),
-    updatedAt: new Date(2023, 3, 10).toISOString(),
-  },
-  {
-    id: "transaction-4",
+    id: "tr-3",
     type: "income",
-    amount: 2000,
-    date: new Date(2023, 3, 20).toISOString(),
+    amount: 1500,
+    date: "2023-06-03T15:45:00Z",
     category: "personal-training",
-    description: "10 PT sessions - Alex Johnson",
+    description: "PT session with client #123 - 10 sessions package",
     recurring: false,
     recurringPeriod: "none",
+    paymentMethod: "card",
+    relatedInvoiceId: "inv-123",
     createdBy: "staff-1",
-    createdAt: new Date(2023, 3, 20).toISOString(),
-    updatedAt: new Date(2023, 3, 20).toISOString(),
+    createdAt: "2023-06-03T15:45:00Z",
+    updatedAt: "2023-06-03T15:45:00Z",
   },
+  {
+    id: "tr-4",
+    type: "expense",
+    amount: 750,
+    date: "2023-06-05T09:15:00Z",
+    category: "utilities",
+    description: "Electricity bill - May 2023",
+    recurring: true,
+    recurringPeriod: "monthly",
+    paymentMethod: "bank-transfer",
+    createdBy: "admin-1",
+    createdAt: "2023-06-05T09:15:00Z",
+    updatedAt: "2023-06-05T09:15:00Z",
+  },
+  {
+    id: "tr-5",
+    type: "expense",
+    amount: 2500,
+    date: "2023-06-10T13:00:00Z",
+    category: "equipment",
+    description: "New treadmill purchase",
+    recurring: false,
+    recurringPeriod: "none",
+    paymentMethod: "card",
+    createdBy: "admin-1",
+    createdAt: "2023-06-10T13:00:00Z",
+    updatedAt: "2023-06-10T13:00:00Z",
+  },
+  {
+    id: "tr-6",
+    type: "income",
+    amount: 500,
+    date: "2023-06-15T16:30:00Z",
+    category: "product-sales",
+    description: "Protein supplements sales",
+    recurring: false,
+    recurringPeriod: "none",
+    paymentMethod: "cash",
+    createdBy: "staff-2",
+    createdAt: "2023-06-15T16:30:00Z",
+    updatedAt: "2023-06-15T16:30:00Z",
+  }
 ];
 
 const TransactionList = () => {
   const [transactions, setTransactions] = useState<FinancialTransaction[]>(mockTransactions);
+  const [filteredTransactions, setFilteredTransactions] = useState<FinancialTransaction[]>(mockTransactions);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "income" | "expense">("all");
 
-  const handleAddTransaction = (type: "income" | "expense") => {
+  useEffect(() => {
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Apply filters whenever they change
+    let filtered = transactions;
+    
+    // Apply search term filter
+    if (searchTerm) {
+      filtered = filtered.filter(tx => 
+        tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply type filter
+    if (typeFilter !== "all") {
+      filtered = filtered.filter(tx => tx.type === typeFilter);
+    }
+    
+    // Apply category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(tx => tx.category === categoryFilter);
+    }
+    
+    // Apply date filter
+    if (dateFilter !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const thisWeekStart = new Date(today);
+      thisWeekStart.setDate(today.getDate() - today.getDay());
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      filtered = filtered.filter(tx => {
+        const txDate = new Date(tx.date);
+        
+        switch (dateFilter) {
+          case "today":
+            return txDate >= today;
+          case "this-week":
+            return txDate >= thisWeekStart;
+          case "this-month":
+            return txDate >= thisMonthStart;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    setFilteredTransactions(filtered);
+  }, [searchTerm, typeFilter, categoryFilter, dateFilter, transactions]);
+
+  const handleAddTransaction = () => {
     setEditingTransaction(null);
     setIsFormOpen(true);
-    // Pre-set the transaction type based on which button was clicked
-    setEditingTransaction({
-      id: "",
-      type,
-      amount: 0,
-      date: new Date().toISOString(),
-      category: type === "income" ? "membership" : "rent",
-      description: "",
-      recurring: false,
-      recurringPeriod: "none",
-      createdBy: "user-1", // This would come from auth in a real app
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
   };
 
   const handleEditTransaction = (transaction: FinancialTransaction) => {
@@ -96,168 +196,323 @@ const TransactionList = () => {
     setIsFormOpen(true);
   };
 
+  const handleDeleteTransaction = (id: string) => {
+    // In a real app, you would make an API call
+    setTransactions(transactions.filter(tx => tx.id !== id));
+    toast.success("Transaction deleted successfully");
+  };
+
   const handleSaveTransaction = (transaction: FinancialTransaction) => {
-    // In a real application, you would make an API call
-    if (transaction.id) {
-      setTransactions(transactions.map(t => t.id === transaction.id ? transaction : t));
+    // In a real app, you would make an API call
+    if (transaction.id && transactions.some(tx => tx.id === transaction.id)) {
+      // Update existing transaction
+      setTransactions(transactions.map(tx => 
+        tx.id === transaction.id ? transaction : tx
+      ));
       toast.success("Transaction updated successfully");
     } else {
+      // Add new transaction
       const newTransaction: FinancialTransaction = {
         ...transaction,
-        id: `transaction-${Date.now()}`,
-        createdAt: new Date().toISOString(),
+        id: transaction.id || `tr-${Date.now()}`,
+        createdAt: transaction.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setTransactions([...transactions, newTransaction]);
-      toast.success("Transaction created successfully");
+      setTransactions([newTransaction, ...transactions]);
+      toast.success("Transaction added successfully");
     }
     setIsFormOpen(false);
     setEditingTransaction(null);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+  const getTypeIcon = (type: string) => {
+    return type === "income" 
+      ? <ArrowUpIcon className="h-4 w-4 text-green-500" />
+      : <ArrowDownIcon className="h-4 w-4 text-red-500" />;
   };
 
-  const getTypeColor = (type: string) => {
-    return type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+  const exportTransactions = () => {
+    // Create CSV content
+    const headers = "ID,Type,Amount,Date,Category,Description,Recurring,Recurring Period,Payment Method,Created By\n";
+    const csvContent = filteredTransactions.reduce((content, tx) => {
+      return content + `${tx.id},${tx.type},${tx.amount},${tx.date},${tx.category},"${tx.description}",${tx.recurring},${tx.recurringPeriod},${tx.paymentMethod || ""},${tx.createdBy}\n`;
+    }, headers);
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const getRecurringBadge = (recurring: boolean, period: string) => {
-    if (!recurring) return null;
-    return (
-      <Badge variant="outline" className="bg-blue-100 text-blue-800">
-        {period.charAt(0).toUpperCase() + period.slice(1)}
-      </Badge>
-    );
+  const resetFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("all");
+    setCategoryFilter("all");
+    setDateFilter("all");
   };
 
-  const filteredTransactions = activeTab === "all" 
-    ? transactions 
-    : transactions.filter(t => t.type === activeTab);
-
-  const totalIncome = transactions
-    .filter(t => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpense = transactions
-    .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const netAmount = totalIncome - totalExpense;
+  // Calculate income, expense, and balance totals
+  const totalIncome = filteredTransactions
+    .filter(tx => tx.type === "income")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+    
+  const totalExpense = filteredTransactions
+    .filter(tx => tx.type === "expense")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+    
+  const balance = totalIncome - totalExpense;
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatPrice(totalIncome)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatPrice(totalExpense)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatPrice(netAmount)}
+            <div className="text-2xl font-bold text-green-600">
+              ${totalIncome.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filteredTransactions.filter(tx => tx.type === "income").length} transactions
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              ${totalExpense.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filteredTransactions.filter(tx => tx.type === "expense").length} transactions
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+              ${balance.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {balance >= 0 ? 'Positive balance' : 'Negative balance'}
+            </p>
           </CardContent>
         </Card>
       </div>
-      
+    
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Financial Transactions</CardTitle>
           <div className="flex gap-2">
             <Button 
-              onClick={() => handleAddTransaction("income")} 
-              variant="outline"
+              variant="outline" 
+              size="sm" 
+              onClick={exportTransactions}
               className="flex items-center gap-1"
             >
-              <PlusIcon className="h-4 w-4" /> Income
+              <Download className="h-4 w-4" />
+              Export
             </Button>
             <Button 
-              onClick={() => handleAddTransaction("expense")} 
+              onClick={handleAddTransaction} 
               className="flex items-center gap-1"
             >
-              <PlusIcon className="h-4 w-4" /> Expense
+              <PlusIcon className="h-4 w-4" /> Add Transaction
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "income" | "expense")}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Transactions</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expense">Expenses</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value={activeTab}>
-              <Table>
-                <TableHeader>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search by description or category..." 
+                className="pl-8" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="membership">Membership</SelectItem>
+                  <SelectItem value="personal-training">PT Sessions</SelectItem>
+                  <SelectItem value="product-sales">Product Sales</SelectItem>
+                  <SelectItem value="class-fees">Class Fees</SelectItem>
+                  <SelectItem value="rent">Rent</SelectItem>
+                  <SelectItem value="salary">Salary</SelectItem>
+                  <SelectItem value="utilities">Utilities</SelectItem>
+                  <SelectItem value="equipment">Equipment</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="this-week">This Week</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={resetFilters}
+                title="Reset Filters"
+              >
+                <RefreshCcwIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Recurring</TableHead>
+                  <TableHead>Payment Method</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Recurring</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableCell colSpan={8} className="text-center py-10">
+                      <div className="flex flex-col items-center justify-center space-y-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="text-muted-foreground">Loading transactions...</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTransactions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                        No transactions found
+                ) : filteredTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                      No transactions found. Try changing your filters or add a new transaction.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredTransactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{format(new Date(tx.date), "MMM d, yyyy")}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {getTypeIcon(tx.type)}
+                          <span className="capitalize">{tx.type}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`
+                          capitalize
+                          ${tx.type === 'income' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}
+                        `}>
+                          {tx.category.replace('-', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{tx.description}</TableCell>
+                      <TableCell className={`font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        {tx.recurring ? (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 capitalize">
+                            {tx.recurringPeriod}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">One-time</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {tx.paymentMethod ? (
+                          <span className="capitalize">{tx.paymentMethod.replace('-', ' ')}</span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleEditTransaction(tx)}>
+                              Edit
+                            </DropdownMenuItem>
+                            {tx.relatedInvoiceId && (
+                              <DropdownMenuItem>
+                                <div className="flex items-center gap-1">
+                                  <FileIcon className="h-4 w-4" />
+                                  <span>View Invoice</span>
+                                </div>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => handleDeleteTransaction(tx.id)}
+                            >
+                              <div className="flex items-center gap-1">
+                                <TrashIcon className="h-4 w-4" />
+                                <span>Delete</span>
+                              </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{format(new Date(transaction.date), "MMM d, yyyy")}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{transaction.description}</TableCell>
-                        <TableCell className="capitalize">{transaction.category}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getTypeColor(transaction.type)}>
-                            {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getRecurringBadge(transaction.recurring, transaction.recurringPeriod)}
-                        </TableCell>
-                        <TableCell className={`font-medium ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.type === 'income' ? '+' : '-'} {formatPrice(transaction.amount)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditTransaction(transaction)}>
-                            <FileTextIcon className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          </Tabs>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

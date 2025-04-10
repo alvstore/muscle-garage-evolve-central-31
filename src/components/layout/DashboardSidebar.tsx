@@ -1,298 +1,158 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
 import {
-  BarChart3,
-  ClipboardList,
-  Users,
-  Calendar,
-  UserCircle,
-  DumbbellIcon,
-  ClipboardEdit,
-  ShoppingCart,
-  FileText,
-  UserPlus,
-  Bell,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-  Package2,
-  BarChartBig
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import Logo from "@/components/Logo";
-import { UserRole } from "@/types";
+import { Separator } from "@/components/ui/separator";
+import {
+  LayoutDashboard,
+  Users,
+  Dumbbell,
+  ClipboardList,
+  CreditCard,
+  Activity as ActivityIcon,
+  DollarSign,
+  Receipt,
+  ArrowLeftRight,
+  Package,
+  Bell,
+  MessageSquare,
+  Heart,
+  AlarmClock,
+  Settings,
+  User,
+  CalendarCheck,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-interface SidebarItem {
-  title: string;
-  href: string;
-  icon: React.ElementType;
-  roles: UserRole[];
-  submenu?: SidebarItem[];
+interface DashboardSidebarProps {
+  isSidebarOpen: boolean;
+  closeSidebar: () => void;
 }
 
-interface SidebarProps {
-  userRole: UserRole;
-  isMobile: boolean;
-  isOpen: boolean;
-  onClose: () => void;
-}
+export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-const menuItems: SidebarItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: BarChart3,
-    roles: ["admin", "staff", "trainer", "member"],
-  },
-  {
-    title: "Member Management",
-    href: "/members",
-    icon: Users,
-    roles: ["admin", "staff"],
-    submenu: [
-      {
-        title: "All Members",
-        href: "/members",
-        icon: Users,
-        roles: ["admin", "staff"],
-      },
-      {
-        title: "Add Member",
-        href: "/members/add",
-        icon: UserPlus,
-        roles: ["admin", "staff"],
-      },
-      {
-        title: "Memberships",
-        href: "/memberships",
-        icon: FileText,
-        roles: ["admin", "staff"],
-      },
-    ],
-  },
-  {
-    title: "Trainer & Classes",
-    href: "/classes",
-    icon: Calendar,
-    roles: ["admin", "staff", "trainer", "member"],
-    submenu: [
-      {
-        title: "All Classes",
-        href: "/classes",
-        icon: Calendar,
-        roles: ["admin", "staff", "trainer", "member"],
-      },
-      {
-        title: "Trainers",
-        href: "/trainers",
-        icon: UserCircle,
-        roles: ["admin", "staff"],
-      },
-    ],
-  },
-  {
-    title: "Attendance",
-    href: "/attendance",
-    icon: ClipboardList,
-    roles: ["admin", "staff"],
-  },
-  {
-    title: "Fitness & Diet Plans",
-    href: "/fitness-plans",
-    icon: DumbbellIcon,
-    roles: ["admin", "staff", "trainer", "member"],
-    submenu: [
-      {
-        title: "Workout Plans",
-        href: "/fitness-plans/workout",
-        icon: DumbbellIcon,
-        roles: ["admin", "staff", "trainer", "member"],
-      },
-      {
-        title: "Diet Plans",
-        href: "/fitness-plans/diet",
-        icon: ClipboardEdit,
-        roles: ["admin", "staff", "trainer", "member"],
-      },
-      {
-        title: "Progress Tracking",
-        href: "/fitness-plans/progress",
-        icon: BarChart3,
-        roles: ["admin", "staff", "trainer", "member"],
-      },
-    ],
-  },
-  {
-    title: "Inventory",
-    href: "/inventory",
-    icon: Package2,
-    roles: ["admin", "staff"],
-  },
-  {
-    title: "Finance Dashboard",
-    href: "/finance/dashboard",
-    icon: BarChartBig,
-    roles: ["admin"],
-  },
-  {
-    title: "CRM & Leads",
-    href: "/leads",
-    icon: UserPlus,
-    roles: ["admin", "staff"],
-  },
-  {
-    title: "Announcements",
-    href: "/announcements",
-    icon: Bell,
-    roles: ["admin", "staff"],
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-    roles: ["admin", "staff", "trainer", "member"],
-  },
-];
-
-const DashboardSidebar = ({
-  userRole,
-  isMobile,
-  isOpen,
-  onClose,
-}: SidebarProps) => {
-  const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
-    {}
-  );
-
-  const filteredItems = menuItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
-
-  const toggleSubMenu = (title: string) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }));
-  };
-
-  const isActive = (href: string) => {
-    if (href === "/dashboard" && location.pathname === "/") {
-      return true;
-    }
-    return location.pathname === href || location.pathname.startsWith(href + "/");
-  };
-
-  const handleLinkClick = () => {
-    if (isMobile) {
-      onClose();
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
-  const SidebarContent = (
-    <>
-      <div className="flex h-14 items-center border-b px-6">
-        <Logo />
-      </div>
-      <ScrollArea className="h-[calc(100vh-3.5rem)] px-2 py-4">
-        <div className="space-y-1 px-2">
-          {filteredItems.map((item) => (
-            <div key={item.title} className="mb-1">
-              {item.submenu ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      isActive(item.href) &&
-                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    )}
-                    onClick={() => toggleSubMenu(item.title)}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                    {expandedItems[item.title] ? (
-                      <ChevronDown className="ml-auto h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="ml-auto h-4 w-4" />
-                    )}
-                  </Button>
-                  {expandedItems[item.title] && (
-                    <div className="mt-1 ml-4 pl-4 border-l border-gray-300 dark:border-gray-700 space-y-1">
-                      {item.submenu
-                        .filter((subitem) => subitem.roles.includes(userRole))
-                        .map((subitem) => (
-                          <Link
-                            key={subitem.href}
-                            to={subitem.href}
-                            onClick={handleLinkClick}
-                          >
-                            <Button
-                              variant="ghost"
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                isActive(subitem.href) &&
-                                  "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                              )}
-                            >
-                              <subitem.icon className="mr-2 h-4 w-4" />
-                              {subitem.title}
-                            </Button>
-                          </Link>
-                        ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Link to={item.href} onClick={handleLinkClick}>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      isActive(item.href) &&
-                        "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    )}
-                  >
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                  </Button>
-                </Link>
-              )}
+  // Define navigation links grouped by sections
+  const navSections = [
+    {
+      label: "Dashboard",
+      links: [
+        { href: "/dashboard", label: "Overview", icon: <LayoutDashboard className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Members & Trainers",
+      links: [
+        { href: "/members", label: "Members", icon: <Users className="h-5 w-5" /> },
+        { href: "/trainers", label: "Trainers", icon: <Dumbbell className="h-5 w-5" /> },
+        { href: "/attendance", label: "Attendance", icon: <CalendarCheck className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Programs",
+      links: [
+        { href: "/classes", label: "Classes", icon: <ClipboardList className="h-5 w-5" /> },
+        { href: "/memberships", label: "Memberships", icon: <CreditCard className="h-5 w-5" /> },
+        { href: "/fitness-plans", label: "Fitness Plans", icon: <ActivityIcon className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Finance",
+      links: [
+        { href: "/finance/dashboard", label: "Finance Dashboard", icon: <DollarSign className="h-5 w-5" /> },
+        { href: "/finance/invoices", label: "Invoices", icon: <Receipt className="h-5 w-5" /> },
+        { href: "/finance/transactions", label: "Transactions", icon: <ArrowLeftRight className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Inventory",
+      links: [
+        { href: "/inventory", label: "Inventory", icon: <Package className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Communication",
+      links: [
+        { href: "/communication/announcements", label: "Announcements", icon: <Bell className="h-5 w-5" /> },
+        { href: "/communication/feedback", label: "Feedback", icon: <MessageSquare className="h-5 w-5" /> },
+        { href: "/communication/motivational", label: "Motivational Messages", icon: <Heart className="h-5 w-5" /> },
+        { href: "/communication/reminders", label: "Reminders", icon: <AlarmClock className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "Settings",
+      links: [
+        { href: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
+        { href: "/profile", label: "Profile", icon: <User className="h-5 w-5" /> },
+      ],
+    },
+  ];
+
+  return (
+    <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
+      <SheetContent side="left" className="w-64">
+        <SheetHeader>
+          <SheetTitle>Dashboard Menu</SheetTitle>
+          <SheetDescription>
+            Navigate through different sections of the dashboard.
+          </SheetDescription>
+        </SheetHeader>
+        <Separator className="my-4" />
+        <div className="flex flex-col space-y-6">
+          {navSections.map((section, index) => (
+            <div key={index} className="flex flex-col space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground px-2">
+                {section.label}
+              </h4>
+              <div className="flex flex-col space-y-1">
+                {section.links.map((link) => (
+                  <SheetClose asChild key={link.href}>
+                    <Link
+                      to={link.href}
+                      className="flex items-center space-x-2 py-2 px-4 rounded-md hover:bg-secondary"
+                    >
+                      {link.icon}
+                      <span>{link.label}</span>
+                    </Link>
+                  </SheetClose>
+                ))}
+              </div>
             </div>
           ))}
         </div>
-      </ScrollArea>
-    </>
-  );
-
-  if (isMobile) {
-    return (
-      <>
-        {isOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/80"
-            onClick={onClose}
-          ></div>
-        )}
-        <div
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-sidebar transition-transform duration-300 ease-in-out",
-            isOpen ? "translate-x-0" : "-translate-x-full"
-          )}
+        <Separator className="my-4" />
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
         >
-          {SidebarContent}
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <div className="hidden border-r bg-sidebar md:block md:w-64">
-      {SidebarContent}
-    </div>
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </Button>
+      </SheetContent>
+    </Sheet>
   );
-};
-
-export default DashboardSidebar;
+}

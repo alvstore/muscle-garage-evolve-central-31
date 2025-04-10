@@ -1,6 +1,7 @@
 
 export type NotificationType = "system" | "payment" | "attendance" | "renewal" | "announcement" | "feedback" | "reminder";
 export type FeedbackType = "class" | "trainer" | "fitness-plan" | "general";
+export type NotificationChannel = "email" | "sms" | "whatsapp" | "in-app";
 
 export interface Notification {
   id: string;
@@ -29,6 +30,9 @@ export interface Announcement {
   attachments?: string[];
   read?: boolean;
   expiresAt?: string;
+  channels?: NotificationChannel[];
+  createdAt?: string;
+  createdBy?: string;
 }
 
 export interface Feedback {
@@ -52,7 +56,7 @@ export interface MotivationalMessage {
   title: string;
   content: string;
   image?: string;
-  category: string;
+  category: "motivation" | "nutrition" | "wellness" | "fitness";
   tags: string[];
   targetAudience?: string[];
   schedule?: {
@@ -64,6 +68,8 @@ export interface MotivationalMessage {
   createdAt: string;
   updatedAt: string;
   status: "draft" | "active" | "completed" | "paused";
+  author?: string;
+  active?: boolean;
 }
 
 export interface ReminderRule {
@@ -81,4 +87,8 @@ export interface ReminderRule {
   lastTriggered?: string;
   targetRoles?: string[];
   customCriteria?: Record<string, any>;
+  type?: string;
+  triggerDays?: number;
+  template?: string;
+  active?: boolean;
 }
