@@ -3,7 +3,7 @@
 
 export type FeedbackType = "class" | "trainer" | "fitness-plan" | "general" | "diet-plan";
 export type NotificationChannel = "email" | "sms" | "push" | "in-app" | "whatsapp";
-export type ReminderTriggerType = "membership-renewal" | "payment-due" | "birthday" | "class-reminder" | "missed-attendance" | "inactivity" | "membership-expiry" | "attendance" | "renewal";
+export type ReminderTriggerType = "membership-renewal" | "payment-due" | "birthday" | "class-reminder" | "missed-attendance" | "inactivity" | "membership-expiry" | "attendance" | "renewal" | "membershipExpiry";
 
 export interface Feedback {
   id: string;
@@ -29,6 +29,8 @@ export interface Announcement {
   expiresAt?: string;
   channels?: NotificationChannel[];
   sentCount?: number;
+  author?: string; // Made optional to fix type errors
+  priority?: "low" | "medium" | "high"; // Added for completeness
 }
 
 export interface ReminderRule {
@@ -70,7 +72,7 @@ export interface MotivationalMessage {
   channels: NotificationChannel[];
   author?: string;
   tags?: string[];
-  category?: string; // Add this property
-  active?: boolean;  // Add this property
-  status?: string;   // Add this property
+  category?: string;
+  active?: boolean;
+  status?: string;
 }
