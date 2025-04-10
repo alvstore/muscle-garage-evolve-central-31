@@ -14,7 +14,7 @@ interface MemberSidebarProps {
 export default function MemberSidebar({ isSidebarOpen, closeSidebar }: MemberSidebarProps) {
   return (
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
-      <SheetContent side="left" className="w-64 p-0 bg-[#2c2c44] text-white border-none">
+      <SheetContent side="left" className="w-64 p-0 bg-[#2c2c44] text-white border-none overflow-hidden">
         <MemberSidebarContent />
       </SheetContent>
     </Sheet>

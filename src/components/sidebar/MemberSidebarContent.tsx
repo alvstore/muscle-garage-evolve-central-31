@@ -8,6 +8,7 @@ import { memberNavSections } from "@/data/memberNavigation";
 import SidebarNavSection from "./SidebarNavSection";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MemberSidebarContent: React.FC = () => {
   const navigate = useNavigate();
@@ -43,16 +44,18 @@ const MemberSidebarContent: React.FC = () => {
         <h1 className="text-lg font-semibold">Muscle Garage</h1>
       </div>
       
-      <div className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
-        {memberNavSections.map((section, index) => (
-          <SidebarNavSection
-            key={index}
-            section={section}
-            isExpanded={expandedSections.includes(section.name)}
-            onToggle={() => toggleSection(section.name)}
-          />
-        ))}
-      </div>
+      <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
+        <div className="py-2 px-2">
+          {memberNavSections.map((section, index) => (
+            <SidebarNavSection
+              key={index}
+              section={section}
+              isExpanded={expandedSections.includes(section.name)}
+              onToggle={() => toggleSection(section.name)}
+            />
+          ))}
+        </div>
+      </ScrollArea>
       
       <div className="mt-auto p-4">
         <Separator className="my-2 bg-white/10" />
