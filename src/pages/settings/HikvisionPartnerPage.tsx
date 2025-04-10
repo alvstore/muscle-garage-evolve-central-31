@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,8 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, Plus, RefreshCw, Trash, Settings2, User, Clock, Link, CameraOff, Camera } from 'lucide-react';
 import { toast } from 'sonner';
-import { hikvisionPartnerService } from '@/services/integrations/hikvisionPartnerService';
-import { HikvisionDevice, HikvisionDeviceStatus } from '@/types/hikvision';
+import { hikvisionPartnerService, HikvisionDeviceWithStatus } from '@/services/integrations/hikvisionPartnerService';
 import { usePermissions } from '@/hooks/use-permissions';
 
 const HikvisionPartnerPage = () => {
@@ -21,7 +19,7 @@ const HikvisionPartnerPage = () => {
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [isKeyConfigured, setIsKeyConfigured] = useState(false);
-  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
+  const [devices, setDevices] = useState<HikvisionDeviceWithStatus[]>([]);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isAddingDevice, setIsAddingDevice] = useState(false);
   const [newDevice, setNewDevice] = useState({
@@ -43,7 +41,6 @@ const HikvisionPartnerPage = () => {
           setApiKey(credentials.appKey);
           setSecretKey(credentials.secretKey || '');
           setIsKeyConfigured(true);
-          // If keys are configured, fetch devices
           fetchDevices();
         }
       } catch (error) {
@@ -77,8 +74,7 @@ const HikvisionPartnerPage = () => {
     try {
       await hikvisionPartnerService.saveCredentials(apiKey, secretKey);
       setIsKeyConfigured(true);
-      toast('API credentials saved successfully', {
-        variant: 'default',
+      toast.success('API credentials saved successfully', {
         description: 'Your Hikvision Partner API credentials have been saved securely.',
       });
       fetchDevices();
@@ -95,13 +91,11 @@ const HikvisionPartnerPage = () => {
     try {
       const result = await hikvisionPartnerService.testConnection();
       if (result.success) {
-        toast('Connection successful', {
-          variant: 'default',
+        toast.success('Connection successful', {
           description: 'Successfully connected to Hikvision Partner API.',
         });
       } else {
-        toast('Connection failed', {
-          variant: 'destructive',
+        toast.error('Connection failed', {
           description: result.message || 'Failed to connect to Hikvision Partner API.',
         });
       }
@@ -115,8 +109,7 @@ const HikvisionPartnerPage = () => {
 
   const addDevice = async () => {
     if (!newDevice.deviceSerial || !newDevice.deviceName) {
-      toast('Missing required fields', {
-        variant: 'destructive',
+      toast.error('Missing required fields', {
         description: 'Device serial and name are required.',
       });
       return;
@@ -126,8 +119,7 @@ const HikvisionPartnerPage = () => {
     try {
       const result = await hikvisionPartnerService.addDevice(newDevice);
       if (result.success) {
-        toast('Device added successfully', {
-          variant: 'default',
+        toast.success('Device added successfully', {
           description: `Device ${newDevice.deviceName} has been added.`,
         });
         fetchDevices();
@@ -141,8 +133,7 @@ const HikvisionPartnerPage = () => {
           isVideoSupported: true
         });
       } else {
-        toast('Failed to add device', {
-          variant: 'destructive',
+        toast.error('Failed to add device', {
           description: result.message || 'An error occurred while adding the device.',
         });
       }
@@ -164,13 +155,11 @@ const HikvisionPartnerPage = () => {
       const result = await hikvisionPartnerService.deleteDevice(deviceSerial);
       if (result.success) {
         setDevices(devices.filter(device => device.deviceSerial !== deviceSerial));
-        toast('Device deleted successfully', {
-          variant: 'default',
+        toast.success('Device deleted successfully', {
           description: `Device ${deviceName} has been removed.`,
         });
       } else {
-        toast('Failed to delete device', {
-          variant: 'destructive',
+        toast.error('Failed to delete device', {
           description: result.message || 'An error occurred while deleting the device.',
         });
       }
@@ -189,13 +178,11 @@ const HikvisionPartnerPage = () => {
         setDevices(devices.map(device => 
           device.deviceSerial === deviceSerial ? { ...device, ...updatedDevice } : device
         ));
-        toast('Device status refreshed', {
-          variant: 'default',
+        toast.success('Device status refreshed', {
           description: 'Device status has been updated.',
         });
       } else {
-        toast('Failed to refresh device status', {
-          variant: 'destructive',
+        toast.error('Failed to refresh device status', {
           description: 'Could not get the latest device status.',
         });
       }
@@ -205,7 +192,7 @@ const HikvisionPartnerPage = () => {
     }
   };
 
-  const deviceStatusBadge = (status?: HikvisionDeviceStatus) => {
+  const deviceStatusBadge = (status?: 'online' | 'offline' | 'unknown') => {
     switch(status) {
       case 'online':
         return <Badge className="bg-green-500">Online</Badge>;

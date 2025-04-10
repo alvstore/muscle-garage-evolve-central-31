@@ -14,7 +14,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1", "branch2", "branch3"],
     isBranchManager: true,
-    avatar: null, // Add avatar field with null value
+    avatar: "/admin-avatar.png", // Changed from null to a placeholder path
   },
   staff: {
     id: "staff1",
@@ -25,7 +25,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: null, // Add avatar field with null value
+    avatar: "/staff-avatar.png", // Changed from null to a placeholder path
   },
   trainer: {
     id: "trainer1",
@@ -36,7 +36,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: null, // Add avatar field with null value
+    avatar: "/trainer-avatar.png", // Changed from null to a placeholder path
   },
   member: {
     id: "member1",
@@ -47,7 +47,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: null, // Add avatar field with null value
+    avatar: "/member-avatar.png", // Changed from null to a placeholder path
   }
 };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -51,6 +50,7 @@ import {
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import BranchSelector from '@/components/branch/BranchSelector';
 import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -136,8 +136,7 @@ const NavItemGroup = ({ title, children }: NavItemGroupProps) => {
 };
 
 const DashboardLayout = () => {
-  // Get the user from useAuth hook instead of props
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -180,13 +179,29 @@ const DashboardLayout = () => {
     }
   }, [darkMode]);
   
-  // If there's no user, don't render the dashboard yet
-  if (!user) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
           <p className="mt-4 text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <UserCircle className="h-12 w-12 mx-auto text-gray-400" />
+          <p className="mt-4 text-lg font-medium">No user found. Please login again.</p>
+          <Button
+            className="mt-4"
+            onClick={() => navigate('/login')}
+          >
+            Go to Login
+          </Button>
         </div>
       </div>
     );
@@ -359,7 +374,7 @@ const DashboardLayout = () => {
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+            <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
             <AvatarFallback className="bg-indigo-600 text-white">
               {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
@@ -447,7 +462,7 @@ const DashboardLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 pl-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+                      <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
                       <AvatarFallback className="bg-indigo-600 text-white text-xs">
                         {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                       </AvatarFallback>
@@ -488,8 +503,5 @@ const DashboardLayout = () => {
     </div>
   );
 };
-
-// Missing Loader2 component import
-import { Loader2 } from "lucide-react";
 
 export default DashboardLayout;
