@@ -7,10 +7,14 @@ export interface Announcement {
   content: string;
   priority: "low" | "medium" | "high";
   createdAt: string;
-  expiresAt: string;
+  expiresAt?: string;
   createdBy: string;
   targetRoles: UserRole[]; // Roles this announcement targets
+  channels?: NotificationChannel[]; // Added to match the usage in components
+  sentCount?: number; // Added to match the usage in components
 }
+
+export type NotificationChannel = "in-app" | "email" | "sms" | "whatsapp" | "push";
 
 export interface Reminder {
   id: string;
@@ -38,16 +42,36 @@ export interface ReminderRule {
   appliesTo: UserRole[];
   createdAt: string;
   createdBy: string;
+  // Added properties to match component usage
+  type?: string;
+  triggerDays?: number;
+  channels?: string[];
+  targetRoles?: UserRole[];
+  active?: boolean;
+  enabled?: boolean;
+  updatedAt?: string;
 }
+
+export type ReminderTriggerType = "membership-renewal" | "missed-attendance" | "birthday" | "payment-due";
 
 export interface MotivationalMessage {
   id: string;
   message: string;
   author?: string;
-  category: "inspiration" | "fitness" | "nutrition" | "consistency" | "progress";
+  category: "inspiration" | "fitness" | "nutrition" | "consistency" | "progress" | "motivation" | "wellness";
   isActive: boolean;
   createdAt: string;
   createdBy: string;
+  // Added properties to match component usage
+  content?: string;
+  tags?: string[];
+  active?: boolean;
+  title?: string;
+  frequency?: string;
+  targetRoles?: UserRole[];
+  enabled?: boolean;
+  updatedAt?: string;
+  channels?: string[];
 }
 
 export interface PushNotification {
@@ -64,3 +88,28 @@ export interface PushNotification {
   createdAt: string;
   createdBy: string;
 }
+
+export type FeedbackType = "general" | "class" | "trainer" | "fitness-plan";
+
+export interface Feedback {
+  id: string;
+  memberId: string;
+  memberName?: string;
+  type: FeedbackType;
+  relatedId?: string;
+  rating: number;
+  comments: string;
+  createdAt: string;
+  anonymous: boolean;
+  title: string;
+}
+
+export type TriggerEvent = 
+  | "member_registration" 
+  | "payment_success" 
+  | "payment_failure" 
+  | "class_booking" 
+  | "class_cancellation" 
+  | "plan_expiry" 
+  | "birthday" 
+  | "motivation";

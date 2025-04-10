@@ -15,20 +15,18 @@ import { useAuth } from '@/hooks/use-auth';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 const BranchSelector = () => {
-  const { branches, currentBranch, setCurrentBranch, isLoading } = useBranch();
+  const { branches, currentBranch, loading, switchBranch } = useBranch();
   const { updateUserBranch } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
   const handleChangeBranch = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
-    if (branch) {
-      setCurrentBranch(branch);
-      updateUserBranch(branch.id);
-    }
-    setIsOpen(false);
+    switchBranch(branchId).then(() => {
+      updateUserBranch(branchId);
+      setIsOpen(false);
+    });
   };
   
-  if (isLoading) {
+  if (loading) {
     return (
       <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
         <Building2 className="mr-2 h-4 w-4" />

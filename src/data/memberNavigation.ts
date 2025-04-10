@@ -12,7 +12,14 @@ import {
   Timer, 
   Users
 } from "lucide-react";
-import { NavItem } from "@/types/index";
+
+// Define the NavItem type here for export
+export interface NavItem {
+  title: string;
+  href: string;
+  icon?: any;
+  children: NavItem[];
+}
 
 export const memberNavigation: NavItem[] = [
   {
@@ -29,14 +36,17 @@ export const memberNavigation: NavItem[] = [
       {
         title: "Workout Plans",
         href: "/fitness/workout",
+        children: [],
       },
       {
         title: "Diet Plans",
         href: "/fitness/diet",
+        children: [],
       },
       {
         title: "Progress Tracker",
         href: "/fitness/progress",
+        children: [],
       },
     ],
   },
@@ -48,10 +58,12 @@ export const memberNavigation: NavItem[] = [
       {
         title: "Book a Class",
         href: "/classes/book",
+        children: [],
       },
       {
         title: "My Bookings",
         href: "/classes/my-bookings",
+        children: [],
       },
     ],
   },
@@ -63,10 +75,12 @@ export const memberNavigation: NavItem[] = [
       {
         title: "My Invoices",
         href: "/payments/invoices",
+        children: [],
       },
       {
         title: "Subscription",
         href: "/payments/subscription",
+        children: [],
       },
     ],
   },
@@ -78,10 +92,12 @@ export const memberNavigation: NavItem[] = [
       {
         title: "Products",
         href: "/shop/products",
+        children: [],
       },
       {
         title: "My Orders",
         href: "/shop/orders",
+        children: [],
       },
     ],
   },
@@ -93,10 +109,12 @@ export const memberNavigation: NavItem[] = [
       {
         title: "Submit Feedback",
         href: "/feedback/submit",
+        children: [],
       },
       {
         title: "My Feedback",
         href: "/feedback/history",
+        children: [],
       },
     ],
   },
@@ -108,11 +126,14 @@ export const memberNavigation: NavItem[] = [
       {
         title: "My Profile",
         href: "/settings/profile",
+        children: [],
       },
       {
         title: "Notifications",
         href: "/settings/notifications",
+        children: [],
       },
     ],
   },
 ];
+

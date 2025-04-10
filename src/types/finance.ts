@@ -1,12 +1,13 @@
-
 import { UserRole } from "@/types/index";
+
+export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled";
 
 export interface Invoice {
   id: string;
   memberId: string;
   memberName: string;
   amount: number;
-  status: "paid" | "pending" | "overdue" | "cancelled";
+  status: InvoiceStatus;
   dueDate: string;
   issuedDate: string;
   paidDate?: string;
@@ -14,6 +15,8 @@ export interface Invoice {
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   items: InvoiceItem[];
+  invoiceId?: string;
+  relatedInvoiceId?: string;
 }
 
 export interface InvoiceItem {
