@@ -1,7 +1,7 @@
-
 import api from '../api';
 import { Invoice } from '@/types/finance';
 import { toast } from 'sonner';
+import { RazorpayEventType, WebhookStatus } from '@/types/webhooks';
 
 export interface RazorpayOptions {
   key: string;
@@ -160,6 +160,130 @@ export const razorpayService = {
     } catch (error) {
       console.error('Failed to send invoice:', error);
       toast.error('Failed to send invoice');
+      return false;
+    }
+  },
+  
+  /**
+   * Get webhook configuration status
+   */
+  async getWebhookConfig(): Promise<{
+    isConfigured: boolean;
+    url?: string;
+    events?: RazorpayEventType[];
+    active?: boolean;
+  }> {
+    try {
+      const response = await api.get('/integrations/razorpay/webhook-config');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get webhook configuration:', error);
+      return { isConfigured: false };
+    }
+  },
+  
+  /**
+   * Configure Razorpay webhooks
+   */
+  async configureWebhook(
+    webhookUrl: string,
+    events: RazorpayEventType[] = [
+      'payment.captured',
+      'payment.failed',
+      'order.paid',
+      'subscription.activated',
+      'subscription.charged',
+      'subscription.cancelled',
+      'refund.processed'
+    ],
+    active: boolean = true
+  ): Promise<boolean> {
+    try {
+      const response = await api.post('/integrations/razorpay/webhook-config', {
+        webhookUrl,
+        events,
+        active
+      });
+      
+      if (response.data.success) {
+        toast.success('Razorpay webhook configured successfully');
+        return true;
+      } else {
+        toast.error(response.data.message || 'Failed to configure webhook');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to configure webhook:', error);
+      toast.error('Failed to configure webhook');
+      return false;
+    }
+  },
+  
+  /**
+   * Get webhook logs
+   */
+  async getWebhookLogs(
+    limit: number = 50,
+    offset: number = 0,
+    status?: WebhookStatus,
+    eventType?: RazorpayEventType
+  ): Promise<any[]> {
+    try {
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
+      
+      if (status) {
+        params.append('status', status);
+      }
+      
+      if (eventType) {
+        params.append('eventType', eventType);
+      }
+      
+      const response = await api.get(`/integrations/razorpay/webhook-logs?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get webhook logs:', error);
+      return [];
+    }
+  },
+  
+  /**
+   * Get invoices updated by webhooks
+   */
+  async getInvoicesUpdatedByWebhooks(status?: InvoiceStatus): Promise<Invoice[]> {
+    try {
+      let url = '/integrations/razorpay/webhook-updated-invoices';
+      if (status) {
+        url += `?status=${status}`;
+      }
+      
+      const response = await api.get<Invoice[]>(url);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get webhook-updated invoices:', error);
+      return [];
+    }
+  },
+  
+  /**
+   * Retry a failed webhook
+   */
+  async retryWebhook(webhookId: string): Promise<boolean> {
+    try {
+      const response = await api.post(`/integrations/razorpay/retry-webhook/${webhookId}`);
+      
+      if (response.data.success) {
+        toast.success('Webhook processing retried successfully');
+        return true;
+      } else {
+        toast.error(response.data.message || 'Failed to retry webhook');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to retry webhook:', error);
+      toast.error('Failed to retry webhook');
       return false;
     }
   }

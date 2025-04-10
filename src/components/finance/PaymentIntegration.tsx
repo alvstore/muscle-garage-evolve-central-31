@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,8 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
   const [sendSms, setSendSms] = useState(true);
   const [sendWhatsapp, setSendWhatsapp] = useState(true);
   const [activeTab, setActiveTab] = useState("link");
+  const [sendEmail, setSendEmail] = useState(false);
+  const [webhookEvents, setWebhookEvents] = useState(true);
 
   const generatePaymentLink = () => {
     setGeneratingLink(true);
@@ -50,22 +52,31 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
       setShowPaymentModal(false);
       
       // Show success toast with notification details
-      const notificationSent = (sendSms || sendWhatsapp);
+      const notificationSent = (sendSms || sendWhatsapp || sendEmail);
       const notificationMethods = [];
       if (sendSms) notificationMethods.push("SMS");
       if (sendWhatsapp) notificationMethods.push("WhatsApp");
+      if (sendEmail) notificationMethods.push("Email");
       
       toast.success(
         notificationSent
           ? `Payment successful. Receipt sent via ${notificationMethods.join(" and ")}`
           : "Payment successful"
       );
+      
+      if (webhookEvents) {
+        // Simulate webhook events
+        toast.info("Webhook events will be processed automatically", {
+          description: "Payment captured webhook will update the invoice status",
+          duration: 5000
+        });
+      }
     }, 2000);
   };
 
   const handleSendLink = () => {
     // In a real app, this would send SMS/WhatsApp with the payment link
-    if (!sendSms && !sendWhatsapp) {
+    if (!sendSms && !sendWhatsapp && !sendEmail) {
       toast.error("Please select at least one notification method");
       return;
     }
@@ -73,6 +84,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
     const notificationMethods = [];
     if (sendSms) notificationMethods.push("SMS");
     if (sendWhatsapp) notificationMethods.push("WhatsApp");
+    if (sendEmail) notificationMethods.push("Email");
     
     toast.success(`Payment link sent via ${notificationMethods.join(" and ")}`);
   };
@@ -91,6 +103,9 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Payment for Invoice #{invoice.id}</DialogTitle>
+            <DialogDescription>
+              Use Razorpay to process payment for this invoice
+            </DialogDescription>
           </DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -123,8 +138,22 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                 <div className="space-y-2 rounded-md bg-muted p-3">
                   <h4 className="font-medium">Invoice Summary</h4>
                   <p>Amount: ₹{invoice.amount.toFixed(2)}</p>
-                  <p>Member: {invoice.memberId}</p>
+                  <p>Member: {invoice.memberName}</p>
                   <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="webhook-events" 
+                      checked={webhookEvents}
+                      onCheckedChange={(checked) => setWebhookEvents(checked === true)}
+                    />
+                    <Label htmlFor="webhook-events" className="text-sm">Process Razorpay webhooks for this payment</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, the system will automatically update the invoice status when payment webhooks are received
+                  </p>
                 </div>
                 
                 <Button
@@ -161,6 +190,15 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                       />
                       <Label htmlFor="send-whatsapp">Send via WhatsApp</Label>
                     </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="send-email" 
+                        checked={sendEmail}
+                        onCheckedChange={(checked) => setSendEmail(checked === true)}
+                      />
+                      <Label htmlFor="send-email">Send via Email</Label>
+                    </div>
                   </div>
                   
                   <div className="pt-2">
@@ -168,7 +206,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                       variant="secondary" 
                       className="w-full"
                       onClick={handleSendLink}
-                      disabled={!sendSms && !sendWhatsapp}
+                      disabled={!sendSms && !sendWhatsapp && !sendEmail}
                     >
                       Send Payment Link
                     </Button>

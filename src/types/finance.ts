@@ -20,6 +20,11 @@ export interface Invoice {
   notes?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  razorpayRefundId?: string;
+  webhookProcessed?: boolean;
+  webhookStatus?: "success" | "failed" | "pending";
+  lastWebhookEvent?: string;
+  lastWebhookTimestamp?: string;
 }
 
 export interface InvoiceItem {
