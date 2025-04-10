@@ -9,12 +9,14 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Login from "./pages/auth/Login";
 import NotFound from "./pages/NotFound";
 import MemberProfilePage from "./pages/members/MemberProfilePage";
+import MembersListPage from "./pages/members/MembersListPage";
 import FitnessPlanPage from "./pages/fitness/FitnessPlanPage";
 import MembershipPage from "./pages/membership/MembershipPage";
 import InvoicePage from "./pages/finance/InvoicePage";
 import TransactionPage from "./pages/finance/TransactionPage";
 import ClassPage from "./pages/classes/ClassPage";
 import TrainerPage from "./pages/trainers/TrainerPage";
+import AttendancePage from "./pages/attendance/AttendancePage";
 import { useEffect, useState } from "react";
 import { User } from "./types";
 
@@ -59,7 +61,11 @@ const App = () => {
               <Route path="dashboard" element={<Dashboard />} />
               
               {/* Member management */}
+              <Route path="members" element={<MembersListPage />} />
               <Route path="members/:id" element={<MemberProfilePage />} />
+              
+              {/* Attendance tracking */}
+              <Route path="attendance" element={<AttendancePage />} />
               
               {/* Trainer management */}
               <Route path="trainers" element={<TrainerPage />} />
