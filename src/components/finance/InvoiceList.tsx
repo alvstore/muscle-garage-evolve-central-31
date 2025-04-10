@@ -67,7 +67,13 @@ const mockInvoices: Invoice[] = [
   },
 ];
 
-const InvoiceList = () => {
+interface InvoiceListProps {
+  readonly?: boolean;
+  allowPayment?: boolean;
+  allowDownload?: boolean;
+}
+
+const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = true }: InvoiceListProps) => {
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -147,9 +153,11 @@ const InvoiceList = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Invoices</CardTitle>
-          <Button onClick={handleAddInvoice} className="flex items-center gap-1">
-            <PlusIcon className="h-4 w-4" /> Create Invoice
-          </Button>
+          {!readonly && (
+            <Button onClick={handleAddInvoice} className="flex items-center gap-1">
+              <PlusIcon className="h-4 w-4" /> Create Invoice
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -175,16 +183,23 @@ const InvoiceList = () => {
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
-                        <FileTextIcon className="h-4 w-4" />
-                      </Button>
-                      {invoice.status === "pending" && (
+                      {!readonly && (
+                        <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                          <FileTextIcon className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {!readonly && invoice.status === "pending" && (
                         <Button variant="ghost" size="sm" onClick={() => handleMarkAsPaid(invoice.id)}>
                           <CreditCardIcon className="h-4 w-4" />
                         </Button>
                       )}
-                      {(invoice.status === "pending" || invoice.status === "overdue") && (
+                      {allowPayment && (invoice.status === "pending" || invoice.status === "overdue") && (
                         <Button variant="ghost" size="sm" onClick={() => handleSendPaymentLink(invoice.id)}>
+                          <CreditCardIcon className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {allowDownload && (
+                        <Button variant="ghost" size="sm" onClick={() => toast.success("Invoice downloaded")}>
                           <DownloadIcon className="h-4 w-4" />
                         </Button>
                       )}
@@ -197,7 +212,7 @@ const InvoiceList = () => {
         </CardContent>
       </Card>
 
-      {isFormOpen && (
+      {isFormOpen && !readonly && (
         <InvoiceForm
           invoice={editingInvoice}
           onSave={handleSaveInvoice}

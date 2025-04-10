@@ -16,9 +16,10 @@ import DietPlanForm from "./DietPlanForm";
 interface FitnessPlanManagerProps {
   members: Member[];
   trainerId: string;
+  readOnly?: boolean;
 }
 
-const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => {
+const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPlanManagerProps) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [editingWorkoutPlan, setEditingWorkoutPlan] = useState(false);
   const [editingDietPlan, setEditingDietPlan] = useState(false);
@@ -130,7 +131,7 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
   const workoutPlan = workoutPlans[selectedMemberId];
   const dietPlan = dietPlans[selectedMemberId];
 
-  if (editingWorkoutPlan) {
+  if (editingWorkoutPlan && !readOnly) {
     return (
       <WorkoutPlanForm 
         member={selectedMember}
@@ -142,7 +143,7 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
     );
   }
 
-  if (editingDietPlan) {
+  if (editingDietPlan && !readOnly) {
     return (
       <DietPlanForm 
         member={selectedMember}
@@ -194,16 +195,18 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">{workoutPlan.workoutDays.length} Day Split</h3>
-                  <div className="space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setEditingWorkoutPlan(true)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit Plan
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setEditingWorkoutPlan(true)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Plan
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-4">
@@ -240,10 +243,12 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">No workout plan has been created yet</p>
-                <Button onClick={() => setEditingWorkoutPlan(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create Workout Plan
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => setEditingWorkoutPlan(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create Workout Plan
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>
@@ -253,16 +258,18 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">{dietPlan.mealPlans.length} Meal Plan</h3>
-                  <div className="space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setEditingDietPlan(true)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit Plan
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setEditingDietPlan(true)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Plan
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-4">
@@ -309,10 +316,12 @@ const FitnessPlanManager = ({ members, trainerId }: FitnessPlanManagerProps) => 
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">No diet plan has been created yet</p>
-                <Button onClick={() => setEditingDietPlan(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create Diet Plan
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => setEditingDietPlan(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create Diet Plan
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>

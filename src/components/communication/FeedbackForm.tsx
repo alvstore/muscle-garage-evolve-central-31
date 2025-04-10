@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,11 +25,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Feedback } from "@/types/notification";
+import { Feedback, FeedbackType } from "@/types/notification";
 import { useMutation } from "@tanstack/react-query";
 
 const formSchema = z.object({
-  type: z.enum(["class", "trainer", "fitness-plan", "general"]),
+  type: z.enum(["class", "trainer", "fitness-plan", "general", "diet-plan"]),
   relatedId: z.string().optional(),
   rating: z.string().min(1, "Please select a rating"),
   comments: z.string().min(10, "Please provide comments (min 10 characters)").max(500, "Comments must be less than 500 characters"),
@@ -38,6 +39,7 @@ const formSchema = z.object({
 
 interface FeedbackFormProps {
   onComplete: () => void;
+  allowedFeedbackTypes?: FeedbackType[];
 }
 
 // Mock data
@@ -59,7 +61,7 @@ const mockPlans = [
   { id: "plan3", name: "Endurance Training Plan" },
 ];
 
-const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
+const FeedbackForm = ({ onComplete, allowedFeedbackTypes }: FeedbackFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -124,6 +126,9 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
     submitMutation.mutate(values);
   };
 
+  // Filter feedback types based on allowedFeedbackTypes prop
+  const availableFeedbackTypes = allowedFeedbackTypes || ["general", "class", "trainer", "fitness-plan", "diet-plan"];
+
   return (
     <Card>
       <CardHeader>
@@ -166,10 +171,21 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="general">General Feedback</SelectItem>
-                      <SelectItem value="class">Class Feedback</SelectItem>
-                      <SelectItem value="trainer">Trainer Feedback</SelectItem>
-                      <SelectItem value="fitness-plan">Fitness Plan Feedback</SelectItem>
+                      {availableFeedbackTypes.includes("general") && (
+                        <SelectItem value="general">General Feedback</SelectItem>
+                      )}
+                      {availableFeedbackTypes.includes("class") && (
+                        <SelectItem value="class">Class Feedback</SelectItem>
+                      )}
+                      {availableFeedbackTypes.includes("trainer") && (
+                        <SelectItem value="trainer">Trainer Feedback</SelectItem>
+                      )}
+                      {availableFeedbackTypes.includes("fitness-plan") && (
+                        <SelectItem value="fitness-plan">Fitness Plan Feedback</SelectItem>
+                      )}
+                      {availableFeedbackTypes.includes("diet-plan") && (
+                        <SelectItem value="diet-plan">Diet Plan Feedback</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormDescription>
