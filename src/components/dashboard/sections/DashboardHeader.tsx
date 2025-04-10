@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Search, Bell, Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/use-auth';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeaderProps {
   toggleSidebar?: () => void;
@@ -25,14 +26,24 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode, sidebarOpen }: DashboardHeaderProps) => {
   const isMobile = useIsMobile();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-[#283046] dark:border-gray-700">
       <div className="flex items-center gap-4">
         {toggleSidebar && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-gray-600 dark:text-gray-300">
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen && isMobile ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         )}
         
@@ -41,12 +52,9 @@ const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode, sidebarOpen }
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               type="search" 
-              placeholder="Search (⌘K)" 
+              placeholder="Search..." 
               className="pl-10 h-9 bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus:bg-white w-full"
             />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
-              ⌘K
-            </div>
           </div>
         </div>
       </div>
@@ -91,7 +99,7 @@ const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode, sidebarOpen }
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Billing</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

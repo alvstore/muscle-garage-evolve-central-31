@@ -24,9 +24,6 @@ import {
   UserPlus,
   ShoppingBag,
   Gift,
-  Home,
-  ChevronRight,
-  ChevronDown,
   LogOut,
   Circle,
   BarChart3,
@@ -35,60 +32,35 @@ import {
   Eye,
   FileText,
   Store,
-  MessageCircle
+  MessageCircle,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@/types";
-import Logo from "@/components/Logo";
-import { usePermissions, Permission } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 import { Badge } from "@/components/ui/badge";
+import Logo from "@/components/Logo";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
   closeSidebar: () => void;
 }
 
-type NavCategory = {
-  name: string;
-  items: NavItem[];
-};
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  activeIcon?: React.ReactNode;
-  badge?: number | string;
-  children?: NavItem[];
-  permission: Permission;
-  isExpanded?: boolean;
-}
-
 export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
-  const { userRole, can } = usePermissions();
+  const { can } = usePermissions();
   
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleSection = (sectionName: string) => {
     if (expandedSections.includes(sectionName)) {
       setExpandedSections(expandedSections.filter(name => name !== sectionName));
     } else {
       setExpandedSections([...expandedSections, sectionName]);
-    }
-  };
-
-  const toggleItem = (itemName: string) => {
-    if (expandedItems.includes(itemName)) {
-      setExpandedItems(expandedItems.filter(name => name !== itemName));
-    } else {
-      setExpandedItems([...expandedItems, itemName]);
     }
   };
 
@@ -104,9 +76,10 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     }
   };
 
-  const navCategories: NavCategory[] = [
+  // Define the navigation structure
+  const navigation = [
     {
-      name: "",
+      name: "DASHBOARD",
       items: [
         { 
           href: "/dashboard", 
@@ -116,7 +89,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
         },
         { 
           href: "/dashboard/overview", 
-          label: "Overview", 
+          label: "Analytics", 
           icon: <Eye className="h-5 w-5" />, 
           permission: "access_dashboards" 
         },
@@ -127,59 +100,49 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       items: [
         { 
           href: "/members", 
-          label: "Members & Trainers", 
+          label: "Members", 
           icon: <Users className="h-5 w-5" />,
           badge: "328",
           permission: "manage_members",
           children: [
             { 
               href: "/members", 
-              label: "Members List", 
-              icon: <Users className="h-5 w-5" />, 
+              label: "All Members", 
               permission: "manage_members" 
             },
             { 
               href: "/members/new", 
               label: "Add Member", 
-              icon: <UserPlus className="h-5 w-5" />, 
               permission: "register_member" 
-            },
-            { 
-              href: "/trainers", 
-              label: "Trainers", 
-              icon: <Dumbbell className="h-5 w-5" />, 
-              permission: "view_all_trainers" 
             }
           ]
         },
         { 
-          href: "/classes", 
-          label: "Programs", 
+          href: "/trainers", 
+          label: "Trainers", 
           icon: <Dumbbell className="h-5 w-5" />, 
-          permission: "trainer_view_classes",
-          children: [
-            { 
-              href: "/classes", 
-              label: "Classes", 
-              icon: <ClipboardList className="h-5 w-5" />, 
-              permission: "trainer_view_classes",
-            },
-            { 
-              href: "/fitness-plans", 
-              label: "Fitness Plans", 
-              icon: <Activity className="h-5 w-5" />, 
-              permission: "trainer_edit_fitness",
-            },
-            { 
-              href: "/memberships", 
-              label: "Membership Plans", 
-              icon: <CreditCard className="h-5 w-5" />, 
-              permission: "member_view_plans" 
-            },
-          ]
+          permission: "view_all_trainers" 
         },
         { 
-          href: "/finance/invoices", 
+          href: "/classes", 
+          label: "Classes", 
+          icon: <ClipboardList className="h-5 w-5" />, 
+          permission: "trainer_view_classes",
+        },
+        { 
+          href: "/fitness-plans", 
+          label: "Fitness Plans", 
+          icon: <Activity className="h-5 w-5" />, 
+          permission: "trainer_edit_fitness",
+        },
+        { 
+          href: "/memberships", 
+          label: "Membership Plans", 
+          icon: <CreditCard className="h-5 w-5" />, 
+          permission: "member_view_plans" 
+        },
+        { 
+          href: "/finance", 
           label: "Finance", 
           icon: <DollarSign className="h-5 w-5" />, 
           permission: "view_invoices",
@@ -187,37 +150,37 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             { 
               href: "/finance/invoices", 
               label: "Invoices", 
-              icon: <Receipt className="h-5 w-5" />, 
               permission: "view_invoices" 
             },
             { 
               href: "/finance/transactions", 
               label: "Transactions", 
-              icon: <ArrowLeftRight className="h-5 w-5" />, 
               permission: "manage_payments" 
             },
           ]
         },
+      ]
+    },
+    {
+      name: "INVENTORY & STORE",
+      items: [
+        { 
+          href: "/inventory", 
+          label: "Inventory", 
+          icon: <Package className="h-5 w-5" />,
+          permission: "access_inventory",
+        },
         { 
           href: "/store", 
-          label: "E-commerce", 
-          icon: <ShoppingBag className="h-5 w-5" />,
+          label: "Store", 
+          icon: <Store className="h-5 w-5" />,
           permission: "access_store",
-          children: [
-            { 
-              href: "/store", 
-              label: "Store", 
-              icon: <Store className="h-5 w-5" />,
-              permission: "access_store",
-            },
-            { 
-              href: "/inventory", 
-              label: "Inventory", 
-              icon: <Package className="h-5 w-5" />,
-              permission: "access_inventory",
-            }
-          ]
-        },
+        }
+      ]
+    },
+    {
+      name: "MARKETING",
+      items: [
         { 
           href: "/crm/leads", 
           label: "CRM", 
@@ -227,79 +190,65 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             { 
               href: "/crm/leads", 
               label: "Leads", 
-              icon: <UserPlus className="h-5 w-5" />, 
               permission: "access_crm" 
             },
             { 
               href: "/crm/funnel", 
               label: "Sales Funnel", 
-              icon: <BarChart3 className="h-5 w-5" />, 
               permission: "access_crm" 
             },
             { 
               href: "/crm/follow-up", 
               label: "Follow-up", 
-              icon: <CalendarCheck className="h-5 w-5" />, 
               permission: "access_crm" 
             }
           ]
         },
         { 
-          href: "/communication/announcements", 
-          label: "Communication", 
-          icon: <MessageCircle className="h-5 w-5" />, 
-          permission: "access_communication",
-          children: [
-            { 
-              href: "/communication/announcements", 
-              label: "Announcements", 
-              icon: <Bell className="h-5 w-5" />, 
-              permission: "access_communication" 
-            },
-            { 
-              href: "/communication/feedback", 
-              label: "Feedback", 
-              icon: <MessageSquare className="h-5 w-5" />, 
-              permission: "access_communication" 
-            },
-            { 
-              href: "/communication/reminders", 
-              label: "Reminders", 
-              icon: <Bell className="h-5 w-5" />, 
-              permission: "access_communication" 
-            }
-          ]
+          href: "/marketing/promo", 
+          label: "Promotions", 
+          icon: <Gift className="h-5 w-5" />,
+          permission: "access_marketing",
+        },
+        { 
+          href: "/marketing/referral", 
+          label: "Referral Program", 
+          icon: <Gift className="h-5 w-5" />,
+          permission: "access_marketing",
         }
       ]
     },
     {
-      name: "TOOLS",
+      name: "COMMUNICATION",
+      items: [
+        { 
+          href: "/communication/announcements", 
+          label: "Announcements", 
+          icon: <Bell className="h-5 w-5" />, 
+          permission: "access_communication" 
+        },
+        { 
+          href: "/communication/feedback", 
+          label: "Feedback", 
+          icon: <MessageSquare className="h-5 w-5" />, 
+          permission: "access_communication" 
+        },
+        { 
+          href: "/communication/reminders", 
+          label: "Reminders", 
+          icon: <Bell className="h-5 w-5" />, 
+          permission: "access_communication" 
+        }
+      ]
+    },
+    {
+      name: "REPORTS & TOOLS",
       items: [
         { 
           href: "/attendance", 
           label: "Attendance", 
           icon: <CalendarDays className="h-5 w-5" />, 
           permission: "view_all_attendance" 
-        },
-        { 
-          href: "/marketing/promo", 
-          label: "Marketing", 
-          icon: <Gift className="h-5 w-5" />,
-          permission: "access_marketing",
-          children: [
-            { 
-              href: "/marketing/promo", 
-              label: "Promotions", 
-              icon: <Gift className="h-5 w-5" />,
-              permission: "access_marketing",
-            },
-            { 
-              href: "/marketing/referral", 
-              label: "Referral Program", 
-              icon: <Gift className="h-5 w-5" />,
-              permission: "access_marketing",
-            }
-          ]
         },
         { 
           href: "/reports", 
@@ -317,7 +266,8 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     }
   ];
   
-  const filteredCategories = navCategories.map(category => {
+  // Filter navigation items based on user permissions
+  const filteredNavigation = navigation.map(category => {
     const filteredItems = category.items.filter(item => {
       if (item.children && item.children.length > 0) {
         const accessibleChildren = item.children.filter(child => can(child.permission));
@@ -344,7 +294,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           </div>
           
           <div className="flex-1 overflow-y-auto py-2">
-            {filteredCategories.map((category, categoryIndex) => (
+            {filteredNavigation.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-4">
                 {category.name && (
                   <div className="px-4 py-2 text-xs font-semibold text-gray-400 tracking-wider">
@@ -369,7 +319,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                         <div className="mb-1">
                           <button
                             onClick={() => showChildren ? toggleSection(item.label) : navigate(item.href)}
-                            className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors ${isExpanded && 'bg-[#1e2740]'}`}
+                            className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors ${isExpanded ? 'bg-[#1e2740]' : ''}`}
                           >
                             <div className="flex items-center gap-2">
                               {item.icon}

@@ -94,13 +94,21 @@ const DashboardLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-[#161d31]">
       {/* Sidebar for desktop */}
-      <div className={`hidden md:block md:w-64 fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'md:left-0' : 'md:-left-64'}`}>
+      <div className={`fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'left-0' : '-left-64'} hidden md:block md:w-64`}>
         <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
       </div>
       
       {/* Mobile sidebar */}
       {isMobile && (
-        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+        <div className={`fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
+          <div 
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
+            onClick={closeSidebar}
+          />
+          <div className="absolute left-0 top-0 bottom-0 w-64">
+            <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+          </div>
+        </div>
       )}
       
       <div className={`flex flex-1 flex-col w-full transition-all duration-300 ${sidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
