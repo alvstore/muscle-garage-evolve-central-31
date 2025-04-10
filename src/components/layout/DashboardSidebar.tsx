@@ -34,11 +34,12 @@ import {
   Store,
   MessageCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions, Permission } from "@/hooks/use-permissions";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
@@ -85,13 +86,13 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/dashboard", 
           label: "Dashboard", 
           icon: <LayoutDashboard className="h-5 w-5" />, 
-          permission: "access_dashboards"
+          permission: "access_dashboards" as Permission
         },
         { 
           href: "/dashboard/overview", 
           label: "Analytics", 
           icon: <Eye className="h-5 w-5" />, 
-          permission: "access_dashboards" 
+          permission: "access_dashboards" as Permission
         },
       ]
     },
@@ -103,17 +104,17 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           label: "Members", 
           icon: <Users className="h-5 w-5" />,
           badge: "328",
-          permission: "manage_members",
+          permission: "manage_members" as Permission,
           children: [
             { 
               href: "/members", 
               label: "All Members", 
-              permission: "manage_members" 
+              permission: "manage_members" as Permission
             },
             { 
               href: "/members/new", 
               label: "Add Member", 
-              permission: "register_member" 
+              permission: "register_member" as Permission
             }
           ]
         },
@@ -121,41 +122,41 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/trainers", 
           label: "Trainers", 
           icon: <Dumbbell className="h-5 w-5" />, 
-          permission: "view_all_trainers" 
+          permission: "view_all_trainers" as Permission
         },
         { 
           href: "/classes", 
           label: "Classes", 
           icon: <ClipboardList className="h-5 w-5" />, 
-          permission: "trainer_view_classes",
+          permission: "trainer_view_classes" as Permission,
         },
         { 
           href: "/fitness-plans", 
           label: "Fitness Plans", 
           icon: <Activity className="h-5 w-5" />, 
-          permission: "trainer_edit_fitness",
+          permission: "trainer_edit_fitness" as Permission,
         },
         { 
           href: "/memberships", 
           label: "Membership Plans", 
           icon: <CreditCard className="h-5 w-5" />, 
-          permission: "member_view_plans" 
+          permission: "member_view_plans" as Permission
         },
         { 
           href: "/finance", 
           label: "Finance", 
           icon: <DollarSign className="h-5 w-5" />, 
-          permission: "view_invoices",
+          permission: "view_invoices" as Permission,
           children: [
             { 
               href: "/finance/invoices", 
               label: "Invoices", 
-              permission: "view_invoices" 
+              permission: "view_invoices" as Permission
             },
             { 
               href: "/finance/transactions", 
               label: "Transactions", 
-              permission: "manage_payments" 
+              permission: "manage_payments" as Permission
             },
           ]
         },
@@ -168,13 +169,13 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/inventory", 
           label: "Inventory", 
           icon: <Package className="h-5 w-5" />,
-          permission: "access_inventory",
+          permission: "access_inventory" as Permission,
         },
         { 
           href: "/store", 
           label: "Store", 
           icon: <Store className="h-5 w-5" />,
-          permission: "access_store",
+          permission: "access_store" as Permission,
         }
       ]
     },
@@ -185,22 +186,22 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/crm/leads", 
           label: "CRM", 
           icon: <UserPlus className="h-5 w-5" />, 
-          permission: "access_crm",
+          permission: "access_crm" as Permission,
           children: [
             { 
               href: "/crm/leads", 
               label: "Leads", 
-              permission: "access_crm" 
+              permission: "access_crm" as Permission
             },
             { 
               href: "/crm/funnel", 
               label: "Sales Funnel", 
-              permission: "access_crm" 
+              permission: "access_crm" as Permission
             },
             { 
               href: "/crm/follow-up", 
               label: "Follow-up", 
-              permission: "access_crm" 
+              permission: "access_crm" as Permission
             }
           ]
         },
@@ -208,13 +209,13 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/marketing/promo", 
           label: "Promotions", 
           icon: <Gift className="h-5 w-5" />,
-          permission: "access_marketing",
+          permission: "access_marketing" as Permission,
         },
         { 
           href: "/marketing/referral", 
           label: "Referral Program", 
           icon: <Gift className="h-5 w-5" />,
-          permission: "access_marketing",
+          permission: "access_marketing" as Permission,
         }
       ]
     },
@@ -225,19 +226,30 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/communication/announcements", 
           label: "Announcements", 
           icon: <Bell className="h-5 w-5" />, 
-          permission: "access_communication" 
+          permission: "access_communication" as Permission
         },
         { 
           href: "/communication/feedback", 
           label: "Feedback", 
           icon: <MessageSquare className="h-5 w-5" />, 
-          permission: "access_communication" 
+          permission: "access_communication" as Permission
         },
         { 
           href: "/communication/reminders", 
           label: "Reminders", 
           icon: <Bell className="h-5 w-5" />, 
-          permission: "access_communication" 
+          permission: "access_communication" as Permission
+        }
+      ]
+    },
+    {
+      name: "FRONT PAGES",
+      items: [
+        { 
+          href: "/frontpages", 
+          label: "Website", 
+          icon: <Globe className="h-5 w-5" />, 
+          permission: "full_system_access" as Permission
         }
       ]
     },
@@ -248,19 +260,19 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           href: "/attendance", 
           label: "Attendance", 
           icon: <CalendarDays className="h-5 w-5" />, 
-          permission: "view_all_attendance" 
+          permission: "view_all_attendance" as Permission
         },
         { 
           href: "/reports", 
           label: "Reports", 
           icon: <FileText className="h-5 w-5" />, 
-          permission: "access_analytics" 
+          permission: "access_analytics" as Permission
         },
         { 
           href: "/settings", 
           label: "Settings", 
           icon: <Settings className="h-5 w-5" />, 
-          permission: "access_own_resources" 
+          permission: "access_own_resources" as Permission
         }
       ]
     }

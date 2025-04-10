@@ -33,12 +33,12 @@ import MemberProfilePage from './pages/members/MemberProfilePage';
 import NewMemberPage from './pages/members/NewMemberPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import FrontPagesManager from './pages/frontpages/FrontPagesManager';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
 import PrivateRoute from './components/auth/PrivateRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
-import { UserRole } from './types';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -86,6 +86,13 @@ export default function App() {
                   <Route path="/members/:id" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <MemberProfilePage />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Front Pages Management Route */}
+                  <Route path="/frontpages" element={
+                    <PrivateRoute allowedRoles={['admin']}>
+                      <FrontPagesManager />
                     </PrivateRoute>
                   } />
                   
