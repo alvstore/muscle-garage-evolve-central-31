@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Feedback } from "@/types/notification";
+import { useMutation } from "@tanstack/react-query";
 
 const formSchema = z.object({
   type: z.enum(["class", "trainer", "fitness-plan", "general"]),
@@ -74,6 +75,35 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
 
   const watchType = form.watch("type");
 
+  const submitMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      // Simulate API call
+      console.log("Submitting feedback:", values);
+      
+      // In a real app, this would be an API call to save the feedback
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      return { ...values, id: `feedback${Date.now()}`, memberId: "current-user", createdAt: new Date().toISOString() };
+    },
+    onSuccess: () => {
+      toast.success("Feedback submitted successfully");
+      form.reset({
+        type: "general",
+        rating: "",
+        comments: "",
+        anonymous: false,
+        title: ""
+      });
+      onComplete();
+    },
+    onError: () => {
+      toast.error("There was a problem submitting your feedback");
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    }
+  });
+
   const getRelatedOptions = () => {
     switch (watchType) {
       case "class":
@@ -91,31 +121,7 @@ const FeedbackForm = ({ onComplete }: FeedbackFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    
-    try {
-      // Simulate API call
-      console.log("Submitting feedback:", values);
-      
-      // In a real app, this would be an API call to save the feedback
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success("Feedback submitted successfully");
-      
-      form.reset({
-        type: "general",
-        rating: "",
-        comments: "",
-        anonymous: false,
-        title: ""
-      });
-      
-      onComplete();
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast.error("There was a problem submitting your feedback");
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate(values);
   };
 
   return (

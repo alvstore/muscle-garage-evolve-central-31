@@ -152,8 +152,10 @@ const FeedbackPage = () => {
 
         {isModalOpen && (
           <FeedbackForm
-            onComplete={() => setIsModalOpen(false)}
-            onSubmit={handleSubmitFeedback}
+            onComplete={() => {
+              setIsModalOpen(false);
+              handleSubmitFeedback;
+            }}
           />
         )}
       </div>
