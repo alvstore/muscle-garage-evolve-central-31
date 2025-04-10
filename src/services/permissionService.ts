@@ -1,4 +1,5 @@
-import { UserRole, Permission } from '@/types';
+import { UserRole } from '@/types';
+import { Permission } from '@/hooks/use-permissions';
 
 export const permissionDescriptions: Record<Permission, string> = {
   'full_system_access': 'Complete access to all system features',
@@ -67,7 +68,6 @@ export const permissionDescriptions: Record<Permission, string> = {
   'manage_content': 'Manage website content and front pages'
 };
 
-// Existing function definitions here (if any)
 export const hasPermission = (
   userRole: UserRole | undefined, 
   permission: Permission, 
@@ -88,12 +88,15 @@ export const hasPermission = (
     case 'access_own_resources':
       return true; // Example: all logged-in users can access own resources
     case 'switch_branches':
-      return userRole === 'staff' || userRole === 'admin';
+      return userRole === 'staff'; // Fix comparison - don't compare 'staff' with 'admin'
+    case 'manage_content':
+      return userRole === 'admin' || userRole === 'staff'; // Add permission for website content management
     // Add more cases as needed
     default:
       return false; // Default: no permission
   }
 };
+
 export const hasRouteAccess = (userRole: UserRole | undefined, route: string) => {
   if (!userRole) return false;
 
