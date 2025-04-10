@@ -4,6 +4,7 @@ import { Users, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
 import Announcements from "@/components/dashboard/Announcements";
+import TaskManagement from "@/components/dashboard/TaskManagement";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -62,50 +63,12 @@ const TrainerDashboard = () => {
     }
   ];
 
-  // Tasks
-  const tasks = [
-    {
-      id: "task1",
-      title: "Update Jordan's workout plan",
-      dueDate: "Today",
-      priority: "High",
-      completed: false
-    },
-    {
-      id: "task2",
-      title: "Review Sarah's progress photos",
-      dueDate: "Today",
-      priority: "Medium",
-      completed: true
-    },
-    {
-      id: "task3",
-      title: "Create meal plan for Michael",
-      dueDate: "Tomorrow",
-      priority: "High",
-      completed: false
-    },
-    {
-      id: "task4",
-      title: "Plan next week's HIIT class",
-      dueDate: "Friday",
-      priority: "Medium",
-      completed: false
-    }
-  ];
-
   const getInitials = (name: string) => {
     return name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase();
-  };
-
-  const getPriorityColor = (priority: string) => {
-    return priority === "High" 
-      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" 
-      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
   };
 
   return (
@@ -137,7 +100,7 @@ const TrainerDashboard = () => {
         <StatCard
           icon={CheckCircle2}
           title="Pending Tasks"
-          value={tasks.filter(t => !t.completed).length}
+          value={3}
           description="Tasks requiring attention"
           iconColor="text-amber-600"
         />
@@ -193,36 +156,7 @@ const TrainerDashboard = () => {
             <CardDescription>Your to-do list</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {tasks.map(task => (
-                <div 
-                  key={task.id} 
-                  className={`p-2 border rounded-md flex items-start justify-between ${task.completed ? 'opacity-60' : ''}`}
-                >
-                  <div className="flex items-start space-x-2">
-                    <input 
-                      type="checkbox" 
-                      checked={task.completed} 
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      readOnly
-                    />
-                    <div>
-                      <p className={`text-sm ${task.completed ? 'line-through' : ''}`}>{task.title}</p>
-                      <div className="flex items-center mt-1 space-x-2">
-                        <span className="text-xs text-muted-foreground">Due: {task.dueDate}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${getPriorityColor(task.priority)}`}>
-                          {task.priority}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              <Button variant="outline" size="sm" className="w-full">
-                Add New Task
-              </Button>
-            </div>
+            <TaskManagement />
           </CardContent>
         </Card>
       </div>

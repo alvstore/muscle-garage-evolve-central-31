@@ -1,137 +1,111 @@
 
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  TooltipProps
-} from "recharts";
-import { format, parseISO } from "date-fns";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { ProgressMetrics } from "@/types/class";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ProgressMetrics } from '@/types/class';
+import { format, parseISO } from 'date-fns';
 
-interface MemberProgressChartProps {
-  data: {
-    date: string;
-    metrics: ProgressMetrics;
-  }[];
-  memberId: string;
-  memberName: string;
+interface ProgressData {
+  date: string;
+  metrics: ProgressMetrics;
 }
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-background p-3 border rounded-md shadow-md">
-        <p className="font-medium mb-1">{format(parseISO(label), "MMM dd, yyyy")}</p>
-        {payload.map((entry, index) => (
-          <p key={`item-${index}`} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: {entry.value} {entry.name === "Weight" ? "kg" : entry.name === "Body Fat" ? "%" : ""}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
+interface MemberProgressChartProps {
+  data: ProgressData[];
+  memberId: string;
+  memberName: string;
+  metricType?: keyof ProgressMetrics;
+}
 
-const MemberProgressChart = ({ data, memberId, memberName }: MemberProgressChartProps) => {
-  const [metricType, setMetricType] = useState<string>("weight");
-  
+const MemberProgressChart = ({ 
+  data, 
+  memberId, 
+  memberName,
+  metricType = 'weight'
+}: MemberProgressChartProps) => {
   // Transform data for the selected metric
   const chartData = data.map(item => ({
     date: item.date,
-    weight: item.metrics.weight,
-    bodyFat: item.metrics.bodyFatPercentage,
-    bmi: item.metrics.bmi,
-    muscleGain: item.metrics.muscleGain
+    value: item.metrics[metricType]
   }));
-
-  const getMetricLabel = (type: string) => {
-    switch (type) {
-      case "weight": return "Weight (kg)";
-      case "bodyFat": return "Body Fat (%)";
-      case "bmi": return "BMI";
-      case "muscleGain": return "Muscle Gain (kg)";
-      default: return "";
+  
+  // Define colors based on metric type
+  const getMetricColor = (type: keyof ProgressMetrics) => {
+    switch(type) {
+      case 'weight': return '#4f46e5'; // indigo
+      case 'bodyFatPercentage': return '#ef4444'; // red
+      case 'bmi': return '#f59e0b'; // amber
+      case 'muscleGain': return '#10b981'; // emerald
+      default: return '#6366f1';
     }
   };
 
-  const getMetricColor = (type: string) => {
-    switch (type) {
-      case "weight": return "#3b82f6"; // blue
-      case "bodyFat": return "#ef4444"; // red
-      case "bmi": return "#8b5cf6"; // purple
-      case "muscleGain": return "#10b981"; // green
-      default: return "#3b82f6";
+  // Define labels based on metric type
+  const getMetricLabel = (type: keyof ProgressMetrics) => {
+    switch(type) {
+      case 'weight': return 'Weight (kg)';
+      case 'bodyFatPercentage': return 'Body Fat (%)';
+      case 'bmi': return 'BMI';
+      case 'muscleGain': return 'Muscle Gain (kg)';
+      default: return 'Value';
     }
   };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <CardTitle>{memberName}'s Progress</CardTitle>
-          <CardDescription>Track progress over time</CardDescription>
+  
+  const lineColor = getMetricColor(metricType);
+  
+  // Format dates for the chart tooltip
+  const formatDate = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border shadow-sm rounded">
+          <p className="font-medium">{formatDate(label)}</p>
+          <p className="text-sm">
+            {getMetricLabel(metricType)}: <span className="font-medium">{payload[0].value.toFixed(1)}</span>
+          </p>
         </div>
-        <Select
-          value={metricType}
-          onValueChange={(value) => setMetricType(value)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select metric" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="weight">Weight</SelectItem>
-            <SelectItem value="bodyFat">Body Fat %</SelectItem>
-            <SelectItem value="bmi">BMI</SelectItem>
-            <SelectItem value="muscleGain">Muscle Gain</SelectItem>
-          </SelectContent>
-        </Select>
-      </CardHeader>
-      <CardContent>
-        <div className="h-80">
+      );
+    }
+    return null;
+  };
+  
+  return (
+    <Card className="h-full">
+      <CardContent className="p-4">
+        <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={chartData}
-              margin={{
-                top: 10,
-                right: 10,
-                left: 10,
-                bottom: 20,
-              }}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => format(parseISO(date), "MMM dd")}
-                tick={{ fontSize: 12 }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(date) => format(parseISO(date), 'MMM d')}
+                stroke="#6B7280"
+                fontSize={12}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
+                stroke="#6B7280"
+                fontSize={12}
                 domain={['auto', 'auto']}
-                label={{ 
-                  value: getMetricLabel(metricType), 
-                  angle: -90, 
-                  position: 'insideLeft',
-                  style: { textAnchor: 'middle', fontSize: 12 }
-                }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
               <Line
                 type="monotone"
-                dataKey={metricType}
-                stroke={getMetricColor(metricType)}
+                dataKey="value"
+                stroke={lineColor}
                 strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                dot={{ r: 4, strokeWidth: 2 }}
+                activeDot={{ r: 6, strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>

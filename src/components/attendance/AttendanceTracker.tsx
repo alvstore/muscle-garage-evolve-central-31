@@ -1,258 +1,397 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { useAuth } from "@/hooks/use-auth";
-import { usePermissions } from "@/hooks/use-permissions";
-
-interface AttendanceRecord {
-  id: string;
-  memberId: string;
-  memberName: string;
-  checkInTime: string;
-  checkOutTime?: string;
-  method: "api" | "rfid" | "fingerprint" | "manual";
-}
+import { CheckCircle, Clock, CalendarClock, UserCheck, XCircle } from "lucide-react";
+import { User } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
+import { toast } from 'sonner';
 
 interface AttendanceTrackerProps {
-  date?: Date;
+  date: Date;
 }
 
-const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("today");
+interface AttendanceEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  checkInTime: string;
+  checkOutTime?: string;
+  status: 'checked-in' | 'checked-out';
+}
+
+const AttendanceTracker = ({ date }: AttendanceTrackerProps) => {
   const { user } = useAuth();
-  const { can, userRole } = usePermissions();
-
-  // Check if the user can manage attendance records
-  const canManageAttendance = can("log_attendance");
+  const { userRole, can } = usePermissions();
+  const [attendanceEntries, setAttendanceEntries] = useState<AttendanceEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [myAttendance, setMyAttendance] = useState<AttendanceEntry | null>(null);
+  
   const isMember = userRole === "member";
-
+  const canManageAttendance = can('log_attendance');
+  
+  // Mock data for demonstration
   useEffect(() => {
-    // Simulate fetching attendance records from API
-    setLoading(true);
-    
-    setTimeout(() => {
-      // Mock data
-      const mockRecords: AttendanceRecord[] = [
-        {
-          id: "att-1",
-          memberId: "member1", // This matches the member user ID in mock data
-          memberName: "Member User",
-          checkInTime: new Date(date.setHours(9, 15)).toISOString(),
-          checkOutTime: new Date(date.setHours(11, 30)).toISOString(),
-          method: "rfid"
-        },
-        {
-          id: "att-2",
-          memberId: "staff1",
-          memberName: "Staff User",
-          checkInTime: new Date(date.setHours(10, 0)).toISOString(),
-          method: "fingerprint"
-        },
-        {
-          id: "att-3",
-          memberId: "trainer1",
-          memberName: "Trainer User",
-          checkInTime: new Date(date.setHours(8, 45)).toISOString(),
-          checkOutTime: new Date(date.setHours(10, 15)).toISOString(),
-          method: "api"
-        }
-      ];
+    const fetchAttendance = async () => {
+      setLoading(true);
       
-      // If the user is a member, only show their records
-      const filteredRecords = isMember && user
-        ? mockRecords.filter(record => record.memberId === user.id)
-        : mockRecords;
+      // Simulate API call
+      setTimeout(() => {
+        // Generate mock attendance data
+        const mockData: AttendanceEntry[] = [
+          {
+            id: '1',
+            userId: 'user1',
+            userName: 'John Doe',
+            userAvatar: '/placeholder.svg',
+            checkInTime: '2025-04-10T08:15:00',
+            checkOutTime: '2025-04-10T10:45:00',
+            status: 'checked-out'
+          },
+          {
+            id: '2',
+            userId: 'user2',
+            userName: 'Sarah Johnson',
+            checkInTime: '2025-04-10T09:30:00',
+            status: 'checked-in'
+          },
+          {
+            id: '3',
+            userId: 'user3',
+            userName: 'Michael Brown',
+            userAvatar: '/placeholder.svg',
+            checkInTime: '2025-04-10T06:45:00',
+            checkOutTime: '2025-04-10T08:30:00',
+            status: 'checked-out'
+          }
+        ];
         
-      setRecords(filteredRecords);
-      setLoading(false);
-    }, 1000);
-  }, [date, user, isMember]);
-
-  // Function to simulate receiving webhook from Hikvision
-  const simulateHikvisionWebhook = () => {
-    if (!user) return;
-    
-    const mockMemberId = user.id || "member-4";
-    const mockMemberName = user.name || "Sarah Wilson";
-    
-    // In a real app, this would be a webhook handler
-    const newRecord: AttendanceRecord = {
-      id: `att-${Date.now()}`,
-      memberId: mockMemberId,
-      memberName: mockMemberName,
-      checkInTime: new Date().toISOString(),
-      method: "api"
-    };
-    
-    setRecords(prev => [...prev, newRecord]);
-    toast.success(`${mockMemberName} checked in via Hikvision API`);
-  };
-
-  // Function to manually record attendance
-  const recordManualAttendance = () => {
-    if (!user) return;
-    
-    const mockMemberId = user.id || "member-5";
-    const mockMemberName = user.name || "Alex Brown";
-    
-    const newRecord: AttendanceRecord = {
-      id: `att-${Date.now()}`,
-      memberId: mockMemberId,
-      memberName: mockMemberName,
-      checkInTime: new Date().toISOString(),
-      method: "manual"
-    };
-    
-    setRecords(prev => [...prev, newRecord]);
-    toast.success(`Manually recorded check-in for ${mockMemberName}`);
-  };
-
-  // Add a function to handle check-out
-  const handleCheckOut = (recordId: string) => {
-    setRecords(prev => 
-      prev.map(record => 
-        record.id === recordId 
-          ? { ...record, checkOutTime: new Date().toISOString() } 
-          : record
-      )
-    );
-    toast.success("Check-out recorded successfully");
-  };
-
-  // Format the date display for current day and date header
-  const dateHeader = format(date, "EEEE, MMMM d, yyyy");
-  const currentDay = format(date, "d");
-
-  return (
-    <Card className="h-full dark:bg-[#1e2740] bg-white">
-      <CardHeader className="pb-3">
-        <CardTitle>Attendance Tracker</CardTitle>
-        <CardDescription>
-          {isMember 
-            ? "Monitor your check-ins and check-outs" 
-            : "Monitor member check-ins and check-outs"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h3 className="text-lg font-medium">
-              {dateHeader}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Total check-ins today: {records.length}
-            </p>
-          </div>
-          <div className="space-x-2">
-            {canManageAttendance && (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={simulateHikvisionWebhook}
-                >
-                  Simulate Hikvision API
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={recordManualAttendance}
-                >
-                  Manual Check-in
-                </Button>
-              </>
-            )}
-            {isMember && !canManageAttendance && (
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={recordManualAttendance}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                Self Check-in
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        <Tabs defaultValue="today" value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="mb-4 w-full grid grid-cols-2 h-auto">
-            <TabsTrigger value="today" className="px-8 py-2">Today</TabsTrigger>
-            <TabsTrigger value="history" className="px-8 py-2">History</TabsTrigger>
-            {canManageAttendance && (
-              <TabsTrigger value="denied" className="px-8 py-2">Access Denied</TabsTrigger>
-            )}
-          </TabsList>
+        // If user is logged in, add their mock attendance
+        if (user) {
+          const userAttendance = {
+            id: '4',
+            userId: user.id,
+            userName: user.name,
+            userAvatar: user.avatar,
+            checkInTime: '2025-04-10T07:30:00',
+            status: 'checked-in' as const
+          };
           
-          <TabsContent value="today">
-            {loading ? (
-              <div className="flex justify-center py-10">
-                <div className="h-8 w-8 rounded-full border-4 border-t-accent animate-spin"></div>
+          setMyAttendance(userAttendance);
+          
+          if (!isMember) {
+            mockData.push(userAttendance);
+          }
+        }
+        
+        setAttendanceEntries(mockData);
+        setLoading(false);
+      }, 1000);
+    };
+    
+    fetchAttendance();
+  }, [user, date, isMember]);
+  
+  const handleCheckIn = () => {
+    // In a real application, this would make an API call
+    const checkInTime = new Date().toISOString();
+    
+    if (!user) return;
+    
+    const newAttendance: AttendanceEntry = {
+      id: Date.now().toString(),
+      userId: user.id,
+      userName: user.name,
+      userAvatar: user.avatar,
+      checkInTime,
+      status: 'checked-in'
+    };
+    
+    setMyAttendance(newAttendance);
+    
+    if (!isMember) {
+      setAttendanceEntries(prev => [...prev, newAttendance]);
+    }
+    
+    toast.success("Successfully checked in!");
+  };
+  
+  const handleCheckOut = () => {
+    // In a real application, this would make an API call
+    const checkOutTime = new Date().toISOString();
+    
+    if (!myAttendance) return;
+    
+    const updatedAttendance = {
+      ...myAttendance,
+      checkOutTime,
+      status: 'checked-out' as const
+    };
+    
+    setMyAttendance(updatedAttendance);
+    
+    if (!isMember) {
+      setAttendanceEntries(prev => 
+        prev.map(entry => 
+          entry.id === myAttendance.id ? updatedAttendance : entry
+        )
+      );
+    }
+    
+    toast.success("Successfully checked out!");
+  };
+  
+  // Format time from ISO string
+  const formatTime = (isoTime: string) => {
+    return format(new Date(isoTime), 'h:mm a');
+  };
+  
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+  
+  const renderMemberView = () => {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">My Attendance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <div className="bg-muted p-3 rounded-full">
+                  <CalendarClock className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</h3>
+                  <p className="text-sm text-muted-foreground">Today's attendance</p>
+                </div>
               </div>
-            ) : records.length > 0 ? (
-              <div className="space-y-3">
-                {records.map(record => (
-                  <div key={record.id} className="flex items-center justify-between border-b pb-3 dark:border-gray-700">
-                    <div>
-                      <p className="font-medium">{record.memberName}</p>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
-                        <span>Check-in: {format(new Date(record.checkInTime), "h:mm a")}</span>
-                        {record.checkOutTime && (
-                          <span>Check-out: {format(new Date(record.checkOutTime), "h:mm a")}</span>
-                        )}
-                      </div>
+              
+              <Badge 
+                className={
+                  myAttendance?.status === 'checked-in' 
+                    ? "bg-green-500" 
+                    : myAttendance?.status === 'checked-out'
+                    ? "bg-blue-500"
+                    : "bg-gray-400"
+                }
+              >
+                {myAttendance?.status === 'checked-in' 
+                  ? "Checked In" 
+                  : myAttendance?.status === 'checked-out'
+                  ? "Checked Out"
+                  : "Not Checked In"}
+              </Badge>
+            </div>
+            
+            {myAttendance ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Check-in time:</span>
+                  </div>
+                  <span className="font-medium">{formatTime(myAttendance.checkInTime)}</span>
+                </div>
+                
+                {myAttendance.checkOutTime && (
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Check-out time:</span>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-                      <Badge variant="outline" className="whitespace-nowrap">
-                        {record.method === "rfid" && "RFID Card"}
-                        {record.method === "fingerprint" && "Fingerprint"}
-                        {record.method === "api" && "Hikvision API"}
-                        {record.method === "manual" && "Manual Entry"}
+                    <span className="font-medium">{formatTime(myAttendance.checkOutTime)}</span>
+                  </div>
+                )}
+                
+                <div className="pt-2">
+                  {myAttendance.status === 'checked-in' ? (
+                    <Button onClick={handleCheckOut} className="w-full">
+                      <Clock className="mr-2 h-4 w-4" />
+                      Check Out
+                    </Button>
+                  ) : (
+                    <div className="text-center py-2 px-4 bg-muted rounded-md">
+                      <p className="text-sm text-muted-foreground">You've completed your session for today</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 pt-4">
+                <div className="text-center py-8">
+                  <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Not checked in yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Record your attendance for today
+                  </p>
+                  <Button onClick={handleCheckIn}>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Check In Now
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+  
+  const renderStaffView = () => {
+    return (
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="all">All Attendance</TabsTrigger>
+          <TabsTrigger value="active">Currently Active</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Attendance for {format(date, 'EEEE, MMMM d, yyyy')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-16 bg-muted animate-pulse rounded-md" />
+                  ))}
+                </div>
+              ) : attendanceEntries.length > 0 ? (
+                <div className="space-y-4">
+                  {attendanceEntries.map(entry => (
+                    <div key={entry.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                      <div className="flex items-center space-x-4">
+                        <Avatar>
+                          <AvatarImage src={entry.userAvatar} alt={entry.userName} />
+                          <AvatarFallback>{getInitials(entry.userName)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium">{entry.userName}</h3>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            <span>In: {formatTime(entry.checkInTime)}</span>
+                            {entry.checkOutTime && (
+                              <>
+                                <span className="mx-1">•</span>
+                                <span>Out: {formatTime(entry.checkOutTime)}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge 
+                        className={
+                          entry.status === 'checked-in' 
+                            ? "bg-green-500" 
+                            : "bg-blue-500"
+                        }
+                      >
+                        {entry.status === 'checked-in' ? "Active" : "Completed"}
                       </Badge>
-                      {!record.checkOutTime && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleCheckOut(record.id)}
-                        >
-                          Record Check-out
+                    </div>
+                  ))}
+                  
+                  {canManageAttendance && (
+                    <Button variant="outline" className="w-full mt-4">
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Add Manual Entry
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No attendance records</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    There are no attendance records for this date
+                  </p>
+                  {canManageAttendance && (
+                    <Button>
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Add Manual Entry
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="active">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Currently Active Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="h-16 bg-muted animate-pulse rounded-md" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {attendanceEntries
+                    .filter(entry => entry.status === 'checked-in')
+                    .map(entry => (
+                    <div key={entry.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                      <div className="flex items-center space-x-4">
+                        <Avatar>
+                          <AvatarImage src={entry.userAvatar} alt={entry.userName} />
+                          <AvatarFallback>{getInitials(entry.userName)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium">{entry.userName}</h3>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            <span>Checked in at {formatTime(entry.checkInTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {canManageAttendance && (
+                        <Button size="sm" variant="outline">
+                          <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
+                          Check Out
                         </Button>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                No attendance records for today
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="history">
-            <div className="text-center py-10 text-muted-foreground">
-              Historical attendance records will be displayed here
-            </div>
-          </TabsContent>
-          
-          {canManageAttendance && (
-            <TabsContent value="denied">
-              <div className="text-center py-10 text-muted-foreground">
-                Access denied events will be displayed here
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-      </CardContent>
-    </Card>
-  );
+                  ))}
+                  
+                  {attendanceEntries.filter(entry => entry.status === 'checked-in').length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No members are currently active</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    );
+  };
+  
+  return isMember ? renderMemberView() : renderStaffView();
 };
 
 export default AttendanceTracker;

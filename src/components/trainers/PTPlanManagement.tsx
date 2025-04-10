@@ -1,303 +1,395 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Edit, Trash2, TrendingUp } from "lucide-react";
-import { PTPlan } from "@/types/measurements";
-import { Member, Trainer } from "@/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Member } from "@/types";
 import { toast } from "sonner";
-import { format, parseISO, isAfter } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { Users, Dumbbell, Search, Check, UserPlus } from "lucide-react";
 
 interface PTPlanManagementProps {
   trainerId: string;
   members: Member[];
 }
 
-const PTPlanManagement: React.FC<PTPlanManagementProps> = ({ trainerId, members }) => {
-  const navigate = useNavigate();
-  const [isAddingPlan, setIsAddingPlan] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PTPlan | null>(null);
-  const [formData, setFormData] = useState({
-    memberId: "",
-    startDate: format(new Date(), "yyyy-MM-dd"),
-    endDate: format(new Date(new Date().setMonth(new Date().getMonth() + 3)), "yyyy-MM-dd"),
-  });
+const PTPlanManagement = ({ trainerId, members }: PTPlanManagementProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   
-  // Mock PT plans data
-  const [ptPlans, setPtPlans] = useState<PTPlan[]>([
+  // Mock data for PT plans
+  const [ptSubscribers, setPtSubscribers] = useState<{
+    memberId: string;
+    startDate: string;
+    endDate: string;
+    sessions: number;
+    sessionsUsed: number;
+    planType: string;
+    status: "active" | "expired" | "pending";
+  }[]>([
     {
-      id: "ptplan-1",
       memberId: "member-1",
-      trainerId,
       startDate: "2025-03-01",
-      endDate: "2025-06-01",
-      isActive: true
+      endDate: "2025-05-31",
+      sessions: 24,
+      sessionsUsed: 10,
+      planType: "Premium PT",
+      status: "active"
     },
     {
-      id: "ptplan-2",
       memberId: "member-2",
-      trainerId,
-      startDate: "2025-02-15",
-      endDate: "2025-05-15",
-      isActive: true
-    },
-    {
-      id: "ptplan-3",
-      memberId: "member-3",
-      trainerId,
       startDate: "2025-01-15",
-      endDate: "2025-01-30",
-      isActive: false
-    },
+      endDate: "2025-04-15",
+      sessions: 36,
+      sessionsUsed: 28,
+      planType: "Standard PT",
+      status: "active"
+    }
   ]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  
+  // Filter members based on search query
+  const filteredMembers = members.filter(member => 
+    member.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    member.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Members assigned to the trainer
+  const assignedMembers = members.filter(m => m.trainerId === trainerId);
+  
+  // PT subscribed members
+  const subscribedMembers = members.filter(m => 
+    ptSubscribers.some(sub => sub.memberId === m.id)
+  );
+  
+  // Get PT plan for a member
+  const getMemberPtPlan = (memberId: string) => {
+    return ptSubscribers.find(sub => sub.memberId === memberId);
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate dates
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
-    
-    if (isAfter(startDate, endDate)) {
-      toast.error("End date must be after start date");
-      return;
-    }
-    
-    if (selectedPlan) {
-      // Update existing plan
-      const updatedPlans = ptPlans.map(plan => 
-        plan.id === selectedPlan.id 
-          ? { 
-              ...plan, 
-              memberId: formData.memberId,
-              startDate: formData.startDate,
-              endDate: formData.endDate,
-              isActive: isAfter(new Date(formData.endDate), new Date())
-            }
-          : plan
-      );
-      
-      setPtPlans(updatedPlans);
-      toast.success("PT plan updated successfully");
-    } else {
-      // Add new plan
-      const newPlan: PTPlan = {
-        id: `ptplan-${Date.now()}`,
-        memberId: formData.memberId,
-        trainerId,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        isActive: isAfter(new Date(formData.endDate), new Date())
-      };
-      
-      setPtPlans([...ptPlans, newPlan]);
-      toast.success("PT plan added successfully");
-    }
-    
-    resetForm();
+  
+  // Toggle member selection
+  const toggleMemberSelection = (memberId: string) => {
+    setSelectedMemberIds(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId) 
+        : [...prev, memberId]
+    );
   };
-
-  const handleEdit = (plan: PTPlan) => {
-    setSelectedPlan(plan);
-    setFormData({
-      memberId: plan.memberId,
-      startDate: plan.startDate,
-      endDate: plan.endDate,
-    });
-    setIsAddingPlan(true);
+  
+  // Assign PT plan to selected members
+  const assignPtPlan = () => {
+    // In a real app, this would make API calls
+    toast.success(`Assigned PT plan to ${selectedMemberIds.length} members`);
+    setSelectedMemberIds([]);
   };
-
-  const handleDelete = (id: string) => {
-    setPtPlans(ptPlans.filter(plan => plan.id !== id));
-    toast.success("PT plan deleted successfully");
+  
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
-
-  const resetForm = () => {
-    setFormData({
-      memberId: "",
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      endDate: format(new Date(new Date().setMonth(new Date().getMonth() + 3)), "yyyy-MM-dd"),
-    });
-    setSelectedPlan(null);
-    setIsAddingPlan(false);
+  
+  // Calculate progress percentage
+  const calculateProgress = (used: number, total: number) => {
+    return Math.round((used / total) * 100);
   };
-
-  const getMemberName = (memberId: string) => {
-    const member = members.find(m => m.id === memberId);
-    return member ? member.name : "Unknown Member";
-  };
-
-  const viewMemberProgress = (memberId: string) => {
-    navigate(`/fitness/measurements/${memberId}`);
-  };
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Personal Training Plans</CardTitle>
-            <CardDescription>
-              Manage your personal training clients
-            </CardDescription>
+    <div className="space-y-6">
+      <Tabs defaultValue="subscribed">
+        <TabsList>
+          <TabsTrigger value="subscribed">PT Subscribers</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned Members</TabsTrigger>
+          <TabsTrigger value="all">All Members</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="subscribed" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Personal Training Subscribers</h2>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Dumbbell className="h-4 w-4" />
+                Manage Plans
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => setIsAddingPlan(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Plan
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ptPlans.length > 0 ? (
-                ptPlans.map(plan => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">{getMemberName(plan.memberId)}</TableCell>
-                    <TableCell>{format(parseISO(plan.startDate), "MMM dd, yyyy")}</TableCell>
-                    <TableCell>{format(parseISO(plan.endDate), "MMM dd, yyyy")}</TableCell>
-                    <TableCell>
-                      <span 
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          plan.isActive 
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300" 
-                        }`}
-                      >
-                        {plan.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => viewMemberProgress(plan.memberId)}
-                        >
-                          <TrendingUp className="mr-1 h-4 w-4" />
-                          Progress
+          
+          {subscribedMembers.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {subscribedMembers.map(member => {
+                const ptPlan = getMemberPtPlan(member.id);
+                if (!ptPlan) return null;
+                
+                const progress = calculateProgress(ptPlan.sessionsUsed, ptPlan.sessions);
+                
+                return (
+                  <Card key={member.id}>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={member.avatar} alt={member.name} />
+                          <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium">{member.name}</h3>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Plan:</span>
+                          <Badge variant="outline">{ptPlan.planType}</Badge>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Status:</span>
+                          <Badge variant={ptPlan.status === "active" ? "default" : "destructive"}>
+                            {ptPlan.status}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Sessions:</span>
+                          <span className="text-sm font-medium">{ptPlan.sessionsUsed} / {ptPlan.sessions}</span>
+                        </div>
+                        
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${
+                              progress > 75 ? "bg-amber-500" : "bg-blue-600"
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <span>Start: {new Date(ptPlan.startDate).toLocaleDateString()}</span>
+                          <span>End: {new Date(ptPlan.endDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          View Plans
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEdit(plan)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDelete(plan.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                        <Button size="sm" className="flex-1">
+                          Record Session
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                    No PT plans found. Add a new plan to get started.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center p-6">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No PT subscribers yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md mt-1">
+                  Members with personal training subscriptions will appear here
+                </p>
+                <Button className="mt-4">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign New Members
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
         
-        <Dialog open={isAddingPlan} onOpenChange={setIsAddingPlan}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedPlan ? "Edit PT Plan" : "Add New PT Plan"}</DialogTitle>
-              <DialogDescription>
-                {selectedPlan 
-                  ? "Update the personal training plan details" 
-                  : "Create a new personal training plan for a member"}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="memberId">Select Member</Label>
-                <Select 
-                  value={formData.memberId} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, memberId: value }))}
-                  required
-                >
-                  <SelectTrigger id="memberId">
-                    <SelectValue placeholder="Select a member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {members.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={resetForm}>
+        <TabsContent value="assigned" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Assigned Members</h2>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search members..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {assignedMembers.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {assignedMembers
+                .filter(m => 
+                  m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  m.email?.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map(member => {
+                  const hasPtPlan = ptSubscribers.some(sub => sub.memberId === member.id);
+                  
+                  return (
+                    <Card key={member.id} className={hasPtPlan ? "border-green-500" : ""}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-medium">{member.name}</h3>
+                            <p className="text-sm text-muted-foreground">{member.email}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 flex justify-between items-center">
+                          <span className="text-sm">
+                            {hasPtPlan ? (
+                              <Badge className="bg-green-500">
+                                <Check className="h-3 w-3 mr-1" />
+                                PT Subscriber
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">
+                                No PT Plan
+                              </Badge>
+                            )}
+                          </span>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => toggleMemberSelection(member.id)}
+                            className={selectedMemberIds.includes(member.id) ? "border-primary text-primary" : ""}
+                          >
+                            {selectedMemberIds.includes(member.id) ? "Selected" : "Select"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center p-6">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No members assigned yet</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md mt-1">
+                  Once members are assigned to you, they will appear here
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {selectedMemberIds.length > 0 && (
+            <div className="sticky bottom-4 flex justify-center">
+              <Card className="inline-flex items-center space-x-4 p-4 shadow-lg border-primary">
+                <span className="font-medium">{selectedMemberIds.length} members selected</span>
+                <Button onClick={assignPtPlan}>
+                  Assign PT Plan
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedMemberIds([])}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {selectedPlan ? "Update Plan" : "Add Plan"}
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="all" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">All Members</h2>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search members..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {filteredMembers.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Members</CardTitle>
+                <CardDescription>Select members to assign personal training plans</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredMembers.map(member => {
+                    const isAssigned = member.trainerId === trainerId;
+                    const hasPtPlan = ptSubscribers.some(sub => sub.memberId === member.id);
+                    
+                    return (
+                      <div 
+                        key={member.id} 
+                        className={`p-3 border rounded-md flex items-center justify-between ${
+                          isAssigned ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : ""
+                        } ${hasPtPlan ? "border-green-500" : ""}`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id={`member-${member.id}`}
+                            checked={selectedMemberIds.includes(member.id)}
+                            onCheckedChange={() => toggleMemberSelection(member.id)}
+                          />
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          </Avatar>
+                          <Label htmlFor={`member-${member.id}`} className="font-medium cursor-pointer">
+                            {member.name}
+                          </Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          {isAssigned && (
+                            <Badge className="bg-blue-500">
+                              Assigned to You
+                            </Badge>
+                          )}
+                          
+                          {hasPtPlan && (
+                            <Badge className="bg-green-500">
+                              <Check className="h-3 w-3 mr-1" />
+                              PT Subscriber
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No members found matching "{searchQuery}"</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {selectedMemberIds.length > 0 && (
+            <div className="sticky bottom-4 flex justify-center">
+              <Card className="inline-flex items-center space-x-4 p-4 shadow-lg border-primary">
+                <span className="font-medium">{selectedMemberIds.length} members selected</span>
+                <Button onClick={assignPtPlan}>
+                  Assign PT Plan
                 </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+                <Button variant="ghost" onClick={() => setSelectedMemberIds([])}>
+                  Cancel
+                </Button>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

@@ -35,12 +35,12 @@ const AttendancePage = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-1">
-            <Card className="dark:bg-[#2c2c44] bg-white">
+            <Card className="dark:bg-background/50 bg-white shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <button 
                     onClick={prevMonth}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    className="p-2 rounded-full hover:bg-muted transition-colors"
                     aria-label="Previous month"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -50,7 +50,7 @@ const AttendancePage = () => {
                   </h2>
                   <button 
                     onClick={nextMonth}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    className="p-2 rounded-full hover:bg-muted transition-colors"
                     aria-label="Next month"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -73,8 +73,8 @@ const AttendancePage = () => {
                   onMonthChange={setCurrentMonth}
                   className="rounded-md border-0 p-0"
                   classNames={{
-                    day_selected: "bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white",
-                    day_today: "bg-gray-200 dark:bg-gray-700 text-accent-foreground",
+                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                    day_today: "bg-muted text-accent-foreground",
                     day: "h-9 w-9 p-0 font-normal text-sm",
                     table: "border-collapse",
                     head_cell: "text-xs font-medium hidden",
