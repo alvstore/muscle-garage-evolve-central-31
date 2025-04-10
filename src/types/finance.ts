@@ -155,3 +155,40 @@ export interface SmsLog {
   triggeredBy?: TriggerEvent;
   triggeredByUserId?: string; // If manually triggered by a user
 }
+
+// Email Template Types
+export type EmailProvider = "sendgrid" | "mailgun" | "smtp";
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  subject: string;
+  provider: EmailProvider;
+  htmlContent: string;
+  textContent?: string; // Plain text fallback
+  variables: string[]; // List of variables used in the template
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  triggerEvents: TriggerEvent[]; // When this template should be triggered
+}
+
+export interface EmailLog {
+  id: string;
+  templateId: string;
+  templateName: string;
+  recipient: string;
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  status: "sent" | "failed" | "pending";
+  provider: EmailProvider;
+  error?: string;
+  sentAt?: string;
+  createdAt: string;
+  retryCount?: number;
+  memberData?: Record<string, string>; // Data used to populate template
+  triggeredBy?: TriggerEvent;
+  triggeredByUserId?: string; // If manually triggered by a user
+}

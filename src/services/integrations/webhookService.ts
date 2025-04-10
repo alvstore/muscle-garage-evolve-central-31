@@ -137,11 +137,15 @@ export const webhookService = {
    * This is used to send SMS, email, or WhatsApp notifications based on webhook events
    * @param event Webhook event
    * @param memberPhone Member's phone number
+   * @param memberEmail Member's email address
+   * @param memberId Member's ID
    * @param data Additional data for the notification
    */
   async sendWebhookNotifications(
     event: RazorpayWebhookEvent,
     memberPhone: string,
+    memberEmail: string,
+    memberId: string,
     data: Record<string, string>
   ): Promise<boolean> {
     try {
@@ -165,12 +169,18 @@ export const webhookService = {
         return false;
       }
       
-      // Send SMS notification using our template system
-      return await messagingService.sendEventSMS(
+      // Send notifications through multiple channels
+      const results = await messagingService.sendMultiChannelNotification(
+        memberId,
+        memberEmail,
         memberPhone,
         triggerEvent,
-        data
+        data,
+        ['email', 'sms']
       );
+      
+      // Return true if any channel was successful
+      return results.email || results.sms || results.whatsapp || results.push;
     } catch (error) {
       console.error('Failed to send webhook notifications:', error);
       return false;
