@@ -6,7 +6,9 @@ import RecentActivity from "@/components/dashboard/RecentActivity";
 import PendingPayments from "@/components/dashboard/PendingPayments";
 import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
+import AdminTaskManagement from "@/components/dashboard/AdminTaskManagement";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockDashboardSummary, mockAnnouncements } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 
@@ -136,78 +138,91 @@ const StaffDashboard = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={Users}
-          title="Total Members"
-          value={isLoading ? "Loading..." : dashboardData.totalMembers}
-          description="Active and inactive members"
-          iconColor="text-blue-600"
-        />
-        <StatCard
-          icon={UserCheck}
-          title="Today's Check-ins"
-          value={isLoading ? "Loading..." : dashboardData.todayCheckIns}
-          description="Members visited today"
-          iconColor="text-green-600"
-        />
-        <StatCard
-          icon={DollarSign}
-          title="Pending Payments"
-          value={isLoading ? "Loading..." : `$${dashboardData.pendingPayments.total}`}
-          description={`${dashboardData.pendingPayments.count} invoices pending`}
-          iconColor="text-purple-600"
-        />
-        <StatCard
-          icon={CalendarCheck2}
-          title="Upcoming Renewals"
-          value={isLoading ? "Loading..." : dashboardData.upcomingRenewals}
-          description="Expiring in the next 7 days"
-          iconColor="text-amber-600"
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          {isLoading ? (
-            <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-          ) : (
-            <AttendanceChart data={dashboardData.attendanceTrend} />
-          )}
-        </div>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tasks">Task Management</TabsTrigger>
+        </TabsList>
         
-        <div>
-          {isLoading ? (
-            <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-          ) : (
-            <UpcomingRenewals renewals={upcomingRenewals} />
-          )}
-        </div>
-      </div>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              icon={Users}
+              title="Total Members"
+              value={isLoading ? "Loading..." : dashboardData.totalMembers}
+              description="Active and inactive members"
+              iconColor="text-blue-600"
+            />
+            <StatCard
+              icon={UserCheck}
+              title="Today's Check-ins"
+              value={isLoading ? "Loading..." : dashboardData.todayCheckIns}
+              description="Members visited today"
+              iconColor="text-green-600"
+            />
+            <StatCard
+              icon={DollarSign}
+              title="Pending Payments"
+              value={isLoading ? "Loading..." : `$${dashboardData.pendingPayments.total}`}
+              description={`${dashboardData.pendingPayments.count} invoices pending`}
+              iconColor="text-purple-600"
+            />
+            <StatCard
+              icon={CalendarCheck2}
+              title="Upcoming Renewals"
+              value={isLoading ? "Loading..." : dashboardData.upcomingRenewals}
+              description="Expiring in the next 7 days"
+              iconColor="text-amber-600"
+            />
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div>
-          {isLoading ? (
-            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-          ) : (
-            <RecentActivity activities={recentActivities} />
-          )}
-        </div>
-        <div>
-          {isLoading ? (
-            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-          ) : (
-            <PendingPayments payments={pendingPayments} />
-          )}
-        </div>
-        <div>
-          {isLoading ? (
-            <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-          ) : (
-            <Announcements announcements={mockAnnouncements} />
-          )}
-        </div>
-      </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              {isLoading ? (
+                <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+              ) : (
+                <AttendanceChart data={dashboardData.attendanceTrend} />
+              )}
+            </div>
+            
+            <div>
+              {isLoading ? (
+                <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+              ) : (
+                <UpcomingRenewals renewals={upcomingRenewals} />
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div>
+              {isLoading ? (
+                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+              ) : (
+                <RecentActivity activities={recentActivities} />
+              )}
+            </div>
+            <div>
+              {isLoading ? (
+                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+              ) : (
+                <PendingPayments payments={pendingPayments} />
+              )}
+            </div>
+            <div>
+              {isLoading ? (
+                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
+              ) : (
+                <Announcements announcements={mockAnnouncements} />
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="tasks">
+          <AdminTaskManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
