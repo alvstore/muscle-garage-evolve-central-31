@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { NavSection } from "@/data/memberNavigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import SidebarNavItem from "./SidebarNavItem";
