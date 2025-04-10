@@ -2,12 +2,13 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
+import { UserRole } from '@/types';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: UserRole;
   [key: string]: any;
 }
 
@@ -64,6 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response && response.user) {
         setUser(response.user);
         setIsLoading(false);
+        
+        // Navigate based on user role
+        const role = response.user.role;
+        navigate('/dashboard');
         return true;
       }
       
@@ -80,12 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await authService.logout();
-      setUser(null);
-      navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout API call failed:', error);
     } finally {
+      // Clear state regardless of API success
+      setUser(null);
       setIsLoading(false);
+      navigate('/login');
     }
   };
 

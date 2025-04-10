@@ -15,6 +15,8 @@ import ReferralPage from './pages/marketing/ReferralPage';
 import ClassPage from './pages/classes/ClassPage';
 import MembershipPage from './pages/membership/MembershipPage';
 import Login from './pages/auth/Login';
+import Dashboard from './pages/dashboard/Dashboard';
+import Unauthorized from './pages/auth/Unauthorized';
 
 import { AuthProvider } from './hooks/use-auth';
 import PrivateRoute from './components/auth/PrivateRoute';
@@ -38,6 +40,18 @@ export default function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Index />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            
+            {/* Dashboard - Role-specific dashboards are handled inside the Dashboard component */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+            
+            {/* Admin only routes */}
+            <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+              {/* Routes that only admin can access */}
+              {/* Add admin-only features here */}
+            </Route>
             
             {/* Admin/Staff only routes */}
             <Route element={<PrivateRoute allowedRoles={['admin', 'staff']} />}>
@@ -48,6 +62,12 @@ export default function App() {
               <Route path="/store" element={<StorePage />} />
               <Route path="/marketing/promo" element={<PromoPage />} />
               <Route path="/marketing/referral" element={<ReferralPage />} />
+            </Route>
+            
+            {/* Admin/Staff/Trainer routes */}
+            <Route element={<PrivateRoute allowedRoles={['admin', 'staff', 'trainer']} />}>
+              {/* Routes for trainers and above */}
+              {/* Add trainer features here */}
             </Route>
             
             {/* All authenticated users routes */}

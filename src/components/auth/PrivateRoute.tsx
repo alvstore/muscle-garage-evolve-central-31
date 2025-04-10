@@ -2,12 +2,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { UserRole } from '@/types';
 
 interface PrivateRouteProps {
-  allowedRoles?: string[];
+  allowedRoles?: UserRole[];
+  requiresAuth?: boolean;
 }
 
-const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
+const PrivateRoute = ({ allowedRoles, requiresAuth = true }: PrivateRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
@@ -20,15 +22,17 @@ const PrivateRoute = ({ allowedRoles }: PrivateRouteProps) => {
     );
   }
 
-  // If not authenticated, redirect to login
-  if (!isAuthenticated) {
+  // If authentication is required but user is not authenticated
+  if (requiresAuth && !isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If allowedRoles is specified, check if user has an allowed role
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    // Redirect to unauthorized page or dashboard based on role
-    return <Navigate to="/" replace />;
+  if (allowedRoles && allowedRoles.length > 0 && user) {
+    if (!allowedRoles.includes(user.role as UserRole)) {
+      // Redirect to unauthorized page or dashboard based on role
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   // Render the protected route
