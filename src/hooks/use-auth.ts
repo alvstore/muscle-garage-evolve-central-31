@@ -5,13 +5,16 @@ import { User } from "@/types";
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
+  updateUserBranch?: (branchId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: false,
+  isAuthenticated: false,
   login: async () => {
     throw new Error("Not implemented");
   },
@@ -55,10 +58,22 @@ export const useAuthProvider = () => {
     setIsLoading(false);
   };
 
+  // Mock implementation for branch selection
+  const updateUserBranch = async (branchId: string): Promise<void> => {
+    if (user) {
+      setUser({
+        ...user,
+        branchId
+      });
+    }
+  };
+
   return {
     user,
     isLoading,
+    isAuthenticated: !!user,
     login,
     logout,
+    updateUserBranch,
   };
 };

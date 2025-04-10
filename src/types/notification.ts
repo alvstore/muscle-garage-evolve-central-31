@@ -1,76 +1,66 @@
 
-// Add or update these interfaces in the existing file
-
-export type FeedbackType = "class" | "trainer" | "fitness-plan" | "general" | "diet-plan";
-export type NotificationChannel = "email" | "sms" | "push" | "in-app" | "whatsapp";
-export type ReminderTriggerType = "membership-renewal" | "payment-due" | "birthday" | "class-reminder" | "missed-attendance" | "inactivity" | "membership-expiry" | "attendance" | "renewal";
-
-export interface Feedback {
-  id: string;
-  memberId: string;
-  memberName?: string;
-  type: FeedbackType;
-  relatedId?: string;
-  rating: number;
-  comments: string;
-  createdAt: string;
-  anonymous: boolean;
-  title: string;
-}
+import { UserRole } from "@/types/index";
 
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  createdBy: string;
+  priority: "low" | "medium" | "high";
   createdAt: string;
-  targetRoles: string[];
-  targetBranch?: string;
-  expiresAt?: string;
-  channels?: NotificationChannel[];
-  sentCount?: number;
+  expiresAt: string;
+  createdBy: string;
+  targetRoles: UserRole[]; // Roles this announcement targets
+}
+
+export interface Reminder {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  time?: string;
+  userId: string;
+  userRole: UserRole;
+  status: "pending" | "sent" | "failed";
+  type: "sms" | "email" | "push" | "whatsapp";
+  createdAt: string;
+  createdBy: string;
 }
 
 export interface ReminderRule {
   id: string;
   name: string;
-  description?: string;
-  type: ReminderTriggerType;
-  triggerDays: number;
-  triggerType?: ReminderTriggerType;
-  daysInAdvance?: number;
+  description: string;
+  triggerType: "membershipExpiry" | "inactivity" | "birthday" | "attendance" | "renewal" | "payment";
+  daysBeforeTrigger: number;
+  isActive: boolean;
   message: string;
-  channels: NotificationChannel[];
-  enabled: boolean;
-  active?: boolean;
+  notificationChannels: ("sms" | "email" | "push" | "whatsapp")[];
+  appliesTo: UserRole[];
   createdAt: string;
-  updatedAt: string;
-  createdBy?: string;
-  targetRoles?: string[];
-  template?: string;
-  sendEmail?: boolean;
-  sendSMS?: boolean;
-  sendPush?: boolean;
-  specificDate?: string;
-  specificTime?: string;
-  repeatYearly?: boolean;
-  targetGroups?: string[];
+  createdBy: string;
 }
 
-// Adding MotivationalMessage interface that was missing
 export interface MotivationalMessage {
   id: string;
-  title: string;
-  content: string;
-  targetRoles: string[];
-  frequency: "daily" | "weekly" | "monthly";
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-  channels: NotificationChannel[];
+  message: string;
   author?: string;
-  tags?: string[];
-  category?: string; // Add this property
-  active?: boolean;  // Add this property
-  status?: string;   // Add this property
+  category: "inspiration" | "fitness" | "nutrition" | "consistency" | "progress";
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface PushNotification {
+  id: string;
+  title: string;
+  body: string;
+  userId?: string;
+  userRole?: UserRole;
+  targetGroups?: ("all" | "members" | "trainers" | "staff" | "admin")[];
+  sentAt?: string;
+  status: "draft" | "scheduled" | "sent" | "failed";
+  scheduledAt?: string;
+  data?: Record<string, any>;
+  createdAt: string;
+  createdBy: string;
 }

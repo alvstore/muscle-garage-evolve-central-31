@@ -145,7 +145,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <DatePicker
-                id="dateOfBirth"
                 date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
                 onSelect={(date) => handleDateChange("dateOfBirth", date)}
               />
@@ -181,7 +180,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             <div className="space-y-2">
               <Label htmlFor="membershipStartDate">Start Date</Label>
               <DatePicker
-                id="membershipStartDate"
                 date={formData.membershipStartDate ? new Date(formData.membershipStartDate) : undefined}
                 onSelect={(date) => handleDateChange("membershipStartDate", date)}
               />
@@ -190,7 +188,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
             <div className="space-y-2">
               <Label htmlFor="membershipEndDate">End Date</Label>
               <DatePicker
-                id="membershipEndDate"
                 date={formData.membershipEndDate ? new Date(formData.membershipEndDate) : undefined}
                 onSelect={(date) => handleDateChange("membershipEndDate", date)}
               />
