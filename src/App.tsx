@@ -23,6 +23,7 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Unauthorized from './pages/auth/Unauthorized';
 import BranchesPage from './pages/branches/BranchesPage';
 import IntegrationsPage from './pages/settings/IntegrationsPage';
+import HikvisionIntegrationPage from './pages/settings/HikvisionIntegrationPage';
 import InvoicePage from './pages/finance/InvoicePage';
 import TransactionPage from './pages/finance/TransactionPage';
 
@@ -104,8 +105,9 @@ export default function App() {
                   <Route path="/finance/invoices" element={<InvoicePage />} />
                   <Route path="/finance/transactions" element={<TransactionPage />} />
                   
-                  {/* Settings & Integrations Route */}
+                  {/* Settings & Integrations Routes */}
                   <Route path="/settings/integrations" element={<IntegrationsPage />} />
+                  <Route path="/settings/integrations/hikvision" element={<HikvisionIntegrationPage />} />
                 </Route>
               </Route>
               

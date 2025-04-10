@@ -3,6 +3,7 @@ import { useAuth } from './use-auth';
 import { hasPermission, hasRouteAccess } from '@/services/permissionService';
 import { UserRole } from '@/types';
 import { useBranch } from './use-branch';
+import { User } from '@/types/user'; // Import the extended User type
 
 // Define a union type for all possible permissions to provide proper type checking
 export type Permission = 
@@ -66,7 +67,9 @@ export const usePermissions = () => {
    * @returns Boolean indicating if user is branch admin
    */
   const isBranchAdmin = (): boolean => {
-    return userRole === 'admin' || (userRole === 'staff' && user?.isBranchManager === true);
+    // Cast user to the extended User type from user.ts which includes isBranchManager
+    const extendedUser = user as User | null;
+    return userRole === 'admin' || (userRole === 'staff' && extendedUser?.isBranchManager === true);
   };
   
   return {
