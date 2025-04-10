@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { useBranch } from '@/hooks/use-branch';
 import { Branch } from '@/types/branch';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
+import { branchService } from '@/services/branchService';
 
 // Mock data for trainers
 const mockTrainers = [
@@ -131,6 +131,25 @@ const TrainerMemberAllocation = ({ isTrainerView = false }: TrainerMemberAllocat
   const [trainers, setTrainers] = useState(mockTrainers);
   const [unassignedMembers, setUnassignedMembers] = useState(mockUnassignedMembers);
   
+  const fetchBranches = async () => {
+    try {
+      const branchesData = await branchService.getBranches();
+      const enrichedBranches = branchesData.map((branch: Branch) => ({
+        ...branch,
+        createdAt: branch.createdAt || new Date().toISOString(),
+        updatedAt: branch.updatedAt || new Date().toISOString()
+      }));
+      setBranches(enrichedBranches);
+    } catch (error) {
+      console.error("Failed to fetch branches:", error);
+      toast.error("Failed to fetch branches");
+    }
+  };
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
   const handleAllocate = (trainerId: string, memberId: string) => {
     // Find the trainer and member
     const trainer = trainers.find(t => t.id === trainerId);

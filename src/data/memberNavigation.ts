@@ -26,11 +26,13 @@ export interface NavItem {
 export interface NavSection {
   title: string;
   items: NavItem[];
+  name?: string; // Added to match component usage
 }
 
 export const memberNavSections: NavSection[] = [
   {
     title: "Overview",
+    name: "Overview", // Added to match component usage
     items: [
       {
         title: "Dashboard",

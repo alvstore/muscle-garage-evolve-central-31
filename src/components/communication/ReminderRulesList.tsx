@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ReminderRule, ReminderTriggerType } from "@/types/notification";
+import { ReminderRule, ReminderTriggerType, NotificationChannel } from "@/types/notification";
 import { toast } from "sonner";
 import { 
   BellRing, 
@@ -46,8 +46,8 @@ const mockReminderRules: ReminderRule[] = [
     daysBeforeTrigger: 7,
     triggerDays: 7,
     message: "Your membership will expire soon. Please renew to continue enjoying our services.",
-    notificationChannels: ["email", "in-app"],
-    channels: ["email", "in-app"],
+    notificationChannels: ["email", "push"],
+    channels: ["email", "push"],
     isActive: true,
     enabled: true,
     createdAt: "2023-05-10T09:00:00Z",
@@ -106,8 +106,8 @@ const mockReminderRules: ReminderRule[] = [
     daysBeforeTrigger: 3,
     triggerDays: 3,
     message: "Your membership is expiring soon. Renew now to avoid interruption.",
-    notificationChannels: ["email", "in-app", "sms"],
-    channels: ["email", "in-app", "sms"],
+    notificationChannels: ["email", "push", "sms"],
+    channels: ["email", "push", "sms"],
     isActive: true,
     enabled: true,
     createdAt: "2023-05-25T12:00:00Z",

@@ -124,12 +124,16 @@ const EmailTemplateManager: React.FC = () => {
       const templateData = {
         ...data,
         variables: extractedVariables,
+        name: data.name || "Untitled Template", // Ensure name is not optional
+        subject: data.subject || "No Subject",
+        htmlContent: data.htmlContent || "",
+        triggerEvents: data.triggerEvents as TriggerEvent[], // Type assertion
       };
       
       if (isEditing && selectedTemplate) {
         await emailTemplateService.updateTemplate(selectedTemplate.id, templateData);
       } else {
-        await emailTemplateService.createTemplate(templateData);
+        await emailTemplateService.createTemplate(templateData as Omit<EmailTemplate, "id" | "createdAt" | "updatedAt">);
       }
       
       // Reset form and state

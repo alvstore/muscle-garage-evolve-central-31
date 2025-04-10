@@ -38,14 +38,14 @@ export interface ReminderRule {
   daysBeforeTrigger: number;
   isActive: boolean;
   message: string;
-  notificationChannels: ("sms" | "email" | "push" | "whatsapp")[];
+  notificationChannels: NotificationChannel[];
   appliesTo: UserRole[];
   createdAt: string;
   createdBy: string;
   // Added properties to match component usage
-  type?: string;
+  type?: ReminderTriggerType;
   triggerDays?: number;
-  channels?: string[];
+  channels?: NotificationChannel[];
   targetRoles?: UserRole[];
   active?: boolean;
   enabled?: boolean;
@@ -113,3 +113,7 @@ export type TriggerEvent =
   | "plan_expiry" 
   | "birthday" 
   | "motivation";
+
+// Define Permission type for use in components
+export type Permission = "manage_members" | "manage_trainers" | "manage_classes" | 
+  "manage_payments" | "manage_sms_templates" | "view_reports" | "admin_access";

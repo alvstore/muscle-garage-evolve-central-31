@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 import { MoreVertical, Pencil, Trash2, Copy, Send, Plus, RefreshCw } from "lucide-react";
 import { 
@@ -35,7 +36,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { smsTemplateService } from "@/services/integrations/smsTemplateService";
-import { SmsTemplate, SmsProvider, TriggerEvent } from '@/types/finance';
+import { SmsTemplate, SmsProvider, TriggerEvent, Permission } from '@/types/notification';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,9 +48,8 @@ import {
   FormLabel,
   FormMessage,
   FormDescription
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import { useAuth } from '@/hooks/use-auth';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 const smsTemplateSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
@@ -102,9 +102,9 @@ const SmsTemplateManager = () => {
     {
       accessorKey: 'triggerEvents',
       header: 'Trigger Events',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex flex-wrap gap-1">
-          {row.triggerEvents.map((event) => (
+          {(row.triggerEvents || []).map((event: string) => (
             <Badge key={event} variant="secondary" className="capitalize">
               {event.replace(/_/g, " ")}
             </Badge>
@@ -208,7 +208,6 @@ const SmsTemplateManager = () => {
     setIsEditMode(true);
     setSelectedTemplate(template);
     
-    // Populate the form with the template data
     form.reset({
       name: template.name,
       content: template.content,
@@ -224,7 +223,6 @@ const SmsTemplateManager = () => {
   };
   
   const handleDuplicate = (template: SmsTemplate) => {
-    // Implement duplicate logic here
     const newTemplate = { ...template, id: '', name: `${template.name} (Copy)` };
     createTemplate(newTemplate);
   };
@@ -269,7 +267,7 @@ const SmsTemplateManager = () => {
     }
   };
   
-  const createTemplate = async (template: SmsTemplate) => {
+  const createTemplate = async (template: Omit<SmsTemplate, "id" | "createdAt" | "updatedAt">) => {
     try {
       const newTemplate = await smsTemplateService.createTemplate({
         name: template.name,
@@ -277,7 +275,7 @@ const SmsTemplateManager = () => {
         description: template.description,
         dltTemplateId: template.dltTemplateId,
         provider: template.provider,
-        triggerEvents: template.triggerEvents as [string, ...string[]],
+        triggerEvents: template.triggerEvents,
         variables: template.variables,
         enabled: template.enabled,
       });
@@ -341,12 +339,13 @@ const SmsTemplateManager = () => {
       const templateData = {
         ...values,
         variables: smsTemplateService.extractVariables(values.content),
+        triggerEvents: values.triggerEvents as TriggerEvent[],
       };
       
       if (isEditMode && selectedTemplate) {
         await updateTemplate(selectedTemplate.id, templateData);
       } else {
-        await createTemplate(templateData as Omit<SmsTemplate, 'id' | 'createdAt' | 'updatedAt'>);
+        await createTemplate(templateData as Omit<SmsTemplate, "id" | "createdAt" | "updatedAt">);
       }
       
       fetchData(); // Refresh data
@@ -363,12 +362,10 @@ const SmsTemplateManager = () => {
     }
   };
   
-  // Test SMS Functionality
   const handleOpenTestModal = (template: SmsTemplate) => {
     setSelectedTemplate(template);
     setTemplateVariables(smsTemplateService.extractVariables(template.content));
     
-    // Initialize testData with empty strings for each variable
     const initialTestData: Record<string, string> = {};
     smsTemplateService.extractVariables(template.content).forEach(variable => {
       initialTestData[variable] = '';
@@ -402,12 +399,14 @@ const SmsTemplateManager = () => {
   };
   
   return (
-    <PermissionGuard permission="manage_sms_templates">
+    <div>
       <Card>
         <CardHeader>
           <div className="flex justify-between">
-            <CardTitle>SMS Templates</CardTitle>
-            <CardDescription>Manage SMS templates for automated notifications.</CardDescription>
+            <div>
+              <CardTitle>SMS Templates</CardTitle>
+              <CardDescription>Manage SMS templates for automated notifications.</CardDescription>
+            </div>
             <Button onClick={fetchData} variant="outline" disabled={loading}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -424,8 +423,6 @@ const SmsTemplateManager = () => {
           <DataTable columns={columns} data={templates} loading={loading} />
         </CardContent>
       </Card>
-      
-      {/* Template Form Modal */}
       
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="max-w-2xl">
@@ -583,8 +580,6 @@ const SmsTemplateManager = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Test SMS Modal */}
-      
       <AlertDialog open={isTestModalOpen} onOpenChange={setIsTestModalOpen}>
         <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
@@ -630,7 +625,7 @@ const SmsTemplateManager = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PermissionGuard>
+    </div>
   );
 };
 
