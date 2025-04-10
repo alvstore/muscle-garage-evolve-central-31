@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { CheckCircle, XCircle, Clock, CalendarClock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -99,8 +99,11 @@ const BookingList = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
+                    <AvatarImage 
+                      src={booking.memberAvatar || "/placeholder.svg"} 
+                      alt={booking.memberName} 
+                    />
+                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">{booking.memberName}</p>
@@ -147,8 +150,11 @@ const BookingList = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
+                    <AvatarImage 
+                      src={booking.memberAvatar || "/placeholder.svg"} 
+                      alt={booking.memberName} 
+                    />
+                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">{booking.memberName}</p>
@@ -188,8 +194,11 @@ const BookingList = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
+                    <AvatarImage 
+                      src={booking.memberAvatar || "/placeholder.svg"} 
+                      alt={booking.memberName} 
+                    />
+                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">{booking.memberName}</p>
@@ -226,3 +235,4 @@ const BookingList = () => {
 };
 
 export default BookingList;
+
