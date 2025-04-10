@@ -26,6 +26,15 @@ const NewMemberPage = () => {
     goal: "",
     membershipId: "gold-6m",
     membershipStatus: "active",
+    // Body measurements
+    height: "",
+    weight: "",
+    chest: "",
+    waist: "",
+    biceps: "",
+    thigh: "",
+    hips: "",
+    bodyFat: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -68,6 +77,17 @@ const NewMemberPage = () => {
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
         membershipStartDate: new Date().toISOString(),
         membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+        // Body measurements
+        height: formData.height ? parseFloat(formData.height) : undefined,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        chest: formData.chest ? parseFloat(formData.chest) : undefined,
+        waist: formData.waist ? parseFloat(formData.waist) : undefined,
+        biceps: formData.biceps ? parseFloat(formData.biceps) : undefined,
+        thigh: formData.thigh ? parseFloat(formData.thigh) : undefined,
+        hips: formData.hips ? parseFloat(formData.hips) : undefined,
+        bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
+        // Initialize empty measurements array
+        measurements: [],
       };
       
       setLoading(false);
@@ -191,6 +211,117 @@ const NewMemberPage = () => {
                     onChange={handleChange} 
                     rows={3} 
                   />
+                </div>
+              </div>
+              
+              {/* Body Measurements */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Body Measurements</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input 
+                      id="height" 
+                      name="height" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="175" 
+                      value={formData.height} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input 
+                      id="weight" 
+                      name="weight" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="70" 
+                      value={formData.weight} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="chest">Chest (cm)</Label>
+                    <Input 
+                      id="chest" 
+                      name="chest" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="95" 
+                      value={formData.chest} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="waist">Waist (cm)</Label>
+                    <Input 
+                      id="waist" 
+                      name="waist" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="80" 
+                      value={formData.waist} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="biceps">Biceps (cm)</Label>
+                    <Input 
+                      id="biceps" 
+                      name="biceps" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="35" 
+                      value={formData.biceps} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="thigh">Thigh (cm)</Label>
+                    <Input 
+                      id="thigh" 
+                      name="thigh" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="55" 
+                      value={formData.thigh} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="hips">Hips (cm)</Label>
+                    <Input 
+                      id="hips" 
+                      name="hips" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="90" 
+                      value={formData.hips} 
+                      onChange={handleChange} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bodyFat">Body Fat (%)</Label>
+                    <Input 
+                      id="bodyFat" 
+                      name="bodyFat" 
+                      type="number" 
+                      step="0.1" 
+                      placeholder="15" 
+                      value={formData.bodyFat} 
+                      onChange={handleChange} 
+                    />
+                  </div>
                 </div>
               </div>
               

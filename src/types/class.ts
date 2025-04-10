@@ -1,8 +1,12 @@
-
 // Progress tracking metrics
 export interface ProgressMetrics {
   weight: number;
-  bodyFatPercentage: number; 
+  chest?: number;
+  waist?: number;
+  biceps?: number;
+  thigh?: number;
+  hips?: number;
+  bodyFatPercentage: number;
   bmi: number;
   muscleGain: number;
 }

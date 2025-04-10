@@ -27,6 +27,12 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = value === "" ? undefined : parseFloat(value);
+    setFormData(prev => ({ ...prev, [name]: numValue }));
+  };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -199,17 +205,118 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 onChange={handleChange}
               />
             </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="goal">Fitness Goal</Label>
-              <Textarea
-                id="goal"
-                name="goal"
-                value={formData.goal || ""}
-                onChange={handleChange}
-                className="min-h-[80px]"
-              />
+          </div>
+          
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-medium mb-4">Body Measurements</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="height">Height (cm)</Label>
+                <Input
+                  id="height"
+                  name="height"
+                  type="number"
+                  step="0.1"
+                  value={formData.height || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  name="weight"
+                  type="number"
+                  step="0.1"
+                  value={formData.weight || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="chest">Chest (cm)</Label>
+                <Input
+                  id="chest"
+                  name="chest"
+                  type="number"
+                  step="0.1"
+                  value={formData.chest || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="waist">Waist (cm)</Label>
+                <Input
+                  id="waist"
+                  name="waist"
+                  type="number"
+                  step="0.1"
+                  value={formData.waist || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="biceps">Biceps (cm)</Label>
+                <Input
+                  id="biceps"
+                  name="biceps"
+                  type="number"
+                  step="0.1"
+                  value={formData.biceps || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="thigh">Thigh (cm)</Label>
+                <Input
+                  id="thigh"
+                  name="thigh"
+                  type="number"
+                  step="0.1"
+                  value={formData.thigh || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hips">Hips (cm)</Label>
+                <Input
+                  id="hips"
+                  name="hips"
+                  type="number"
+                  step="0.1"
+                  value={formData.hips || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bodyFat">Body Fat (%)</Label>
+                <Input
+                  id="bodyFat"
+                  name="bodyFat"
+                  type="number"
+                  step="0.1"
+                  value={formData.bodyFat || ""}
+                  onChange={handleNumberChange}
+                />
+              </div>
             </div>
+          </div>
+          
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="goal">Fitness Goal</Label>
+            <Textarea
+              id="goal"
+              name="goal"
+              value={formData.goal || ""}
+              onChange={handleChange}
+              className="min-h-[80px]"
+            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">

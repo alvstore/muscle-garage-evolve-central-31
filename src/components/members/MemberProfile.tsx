@@ -8,6 +8,8 @@ import { Member } from "@/types";
 import { CalendarIcon, Edit2Icon, UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import MemberProfileForm from "./MemberProfileForm";
+import ProgressTracker from "./ProgressTracker";
+import { MemberMeasurement } from "@/types/user";
 
 interface MemberProfileProps {
   member: Member;
@@ -43,6 +45,22 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
     setEditing(false);
   };
   
+  const handleProgressUpdate = (measurement: MemberMeasurement) => {
+    // Add the new measurement to the beginning of the array
+    const updatedMeasurements = [
+      measurement,
+      ...(member.measurements || [])
+    ];
+    
+    // Update the member with the new measurements
+    const updatedMember = {
+      ...member,
+      measurements: updatedMeasurements
+    };
+    
+    onUpdate(updatedMember);
+  };
+  
   if (editing) {
     return <MemberProfileForm member={member} onSave={handleUpdate} onCancel={() => setEditing(false)} />;
   }
@@ -70,6 +88,7 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
             <TabsTrigger value="personal">Personal Info</TabsTrigger>
             <TabsTrigger value="membership">Membership</TabsTrigger>
             <TabsTrigger value="fitness">Fitness Details</TabsTrigger>
+            <TabsTrigger value="progress">Progress Tracker</TabsTrigger>
           </TabsList>
           
           <TabsContent value="personal" className="space-y-4">
@@ -101,6 +120,11 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     {member.dateOfBirth ? format(new Date(member.dateOfBirth), "MMMM d, yyyy") : "Not provided"}
                   </p>
+                </div>
+                
+                <div className="space-y-1 md:col-span-2">
+                  <p className="text-sm font-medium text-muted-foreground">Address</p>
+                  <p className="font-medium">{member.address || "Not provided"}</p>
                 </div>
               </div>
             </div>
@@ -150,7 +174,29 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                   {member.trainerId ? "Trainer ID: " + member.trainerId : "None assigned"}
                 </p>
               </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Height</p>
+                <p className="font-medium">{member.height ? `${member.height} cm` : "Not recorded"}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Weight</p>
+                <p className="font-medium">{member.weight ? `${member.weight} kg` : "Not recorded"}</p>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Body Fat</p>
+                <p className="font-medium">{member.bodyFat ? `${member.bodyFat}%` : "Not recorded"}</p>
+              </div>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="progress">
+            <ProgressTracker 
+              member={member} 
+              onUpdateProgress={handleProgressUpdate} 
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

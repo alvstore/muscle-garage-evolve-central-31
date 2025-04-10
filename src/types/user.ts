@@ -33,4 +33,32 @@ export interface MemberWithBranch {
   membershipEndDate?: string;
   primaryBranchId: string;
   accessibleBranchIds: string[];
+  // Body measurements
+  height?: number;
+  weight?: number;
+  chest?: number;
+  waist?: number;
+  biceps?: number;
+  thigh?: number;
+  hips?: number;
+  bodyFat?: number;
+  // Progress tracking
+  measurements?: MemberMeasurement[];
+}
+
+// New type for tracking measurement history
+export interface MemberMeasurement {
+  id: string;
+  date: string;
+  weight?: number;
+  chest?: number;
+  waist?: number;
+  biceps?: number;
+  thigh?: number;
+  hips?: number;
+  bodyFat?: number;
+  notes?: string;
+  photoUrl?: string;
+  updatedBy: string; // ID of user who updated the record
+  updatedByRole: UserRole; // Role of user who updated the record
 }
