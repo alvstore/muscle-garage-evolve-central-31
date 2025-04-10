@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,7 +57,6 @@ const userRoles: { value: UserRole; label: string }[] = [
   { value: "member", label: "Members" },
 ];
 
-// Mock notification templates
 const mockTemplates = [
   { id: "template1", name: "Membership Expiry Notice" },
   { id: "template2", name: "Birthday Wish Template" },
@@ -102,10 +100,8 @@ const ReminderRuleForm = ({ editRule, onComplete }: ReminderRuleFormProps) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
       console.log("Submitting reminder rule:", values);
       
-      // In a real app, this would be an API call to save the rule
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast.success(

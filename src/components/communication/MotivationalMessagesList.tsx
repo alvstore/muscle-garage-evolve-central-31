@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -18,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MoreVertical, Pencil, Trash2, RefreshCw, Quote, PlayCircle } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, RefreshCcw, Quote, PlayCircle } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -32,42 +31,67 @@ import { MotivationalMessage } from "@/types/notification";
 const mockMessages: MotivationalMessage[] = [
   {
     id: "1",
+    title: "Workout Motivation",
     content: "The only bad workout is the one that didn't happen.",
     author: "Unknown",
     category: "motivation",
     tags: ["workout", "consistency"],
+    createdBy: "admin1",
+    createdAt: "2023-01-15T10:00:00Z",
+    updatedAt: "2023-01-15T10:00:00Z",
+    status: "active",
     active: true
   },
   {
     id: "2",
+    title: "Mind Over Matter",
     content: "Your body can stand almost anything. It's your mind that you have to convince.",
     author: "Andrew Murphy",
     category: "motivation",
     tags: ["mindset", "strength"],
+    createdBy: "admin1",
+    createdAt: "2023-02-10T15:30:00Z",
+    updatedAt: "2023-02-10T15:30:00Z",
+    status: "active",
     active: true
   },
   {
     id: "3",
+    title: "Nutrition Basics",
     content: "Proper nutrition is the foundation of a healthy lifestyle.",
     author: "Unknown",
     category: "nutrition",
     tags: ["food", "health"],
+    createdBy: "trainer1",
+    createdAt: "2023-03-05T09:45:00Z",
+    updatedAt: "2023-03-05T09:45:00Z",
+    status: "active",
     active: true
   },
   {
     id: "4",
+    title: "Consistency is Key",
     content: "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success.",
     author: "Dwayne Johnson",
     category: "motivation",
     tags: ["consistency", "success"],
+    createdBy: "admin2",
+    createdAt: "2023-04-20T14:20:00Z",
+    updatedAt: "2023-04-20T14:20:00Z",
+    status: "paused",
     active: false
   },
   {
     id: "5",
+    title: "Health Benefits",
     content: "To enjoy the glow of good health, you must exercise.",
     author: "Gene Tunney",
     category: "wellness",
     tags: ["health", "exercise"],
+    createdBy: "trainer2",
+    createdAt: "2023-05-12T11:15:00Z",
+    updatedAt: "2023-05-12T11:15:00Z",
+    status: "active",
     active: true
   }
 ];

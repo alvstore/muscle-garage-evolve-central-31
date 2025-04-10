@@ -13,7 +13,7 @@ export const usePermissions = () => {
    * @param isOwner Whether the user owns the resource (for member-specific permissions)
    * @returns Boolean indicating if user has permission
    */
-  const can = (permission: Parameters<typeof hasPermission>[1], isOwner = false): boolean => {
+  const can = (permission: string, isOwner = false): boolean => {
     return hasPermission(userRole, permission, isOwner);
   };
   

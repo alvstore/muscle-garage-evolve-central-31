@@ -7,15 +7,6 @@ import PromoCodeForm from '@/components/marketing/PromoCodeForm';
 import PromoCodeStats from '@/components/marketing/PromoCodeStats';
 import { PromoCode } from '@/types/marketing';
 
-// Define interface to match component props
-interface PromoCodeFormCompatProps {
-  initialData?: PromoCode;
-  onComplete?: () => void;
-}
-
-// Mock function to check if the component accepts these props
-const isPromoCodeFormCompatible = (props: PromoCodeFormCompatProps) => PromoCodeForm;
-
 const PromoPage = () => {
   const [activeTab, setActiveTab] = useState('list');
   const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);

@@ -194,7 +194,7 @@ const AdminDashboard = () => {
     { month: "Jun", revenue: 25000, expenses: 14000, profit: 11000 },
   ];
 
-  const feedbackData = [
+  const feedbackData: Feedback[] = [
     {
       id: "feedback1",
       memberId: "member1",

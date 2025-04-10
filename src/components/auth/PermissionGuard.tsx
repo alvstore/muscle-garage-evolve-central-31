@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
 
 interface PermissionGuardProps {
-  permission: Parameters<typeof usePermissions>['can'][0];
+  permission: string;
   isOwner?: boolean;
   fallback?: ReactNode;
   children: ReactNode;
@@ -28,7 +28,7 @@ export const PermissionGuard = ({
 };
 
 interface PermissionButtonProps {
-  permission: Parameters<typeof usePermissions>['can'][0];
+  permission: string;
   isOwner?: boolean;
   disableOnly?: boolean;
   children: ReactNode;
