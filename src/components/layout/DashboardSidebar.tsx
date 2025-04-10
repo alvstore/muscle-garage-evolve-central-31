@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Sheet,
@@ -5,7 +6,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,14 @@ import {
   Settings,
   User,
   CalendarCheck,
+  UserPlus,
+  Filter,
+  MessageCircle,
+  ShoppingBag,
+  Tag,
+  Gift,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 interface DashboardSidebarProps {
@@ -39,14 +44,13 @@ interface DashboardSidebarProps {
 }
 
 export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
-  const { logout } = useAuth();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await logout();
+      // await logout();
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -88,9 +92,20 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
       ],
     },
     {
-      label: "Inventory",
+      label: "Inventory & Store",
       links: [
         { href: "/inventory", label: "Inventory", icon: <Package className="h-5 w-5" /> },
+        { href: "/store", label: "Store", icon: <ShoppingBag className="h-5 w-5" /> },
+      ],
+    },
+    {
+      label: "CRM & Marketing",
+      links: [
+        { href: "/crm/leads", label: "Leads", icon: <UserPlus className="h-5 w-5" /> },
+        { href: "/crm/funnel", label: "Funnel", icon: <Filter className="h-5 w-5" /> },
+        { href: "/crm/follow-up", label: "Follow-up", icon: <MessageCircle className="h-5 w-5" /> },
+        { href: "/marketing/promo", label: "Promo Codes", icon: <Tag className="h-5 w-5" /> },
+        { href: "/marketing/referral", label: "Referrals", icon: <Gift className="h-5 w-5" /> },
       ],
     },
     {
