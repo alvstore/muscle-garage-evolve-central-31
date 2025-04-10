@@ -9,7 +9,7 @@ export type RecurringPeriod = "daily" | "weekly" | "monthly" | "quarterly" | "ye
 export interface Invoice {
   id: string;
   memberId: string;
-  memberName: string;
+  memberName: string; // Added this property to fix the error
   amount: number;
   status: InvoiceStatus;
   dueDate: string;
