@@ -44,23 +44,23 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
           id: "att-1",
           memberId: "member1", // This matches the member user ID in mock data
           memberName: "Member User",
-          checkInTime: new Date(new Date().setHours(9, 15)).toISOString(),
-          checkOutTime: new Date(new Date().setHours(11, 30)).toISOString(),
+          checkInTime: new Date(date.setHours(9, 15)).toISOString(),
+          checkOutTime: new Date(date.setHours(11, 30)).toISOString(),
           method: "rfid"
         },
         {
           id: "att-2",
           memberId: "staff1",
           memberName: "Staff User",
-          checkInTime: new Date(new Date().setHours(10, 0)).toISOString(),
+          checkInTime: new Date(date.setHours(10, 0)).toISOString(),
           method: "fingerprint"
         },
         {
           id: "att-3",
           memberId: "trainer1",
           memberName: "Trainer User",
-          checkInTime: new Date(new Date().setHours(8, 45)).toISOString(),
-          checkOutTime: new Date(new Date().setHours(10, 15)).toISOString(),
+          checkInTime: new Date(date.setHours(8, 45)).toISOString(),
+          checkOutTime: new Date(date.setHours(10, 15)).toISOString(),
           method: "api"
         }
       ];
@@ -126,9 +126,13 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
     toast.success("Check-out recorded successfully");
   };
 
+  // Format the date display for current day and date header
+  const dateHeader = format(date, "EEEE, MMMM d, yyyy");
+  const currentDay = format(date, "d");
+
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full dark:bg-[#1e2740] bg-white">
+      <CardHeader className="pb-3">
         <CardTitle>Attendance Tracker</CardTitle>
         <CardDescription>
           {isMember 
@@ -140,47 +144,50 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-lg font-medium">
-              {format(date, "EEEE, MMMM d, yyyy")}
+              {dateHeader}
             </h3>
             <p className="text-sm text-muted-foreground">
               Total check-ins today: {records.length}
             </p>
           </div>
-          {canManageAttendance && (
-            <div className="space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={simulateHikvisionWebhook}
-              >
-                Simulate Hikvision API
-              </Button>
+          <div className="space-x-2">
+            {canManageAttendance && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={simulateHikvisionWebhook}
+                >
+                  Simulate Hikvision API
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={recordManualAttendance}
+                >
+                  Manual Check-in
+                </Button>
+              </>
+            )}
+            {isMember && !canManageAttendance && (
               <Button 
                 variant="default" 
                 size="sm"
                 onClick={recordManualAttendance}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
               >
-                Manual Check-in
+                Self Check-in
               </Button>
-            </div>
-          )}
-          {isMember && !canManageAttendance && (
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={recordManualAttendance}
-            >
-              Self Check-in
-            </Button>
-          )}
+            )}
+          </div>
         </div>
         
-        <Tabs defaultValue="today" value={tab} onValueChange={setTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
+        <Tabs defaultValue="today" value={tab} onValueChange={setTab} className="w-full">
+          <TabsList className="mb-4 w-full grid grid-cols-2 h-auto">
+            <TabsTrigger value="today" className="px-8 py-2">Today</TabsTrigger>
+            <TabsTrigger value="history" className="px-8 py-2">History</TabsTrigger>
             {canManageAttendance && (
-              <TabsTrigger value="denied">Access Denied</TabsTrigger>
+              <TabsTrigger value="denied" className="px-8 py-2">Access Denied</TabsTrigger>
             )}
           </TabsList>
           
@@ -192,18 +199,18 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
             ) : records.length > 0 ? (
               <div className="space-y-3">
                 {records.map(record => (
-                  <div key={record.id} className="flex items-center justify-between border-b pb-3">
+                  <div key={record.id} className="flex items-center justify-between border-b pb-3 dark:border-gray-700">
                     <div>
                       <p className="font-medium">{record.memberName}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
                         <span>Check-in: {format(new Date(record.checkInTime), "h:mm a")}</span>
                         {record.checkOutTime && (
                           <span>Check-out: {format(new Date(record.checkOutTime), "h:mm a")}</span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">
+                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                      <Badge variant="outline" className="whitespace-nowrap">
                         {record.method === "rfid" && "RFID Card"}
                         {record.method === "fingerprint" && "Fingerprint"}
                         {record.method === "api" && "Hikvision API"}

@@ -12,6 +12,7 @@ import FeedbackList from '@/components/communication/FeedbackList';
 import FeedbackForm from '@/components/communication/FeedbackForm';
 import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
+import { useMemberSpecificData } from '@/hooks/use-member-specific-data';
 
 const mockFeedbacks: Feedback[] = [
   {
@@ -80,15 +81,29 @@ const FeedbackPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentBranch } = useBranch();
+  const isMember = user?.role === 'member';
 
   const { data: feedbacks, isLoading, refetch } = useQuery({
-    queryKey: ['feedbacks', currentBranch?.id],
+    queryKey: ['feedbacks', currentBranch?.id, user?.id],
     queryFn: async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // In a real app, you would filter by branch ID
-      return mockFeedbacks;
+      
+      // In a real app, you would filter by branch ID and member ID if user is a member
+      const allFeedbacks = mockFeedbacks;
+      
+      // Use useMemberSpecificData to filter data based on user role
+      return allFeedbacks;
     }
   });
+  
+  // Filter feedback types based on user role
+  const memberFeedbackTypes = ['general', 'trainer', 'class'];
+  
+  // Use the hook to filter data based on user role
+  const { data: filteredFeedbacks } = useMemberSpecificData(
+    feedbacks || [],
+    (feedback, userId) => feedback.memberId === userId
+  );
 
   const addFeedbackMutation = useMutation({
     mutationFn: async (newFeedback: Feedback) => {
@@ -96,7 +111,8 @@ const FeedbackPage = () => {
       return { 
         ...newFeedback, 
         id: `feedback${Date.now()}`,
-        branchId: currentBranch?.id // Add branch ID to feedback
+        branchId: currentBranch?.id,
+        memberId: user?.id
       };
     },
     onSuccess: () => {
@@ -142,23 +158,27 @@ const FeedbackPage = () => {
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">All Feedback</TabsTrigger>
-            <TabsTrigger value="class">Class</TabsTrigger>
+            <TabsTrigger value="general">Gym</TabsTrigger>
             <TabsTrigger value="trainer">Trainer</TabsTrigger>
-            <TabsTrigger value="fitness-plan">Fitness Plan</TabsTrigger>
-            <TabsTrigger value="general">General</TabsTrigger>
+            {!isMember && (
+              <>
+                <TabsTrigger value="class">Class</TabsTrigger>
+                <TabsTrigger value="fitness-plan">Fitness Plan</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="all">
             <FeedbackList
-              feedbacks={feedbacks || []}
+              feedbacks={filteredFeedbacks || []}
               isLoading={isLoading}
             />
           </TabsContent>
 
-          {['class', 'trainer', 'fitness-plan', 'general'].map((type) => (
+          {(isMember ? memberFeedbackTypes : ['general', 'trainer', 'class', 'fitness-plan']).map((type) => (
             <TabsContent key={type} value={type}>
               <FeedbackList
-                feedbacks={(feedbacks || []).filter(f => f.type === type as FeedbackType)}
+                feedbacks={(filteredFeedbacks || []).filter(f => f.type === type as FeedbackType)}
                 isLoading={isLoading}
               />
             </TabsContent>
@@ -170,6 +190,7 @@ const FeedbackPage = () => {
             onComplete={() => {
               setIsModalOpen(false);
             }}
+            allowedFeedbackTypes={isMember ? memberFeedbackTypes as FeedbackType[] : undefined}
           />
         )}
       </div>
