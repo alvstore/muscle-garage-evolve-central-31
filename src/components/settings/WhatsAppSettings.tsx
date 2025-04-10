@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -107,8 +106,8 @@ const WhatsAppSettings = () => {
 
     const template: Template = {
       id: Date.now().toString(),
-      name: newTemplate.name,
-      content: newTemplate.content,
+      name: newTemplate.name || "",
+      content: newTemplate.content || "",
       language: newTemplate.language || "en",
       category: newTemplate.category || "UTILITY",
     };
