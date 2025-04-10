@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from './pages/Index';
@@ -14,12 +14,18 @@ import PromoPage from './pages/marketing/PromoPage';
 import ReferralPage from './pages/marketing/ReferralPage';
 import ClassPage from './pages/classes/ClassPage';
 import MembershipPage from './pages/membership/MembershipPage';
+import FeedbackPage from './pages/communication/FeedbackPage';
+import AnnouncementPage from './pages/communication/AnnouncementPage';
+import ReminderPage from './pages/communication/ReminderPage'; 
+import MotivationalPage from './pages/communication/MotivationalPage';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import Unauthorized from './pages/auth/Unauthorized';
 
 import { AuthProvider } from './hooks/use-auth';
 import PrivateRoute from './components/auth/PrivateRoute';
+import DashboardLayout from './components/layout/DashboardLayout';
+import { useAuth } from './hooks/use-auth';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -30,6 +36,17 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Wrapper component to provide the user to the DashboardLayout
+const DashboardLayoutWrapper = () => {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <DashboardLayout user={user} />;
+};
 
 export default function App() {
   return (
@@ -42,38 +59,38 @@ export default function App() {
             <Route path="/" element={<Index />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             
-            {/* Dashboard - Role-specific dashboards are handled inside the Dashboard component */}
+            {/* Protected Dashboard Routes */}
             <Route element={<PrivateRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-            </Route>
-            
-            {/* Admin only routes */}
-            <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-              {/* Routes that only admin can access */}
-              {/* Add admin-only features here */}
-            </Route>
-            
-            {/* Admin/Staff only routes */}
-            <Route element={<PrivateRoute allowedRoles={['admin', 'staff']} />}>
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/crm/leads" element={<LeadsPage />} />
-              <Route path="/crm/funnel" element={<FunnelPage />} />
-              <Route path="/crm/follow-up" element={<FollowUpPage />} />
-              <Route path="/store" element={<StorePage />} />
-              <Route path="/marketing/promo" element={<PromoPage />} />
-              <Route path="/marketing/referral" element={<ReferralPage />} />
-            </Route>
-            
-            {/* Admin/Staff/Trainer routes */}
-            <Route element={<PrivateRoute allowedRoles={['admin', 'staff', 'trainer']} />}>
-              {/* Routes for trainers and above */}
-              {/* Add trainer features here */}
-            </Route>
-            
-            {/* All authenticated users routes */}
-            <Route element={<PrivateRoute />}>
-              <Route path="/classes" element={<ClassPage />} />
-              <Route path="/membership" element={<MembershipPage />} />
+              <Route element={<DashboardLayoutWrapper />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                
+                {/* CRM Routes */}
+                <Route path="/crm/leads" element={<LeadsPage />} />
+                <Route path="/crm/funnel" element={<FunnelPage />} />
+                <Route path="/crm/follow-up" element={<FollowUpPage />} />
+                
+                {/* Marketing Routes */}
+                <Route path="/marketing/promo" element={<PromoPage />} />
+                <Route path="/marketing/referral" element={<ReferralPage />} />
+                
+                {/* Inventory Route */}
+                <Route path="/inventory" element={<InventoryPage />} />
+                
+                {/* Store Route */}
+                <Route path="/store" element={<StorePage />} />
+                
+                {/* Class Route */}
+                <Route path="/classes" element={<ClassPage />} />
+                
+                {/* Membership Route */}
+                <Route path="/membership" element={<MembershipPage />} />
+                
+                {/* Communication Routes */}
+                <Route path="/communication/feedback" element={<FeedbackPage />} />
+                <Route path="/communication/announcements" element={<AnnouncementPage />} />
+                <Route path="/communication/reminders" element={<ReminderPage />} />
+                <Route path="/communication/motivational" element={<MotivationalPage />} />
+              </Route>
             </Route>
             
             {/* Catch all route */}

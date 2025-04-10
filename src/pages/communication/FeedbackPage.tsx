@@ -1,27 +1,27 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle } from 'lucide-react';
-import type { Feedback, FeedbackType } from '@/types/notification';
+import { Feedback, FeedbackType } from '@/types/notification';
 import FeedbackList from '@/components/communication/FeedbackList';
 import FeedbackForm from '@/components/communication/FeedbackForm';
 import { useAuth } from '@/hooks/use-auth';
 
-// Custom props for FeedbackList since the read-only file doesn't match what we need
+// Define the props that match what FeedbackList requires
 interface CustomFeedbackListProps {
   feedbacks: Feedback[];
   isLoading: boolean;
 }
 
-// Custom props for FeedbackForm since the read-only file doesn't match what we need
+// Define the props that match what FeedbackForm requires
 interface CustomFeedbackFormProps {
   onComplete: () => void;
-  onSubmitFeedback: (newFeedback: Feedback) => void; 
+  onSubmitFeedback: (newFeedback: Feedback) => void;
 }
 
 const mockFeedbacks: Feedback[] = [
@@ -29,7 +29,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback1",
     memberId: "member1",
     memberName: "David Miller",
-    type: "class" as FeedbackType,
+    type: "class",
     relatedId: "class1",
     rating: 4,
     comments: "Great class, but the room was a bit crowded.",
@@ -41,7 +41,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback2",
     memberId: "member2",
     memberName: "Sarah Parker",
-    type: "trainer" as FeedbackType,
+    type: "trainer",
     relatedId: "trainer1",
     rating: 5,
     comments: "Excellent trainer, very motivating!",
@@ -52,7 +52,7 @@ const mockFeedbacks: Feedback[] = [
   {
     id: "feedback3",
     memberId: "member3",
-    type: "fitness-plan" as FeedbackType,
+    type: "fitness-plan",
     relatedId: "plan1",
     rating: 3,
     comments: "Plan is good but too challenging for beginners.",
@@ -64,7 +64,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback4",
     memberId: "member4",
     memberName: "Emily Davidson",
-    type: "general" as FeedbackType,
+    type: "general",
     rating: 2,
     comments: "The gym needs better ventilation.",
     createdAt: "2023-06-18T16:45:00Z",
@@ -75,7 +75,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback5",
     memberId: "member5",
     memberName: "Michael Wong",
-    type: "class" as FeedbackType,
+    type: "class",
     relatedId: "class2",
     rating: 5,
     comments: "Best HIIT class I've ever taken!",
@@ -127,6 +127,15 @@ const FeedbackPage = () => {
     addFeedbackMutation.mutate(newFeedback);
   };
 
+  // Custom components that match what FeedbackList and FeedbackForm expect
+  const CustomFeedbackList: React.FC<CustomFeedbackListProps> = ({ feedbacks, isLoading }) => (
+    <FeedbackList feedbacks={feedbacks} isLoading={isLoading} />
+  );
+
+  const CustomFeedbackForm: React.FC<CustomFeedbackFormProps> = ({ onComplete, onSubmitFeedback }) => (
+    <FeedbackForm onComplete={onComplete} onSubmitFeedback={onSubmitFeedback} />
+  );
+
   return (
     <Container>
       <div className="py-6">
@@ -148,27 +157,24 @@ const FeedbackPage = () => {
           </TabsList>
 
           <TabsContent value="all">
-            {/* @ts-ignore */}
-            <FeedbackList 
-              feedbacks={feedbacks || []} 
-              isLoading={isLoading} 
+            <CustomFeedbackList
+              feedbacks={feedbacks || []}
+              isLoading={isLoading}
             />
           </TabsContent>
 
-          {['class', 'trainer', 'fitness-plan', 'general'].map(type => (
+          {['class', 'trainer', 'fitness-plan', 'general'].map((type) => (
             <TabsContent key={type} value={type}>
-              {/* @ts-ignore */}
-              <FeedbackList 
-                feedbacks={(feedbacks || []).filter(f => f.type === type)} 
-                isLoading={isLoading} 
+              <CustomFeedbackList
+                feedbacks={(feedbacks || []).filter(f => f.type === type as FeedbackType)}
+                isLoading={isLoading}
               />
             </TabsContent>
           ))}
         </Tabs>
 
         {isModalOpen && (
-          /* @ts-ignore */
-          <FeedbackForm
+          <CustomFeedbackForm
             onComplete={() => setIsModalOpen(false)}
             onSubmitFeedback={handleSubmitFeedback}
           />

@@ -8,7 +8,6 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import Logo from '@/components/Logo';
 import { authService } from '@/services/authService';
@@ -63,30 +62,59 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-full">
-      {/* Left side with illustration */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-b from-indigo-500 to-indigo-600 p-8 items-center justify-center relative overflow-hidden">
-        <div className="absolute top-8 left-8">
-          <Logo variant="white" />
-        </div>
-        <div className="relative z-10 text-center">
-          <img 
-            src="/lovable-uploads/b9ef8aff-1fdd-46f9-84f1-c0d87249ed93.png" 
-            alt="Fitness Illustration" 
-            className="max-w-md mx-auto"
-          />
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Left side - Image */}
+      <div 
+        className="hidden lg:flex lg:w-1/2 bg-cover bg-center" 
+        style={{ 
+          backgroundImage: "url('/lovable-uploads/b9ef8aff-1fdd-46f9-84f1-c0d87249ed93.png')",
+          backgroundSize: 'cover',
+          position: 'relative'
+        }}
+      >
+        <div className="absolute inset-0 bg-indigo-900 opacity-80"></div>
+        <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
+          <div className="mb-8">
+            <Logo variant="white" size="lg" />
+          </div>
+          <h1 className="text-4xl font-bold mb-6">Welcome to Muscle Garage</h1>
+          <p className="text-xl max-w-md text-center">
+            Your one-stop destination for fitness management and tracking your progress.
+          </p>
+          
+          <div className="mt-12 bg-white/10 p-6 rounded-lg backdrop-blur-sm">
+            <h3 className="text-xl font-semibold mb-3">Why Join Us?</h3>
+            <ul className="space-y-2">
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-white mr-2"></div>
+                <span>Personalized fitness plans</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-white mr-2"></div>
+                <span>Expert trainers & nutritionists</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-white mr-2"></div>
+                <span>State-of-the-art equipment</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-white mr-2"></div>
+                <span>Group classes & personal training</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
       
-      {/* Right side with login form */}
-      <div className="w-full md:w-1/2 p-6 flex items-center justify-center">
+      {/* Right side - Login Form */}
+      <div className="w-full lg:w-1/2 flex justify-center items-center p-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <div className="md:hidden mb-6">
+            <div className="lg:hidden mb-6">
               <Logo />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome to Muscle Garage!</h1>
-            <p className="text-gray-500 mt-2">Please sign-in to your account and start the adventure</p>
+            <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
+            <p className="text-gray-500 mt-2">Enter your credentials to access your account</p>
           </div>
           
           <div className="mb-6 p-4 bg-indigo-50 rounded-lg text-sm">
@@ -205,7 +233,7 @@ const LoginForm = () => {
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">or</span>
+                  <span className="px-2 bg-white text-gray-500">or sign in with</span>
                 </div>
               </div>
               

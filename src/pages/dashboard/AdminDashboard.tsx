@@ -1,207 +1,86 @@
 
-import { useState, useEffect } from "react";
-import { Users, DollarSign, UserCheck, Calendar, Clock, RefreshCcw, FileBarChart, TrendingDown } from "lucide-react";
-import StatCard from "@/components/dashboard/StatCard";
-import AttendanceChart from "@/components/dashboard/AttendanceChart";
-import MemberStatusChart from "@/components/dashboard/MemberStatusChart";
-import RecentActivity from "@/components/dashboard/RecentActivity";
-import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
-import PendingPayments from "@/components/dashboard/PendingPayments";
-import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
-import Announcements from "@/components/dashboard/Announcements";
-import ChurnPredictionWidget from "@/components/dashboard/ChurnPredictionWidget";
-import RevenueChart from "@/components/dashboard/RevenueChart";
-import FeedbackSummaryChart from "@/components/dashboard/FeedbackSummaryChart";
-import { mockDashboardSummary, mockClasses, mockAnnouncements } from "@/data/mockData";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Feedback, FeedbackType } from "@/types/notification";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { MemberStatusChart } from '@/components/dashboard/MemberStatusChart';
+import { AttendanceChart } from '@/components/dashboard/AttendanceChart';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { UpcomingClasses } from '@/components/dashboard/UpcomingClasses';
+import { UpcomingRenewals } from '@/components/dashboard/UpcomingRenewals';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { PendingPayments } from '@/components/dashboard/PendingPayments';
+import { Announcements } from '@/components/dashboard/Announcements';
+import { FeedbackSummaryChart } from '@/components/dashboard/FeedbackSummaryChart';
+import { MemberProgressChart } from '@/components/dashboard/MemberProgressChart';
+import { ClassAttendanceWidget } from '@/components/dashboard/ClassAttendanceWidget';
+import { ChurnPredictionWidget } from '@/components/dashboard/ChurnPredictionWidget';
+import { ArrowUpRight, Calendar, Clock, DollarSign, Heart, Users } from 'lucide-react';
+import { Feedback } from '@/types/notification';
 
 const AdminDashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setDashboardData(mockDashboardSummary);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const memberStatusData = [
-    { name: "Active", value: dashboardData.membersByStatus.active, color: "#38a169" },
-    { name: "Inactive", value: dashboardData.membersByStatus.inactive, color: "#f6ad55" },
-    { name: "Expired", value: dashboardData.membersByStatus.expired, color: "#e53e3e" },
-  ];
-
-  const recentActivities = [
-    {
-      id: "1",
-      title: "New Member Registration",
-      description: "Sarah Parker has registered as a new member",
-      user: {
-        name: "Sarah Parker",
-        avatar: "/placeholder.svg",
-      },
-      time: "10 minutes ago",
-      type: "membership" as const,
+  // Mock data for dashboard
+  const dashboardData = {
+    totalMembers: 328,
+    newMembersToday: 5,
+    activeMembers: 287,
+    attendanceToday: 152,
+    revenue: {
+      today: 2450,
+      thisWeek: 12780,
+      thisMonth: 45600,
+      lastMonth: 39800
     },
-    {
-      id: "2",
-      title: "Class Attendance",
-      description: "Michael Wong checked in for HIIT Extreme class",
-      user: {
-        name: "Michael Wong",
-        avatar: "/placeholder.svg",
-      },
-      time: "30 minutes ago",
-      type: "check-in" as const,
+    pendingPayments: {
+      count: 23,
+      total: 8750
     },
-    {
-      id: "3",
-      title: "Payment Received",
-      description: "Emily Davidson paid $99 for Standard Monthly membership",
-      user: {
-        name: "Emily Davidson",
-        avatar: "/placeholder.svg",
-      },
-      time: "1 hour ago",
-      type: "payment" as const,
+    upcomingRenewals: {
+      today: 3,
+      thisWeek: 18,
+      thisMonth: 42
     },
-    {
-      id: "4",
-      title: "New Class Booking",
-      description: "Jordan Lee booked a spot in Power Yoga class",
-      user: {
-        name: "Jordan Lee",
-        avatar: "/placeholder.svg",
-      },
-      time: "2 hours ago",
-      type: "class" as const,
-    },
-  ];
-
-  const pendingPayments = [
-    {
-      id: "payment1",
-      memberId: "member2",
-      memberName: "Sarah Parker",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Standard Monthly",
-      amount: 99,
-      dueDate: "2023-07-25T00:00:00Z",
-      status: "pending" as const,
-      contactInfo: "+1234567894",
-    },
-    {
-      id: "payment2",
-      memberId: "member5",
-      memberName: "David Miller",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Premium Annual",
-      amount: 999,
-      dueDate: "2023-07-15T00:00:00Z",
-      status: "overdue" as const,
-      contactInfo: "+1234567897",
-    },
-    {
-      id: "payment3",
-      memberId: "member3",
-      memberName: "Michael Wong",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Basic Quarterly",
-      amount: 249,
-      dueDate: "2023-07-30T00:00:00Z",
-      status: "pending" as const,
-      contactInfo: "+1234567895",
-    },
-  ];
-
-  const upcomingRenewals = [
-    {
-      id: "renewal1",
-      memberName: "Emily Davidson",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Premium Annual",
-      expiryDate: "2023-07-28T00:00:00Z",
-      status: "active" as const,
-      renewalAmount: 999
-    },
-    {
-      id: "renewal2",
-      memberName: "Michael Wong",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Basic Quarterly",
-      expiryDate: "2023-07-30T00:00:00Z",
-      status: "active" as const,
-      renewalAmount: 249
-    },
-    {
-      id: "renewal3",
-      memberName: "Jordan Lee",
-      memberAvatar: "/placeholder.svg",
-      membershipPlan: "Standard Monthly",
-      expiryDate: "2023-07-26T00:00:00Z",
-      status: "active" as const,
-      renewalAmount: 99
+    classAttendance: {
+      today: 152,
+      yesterday: 143,
+      lastWeek: 982
     }
-  ];
+  };
 
-  const churnMembers = [
-    {
-      id: "member1",
-      name: "David Miller",
-      avatar: "/placeholder.svg",
-      churnRisk: 85,
-      lastVisit: "15 days ago",
-      missedClasses: 4,
-      subscriptionEnd: "in 5 days",
-      contactInfo: {
-        phone: "+1234567890",
-        email: "david@example.com"
-      },
-      factors: [
-        { name: "Low Attendance", impact: "high" as const },
-        { name: "Expiring Soon", impact: "high" as const },
-        { name: "Ignored Messages", impact: "medium" as const }
-      ]
-    },
-    {
-      id: "member2",
-      name: "Lisa Johnson",
-      avatar: "/placeholder.svg",
-      churnRisk: 62,
-      lastVisit: "9 days ago",
-      missedClasses: 2,
-      subscriptionEnd: "in 12 days",
-      contactInfo: {
-        email: "lisa@example.com"
-      },
-      factors: [
-        { name: "Declining Usage", impact: "medium" as const },
-        { name: "Negative Feedback", impact: "high" as const }
-      ]
-    }
+  const membersByStatus = {
+    active: 287,
+    inactive: 24,
+    expired: 17
+  };
+
+  const attendanceTrend = [
+    { date: '2022-06-01', count: 120 },
+    { date: '2022-06-02', count: 132 },
+    { date: '2022-06-03', count: 125 },
+    { date: '2022-06-04', count: 140 },
+    { date: '2022-06-05', count: 147 },
+    { date: '2022-06-06', count: 138 },
+    { date: '2022-06-07', count: 152 }
   ];
 
   const revenueData = [
-    { month: "Jan", revenue: 15000, expenses: 10000, profit: 5000 },
-    { month: "Feb", revenue: 18000, expenses: 11000, profit: 7000 },
-    { month: "Mar", revenue: 17000, expenses: 10500, profit: 6500 },
-    { month: "Apr", revenue: 20000, expenses: 12000, profit: 8000 },
-    { month: "May", revenue: 22000, expenses: 13000, profit: 9000 },
-    { month: "Jun", revenue: 25000, expenses: 14000, profit: 11000 },
+    { date: 'Jan', membership: 15000, supplements: 4000, classes: 2000 },
+    { date: 'Feb', membership: 18000, supplements: 4200, classes: 2200 },
+    { date: 'Mar', membership: 16500, supplements: 4800, classes: 2400 },
+    { date: 'Apr', membership: 17800, supplements: 5100, classes: 2600 },
+    { date: 'May', membership: 19200, supplements: 5400, classes: 2800 },
+    { date: 'Jun', membership: 21000, supplements: 5600, classes: 3000 }
   ];
 
-  const feedbackData: Feedback[] = [
+  const recentFeedback: Feedback[] = [
     {
       id: "feedback1",
       memberId: "member1",
       memberName: "David Miller",
-      type: "class" as FeedbackType,
+      type: "class",
       relatedId: "class1",
       rating: 4,
       comments: "Great class, but the room was a bit crowded.",
@@ -213,7 +92,7 @@ const AdminDashboard = () => {
       id: "feedback2",
       memberId: "member2",
       memberName: "Sarah Parker",
-      type: "trainer" as FeedbackType,
+      type: "trainer",
       relatedId: "trainer1",
       rating: 5,
       comments: "Excellent trainer, very motivating!",
@@ -224,7 +103,7 @@ const AdminDashboard = () => {
     {
       id: "feedback3",
       memberId: "member3",
-      type: "fitness-plan" as FeedbackType,
+      type: "fitness-plan",
       relatedId: "plan1",
       rating: 3,
       comments: "Plan is good but too challenging for beginners.",
@@ -236,7 +115,7 @@ const AdminDashboard = () => {
       id: "feedback4",
       memberId: "member4",
       memberName: "Emily Davidson",
-      type: "general" as FeedbackType,
+      type: "general",
       rating: 2,
       comments: "The gym needs better ventilation.",
       createdAt: "2023-06-18T16:45:00Z",
@@ -247,7 +126,7 @@ const AdminDashboard = () => {
       id: "feedback5",
       memberId: "member5",
       memberName: "Michael Wong",
-      type: "class" as FeedbackType,
+      type: "class",
       relatedId: "class2",
       rating: 5,
       comments: "Best HIIT class I've ever taken!",
@@ -257,184 +136,231 @@ const AdminDashboard = () => {
     }
   ];
 
-  const handleRefresh = () => {
-    setIsLoading(true);
-    toast({
-      title: "Refreshing dashboard data",
-      description: "Please wait while we fetch the latest information."
-    });
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Dashboard updated",
-        description: "All data has been refreshed with the latest information."
-      });
-    }, 1000);
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-2">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="flex items-center gap-1"
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          <RefreshCcw className="h-4 w-4" />
-          Refresh
-        </Button>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm">
+            <Calendar className="mr-2 h-4 w-4" />
+            Date Range
+          </Button>
+          <Button variant="default" size="sm">
+            Export Report
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={Users}
-          title="Total Members"
-          value={isLoading ? "Loading..." : dashboardData.totalMembers}
-          description="Total active and inactive members"
-          trend={{ direction: "up", value: "+5% from last month" }}
-          iconColor="text-blue-600"
-        />
-        <StatCard
-          icon={UserCheck}
-          title="Today's Check-ins"
-          value={isLoading ? "Loading..." : dashboardData.todayCheckIns}
-          description="Members visited today"
-          trend={{ direction: "neutral", value: "Average daily: 85" }}
-          iconColor="text-green-600"
-        />
-        <StatCard
-          icon={DollarSign}
-          title="Monthly Revenue"
-          value={isLoading ? "Loading..." : `$${dashboardData.revenue.monthly.toLocaleString()}`}
-          description="Total revenue this month"
-          trend={{ direction: "up", value: "+12% from last month" }}
-          iconColor="text-purple-600"
-        />
-        <StatCard
-          icon={TrendingDown}
-          title="Churn Risk"
-          value={isLoading ? "Loading..." : churnMembers.length}
-          description="Members likely to cancel"
-          trend={{ direction: "down", value: "-2 from last week" }}
-          iconColor="text-red-600"
-        />
-      </div>
-
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs
+        defaultValue={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="classes">Classes</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="trainers">Trainers</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              {isLoading ? (
-                <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <AttendanceChart data={dashboardData.attendanceTrend} />
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <MemberStatusChart data={memberStatusData} />
-              )}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Members"
+              value={dashboardData.totalMembers}
+              description={`+${dashboardData.newMembersToday} today`}
+              trend="up"
+              icon={<Users className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatCard
+              title="Today's Attendance"
+              value={dashboardData.attendanceToday}
+              description={`${Math.round((dashboardData.attendanceToday / dashboardData.activeMembers) * 100)}% of active members`}
+              trend="up"
+              icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatCard
+              title="Revenue (Month)"
+              value={`₹${dashboardData.revenue.thisMonth}`}
+              description={`+${Math.round(((dashboardData.revenue.thisMonth - dashboardData.revenue.lastMonth) / dashboardData.revenue.lastMonth) * 100)}% from last month`}
+              trend="up"
+              icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatCard
+              title="Active Members"
+              value={dashboardData.activeMembers}
+              description={`${Math.round((dashboardData.activeMembers / dashboardData.totalMembers) * 100)}% of total members`}
+              trend="up"
+              icon={<Heart className="h-4 w-4 text-muted-foreground" />}
+            />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <RecentActivity activities={recentActivities} />
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <div className="space-y-4">
-                  <UpcomingClasses classes={mockClasses} />
-                  <UpcomingRenewals renewals={upcomingRenewals} />
-                </div>
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <div className="space-y-4">
-                  <PendingPayments payments={pendingPayments} />
-                  <Announcements announcements={mockAnnouncements} />
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="revenue" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="col-span-3 md:col-span-2">
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Revenue Overview</CardTitle>
+                <CardDescription>
+                  Monthly revenue breakdown by category
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
                 <RevenueChart data={revenueData} />
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <PendingPayments payments={pendingPayments} />
-              )}
-            </div>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Member Status</CardTitle>
+                <CardDescription>
+                  Current membership status breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MemberStatusChart data={membersByStatus} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Attendance Trend</CardTitle>
+                <CardDescription>
+                  Daily attendance over the last 7 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <AttendanceChart data={attendanceTrend} />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Upcoming Renewals</CardTitle>
+                <CardDescription>
+                  Memberships up for renewal soon
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpcomingRenewals />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Latest check-ins and transactions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecentActivity />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-2">
+              <CardHeader>
+                <CardTitle>Pending Payments</CardTitle>
+                <CardDescription>
+                  Unpaid invoices and due dates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PendingPayments />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-2">
+              <CardHeader>
+                <CardTitle>Announcements</CardTitle>
+                <CardDescription>
+                  Latest news and updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Announcements />
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="members" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="col-span-3 md:col-span-2">
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <MemberStatusChart data={memberStatusData} />
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <ChurnPredictionWidget members={churnMembers} />
-              )}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Member Progress</CardTitle>
+                <CardDescription>
+                  Average fitness metrics over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MemberProgressChart />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Churn Prediction</CardTitle>
+                <CardDescription>
+                  Members at risk of not renewing
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChurnPredictionWidget />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Member Feedback</CardTitle>
+              <CardDescription>
+                Recent member reviews and ratings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FeedbackSummaryChart data={recentFeedback} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="classes" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Class Attendance</CardTitle>
+                <CardDescription>
+                  Attendance by class type for this month
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ClassAttendanceWidget />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Upcoming Classes</CardTitle>
+                <CardDescription>
+                  Classes scheduled in the next 48 hours
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpcomingClasses />
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
-        
-        <TabsContent value="feedback" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="col-span-3 md:col-span-2">
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <FeedbackSummaryChart feedback={feedbackData} />
-              )}
-            </div>
-            <div>
-              {isLoading ? (
-                <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
-              ) : (
-                <Announcements announcements={mockAnnouncements} />
-              )}
-            </div>
-          </div>
+
+        <TabsContent value="payments" className="space-y-4">
+          {/* Similar content for payments tab */}
+        </TabsContent>
+
+        <TabsContent value="trainers" className="space-y-4">
+          {/* Similar content for trainers tab */}
         </TabsContent>
       </Tabs>
     </div>
