@@ -7,6 +7,9 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
+  branchId?: string;
+  branchIds?: string[];
+  isBranchManager?: boolean;
 }
 
 export interface Member extends User {

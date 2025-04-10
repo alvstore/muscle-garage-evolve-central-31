@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import UpcomingRenewals from '@/components/dashboard/UpcomingRenewals';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useBranch } from '@/hooks/use-branch';
+import { Payment, RenewalItem } from '@/types/dashboard';
 
 // Mock dashboard data
 const dashboardData = {
@@ -39,8 +39,8 @@ const dashboardData = {
   }
 };
 
-// Mock payments data
-const pendingPayments = [
+// Mock payments data with proper typing for the status field
+const pendingPayments: Payment[] = [
   {
     id: "pay1",
     memberId: "mem1",
@@ -76,8 +76,8 @@ const pendingPayments = [
   }
 ];
 
-// Mock renewals data
-const upcomingRenewals = [
+// Mock renewals data with proper typing for the status field
+const upcomingRenewals: RenewalItem[] = [
   {
     id: "renew1",
     memberName: "Michael Chang",
