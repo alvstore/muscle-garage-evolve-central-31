@@ -5,7 +5,7 @@ export interface Feedback {
   id: string;
   memberId: string;
   memberName?: string;
-  title: string; // Add this to fix the errors
+  title: string;
   type: FeedbackType;
   relatedId?: string;
   rating: number;
@@ -51,3 +51,19 @@ export interface MotivationalMessage {
   updatedAt: string;
   status: "active" | "inactive";
 }
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  priority: "low" | "medium" | "high";
+  startDate: string;
+  endDate?: string;
+  targetGroups: string[];
+  channels: NotificationChannel[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type NotificationChannel = "email" | "sms" | "push" | "in-app";

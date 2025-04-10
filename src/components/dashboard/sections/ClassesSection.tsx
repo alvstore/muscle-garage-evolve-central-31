@@ -1,0 +1,72 @@
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ClassAttendanceWidget from '@/components/dashboard/ClassAttendanceWidget';
+import UpcomingClasses from '@/components/dashboard/UpcomingClasses';
+
+const ClassesSection = () => {
+  // Mock data for class attendance
+  const classBookings = [
+    {
+      id: "booking1",
+      memberId: "member1",
+      memberName: "John Doe",
+      memberAvatar: "/avatars/01.png",
+      status: "attended" as const
+    },
+    {
+      id: "booking2",
+      memberId: "member2",
+      memberName: "Jane Smith",
+      memberAvatar: "/avatars/02.png",
+      status: "confirmed" as const
+    },
+    {
+      id: "booking3",
+      memberId: "member3",
+      memberName: "Alex Johnson",
+      memberAvatar: "/avatars/03.png",
+      status: "missed" as const
+    }
+  ];
+
+  const handleMarkAttendance = (bookingId: string, status: "attended" | "missed") => {
+    console.log(`Marking booking ${bookingId} as ${status}`);
+  };
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <Card className="col-span-4">
+        <CardHeader>
+          <CardTitle>Class Attendance</CardTitle>
+          <CardDescription>
+            Attendance by class type for this month
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ClassAttendanceWidget 
+            classId="class1"
+            className="HIIT Workout"
+            time="10:00 AM - 11:00 AM"
+            bookings={classBookings}
+            onMarkAttendance={handleMarkAttendance}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="col-span-3">
+        <CardHeader>
+          <CardTitle>Upcoming Classes</CardTitle>
+          <CardDescription>
+            Classes scheduled in the next 48 hours
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UpcomingClasses classes={[]} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ClassesSection;
