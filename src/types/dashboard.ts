@@ -39,6 +39,18 @@ export interface MemberStatusData {
   expired: number;
 }
 
+export interface ActivityItem {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  type: string;
+  user: {
+    name: string;
+    avatar: string;
+  };
+}
+
 export interface DashboardData {
   revenue: RevenueItem[];
   attendance: AttendanceData[];
