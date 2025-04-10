@@ -12,6 +12,7 @@ export interface Invoice {
   paidDate?: string;
   paymentMethod?: PaymentMethod;
   razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   items: InvoiceItem[];
 }
 
@@ -44,6 +45,8 @@ export interface FinancialTransaction {
   memberId?: string; // For income from membership
   memberName?: string;
   invoiceId?: string; // Associated invoice if any
+  razorpayPaymentId?: string; // Associated Razorpay payment ID if any
+  razorpayRefundId?: string; // Associated Razorpay refund ID if any
 }
 
 export interface FinancialReport {
@@ -70,7 +73,11 @@ export type RazorpayEventType =
   | "subscription.authenticated"
   | "subscription.activated"
   | "subscription.charged"
-  | "subscription.cancelled";
+  | "subscription.cancelled"
+  | "subscription.halted"
+  | "refund.created"
+  | "refund.processed"
+  | "refund.failed";
 
 export interface RazorpayWebhookEvent {
   entity: "event";
@@ -94,4 +101,14 @@ export interface WebhookLog {
   error?: string;
   processedAt?: string;
   createdAt: string;
+  razorpayId?: string; // ID of the Razorpay entity (payment/order/subscription)
+  relatedEntityId?: string; // ID of the related entity in our system (invoice/subscription/transaction)
+  retryCount?: number; // Number of times this webhook has been retried
+}
+
+export interface WebhookSettings {
+  enableNotifications: boolean; // Whether to send notifications on webhook events
+  autoRetry: boolean; // Whether to automatically retry failed webhooks
+  retryAttempts: number; // Maximum number of retry attempts
+  notifyAdminOnFailure: boolean; // Whether to notify admin on webhook failure
 }

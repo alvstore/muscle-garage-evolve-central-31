@@ -1,136 +1,117 @@
 
-import React from "react";
-import {
-  LayoutDashboard,
-  Dumbbell,
-  FileText,
-  ClipboardList,
-  CreditCard,
-  ShoppingBag,
-  Calendar,
+import { 
+  BarChart3, 
+  Calendar, 
+  CreditCard, 
+  Users, 
+  ShoppingCart, 
+  BarChart, 
   MessageSquare,
-  HelpCircle,
-  Settings,
-  Activity,
-  User,
-} from "lucide-react";
+  Home,
+  Dumbbell,
+  GraduationCap,
+  Utensils,
+  Heart,
+  ChevronUp
+} from 'lucide-react';
 
 export interface NavItem {
+  title: string;
   href: string;
-  label: string;
   icon?: React.ReactNode;
-  badge?: string;
+  submenu?: boolean;
+  subMenuItems?: NavItem[];
 }
 
 export interface NavSection {
-  name: string;
+  title: string;
   items: NavItem[];
 }
 
 export const memberNavSections: NavSection[] = [
   {
-    name: "Overview",
+    title: 'Overview',
     items: [
       {
-        href: "/dashboard",
-        label: "Dashboard",
-        icon: <LayoutDashboard className="h-5 w-5" />,
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: <Home size={20} />
       },
       {
-        href: "/fitness/progress",
-        label: "My Progress",
-        icon: <Activity className="h-5 w-5" />,
+        title: 'Classes',
+        href: '/classes',
+        icon: <Calendar size={20} />
       },
       {
-        href: "/profile",
-        label: "My Profile",
-        icon: <User className="h-5 w-5" />,
-      },
-    ],
+        title: 'Payments',
+        href: '/payments',
+        icon: <CreditCard size={20} />
+      }
+    ]
   },
   {
-    name: "Fitness",
+    title: 'Fitness',
     items: [
       {
-        href: "/workouts",
-        label: "My Workouts",
-        icon: <Dumbbell className="h-5 w-5" />,
+        title: 'Workouts',
+        href: '/fitness/workout',
+        icon: <Dumbbell size={20} />
       },
       {
-        href: "/diet-plans",
-        label: "Diet Plans",
-        icon: <FileText className="h-5 w-5" />,
+        title: 'Diet Plans',
+        href: '/fitness/diet',
+        icon: <Utensils size={20} />
       },
-    ],
+      {
+        title: 'Progress Tracker',
+        href: '/fitness/progress',
+        icon: <BarChart3 size={20} />
+      },
+      {
+        title: 'Personal Training',
+        href: '/fitness/training',
+        icon: <GraduationCap size={20} />
+      }
+    ]
   },
   {
-    name: "Classes",
+    title: 'Community',
     items: [
       {
-        href: "/classes",
-        label: "Browse Classes",
-        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Announcements',
+        href: '/community/announcements',
+        icon: <MessageSquare size={20} />
       },
       {
-        href: "/classes/my-bookings",
-        label: "My Bookings",
-        icon: <Calendar className="h-5 w-5" />,
+        title: 'Members',
+        href: '/community/members',
+        icon: <Users size={20} />
       },
-    ],
+      {
+        title: 'Feedback',
+        href: '/community/feedback',
+        icon: <MessageSquare size={20} />
+      }
+    ]
   },
   {
-    name: "Membership",
+    title: 'Shop',
     items: [
       {
-        href: "/membership",
-        label: "Membership Details",
-        icon: <CreditCard className="h-5 w-5" />,
+        title: 'Supplements',
+        href: '/shop/supplements',
+        icon: <ShoppingCart size={20} />
       },
       {
-        href: "/invoices",
-        label: "Invoices & Payments",
-        icon: <FileText className="h-5 w-5" />,
-      },
-    ],
-  },
-  {
-    name: "Shop",
-    items: [
-      {
-        href: "/store",
-        label: "Shop Products",
-        icon: <ShoppingBag className="h-5 w-5" />,
+        title: 'Merchandise',
+        href: '/shop/merchandise',
+        icon: <ShoppingCart size={20} />
       },
       {
-        href: "/store/orders",
-        label: "My Orders",
-        icon: <FileText className="h-5 w-5" />,
-      },
-    ],
-  },
-  {
-    name: "Support",
-    items: [
-      {
-        href: "/feedback",
-        label: "Provide Feedback",
-        icon: <MessageSquare className="h-5 w-5" />,
-      },
-      {
-        href: "/help",
-        label: "Help & Support",
-        icon: <HelpCircle className="h-5 w-5" />,
-      },
-    ],
-  },
-  {
-    name: "Account",
-    items: [
-      {
-        href: "/settings",
-        label: "Account Settings",
-        icon: <Settings className="h-5 w-5" />,
-      },
-    ],
-  },
+        title: 'Nutrition',
+        href: '/shop/nutrition',
+        icon: <Heart size={20} />
+      }
+    ]
+  }
 ];

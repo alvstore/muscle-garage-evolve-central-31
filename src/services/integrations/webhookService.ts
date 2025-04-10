@@ -85,5 +85,49 @@ export const webhookService = {
       console.error('Failed to validate webhook signature:', error);
       return false;
     }
+  },
+  
+  /**
+   * Get webhook statistics
+   */
+  async getWebhookStats(): Promise<{
+    total: number;
+    processed: number;
+    failed: number;
+    pending: number;
+  }> {
+    try {
+      const response = await api.get('/integrations/razorpay/webhook-stats');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch webhook stats:', error);
+      return { total: 0, processed: 0, failed: 0, pending: 0 };
+    }
+  },
+
+  /**
+   * Update webhook settings
+   */
+  async updateWebhookSettings(settings: {
+    enableNotifications: boolean;
+    autoRetry: boolean;
+    retryAttempts: number;
+    notifyAdminOnFailure: boolean;
+  }): Promise<boolean> {
+    try {
+      const response = await api.post('/integrations/razorpay/webhook-settings', settings);
+      
+      if (response.data.success) {
+        toast.success('Webhook settings updated successfully');
+        return true;
+      } else {
+        toast.error(response.data.message || 'Failed to update webhook settings');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to update webhook settings:', error);
+      toast.error('Failed to update webhook settings');
+      return false;
+    }
   }
 };
