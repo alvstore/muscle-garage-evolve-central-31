@@ -15,6 +15,57 @@ import { usePermissions } from "@/hooks/use-permissions";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { useBranch } from "@/hooks/use-branch";
 
+// Mock data for dashboard components
+const mockData = {
+  stats: {
+    totalMembers: 250,
+    activeMembers: 210, 
+    newMembers: 15,
+    revenue: 12500,
+    attendance: 85,
+    classes: 24,
+    retentionRate: 92,
+    leadConversion: 28
+  },
+  revenueData: {
+    monthly: [
+      { month: 'Jan', revenue: 8000 },
+      { month: 'Feb', revenue: 9200 },
+      { month: 'Mar', revenue: 8800 },
+      { month: 'Apr', revenue: 10000 },
+      { month: 'May', revenue: 11500 },
+      { month: 'Jun', revenue: 12500 }
+    ],
+    forecast: 15000,
+    lastMonth: 11500,
+    growth: 8.7
+  },
+  memberData: {
+    active: 210,
+    inactive: 40,
+    trial: 15,
+    expired: 25,
+    distribution: [
+      { name: 'Premium', value: 90 },
+      { name: 'Standard', value: 120 },
+      { name: 'Basic', value: 40 }
+    ]
+  },
+  attendanceData: {
+    weeklyData: [
+      { day: 'Mon', attendance: 45 },
+      { day: 'Tue', attendance: 52 },
+      { day: 'Wed', attendance: 49 },
+      { day: 'Thu', attendance: 63 },
+      { day: 'Fri', attendance: 55 },
+      { day: 'Sat', attendance: 70 },
+      { day: 'Sun', attendance: 40 }
+    ],
+    peak: 'Saturday, 9am-11am',
+    average: 53.4
+  }
+};
+
 const AdminDashboard = () => {
   const { can } = usePermissions();
   const { currentBranch } = useBranch();
@@ -74,15 +125,15 @@ const AdminDashboard = () => {
         </div>
 
         <TabsContent value="overview" className="space-y-6 w-full overflow-x-visible">
-          <OverviewStats />
+          <OverviewStats data={mockData.stats} />
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RevenueSection />
-            <MemberStatusSection />
+            <RevenueSection data={mockData.revenueData} />
+            <MemberStatusSection data={mockData.memberData} />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AttendanceSection />
+            <AttendanceSection data={mockData.attendanceData} />
             <ActivitySection />
           </div>
         </TabsContent>
@@ -90,7 +141,7 @@ const AdminDashboard = () => {
         <TabsContent value="members" className="space-y-6 w-full overflow-x-visible">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <MemberStatusSection />
+              <MemberStatusSection data={mockData.memberData} />
             </div>
             <div>
               <RenewalsSection />
