@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import {
 import { toast } from "sonner";
 import { format, isAfter, isPast, parseISO } from "date-fns";
 
-// Mock task data
 interface Task {
   id: string;
   title: string;
@@ -96,7 +94,6 @@ const mockTasks: Task[] = [
 const TrainerTaskManagement = () => {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   
-  // Function to update task status
   const updateTaskStatus = (taskId: string, newStatus: "pending" | "in_progress" | "completed" | "overdue") => {
     setTasks(tasks.map(task => 
       task.id === taskId ? { ...task, status: newStatus } : task
@@ -105,7 +102,6 @@ const TrainerTaskManagement = () => {
     toast.success(`Task status updated to ${newStatus.replace('_', ' ')}`);
   };
   
-  // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -113,7 +109,7 @@ const TrainerTaskManagement = () => {
       case 'in_progress':
         return <Badge variant="secondary" className="flex items-center gap-1"><Calendar className="h-3 w-3" /> In Progress</Badge>;
       case 'completed':
-        return <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 flex items-center gap-1">
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" /> Completed
         </Badge>;
       case 'overdue':
@@ -123,7 +119,6 @@ const TrainerTaskManagement = () => {
     }
   };
   
-  // Get priority badge
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'low':
