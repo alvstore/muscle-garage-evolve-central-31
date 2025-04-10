@@ -56,3 +56,42 @@ export interface FinancialReport {
   endDate: string;
   period: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 }
+
+// Razorpay Webhook Types
+export type RazorpayEventType = 
+  | "payment.authorized"
+  | "payment.captured"
+  | "payment.failed"
+  | "payment.refunded"
+  | "payment.dispute.created"
+  | "payment.dispute.won" 
+  | "payment.dispute.lost"
+  | "order.paid"
+  | "subscription.authenticated"
+  | "subscription.activated"
+  | "subscription.charged"
+  | "subscription.cancelled";
+
+export interface RazorpayWebhookEvent {
+  entity: "event";
+  account_id: string;
+  event: RazorpayEventType;
+  contains: ("payment" | "order" | "refund" | "subscription")[];
+  payload: {
+    payment?: any;
+    order?: any;
+    refund?: any;
+    subscription?: any;
+  };
+  created_at: number;
+}
+
+export interface WebhookLog {
+  id: string;
+  eventType: RazorpayEventType;
+  payload: string; // JSON stringified payload
+  status: "processed" | "failed" | "pending";
+  error?: string;
+  processedAt?: string;
+  createdAt: string;
+}

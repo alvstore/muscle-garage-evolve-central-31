@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +10,7 @@ import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/use-permissions';
 import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
 import PushNotificationManager from '@/components/integrations/PushNotificationManager';
+import RazorpayWebhookManager from '@/components/integrations/RazorpayWebhookManager';
 
 const IntegrationsPage = () => {
   const { can } = usePermissions();
@@ -79,6 +79,7 @@ const IntegrationsPage = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="access-control">Access Control</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="messaging">Messaging</TabsTrigger>
             <TabsTrigger value="notifications">Push Notifications</TabsTrigger>
           </TabsList>
@@ -207,6 +208,10 @@ const IntegrationsPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="webhooks">
+            <RazorpayWebhookManager />
           </TabsContent>
           
           <TabsContent value="messaging">
