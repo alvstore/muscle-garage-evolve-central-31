@@ -22,6 +22,9 @@ import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import Unauthorized from './pages/auth/Unauthorized';
 import BranchesPage from './pages/branches/BranchesPage';
+import IntegrationsPage from './pages/settings/IntegrationsPage';
+import InvoicePage from './pages/finance/InvoicePage';
+import TransactionPage from './pages/finance/TransactionPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -96,6 +99,13 @@ export default function App() {
                   
                   {/* Branch Management Route */}
                   <Route path="/branches" element={<BranchesPage />} />
+                  
+                  {/* Finance Routes */}
+                  <Route path="/finance/invoices" element={<InvoicePage />} />
+                  <Route path="/finance/transactions" element={<TransactionPage />} />
+                  
+                  {/* Settings & Integrations Route */}
+                  <Route path="/settings/integrations" element={<IntegrationsPage />} />
                 </Route>
               </Route>
               
