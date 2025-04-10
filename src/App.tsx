@@ -13,6 +13,8 @@ import FitnessPlanPage from "./pages/fitness/FitnessPlanPage";
 import MembershipPage from "./pages/membership/MembershipPage";
 import InvoicePage from "./pages/finance/InvoicePage";
 import TransactionPage from "./pages/finance/TransactionPage";
+import ClassPage from "./pages/classes/ClassPage";
+import TrainerPage from "./pages/trainers/TrainerPage";
 import { useEffect, useState } from "react";
 import { User } from "./types";
 
@@ -58,6 +60,12 @@ const App = () => {
               
               {/* Member management */}
               <Route path="members/:id" element={<MemberProfilePage />} />
+              
+              {/* Trainer management */}
+              <Route path="trainers" element={<TrainerPage />} />
+              
+              {/* Class management */}
+              <Route path="classes" element={<ClassPage />} />
               
               {/* Fitness plans */}
               <Route path="fitness-plans" element={<FitnessPlanPage />} />

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -137,19 +136,19 @@ const sidebarItems: SidebarItem[] = [
     submenu: [
       {
         title: "Invoices",
-        href: "/finance/invoices",
+        href: "/invoices",
         icon: FileText,
         roles: ["admin", "staff"],
       },
       {
         title: "Expenses",
-        href: "/finance/expenses",
+        href: "/transactions",
         icon: FileText,
         roles: ["admin", "staff"],
       },
       {
         title: "Income",
-        href: "/finance/income",
+        href: "/transactions",
         icon: FileText,
         roles: ["admin", "staff"],
       },
