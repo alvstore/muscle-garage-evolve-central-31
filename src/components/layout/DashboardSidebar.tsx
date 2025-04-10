@@ -135,6 +135,23 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           label: "Fitness Plans", 
           icon: <Activity className="h-5 w-5" />, 
           permission: "trainer_edit_fitness" as Permission,
+          children: [
+            { 
+              href: "/fitness-plans", 
+              label: "Overview", 
+              permission: "trainer_edit_fitness" as Permission
+            },
+            { 
+              href: "/fitness/workout-plans", 
+              label: "Workout Plans", 
+              permission: "trainer_edit_fitness" as Permission
+            },
+            { 
+              href: "/fitness/diet-plans", 
+              label: "Diet Plans", 
+              permission: "trainer_edit_fitness" as Permission
+            }
+          ]
         },
         { 
           href: "/memberships", 
