@@ -8,6 +8,7 @@ import MemberDashboard from "./MemberDashboard";
 import { UserRole } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { BranchProvider } from "@/hooks/use-branch";
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
@@ -30,11 +31,23 @@ const Dashboard = () => {
   const renderDashboard = (role: UserRole) => {
     switch (role) {
       case "admin":
-        return <AdminDashboard />;
+        return (
+          <BranchProvider>
+            <AdminDashboard />
+          </BranchProvider>
+        );
       case "staff":
-        return <StaffDashboard />;
+        return (
+          <BranchProvider>
+            <StaffDashboard />
+          </BranchProvider>
+        );
       case "trainer":
-        return <TrainerDashboard />;
+        return (
+          <BranchProvider>
+            <TrainerDashboard />
+          </BranchProvider>
+        );
       case "member":
         return <MemberDashboard />;
       default:

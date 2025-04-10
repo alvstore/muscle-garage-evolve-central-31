@@ -11,7 +11,7 @@ import GeneralSettings from "@/components/settings/GeneralSettings";
 import AccessControlSettings from "@/components/settings/AccessControlSettings";
 import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
 import EmailSettings from "@/components/settings/EmailSettings";
-import SmsSettings from "@/components/settings/SmsSettings";
+import SmsTemplateManager from "@/components/settings/SmsTemplateManager";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
@@ -100,7 +100,7 @@ const SettingsPage = () => {
           </TabsContent>
           
           <TabsContent value="sms">
-            <SmsSettings />
+            <SmsTemplateManager />
           </TabsContent>
           
           <TabsContent value="notifications">
