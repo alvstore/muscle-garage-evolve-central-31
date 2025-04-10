@@ -30,7 +30,8 @@ export const trainerNavSections: NavSection[] = [
       { 
         href: "/trainers/tasks", 
         label: "Task Management", 
-        icon: createNavIcon("ListTodo")
+        icon: createNavIcon("ListTodo"),
+        badge: 3 // Number of pending tasks
       },
     ],
   },
@@ -55,13 +56,8 @@ export const trainerNavSections: NavSection[] = [
     icon: createNavIcon("Users"),
     items: [
       { 
-        href: "/members", 
-        label: "All Members", 
-        icon: createNavIcon("Users")
-      },
-      { 
         href: "/trainers/allocation", 
-        label: "Member Allocation", 
+        label: "My Assigned Members", 
         icon: createNavIcon("UserCircle")
       },
       { 
@@ -102,9 +98,10 @@ export const trainerNavSections: NavSection[] = [
         icon: createNavIcon("Bell")
       },
       { 
-        href: "/communication/motivational", 
-        label: "Motivational", 
-        icon: createNavIcon("TrendingUp")
+        href: "/communication/notifications", 
+        label: "My Notifications", 
+        icon: createNavIcon("MessageCircle"),
+        badge: 5 // Number of unread notifications
       },
     ],
   },

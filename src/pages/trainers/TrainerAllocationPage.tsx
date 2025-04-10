@@ -3,7 +3,6 @@ import React from 'react';
 import { Container } from '@/components/ui/container';
 import TrainerMemberAllocation from '@/components/trainers/TrainerMemberAllocation';
 import { usePermissions } from '@/hooks/use-permissions';
-import { MemberWithBranch } from '@/types/user';
 
 const TrainerAllocationPage = () => {
   const { userRole } = usePermissions();
@@ -12,7 +11,9 @@ const TrainerAllocationPage = () => {
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Trainer-Member Allocation</h1>
+        <h1 className="text-2xl font-bold mb-6">
+          {isTrainerView ? "My Assigned Members" : "Trainer-Member Allocation"}
+        </h1>
         
         <TrainerMemberAllocation isTrainerView={isTrainerView} />
       </div>
