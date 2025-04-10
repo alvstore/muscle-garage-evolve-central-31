@@ -65,13 +65,13 @@ export interface MotivationalMessage {
   createdBy: string;
   // Added properties to match component usage
   tags?: string[];
-  active?: boolean;
   title?: string;
   frequency?: string;
   targetRoles?: UserRole[];
   enabled?: boolean;
   updatedAt?: string;
   channels?: string[];
+  active?: boolean;
 }
 
 export interface PushNotification {
@@ -117,3 +117,35 @@ export type TriggerEvent =
 // Define Permission type for use in components
 export type Permission = "manage_members" | "manage_trainers" | "manage_classes" | 
   "manage_payments" | "manage_sms_templates" | "view_reports" | "admin_access";
+
+// Add SMS related interfaces
+export interface SmsTemplate {
+  id: string;
+  name: string;
+  content: string;
+  description?: string;
+  dltTemplateId?: string;
+  provider: SmsProvider;
+  triggerEvents: TriggerEvent[];
+  variables?: string[];
+  enabled: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
+
+export type SmsProvider = "msg91" | "twilio";
+
+export interface SmsLog {
+  id: string;
+  templateId: string;
+  templateName: string;
+  phoneNumber: string;
+  content: string;
+  status: "sent" | "failed" | "pending";
+  sentAt?: string;
+  errorMessage?: string;
+  userId?: string;
+  userRole?: UserRole;
+  createdAt: string;
+}

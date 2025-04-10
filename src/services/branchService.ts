@@ -1,14 +1,6 @@
 
 import { User } from "@/types";
-
-export interface Branch {
-  id: string;
-  name: string;
-  address: string;
-  phoneNumber: string;
-  email?: string;
-  isActive: boolean;
-}
+import { Branch } from "@/types/branch";
 
 // Mock branch data
 const mockBranches: Branch[] = [
@@ -18,7 +10,9 @@ const mockBranches: Branch[] = [
     address: "123 Main St, Downtown",
     phoneNumber: "+1234567890",
     email: "downtown@musclegarage.com",
-    isActive: true
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: "branch-2",
@@ -26,7 +20,9 @@ const mockBranches: Branch[] = [
     address: "456 High St, Uptown",
     phoneNumber: "+1234567891",
     email: "uptown@musclegarage.com",
-    isActive: true
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
     id: "branch-3",
@@ -34,7 +30,9 @@ const mockBranches: Branch[] = [
     address: "789 West St, Westside",
     phoneNumber: "+1234567892",
     email: "westside@musclegarage.com",
-    isActive: true
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 

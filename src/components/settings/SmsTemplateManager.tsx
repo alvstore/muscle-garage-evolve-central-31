@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from '@/components/ui/data-table';
@@ -124,6 +125,7 @@ const SmsTemplateManager = () => {
     },
     {
       id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -214,7 +216,7 @@ const SmsTemplateManager = () => {
       description: template.description || "",
       dltTemplateId: template.dltTemplateId || "",
       provider: template.provider,
-      triggerEvents: template.triggerEvents,
+      triggerEvents: template.triggerEvents as unknown as string[],
       variables: template.variables || [],
       enabled: template.enabled,
     });
@@ -275,7 +277,7 @@ const SmsTemplateManager = () => {
         description: template.description,
         dltTemplateId: template.dltTemplateId,
         provider: template.provider,
-        triggerEvents: template.triggerEvents,
+        triggerEvents: template.triggerEvents as TriggerEvent[],
         variables: template.variables,
         enabled: template.enabled,
       });
@@ -339,7 +341,7 @@ const SmsTemplateManager = () => {
       const templateData = {
         ...values,
         variables: smsTemplateService.extractVariables(values.content),
-        triggerEvents: values.triggerEvents as TriggerEvent[],
+        triggerEvents: values.triggerEvents as unknown as TriggerEvent[],
       };
       
       if (isEditMode && selectedTemplate) {
@@ -564,7 +566,7 @@ const SmsTemplateManager = () => {
               />
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={handleCloseModal}>Cancel</AlertDialogCancel>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} variant="default">
                   {isSubmitting ? (
                     <span className="flex items-center">
                       <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>

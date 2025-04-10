@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,16 +131,17 @@ const TrainerMemberAllocation = ({ isTrainerView = false }: TrainerMemberAllocat
   const { branches } = useBranch();
   const [trainers, setTrainers] = useState(mockTrainers);
   const [unassignedMembers, setUnassignedMembers] = useState(mockUnassignedMembers);
+  const [localBranches, setLocalBranches] = useState<Branch[]>([]);
   
   const fetchBranches = async () => {
     try {
-      const branchesData = await branchService.getBranches();
+      const branchesData = await branchService.getAllBranches();
       const enrichedBranches = branchesData.map((branch: Branch) => ({
         ...branch,
         createdAt: branch.createdAt || new Date().toISOString(),
         updatedAt: branch.updatedAt || new Date().toISOString()
       }));
-      setBranches(enrichedBranches);
+      setLocalBranches(enrichedBranches);
     } catch (error) {
       console.error("Failed to fetch branches:", error);
       toast.error("Failed to fetch branches");
@@ -183,7 +185,7 @@ const TrainerMemberAllocation = ({ isTrainerView = false }: TrainerMemberAllocat
         </CardHeader>
         <CardContent>
           <AllocationForm 
-            branches={branches} 
+            branches={localBranches} 
             trainers={trainers} 
             unassignedMembers={unassignedMembers}
             onAllocate={handleAllocate}
@@ -198,7 +200,7 @@ const TrainerMemberAllocation = ({ isTrainerView = false }: TrainerMemberAllocat
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {branches.map(branch => (
+            {localBranches.map(branch => (
               <div key={branch.id} className="space-y-2">
                 <h3 className="font-medium">{branch.name}</h3>
                 <div className="space-y-2">
