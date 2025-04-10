@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, Calendar, Clock, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -7,13 +6,16 @@ import MemberStatusChart from "@/components/dashboard/MemberStatusChart";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
 import PendingPayments from "@/components/dashboard/PendingPayments";
+import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
 import { mockDashboardSummary, mockClasses, mockAnnouncements } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Simulate API call
@@ -112,10 +114,48 @@ const AdminDashboard = () => {
     },
   ];
 
+  const upcomingRenewals = [
+    {
+      id: "renewal1",
+      memberName: "Emily Davidson",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Premium Annual",
+      expiryDate: "2023-07-28T00:00:00Z",
+      status: "active" as const,
+      renewalAmount: 999
+    },
+    {
+      id: "renewal2",
+      memberName: "Michael Wong",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Basic Quarterly",
+      expiryDate: "2023-07-30T00:00:00Z",
+      status: "active" as const,
+      renewalAmount: 249
+    },
+    {
+      id: "renewal3",
+      memberName: "Jordan Lee",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Standard Monthly",
+      expiryDate: "2023-07-26T00:00:00Z",
+      status: "active" as const,
+      renewalAmount: 99
+    }
+  ];
+
   const handleRefresh = () => {
     setIsLoading(true);
+    toast({
+      title: "Refreshing dashboard data",
+      description: "Please wait while we fetch the latest information."
+    });
     setTimeout(() => {
       setIsLoading(false);
+      toast({
+        title: "Dashboard updated",
+        description: "All data has been refreshed with the latest information."
+      });
     }, 1000);
   };
 
@@ -199,7 +239,10 @@ const AdminDashboard = () => {
           {isLoading ? (
             <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
           ) : (
-            <UpcomingClasses classes={mockClasses} />
+            <div className="space-y-4">
+              <UpcomingClasses classes={mockClasses} />
+              <UpcomingRenewals renewals={upcomingRenewals} />
+            </div>
           )}
         </div>
         <div>

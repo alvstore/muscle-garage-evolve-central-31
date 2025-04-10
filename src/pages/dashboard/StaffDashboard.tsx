@@ -1,19 +1,19 @@
-
 import { useState, useEffect } from "react";
-import { Users, DollarSign, UserCheck, CalendarCheck2 } from "lucide-react";
+import { Users, DollarSign, UserCheck, CalendarCheck2, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import PendingPayments from "@/components/dashboard/PendingPayments";
+import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { mockDashboardSummary, mockAnnouncements } from "@/data/mockData";
+import { useToast } from "@/hooks/use-toast";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Simulate API call
@@ -91,7 +91,7 @@ const StaffDashboard = () => {
       memberAvatar: "/placeholder.svg",
       membershipPlan: "Premium Annual",
       expiryDate: "2023-07-28T00:00:00Z",
-      status: "active",
+      status: "active" as const,
       renewalAmount: 999
     },
     {
@@ -100,22 +100,41 @@ const StaffDashboard = () => {
       memberAvatar: "/placeholder.svg",
       membershipPlan: "Basic Quarterly",
       expiryDate: "2023-07-30T00:00:00Z",
-      status: "active",
+      status: "active" as const,
       renewalAmount: 249
     }
   ];
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  const handleRefresh = () => {
+    setIsLoading(true);
+    toast({
+      title: "Refreshing dashboard data",
+      description: "Please wait while we fetch the latest information."
+    });
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Dashboard updated",
+        description: "All data has been refreshed with the latest information."
+      });
+    }, 1000);
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Staff Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Staff Dashboard</h1>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="flex items-center gap-1"
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          <RefreshCcw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -158,52 +177,11 @@ const StaffDashboard = () => {
         </div>
         
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Membership Renewals</CardTitle>
-              <CardDescription>Memberships expiring in the next 7 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {upcomingRenewals.length === 0 ? (
-                <p className="text-center text-muted-foreground py-6">No upcoming renewals</p>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingRenewals.map((renewal) => (
-                    <div key={renewal.id} className="flex items-center justify-between space-x-4">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={renewal.memberAvatar} alt={renewal.memberName} />
-                          <AvatarFallback>{getInitials(renewal.memberName)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium leading-none">{renewal.memberName}</p>
-                          <div className="flex items-center pt-1">
-                            <span className="text-xs text-muted-foreground">{renewal.membershipPlan}</span>
-                            <span className="mx-1 text-xs text-muted-foreground">・</span>
-                            <span className="text-xs text-muted-foreground">
-                              Expires: {new Date(renewal.expiryDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">${renewal.renewalAmount}</span>
-                        <Button variant="secondary" size="sm">
-                          Send Reminder
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {upcomingRenewals.length > 5 && (
-                    <Button variant="outline" className="w-full mt-2">
-                      View All Renewals
-                    </Button>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {isLoading ? (
+            <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+          ) : (
+            <UpcomingRenewals renewals={upcomingRenewals} />
+          )}
         </div>
       </div>
 
