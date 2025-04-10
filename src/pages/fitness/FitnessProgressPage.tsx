@@ -6,6 +6,7 @@ import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/use-auth';
+import { Member } from '@/types';
 
 const FitnessProgressPage = () => {
   const { user } = useAuth();
@@ -20,8 +21,8 @@ const FitnessProgressPage = () => {
     { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
   ];
   
-  // Mock data for member
-  const mockMember = {
+  // Mock data for member - properly typed as Member
+  const mockMember: Member = {
     id: user?.id || '1',
     name: user?.name || 'Current Member',
     email: user?.email || 'member@example.com',

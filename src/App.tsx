@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -35,13 +34,15 @@ import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import FrontPagesManager from './pages/frontpages/FrontPagesManager';
 import FitnessPlanPage from './pages/fitness/FitnessPlanPage';
+import FitnessProgressPage from './pages/fitness/FitnessProgressPage';
+import DietPlanPage from './pages/fitness/DietPlanPage';
+import TrainerAllocationPage from './pages/trainers/TrainerAllocationPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
 import PrivateRoute from './components/auth/PrivateRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -58,17 +59,14 @@ export default function App() {
         <AuthProvider>
           <BranchProvider>
             <Routes>
-              {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Index />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               
-              {/* Protected Dashboard Routes */}
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   
-                  {/* Members Routes */}
                   <Route path="/members" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <MembersListPage />
@@ -90,28 +88,39 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Fitness Plans Route */}
                   <Route path="/fitness-plans" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
                       <FitnessPlanPage />
                     </PrivateRoute>
                   } />
+                  <Route path="/fitness/progress" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <FitnessProgressPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/fitness/diet" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <DietPlanPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/trainers/allocation" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <TrainerAllocationPage />
+                    </PrivateRoute>
+                  } />
                   
-                  {/* Front Pages Management Route */}
                   <Route path="/frontpages" element={
                     <PrivateRoute allowedRoles={['admin']}>
                       <FrontPagesManager />
                     </PrivateRoute>
                   } />
                   
-                  {/* Attendance Route */}
                   <Route path="/attendance" element={
                     <PrivateRoute>
                       <AttendancePage />
                     </PrivateRoute>
                   } />
                   
-                  {/* CRM Routes */}
                   <Route path="/crm/leads" element={
                     <PrivateRoute allowedRoles={['admin', 'staff']}>
                       <LeadsPage />
@@ -128,7 +137,6 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Marketing Routes */}
                   <Route path="/marketing/promo" element={
                     <PrivateRoute allowedRoles={['admin', 'staff']}>
                       <PromoPage />
@@ -140,35 +148,30 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Inventory Route */}
                   <Route path="/inventory" element={
                     <PrivateRoute allowedRoles={['admin', 'staff']}>
                       <InventoryPage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Store Route */}
                   <Route path="/store" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
                       <StorePage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Class Route */}
                   <Route path="/classes" element={
                     <PrivateRoute>
                       <ClassPage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Membership Route */}
                   <Route path="/membership" element={
                     <PrivateRoute>
                       <MembershipPage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Communication Routes */}
                   <Route path="/communication/feedback" element={
                     <PrivateRoute>
                       <FeedbackPage />
@@ -190,14 +193,12 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Branch Management Route */}
                   <Route path="/branches" element={
                     <PrivateRoute allowedRoles={['admin']}>
                       <BranchesPage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Finance Routes */}
                   <Route path="/finance/invoices" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
                       <InvoicePage />
@@ -209,14 +210,12 @@ export default function App() {
                     </PrivateRoute>
                   } />
                   
-                  {/* Reports Route */}
                   <Route path="/reports" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <ReportsPage />
                     </PrivateRoute>
                   } />
                   
-                  {/* Settings Routes */}
                   <Route path="/settings" element={
                     <PrivateRoute allowedRoles={['admin']}>
                       <SettingsPage />
@@ -240,7 +239,6 @@ export default function App() {
                 </Route>
               </Route>
               
-              {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BranchProvider>
