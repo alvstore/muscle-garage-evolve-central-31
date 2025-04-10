@@ -18,7 +18,7 @@ import React from "react";
 export interface NavItem {
   title: string;
   href: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<any>; // Changed from ReactNode to ComponentType
   children: NavItem[];
   label?: string;
   badge?: string;
@@ -38,7 +38,7 @@ export const memberNavSections: NavSection[] = [
       {
         title: "Dashboard",
         href: "/dashboard",
-        icon: LayoutDashboard,
+        icon: LayoutDashboard,  // Icon reference, not JSX
         label: "Dashboard",
         children: []
       }
@@ -194,7 +194,7 @@ export const memberNavigation: NavItem[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
-    icon: LayoutDashboard,
+    icon: LayoutDashboard,  // Icon reference, not JSX
     label: "Dashboard",
     children: []
   },
