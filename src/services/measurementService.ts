@@ -112,6 +112,20 @@ export const measurementService = {
   },
   
   /**
+   * Get the active PT plan for a member
+   */
+  getActivePTPlan: async (memberId: string): Promise<PTPlan | null> => {
+    try {
+      const plans = await measurementService.getPTPlans(memberId);
+      const activePlan = plans.find(plan => plan.isActive);
+      return activePlan || null;
+    } catch (error) {
+      console.error('Error getting active PT plan:', error);
+      return null;
+    }
+  },
+  
+  /**
    * Check if a member has an active PT plan
    */
   hasActivePTPlan: async (memberId: string): Promise<boolean> => {
