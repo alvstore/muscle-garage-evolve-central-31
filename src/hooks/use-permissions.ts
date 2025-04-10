@@ -1,3 +1,4 @@
+
 import { useAuth } from "./use-auth";
 
 export type Permission = 
@@ -66,7 +67,7 @@ export type Permission =
   | "feature_social_media_integration"
   | "member_submit_feedback"
   | "member_view_feedback"
-  | "manage_sms_templates";
+  | "manage_sms_templates"; // Added this permission
 
 export const usePermissions = () => {
   const { user } = useAuth();
@@ -79,6 +80,7 @@ export const usePermissions = () => {
       case "manage_branches":
       case "manage_roles":
       case "feature_admin_dashboard":
+      case "manage_sms_templates": // Added handling for the new permission
         return userRole === "admin";
       
       case "register_member":

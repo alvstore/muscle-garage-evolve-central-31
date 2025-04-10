@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -206,10 +207,10 @@ const SmsTemplateManager: React.FC = () => {
           id: `template-${Date.now()}`,
           name: formData.name,
           content: formData.content,
-          description: formData.description || "",
+          description: formData.description,
           dltTemplateId: formData.dltTemplateId,
           provider: formData.provider,
-          triggerEvents: formData.triggerEvents as TriggerEvent[],
+          triggerEvents: formData.triggerEvents,
           enabled: formData.enabled,
           variables,
           createdAt: new Date().toISOString(),

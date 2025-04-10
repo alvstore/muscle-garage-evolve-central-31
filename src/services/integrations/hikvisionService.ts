@@ -1,104 +1,167 @@
 
-// Mock service for Hikvision integration
+import { HikvisionDevice, HikvisionEvent, HikvisionCredentials } from '@/types/hikvision';
 
-export interface HikvisionEvent {
-  eventId: string;
-  eventType: "entry" | "exit" | "denied";
-  eventTime: string;
-  doorId: string;
-  doorName?: string;
-  personId?: string;
-  personName?: string;
-  cardNo?: string;
-  isProcessed?: boolean;
-}
+// This is a mock implementation for development purposes
+// In a real app, this would make actual API calls to Hikvision devices
+
+const mockCredentials: HikvisionCredentials = {
+  username: "admin",
+  password: "password",
+  baseUrl: "https://hikvision.example.com/api"
+};
+
+const mockDevices: HikvisionDevice[] = [
+  {
+    id: "device1",
+    name: "Main Entrance",
+    serialNumber: "DS-K1T671M20201204C",
+    firmwareVersion: "V3.2.2_build210302",
+    model: "DS-K1T671M",
+    ipAddress: "192.168.1.100",
+    port: 80,
+    status: "online"
+  },
+  {
+    id: "device2",
+    name: "Staff Entrance",
+    serialNumber: "DS-K1T671M20201205D",
+    firmwareVersion: "V3.2.2_build210302",
+    model: "DS-K1T671M",
+    ipAddress: "192.168.1.101",
+    port: 80,
+    status: "online"
+  },
+  {
+    id: "device3",
+    name: "Emergency Exit",
+    serialNumber: "DS-K1T671M20201206E",
+    firmwareVersion: "V3.2.2_build210302",
+    model: "DS-K1T605M",
+    ipAddress: "192.168.1.102",
+    port: 80,
+    status: "offline"
+  }
+];
+
+const mockEvents: HikvisionEvent[] = [
+  {
+    id: "event1",
+    eventTime: new Date(Date.now() - 5000).toISOString(),
+    eventType: "entry",
+    cardNo: "123456",
+    employeeNo: "EMP001",
+    deviceId: "device1",
+    deviceName: "Main Entrance",
+    doorId: "door1",
+    doorName: "Main Door",
+    personId: "person1",
+    personName: "John Doe",
+    verified: true
+  },
+  {
+    id: "event2",
+    eventTime: new Date(Date.now() - 60000).toISOString(),
+    eventType: "exit",
+    cardNo: "123456",
+    employeeNo: "EMP001",
+    deviceId: "device1",
+    deviceName: "Main Entrance",
+    doorId: "door1",
+    doorName: "Main Door",
+    personId: "person1",
+    personName: "John Doe",
+    verified: true
+  },
+  {
+    id: "event3",
+    eventTime: new Date(Date.now() - 120000).toISOString(),
+    eventType: "denied",
+    cardNo: "654321",
+    employeeNo: "EMP002",
+    deviceId: "device2",
+    deviceName: "Staff Entrance",
+    doorId: "door2",
+    doorName: "Staff Door",
+    personId: "person2",
+    personName: "Jane Smith",
+    verified: false
+  }
+];
 
 export const hikvisionService = {
-  /**
-   * Get events from the Hikvision system
-   */
-  getEvents: async (startTime: string, endTime?: string): Promise<HikvisionEvent[]> => {
-    // In a real app, this would be an API call to the Hikvision system
-    
-    // For demo, return mock data
-    const mockEvents: HikvisionEvent[] = [
-      {
-        eventId: "evt-" + Date.now() + "-1",
-        eventType: "entry",
-        eventTime: new Date().toISOString(),
-        doorId: "door-1",
-        doorName: "Main Entrance",
-        personId: "member-1",
-        personName: "John Member",
-        cardNo: "12345",
-        isProcessed: false
-      },
-      {
-        eventId: "evt-" + Date.now() + "-2",
-        eventType: "exit",
-        eventTime: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
-        doorId: "door-1",
-        doorName: "Main Entrance",
-        personId: "member-2",
-        personName: "Jane Member",
-        cardNo: "23456",
-        isProcessed: true
-      },
-      {
-        eventId: "evt-" + Date.now() + "-3",
-        eventType: "denied",
-        eventTime: new Date(Date.now() - 1200000).toISOString(), // 20 minutes ago
-        doorId: "door-2",
-        doorName: "Staff Entrance",
-        personId: "visitor-1",
-        personName: "Unknown Person",
-        isProcessed: true
-      }
-    ];
-    
-    return Promise.resolve(mockEvents);
-  },
-  
-  /**
-   * Process attendance from access control events
-   */
-  processAttendance: async (events: HikvisionEvent[]): Promise<number> => {
-    // In a real app, this would process events and create attendance records
-    
-    // Filter for unprocessed entry events
-    const unprocessedEntryEvents = events.filter(
-      event => event.eventType === "entry" && !event.isProcessed
-    );
-    
-    // Mark all events as processed
-    events.forEach(event => {
-      event.isProcessed = true;
+  // Get credentials
+  getCredentials: async (): Promise<HikvisionCredentials> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(mockCredentials);
+      }, 500);
     });
-    
-    // Return count of processed events
-    return Promise.resolve(unprocessedEntryEvents.length);
   },
-  
-  /**
-   * Simulate an access control event (for testing)
-   */
-  simulateEvent: async (
-    memberId: string,
-    eventType: "entry" | "exit" | "denied"
-  ): Promise<HikvisionEvent> => {
-    // Create a mock event
-    const mockEvent: HikvisionEvent = {
-      eventId: "evt-" + Date.now(),
-      eventType,
-      eventTime: new Date().toISOString(),
-      doorId: "door-1",
-      doorName: "Main Entrance",
-      personId: memberId,
-      personName: "John Member",
-      cardNo: "12345",
-      isProcessed: false
-    };
-    
-    return Promise.resolve(mockEvent);
+
+  // Save credentials
+  saveCredentials: async (credentials: HikvisionCredentials): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log("Saving credentials:", credentials);
+        resolve(true);
+      }, 500);
+    });
+  },
+
+  // Validate credentials
+  validateCredentials: async (credentials: HikvisionCredentials): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    });
+  },
+
+  // Get all devices
+  getDevices: async (): Promise<HikvisionDevice[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(mockDevices);
+      }, 800);
+    });
+  },
+
+  // Get events for a given time range
+  getEvents: async (startTime: string, endTime?: string): Promise<HikvisionEvent[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(mockEvents);
+      }, 800);
+    });
+  },
+
+  // Process attendance from events
+  processAttendance: async (events: HikvisionEvent[]): Promise<number> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Processing ${events.length} events for attendance`);
+        resolve(events.length);
+      }, 1000);
+    });
+  },
+
+  // Simulate an event for testing
+  simulateEvent: async (memberId: string, eventType: 'entry' | 'exit' | 'denied'): Promise<HikvisionEvent> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const event: HikvisionEvent = {
+          id: `sim-${Date.now()}`,
+          eventTime: new Date().toISOString(),
+          eventType,
+          personId: memberId,
+          personName: "Simulated User",
+          deviceId: "device1",
+          deviceName: "Main Entrance",
+          verified: eventType !== 'denied'
+        };
+        console.log("Simulated event:", event);
+        resolve(event);
+      }, 500);
+    });
   }
 };

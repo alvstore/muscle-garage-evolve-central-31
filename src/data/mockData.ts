@@ -62,7 +62,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership1",
     membershipStatus: "active",
     membershipStartDate: "2023-01-01",
-    membershipEndDate: "2024-01-01"
+    membershipEndDate: "2024-01-01",
+    primaryBranchId: "branch1"
   },
   {
     id: "member2",
@@ -77,7 +78,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership2",
     membershipStatus: "active",
     membershipStartDate: "2023-02-15",
-    membershipEndDate: "2023-08-15"
+    membershipEndDate: "2023-08-15",
+    primaryBranchId: "branch1"
   },
   {
     id: "member3",
@@ -92,7 +94,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership3",
     membershipStatus: "inactive",
     membershipStartDate: "2022-10-01",
-    membershipEndDate: "2023-04-01"
+    membershipEndDate: "2023-04-01",
+    primaryBranchId: "branch2"
   },
   {
     id: "member4",
@@ -107,7 +110,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership1",
     membershipStatus: "active",
     membershipStartDate: "2023-03-01",
-    membershipEndDate: "2024-03-01"
+    membershipEndDate: "2024-03-01",
+    primaryBranchId: "branch1"
   },
   {
     id: "member5",
@@ -121,11 +125,12 @@ export const mockMembers: Member[] = [
     membershipId: "membership2",
     membershipStatus: "expired",
     membershipStartDate: "2022-06-01",
-    membershipEndDate: "2023-06-01"
+    membershipEndDate: "2023-06-01",
+    primaryBranchId: "branch3"
   }
 ];
 
-// Mock Trainers
+// Mock Trainers - fixed specialty to be an array
 export const mockTrainers: Trainer[] = [
   {
     id: "trainer1",
@@ -134,9 +139,11 @@ export const mockTrainers: Trainer[] = [
     role: "trainer",
     avatar: "/placeholder.svg",
     phone: "+1234567892",
-    specialty: "Weight Loss",
+    specialization: ["Weight Loss"],
+    experience: 8,
+    certifications: ["ACE", "NASM"],
     bio: "Certified personal trainer with 8 years of experience specializing in weight management and functional training.",
-    rating: 4.8
+    specialty: ["Weight Loss"]
   },
   {
     id: "trainer2",
@@ -145,9 +152,11 @@ export const mockTrainers: Trainer[] = [
     role: "trainer",
     avatar: "/placeholder.svg",
     phone: "+1234567898",
-    specialty: "Bodybuilding",
+    specialization: ["Bodybuilding"],
+    experience: 7,
+    certifications: ["ISSA", "NSCA"],
     bio: "Former competitive bodybuilder with extensive knowledge in muscle hypertrophy and nutrition.",
-    rating: 4.9
+    specialty: ["Bodybuilding"]
   },
   {
     id: "trainer3",
@@ -156,13 +165,15 @@ export const mockTrainers: Trainer[] = [
     role: "trainer",
     avatar: "/placeholder.svg",
     phone: "+1234567899",
-    specialty: "Yoga & Flexibility",
+    specialization: ["Yoga", "Flexibility"],
+    experience: 5,
+    certifications: ["YogaAlliance", "FMS"],
     bio: "Yoga instructor and flexibility coach who focuses on mobility, balance, and mind-body connection.",
-    rating: 4.7
+    specialty: ["Yoga", "Flexibility"]
   }
 ];
 
-// Mock Staff
+// Mock Staff - added hireDate
 export const mockStaff: Staff[] = [
   {
     id: "staff1",
@@ -172,7 +183,8 @@ export const mockStaff: Staff[] = [
     avatar: "/placeholder.svg",
     phone: "+1234567891",
     position: "Front Desk",
-    department: "Operations"
+    department: "Operations",
+    hireDate: "2022-03-15"
   },
   {
     id: "staff2",
@@ -182,11 +194,12 @@ export const mockStaff: Staff[] = [
     avatar: "/placeholder.svg",
     phone: "+1234567900",
     position: "Sales Associate",
-    department: "Sales"
+    department: "Sales",
+    hireDate: "2021-06-22"
   }
 ];
 
-// Mock Admins
+// Mock Admins - added permissions
 export const mockAdmins: Admin[] = [
   {
     id: "admin1",
@@ -194,17 +207,20 @@ export const mockAdmins: Admin[] = [
     name: "Alex Johnson",
     role: "admin",
     avatar: "/placeholder.svg",
-    phone: "+1234567890"
+    phone: "+1234567890",
+    permissions: ["all"]
   }
 ];
 
-// Mock Classes
+// Mock Classes - added trainer and difficulty
 export const mockClasses: Class[] = [
   {
     id: "class1",
     name: "HIIT Extreme",
     description: "High-intensity interval training to maximize calorie burn and improve conditioning.",
     trainerId: "trainer1",
+    trainer: "Chris Rodriguez",
+    difficulty: "Advanced",
     capacity: 15,
     enrolled: 12,
     startTime: "2023-07-20T08:00:00Z",
@@ -217,6 +233,8 @@ export const mockClasses: Class[] = [
     name: "Power Yoga",
     description: "Dynamic yoga practice focused on building strength and flexibility.",
     trainerId: "trainer3",
+    trainer: "Jessica Wu",
+    difficulty: "Intermediate",
     capacity: 20,
     enrolled: 15,
     startTime: "2023-07-20T10:00:00Z",
@@ -229,6 +247,8 @@ export const mockClasses: Class[] = [
     name: "Muscle Building 101",
     description: "Learn proper techniques for hypertrophy training.",
     trainerId: "trainer2",
+    trainer: "Sam Johnson",
+    difficulty: "Beginner",
     capacity: 10,
     enrolled: 8,
     startTime: "2023-07-20T17:00:00Z",
@@ -241,6 +261,8 @@ export const mockClasses: Class[] = [
     name: "Spin Class",
     description: "High-energy indoor cycling workout set to motivating music.",
     trainerId: "trainer1",
+    trainer: "Chris Rodriguez",
+    difficulty: "Intermediate",
     capacity: 25,
     enrolled: 20,
     startTime: "2023-07-21T07:00:00Z",
@@ -253,6 +275,8 @@ export const mockClasses: Class[] = [
     name: "Core Crusher",
     description: "30-minute focused workout for developing core strength and stability.",
     trainerId: "trainer3",
+    trainer: "Jessica Wu",
+    difficulty: "All Levels",
     capacity: 15,
     enrolled: 10,
     startTime: "2023-07-21T12:00:00Z",
@@ -262,77 +286,78 @@ export const mockClasses: Class[] = [
   }
 ];
 
-// Mock Memberships
+// Mock Memberships - fixed duration property name
 export const mockMemberships: Membership[] = [
   {
     id: "membership1",
     name: "Premium Annual",
     price: 999,
-    durationDays: 365,
-    benefits: [
+    duration: 365,
+    features: [
       "Unlimited gym access",
       "Free group classes",
       "2 personal training sessions/month",
       "Locker rental",
       "Spa access"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership2",
     name: "Standard Monthly",
     price: 99,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    features: [
       "Unlimited gym access",
       "5 group classes/month",
       "Fitness assessment"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership3",
     name: "Basic Quarterly",
     price: 249,
-    durationDays: 90,
-    benefits: [
+    duration: 90,
+    features: [
       "Unlimited gym access",
       "3 group classes/month"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership4",
     name: "Student Special",
     price: 69,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    features: [
       "Unlimited gym access",
       "2 group classes/month",
       "Valid student ID required"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership5",
     name: "Family Plan",
     price: 199,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    features: [
       "Access for up to 4 family members",
       "10 group classes to share/month",
       "Childcare services"
     ],
-    active: true
+    isActive: true
   }
 ];
 
-// Mock Announcements
+// Mock Announcements - added priority
 export const mockAnnouncements: Announcement[] = [
   {
     id: "announcement1",
     title: "New Yoga Class Schedule",
     content: "We're excited to announce our expanded yoga schedule with 5 new classes per week!",
+    priority: "medium",
     createdBy: "admin1",
     createdAt: "2023-07-15T10:00:00Z",
     targetRoles: ["member", "trainer", "staff", "admin"],
@@ -342,6 +367,7 @@ export const mockAnnouncements: Announcement[] = [
     id: "announcement2",
     title: "Maintenance Notice",
     content: "The pool area will be closed for maintenance from July 25-27. We apologize for any inconvenience.",
+    priority: "high",
     createdBy: "admin1",
     createdAt: "2023-07-18T15:30:00Z",
     targetRoles: ["member", "trainer", "staff", "admin"],
@@ -351,6 +377,7 @@ export const mockAnnouncements: Announcement[] = [
     id: "announcement3",
     title: "Staff Meeting",
     content: "Reminder: Monthly staff meeting this Friday at 2 PM in the conference room.",
+    priority: "low",
     createdBy: "admin1",
     createdAt: "2023-07-19T09:00:00Z",
     targetRoles: ["trainer", "staff", "admin"],
@@ -358,20 +385,22 @@ export const mockAnnouncements: Announcement[] = [
   }
 ];
 
-// Mock Dashboard Summary
+// Mock Dashboard Summary - fixed pendingPayments type
 export const mockDashboardSummary: DashboardSummary = {
   totalMembers: 243,
   todayCheckIns: 87,
+  pendingPayments: 12, // Changed to number
+  upcomingRenewals: 8,
   revenue: {
     daily: 1250,
     weekly: 8750,
     monthly: 35000
   },
-  pendingPayments: {
-    count: 12,
-    total: 1490
-  },
-  upcomingRenewals: 8,
+  activeMemberships: 205,
+  totalRevenue: 35000,
+  newMembers: 15,
+  upcomingClasses: 8,
+  occupancyRate: 75,
   attendanceTrend: [
     { date: "2023-07-14", count: 78 },
     { date: "2023-07-15", count: 82 },

@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Member, Trainer } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 import { branchService, Branch } from "@/services/branchService";
 
 interface TrainerMemberAllocationProps {
@@ -33,7 +32,6 @@ const TrainerMemberAllocation: React.FC<TrainerMemberAllocationProps> = ({
   const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(member.primaryBranchId);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadBranches = async () => {

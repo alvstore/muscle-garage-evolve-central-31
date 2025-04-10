@@ -13,7 +13,7 @@ export interface DashboardSummary {
   attendanceTrend: Array<{ date: string; count: number }>;
 }
 
-// Add the Member interface to explicitly include primaryBranchId
+// Updated Member interface to explicitly include primaryBranchId
 export interface Member {
   id: string;
   email: string;
@@ -29,7 +29,7 @@ export interface Member {
   membershipStatus: "active" | "inactive" | "expired";
   membershipStartDate?: string;
   membershipEndDate?: string;
-  primaryBranchId?: string; // This property is present
+  primaryBranchId?: string; // Now explicitly defined here
   // Body measurements
   height?: number;
   weight?: number;

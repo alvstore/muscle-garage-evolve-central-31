@@ -12,7 +12,7 @@ const mockMember: Member = {
   name: "John Doe",
   role: "member",
   membershipStatus: "active",
-  primaryBranchId: "branch-1"  // This is the required property
+  primaryBranchId: "branch-1"  // This is now a valid property on Member
 };
 
 const mockTrainers: Trainer[] = [
