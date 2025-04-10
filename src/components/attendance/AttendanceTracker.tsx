@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface AttendanceRecord {
   id: string;
@@ -24,6 +26,12 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("today");
+  const { user } = useAuth();
+  const { can, userRole } = usePermissions();
+
+  // Check if the user can manage attendance records
+  const canManageAttendance = can("log_attendance");
+  const isMember = userRole === "member";
 
   useEffect(() => {
     // Simulate fetching attendance records from API
@@ -34,38 +42,45 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
       const mockRecords: AttendanceRecord[] = [
         {
           id: "att-1",
-          memberId: "member-1",
-          memberName: "John Doe",
+          memberId: "member1", // This matches the member user ID in mock data
+          memberName: "Member User",
           checkInTime: new Date(new Date().setHours(9, 15)).toISOString(),
           checkOutTime: new Date(new Date().setHours(11, 30)).toISOString(),
           method: "rfid"
         },
         {
           id: "att-2",
-          memberId: "member-2",
-          memberName: "Jane Smith",
+          memberId: "staff1",
+          memberName: "Staff User",
           checkInTime: new Date(new Date().setHours(10, 0)).toISOString(),
           method: "fingerprint"
         },
         {
           id: "att-3",
-          memberId: "member-3",
-          memberName: "Mike Johnson",
+          memberId: "trainer1",
+          memberName: "Trainer User",
           checkInTime: new Date(new Date().setHours(8, 45)).toISOString(),
           checkOutTime: new Date(new Date().setHours(10, 15)).toISOString(),
           method: "api"
         }
       ];
       
-      setRecords(mockRecords);
+      // If the user is a member, only show their records
+      const filteredRecords = isMember && user
+        ? mockRecords.filter(record => record.memberId === user.id)
+        : mockRecords;
+        
+      setRecords(filteredRecords);
       setLoading(false);
     }, 1000);
-  }, [date]);
+  }, [date, user, isMember]);
 
   // Function to simulate receiving webhook from Hikvision
   const simulateHikvisionWebhook = () => {
-    const mockMemberId = "member-4";
-    const mockMemberName = "Sarah Wilson";
+    if (!user) return;
+    
+    const mockMemberId = user.id || "member-4";
+    const mockMemberName = user.name || "Sarah Wilson";
     
     // In a real app, this would be a webhook handler
     const newRecord: AttendanceRecord = {
@@ -82,8 +97,10 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
 
   // Function to manually record attendance
   const recordManualAttendance = () => {
-    const mockMemberId = "member-5";
-    const mockMemberName = "Alex Brown";
+    if (!user) return;
+    
+    const mockMemberId = user.id || "member-5";
+    const mockMemberName = user.name || "Alex Brown";
     
     const newRecord: AttendanceRecord = {
       id: `att-${Date.now()}`,
@@ -97,11 +114,27 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
     toast.success(`Manually recorded check-in for ${mockMemberName}`);
   };
 
+  // Add a function to handle check-out
+  const handleCheckOut = (recordId: string) => {
+    setRecords(prev => 
+      prev.map(record => 
+        record.id === recordId 
+          ? { ...record, checkOutTime: new Date().toISOString() } 
+          : record
+      )
+    );
+    toast.success("Check-out recorded successfully");
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Attendance Tracker</CardTitle>
-        <CardDescription>Monitor member check-ins and check-outs</CardDescription>
+        <CardDescription>
+          {isMember 
+            ? "Monitor your check-ins and check-outs" 
+            : "Monitor member check-ins and check-outs"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center mb-4">
@@ -113,29 +146,42 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
               Total check-ins today: {records.length}
             </p>
           </div>
-          <div className="space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={simulateHikvisionWebhook}
-            >
-              Simulate Hikvision API
-            </Button>
+          {canManageAttendance && (
+            <div className="space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={simulateHikvisionWebhook}
+              >
+                Simulate Hikvision API
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={recordManualAttendance}
+              >
+                Manual Check-in
+              </Button>
+            </div>
+          )}
+          {isMember && !canManageAttendance && (
             <Button 
               variant="default" 
               size="sm"
               onClick={recordManualAttendance}
             >
-              Manual Check-in
+              Self Check-in
             </Button>
-          </div>
+          )}
         </div>
         
         <Tabs defaultValue="today" value={tab} onValueChange={setTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
-            <TabsTrigger value="denied">Access Denied</TabsTrigger>
+            {canManageAttendance && (
+              <TabsTrigger value="denied">Access Denied</TabsTrigger>
+            )}
           </TabsList>
           
           <TabsContent value="today">
@@ -164,7 +210,13 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
                         {record.method === "manual" && "Manual Entry"}
                       </Badge>
                       {!record.checkOutTime && (
-                        <Button variant="ghost" size="sm">Record Check-out</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleCheckOut(record.id)}
+                        >
+                          Record Check-out
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -183,11 +235,13 @@ const AttendanceTracker = ({ date = new Date() }: AttendanceTrackerProps) => {
             </div>
           </TabsContent>
           
-          <TabsContent value="denied">
-            <div className="text-center py-10 text-muted-foreground">
-              Access denied events will be displayed here
-            </div>
-          </TabsContent>
+          {canManageAttendance && (
+            <TabsContent value="denied">
+              <div className="text-center py-10 text-muted-foreground">
+                Access denied events will be displayed here
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </CardContent>
     </Card>

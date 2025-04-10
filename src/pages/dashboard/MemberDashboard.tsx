@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Activity,
   Calendar,
@@ -7,6 +9,7 @@ import {
   Dumbbell,
   FileText,
   User,
+  CheckSquare,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +20,10 @@ import RecentActivity from "@/components/dashboard/RecentActivity";
 import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
 import Announcements from "@/components/dashboard/Announcements";
 import { mockClasses, mockAnnouncements } from "@/data/mockData";
+import { useAuth } from "@/hooks/use-auth";
 
 const MemberDashboard = () => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [memberData, setMemberData] = useState({
     profile: {
@@ -75,13 +80,32 @@ const MemberDashboard = () => {
         receipt: "INV-2023-001",
       },
     },
+    attendance: {
+      today: false,
+      streak: 5,
+      lastWeek: 4,
+      thisMonth: 12,
+    }
   });
 
   useEffect(() => {
+    // Update member data with user info when available
+    if (user) {
+      setMemberData(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          name: user.name || prev.profile.name,
+          email: user.email || prev.profile.email,
+          avatar: user.avatar || prev.profile.avatar,
+        }
+      }));
+    }
+    
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [user]);
 
   const recentActivities = [
     {
@@ -100,8 +124,8 @@ const MemberDashboard = () => {
       title: "Class Attendance",
       description: "You checked in for HIIT Extreme class",
       user: {
-        name: "John Doe",
-        avatar: "/placeholder.svg",
+        name: user?.name || "John Doe",
+        avatar: user?.avatar || "/placeholder.svg",
       },
       time: "2 days ago, 7:00 PM",
       type: "check-in" as const,
@@ -111,8 +135,8 @@ const MemberDashboard = () => {
       title: "Workout Completed",
       description: "You completed Day 12 of your fitness plan",
       user: {
-        name: "John Doe",
-        avatar: "/placeholder.svg",
+        name: user?.name || "John Doe",
+        avatar: user?.avatar || "/placeholder.svg",
       },
       time: "3 days ago, 5:45 PM",
       type: "other" as const,
@@ -127,10 +151,86 @@ const MemberDashboard = () => {
       .toUpperCase();
   };
 
+  // Self check-in function
+  const handleSelfCheckIn = () => {
+    setMemberData(prev => ({
+      ...prev,
+      attendance: {
+        ...prev.attendance,
+        today: true,
+        streak: prev.attendance.streak + 1,
+        thisMonth: prev.attendance.thisMonth + 1
+      }
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Member Dashboard</h1>
+        <div className="flex space-x-2">
+          {!memberData.attendance.today && (
+            <Button onClick={handleSelfCheckIn}>
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Check In
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/attendance">View Attendance</Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick stats cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Attendance Streak</CardTitle>
+            <CheckSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{memberData.attendance.streak} days</div>
+            <p className="text-xs text-muted-foreground">
+              {memberData.attendance.lastWeek} visits last week
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Membership Status</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold capitalize">{memberData.profile.membershipStatus}</div>
+            <p className="text-xs text-muted-foreground">
+              Expires: {memberData.profile.endDate}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Classes</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{memberData.classes.booked}</div>
+            <p className="text-xs text-muted-foreground">
+              Attended {memberData.classes.attended} classes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Next Payment</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${memberData.payments.nextPayment.amount}</div>
+            <p className="text-xs text-muted-foreground">
+              Due: {memberData.payments.nextPayment.dueDate}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">

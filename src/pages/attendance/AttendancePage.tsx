@@ -5,14 +5,22 @@ import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const AttendancePage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
+  const { user } = useAuth();
+  const { userRole } = usePermissions();
+  
+  const isMember = userRole === "member";
+  
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Attendance Management</h1>
+        <h1 className="text-2xl font-bold mb-6">
+          {isMember ? "My Attendance" : "Attendance Management"}
+        </h1>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-1">
