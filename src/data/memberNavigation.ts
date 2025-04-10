@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import React from "react";
 import {
   LayoutDashboard,
   Dumbbell,
@@ -9,10 +9,8 @@ import {
   ShoppingBag,
   Calendar,
   MessageSquare,
-  BookOpen,
-  BarChart3,
-  Settings,
   HelpCircle,
+  Settings,
   Activity,
   User,
 } from "lucide-react";
@@ -20,7 +18,7 @@ import {
 export interface NavItem {
   href: string;
   label: string;
-  icon?: ReactNode;
+  icon?: React.ReactNode;
   badge?: string;
 }
 
