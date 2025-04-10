@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, Calendar, Clock, RefreshCcw, FileBarChart, TrendingDown } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -149,7 +148,6 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Mock data for churn prediction
   const churnMembers = [
     {
       id: "member1",
@@ -187,7 +185,6 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Mock data for revenue chart
   const revenueData = [
     { month: "Jan", revenue: 15000, expenses: 10000, profit: 5000 },
     { month: "Feb", revenue: 18000, expenses: 11000, profit: 7000 },
@@ -197,7 +194,6 @@ const AdminDashboard = () => {
     { month: "Jun", revenue: 25000, expenses: 14000, profit: 11000 },
   ];
 
-  // Mock data for feedback summary
   const feedbackData = [
     {
       id: "feedback1",
@@ -224,7 +220,6 @@ const AdminDashboard = () => {
     {
       id: "feedback3",
       memberId: "member3",
-      memberName: "",
       type: "fitness-plan",
       relatedId: "plan1",
       rating: 3,

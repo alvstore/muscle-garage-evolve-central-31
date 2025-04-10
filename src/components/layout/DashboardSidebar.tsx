@@ -15,6 +15,8 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Package2,
+  BarChartBig
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const sidebarItems: SidebarItem[] = [
+const menuItems: SidebarItem[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -125,34 +127,14 @@ const sidebarItems: SidebarItem[] = [
   {
     title: "Inventory",
     href: "/inventory",
-    icon: ShoppingCart,
+    icon: Package2,
     roles: ["admin", "staff"],
   },
   {
-    title: "Finance",
-    href: "/finance",
-    icon: FileText,
-    roles: ["admin", "staff"],
-    submenu: [
-      {
-        title: "Invoices",
-        href: "/invoices",
-        icon: FileText,
-        roles: ["admin", "staff"],
-      },
-      {
-        title: "Expenses",
-        href: "/transactions",
-        icon: FileText,
-        roles: ["admin", "staff"],
-      },
-      {
-        title: "Income",
-        href: "/transactions",
-        icon: FileText,
-        roles: ["admin", "staff"],
-      },
-    ],
+    title: "Finance Dashboard",
+    href: "/finance/dashboard",
+    icon: BarChartBig,
+    roles: ["admin"],
   },
   {
     title: "CRM & Leads",
@@ -185,7 +167,7 @@ const DashboardSidebar = ({
     {}
   );
 
-  const filteredItems = sidebarItems.filter((item) =>
+  const filteredItems = menuItems.filter((item) =>
     item.roles.includes(userRole)
   );
 

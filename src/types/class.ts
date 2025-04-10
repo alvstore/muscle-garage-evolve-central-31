@@ -21,6 +21,7 @@ export interface GymClass {
   description: string;
   trainerId: string;
   trainerName: string;
+  trainerAvatar?: string;
   startTime: string;
   endTime: string;
   duration: number; // in minutes
@@ -29,9 +30,12 @@ export interface GymClass {
   location: string;
   type: string;
   level: ClassDifficulty;
+  difficulty?: ClassDifficulty; // Alias for level to maintain compatibility
   image?: string;
   isRecurring: boolean;
+  recurring?: boolean; // Alias for isRecurring to maintain compatibility
   recurringDays?: number[]; // 0 = Sunday, 1 = Monday, etc.
+  recurringPattern?: number[]; // Alias for recurringDays to maintain compatibility
   createdAt: string;
   updatedAt: string;
 }

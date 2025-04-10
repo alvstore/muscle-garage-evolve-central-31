@@ -1,68 +1,84 @@
 
-import { UserRole } from ".";
+export type NotificationType = "system" | "payment" | "attendance" | "renewal" | "announcement" | "feedback" | "reminder";
+export type FeedbackType = "class" | "trainer" | "fitness-plan" | "general";
 
-export type NotificationChannel = "in-app" | "email" | "sms" | "whatsapp";
-export type NotificationType = 
-  | "reminder" 
-  | "announcement" 
-  | "birthday" 
-  | "membership-expiry" 
-  | "attendance" 
-  | "feedback" 
-  | "motivational";
-
-export interface NotificationTemplate {
+export interface Notification {
   id: string;
-  name: string;
+  userId: string;
+  title: string;
+  message: string;
   type: NotificationType;
-  channels: NotificationChannel[];
-  subject: string;
-  content: string;
-  variables: string[];
-  active: boolean;
-}
-
-export interface ReminderRule {
-  id: string;
-  name: string;
-  type: "membership-expiry" | "attendance" | "birthday" | "renewal";
-  triggerDays: number; // Days before/after the event
-  template: string; // Template ID
-  channels: NotificationChannel[];
-  targetRoles: UserRole[];
-  active: boolean;
+  read: boolean;
+  createdAt: string;
+  link?: string;
+  actionRequired?: boolean;
+  priority?: "low" | "medium" | "high";
+  expiresAt?: string;
 }
 
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  createdBy: string;
-  createdAt: string;
-  targetRoles: UserRole[];
-  targetBranch?: string;
+  date: string;
+  priority: "low" | "medium" | "high";
+  author: string;
+  authorId: string;
+  authorRole: string;
+  targetRoles?: string[];
+  attachments?: string[];
+  read?: boolean;
   expiresAt?: string;
-  channels: NotificationChannel[];
-  sentCount?: number;
 }
 
 export interface Feedback {
   id: string;
   memberId: string;
   memberName?: string;
-  type: "class" | "trainer" | "fitness-plan" | "general";
-  relatedId?: string; // Class ID, Trainer ID, or Plan ID
-  rating: number; // 1-5
-  comments?: string;
+  type: FeedbackType;
+  relatedId?: string;
+  rating: number;
+  comments: string;
   createdAt: string;
   anonymous: boolean;
+  responseId?: string;
+  responseContent?: string;
+  responseDate?: string;
+  status?: "new" | "responded" | "closed";
 }
 
 export interface MotivationalMessage {
   id: string;
+  title: string;
   content: string;
-  author?: string;
-  category: "fitness" | "nutrition" | "motivation" | "wellness";
-  tags?: string[];
-  active: boolean;
+  image?: string;
+  category: string;
+  tags: string[];
+  targetAudience?: string[];
+  schedule?: {
+    type: "immediate" | "scheduled" | "recurring";
+    date?: string;
+    recurrencePattern?: string;
+  };
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  status: "draft" | "active" | "completed" | "paused";
+}
+
+export interface ReminderRule {
+  id: string;
+  name: string;
+  description: string;
+  triggerType: "membership-expiry" | "missed-attendance" | "birthday" | "payment-due" | "class-booking" | "custom";
+  daysInAdvance: number;
+  message: string;
+  channels: ("email" | "sms" | "whatsapp" | "in-app")[];
+  enabled: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  lastTriggered?: string;
+  targetRoles?: string[];
+  customCriteria?: Record<string, any>;
 }

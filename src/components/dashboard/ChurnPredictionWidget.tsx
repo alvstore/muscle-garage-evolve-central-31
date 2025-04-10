@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -114,8 +113,7 @@ const ChurnPredictionWidget = ({ members }: ChurnPredictionWidgetProps) => {
               </div>
               <Progress 
                 value={member.churnRisk} 
-                className="h-2" 
-                indicatorClassName={getRiskProgressColor(member.churnRisk)} 
+                className="h-2 w-full"
               />
             </div>
             

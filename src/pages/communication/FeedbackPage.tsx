@@ -94,7 +94,7 @@ const FeedbackPage = () => {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
-            <FeedbackList feedback={feedbackData} loading={loading} />
+            <FeedbackList feedbacks={feedbackData} isLoading={loading} />
           </TabsContent>
           
           <TabsContent value="analytics" className="space-y-4">
@@ -110,7 +110,7 @@ const FeedbackPage = () => {
           <TabsContent value="form" className="space-y-4">
             <FeedbackForm 
               onComplete={() => setActiveTab("list")} 
-              onSubmit={handleFeedbackSubmission}
+              onSubmitFeedback={handleFeedbackSubmission}
             />
           </TabsContent>
         </Tabs>

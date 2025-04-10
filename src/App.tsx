@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,12 +20,14 @@ import AnnouncementPage from "./pages/communication/AnnouncementPage";
 import ReminderPage from "./pages/communication/ReminderPage";
 import FeedbackPage from "./pages/communication/FeedbackPage";
 import MotivationalPage from "./pages/communication/MotivationalPage";
+import InventoryPage from "./pages/inventory/InventoryPage";
+import FinanceDashboardPage from "./pages/finance/FinanceDashboardPage";
 import { useEffect, useState } from "react";
 import { User } from "./types";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -94,6 +95,12 @@ const App = () => {
               <Route path="reminders" element={<ReminderPage />} />
               <Route path="feedback" element={<FeedbackPage />} />
               <Route path="motivational" element={<MotivationalPage />} />
+              
+              {/* Inventory management */}
+              <Route path="/inventory" element={<InventoryPage />} />
+              
+              {/* Finance dashboard */}
+              <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
             </Route>
             
             {/* Catch-all route */}
@@ -103,6 +110,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
