@@ -1,4 +1,3 @@
-
 import { useAuth } from './use-auth';
 import { hasPermission, hasRouteAccess } from '@/services/permissionService';
 import { UserRole } from '@/types';
@@ -71,7 +70,8 @@ export type Permission =
   | "feature_email_campaigns"
   | "feature_sms_campaigns"
   | "feature_whatsapp_campaigns"
-  | "feature_social_media_integration";
+  | "feature_social_media_integration"
+  | "manage_content"; // Add the new permission
 
 export const usePermissions = () => {
   const { user } = useAuth();
