@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Sheet,
@@ -62,7 +61,6 @@ interface DashboardSidebarProps {
   closeSidebar: () => void;
 }
 
-// Define navigation categories
 type NavCategory = {
   name: string;
   items: NavItem[];
@@ -85,7 +83,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
   const { user, logout } = useAuth();
   const { userRole, can } = usePermissions();
   
-  // State to track expanded menu sections
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboards']);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -117,7 +114,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     }
   };
 
-  // Define navigation categories
   const navCategories: NavCategory[] = [
     {
       name: "",
@@ -323,9 +319,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
   ];
   
   const filteredCategories = navCategories.map(category => {
-    // Filter items based on user permissions
     const filteredItems = category.items.filter(item => {
-      // If the item has children, include it if at least one child is accessible
       if (item.children && item.children.length > 0) {
         const accessibleChildren = item.children.filter(child => can(child.permission));
         return accessibleChildren.length > 0 || can(item.permission);
@@ -343,10 +337,9 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
       <SheetContent side="left" className="w-64 p-0 bg-[#283046] text-white border-none">
         <div className="flex flex-col h-full">
-          {/* Sidebar Header with Logo */}
           <div className="p-4 flex items-center gap-3 border-b border-gray-700">
             <div className="bg-indigo-600 p-1 rounded-md">
-              <Logo variant="white" className="w-10 h-10" />
+              <Logo variant="white" />
             </div>
             <h1 className="text-xl font-semibold text-white">Vuexy</h1>
             <Button 
@@ -358,21 +351,17 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             </Button>
           </div>
           
-          {/* Sidebar Navigation */}
           <div className="flex-1 overflow-y-auto py-2">
             {filteredCategories.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-4">
-                {/* Category Header */}
                 {category.name && (
                   <div className="px-4 py-2 text-xs font-semibold text-gray-400 tracking-wider">
                     {category.name}
                   </div>
                 )}
                 
-                {/* Category Items */}
                 <div className="space-y-1">
                   {category.items.map((item, itemIndex) => {
-                    // Check if this item has accessible children
                     const hasChildren = item.children && item.children.length > 0;
                     const filteredChildren = hasChildren 
                       ? item.children!.filter(child => can(child.permission))
@@ -386,7 +375,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                         permission={item.permission}
                       >
                         <div className="mb-1">
-                          {/* Parent Item */}
                           <button
                             onClick={() => showChildren ? toggleSection(item.label) : navigate(item.href)}
                             className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors ${isExpanded && 'bg-[#1e2740]'}`}
@@ -411,7 +399,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                             </div>
                           </button>
                           
-                          {/* Child Items */}
                           {showChildren && isExpanded && (
                             <div className="mt-1 py-1 bg-[#161d31]">
                               {filteredChildren.map((child, childIndex) => (
@@ -445,7 +432,6 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             ))}
           </div>
           
-          {/* Sidebar Footer */}
           <div className="mt-auto p-4">
             <Separator className="my-2 bg-gray-700" />
             <Button
