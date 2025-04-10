@@ -1,6 +1,16 @@
 
 import { User } from "@/types";
-import { Branch } from "@/types/branch";
+
+export interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  email: string;
+  isActive: boolean;
+  phoneNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Mock branch data
 const mockBranches: Branch[] = [

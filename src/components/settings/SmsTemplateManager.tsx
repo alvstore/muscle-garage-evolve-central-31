@@ -1,46 +1,9 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from '@/components/ui/data-table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from "@/components/ui/badge";
-import { toast } from 'sonner';
-import { MoreVertical, Pencil, Trash2, Copy, Send, Plus, RefreshCw } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
-import { smsTemplateService } from "@/services/integrations/smsTemplateService";
-import { SmsTemplate, SmsProvider, TriggerEvent, Permission } from '@/types/notification';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { SmsTemplate, SmsProvider, TriggerEvent, Permission } from "@/types/notification";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -48,37 +11,124 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription
 } from "@/components/ui/form";
-import { useAuth } from '@/hooks/use-auth';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
-const smsTemplateSchema = z.object({
-  name: z.string().min(3, { message: "Name must be at least 3 characters." }),
+// Define the form schema
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Template name must be at least 2 characters." }),
   content: z.string().min(10, { message: "Content must be at least 10 characters." }),
   description: z.string().optional(),
   dltTemplateId: z.string().optional(),
   provider: z.enum(["msg91", "twilio"]),
-  triggerEvents: z.array(z.string()).nonempty({ message: "Select at least one trigger event." }),
-  variables: z.array(z.string()).optional(),
+  triggerEvents: z.array(z.string()),
   enabled: z.boolean().default(true),
 });
 
-const SmsTemplateManager = () => {
-  const [templates, setTemplates] = useState<SmsTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+type FormValues = z.infer<typeof formSchema>;
+
+// Mock data for SMS templates
+const mockTemplates: SmsTemplate[] = [
+  {
+    id: "template-1",
+    name: "Welcome Message",
+    content: "Welcome to Muscle Garage, {{name}}! Your membership is now active.",
+    description: "Sent to new members upon registration",
+    provider: "msg91",
+    triggerEvents: ["member_registration"],
+    variables: ["name"],
+    enabled: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "template-2",
+    name: "Payment Confirmation",
+    content: "Thank you for your payment of ₹{{amount}}. Receipt: {{receipt}}",
+    description: "Sent after successful payment",
+    dltTemplateId: "1234567890",
+    provider: "msg91",
+    triggerEvents: ["payment_success"],
+    variables: ["amount", "receipt"],
+    enabled: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "template-3",
+    name: "Class Booking Confirmation",
+    content: "Your booking for {{class}} on {{date}} at {{time}} is confirmed.",
+    description: "Sent after booking a class",
+    provider: "twilio",
+    triggerEvents: ["class_booking"],
+    variables: ["class", "date", "time"],
+    enabled: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "template-4",
+    name: "Membership Expiry Reminder",
+    content: "Your membership expires on {{date}}. Renew now to avoid interruption.",
+    description: "Sent before membership expiry",
+    provider: "msg91",
+    triggerEvents: ["plan_expiry"],
+    variables: ["date"],
+    enabled: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// Available trigger events
+const availableTriggerEvents = [
+  { value: "member_registration", label: "Member Registration" },
+  { value: "payment_success", label: "Payment Success" },
+  { value: "payment_failure", label: "Payment Failure" },
+  { value: "class_booking", label: "Class Booking" },
+  { value: "class_cancellation", label: "Class Cancellation" },
+  { value: "plan_expiry", label: "Plan Expiry" },
+  { value: "birthday", label: "Birthday" },
+  { value: "motivation", label: "Motivation" },
+];
+
+const SmsTemplateManager: React.FC = () => {
+  const [templates, setTemplates] = useState<SmsTemplate[]>(mockTemplates);
   const [selectedTemplate, setSelectedTemplate] = useState<SmsTemplate | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
-  const [testPhoneNumber, setTestPhoneNumber] = useState('');
-  const [testData, setTestData] = useState<Record<string, string>>({});
-  const [templateVariables, setTemplateVariables] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
-  
-  const form = useForm<z.infer<typeof smsTemplateSchema>>({
-    resolver: zodResolver(smsTemplateSchema),
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const { can } = usePermissions();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       content: "",
@@ -86,548 +136,455 @@ const SmsTemplateManager = () => {
       dltTemplateId: "",
       provider: "msg91",
       triggerEvents: [],
-      variables: [],
       enabled: true,
     },
   });
-  
-  const columns = [
-    {
-      accessorKey: 'name',
-      header: 'Name',
-    },
-    {
-      accessorKey: 'provider',
-      header: 'Provider',
-    },
-    {
-      accessorKey: 'triggerEvents',
-      header: 'Trigger Events',
-      cell: ({ row }: { row: any }) => (
-        <div className="flex flex-wrap gap-1">
-          {(row.triggerEvents || []).map((event: string) => (
-            <Badge key={event} variant="secondary" className="capitalize">
-              {event.replace(/_/g, " ")}
-            </Badge>
-          ))}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'enabled',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Switch 
-          checked={row.enabled} 
-          onCheckedChange={(checked) => handleToggleStatus(row.id, checked)}
-        />
-      ),
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(row)}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDuplicate(row)}>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleOpenTestModal(row)}>
-              <Send className="h-4 w-4 mr-2" />
-              Send Test SMS
-            </DropdownMenuItem>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the template.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDelete(row.id)}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
-  
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await smsTemplateService.getTemplates();
-      setTemplates(data);
-    } catch (error) {
-      console.error("Failed to fetch templates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch SMS templates. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-  
+
+  // Reset form when selected template changes
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  
-  const handleOpenModal = () => {
-    setIsEditMode(false);
+    if (selectedTemplate) {
+      form.reset({
+        name: selectedTemplate.name,
+        content: selectedTemplate.content,
+        description: selectedTemplate.description || "",
+        dltTemplateId: selectedTemplate.dltTemplateId || "",
+        provider: selectedTemplate.provider,
+        triggerEvents: selectedTemplate.triggerEvents as TriggerEvent[],
+        enabled: selectedTemplate.enabled,
+      });
+    } else {
+      form.reset({
+        name: "",
+        content: "",
+        description: "",
+        dltTemplateId: "",
+        provider: "msg91",
+        triggerEvents: [],
+        enabled: true,
+      });
+    }
+  }, [selectedTemplate, form]);
+
+  const handleCreateTemplate = () => {
     setSelectedTemplate(null);
-    form.reset();
-    setOpen(true);
+    setIsDialogOpen(true);
   };
-  
-  const handleCloseModal = () => {
-    setOpen(false);
-    setIsTestModalOpen(false);
-  };
-  
-  const handleEdit = (template: SmsTemplate) => {
-    setIsEditMode(true);
+
+  const handleEditTemplate = (template: SmsTemplate) => {
     setSelectedTemplate(template);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      setTemplates(templates.filter((t) => t.id !== templateId));
+      toast.success("Template deleted successfully");
+      setIsLoading(false);
+    }, 500);
+  };
+
+  const onSubmit = (formData: FormValues) => {
+    setIsLoading(true);
     
-    form.reset({
-      name: template.name,
-      content: template.content,
-      description: template.description || "",
-      dltTemplateId: template.dltTemplateId || "",
-      provider: template.provider,
-      triggerEvents: template.triggerEvents as unknown as string[],
-      variables: template.variables || [],
-      enabled: template.enabled,
-    });
+    // Extract variables from content using regex
+    const variableRegex = /{{([^}]+)}}/g;
+    const matches = [...formData.content.matchAll(variableRegex)];
+    const variables = matches.map((match) => match[1]);
     
-    setOpen(true);
-  };
-  
-  const handleDuplicate = (template: SmsTemplate) => {
-    const newTemplate = { ...template, id: '', name: `${template.name} (Copy)` };
-    createTemplate(newTemplate);
-  };
-  
-  const handleDelete = async (id: string) => {
-    try {
-      await smsTemplateService.deleteTemplate(id);
-      setTemplates(templates.filter((template) => template.id !== id));
-      toast({
-        title: "Success",
-        description: "Template deleted successfully.",
-      });
-    } catch (error) {
-      console.error("Failed to delete template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete template. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleToggleStatus = async (id: string, enabled: boolean) => {
-    try {
-      await smsTemplateService.updateTemplate(id, { enabled });
-      setTemplates(
-        templates.map((template) =>
-          template.id === id ? { ...template, enabled } : template
-        )
-      );
-      toast({
-        title: "Success",
-        description: `Template ${enabled ? 'enabled' : 'disabled'} successfully.`,
-      });
-    } catch (error) {
-      console.error("Failed to update template status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update template status. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const createTemplate = async (template: Omit<SmsTemplate, "id" | "createdAt" | "updatedAt">) => {
-    try {
-      const newTemplate = await smsTemplateService.createTemplate({
-        name: template.name,
-        content: template.content,
-        description: template.description,
-        dltTemplateId: template.dltTemplateId,
-        provider: template.provider,
-        triggerEvents: template.triggerEvents as TriggerEvent[],
-        variables: template.variables,
-        enabled: template.enabled,
-      });
-      
-      if (newTemplate) {
-        setTemplates([...templates, newTemplate]);
-        toast({
-          title: "Success",
-          description: "Template created successfully.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to create template.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to create template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create template. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const updateTemplate = async (id: string, templateData: Partial<SmsTemplate>) => {
-    try {
-      const updatedTemplate = await smsTemplateService.updateTemplate(id, templateData);
-      if (updatedTemplate) {
-        setTemplates(
-          templates.map((template) =>
-            template.id === id ? updatedTemplate : template
-          )
+    const triggerEventString = Array.isArray(formData.triggerEvents) 
+      ? formData.triggerEvents.join(',') 
+      : '';
+
+    // Simulate API call
+    setTimeout(() => {
+      if (selectedTemplate) {
+        // Update existing template
+        const updatedTemplates = templates.map((t) =>
+          t.id === selectedTemplate.id
+            ? {
+                ...t,
+                ...formData,
+                variables,
+                updatedAt: new Date().toISOString(),
+              }
+            : t
         );
-        toast({
-          title: "Success",
-          description: "Template updated successfully.",
-        });
+        setTemplates(updatedTemplates);
+        toast.success("Template updated successfully");
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to update template.",
-          variant: "destructive",
-        });
+        // Create new template
+        const newTemplate: SmsTemplate = {
+          id: `template-${Date.now()}`,
+          ...formData,
+          variables,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setTemplates([...templates, newTemplate]);
+        toast.success("Template created successfully");
       }
-    } catch (error) {
-      console.error("Failed to update template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update template. Please try again.",
-        variant: "destructive",
-      });
-    }
+      setIsLoading(false);
+      setIsDialogOpen(false);
+    }, 1000);
   };
-  
-  const onSubmit = async (values: z.infer<typeof smsTemplateSchema>) => {
-    setIsSubmitting(true);
-    try {
-      const templateData = {
-        ...values,
-        variables: smsTemplateService.extractVariables(values.content),
-        triggerEvents: values.triggerEvents as unknown as TriggerEvent[],
-      };
-      
-      if (isEditMode && selectedTemplate) {
-        await updateTemplate(selectedTemplate.id, templateData);
-      } else {
-        await createTemplate(templateData as Omit<SmsTemplate, "id" | "createdAt" | "updatedAt">);
-      }
-      
-      fetchData(); // Refresh data
-      handleCloseModal();
-    } catch (error) {
-      console.error("Failed to save template:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save template. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const handleOpenTestModal = (template: SmsTemplate) => {
-    setSelectedTemplate(template);
-    setTemplateVariables(smsTemplateService.extractVariables(template.content));
-    
-    const initialTestData: Record<string, string> = {};
-    smsTemplateService.extractVariables(template.content).forEach(variable => {
-      initialTestData[variable] = '';
-    });
-    setTestData(initialTestData);
-    
-    setIsTestModalOpen(true);
-  };
-  
-  const handleTestDataChange = (variable: string, value: string) => {
-    setTestData(prevData => ({
-      ...prevData,
-      [variable]: value,
-    }));
-  };
-  
-  const handleSendTest = async () => {
-    if (!selectedTemplate) return;
-    
-    try {
-      await smsTemplateService.sendTestSms(selectedTemplate.id, testPhoneNumber, testData);
-      handleCloseModal();
-    } catch (error) {
-      console.error("Failed to send test SMS:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send test SMS. Please check your phone number and test data.",
-        variant: "destructive",
-      });
-    }
-  };
-  
+
+  const filteredTemplates = activeTab === "all" 
+    ? templates 
+    : activeTab === "active" 
+      ? templates.filter(t => t.enabled) 
+      : templates.filter(t => !t.enabled);
+
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between">
-            <div>
-              <CardTitle>SMS Templates</CardTitle>
-              <CardDescription>Manage SMS templates for automated notifications.</CardDescription>
-            </div>
-            <Button onClick={fetchData} variant="outline" disabled={loading}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Button onClick={handleOpenModal}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Template
-            </Button>
-          </div>
-          <DataTable columns={columns} data={templates} loading={loading} />
-        </CardContent>
-      </Card>
-      
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent className="max-w-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isEditMode ? 'Edit Template' : 'Create Template'}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isEditMode ? 'Update the template details.' : 'Create a new SMS template.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Template Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">SMS Templates</h2>
+          <p className="text-muted-foreground">
+            Manage SMS templates for automated notifications
+          </p>
+        </div>
+        {can("manage_sms_templates") && (
+          <Button onClick={handleCreateTemplate}>
+            <Plus className="mr-2 h-4 w-4" /> Create Template
+          </Button>
+        )}
+      </div>
+
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All Templates</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onEdit={handleEditTemplate}
+                onDelete={handleDeleteTemplate}
+                canEdit={can("manage_sms_templates")}
               />
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Content</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Template Content" className="min-h-[100px]" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Use {`{variable}`} to insert dynamic content.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Template Description" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dltTemplateId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>DLT Template ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="DLT Template ID" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="provider"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Provider</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a provider" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="msg91">MSG91</SelectItem>
-                        <SelectItem value="twilio">Twilio</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="triggerEvents"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trigger Events</FormLabel>
-                    <Select
-                      multiple
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select trigger events" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="member_registration">Member Registration</SelectItem>
-                        <SelectItem value="payment_success">Payment Success</SelectItem>
-                        <SelectItem value="payment_failure">Payment Failure</SelectItem>
-                        <SelectItem value="class_booking">Class Booking</SelectItem>
-                        <SelectItem value="class_cancellation">Class Cancellation</SelectItem>
-                        <SelectItem value="plan_expiry">Plan Expiry</SelectItem>
-                        <SelectItem value="birthday">Birthday</SelectItem>
-                        <SelectItem value="motivation">Motivation</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Enabled</FormLabel>
-                      <FormDescription>
-                        Enable or disable this template.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={handleCloseModal}>Cancel</AlertDialogCancel>
-                <Button type="submit" disabled={isSubmitting} variant="default">
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>
-                      Saving...
-                    </span>
-                  ) : (
-                    isEditMode ? 'Update' : 'Create'
-                  )}
-                </Button>
-              </AlertDialogFooter>
-            </form>
-          </Form>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      <AlertDialog open={isTestModalOpen} onOpenChange={setIsTestModalOpen}>
-        <AlertDialogContent className="max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Send Test SMS</AlertDialogTitle>
-            <AlertDialogDescription>
-              Enter a phone number and test data to send a test SMS.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone Number
-              </Label>
-              <Input
-                type="tel"
-                id="phone"
-                value={testPhoneNumber}
-                onChange={(e) => setTestPhoneNumber(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <Separator />
-            {templateVariables.map((variable) => (
-              <div key={variable} className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor={variable} className="text-right">
-                  {variable}
-                </Label>
-                <Input
-                  type="text"
-                  id={variable}
-                  value={testData[variable] || ''}
-                  onChange={(e) => handleTestDataChange(variable, e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
             ))}
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseModal}>Cancel</AlertDialogCancel>
-            <Button variant="default" size="sm" onClick={handleSendTest}>
-              Send Test SMS
+        </TabsContent>
+        <TabsContent value="active" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onEdit={handleEditTemplate}
+                onDelete={handleDeleteTemplate}
+                canEdit={can("manage_sms_templates")}
+              />
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="inactive" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onEdit={handleEditTemplate}
+                onDelete={handleDeleteTemplate}
+                canEdit={can("manage_sms_templates")}
+              />
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTemplate ? "Edit SMS Template" : "Create SMS Template"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTemplate
+                ? "Update the details of this SMS template"
+                : "Create a new SMS template for automated notifications"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 pr-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Template Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Welcome Message" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="provider"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>SMS Provider</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select provider" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="msg91">MSG91</SelectItem>
+                            <SelectItem value="twilio">Twilio</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Brief description of when this template is used" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Message Content</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter message content with variables like {{name}}"
+                          className="min-h-[120px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Use {{variable}} syntax for dynamic content (e.g., {{name}}, {{amount}})
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="dltTemplateId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>DLT Template ID (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="For Indian regulations (MSG91)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="triggerEvents"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel className="text-base">Trigger Events</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Select when this template should be sent
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {availableTriggerEvents.map((event) => (
+                          <FormField
+                            key={event.value}
+                            control={form.control}
+                            name="triggerEvents"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={event.value}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(event.value)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, event.value])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== event.value
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {event.label}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Enabled</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Activate or deactivate this template
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </ScrollArea>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            <Button 
+              type="submit" 
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {selectedTemplate ? "Update Template" : "Create Template"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+};
+
+interface TemplateCardProps {
+  template: SmsTemplate;
+  onEdit: (template: SmsTemplate) => void;
+  onDelete: (id: string) => void;
+  canEdit: boolean;
+}
+
+const TemplateCard: React.FC<TemplateCardProps> = ({
+  template,
+  onEdit,
+  onDelete,
+  canEdit,
+}) => {
+  return (
+    <Card className={!template.enabled ? "opacity-70" : ""}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg">{template.name}</CardTitle>
+          {template.enabled ? (
+            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+              Active
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">
+              Inactive
+            </Badge>
+          )}
+        </div>
+        <CardDescription>{template.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="space-y-2">
+          <div>
+            <h4 className="text-sm font-medium">Content:</h4>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {template.content}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium">Provider:</h4>
+            <p className="text-sm text-muted-foreground capitalize">
+              {template.provider}
+            </p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium">Trigger Events:</h4>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {template.triggerEvents.map((event) => (
+                <Badge key={event} variant="secondary" className="text-xs">
+                  {event.replace(/_/g, " ")}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          {template.variables && template.variables.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium">Variables:</h4>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {template.variables.map((variable) => (
+                  <Badge key={variable} variant="outline" className="text-xs">
+                    {variable}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        {canEdit && (
+          <div className="flex justify-between w-full">
+            <Button variant="outline" size="sm" onClick={() => onEdit(template)}>
+              Edit
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => onDelete(template.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 

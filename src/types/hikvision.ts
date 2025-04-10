@@ -32,4 +32,5 @@ export interface HikvisionDevice {
   status: "online" | "offline" | "unknown";
   ipAddress?: string;
   lastSeen?: string;
+  deviceId?: string;
 }

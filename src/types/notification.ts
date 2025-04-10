@@ -149,3 +149,20 @@ export interface SmsLog {
   userRole?: UserRole;
   createdAt: string;
 }
+
+// Add Email template interfaces
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  description?: string;
+  provider: "sendgrid" | "mailgun" | "smtp";
+  triggerEvents: TriggerEvent[];
+  variables?: string[];
+  enabled: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+}

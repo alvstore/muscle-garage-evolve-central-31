@@ -123,6 +123,7 @@ export interface Trainer {
   bio?: string;
   phone?: string;
   availability?: any[];
+  specialty?: string[]; // Added to match usage in components
 }
 
 export interface Staff {
@@ -134,6 +135,7 @@ export interface Staff {
   department: string;
   hireDate: string;
   avatar?: string;
+  phone?: string; // Added to match usage in components
 }
 
 export interface Admin {
@@ -143,6 +145,7 @@ export interface Admin {
   role: "admin";
   permissions: string[];
   avatar?: string;
+  phone?: string; // Added to match usage in components
 }
 
 export interface Membership {
@@ -162,7 +165,11 @@ export interface Announcement {
   createdAt: string;
   expiresAt: string;
   createdBy: string;
+  targetRoles?: UserRole[]; // Added to match component usage
 }
+
+// Re-export from notification.ts types for backward compatibility
+export { type TriggerEvent } from '@/types/notification';
 
 export interface DashboardSummary {
   activeMemberships: number;
@@ -170,6 +177,11 @@ export interface DashboardSummary {
   newMembers: number;
   upcomingClasses: number;
   occupancyRate: number;
+  totalMembers: number;
+  todayCheckIns: number;
+  pendingPayments: number;
+  upcomingRenewals: number;
+  attendanceTrend: Array<{ date: string; count: number }>;
 }
 
 export interface Invoice {
