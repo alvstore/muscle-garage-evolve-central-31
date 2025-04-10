@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -234,7 +235,7 @@ const WhatsAppSettings = () => {
                         <Input
                           id="name"
                           placeholder="e.g., appointment_reminder"
-                          value={newTemplate.name}
+                          value={newTemplate.name || ""}
                           onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                         />
                         <FormDescription>
@@ -247,7 +248,7 @@ const WhatsAppSettings = () => {
                           id="content"
                           placeholder="Hello {{1}}, your membership expires on {{2}}."
                           rows={4}
-                          value={newTemplate.content}
+                          value={newTemplate.content || ""}
                           onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
                         />
                         <FormDescription>
@@ -260,7 +261,7 @@ const WhatsAppSettings = () => {
                           <Input
                             id="language"
                             placeholder="en"
-                            value={newTemplate.language}
+                            value={newTemplate.language || "en"}
                             onChange={(e) => setNewTemplate({ ...newTemplate, language: e.target.value })}
                           />
                         </div>
@@ -269,7 +270,7 @@ const WhatsAppSettings = () => {
                           <Input
                             id="category"
                             placeholder="UTILITY"
-                            value={newTemplate.category}
+                            value={newTemplate.category || "UTILITY"}
                             onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
                           />
                         </div>
