@@ -15,6 +15,7 @@ import { Loader2, EyeOff, Eye, MessageSquare, Send } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import settingsService, { WhatsAppSettings as WhatsAppSettingsType } from "@/services/settingsService";
 import { messagingService } from "@/services/integrations/messagingService";
+import { Label } from "@/components/ui/label";
 
 // Define the form schema with Zod
 const whatsAppSchema = z.object({
