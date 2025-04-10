@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -90,7 +91,7 @@ export const hasPermission = (
     case 'switch_branches':
       return userRole === 'staff'; // Fix comparison - don't compare 'staff' with 'admin'
     case 'manage_content':
-      return userRole === 'admin' || userRole === 'staff'; // Add permission for website content management
+      return userRole === 'staff'; // Allow staff to manage content but not compare with admin (admin already has all permissions)
     // Add more cases as needed
     default:
       return false; // Default: no permission
