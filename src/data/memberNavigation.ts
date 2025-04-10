@@ -1,3 +1,4 @@
+
 import {
   BarChart3,
   Calendar,
@@ -14,18 +15,74 @@ import {
   Apple,
 } from "lucide-react";
 
-interface SidebarNavItem {
+export interface NavItem {
   name: string;
   href: string;
   icon: LucideIcon;
+  badge?: string;
+  label?: string;
 }
 
-interface SidebarNavGroup {
+export interface NavSection {
   name: string;
-  items: SidebarNavItem[];
+  items: NavItem[];
 }
 
-export const memberNavigation: SidebarNavGroup[] = [
+export const memberNavSections: NavSection[] = [
+  {
+    name: "Dashboard",
+    items: [
+      {
+        name: "Overview",
+        href: "/",
+        icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    name: "Fitness & Classes",
+    items: [
+      {
+        name: "Book Classes",
+        href: "/classes",
+        icon: Calendar,
+      },
+      {
+        name: "Workout Plans",
+        href: "/fitness/workout-plans",
+        icon: Dumbbell,
+      },
+      {
+        name: "Diet Plans",
+        href: "/fitness/diet-plans",
+        icon: Apple,
+      },
+      {
+        name: "Progress Tracker",
+        href: "/fitness/progress",
+        icon: LineChart,
+      },
+    ],
+  },
+  {
+    name: "Account",
+    items: [
+      {
+        name: "Profile",
+        href: "/profile",
+        icon: User,
+      },
+      {
+        name: "Settings",
+        href: "/settings",
+        icon: Settings,
+      },
+    ],
+  },
+];
+
+// For backward compatibility
+export const memberNavigation = [
   {
     name: "General",
     items: [

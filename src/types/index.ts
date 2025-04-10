@@ -1,3 +1,4 @@
+
 // Extended user type with branch information
 export interface User {
   id: string;
@@ -88,5 +89,146 @@ export interface Member {
   hips?: number;
   bodyFat?: number;
   // Progress tracking
-  measurements?: import("./user").MemberMeasurement[];
+  measurements?: MemberMeasurement[];
+}
+
+// Additional types needed for other components
+export interface Class {
+  id: string;
+  name: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  enrolled: number;
+  trainer: string;
+  trainerName?: string;
+  trainerAvatar?: string;
+  trainerId?: string;
+  difficulty: string;
+  type: string;
+  location?: string;
+  status?: string;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  email: string;
+  role: "trainer";
+  specialization: string[];
+  experience: number;
+  certifications: string[];
+  avatar?: string;
+  bio?: string;
+  phone?: string;
+  availability?: any[];
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  role: "staff";
+  position: string;
+  department: string;
+  hireDate: string;
+  avatar?: string;
+}
+
+export interface Admin {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin";
+  permissions: string[];
+  avatar?: string;
+}
+
+export interface Membership {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
+  features: string[];
+  isActive: boolean;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: "low" | "medium" | "high";
+  createdAt: string;
+  expiresAt: string;
+  createdBy: string;
+}
+
+export interface DashboardSummary {
+  activeMemberships: number;
+  totalRevenue: number;
+  newMembers: number;
+  upcomingClasses: number;
+  occupancyRate: number;
+}
+
+export interface Invoice {
+  id: string;
+  memberId: string;
+  memberName: string;
+  amount: number;
+  status: "paid" | "pending" | "overdue";
+  dueDate: string;
+  items: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }[];
+}
+
+export interface WorkoutPlan {
+  id: string;
+  memberId: string;
+  trainerId: string;
+  workoutDays: WorkoutDay[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  rest?: number;
+  notes?: string;
+}
+
+export interface DietPlan {
+  id: string;
+  memberId: string;
+  trainerId: string;
+  mealPlans: MealPlan[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MealPlan {
+  id: string;
+  name: string;
+  time: string;
+  items: string[];
+  macros: {
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
 }
