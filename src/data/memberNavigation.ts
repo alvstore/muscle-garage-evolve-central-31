@@ -54,6 +54,11 @@ export const memberNavSections: NavSection[] = [
         label: "Attendance", 
         icon: createNavIcon("Activity")
       },
+      { 
+        href: "/fitness/diet", 
+        label: "Diet Plan", 
+        icon: createNavIcon("Utensils")
+      },
     ],
   },
   {
@@ -96,17 +101,6 @@ export const memberNavSections: NavSection[] = [
         href: "/communication/announcements", 
         label: "Announcements", 
         icon: createNavIcon("Bell")
-      },
-    ],
-  },
-  {
-    name: "Settings",
-    icon: createNavIcon("Settings"),
-    items: [
-      { 
-        href: "/settings", 
-        label: "Account Settings", 
-        icon: createNavIcon("Settings")
       },
     ],
   },

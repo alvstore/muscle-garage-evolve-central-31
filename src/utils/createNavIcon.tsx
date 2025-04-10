@@ -10,7 +10,8 @@ import {
   FileText,
   Bell,
   Settings,
-  Home
+  Home,
+  Utensils
 } from "lucide-react";
 
 // Map of icon names to their components
@@ -24,7 +25,8 @@ const iconMap = {
   ShoppingBag,
   FileText,
   Bell,
-  Settings
+  Settings,
+  Utensils
 };
 
 export type IconName = keyof typeof iconMap;

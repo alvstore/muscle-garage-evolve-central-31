@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -44,7 +43,6 @@ import {
 import { Product, ProductCategory, ProductStatus } from "@/types/store";
 import { toast } from "sonner";
 
-// Mock data for products
 const mockProducts: Product[] = [
   {
     id: "1",
@@ -150,9 +148,10 @@ const mockProducts: Product[] = [
 interface ProductListProps {
   onEdit: (product: Product) => void;
   onAddNew: () => void;
+  isMemberView?: boolean;
 }
 
-const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
+const ProductList = ({ onEdit, onAddNew, isMemberView = false }: ProductListProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +160,6 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
   const [statusFilter, setStatusFilter] = useState<ProductStatus | "all">("all");
 
   useEffect(() => {
-    // Simulate API call
     setTimeout(() => {
       setProducts(mockProducts);
       setFilteredProducts(mockProducts);
@@ -169,11 +167,9 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
     }, 1000);
   }, []);
 
-  // Apply filters when any filter changes
   useEffect(() => {
     let result = products;
     
-    // Apply search filter
     if (searchTerm) {
       result = result.filter(product => 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -182,12 +178,10 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
       );
     }
     
-    // Apply category filter
     if (categoryFilter !== "all") {
       result = result.filter(product => product.category === categoryFilter);
     }
     
-    // Apply status filter
     if (statusFilter !== "all") {
       result = result.filter(product => product.status === statusFilter);
     }
@@ -196,13 +190,11 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
   }, [products, searchTerm, categoryFilter, statusFilter]);
 
   const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
     setProducts(products.filter(product => product.id !== id));
     setFilteredProducts(filteredProducts.filter(product => product.id !== id));
     toast.success("Product deleted successfully");
   };
 
-  // Status badge color mapping
   const getStatusBadge = (status: ProductStatus) => {
     switch (status) {
       case "in-stock":
@@ -218,7 +210,6 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
     }
   };
 
-  // Format price to currency
   const formatPrice = (price: number) => {
     return `$${price.toFixed(2)}`;
   };
@@ -227,11 +218,13 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <CardTitle>Products</CardTitle>
-          <Button onClick={onAddNew}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add New Product
-          </Button>
+          <CardTitle>{isMemberView ? "Available Products" : "Products"}</CardTitle>
+          {!isMemberView && (
+            <Button onClick={onAddNew}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add New Product
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -239,7 +232,7 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search by name, description or SKU..."
+                placeholder="Search products by name, description or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -287,25 +280,29 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
               Showing {filteredProducts.length} products
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setProducts(mockProducts);
-                    setFilteredProducts(mockProducts);
-                    setLoading(false);
-                  }, 1000);
-                }}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              {!isMemberView && (
+                <>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setLoading(true);
+                      setTimeout(() => {
+                        setProducts(mockProducts);
+                        setFilteredProducts(mockProducts);
+                        setLoading(false);
+                      }, 1000);
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -324,7 +321,7 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
             <p className="mt-1 text-sm text-muted-foreground mb-4">
               {searchTerm || categoryFilter !== "all" || statusFilter !== "all" 
                 ? "Try changing your filters"
-                : "Start by adding a new product"}
+                : isMemberView ? "No products available in this category" : "Start by adding a new product"}
             </p>
             {searchTerm || categoryFilter !== "all" || statusFilter !== "all" ? (
               <Button 
@@ -337,12 +334,12 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
               >
                 Clear Filters
               </Button>
-            ) : (
+            ) : (!isMemberView && (
               <Button onClick={onAddNew}>
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Add New Product
               </Button>
-            )}
+            ))}
           </div>
         ) : (
           <div className="rounded-md border overflow-hidden">
@@ -354,7 +351,7 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
                   <TableHead>Price</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>SKU</TableHead>
+                  {!isMemberView && <TableHead>SKU</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -385,32 +382,38 @@ const ProductList = ({ onEdit, onAddNew }: ProductListProps) => {
                     </TableCell>
                     <TableCell>{getStatusBadge(product.status)}</TableCell>
                     <TableCell>{product.stock}</TableCell>
-                    <TableCell className="font-mono text-xs">{product.sku}</TableCell>
+                    {!isMemberView && <TableCell className="font-mono text-xs">{product.sku}</TableCell>}
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(product)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(product.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {isMemberView ? (
+                        <Button variant="outline" size="sm">
+                          Add to Cart
+                        </Button>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEdit(product)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(product.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
