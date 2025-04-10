@@ -7,6 +7,46 @@ export interface ProgressMetrics {
   muscleGain: number;
 }
 
+// Workout related types
+export interface Exercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  rest?: number;
+  notes?: string;
+  mediaUrl?: string;
+  muscleGroupTag?: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  dayLabel: string;
+  exercises: Exercise[];
+}
+
+export interface WorkoutPlan {
+  id: string;
+  name: string;
+  description: string;
+  isCommon: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  days: WorkoutDay[];
+}
+
+export interface MemberWorkout {
+  id: string;
+  memberId: string;
+  workoutPlanId: string;
+  isCustom: boolean;
+  customDays?: WorkoutDay[];
+  assignedBy: string;
+  assignedAt: string;
+}
+
 // Class and booking related types
 export type ClassDifficulty = "beginner" | "intermediate" | "advanced" | "all";
 

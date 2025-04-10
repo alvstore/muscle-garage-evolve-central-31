@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -36,6 +37,7 @@ import FrontPagesManager from './pages/frontpages/FrontPagesManager';
 import FitnessPlanPage from './pages/fitness/FitnessPlanPage';
 import FitnessProgressPage from './pages/fitness/FitnessProgressPage';
 import DietPlanPage from './pages/fitness/DietPlanPage';
+import WorkoutPlansPage from './pages/fitness/WorkoutPlansPage';
 import TrainerAllocationPage from './pages/trainers/TrainerAllocationPage';
 
 import { AuthProvider } from './hooks/use-auth';
@@ -101,6 +103,11 @@ export default function App() {
                   <Route path="/fitness/diet" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
                       <DietPlanPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/fitness/workout-plans" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <WorkoutPlansPage />
                     </PrivateRoute>
                   } />
                   <Route path="/trainers/allocation" element={

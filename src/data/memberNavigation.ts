@@ -60,6 +60,11 @@ export const memberNavSections: NavSection[] = [
         icon: createNavIcon("TrendingUp")
       },
       { 
+        href: "/fitness/workout-plans", 
+        label: "Workout Plans", 
+        icon: createNavIcon("Activity")
+      },
+      { 
         href: "/fitness/diet", 
         label: "Diet Plan", 
         icon: createNavIcon("Utensils")

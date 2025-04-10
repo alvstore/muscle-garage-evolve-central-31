@@ -12,7 +12,8 @@ import {
   Settings,
   Home,
   Utensils,
-  TrendingUp
+  TrendingUp,
+  Dumbbell
 } from "lucide-react";
 
 // Map of icon names to their components
@@ -28,7 +29,8 @@ const iconMap = {
   Bell,
   Settings,
   Utensils,
-  TrendingUp
+  TrendingUp,
+  Dumbbell
 };
 
 export type IconName = keyof typeof iconMap;
