@@ -1,20 +1,8 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO } from "date-fns";
-
-interface Payment {
-  id: string;
-  memberId: string;
-  memberName: string;
-  memberAvatar?: string;
-  membershipPlan: string;
-  amount: number;
-  dueDate: string;
-  status: "pending" | "overdue";
-  contactInfo: string;
-}
+import { Payment } from "@/types/dashboard";
 
 interface PendingPaymentsProps {
   payments: Payment[];

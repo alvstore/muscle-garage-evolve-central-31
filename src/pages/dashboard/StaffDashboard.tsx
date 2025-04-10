@@ -33,7 +33,7 @@ const StaffDashboard = () => {
         avatar: "/placeholder.svg",
       },
       time: "10 minutes ago",
-      type: "membership",
+      type: "membership" as const,
     },
     {
       id: "2",
@@ -44,7 +44,7 @@ const StaffDashboard = () => {
         avatar: "/placeholder.svg",
       },
       time: "30 minutes ago",
-      type: "check-in",
+      type: "check-in" as const,
     },
     {
       id: "3",
@@ -55,7 +55,7 @@ const StaffDashboard = () => {
         avatar: "/placeholder.svg",
       },
       time: "1 hour ago",
-      type: "payment",
+      type: "payment" as const,
     }
   ];
 
@@ -68,7 +68,7 @@ const StaffDashboard = () => {
       membershipPlan: "Standard Monthly",
       amount: 99,
       dueDate: "2023-07-25T00:00:00Z",
-      status: "pending",
+      status: "pending" as const,
       contactInfo: "+1234567894",
     },
     {
@@ -79,7 +79,7 @@ const StaffDashboard = () => {
       membershipPlan: "Premium Annual",
       amount: 999,
       dueDate: "2023-07-15T00:00:00Z",
-      status: "overdue",
+      status: "overdue" as const,
       contactInfo: "+1234567897",
     }
   ];

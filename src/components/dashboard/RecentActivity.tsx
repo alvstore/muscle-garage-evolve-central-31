@@ -1,19 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface ActivityItem {
-  id: string;
-  title: string;
-  description: string;
-  user: {
-    name: string;
-    avatar?: string;
-  };
-  time: string;
-  type: "membership" | "check-in" | "payment" | "class" | "other";
-}
+import { ActivityItem } from "@/types/dashboard";
 
 interface RecentActivityProps {
   activities: ActivityItem[];
