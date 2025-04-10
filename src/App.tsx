@@ -43,6 +43,7 @@ import TrainerAttendancePage from './pages/trainers/TrainerAttendancePage';
 import TrainerProfilePage from './pages/trainers/TrainerProfilePage';
 import MemberProgressPage from './pages/members/MemberProgressPage';
 import TrainerTaskPage from './pages/trainers/TrainerTaskPage';
+import TrainerNotificationsPage from './pages/communication/TrainerNotificationsPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -229,6 +230,12 @@ export default function App() {
                   <Route path="/communication/motivational" element={
                     <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
                       <MotivationalPage />
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/communication/notifications" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <TrainerNotificationsPage />
                     </PrivateRoute>
                   } />
                   
