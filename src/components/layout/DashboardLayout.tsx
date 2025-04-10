@@ -374,9 +374,9 @@ const DashboardLayout = () => {
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
+            <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
             <AvatarFallback className="bg-indigo-600 text-white">
-              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="ml-3">
@@ -392,11 +392,11 @@ const DashboardLayout = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/members/profile")}>
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
@@ -462,9 +462,9 @@ const DashboardLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2 pl-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
+                      <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
                       <AvatarFallback className="bg-indigo-600 text-white text-xs">
-                        {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                        {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start">
@@ -477,11 +477,11 @@ const DashboardLayout = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/members/profile")}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>

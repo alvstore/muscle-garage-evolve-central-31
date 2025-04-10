@@ -147,7 +147,7 @@ const MembersListPage = () => {
             <Button variant="outline" size="icon">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button onClick={() => toast.info("Add member feature coming soon")}>
+            <Button onClick={() => navigate("/members/new")}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add Member
             </Button>

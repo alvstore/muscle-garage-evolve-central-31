@@ -27,6 +27,10 @@ import HikvisionIntegrationPage from './pages/settings/HikvisionIntegrationPage'
 import HikvisionPartnerPage from './pages/settings/HikvisionPartnerPage';
 import InvoicePage from './pages/finance/InvoicePage';
 import TransactionPage from './pages/finance/TransactionPage';
+import AttendancePage from './pages/attendance/AttendancePage';
+import MembersListPage from './pages/members/MembersListPage';
+import MemberProfilePage from './pages/members/MemberProfilePage';
+import NewMemberPage from './pages/members/NewMemberPage';
 
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
@@ -60,6 +64,35 @@ export default function App() {
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  
+                  {/* Members Routes */}
+                  <Route path="/members" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <MembersListPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/members/new" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff']}>
+                      <NewMemberPage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/members/profile" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+                      <MemberProfilePage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="/members/:id" element={
+                    <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+                      <MemberProfilePage />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Attendance Route */}
+                  <Route path="/attendance" element={
+                    <PrivateRoute>
+                      <AttendancePage />
+                    </PrivateRoute>
+                  } />
                   
                   {/* CRM Routes */}
                   <Route path="/crm/leads" element={
