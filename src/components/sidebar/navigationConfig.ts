@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Users,
@@ -24,11 +23,12 @@ import {
   Store,
   MessageCircle,
   CheckSquare,
-  Globe
+  Globe,
+  LucideIcon
 } from "lucide-react";
 import { Permission } from "@/hooks/use-permissions";
 import { SidebarItem } from "./SidebarNavigation";
-import { createNavIcon } from "@/utils/createNavIcon";
+import { createIconFromComponent } from "@/utils/createNavIcon";
 import { ReactNode } from "react";
 
 export const navigation: {
@@ -41,13 +41,13 @@ export const navigation: {
       { 
         href: "/dashboard", 
         label: "Dashboard", 
-        icon: createNavIcon(LayoutDashboard), 
+        icon: createIconFromComponent(LayoutDashboard), 
         permission: "access_dashboards" as Permission
       },
       { 
         href: "/dashboard/overview", 
         label: "Analytics", 
-        icon: createNavIcon(Eye), 
+        icon: createIconFromComponent(Eye), 
         permission: "access_dashboards" as Permission
       },
     ]
@@ -58,20 +58,20 @@ export const navigation: {
       { 
         href: "/members", 
         label: "Members", 
-        icon: createNavIcon(Users),
+        icon: createIconFromComponent(Users),
         badge: "328",
         permission: "manage_members" as Permission,
         children: [
           { 
             href: "/members", 
             label: "All Members",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "manage_members" as Permission
           },
           { 
             href: "/members/new", 
             label: "Add Member",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "register_member" as Permission
           }
         ]
@@ -79,37 +79,37 @@ export const navigation: {
       { 
         href: "/trainers", 
         label: "Trainers", 
-        icon: createNavIcon(Dumbbell), 
+        icon: createIconFromComponent(Dumbbell), 
         permission: "view_all_trainers" as Permission
       },
       { 
         href: "/classes", 
         label: "Classes", 
-        icon: createNavIcon(ClipboardList), 
+        icon: createIconFromComponent(ClipboardList), 
         permission: "trainer_view_classes" as Permission,
       },
       { 
         href: "/fitness-plans", 
         label: "Fitness Plans", 
-        icon: createNavIcon(Activity), 
+        icon: createIconFromComponent(Activity), 
         permission: "trainer_edit_fitness" as Permission,
         children: [
           { 
             href: "/fitness-plans", 
             label: "Overview",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "trainer_edit_fitness" as Permission
           },
           { 
             href: "/fitness/workout-plans", 
             label: "Workout Plans",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "trainer_edit_fitness" as Permission
           },
           { 
             href: "/fitness/diet-plans", 
             label: "Diet Plans",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "trainer_edit_fitness" as Permission
           }
         ]
@@ -117,25 +117,25 @@ export const navigation: {
       { 
         href: "/memberships", 
         label: "Membership Plans", 
-        icon: createNavIcon(CreditCard), 
+        icon: createIconFromComponent(CreditCard), 
         permission: "member_view_plans" as Permission
       },
       { 
         href: "/finance", 
         label: "Finance", 
-        icon: createNavIcon(DollarSign), 
+        icon: createIconFromComponent(DollarSign), 
         permission: "view_invoices" as Permission,
         children: [
           { 
             href: "/finance/invoices", 
             label: "Invoices",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "view_invoices" as Permission
           },
           { 
             href: "/finance/transactions", 
             label: "Transactions",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "manage_payments" as Permission
           }
         ]
@@ -148,13 +148,13 @@ export const navigation: {
       { 
         href: "/trainers/tasks", 
         label: "Task Management", 
-        icon: createNavIcon(CheckSquare),
+        icon: createIconFromComponent(CheckSquare),
         permission: "access_own_resources" as Permission
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
-        icon: createNavIcon(CalendarDays), 
+        icon: createIconFromComponent(CalendarDays), 
         permission: "view_all_attendance" as Permission
       }
     ]
@@ -165,13 +165,13 @@ export const navigation: {
       { 
         href: "/inventory", 
         label: "Inventory", 
-        icon: createNavIcon(Package),
+        icon: createIconFromComponent(Package),
         permission: "access_inventory" as Permission
       },
       { 
         href: "/store", 
         label: "Store", 
-        icon: createNavIcon(Store),
+        icon: createIconFromComponent(Store),
         permission: "access_store" as Permission
       }
     ]
@@ -182,25 +182,25 @@ export const navigation: {
       { 
         href: "/crm/leads", 
         label: "CRM", 
-        icon: createNavIcon(UserPlus), 
+        icon: createIconFromComponent(UserPlus), 
         permission: "access_crm" as Permission,
         children: [
           { 
             href: "/crm/leads", 
             label: "Leads",
-            icon: createNavIcon(Circle), 
+            icon: createIconFromComponent(Circle), 
             permission: "access_crm" as Permission
           },
           { 
             href: "/crm/funnel", 
             label: "Sales Funnel",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "access_crm" as Permission
           },
           { 
             href: "/crm/follow-up", 
             label: "Follow-up",
-            icon: createNavIcon(Circle),
+            icon: createIconFromComponent(Circle),
             permission: "access_crm" as Permission
           }
         ]
@@ -208,13 +208,13 @@ export const navigation: {
       { 
         href: "/marketing/promo", 
         label: "Promotions", 
-        icon: createNavIcon(Gift),
+        icon: createIconFromComponent(Gift),
         permission: "access_marketing" as Permission
       },
       { 
         href: "/marketing/referral", 
         label: "Referral Program", 
-        icon: createNavIcon(Gift),
+        icon: createIconFromComponent(Gift),
         permission: "access_marketing" as Permission
       }
     ]
@@ -225,19 +225,19 @@ export const navigation: {
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: createNavIcon(Bell), 
+        icon: createIconFromComponent(Bell), 
         permission: "access_communication" as Permission
       },
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: createNavIcon(MessageSquare), 
+        icon: createIconFromComponent(MessageSquare), 
         permission: "access_communication" as Permission
       },
       { 
         href: "/communication/reminders", 
         label: "Reminders", 
-        icon: createNavIcon(Bell), 
+        icon: createIconFromComponent(Bell), 
         permission: "access_communication" as Permission
       }
     ]
@@ -248,7 +248,7 @@ export const navigation: {
       { 
         href: "/frontpages", 
         label: "Website", 
-        icon: createNavIcon(Globe), 
+        icon: createIconFromComponent(Globe), 
         permission: "full_system_access" as Permission
       }
     ]
@@ -259,13 +259,13 @@ export const navigation: {
       { 
         href: "/reports", 
         label: "Reports", 
-        icon: createNavIcon(FileText), 
+        icon: createIconFromComponent(FileText), 
         permission: "access_analytics" as Permission
       },
       { 
         href: "/settings", 
         label: "Settings", 
-        icon: createNavIcon(Settings), 
+        icon: createIconFromComponent(Settings), 
         permission: "access_own_resources" as Permission
       }
     ]
