@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import Logo from "@/components/Logo";
 import SidebarNavigation from "@/components/sidebar/SidebarNavigation";
 import { navigation } from "@/components/sidebar/navigationConfig";
+import { cn } from "@/lib/utils";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -47,7 +47,11 @@ export default function DashboardSidebar({
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
       <SheetContent 
         side="left" 
-        className={`w-${isCollapsed ? '20' : '64'} p-0 bg-[#283046] text-white border-none transition-all duration-300 ease-in-out`}
+        className={cn(
+          "p-0 bg-[#283046] text-white border-none transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-20" : "w-64"
+        )}
+        showCloseButton={false}
       >
         <div className="flex flex-col h-full">
           <div className="p-4 flex items-center gap-3 border-b border-gray-700 justify-between">

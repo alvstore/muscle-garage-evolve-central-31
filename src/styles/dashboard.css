@@ -29,6 +29,11 @@ body, html {
   padding: 0;
 }
 
+/* Fix the overlay issue from the sheet component */
+[data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
+}
+
 .container {
   margin-left: auto;
   margin-right: auto;
@@ -147,6 +152,18 @@ body, html {
 /* Fix for modal z-index issues */
 .modal, .drawer, .dialog {
   z-index: 100 !important;
+}
+
+/* Fix for sheet overlay z-index */
+[data-radix-portal],
+[role="dialog"] {
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+.radix-sheet-overlay,
+[data-radix-overlay] {
+  pointer-events: auto !important;
 }
 
 /* Smooth fade animations for elements */

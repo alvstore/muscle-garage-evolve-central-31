@@ -5,6 +5,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import MemberSidebarContent from "../sidebar/MemberSidebarContent";
+import { cn } from "@/lib/utils";
 
 interface MemberSidebarProps {
   isSidebarOpen: boolean;
@@ -23,7 +24,11 @@ export default function MemberSidebar({
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
       <SheetContent 
         side="left" 
-        className={`w-${isCollapsed ? '20' : '64'} p-0 bg-[#2c2c44] text-white border-none overflow-hidden transition-all duration-300 ease-in-out`}
+        className={cn(
+          "p-0 bg-[#2c2c44] text-white border-none overflow-hidden transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-20" : "w-64"
+        )}
+        showCloseButton={false}
       >
         <MemberSidebarContent isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       </SheetContent>

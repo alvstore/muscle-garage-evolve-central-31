@@ -25,8 +25,10 @@ const TrainerSidebar: React.FC<TrainerSidebarProps> = ({
       <SheetContent 
         side="left" 
         className={cn(
-          `w-${isCollapsed ? '20' : '64'} p-0 border-none bg-[#283046] text-white transition-all duration-300 ease-in-out`
+          "p-0 border-none bg-[#283046] text-white transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-20" : "w-64"
         )}
+        showCloseButton={false}
       >
         <TrainerSidebarContent isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       </SheetContent>

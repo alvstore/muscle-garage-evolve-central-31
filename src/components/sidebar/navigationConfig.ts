@@ -136,9 +136,9 @@ export const navigation: {
             label: "Transactions",
             icon: <Circle className="h-2 w-2" />,
             permission: "manage_payments" as Permission
-          },
+          }
         ]
-      },
+      }
     ]
   },
   {
@@ -148,14 +148,14 @@ export const navigation: {
         href: "/trainers/tasks", 
         label: "Task Management", 
         icon: <CheckSquare className="h-5 w-5" />,
-        permission: "access_own_resources" as Permission,
+        permission: "access_own_resources" as Permission
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
         icon: <CalendarDays className="h-5 w-5" />, 
         permission: "view_all_attendance" as Permission
-      },
+      }
     ]
   },
   {
@@ -165,13 +165,13 @@ export const navigation: {
         href: "/inventory", 
         label: "Inventory", 
         icon: <Package className="h-5 w-5" />,
-        permission: "access_inventory" as Permission,
+        permission: "access_inventory" as Permission
       },
       { 
         href: "/store", 
         label: "Store", 
         icon: <Store className="h-5 w-5" />,
-        permission: "access_store" as Permission,
+        permission: "access_store" as Permission
       }
     ]
   },
@@ -208,13 +208,13 @@ export const navigation: {
         href: "/marketing/promo", 
         label: "Promotions", 
         icon: <Gift className="h-5 w-5" />,
-        permission: "access_marketing" as Permission,
+        permission: "access_marketing" as Permission
       },
       { 
         href: "/marketing/referral", 
         label: "Referral Program", 
         icon: <Gift className="h-5 w-5" />,
-        permission: "access_marketing" as Permission,
+        permission: "access_marketing" as Permission
       }
     ]
   },
