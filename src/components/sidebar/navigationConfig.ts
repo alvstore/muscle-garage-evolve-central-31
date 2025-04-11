@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Permission } from "@/hooks/use-permissions";
 import { SidebarItem } from "./SidebarNavigation";
+import { createNavIcon } from "@/utils/createNavIcon";
 import { ReactNode } from "react";
 
 export const navigation: {
@@ -40,13 +41,13 @@ export const navigation: {
       { 
         href: "/dashboard", 
         label: "Dashboard", 
-        icon: <LayoutDashboard className="h-5 w-5" />, 
+        icon: createNavIcon(LayoutDashboard), 
         permission: "access_dashboards" as Permission
       },
       { 
         href: "/dashboard/overview", 
         label: "Analytics", 
-        icon: <Eye className="h-5 w-5" />, 
+        icon: createNavIcon(Eye), 
         permission: "access_dashboards" as Permission
       },
     ]
@@ -57,20 +58,20 @@ export const navigation: {
       { 
         href: "/members", 
         label: "Members", 
-        icon: <Users className="h-5 w-5" />,
+        icon: createNavIcon(Users),
         badge: "328",
         permission: "manage_members" as Permission,
         children: [
           { 
             href: "/members", 
             label: "All Members",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "manage_members" as Permission
           },
           { 
             href: "/members/new", 
             label: "Add Member",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "register_member" as Permission
           }
         ]
@@ -78,37 +79,37 @@ export const navigation: {
       { 
         href: "/trainers", 
         label: "Trainers", 
-        icon: <Dumbbell className="h-5 w-5" />, 
+        icon: createNavIcon(Dumbbell), 
         permission: "view_all_trainers" as Permission
       },
       { 
         href: "/classes", 
         label: "Classes", 
-        icon: <ClipboardList className="h-5 w-5" />, 
+        icon: createNavIcon(ClipboardList), 
         permission: "trainer_view_classes" as Permission,
       },
       { 
         href: "/fitness-plans", 
         label: "Fitness Plans", 
-        icon: <Activity className="h-5 w-5" />, 
+        icon: createNavIcon(Activity), 
         permission: "trainer_edit_fitness" as Permission,
         children: [
           { 
             href: "/fitness-plans", 
             label: "Overview",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "trainer_edit_fitness" as Permission
           },
           { 
             href: "/fitness/workout-plans", 
             label: "Workout Plans",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "trainer_edit_fitness" as Permission
           },
           { 
             href: "/fitness/diet-plans", 
             label: "Diet Plans",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "trainer_edit_fitness" as Permission
           }
         ]
@@ -116,25 +117,25 @@ export const navigation: {
       { 
         href: "/memberships", 
         label: "Membership Plans", 
-        icon: <CreditCard className="h-5 w-5" />, 
+        icon: createNavIcon(CreditCard), 
         permission: "member_view_plans" as Permission
       },
       { 
         href: "/finance", 
         label: "Finance", 
-        icon: <DollarSign className="h-5 w-5" />, 
+        icon: createNavIcon(DollarSign), 
         permission: "view_invoices" as Permission,
         children: [
           { 
             href: "/finance/invoices", 
             label: "Invoices",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "view_invoices" as Permission
           },
           { 
             href: "/finance/transactions", 
             label: "Transactions",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "manage_payments" as Permission
           }
         ]
@@ -147,13 +148,13 @@ export const navigation: {
       { 
         href: "/trainers/tasks", 
         label: "Task Management", 
-        icon: <CheckSquare className="h-5 w-5" />,
+        icon: createNavIcon(CheckSquare),
         permission: "access_own_resources" as Permission
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
-        icon: <CalendarDays className="h-5 w-5" />, 
+        icon: createNavIcon(CalendarDays), 
         permission: "view_all_attendance" as Permission
       }
     ]
@@ -164,13 +165,13 @@ export const navigation: {
       { 
         href: "/inventory", 
         label: "Inventory", 
-        icon: <Package className="h-5 w-5" />,
+        icon: createNavIcon(Package),
         permission: "access_inventory" as Permission
       },
       { 
         href: "/store", 
         label: "Store", 
-        icon: <Store className="h-5 w-5" />,
+        icon: createNavIcon(Store),
         permission: "access_store" as Permission
       }
     ]
@@ -181,25 +182,25 @@ export const navigation: {
       { 
         href: "/crm/leads", 
         label: "CRM", 
-        icon: <UserPlus className="h-5 w-5" />, 
+        icon: createNavIcon(UserPlus), 
         permission: "access_crm" as Permission,
         children: [
           { 
             href: "/crm/leads", 
             label: "Leads",
-            icon: <Circle className="h-2 w-2" />, 
+            icon: createNavIcon(Circle), 
             permission: "access_crm" as Permission
           },
           { 
             href: "/crm/funnel", 
             label: "Sales Funnel",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "access_crm" as Permission
           },
           { 
             href: "/crm/follow-up", 
             label: "Follow-up",
-            icon: <Circle className="h-2 w-2" />,
+            icon: createNavIcon(Circle),
             permission: "access_crm" as Permission
           }
         ]
@@ -207,13 +208,13 @@ export const navigation: {
       { 
         href: "/marketing/promo", 
         label: "Promotions", 
-        icon: <Gift className="h-5 w-5" />,
+        icon: createNavIcon(Gift),
         permission: "access_marketing" as Permission
       },
       { 
         href: "/marketing/referral", 
         label: "Referral Program", 
-        icon: <Gift className="h-5 w-5" />,
+        icon: createNavIcon(Gift),
         permission: "access_marketing" as Permission
       }
     ]
@@ -224,19 +225,19 @@ export const navigation: {
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: <Bell className="h-5 w-5" />, 
+        icon: createNavIcon(Bell), 
         permission: "access_communication" as Permission
       },
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: <MessageSquare className="h-5 w-5" />, 
+        icon: createNavIcon(MessageSquare), 
         permission: "access_communication" as Permission
       },
       { 
         href: "/communication/reminders", 
         label: "Reminders", 
-        icon: <Bell className="h-5 w-5" />, 
+        icon: createNavIcon(Bell), 
         permission: "access_communication" as Permission
       }
     ]
@@ -247,7 +248,7 @@ export const navigation: {
       { 
         href: "/frontpages", 
         label: "Website", 
-        icon: <Globe className="h-5 w-5" />, 
+        icon: createNavIcon(Globe), 
         permission: "full_system_access" as Permission
       }
     ]
@@ -258,13 +259,13 @@ export const navigation: {
       { 
         href: "/reports", 
         label: "Reports", 
-        icon: <FileText className="h-5 w-5" />, 
+        icon: createNavIcon(FileText), 
         permission: "access_analytics" as Permission
       },
       { 
         href: "/settings", 
         label: "Settings", 
-        icon: <Settings className="h-5 w-5" />, 
+        icon: createNavIcon(Settings), 
         permission: "access_own_resources" as Permission
       }
     ]
