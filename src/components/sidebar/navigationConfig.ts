@@ -1,7 +1,4 @@
 
-import React from "react";
-import { Permission } from "@/hooks/use-permissions";
-import { SidebarItem } from "./SidebarNavigation";
 import {
   LayoutDashboard,
   Users,
@@ -29,6 +26,9 @@ import {
   CheckSquare,
   Globe
 } from "lucide-react";
+import { Permission } from "@/hooks/use-permissions";
+import { SidebarItem } from "./SidebarNavigation";
+import { ReactNode } from "react";
 
 export const navigation: {
   name: string;

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LogOut } from "lucide-react";
+import { ChevronLeft, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import Logo from "@/components/Logo";
@@ -17,9 +17,16 @@ import { navigation } from "@/components/sidebar/navigationConfig";
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
   closeSidebar: () => void;
+  isCollapsed?: boolean;
+  toggleCollapse?: () => void;
 }
 
-export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
+export default function DashboardSidebar({ 
+  isSidebarOpen, 
+  closeSidebar, 
+  isCollapsed = false,
+  toggleCollapse 
+}: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
@@ -38,20 +45,34 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
 
   return (
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
-      <SheetContent side="left" className="w-64 p-0 bg-[#283046] text-white border-none">
+      <SheetContent 
+        side="left" 
+        className={`w-${isCollapsed ? '20' : '64'} p-0 bg-[#283046] text-white border-none transition-all duration-300 ease-in-out`}
+      >
         <div className="flex flex-col h-full">
-          <div className="p-4 flex items-center gap-3 border-b border-gray-700">
-            <div className="bg-indigo-600 p-1 rounded-md">
-              <Logo variant="white" />
+          <div className="p-4 flex items-center gap-3 border-b border-gray-700 justify-between">
+            <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
+              <div className="bg-indigo-600 p-1 rounded-md">
+                <Logo variant="white" />
+              </div>
+              {!isCollapsed && <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>}
             </div>
-            <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>
+            {toggleCollapse && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleCollapse}
+                className="text-gray-300 hover:text-white hover:bg-[#1e2740]"
+              >
+                <ChevronLeft className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+              </Button>
+            )}
           </div>
           
-          {/* Apply max-height and overflow-y-auto to enable scrolling */}
-          <div className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
+          <div className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)] hide-scrollbar">
             {navigation.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-4">
-                {category.name && (
+                {category.name && !isCollapsed && (
                   <div className="px-4 py-2 text-xs font-semibold text-gray-400 tracking-wider">
                     {category.name}
                   </div>
@@ -60,6 +81,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                 <SidebarNavigation
                   items={category.items}
                   closeSidebar={closeSidebar}
+                  isCollapsed={isCollapsed}
                 />
               </div>
             ))}
@@ -69,12 +91,12 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             <Separator className="my-2 bg-gray-700" />
             <Button
               variant="ghost"
-              className="w-full justify-start text-gray-300 hover:text-white hover:bg-[#1e2740]"
+              className={`w-full justify-${isCollapsed ? 'center' : 'start'} text-gray-300 hover:text-white hover:bg-[#1e2740]`}
               onClick={handleLogout}
               disabled={isLoggingOut}
             >
-              <LogOut className="mr-2 h-5 w-5" />
-              {isLoggingOut ? "Logging out..." : "Logout"}
+              <LogOut className={`${isCollapsed ? '' : 'mr-2'} h-5 w-5`} />
+              {!isCollapsed && (isLoggingOut ? "Logging out..." : "Logout")}
             </Button>
           </div>
         </div>

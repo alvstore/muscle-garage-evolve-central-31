@@ -19,11 +19,21 @@ const DashboardLayout = () => {
   });
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    return savedState === 'true';
+  });
   const location = useLocation();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebar-collapsed', String(newState));
   };
 
   const closeSidebar = () => {
@@ -60,6 +70,13 @@ const DashboardLayout = () => {
       setSidebarOpen(false);
     }
   }, [location.pathname, isMobile]);
+  
+  // Auto-collapse sidebar for smaller screens but not mobile
+  useEffect(() => {
+    if (!isMobile && window.innerWidth < 1024 && window.innerWidth >= 768) {
+      setIsCollapsed(true);
+    }
+  }, [isMobile]);
   
   if (isLoading) {
     return (
@@ -108,32 +125,42 @@ const DashboardLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-[#161d31] overflow-hidden">
       {/* Sidebar for desktop */}
-      <div className={`fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'left-0' : '-left-64'} hidden md:block md:w-64`}>
-        <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
+      <div className={`fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'left-0' : '-left-64'} hidden md:block ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}>
+        <SidebarComponent 
+          isSidebarOpen={true} 
+          closeSidebar={() => {}} 
+          isCollapsed={isCollapsed} 
+          toggleCollapse={toggleCollapse} 
+        />
       </div>
+      
+      {/* Mobile sidebar overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" 
+          onClick={closeSidebar}
+        />
+      )}
       
       {/* Mobile sidebar */}
       {isMobile && (
         <div className={`fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
-          <div 
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
-            onClick={closeSidebar}
-          />
           <div className="absolute left-0 top-0 bottom-0 w-64">
             <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
           </div>
         </div>
       )}
       
-      <div className={`flex flex-1 flex-col w-full transition-all duration-300 ${sidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
+      <div className={`flex flex-1 flex-col w-full transition-all duration-300 ${sidebarOpen ? (isCollapsed ? 'md:pl-20' : 'md:pl-64') : 'md:pl-0'}`}>
         <DashboardHeader 
           toggleSidebar={toggleSidebar} 
           toggleTheme={toggleTheme} 
           isDarkMode={darkMode}
           sidebarOpen={sidebarOpen}
+          isCollapsed={isCollapsed}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 relative z-0">
+        <main className="flex-1 relative z-10 overflow-y-auto p-4">
           <Outlet />
         </main>
       </div>

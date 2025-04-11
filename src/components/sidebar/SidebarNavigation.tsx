@@ -6,6 +6,7 @@ import { Permission, usePermissions } from "@/hooks/use-permissions";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 import { Badge } from "@/components/ui/badge";
 import { ReactNode } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Updated interface for sidebar child items allowing optional icon
 interface SidebarChildItem {
@@ -28,9 +29,14 @@ export interface SidebarItem {
 interface SidebarNavigationProps {
   items: SidebarItem[];
   closeSidebar: () => void;
+  isCollapsed?: boolean;
 }
 
-const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ items, closeSidebar }) => {
+const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ 
+  items, 
+  closeSidebar, 
+  isCollapsed = false
+}) => {
   const navigate = useNavigate();
   const { can } = usePermissions();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
@@ -52,6 +58,35 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ items, closeSideb
     return can(item.permission);
   });
 
+  const renderCollapsedItem = (item: SidebarItem) => {
+    const hasChildren = item.children && item.children.length > 0;
+    
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate(item.href)}
+              className="w-full flex items-center justify-center p-2 my-1 text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors rounded-md"
+            >
+              <div className="relative">
+                {item.icon}
+                {item.badge && (
+                  <Badge variant="default" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center bg-red-500 text-[10px]">
+                    {item.badge}
+                  </Badge>
+                )}
+              </div>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{item.label}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   return (
     <div className="space-y-1">
       {filteredItems.map((item, itemIndex) => {
@@ -62,6 +97,19 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ items, closeSideb
         const showChildren = hasChildren && filteredChildren.length > 0;
         const isExpanded = expandedSections.includes(item.label);
         
+        // Render collapsed view for sidebar items
+        if (isCollapsed) {
+          return (
+            <RoutePermissionGuard 
+              key={itemIndex} 
+              permission={item.permission}
+            >
+              {renderCollapsedItem(item)}
+            </RoutePermissionGuard>
+          );
+        }
+        
+        // Render expanded view for sidebar items
         return (
           <RoutePermissionGuard 
             key={itemIndex} 
