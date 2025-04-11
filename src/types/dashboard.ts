@@ -1,9 +1,22 @@
 
+// Dashboard component types
+export interface ActivityItem {
+  id: string;
+  title: string;
+  description: string;
+  user: {
+    name: string;
+    avatar?: string;
+  };
+  time: string;
+  type: "membership" | "check-in" | "payment" | "class" | "other";
+}
+
 export interface Payment {
   id: string;
   memberId: string;
   memberName: string;
-  memberAvatar: string;
+  memberAvatar?: string;
   membershipPlan: string;
   amount: number;
   dueDate: string;
@@ -14,18 +27,33 @@ export interface Payment {
 export interface RenewalItem {
   id: string;
   memberName: string;
-  memberAvatar: string;
+  memberAvatar?: string;
   membershipPlan: string;
   expiryDate: string;
   status: "active" | "inactive" | "expired";
   renewalAmount: number;
 }
 
-export interface RevenueItem {
-  month: string;
-  revenue: number;
-  expenses: number;
-  profit: number;
+export interface ClassItem {
+  id: string;
+  name: string;
+  trainer: string;
+  trainerAvatar?: string;
+  time: string;
+  duration: string;
+  capacity: number;
+  enrolled: number;
+  type: string;
+  level: "beginner" | "intermediate" | "advanced" | "all";
+}
+
+export interface AnnouncementItem {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  priority: "low" | "medium" | "high";
+  author: string;
 }
 
 export interface AttendanceData {
@@ -34,33 +62,7 @@ export interface AttendanceData {
 }
 
 export interface MemberStatusData {
-  active: number;
-  inactive: number;
-  expired: number;
-}
-
-export interface ActivityItem {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  type: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-}
-
-export interface DashboardData {
-  revenue: RevenueItem[];
-  attendance: AttendanceData[];
-  memberStatus: MemberStatusData;
-  topPerformers: {
-    id: string;
-    name: string;
-    avatar: string;
-    role: string;
-    performance: number;
-    growth: number;
-  }[];
+  name: string;
+  value: number;
+  color: string;
 }

@@ -18,8 +18,7 @@ import {
   MessageCircle,
   UserCircle,
   ChefHat,
-  ListTodo,
-  LucideIcon
+  ListTodo
 } from "lucide-react";
 
 // Map of icon names to their components
@@ -50,9 +49,4 @@ export type IconName = keyof typeof iconMap;
 export const createNavIcon = (name: IconName): ReactNode => {
   const IconComponent = iconMap[name];
   return <IconComponent className="h-5 w-5" />;
-};
-
-// Alternative function to handle LucideIcon component directly
-export const createIconFromComponent = (IconComponent: LucideIcon): ReactNode => {
-  return React.createElement(IconComponent, { className: "h-5 w-5" });
 };

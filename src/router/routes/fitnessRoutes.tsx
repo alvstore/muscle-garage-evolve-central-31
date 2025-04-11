@@ -1,20 +1,76 @@
 
 import React from 'react';
-import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
-import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
-import DietPlanPage from '@/pages/fitness/DietPlanPage';
+import { RouteObject } from 'react-router-dom';
+import PrivateRoute from '@/components/auth/PrivateRoute';
 
-export const fitnessRoutes = [
+// Fitness pages
+import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
+import FitnessProgressPage from '@/pages/fitness/FitnessProgressPage';
+import DietPlanPage from '@/pages/fitness/DietPlanPage';
+import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
+import ClassPage from '@/pages/classes/ClassPage';
+import MembershipPage from '@/pages/membership/MembershipPage';
+import AttendancePage from '@/pages/attendance/AttendancePage';
+
+export const fitnessRoutes: RouteObject[] = [
   {
     path: '/fitness-plans',
-    element: <FitnessPlanPage />
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <FitnessPlanPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/fitness/progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <FitnessProgressPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/fitness/diet',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <DietPlanPage />
+      </PrivateRoute>
+    )
   },
   {
     path: '/fitness/workout-plans',
-    element: <WorkoutPlansPage />
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <WorkoutPlansPage />
+      </PrivateRoute>
+    )
   },
   {
-    path: '/fitness/diet-plans',
-    element: <DietPlanPage />
+    path: '/classes',
+    element: (
+      <PrivateRoute>
+        <ClassPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/membership',
+    element: (
+      <PrivateRoute>
+        <MembershipPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/memberships',
+    element: <PrivateRoute element={<MembershipPage />} />
+  },
+  {
+    path: '/attendance',
+    element: (
+      <PrivateRoute>
+        <AttendancePage />
+      </PrivateRoute>
+    )
   }
 ];

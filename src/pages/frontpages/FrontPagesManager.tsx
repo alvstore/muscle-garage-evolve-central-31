@@ -218,6 +218,7 @@ const FrontPagesManager = () => {
                 </Card>
               </TabsContent>
               
+              {/* Other tabs content would be similar, but include a simpler template for now */}
               {['classes', 'trainers', 'pricing', 'testimonials', 'contact'].map(tab => (
                 <TabsContent key={tab} value={tab} className="mt-0">
                   <Card>

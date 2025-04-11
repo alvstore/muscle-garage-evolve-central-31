@@ -1,17 +1,6 @@
+
 import { ReactNode } from "react";
-import { createIconFromComponent } from "@/utils/createNavIcon";
-import {
-  Home,
-  User,
-  Calendar,
-  Activity,
-  DollarSign,
-  CreditCard,
-  ShoppingBag,
-  Bell,
-  TrendingUp,
-  Utensils
-} from "lucide-react";
+import { createNavIcon, IconName } from "@/utils/createNavIcon";
 
 export interface NavItem {
   href: string;
@@ -31,97 +20,97 @@ export interface NavSection {
 export const memberNavSections: NavSection[] = [
   {
     name: "Dashboard",
-    icon: createIconFromComponent(Home),
+    icon: createNavIcon("Home"),
     items: [
       { 
         href: "/dashboard", 
         label: "Overview", 
-        icon: createIconFromComponent(Home)
+        icon: createNavIcon("Home")
       },
     ],
   },
   {
     name: "My Profile",
-    icon: createIconFromComponent(User),
+    icon: createNavIcon("User"),
     items: [
       { 
         href: "/members/profile", 
         label: "Profile", 
-        icon: createIconFromComponent(User)
+        icon: createNavIcon("User")
       },
     ],
   },
   {
     name: "Fitness & Classes",
-    icon: createIconFromComponent(Activity),
+    icon: createNavIcon("Activity"),
     items: [
       { 
         href: "/classes", 
         label: "Book Classes", 
-        icon: createIconFromComponent(Calendar)
+        icon: createNavIcon("Calendar")
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
-        icon: createIconFromComponent(Activity)
+        icon: createNavIcon("Activity")
       },
       { 
         href: "/fitness/progress", 
         label: "Progress Tracker", 
-        icon: createIconFromComponent(TrendingUp)
+        icon: createNavIcon("TrendingUp")
       },
       { 
         href: "/fitness/workout-plans", 
         label: "Workout Plans", 
-        icon: createIconFromComponent(Activity)
+        icon: createNavIcon("Activity")
       },
       { 
-        href: "/fitness/diet-plans", 
+        href: "/fitness/diet", 
         label: "Diet Plan", 
-        icon: createIconFromComponent(Utensils)
+        icon: createNavIcon("Utensils")
       },
     ],
   },
   {
     name: "Finance",
-    icon: createIconFromComponent(DollarSign),
+    icon: createNavIcon("DollarSign"),
     items: [
       { 
         href: "/finance/invoices", 
         label: "Invoices", 
-        icon: createIconFromComponent(DollarSign)
+        icon: createNavIcon("FileText")
       },
       { 
         href: "/membership", 
         label: "Membership", 
-        icon: createIconFromComponent(CreditCard)
+        icon: createNavIcon("CreditCard")
       },
     ],
   },
   {
     name: "Store",
-    icon: createIconFromComponent(ShoppingBag),
+    icon: createNavIcon("ShoppingBag"),
     items: [
       { 
         href: "/store", 
         label: "Shop", 
-        icon: createIconFromComponent(ShoppingBag)
+        icon: createNavIcon("ShoppingBag")
       },
     ],
   },
   {
     name: "Communication",
-    icon: createIconFromComponent(Bell),
+    icon: createNavIcon("Bell"),
     items: [
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: createIconFromComponent(Bell)
+        icon: createNavIcon("Bell")
       },
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: createIconFromComponent(Bell)
+        icon: createNavIcon("Bell")
       },
     ],
   },

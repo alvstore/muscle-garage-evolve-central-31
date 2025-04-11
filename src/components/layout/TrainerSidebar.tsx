@@ -3,6 +3,7 @@ import React from "react";
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import TrainerSidebarContent from "@/components/sidebar/TrainerSidebarContent";
@@ -10,27 +11,21 @@ import TrainerSidebarContent from "@/components/sidebar/TrainerSidebarContent";
 interface TrainerSidebarProps {
   isSidebarOpen: boolean;
   closeSidebar: () => void;
-  isCollapsed?: boolean;
-  toggleCollapse?: () => void;
 }
 
 const TrainerSidebar: React.FC<TrainerSidebarProps> = ({ 
   isSidebarOpen, 
-  closeSidebar,
-  isCollapsed = false,
-  toggleCollapse 
+  closeSidebar 
 }) => {
   return (
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
       <SheetContent 
         side="left" 
         className={cn(
-          "p-0 border-none bg-[#283046] text-white transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-20" : "w-64"
+          "w-64 p-0 border-none bg-[#283046] text-white"
         )}
-        showCloseButton={false}
       >
-        <TrainerSidebarContent isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
+        <TrainerSidebarContent />
       </SheetContent>
     </Sheet>
   );

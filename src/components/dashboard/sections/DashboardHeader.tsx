@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, Moon, Sun, Bell, Search, X, ChevronLeft } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
@@ -22,16 +22,9 @@ interface DashboardHeaderProps {
   toggleTheme?: () => void;
   isDarkMode?: boolean;
   sidebarOpen?: boolean;
-  isCollapsed?: boolean;
 }
 
-const DashboardHeader = ({ 
-  toggleSidebar, 
-  toggleTheme, 
-  isDarkMode, 
-  sidebarOpen,
-  isCollapsed 
-}: DashboardHeaderProps) => {
+const DashboardHeader = ({ toggleSidebar, toggleTheme, isDarkMode, sidebarOpen }: DashboardHeaderProps) => {
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -46,16 +39,16 @@ const DashboardHeader = ({
   };
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-[#283046] dark:border-gray-700 shadow-sm">
-      <div className="flex items-center gap-4 w-full lg:w-1/2">
+    <div className="flex items-center justify-between h-16 px-4 border-b bg-white dark:bg-[#283046] dark:border-gray-700">
+      <div className="flex items-center gap-4">
         {toggleSidebar && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-gray-600 dark:text-gray-300">
             {sidebarOpen && isMobile ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         )}
         
-        <div className="hidden md:flex relative flex-1">
-          <div className="relative flex items-center w-full">
+        <div className="relative flex-1 max-w-md">
+          <div className="relative flex items-center h-9">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               type="search" 
@@ -63,27 +56,6 @@ const DashboardHeader = ({
               className="pl-10 h-9 bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus:bg-white w-full"
             />
           </div>
-        </div>
-        
-        {/* Mobile search toggle */}
-        <div className="md:hidden flex-1 flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-gray-600 dark:text-gray-300">
-                <Search className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[250px] p-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  type="search" 
-                  placeholder="Search..." 
-                  className="pl-10 h-9 w-full"
-                />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
       
@@ -123,9 +95,9 @@ const DashboardHeader = ({
               <span className="text-xs text-gray-500">{user?.role || 'User'}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/profile")}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")}>Settings</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/billing")}>Billing</DropdownMenuItem>
+            <DropdownMenuItem>Profile</DropdownMenuItem>
+            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem>Billing</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
           </DropdownMenuContent>

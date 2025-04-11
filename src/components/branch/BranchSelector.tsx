@@ -16,12 +16,8 @@ import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 const BranchSelector = () => {
   const { branches, currentBranch, setCurrentBranch, isLoading } = useBranch();
-  const { updateUserBranch, getUserAccessibleBranches } = useAuth();
+  const { updateUserBranch } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  
-  const accessibleBranchIds = getUserAccessibleBranches();
-  const accessibleBranches = branches.filter(branch => 
-    accessibleBranchIds.includes(branch.id));
   
   const handleChangeBranch = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
@@ -50,16 +46,6 @@ const BranchSelector = () => {
     );
   }
   
-  // If user only has access to one branch, show a static display
-  if (accessibleBranches.length <= 1) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
-        <Building2 className="h-4 w-4" />
-        <span>{currentBranch?.name || 'No branch selected'}</span>
-      </div>
-    );
-  }
-  
   return (
     <PermissionGuard permission="view_branch_data" fallback={
       <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
@@ -78,7 +64,7 @@ const BranchSelector = () => {
         <DropdownMenuContent align="end" className="w-[200px]">
           <DropdownMenuLabel>Select Branch</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {accessibleBranches.map((branch) => (
+          {branches.map((branch) => (
             <DropdownMenuItem 
               key={branch.id}
               onClick={() => handleChangeBranch(branch.id)}
