@@ -34,6 +34,23 @@ body, html {
   z-index: 100 !important;
 }
 
+/* Ensure that when the sheet/dialog is closed, the overlay is hidden and doesn't block interactions */
+[data-state="closed"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Fix for sheet overlay to not block interactions when closed */
+[data-radix-overlay][data-state="closed"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Allow the body to scroll when modals are inactive */
+body:not(:has([role="dialog"][data-state="open"])) {
+  overflow: auto !important;
+}
+
 .container {
   margin-left: auto;
   margin-right: auto;
@@ -164,6 +181,20 @@ body, html {
 .radix-sheet-overlay,
 [data-radix-overlay] {
   pointer-events: auto !important;
+}
+
+/* Ensure overlay is removed/disabled when dialog is closed */
+[data-radix-overlay][data-state="closed"],
+.radix-sheet-overlay[data-state="closed"] {
+  display: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Fix for Radix Dialog and Sheet components */
+[data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
 }
 
 /* Smooth fade animations for elements */
