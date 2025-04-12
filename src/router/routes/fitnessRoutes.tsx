@@ -63,7 +63,11 @@ export const fitnessRoutes: RouteObject[] = [
   },
   {
     path: '/memberships',
-    element: <PrivateRoute element={<MembershipPage />} />
+    element: (
+      <PrivateRoute>
+        <MembershipPage />
+      </PrivateRoute>
+    )
   },
   {
     path: '/attendance',

@@ -31,7 +31,8 @@ import {
   Store,
   ChevronDown,
   ChevronRight,
-  Globe
+  Globe,
+  UserPlus as UserPlusIcon
 } from "lucide-react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -182,7 +183,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
         { 
           href: "/crm/leads", 
           label: "CRM", 
-          icon: <UserPlus className="h-5 w-5" />, 
+          icon: <UserPlusIcon className="h-5 w-5" />, 
           permission: "access_crm" as Permission,
           children: [
             { 
@@ -302,7 +303,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <div className="p-4 flex items-center gap-3 border-b border-indigo-800">
             <div className="bg-white p-1 rounded-md">
-              <Logo variant="colored" />
+              <Logo variant="default" />
             </div>
             <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>
           </div>
