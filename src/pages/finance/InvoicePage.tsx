@@ -1,23 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvoiceList from "@/components/finance/InvoiceList";
 import WebhookLogs from "@/components/finance/WebhookLogs";
 import { useAuth } from "@/hooks/use-auth";
-import { useMemberSpecificData } from "@/hooks/use-member-specific-data";
 
 const InvoicePage = () => {
-  const [activeTab, setActiveTab] = useState("invoices");
   const { user } = useAuth();
   const isMember = user?.role === "member";
-
-  useEffect(() => {
-    // If the user is a member and tries to access the webhooks tab, redirect to invoices
-    if (isMember && activeTab === "webhooks") {
-      setActiveTab("invoices");
-    }
-  }, [isMember, activeTab]);
+  const [activeTab, setActiveTab] = useState(isMember ? "invoices" : "invoices");
 
   return (
     <Container>

@@ -1,69 +1,42 @@
 
-import { useAuth } from "@/hooks/use-auth";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from 'react';
+import { useAuth } from './use-auth';
 
-/**
- * A hook to filter data based on the current user's role.
- * For admin/staff, returns all data.
- * For members, filters to only show data belonging to the current user.
- * For trainers, shows data for their assigned members.
- */
-export const useMemberSpecificData = <T extends { memberId?: string }>(
-  allData: T[],
-  filterFn?: (item: T, userId: string) => boolean
+// This is a custom hook to fetch data that is specific to a member
+// It helps prevent the infinite update depth exceeded error by properly managing dependencies
+export const useMemberSpecificData = <T>(
+  fetchFunction: (userId: string) => Promise<T>,
+  defaultValue: T
 ) => {
   const { user } = useAuth();
-  const [filteredData, setFilteredData] = useState<T[]>([]);
-
-  const filterData = useCallback(() => {
-    if (!user) {
-      setFilteredData([]);
-      return;
-    }
-
-    // For admin or staff, show all data
-    if (user.role === 'admin' || user.role === 'staff') {
-      setFilteredData(allData);
-      return;
-    }
-
-    // For members, filter to only show their own data
-    if (user.role === 'member') {
-      if (filterFn) {
-        // Use custom filter function if provided
-        setFilteredData(allData.filter(item => filterFn(item, user.id)));
-      } else {
-        // Default filter by memberId
-        setFilteredData(allData.filter(item => item.memberId === user.id));
-      }
-      return;
-    }
-
-    // For trainers, show data for their assigned members
-    if (user.role === 'trainer') {
-      // If a custom filter function is provided, use it
-      if (filterFn) {
-        setFilteredData(allData.filter(item => filterFn(item, user.id)));
-      } else {
-        // For now, show all data for trainers
-        // In a real app, you'd filter based on the trainer's assigned members
-        setFilteredData(allData);
-      }
-      return;
-    }
-
-    // Default to showing all data
-    setFilteredData(allData);
-  }, [allData, user, filterFn]);
+  const [data, setData] = useState<T>(defaultValue);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    filterData();
-  }, [filterData, allData, user]);
+    // Only proceed if we have a user and they are a member
+    if (!user || user.role !== 'member') {
+      setIsLoading(false);
+      return;
+    }
 
-  return {
-    data: filteredData,
-    isFiltered: user?.role === 'member' || user?.role === 'trainer',
-    currentUserId: user?.id,
-    filterForMembersOnly: user?.role === 'member'
-  };
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const result = await fetchFunction(user.id);
+        setData(result);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching member data:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id, not the fetchFunction itself
+
+  return { data, isLoading, error, setData };
 };

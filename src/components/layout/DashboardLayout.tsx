@@ -142,7 +142,7 @@ const DashboardLayout = () => {
           sidebarOpen={sidebarOpen}
         />
         
-        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
           <Outlet />
         </main>
       </div>

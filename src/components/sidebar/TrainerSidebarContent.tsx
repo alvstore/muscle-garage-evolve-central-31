@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import Logo from "@/components/Logo";
 import { trainerNavSections } from "@/data/trainerNavigation";
-import SidebarNavSection from "./SidebarNavSection";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import NavigationSections from "@/components/navigation/NavigationSections";
 
 const TrainerSidebarContent: React.FC = () => {
   const navigate = useNavigate();
@@ -45,16 +45,11 @@ const TrainerSidebarContent: React.FC = () => {
       </div>
       
       <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
-        <div className="py-2 px-2">
-          {trainerNavSections.map((section, index) => (
-            <SidebarNavSection
-              key={index}
-              section={section}
-              isExpanded={expandedSections.includes(section.name)}
-              onToggle={() => toggleSection(section.name)}
-            />
-          ))}
-        </div>
+        <NavigationSections
+          sections={trainerNavSections}
+          expandedSections={expandedSections}
+          toggleSection={toggleSection}
+        />
       </ScrollArea>
       
       <div className="mt-auto p-4">
