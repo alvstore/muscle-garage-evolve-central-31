@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -16,13 +17,9 @@ import {
   Activity,
   DollarSign,
   Receipt,
-  ArrowLeftRight,
   Package,
   Bell,
   MessageSquare,
-  CalendarCheck,
-  UserPlus,
-  ShoppingBag,
   Gift,
   LogOut,
   Circle,
@@ -32,12 +29,11 @@ import {
   Eye,
   FileText,
   Store,
-  MessageCircle,
   ChevronDown,
   ChevronRight,
   Globe
 } from "lucide-react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions, Permission } from "@/hooks/use-permissions";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
@@ -51,6 +47,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
   const { can } = usePermissions();
@@ -294,13 +291,18 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
     };
   }).filter(category => category.items.length > 0);
 
+  // Check if a route is active (including child routes)
+  const isRouteActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
   return (
     <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
-      <SheetContent side="left" className="w-64 p-0 bg-[#283046] text-white border-none">
-        <div className="flex flex-col h-full">
-          <div className="p-4 flex items-center gap-3 border-b border-gray-700">
-            <div className="bg-indigo-600 p-1 rounded-md">
-              <Logo variant="white" />
+      <SheetContent side="left" className="w-64 p-0 border-none overflow-hidden">
+        <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
+          <div className="p-4 flex items-center gap-3 border-b border-indigo-800">
+            <div className="bg-white p-1 rounded-md">
+              <Logo variant="colored" />
             </div>
             <h1 className="text-xl font-semibold text-white">Muscle Garage</h1>
           </div>
@@ -310,7 +312,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
             {filteredNavigation.map((category, categoryIndex) => (
               <div key={categoryIndex} className="mb-4">
                 {category.name && (
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-400 tracking-wider">
+                  <div className="px-4 py-2 text-xs font-semibold text-indigo-300 tracking-wider">
                     {category.name}
                   </div>
                 )}
@@ -323,6 +325,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                       : [];
                     const showChildren = hasChildren && filteredChildren.length > 0;
                     const isExpanded = expandedSections.includes(item.label);
+                    const isActive = isRouteActive(item.href);
                     
                     return (
                       <RoutePermissionGuard 
@@ -332,7 +335,13 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                         <div className="mb-1">
                           <button
                             onClick={() => showChildren ? toggleSection(item.label) : navigate(item.href)}
-                            className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-[#1e2740] transition-colors ${isExpanded ? 'bg-[#1e2740]' : ''}`}
+                            className={cn(
+                              "w-full flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors",
+                              isActive 
+                                ? "bg-indigo-800/70 text-white before:absolute before:left-0 before:h-full before:w-1 before:bg-white" 
+                                : "text-indigo-100 hover:bg-indigo-800/50 hover:text-white",
+                              "relative"
+                            )}
                           >
                             <div className="flex items-center gap-2">
                               {item.icon}
@@ -355,7 +364,7 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                           </button>
                           
                           {showChildren && isExpanded && (
-                            <div className="mt-1 py-1 bg-[#161d31]">
+                            <div className="mt-1 py-1 bg-indigo-900/50">
                               {filteredChildren.map((child, childIndex) => (
                                 <RoutePermissionGuard 
                                   key={childIndex} 
@@ -363,12 +372,12 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
                                 >
                                   <NavLink
                                     to={child.href}
-                                    className={({ isActive }) => `
-                                      flex items-center gap-2 py-2 px-10 text-sm my-1 transition-colors
-                                      ${isActive 
-                                        ? 'text-indigo-400 font-medium' 
-                                        : 'text-gray-300 hover:text-white'}
-                                    `}
+                                    className={({ isActive }) => cn(
+                                      "flex items-center gap-2 py-2 px-10 text-sm my-1 transition-colors",
+                                      isActive 
+                                        ? "text-white font-medium bg-indigo-800/30" 
+                                        : "text-indigo-200 hover:text-white hover:bg-indigo-800/20"
+                                    )}
                                     onClick={closeSidebar}
                                   >
                                     <Circle className="h-2 w-2" />
@@ -388,10 +397,10 @@ export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: Dashbo
           </div>
           
           <div className="mt-auto p-4">
-            <Separator className="my-2 bg-gray-700" />
+            <Separator className="my-2 bg-indigo-800" />
             <Button
               variant="ghost"
-              className="w-full justify-start text-gray-300 hover:text-white hover:bg-[#1e2740]"
+              className="w-full justify-start text-indigo-200 hover:text-white hover:bg-indigo-800/50"
               onClick={handleLogout}
               disabled={isLoggingOut}
             >

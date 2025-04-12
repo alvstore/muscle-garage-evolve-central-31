@@ -106,26 +106,35 @@ const DashboardLayout = () => {
   const SidebarComponent = getSidebarComponent();
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-[#161d31] overflow-hidden">
-      {/* Sidebar for desktop */}
-      <div className={`fixed inset-y-0 z-30 transition-all duration-300 ${sidebarOpen ? 'left-0' : '-left-64'} hidden md:block md:w-64`}>
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* Desktop Sidebar */}
+      <div 
+        className={`fixed inset-y-0 z-20 transition-all duration-300 ${
+          sidebarOpen ? 'left-0' : '-left-64'
+        } hidden md:block md:w-64`}
+      >
         <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
       </div>
       
-      {/* Mobile sidebar */}
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-10 bg-black/50 backdrop-blur-sm"
+          onClick={closeSidebar}
+        />
+      )}
+      
+      {/* Mobile Sidebar */}
       {isMobile && (
-        <div className={`fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
-          <div 
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
-            onClick={closeSidebar}
-          />
-          <div className="absolute left-0 top-0 bottom-0 w-64">
-            <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
-          </div>
+        <div className={`fixed inset-0 z-30 ${sidebarOpen ? 'block' : 'hidden'}`}>
+          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
         </div>
       )}
       
-      <div className={`flex flex-1 flex-col w-full transition-all duration-300 ${sidebarOpen ? 'md:pl-64' : 'md:pl-0'}`}>
+      {/* Main Content */}
+      <div className={`flex flex-1 flex-col transition-all duration-300 ${
+        sidebarOpen ? 'md:ml-64' : 'md:ml-0'
+      }`}>
         <DashboardHeader 
           toggleSidebar={toggleSidebar} 
           toggleTheme={toggleTheme} 
@@ -133,7 +142,7 @@ const DashboardLayout = () => {
           sidebarOpen={sidebarOpen}
         />
         
-        <main className="flex-1 overflow-y-auto p-4 relative z-0">
+        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900">
           <Outlet />
         </main>
       </div>

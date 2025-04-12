@@ -3,7 +3,6 @@ import React from "react";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import TrainerSidebarContent from "@/components/sidebar/TrainerSidebarContent";
@@ -22,10 +21,12 @@ const TrainerSidebar: React.FC<TrainerSidebarProps> = ({
       <SheetContent 
         side="left" 
         className={cn(
-          "w-64 p-0 border-none bg-[#283046] text-white"
+          "w-64 p-0 border-none overflow-hidden"
         )}
       >
-        <TrainerSidebarContent />
+        <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
+          <TrainerSidebarContent />
+        </div>
       </SheetContent>
     </Sheet>
   );
