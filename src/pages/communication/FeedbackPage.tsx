@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,10 +88,7 @@ const FeedbackPage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // In a real app, you would filter by branch ID and member ID if user is a member
-      const allFeedbacks = mockFeedbacks;
-      
-      // Use useMemberSpecificData to filter data based on user role
-      return allFeedbacks;
+      return mockFeedbacks;
     }
   });
   
@@ -100,9 +96,9 @@ const FeedbackPage = () => {
   const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
   // Use the hook to filter data based on user role
-  const { data: filteredFeedbacks } = useMemberSpecificData(
+  const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
     feedbacks || [],
-    (feedback, userId) => feedback.memberId === userId
+    (item, userId) => item.memberId === userId
   );
 
   const addFeedbackMutation = useMutation({

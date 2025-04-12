@@ -4,39 +4,42 @@ import { useAuth } from './use-auth';
 
 // This is a custom hook to fetch data that is specific to a member
 // It helps prevent the infinite update depth exceeded error by properly managing dependencies
-export const useMemberSpecificData = <T>(
-  fetchFunction: (userId: string) => Promise<T>,
-  defaultValue: T
+export const useMemberSpecificData = <T, R = T>(
+  data: T,
+  filterFunction: (item: T, userId: string) => boolean | R[] = () => true
 ) => {
   const { user } = useAuth();
-  const [data, setData] = useState<T>(defaultValue);
+  const [filteredData, setFilteredData] = useState<R | T>(data);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     // Only proceed if we have a user and they are a member
     if (!user || user.role !== 'member') {
+      setFilteredData(data);
       setIsLoading(false);
       return;
     }
 
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const result = await fetchFunction(user.id);
-        setData(result);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching member data:', err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        setIsLoading(false);
+    try {
+      setIsLoading(true);
+      // For array data, filter it based on the provided function
+      if (Array.isArray(data)) {
+        const result = data.filter(item => filterFunction(item, user.id));
+        setFilteredData(result as R);
+      } else {
+        // For non-array data, just apply the filter function
+        const result = filterFunction(data, user.id);
+        setFilteredData(result as R);
       }
-    };
+      setError(null);
+    } catch (err) {
+      console.error('Error processing member data:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, data, filterFunction]);
 
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only depend on user.id, not the fetchFunction itself
-
-  return { data, isLoading, error, setData };
+  return { data: filteredData, isLoading, error, setData: setFilteredData };
 };
