@@ -6,12 +6,29 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 // Finance pages
 import InvoicePage from '@/pages/finance/InvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';
+import FinanceDashboardPage from '@/pages/finance/FinanceDashboardPage';
 
 export const financeRoutes: RouteObject[] = [
   {
+    path: '/finance',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <FinanceDashboardPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/finance/dashboard',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <FinanceDashboardPage />
+      </PrivateRoute>
+    )
+  },
+  {
     path: '/finance/invoices',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
+      <PrivateRoute>
         <InvoicePage />
       </PrivateRoute>
     )

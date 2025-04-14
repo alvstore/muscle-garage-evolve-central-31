@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -98,7 +99,13 @@ const FeedbackPage = () => {
   // Use the hook to filter data based on user role
   const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
     feedbacks || [],
-    (item, userId) => item.memberId === userId
+    (item, userId) => {
+      // Ensure we're checking an individual feedback item, not the array
+      if (Array.isArray(item)) {
+        return false;
+      }
+      return item.memberId === userId;
+    }
   );
 
   const addFeedbackMutation = useMutation({
