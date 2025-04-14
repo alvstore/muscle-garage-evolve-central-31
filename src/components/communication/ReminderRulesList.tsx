@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ReminderRule, ReminderTriggerType } from "@/types/notification";
+import { ReminderRule, ReminderTriggerType, NotificationChannel } from "@/types/notification";
 import { toast } from "sonner";
 import { 
   BellRing, 
@@ -41,57 +41,73 @@ const mockReminderRules: ReminderRule[] = [
     id: "1",
     name: "Membership Expiry Reminder",
     description: "Remind members before their membership expires",
-    type: "membership-renewal",
-    triggerDays: 7,
+    triggerType: "membership_expiry",
+    triggerValue: 7,
     message: "Your membership will expire soon. Please renew to continue enjoying our services.",
-    channels: ["email", "in-app"],
-    enabled: true,
+    sendVia: ["email", "in-app"],
+    active: true,
     createdAt: "2023-05-10T09:00:00Z",
     updatedAt: "2023-05-10T09:00:00Z",
-    targetRoles: ["member"],
-    active: true
+    // Compatibility fields
+    type: "membership-renewal",
+    triggerDays: 7,
+    channels: ["email", "in-app"],
+    enabled: true,
+    targetRoles: ["member"]
   },
   {
     id: "2",
     name: "Birthday Wish",
     description: "Send birthday wishes to members",
-    type: "birthday",
-    triggerDays: 0,
+    triggerType: "birthday",
+    triggerValue: 0,
     message: "Happy Birthday! Enjoy a special discount on your next purchase.",
-    channels: ["email", "whatsapp", "sms"],
-    enabled: true,
+    sendVia: ["email", "whatsapp", "sms"],
+    active: true,
     createdAt: "2023-05-15T10:00:00Z",
     updatedAt: "2023-05-15T10:00:00Z",
-    targetRoles: ["member", "trainer", "staff"],
-    active: true
+    // Compatibility fields
+    type: "birthday",
+    triggerDays: 0,
+    channels: ["email", "whatsapp", "sms"],
+    enabled: true,
+    targetRoles: ["member", "trainer", "staff"]
   },
   {
     id: "3",
     name: "Missed Attendance Follow-up",
     description: "Follow up with members who haven't visited recently",
-    type: "missed-attendance",
-    triggerDays: 3,
+    triggerType: "missed_attendance",
+    triggerValue: 3,
     message: "We've noticed you haven't visited recently. Is everything okay?",
-    channels: ["sms", "whatsapp"],
-    enabled: false,
+    sendVia: ["sms", "whatsapp"],
+    active: false,
     createdAt: "2023-05-20T11:00:00Z",
     updatedAt: "2023-05-20T11:00:00Z",
-    targetRoles: ["member"],
-    active: false
+    // Compatibility fields
+    type: "missed-attendance",
+    triggerDays: 3,
+    channels: ["sms", "whatsapp"],
+    enabled: false,
+    targetRoles: ["member"]
   },
   {
     id: "4",
     name: "Membership Renewal Reminder",
     description: "Remind members to renew their membership",
-    type: "payment-due",
-    triggerDays: 3,
+    triggerType: "membership_expiry",
+    triggerValue: 3,
     message: "Your membership is expiring soon. Renew now to avoid interruption.",
-    channels: ["email", "in-app", "sms"],
-    enabled: true,
+    sendVia: ["email", "in-app", "sms"],
+    active: true,
     createdAt: "2023-05-25T12:00:00Z",
     updatedAt: "2023-05-25T12:00:00Z",
-    targetRoles: ["member"],
-    active: true
+    // Compatibility fields
+    type: "payment-due",
+    triggerDays: 3,
+    channels: ["email", "in-app", "sms"],
+    enabled: true,
+    targetRoles: ["member"]
   }
 ];
 

@@ -7,8 +7,9 @@ import PendingPayments from "@/components/dashboard/PendingPayments";
 import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
 import { Button } from "@/components/ui/button";
-import { mockDashboardSummary, mockAnnouncements } from "@/data/mockData";
+import { mockDashboardSummary } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { Announcement } from "@/types/notification";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -102,6 +103,37 @@ const StaffDashboard = () => {
       expiryDate: "2023-07-30T00:00:00Z",
       status: "active" as const,
       renewalAmount: 249
+    }
+  ];
+
+  const mockAnnouncements: Announcement[] = [
+    {
+      id: "announcement1",
+      title: "Gym Closure for Maintenance",
+      content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-10T10:00:00Z",
+      priority: "high",
+      targetRoles: ["member", "trainer", "staff"],
+      channels: ["in-app", "email"],
+      sentCount: 120,
+      forRoles: ["member", "trainer", "staff"],
+      createdBy: "admin1"
+    },
+    {
+      id: "announcement2",
+      title: "New Fitness Classes Added",
+      content: "We're excited to announce new Zumba and Pilates classes starting next week!",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-12T14:30:00Z",
+      priority: "medium",
+      targetRoles: ["member", "trainer"],
+      channels: ["in-app", "email"],
+      sentCount: 98,
+      forRoles: ["member", "trainer"],
+      createdBy: "admin1"
     }
   ];
 

@@ -36,13 +36,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "motivation",
     tags: ["workout", "consistency"],
-    targetRoles: ["member"],
-    frequency: "daily",
-    enabled: true,
+    active: true,
     createdAt: "2023-01-15T10:00:00Z",
     updatedAt: "2023-01-15T10:00:00Z",
-    channels: ["push", "email"],
-    active: true
   },
   {
     id: "2",
@@ -51,13 +47,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Andrew Murphy",
     category: "motivation",
     tags: ["mindset", "strength"],
-    targetRoles: ["member"],
-    frequency: "weekly",
-    enabled: true,
+    active: true,
     createdAt: "2023-02-10T15:30:00Z",
     updatedAt: "2023-02-10T15:30:00Z",
-    channels: ["push", "email"],
-    active: true
   },
   {
     id: "3",
@@ -66,13 +58,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "nutrition",
     tags: ["food", "health"],
-    targetRoles: ["member"],
-    frequency: "weekly",
-    enabled: true,
+    active: true,
     createdAt: "2023-03-05T09:45:00Z",
     updatedAt: "2023-03-05T09:45:00Z",
-    channels: ["push", "email"],
-    active: true
   },
   {
     id: "4",
@@ -81,13 +69,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Dwayne Johnson",
     category: "motivation",
     tags: ["consistency", "success"],
-    targetRoles: ["member"],
-    frequency: "monthly",
-    enabled: false,
+    active: false,
     createdAt: "2023-04-20T14:20:00Z",
     updatedAt: "2023-04-20T14:20:00Z",
-    channels: ["push", "email"],
-    active: false
   },
   {
     id: "5",
@@ -96,13 +80,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Gene Tunney",
     category: "wellness",
     tags: ["health", "exercise"],
-    targetRoles: ["member"],
-    frequency: "weekly",
-    enabled: true,
+    active: true,
     createdAt: "2023-05-12T11:15:00Z",
     updatedAt: "2023-05-12T11:15:00Z",
-    channels: ["push", "email"],
-    active: true
   }
 ];
 

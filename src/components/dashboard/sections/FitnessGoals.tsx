@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Trophy } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface GoalItem {
   id: string;
@@ -18,10 +19,10 @@ const FitnessGoals: React.FC<FitnessGoalsProps> = ({ goals }) => {
   if (!goals || goals.length === 0) {
     return (
       <div className="text-center py-10">
-        <Trophy className="h-10 w-10 mx-auto text-muted-foreground" />
+        <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground" />
         <h3 className="mt-4 text-lg font-medium">No fitness goals</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Set your first fitness goal to track your progress
+          Set your fitness goals to track your progress
         </p>
       </div>
     );
@@ -30,20 +31,12 @@ const FitnessGoals: React.FC<FitnessGoalsProps> = ({ goals }) => {
   return (
     <div className="space-y-4">
       {goals.map((goal) => (
-        <div key={goal.id} className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              {goal.progress >= 100 ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : (
-                <div className="h-5 w-5 flex items-center justify-center">
-                  <span className="text-sm font-medium">{goal.progress}%</span>
-                </div>
-              )}
-              <span className="font-medium">{goal.name}</span>
-            </div>
-            <span className="text-sm text-muted-foreground">{goal.target}</span>
+        <div key={goal.id} className="p-3 border rounded-lg">
+          <div className="flex justify-between mb-2">
+            <h3 className="font-medium">{goal.name}</h3>
+            <span className="text-sm font-medium">{goal.progress}%</span>
           </div>
+          <p className="text-xs text-muted-foreground mb-2">Target: {goal.target}</p>
           <Progress value={goal.progress} className="h-2" />
         </div>
       ))}

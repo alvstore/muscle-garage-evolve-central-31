@@ -9,38 +9,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockClasses, mockAnnouncements, mockMembers } from "@/data/mockData";
+import { mockClasses, mockMembers } from "@/data/mockData";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/use-auth";
 import MemberProgressChart from "@/components/dashboard/MemberProgressChart";
+import { Announcement } from "@/types/notification";
 
 const TrainerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Simulate fetching data
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
   }, []);
 
-  // Filter classes for this trainer (using trainer1 ID)
   const trainerClasses = mockClasses.filter(c => c.trainerId === user?.id || c.trainerId === "trainer1");
   
-  // Filter members assigned to this trainer
   const assignedMembers = mockMembers.filter(m => m.trainerId === user?.id || m.trainerId === "trainer1");
 
-  // Personal Training Members - identify them based on membershipId or manually for demo
-  // In a real application, this would check for a specific PT membership type
   const ptMembers = assignedMembers.filter(m => 
-    // Check for member-1 for demo purposes or check for any PT-specific data
     m.id === "member-1" || 
     (m.membershipId && m.membershipId.includes("pt"))
   );
 
-  // Upcoming appointments
   const appointments = [
     {
       id: "appt1",
@@ -76,7 +70,6 @@ const TrainerDashboard = () => {
     }
   ];
 
-  // Mock progress data for a PT member
   const progressData = [
     { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
     { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
@@ -93,6 +86,37 @@ const TrainerDashboard = () => {
       .join("")
       .toUpperCase();
   };
+
+  const mockAnnouncements: Announcement[] = [
+    {
+      id: "announcement1",
+      title: "Trainer Meeting",
+      content: "All trainers are required to attend the monthly meeting on Friday.",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-10T10:00:00Z",
+      priority: "high",
+      targetRoles: ["trainer"],
+      channels: ["in-app", "email"],
+      sentCount: 15,
+      forRoles: ["trainer"],
+      createdBy: "admin1"
+    },
+    {
+      id: "announcement2",
+      title: "New Workout Program",
+      content: "We're launching a new specialized workout program next month. Sign up for training.",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-12T14:30:00Z",
+      priority: "medium",
+      targetRoles: ["trainer"],
+      channels: ["in-app"],
+      sentCount: 15,
+      forRoles: ["trainer"],
+      createdBy: "admin1"
+    }
+  ];
 
   return (
     <div className="space-y-6">

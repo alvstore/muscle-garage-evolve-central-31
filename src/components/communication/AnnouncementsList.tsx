@@ -34,32 +34,44 @@ const mockAnnouncements: Announcement[] = [
     id: "1",
     title: "Gym Closure for Maintenance",
     content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
-    createdBy: "admin1",
+    authorId: "admin1",
+    authorName: "Admin",
     createdAt: "2023-07-10T10:00:00Z",
     targetRoles: ["member", "trainer"],
     channels: ["in-app", "email"],
-    sentCount: 120
+    sentCount: 120,
+    priority: "medium",
+    forRoles: ["member", "trainer"], // For compatibility
+    createdBy: "admin1" // For compatibility
   },
   {
     id: "2",
     title: "New Fitness Classes Added",
     content: "We're excited to announce new Zumba and Pilates classes starting next week!",
-    createdBy: "admin1",
+    authorId: "admin1",
+    authorName: "Admin",
     createdAt: "2023-07-12T14:30:00Z",
     targetRoles: ["member"],
     channels: ["in-app", "email", "sms"],
     expiresAt: "2023-07-26T23:59:59Z",
-    sentCount: 98
+    sentCount: 98,
+    priority: "high",
+    forRoles: ["member"], // For compatibility
+    createdBy: "admin1" // For compatibility
   },
   {
     id: "3", 
     title: "Holiday Schedule Change",
     content: "Please note our special hours during the upcoming holiday weekend.",
-    createdBy: "staff1",
+    authorId: "staff1",
+    authorName: "Staff Member",
     createdAt: "2023-07-18T09:15:00Z",
     targetRoles: ["member", "trainer", "staff"],
     channels: ["in-app", "whatsapp"],
-    sentCount: 215
+    sentCount: 215,
+    priority: "low",
+    forRoles: ["member", "trainer", "staff"], // For compatibility
+    createdBy: "staff1" // For compatibility
   }
 ];
 

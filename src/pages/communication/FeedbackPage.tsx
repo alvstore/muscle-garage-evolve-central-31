@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -104,7 +105,7 @@ const FeedbackPage = () => {
     (item) => {
       // For direct filtering of feedback items with matching memberId
       if (user && user.id) {
-        return (item as Feedback).memberId === user.id;
+        return item.memberId === user.id;
       }
       return false;
     }
