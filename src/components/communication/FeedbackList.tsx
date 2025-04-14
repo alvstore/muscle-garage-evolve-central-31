@@ -28,8 +28,8 @@ import { format, parseISO } from "date-fns";
 import { Feedback } from "@/types/notification";
 import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Mock feedback data
 const mockFeedbackData: Feedback[] = [
   {
     id: "feedback1",
@@ -104,7 +104,6 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
-    // Simulate API call or use provided feedbacks
     setTimeout(() => {
       setFeedback(feedbacks);
       setLoading(isLoading);
@@ -117,7 +116,6 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
   };
 
   const handleExportCSV = () => {
-    // In a real app, this would generate and download a CSV
     toast.success("Feedback data exported to CSV");
   };
 
@@ -125,7 +123,6 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
     ? feedback 
     : feedback.filter(item => item.type === filter);
 
-  // Function to render stars based on rating
   const renderStars = (rating: number) => {
     return Array(5)
       .fill(0)
@@ -137,7 +134,6 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
       ));
   };
 
-  // Function to get the initials from a name
   const getInitials = (name: string) => {
     if (name === "Anonymous") return "A";
     return name
@@ -204,83 +200,85 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="h-80 flex items-center justify-center">
-              <div className="text-center">
-                <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading feedback...</p>
+          <ScrollArea className="h-[calc(100vh-300px)]">
+            {loading ? (
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Loading feedback...</p>
+                </div>
               </div>
-            </div>
-          ) : filteredFeedback.length === 0 ? (
-            <div className="text-center py-10">
-              <MessageSquareOff className="h-10 w-10 mx-auto text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium">No feedback found</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {filter === "all" 
-                  ? "No feedback has been submitted yet." 
-                  : `No feedback found for the "${filter}" category.`}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Comment Preview</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFeedback.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="/placeholder.svg" alt={item.memberName} />
-                            <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
-                          </Avatar>
-                          <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {item.type === "fitness-plan" ? "Fitness Plan" : item.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex">
-                          {renderStars(item.rating)}
-                        </div>
-                      </TableCell>
-                      <TableCell>{format(parseISO(item.createdAt), "MMM dd, yyyy")}</TableCell>
-                      <TableCell>
-                        {item.comments 
-                          ? item.comments.length > 30 
-                            ? `${item.comments.substring(0, 30)}...` 
-                            : item.comments
-                          : "No comment provided"
-                        }
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewDetails(item)}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                      </TableCell>
+            ) : filteredFeedback.length === 0 ? (
+              <div className="text-center py-10">
+                <MessageSquareOff className="h-10 w-10 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No feedback found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {filter === "all" 
+                    ? "No feedback has been submitted yet." 
+                    : `No feedback found for the "${filter}" category.`}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Comment Preview</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFeedback.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src="/placeholder.svg" alt={item.memberName} />
+                              <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
+                            </Avatar>
+                            <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {item.type === "fitness-plan" ? "Fitness Plan" : item.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex">
+                            {renderStars(item.rating)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{format(parseISO(item.createdAt), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>
+                          {item.comments 
+                            ? item.comments.length > 30 
+                              ? `${item.comments.substring(0, 30)}...` 
+                              : item.comments
+                            : "No comment provided"
+                          }
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewDetails(item)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </ScrollArea>
         </CardContent>
       </Card>
       
