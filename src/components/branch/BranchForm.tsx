@@ -30,6 +30,11 @@ const formSchema = z.object({
   maxCapacity: z.string().optional(),
   openingHours: z.string().optional(),
   closingHours: z.string().optional(),
+  // Added fields for enhanced multi-branch support
+  region: z.string().optional(),
+  branchCode: z.string().optional(),
+  taxRate: z.string().optional(),
+  timezone: z.string().optional(),
 });
 
 interface BranchFormProps {
@@ -53,6 +58,11 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       maxCapacity: branch?.maxCapacity?.toString() || "",
       openingHours: branch?.openingHours || "",
       closingHours: branch?.closingHours || "",
+      // Initialize new fields
+      region: branch?.region || "",
+      branchCode: branch?.branchCode || "",
+      taxRate: branch?.taxRate?.toString() || "",
+      timezone: branch?.timezone || "",
     },
   });
 
@@ -117,25 +127,42 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
               
               <FormField
                 control={form.control}
-                name="isActive"
+                name="branchCode"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Branch Status</FormLabel>
-                      <FormDescription>
-                        Inactive branches won't be available for selection
-                      </FormDescription>
-                    </div>
+                  <FormItem>
+                    <FormLabel>Branch Code</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Input placeholder="e.g. NYC001" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      Unique code for this branch location
+                    </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Branch Status</FormLabel>
+                    <FormDescription>
+                      Inactive branches won't be available for selection
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
@@ -150,6 +177,36 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="region"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Region</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Northeast" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Timezone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. America/New_York" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -240,6 +297,23 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="taxRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tax Rate (%)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 8.5" type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Used for calculating taxes on membership fees and product sales
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="flex justify-end space-x-2">
               <Button 
