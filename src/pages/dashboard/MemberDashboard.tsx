@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import UpcomingClasses from '@/components/dashboard/sections/UpcomingClasses';
 import FitnessGoals from '@/components/dashboard/sections/FitnessGoals';
 import DietRecommendations from '@/components/dashboard/sections/DietRecommendations';
-import AnnouncementsList from '@/components/communication/AnnouncementsList';
+import Announcements from '@/components/dashboard/Announcements';
 import { Announcement } from '@/types/notification';
 
 const MemberDashboard = () => {
@@ -80,7 +81,7 @@ const MemberDashboard = () => {
   ];
 
   // Mock data for recent announcements
-  const recentAnnouncements = [
+  const recentAnnouncements: Announcement[] = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -90,7 +91,8 @@ const MemberDashboard = () => {
       createdAt: "2023-07-10T10:00:00Z",
       targetRoles: ["member"],
       channels: ["in-app"],
-      sentCount: 120
+      sentCount: 120,
+      priority: "medium"
     },
     {
       id: "announcement2",
@@ -101,7 +103,8 @@ const MemberDashboard = () => {
       createdAt: "2023-07-12T14:30:00Z",
       targetRoles: ["member"],
       channels: ["in-app"],
-      sentCount: 98
+      sentCount: 98,
+      priority: "low"
     }
   ];
 
@@ -225,7 +228,7 @@ const MemberDashboard = () => {
             <CardDescription>Stay updated with gym news</CardDescription>
           </CardHeader>
           <CardContent>
-            <AnnouncementsList announcements={recentAnnouncements as Announcement[]} onEdit={() => {}} />
+            <Announcements announcements={recentAnnouncements} />
           </CardContent>
         </Card>
       </div>

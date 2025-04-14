@@ -37,12 +37,12 @@ export interface Announcement {
   createdAt: string;
   expiresAt?: string;
   priority: 'low' | 'medium' | 'high';
-  forRoles?: string[];
-  forBranchIds?: string[];
-  // Additional properties for the dashboard
   targetRoles?: string[];
   channels?: NotificationChannel[];
   sentCount?: number;
+  createdBy?: string; // Add this property for compatibility
+  forRoles?: string[]; // Add this property for compatibility
+  forBranchIds?: string[];
 }
 
 export interface MotivationalMessage {
@@ -54,7 +54,10 @@ export interface MotivationalMessage {
   active: boolean;
   createdAt: string;
   updatedAt?: string;
+  title?: string; // Add this for compatibility
 }
+
+export type ReminderTriggerType = 'membership_expiry' | 'missed_attendance' | 'birthday' | 'inactive_member' | 'special_event';
 
 export interface ReminderRule {
   id: string;
@@ -67,7 +70,10 @@ export interface ReminderRule {
   active: boolean;
   createdAt: string;
   updatedAt?: string;
+  // Add compatibility properties
+  type?: string;
+  triggerDays?: number;
+  channels?: NotificationChannel[];
+  targetRoles?: string[];
+  enabled?: boolean;
 }
-
-export type ReminderTriggerType = 'membership_expiry' | 'missed_attendance' | 'birthday' | 'inactive_member' | 'special_event';
-

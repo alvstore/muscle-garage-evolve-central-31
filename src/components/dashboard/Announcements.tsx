@@ -1,38 +1,42 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Announcement } from "@/types/notification";
-import { format, parseISO } from "date-fns";
+import React from 'react';
+import { format, parseISO } from 'date-fns';
+import { Announcement } from '@/types/notification';
+import { MessageSquare } from 'lucide-react';
 
 interface AnnouncementsProps {
   announcements: Announcement[];
 }
 
-const Announcements = ({ announcements }: AnnouncementsProps) => {
+const Announcements: React.FC<AnnouncementsProps> = ({ announcements }) => {
+  if (!announcements || announcements.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-medium">No announcements</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          You'll see gym announcements here when they're available
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Announcements</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {announcements.length === 0 ? (
-          <p className="text-center text-muted-foreground py-6">No announcements</p>
-        ) : (
-          <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <div key={announcement.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{announcement.title}</h3>
-                  <span className="text-xs text-muted-foreground">
-                    {format(parseISO(announcement.createdAt), "MMM dd, yyyy")}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{announcement.content}</p>
-              </div>
-            ))}
+    <div className="space-y-4">
+      {announcements.map((announcement) => (
+        <div key={announcement.id} className="p-4 border rounded-lg">
+          <div className="flex justify-between items-start">
+            <h3 className="font-medium">{announcement.title}</h3>
+            <div className="flex items-center">
+              <span className="text-xs text-muted-foreground">
+                {format(parseISO(announcement.createdAt), 'MMM dd, yyyy')}
+              </span>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <p className="mt-2 text-sm text-muted-foreground">{announcement.content}</p>
+        </div>
+      ))}
+    </div>
   );
 };
 
