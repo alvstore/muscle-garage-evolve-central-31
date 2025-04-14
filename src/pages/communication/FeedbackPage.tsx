@@ -14,12 +14,30 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
 import { useMemberSpecificData } from '@/hooks/use-member-specific-data';
 
-const mockFeedbacks: Feedback[] = [
+// Create notification feedback type if not exists
+interface FeedbackBase {
+  id: string;
+  type: FeedbackType;
+  relatedId?: string;
+  rating: number;
+  comments: string;
+  createdAt: string;
+  anonymous: boolean;
+  title: string;
+}
+
+// If Feedback type doesn't exist, define it here, otherwise it'll use the imported one
+type FeedbackWithMember = FeedbackBase & {
+  memberId?: string;
+  memberName?: string;
+};
+
+const mockFeedbacks: FeedbackWithMember[] = [
   {
     id: "feedback1",
     memberId: "member1",
     memberName: "David Miller",
-    type: "class",
+    type: "class" as FeedbackType,
     relatedId: "class1",
     rating: 4,
     comments: "Great class, but the room was a bit crowded.",
@@ -31,7 +49,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback2",
     memberId: "member2",
     memberName: "Sarah Parker",
-    type: "trainer",
+    type: "trainer" as FeedbackType,
     relatedId: "trainer1",
     rating: 5,
     comments: "Excellent trainer, very motivating!",
@@ -42,7 +60,7 @@ const mockFeedbacks: Feedback[] = [
   {
     id: "feedback3",
     memberId: "member3",
-    type: "fitness-plan",
+    type: "fitness-plan" as FeedbackType,
     relatedId: "plan1",
     rating: 3,
     comments: "Plan is good but too challenging for beginners.",
@@ -54,7 +72,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback4",
     memberId: "member4",
     memberName: "Emily Davidson",
-    type: "general",
+    type: "general" as FeedbackType,
     rating: 2,
     comments: "The gym needs better ventilation.",
     createdAt: "2023-06-18T16:45:00Z",
@@ -65,7 +83,7 @@ const mockFeedbacks: Feedback[] = [
     id: "feedback5",
     memberId: "member5",
     memberName: "Michael Wong",
-    type: "class",
+    type: "class" as FeedbackType,
     relatedId: "class2",
     rating: 5,
     comments: "Best HIIT class I've ever taken!",
@@ -97,10 +115,10 @@ const FeedbackPage = () => {
   const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
   // Use the hook to filter data based on user role
-  const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
+  const { data: filteredFeedbacks } = useMemberSpecificData<FeedbackWithMember[], FeedbackWithMember[]>(
     feedbacks || [],
     (item, userId) => {
-      // Ensure we're checking an individual feedback item, not the array
+      // For array items, we would check deeper, but for direct items:
       if (Array.isArray(item)) {
         return false;
       }

@@ -96,7 +96,7 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: createNavIcon("MessageSquare"),
+        icon: createNavIcon("MessageCircle"),
         permission: "access_communication" as Permission
       },
       { 

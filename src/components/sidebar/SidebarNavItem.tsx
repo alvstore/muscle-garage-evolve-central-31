@@ -2,7 +2,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { SheetClose } from "@/components/ui/sheet";
-import { NavItem } from "@/data/memberNavigation";
+import { NavItem } from "@/types/navigation";
 
 interface SidebarNavItemProps {
   item: NavItem;

@@ -1,52 +1,43 @@
 
-import React, { ReactNode } from "react";
+import React from 'react';
 import { 
-  User,
-  Calendar,
-  CreditCard,
-  Activity,
-  DollarSign,
-  ShoppingBag,
-  FileText,
-  Bell,
-  Settings,
-  Home,
+  Home, 
+  User, 
+  Calendar, 
+  Activity, 
+  TrendingUp, 
   Utensils,
-  TrendingUp,
-  Dumbbell,
-  Users,
-  MessageCircle,
-  UserCircle,
-  ChefHat,
-  ListTodo
-} from "lucide-react";
-
-// Map of icon names to their components
-const iconMap = {
-  Home,
-  User,
-  Users,
-  Calendar,
+  FileText, 
   CreditCard, 
-  Activity,
-  DollarSign,
-  ShoppingBag,
-  FileText,
-  Bell,
-  Settings,
-  Utensils,
-  TrendingUp,
-  Dumbbell,
-  MessageCircle,
-  UserCircle,
-  ChefHat,
-  ListTodo
+  ShoppingBag, 
+  MessageCircle, 
+  Bell
+} from 'lucide-react';
+
+// Map of icon names to Lucide icon components
+const iconMap = {
+  "Home": Home,
+  "User": User,
+  "Calendar": Calendar,
+  "Activity": Activity,
+  "TrendingUp": TrendingUp,
+  "Utensils": Utensils,
+  "FileText": FileText,
+  "CreditCard": CreditCard,
+  "ShoppingBag": ShoppingBag,
+  "MessageCircle": MessageCircle,
+  "Bell": Bell,
 };
 
-export type IconName = keyof typeof iconMap;
+// Type for the iconName parameter based on keys in iconMap
+type IconName = keyof typeof iconMap;
 
-// Function to create icon elements with consistent styling
-export const createNavIcon = (name: IconName): ReactNode => {
-  const IconComponent = iconMap[name];
-  return <IconComponent className="h-5 w-5" />;
+/**
+ * Creates a React element with the specified icon
+ * @param iconName Name of the icon to create
+ * @returns React element with the icon
+ */
+export const createNavIcon = (iconName: IconName) => {
+  const IconComponent = iconMap[iconName];
+  return <IconComponent className="h-4 w-4" />;
 };

@@ -2,7 +2,7 @@
 import React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import SidebarNavItem from "./SidebarNavItem";
-import { NavSection } from "@/data/memberNavigation";
+import { NavSection } from "@/types/navigation";
 
 interface SidebarNavSectionProps {
   section: NavSection;
