@@ -15,6 +15,8 @@ export interface Feedback {
   title: string;
 }
 
+export type NotificationChannel = 'in-app' | 'email' | 'sms' | 'whatsapp';
+
 export interface Notification {
   id: string;
   userId: string;
@@ -37,4 +39,35 @@ export interface Announcement {
   priority: 'low' | 'medium' | 'high';
   forRoles?: string[];
   forBranchIds?: string[];
+  // Additional properties for the dashboard
+  targetRoles?: string[];
+  channels?: NotificationChannel[];
+  sentCount?: number;
 }
+
+export interface MotivationalMessage {
+  id: string;
+  content: string;
+  author?: string;
+  category: 'motivation' | 'fitness' | 'nutrition' | 'wellness';
+  tags?: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ReminderRule {
+  id: string;
+  name: string;
+  description?: string;
+  triggerType: ReminderTriggerType;
+  triggerValue: number;
+  message: string;
+  sendVia: NotificationChannel[];
+  active: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type ReminderTriggerType = 'membership_expiry' | 'missed_attendance' | 'birthday' | 'inactive_member' | 'special_event';
+

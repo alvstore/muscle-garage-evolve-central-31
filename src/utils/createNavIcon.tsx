@@ -11,7 +11,11 @@ import {
   CreditCard, 
   ShoppingBag, 
   MessageCircle, 
-  Bell
+  Bell,
+  ListTodo,
+  UserCircle,
+  Dumbbell,
+  ChefHat
 } from 'lucide-react';
 
 // Map of icon names to Lucide icon components
@@ -27,6 +31,10 @@ const iconMap = {
   "ShoppingBag": ShoppingBag,
   "MessageCircle": MessageCircle,
   "Bell": Bell,
+  "ListTodo": ListTodo,
+  "UserCircle": UserCircle,
+  "Dumbbell": Dumbbell,
+  "ChefHat": ChefHat,
 };
 
 // Type for the iconName parameter based on keys in iconMap

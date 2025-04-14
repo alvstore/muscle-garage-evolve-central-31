@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,23 +13,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
 import { useMemberSpecificData } from '@/hooks/use-member-specific-data';
 
-// Create notification feedback type if not exists
-interface FeedbackBase {
-  id: string;
-  type: FeedbackType;
-  relatedId?: string;
-  rating: number;
-  comments: string;
-  createdAt: string;
-  anonymous: boolean;
-  title: string;
-}
-
-// If Feedback type doesn't exist, define it here, otherwise it'll use the imported one
-type FeedbackWithMember = FeedbackBase & {
-  memberId?: string;
-  memberName?: string;
-};
+// Using the imported Feedback type from notification.ts
+type FeedbackWithMember = Feedback;
 
 const mockFeedbacks: FeedbackWithMember[] = [
   {
@@ -117,12 +101,12 @@ const FeedbackPage = () => {
   // Use the hook to filter data based on user role
   const { data: filteredFeedbacks } = useMemberSpecificData<FeedbackWithMember[], FeedbackWithMember[]>(
     feedbacks || [],
-    (item, userId) => {
-      // For array items, we would check deeper, but for direct items:
-      if (Array.isArray(item)) {
-        return false;
+    (item) => {
+      // For direct filtering of feedback items with matching memberId
+      if (user && user.id) {
+        return (item as Feedback).memberId === user.id;
       }
-      return item.memberId === userId;
+      return false;
     }
   );
 
