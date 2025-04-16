@@ -26,11 +26,17 @@ const FeedbackPage = () => {
   // Filter feedback types based on user role
   const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
-  // Use the hook to filter data based on user role
-  // Fix: Correct the filter function to work with the whole array and userId
+  // Fixed: Corrected the return type and filter function to match the hook's expectation
   const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
     feedbacks || [],
-    (feedbackArray, userId) => feedbackArray.filter(item => item.memberId === userId)
+    (feedbackArray, userId) => {
+      // When a member is logged in, only return their feedbacks
+      if (userId) {
+        return feedbackArray.filter(item => item.memberId === userId);
+      }
+      // For non-members, return all feedbacks
+      return feedbackArray;
+    }
   );
 
   const addFeedbackMutation = useMutation({
