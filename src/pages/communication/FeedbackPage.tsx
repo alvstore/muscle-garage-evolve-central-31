@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -100,7 +99,7 @@ const FeedbackPage = () => {
   const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
   // Use the hook to filter data based on user role
-  const { data: filteredFeedbacks } = useMemberSpecificData<FeedbackWithMember[], FeedbackWithMember[]>(
+  const { data: filteredFeedbacks } = useMemberSpecificData<FeedbackWithMember[], FeedbackWithMember>(
     feedbacks || [],
     (item) => {
       // For direct filtering of feedback items with matching memberId
