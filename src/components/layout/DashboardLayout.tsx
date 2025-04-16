@@ -106,7 +106,7 @@ const DashboardLayout = () => {
   const SidebarComponent = getSidebarComponent();
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
       <div 
         className={`fixed inset-y-0 z-20 transition-all duration-300 ${
@@ -142,7 +142,7 @@ const DashboardLayout = () => {
           sidebarOpen={sidebarOpen}
         />
         
-        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900 overflow-y-auto max-h-[calc(100vh-64px)]">
           <Outlet />
         </main>
       </div>

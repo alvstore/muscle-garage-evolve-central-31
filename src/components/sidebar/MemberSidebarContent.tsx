@@ -8,9 +8,13 @@ import { memberNavSections } from "@/data/memberNavigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import NavigationSections from "@/components/navigation/NavigationSections";
+import SidebarNavSection from "./SidebarNavSection";
 
-const MemberSidebarContent: React.FC = () => {
+interface MemberSidebarContentProps {
+  onLinkClick?: () => void;
+}
+
+const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ onLinkClick }) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
@@ -45,11 +49,16 @@ const MemberSidebarContent: React.FC = () => {
       </div>
       
       <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
-        <NavigationSections
-          sections={memberNavSections}
-          expandedSections={expandedSections}
-          toggleSection={toggleSection}
-        />
+        <div className="p-2">
+          {memberNavSections.map((section, index) => (
+            <SidebarNavSection
+              key={index}
+              section={section}
+              isExpanded={expandedSections.includes(section.name)}
+              onToggle={() => toggleSection(section.name)}
+            />
+          ))}
+        </div>
       </ScrollArea>
       
       <div className="mt-auto p-4">

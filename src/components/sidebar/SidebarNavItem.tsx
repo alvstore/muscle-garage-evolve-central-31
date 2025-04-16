@@ -28,7 +28,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item }) => {
         `}
         onClick={handleClick}
       >
-        {item.icon}
+        {item.icon && item.icon}
         <span>{item.label}</span>
         {item.badge && (
           <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">

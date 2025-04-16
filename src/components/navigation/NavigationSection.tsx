@@ -31,7 +31,9 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
   };
   
   // Handle navigation with React Router
-  const handleNavigation = (href: string, hasChildren: boolean) => {
+  const handleNavigation = (href: string, hasChildren: boolean, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default browser navigation
+    
     if (hasChildren) {
       onToggle();
     } else {
@@ -59,7 +61,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
           >
             <div className="mb-1">
               <button
-                onClick={() => handleNavigation(item.href, showChildren)}
+                onClick={(e) => handleNavigation(item.href, showChildren, e)}
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors",
                   isActive 
@@ -103,7 +105,11 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
                             ? "text-white font-medium bg-indigo-800/30" 
                             : "text-indigo-200 hover:text-white hover:bg-indigo-800/20"
                         )}
-                        onClick={onLinkClick}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (onLinkClick) onLinkClick();
+                          navigate(child.href);
+                        }}
                       >
                         <Circle className="h-2 w-2" />
                         <span>{child.label}</span>
