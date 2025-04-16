@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { SheetClose } from "@/components/ui/sheet";
 import { NavItem } from "@/types/navigation";
 
@@ -9,6 +9,13 @@ interface SidebarNavItemProps {
 }
 
 const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item }) => {
+  const navigate = useNavigate();
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(item.href);
+  };
+  
   return (
     <SheetClose asChild>
       <NavLink
@@ -19,6 +26,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item }) => {
             ? 'bg-indigo-600 text-white' 
             : 'text-white/70 hover:text-white hover:bg-white/10'}
         `}
+        onClick={handleClick}
       >
         {item.icon}
         <span>{item.label}</span>

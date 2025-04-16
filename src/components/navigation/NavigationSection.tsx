@@ -1,7 +1,7 @@
 
 import React from "react";
 import { ChevronDown, ChevronRight, Circle } from "lucide-react";
-import { useLocation, NavLink } from "react-router-dom";
+import { useLocation, NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { NavSection } from "@/types/navigation";
@@ -22,11 +22,24 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
   onLinkClick
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { can } = usePermissions();
   
   // Check if a route is active (including child routes)
   const isRouteActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+  
+  // Handle navigation with React Router
+  const handleNavigation = (href: string, hasChildren: boolean) => {
+    if (hasChildren) {
+      onToggle();
+    } else {
+      if (onLinkClick) {
+        onLinkClick();
+      }
+      navigate(href);
+    }
   };
   
   return (
@@ -46,7 +59,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
           >
             <div className="mb-1">
               <button
-                onClick={() => showChildren ? onToggle() : (onLinkClick ? () => { onLinkClick(); window.location.href = item.href; } : undefined)}
+                onClick={() => handleNavigation(item.href, showChildren)}
                 className={cn(
                   "w-full flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors",
                   isActive 

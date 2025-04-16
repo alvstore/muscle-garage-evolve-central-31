@@ -29,7 +29,7 @@ const FeedbackPage = () => {
   // Fixed: Corrected the return type and filter function to match the hook's expectation
   const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
     feedbacks || [],
-    (feedbackArray, userId) => {
+    (feedbackArray: Feedback[], userId: string): Feedback[] => {
       // When a member is logged in, only return their feedbacks
       if (userId) {
         return feedbackArray.filter(item => item.memberId === userId);

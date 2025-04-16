@@ -1,6 +1,7 @@
 
 import React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import SidebarNavItem from "./SidebarNavItem";
 import { NavSection } from "@/types/navigation";
 
