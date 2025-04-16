@@ -6,7 +6,7 @@ import { useAuth } from './use-auth';
 // It helps prevent the infinite update depth exceeded error by properly managing dependencies
 export const useMemberSpecificData = <T, R = T>(
   data: T,
-  filterFunction: (item: T, userId: string) => boolean | R[] = () => true
+  filterFunction: (item: T, userId: string) => R
 ) => {
   const { user } = useAuth();
   const [filteredData, setFilteredData] = useState<R | T>(data);
@@ -23,15 +23,9 @@ export const useMemberSpecificData = <T, R = T>(
 
     try {
       setIsLoading(true);
-      // For array data, filter it based on the provided function
-      if (Array.isArray(data)) {
-        const result = data.filter(item => filterFunction(item, user.id));
-        setFilteredData(result as R);
-      } else {
-        // For non-array data, just apply the filter function
-        const result = filterFunction(data, user.id);
-        setFilteredData(result as R);
-      }
+      // Apply the filter function
+      const result = filterFunction(data, user.id);
+      setFilteredData(result);
       setError(null);
     } catch (err) {
       console.error('Error processing member data:', err);

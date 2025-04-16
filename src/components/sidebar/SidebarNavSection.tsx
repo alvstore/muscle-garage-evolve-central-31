@@ -16,6 +16,12 @@ const SidebarNavSection: React.FC<SidebarNavSectionProps> = ({
   isExpanded, 
   onToggle 
 }) => {
+  const navigate = useNavigate();
+  
+  const handleItemClick = (href: string) => {
+    navigate(href);
+  };
+  
   return (
     <div className="mb-1">
       <button

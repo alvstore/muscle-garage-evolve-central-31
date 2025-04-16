@@ -26,10 +26,10 @@ const FeedbackPage = () => {
   // Filter feedback types based on user role
   const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
-  // Fixed: Corrected the return type and filter function to match the hook's expectation
+  // Fix for the TypeScript error: Properly define the function return type to match hook expectations
   const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
     feedbacks || [],
-    (feedbackArray: Feedback[], userId: string): Feedback[] => {
+    (feedbackArray: Feedback[], userId: string) => {
       // When a member is logged in, only return their feedbacks
       if (userId) {
         return feedbackArray.filter(item => item.memberId === userId);
