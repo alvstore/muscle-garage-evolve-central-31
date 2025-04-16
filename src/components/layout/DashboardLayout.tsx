@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
@@ -106,47 +106,33 @@ const DashboardLayout = () => {
   const SidebarComponent = getSidebarComponent();
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Desktop Sidebar */}
-      <div 
-        className={`fixed inset-y-0 z-20 transition-all duration-300 ${
-          sidebarOpen ? 'left-0' : '-left-64'
-        } hidden md:block md:w-64`}
-      >
-        <SidebarComponent isSidebarOpen={true} closeSidebar={() => {}} />
-      </div>
-      
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-10 bg-black/50 backdrop-blur-sm"
-          onClick={closeSidebar}
-        />
-      )}
-      
-      {/* Mobile Sidebar */}
-      {isMobile && (
-        <div className={`fixed inset-0 z-30 ${sidebarOpen ? 'block' : 'hidden'}`}>
+    <SidebarProvider defaultOpen={!isMobile}>
+      <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
+        {/* Desktop Sidebar */}
+        {!isMobile && (
           <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
-        </div>
-      )}
-      
-      {/* Main Content */}
-      <div className={`flex flex-1 flex-col transition-all duration-300 ${
-        sidebarOpen ? 'md:ml-64' : 'md:ml-0'
-      }`}>
-        <DashboardHeader 
-          toggleSidebar={toggleSidebar} 
-          toggleTheme={toggleTheme} 
-          isDarkMode={darkMode}
-          sidebarOpen={sidebarOpen}
-        />
+        )}
         
-        <main className="flex-1 p-4 relative z-0 bg-gray-50 dark:bg-gray-900 overflow-y-auto max-h-[calc(100vh-64px)]">
-          <Outlet />
-        </main>
+        {/* Mobile Sidebar */}
+        {isMobile && (
+          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+        )}
+        
+        {/* Main Content */}
+        <div className="flex-1">
+          <DashboardHeader 
+            toggleSidebar={toggleSidebar} 
+            toggleTheme={toggleTheme} 
+            isDarkMode={darkMode}
+            sidebarOpen={sidebarOpen}
+          />
+          
+          <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
