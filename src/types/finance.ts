@@ -1,4 +1,3 @@
-
 export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled";
 export type PaymentMethod = "cash" | "card" | "bank-transfer" | "razorpay" | "other";
 export type ExpenseCategory = "rent" | "salary" | "utilities" | "equipment" | "maintenance" | "marketing" | "other";
@@ -9,7 +8,7 @@ export type RecurringPeriod = "daily" | "weekly" | "monthly" | "quarterly" | "ye
 export interface Invoice {
   id: string;
   memberId: string;
-  memberName: string; // Added this property to fix the error
+  memberName: string;
   amount: number;
   status: InvoiceStatus;
   dueDate: string;
@@ -18,6 +17,8 @@ export interface Invoice {
   paymentMethod?: PaymentMethod;
   items: InvoiceItem[];
   notes?: string;
+  membershipPlanId?: string;
+  membershipDuration?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpayRefundId?: string;
@@ -25,6 +26,7 @@ export interface Invoice {
   webhookStatus?: "success" | "failed" | "pending";
   lastWebhookEvent?: string;
   lastWebhookTimestamp?: string;
+  branchId: string;
 }
 
 export interface InvoiceItem {

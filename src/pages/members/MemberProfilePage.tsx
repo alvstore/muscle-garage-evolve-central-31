@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Container } from "@/components/ui/container";
 import MemberProfile from "@/components/members/MemberProfile";
+import MemberTransactionHistory from "@/components/members/MemberTransactionHistory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Member } from "@/types";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,10 +59,23 @@ const MemberProfilePage = () => {
             <Skeleton className="h-64 w-full" />
           </div>
         ) : member ? (
-          <MemberProfile 
-            member={member} 
-            onUpdate={handleUpdateMember} 
-          />
+          <Tabs defaultValue="profile" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="profile">
+              <MemberProfile 
+                member={member} 
+                onUpdate={handleUpdateMember} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="transactions">
+              <MemberTransactionHistory />
+            </TabsContent>
+          </Tabs>
         ) : (
           <div className="p-4 border rounded bg-yellow-50 text-yellow-700">
             Member not found

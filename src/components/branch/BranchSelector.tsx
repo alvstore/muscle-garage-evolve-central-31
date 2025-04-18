@@ -13,6 +13,7 @@ import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { toast } from "sonner";
+import CreateBranchDialog from './CreateBranchDialog';
 
 const BranchSelector = () => {
   const { branches, currentBranch, setCurrentBranch, isLoading } = useBranch();
@@ -33,10 +34,12 @@ const BranchSelector = () => {
   
   if (isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
-        <Building2 className="mr-2 h-4 w-4" />
-        <span>Loading branches...</span>
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
+          <Building2 className="mr-2 h-4 w-4" />
+          <span>Loading branches...</span>
+        </Button>
+      </div>
     );
   }
 
@@ -47,29 +50,35 @@ const BranchSelector = () => {
         <span>{currentBranch?.name || 'No branch selected'}</span>
       </div>
     }>
-      <Select
-        value={currentBranch?.id}
-        onValueChange={handleChangeBranch}
-      >
-        <SelectTrigger className="w-[200px]">
-          <Building2 className="mr-2 h-4 w-4" />
-          <SelectValue placeholder="Select branch" />
-        </SelectTrigger>
-        <SelectContent>
-          {branches.map((branch) => (
-            <SelectItem
-              key={branch.id}
-              value={branch.id}
-              className="flex items-center justify-between"
-            >
-              <span>{branch.name}</span>
-              {currentBranch?.id === branch.id && (
-                <Check className="ml-2 h-4 w-4" />
-              )}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select
+          value={currentBranch?.id}
+          onValueChange={handleChangeBranch}
+        >
+          <SelectTrigger className="w-[200px]">
+            <Building2 className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Select branch" />
+          </SelectTrigger>
+          <SelectContent>
+            {branches.map((branch) => (
+              <SelectItem
+                key={branch.id}
+                value={branch.id}
+                className="flex items-center justify-between"
+              >
+                <span>{branch.name}</span>
+                {currentBranch?.id === branch.id && (
+                  <Check className="ml-2 h-4 w-4" />
+                )}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <PermissionGuard permission="manage_branches">
+          <CreateBranchDialog />
+        </PermissionGuard>
+      </div>
     </PermissionGuard>
   );
 };
