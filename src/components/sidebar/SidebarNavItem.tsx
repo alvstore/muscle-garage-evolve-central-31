@@ -1,7 +1,6 @@
 
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { NavItem } from "@/types/navigation";
 
 interface SidebarNavItemProps {

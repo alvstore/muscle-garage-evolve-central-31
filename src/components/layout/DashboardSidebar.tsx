@@ -22,7 +22,7 @@ interface DashboardSidebarProps {
   closeSidebar: () => void;
 }
 
-export default function DashboardSidebar({ isSidebarOpen }: DashboardSidebarProps) {
+export default function DashboardSidebar({ isSidebarOpen, closeSidebar }: DashboardSidebarProps) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();

@@ -13,7 +13,8 @@ interface TrainerSidebarProps {
 }
 
 const TrainerSidebar: React.FC<TrainerSidebarProps> = ({ 
-  isSidebarOpen
+  isSidebarOpen,
+  closeSidebar
 }) => {
   return (
     <Sidebar className={cn(
@@ -22,7 +23,7 @@ const TrainerSidebar: React.FC<TrainerSidebarProps> = ({
     )}>
       <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
-          <TrainerSidebarContent />
+          <TrainerSidebarContent closeSidebar={closeSidebar} />
         </div>
       </SidebarContent>
     </Sidebar>
