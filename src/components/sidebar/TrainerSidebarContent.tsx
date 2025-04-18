@@ -10,7 +10,11 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationSections from "@/components/navigation/NavigationSections";
 
-const TrainerSidebarContent: React.FC = () => {
+interface TrainerSidebarContentProps {
+  closeSidebar?: () => void;
+}
+
+const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSidebar }) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
@@ -40,7 +44,9 @@ const TrainerSidebarContent: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 flex items-center gap-3">
-        <Logo variant="white" />
+        <div className="bg-white p-1 rounded-md">
+          <Logo variant="default" />
+        </div>
         <h1 className="text-lg font-semibold">Muscle Garage</h1>
       </div>
       
@@ -49,6 +55,7 @@ const TrainerSidebarContent: React.FC = () => {
           sections={trainerNavSections}
           expandedSections={expandedSections}
           toggleSection={toggleSection}
+          onLinkClick={closeSidebar}
         />
       </ScrollArea>
       

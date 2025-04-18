@@ -10,7 +10,13 @@ import {
   Bell,
   MessageSquare,
   FileText,
-  Settings
+  Settings,
+  User,
+  Calendar,
+  UserCircle,
+  ChefHat,
+  ListTodo,
+  MessageCircle
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 import { Permission } from '@/hooks/use-permissions';
@@ -22,40 +28,77 @@ export const trainerNavSections: NavSection[] = [
     items: [
       { 
         href: "/dashboard", 
-        label: "Dashboard", 
+        label: "Overview", 
         icon: <LayoutDashboard className="h-4 w-4" />, 
-        permission: "access_dashboards" as Permission
-      }
+        permission: "feature_trainer_dashboard" as Permission
+      },
+      { 
+        href: "/trainers/tasks", 
+        label: "Task Management", 
+        icon: <ListTodo className="h-4 w-4" />,
+        badge: "3", // Number of pending tasks
+        permission: "trainer_view_classes" as Permission
+      },
     ]
   },
   {
-    name: "Training",
-    icon: <Dumbbell className="h-4 w-4" />,
+    name: "My Profile",
+    icon: <User className="h-4 w-4" />,
     items: [
       { 
-        href: "/members", 
-        label: "My Members", 
-        icon: <Users className="h-4 w-4" />,
+        href: "/trainers/profile", 
+        label: "Profile", 
+        icon: <User className="h-4 w-4" />,
+        permission: "access_own_resources" as Permission
+      },
+      { 
+        href: "/trainers/attendance", 
+        label: "My Attendance", 
+        icon: <Calendar className="h-4 w-4" />,
+        permission: "trainer_view_attendance" as Permission
+      },
+    ]
+  },
+  {
+    name: "Members",
+    icon: <Users className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/allocation", 
+        label: "My Assigned Members", 
+        icon: <UserCircle className="h-4 w-4" />,
         permission: "trainer_view_members" as Permission
       },
       { 
+        href: "/trainers/pt-plans", 
+        label: "PT Plans", 
+        icon: <Dumbbell className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
+      },
+    ]
+  },
+  {
+    name: "Fitness & Diet",
+    icon: <Activity className="h-4 w-4" />,
+    items: [
+      { 
         href: "/classes", 
         label: "Classes", 
-        icon: <ClipboardList className="h-4 w-4" />, 
+        icon: <Calendar className="h-4 w-4" />,
         permission: "trainer_view_classes" as Permission
       },
       { 
-        href: "/fitness-plans", 
-        label: "Fitness Plans", 
-        icon: <Activity className="h-4 w-4" />, 
+        href: "/fitness/workout-plans", 
+        label: "Workout Plans", 
+        icon: <Activity className="h-4 w-4" />,
         permission: "trainer_edit_fitness" as Permission
       },
       { 
-        href: "/attendance", 
-        label: "Attendance", 
-        icon: <CalendarDays className="h-4 w-4" />, 
-        permission: "trainer_view_attendance" as Permission
-      }
+        href: "/fitness/diet", 
+        label: "Diet Plans", 
+        icon: <ChefHat className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
+      },
     ]
   },
   {
@@ -65,15 +108,16 @@ export const trainerNavSections: NavSection[] = [
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: <Bell className="h-4 w-4" />, 
-        permission: "access_communication" as Permission 
+        icon: <Bell className="h-4 w-4" />,
+        permission: "access_communication" as Permission
       },
       { 
-        href: "/communication/feedback", 
-        label: "Feedback", 
-        icon: <MessageSquare className="h-4 w-4" />, 
+        href: "/communication/notifications", 
+        label: "My Notifications", 
+        icon: <MessageCircle className="h-4 w-4" />,
+        badge: "5", // Number of unread notifications
         permission: "access_communication" as Permission
-      }
+      },
     ]
   },
   {
