@@ -64,6 +64,7 @@ const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ onLinkClick
                 section={section}
                 isExpanded={expandedSections.includes(section.name)}
                 onToggle={() => toggleSection(section.name)}
+                onLinkClick={onLinkClick}
               />
             ))}
           </div>

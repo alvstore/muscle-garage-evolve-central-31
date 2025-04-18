@@ -1,7 +1,7 @@
 
 import React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import SidebarNavItem from "./SidebarNavItem";
 import { NavSection } from "@/types/navigation";
 
@@ -9,40 +9,34 @@ interface SidebarNavSectionProps {
   section: NavSection;
   isExpanded: boolean;
   onToggle: () => void;
+  onLinkClick?: () => void;
 }
 
-const SidebarNavSection: React.FC<SidebarNavSectionProps> = ({ 
-  section, 
-  isExpanded, 
-  onToggle 
+const SidebarNavSection: React.FC<SidebarNavSectionProps> = ({
+  section,
+  isExpanded,
+  onToggle,
+  onLinkClick,
 }) => {
-  const navigate = useNavigate();
-  
-  const handleItemClick = (href: string) => {
-    navigate(href);
-  };
-  
   return (
-    <div className="mb-1">
-      <button
+    <div className="mb-3">
+      <Button
+        variant="ghost"
+        className="w-full flex justify-between items-center text-white/80 hover:text-white hover:bg-white/10"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
       >
-        <div className="flex items-center gap-2">
-          {section.icon}
-          <span>{section.name}</span>
-        </div>
+        <span className="text-sm font-medium">{section.name}</span>
         {isExpanded ? (
           <ChevronDown className="h-4 w-4" />
         ) : (
           <ChevronRight className="h-4 w-4" />
         )}
-      </button>
+      </Button>
       
       {isExpanded && (
-        <div className="mt-1 pl-4">
-          {section.items.map((item, itemIndex) => (
-            <SidebarNavItem key={itemIndex} item={item} />
+        <div className="mt-1 ml-2 space-y-1">
+          {section.items.map((item, index) => (
+            <SidebarNavItem key={index} item={item} onLinkClick={onLinkClick} />
           ))}
         </div>
       )}
