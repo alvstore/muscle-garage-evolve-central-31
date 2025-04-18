@@ -40,5 +40,13 @@ export const financeRoutes: RouteObject[] = [
         <TransactionPage />
       </PrivateRoute>
     )
+  },
+  {
+    path: '/reports',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <FinanceDashboardPage />
+      </PrivateRoute>
+    )
   }
 ];

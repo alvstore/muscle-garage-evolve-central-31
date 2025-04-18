@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { Invoice } from "@/types/finance";
 import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
+import { useBranch } from "@/hooks/use-branch";
 
 const mockInvoices: Invoice[] = [
   {
@@ -29,6 +30,7 @@ const mockInvoices: Invoice[] = [
         unitPrice: 1999,
       }
     ],
+    branchId: "branch-1",
   },
   {
     id: "INV-002",
@@ -47,6 +49,7 @@ const mockInvoices: Invoice[] = [
       }
     ],
     razorpayOrderId: "order_123456",
+    branchId: "branch-1",
   },
   {
     id: "INV-003",
@@ -64,6 +67,7 @@ const mockInvoices: Invoice[] = [
         unitPrice: 18999,
       }
     ],
+    branchId: "branch-1",
   },
 ];
 
@@ -77,6 +81,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const { currentBranch } = useBranch();
 
   const handleAddInvoice = () => {
     setEditingInvoice(null);
@@ -119,6 +124,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       const newInvoice: Invoice = {
         ...invoice,
         id: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+        branchId: currentBranch?.id || 'branch-1',
       };
       setInvoices([...invoices, newInvoice]);
       toast.success("Invoice created successfully");

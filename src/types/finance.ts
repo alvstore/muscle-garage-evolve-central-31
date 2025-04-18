@@ -1,3 +1,4 @@
+
 export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled";
 export type PaymentMethod = "cash" | "card" | "bank-transfer" | "razorpay" | "other";
 export type ExpenseCategory = "rent" | "salary" | "utilities" | "equipment" | "maintenance" | "marketing" | "other";
@@ -65,3 +66,6 @@ export interface FinancialSummary {
     percentage: number;
   }[];
 }
+
+// Alias for backward compatibility
+export type Transaction = FinancialTransaction;

@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 const InvoicePage = () => {
   const { user } = useAuth();
   const isMember = user?.role === "member";
-  const [activeTab, setActiveTab] = useState(isMember ? "invoices" : "invoices");
+  const [activeTab, setActiveTab] = useState(isMember ? "invoices" : "all-invoices");
 
   return (
     <Container>
@@ -20,11 +20,22 @@ const InvoicePage = () => {
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            {!isMember && (
-              <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>
-            )}
+            {!isMember && <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>}
+            <TabsTrigger value="invoices">{isMember ? "Invoices" : "Pending Invoices"}</TabsTrigger>
+            {!isMember && <TabsTrigger value="paid">Paid Invoices</TabsTrigger>}
+            {!isMember && <TabsTrigger value="overdue">Overdue Invoices</TabsTrigger>}
+            {!isMember && <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>}
           </TabsList>
+          
+          {!isMember && (
+            <TabsContent value="all-invoices">
+              <InvoiceList 
+                readonly={false} 
+                allowPayment={true}
+                allowDownload={true}
+              />
+            </TabsContent>
+          )}
           
           <TabsContent value="invoices">
             <InvoiceList 
@@ -33,6 +44,26 @@ const InvoicePage = () => {
               allowDownload={true}
             />
           </TabsContent>
+          
+          {!isMember && (
+            <TabsContent value="paid">
+              <InvoiceList 
+                readonly={false}
+                allowPayment={false}
+                allowDownload={true}
+              />
+            </TabsContent>
+          )}
+          
+          {!isMember && (
+            <TabsContent value="overdue">
+              <InvoiceList 
+                readonly={false}
+                allowPayment={true}
+                allowDownload={true}
+              />
+            </TabsContent>
+          )}
           
           {!isMember && (
             <TabsContent value="webhooks">

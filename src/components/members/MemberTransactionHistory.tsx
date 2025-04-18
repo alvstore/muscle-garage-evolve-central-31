@@ -3,14 +3,14 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Transaction } from "@/types/finance";
+import { FinancialTransaction, Transaction } from "@/types/finance";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MemberTransactionHistory = () => {
   const { id } = useParams();
 
   // Mock data - In a real app, fetch from API
-  const transactions: Transaction[] = [
+  const transactions: FinancialTransaction[] = [
     {
       id: "1",
       type: "income",
@@ -19,10 +19,39 @@ const MemberTransactionHistory = () => {
       category: "membership",
       description: "Monthly Membership Fee",
       recurring: true,
+      recurringPeriod: "monthly",
       paymentMethod: "card",
       createdBy: "system",
       createdAt: "2024-04-18",
       updatedAt: "2024-04-18"
+    },
+    {
+      id: "2",
+      type: "income",
+      amount: 49.99,
+      date: "2024-04-15",
+      category: "personal-training",
+      description: "Personal Training Session",
+      recurring: false,
+      recurringPeriod: "none",
+      paymentMethod: "cash",
+      createdBy: "trainer-1",
+      createdAt: "2024-04-15",
+      updatedAt: "2024-04-15"
+    },
+    {
+      id: "3",
+      type: "income",
+      amount: 25,
+      date: "2024-04-10",
+      category: "product-sales",
+      description: "Protein Shake Purchase",
+      recurring: false,
+      recurringPeriod: "none",
+      paymentMethod: "card",
+      createdBy: "staff-1",
+      createdAt: "2024-04-10",
+      updatedAt: "2024-04-10"
     }
   ];
 
@@ -43,6 +72,9 @@ const MemberTransactionHistory = () => {
                   <p className="font-medium">{transaction.description}</p>
                   <p className="text-sm text-muted-foreground">
                     {new Date(transaction.date).toLocaleDateString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {transaction.category}
                   </p>
                 </div>
                 <div className="text-right">

@@ -16,11 +16,21 @@ const TransactionPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="transactions">All Transactions</TabsTrigger>
+            <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="webhook-transactions">Webhook Transactions</TabsTrigger>
           </TabsList>
           
           <TabsContent value="transactions">
             <TransactionList />
+          </TabsContent>
+          
+          <TabsContent value="income">
+            <TransactionList type="income" />
+          </TabsContent>
+          
+          <TabsContent value="expenses">
+            <TransactionList type="expense" />
           </TabsContent>
           
           <TabsContent value="webhook-transactions">

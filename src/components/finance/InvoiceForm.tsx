@@ -24,6 +24,7 @@ import {
   InvoiceItem, 
   InvoiceStatus
 } from "@/types/finance";
+import { useBranch } from "@/hooks/use-branch";
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -39,6 +40,7 @@ const mockMembers = [
 ];
 
 const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
+  const { currentBranch } = useBranch();
   const [formData, setFormData] = useState<Invoice>({
     id: "",
     memberId: "",
@@ -55,6 +57,7 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
         unitPrice: 0,
       },
     ],
+    branchId: currentBranch?.id || "branch-1",
   });
 
   useEffect(() => {
