@@ -1,9 +1,9 @@
 
 import React from "react";
 import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
+  Sidebar,
+  SidebarContent,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import TrainerSidebarContent from "@/components/sidebar/TrainerSidebarContent";
 
@@ -13,22 +13,19 @@ interface TrainerSidebarProps {
 }
 
 const TrainerSidebar: React.FC<TrainerSidebarProps> = ({ 
-  isSidebarOpen, 
-  closeSidebar 
+  isSidebarOpen
 }) => {
   return (
-    <Sheet open={isSidebarOpen} onOpenChange={closeSidebar}>
-      <SheetContent 
-        side="left" 
-        className={cn(
-          "w-64 p-0 border-none overflow-hidden"
-        )}
-      >
+    <Sidebar className={cn(
+      "transition-all duration-300",
+      isSidebarOpen ? "w-64" : "w-0"
+    )}>
+      <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <TrainerSidebarContent />
         </div>
-      </SheetContent>
-    </Sheet>
+      </SidebarContent>
+    </Sidebar>
   );
 };
 
