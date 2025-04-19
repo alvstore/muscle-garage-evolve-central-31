@@ -5,12 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TransactionList from "@/components/finance/TransactionList";
 import WebhookLogs from "@/components/finance/WebhookLogs";
 
-// Define proper types for TransactionList
-interface TransactionListProps {
-  webhookOnly?: boolean;
-  transactionType?: string;
-}
-
 const TransactionPage = () => {
   const [activeTab, setActiveTab] = useState("transactions");
 
