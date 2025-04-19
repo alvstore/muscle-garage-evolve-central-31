@@ -1,32 +1,9 @@
-
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { 
-  FileText, 
-  CreditCard, 
-  Users, 
-  CalendarCheck, 
-  DollarSign, 
-  TrendingUp, 
-  Gift, 
-  Activity,
-  Search,
-  Download,
-  Calendar as CalendarIcon
-} from 'lucide-react';
-import { format } from 'date-fns';
-
+import { Users, CalendarCheck, CreditCard, Activity, Gift, DollarSign } from 'lucide-react';
+import { SearchAndExport } from '@/components/dashboard/sections/SearchAndExport';
 import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';
 import MemberStatusSection from '@/components/dashboard/sections/MemberStatusSection';
@@ -41,7 +18,6 @@ const AdminDashboard = () => {
   const [isStartDateOpen, setIsStartDateOpen] = useState(false);
   const [isEndDateOpen, setIsEndDateOpen] = useState(false);
 
-  // Mock data for dashboard
   const dashboardData = {
     totalMembers: 328,
     newMembersToday: 5,
@@ -133,14 +109,16 @@ const AdminDashboard = () => {
     }
   ];
 
-  const handleSearch = () => {
-    toast.info(`Searching for: ${searchQuery}`);
-    // In a real app, you'd filter the data based on search query
+  const handleSearch = (query: string) => {
+    toast.info(`Searching for: ${query}`);
+  };
+
+  const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
+    toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
   };
 
   const handleExport = () => {
     toast.success('Dashboard data exported successfully');
-    // In a real app, you'd generate and download a report
   };
 
   return (
@@ -150,89 +128,21 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to Muscle Garage management system</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-48 mr-2"
-            />
-            <Button 
-              size="icon" 
-              variant="outline" 
-              className="h-8 w-8 absolute right-3 top-0"
-              onClick={handleSearch}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-8 w-auto flex items-center gap-1">
-                  <CalendarIcon className="h-4 w-4" />
-                  {startDate ? format(startDate, 'PP') : 'Start Date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={(date) => {
-                    setStartDate(date);
-                    setIsStartDateOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-8 w-auto flex items-center gap-1">
-                  <CalendarIcon className="h-4 w-4" />
-                  {endDate ? format(endDate, 'PP') : 'End Date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={(date) => {
-                    setEndDate(date);
-                    setIsEndDateOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <Button 
-            variant="default" 
-            className="h-8 bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1"
-            onClick={handleExport}
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-        </div>
+        <SearchAndExport 
+          onSearch={handleSearch}
+          onDateRangeChange={handleDateRangeChange}
+          onExport={handleExport}
+        />
       </div>
       
       <div className="space-y-6">
-        {/* Overview Stats */}
         <OverviewStats data={dashboardData} />
         
-        {/* New Smart Dashboard Components */}
         <div className="grid gap-6 md:grid-cols-2">
           <MemberProgressSection />
           <ChurnPredictionSection />
         </div>
         
-        {/* Featured Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuredActions.map((action, index) => (
             <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -254,7 +164,6 @@ const AdminDashboard = () => {
           ))}
         </div>
         
-        {/* Analytics Section */}
         <div className="grid gap-6 md:grid-cols-2">
           <RevenueSection data={revenueData} />
           <MemberStatusSection data={membersByStatus} />
