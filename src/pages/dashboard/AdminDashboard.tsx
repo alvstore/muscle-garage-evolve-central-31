@@ -1,8 +1,9 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Users, CalendarCheck, CreditCard, Activity, Gift, DollarSign } from 'lucide-react';
+import { Users, CalendarCheck, CreditCard, Activity, Gift, DollarSign, FileText, TrendingUp } from 'lucide-react';
 import { SearchAndExport } from '@/components/dashboard/sections/SearchAndExport';
 import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';

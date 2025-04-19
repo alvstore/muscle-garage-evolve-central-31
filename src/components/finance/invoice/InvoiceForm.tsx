@@ -12,6 +12,13 @@ import { InvoiceMemberSelect } from "./InvoiceMemberSelect";
 import { InvoiceItemList } from "./InvoiceItemList";
 import { InvoiceTotal } from "./InvoiceTotal";
 
+// Mock data for member selection - should be moved to API call in the future
+const mockMembers = [
+  { id: "member-1", name: "John Doe" },
+  { id: "member-2", name: "Jane Smith" },
+  { id: "member-3", name: "Alex Johnson" },
+];
+
 interface InvoiceFormProps {
   invoice: Invoice | null;
   onSave: (invoice: Invoice) => void;
@@ -176,4 +183,3 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
 };
 
 export default InvoiceForm;
-
