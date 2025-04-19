@@ -19,9 +19,13 @@ import { formatCurrency } from '@/utils/formatters';
 
 interface TransactionListProps {
   webhookOnly?: boolean;
+  transactionType?: string;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ webhookOnly = false }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ 
+  webhookOnly = false,
+  transactionType 
+}) => {
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,15 +78,23 @@ const TransactionList: React.FC<TransactionListProps> = ({ webhookOnly = false }
         }
       ];
       
-      // If webhookOnly is true, filter to only show Razorpay transactions
-      const filteredTransactions = webhookOnly 
-        ? mockTransactions.filter(t => t.paymentMethod === 'razorpay')
-        : mockTransactions;
+      // Apply filters based on props
+      let filteredTransactions = mockTransactions;
+      
+      // Filter by transaction type if specified
+      if (transactionType) {
+        filteredTransactions = filteredTransactions.filter(t => t.type === transactionType);
+      }
+      
+      // Filter by webhook only if requested
+      if (webhookOnly) {
+        filteredTransactions = filteredTransactions.filter(t => t.paymentMethod === 'razorpay');
+      }
         
       setTransactions(filteredTransactions);
       setLoading(false);
     }, 1000);
-  }, [webhookOnly]);
+  }, [webhookOnly, transactionType]);
 
   const getPaymentMethodLabel = (method?: PaymentMethod) => {
     switch (method) {
