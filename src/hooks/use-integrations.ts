@@ -24,7 +24,24 @@ export const useIntegrations = (integrationName?: string) => {
   }, []);
   
   // Update a specific integration's config
-  const updateConfig = useCallback((name: string, config: Partial<IntegrationConfig>) => {
+  const updateConfig = useCallback((nameOrConfig: string | Partial<IntegrationConfig>, configOrNothing?: Partial<IntegrationConfig>) => {
+    // Handle both single-argument and two-argument versions
+    let name: string;
+    let config: Partial<IntegrationConfig>;
+    
+    if (typeof nameOrConfig === 'string') {
+      name = nameOrConfig;
+      config = configOrNothing || {};
+    } else {
+      // If only one argument is provided and it's an object, use the integrationName from hook params
+      if (!integrationName) {
+        console.error('Integration name is required when updating config with a single argument');
+        return false;
+      }
+      name = integrationName;
+      config = nameOrConfig;
+    }
+    
     const success = integrationService.updateConfig(name, config);
     
     if (success) {
@@ -38,7 +55,7 @@ export const useIntegrations = (integrationName?: string) => {
     }
     
     return success;
-  }, []);
+  }, [integrationName]);
   
   // Toggle an integration on/off
   const toggleIntegration = useCallback((name: string, enable: boolean) => {

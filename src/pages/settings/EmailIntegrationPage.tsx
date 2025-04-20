@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,18 +8,26 @@ import { toast } from 'sonner';
 import { EmailSettingsHeader } from '@/components/settings/email/EmailSettingsHeader';
 import { EmailProviderSettings } from '@/components/settings/email/EmailProviderSettings';
 import { NotificationSettings } from '@/components/settings/email/NotificationSettings';
+import { IntegrationConfig } from '@/services/integrationService';
 
 const EmailIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('email');
+  const [pendingChanges, setPendingChanges] = useState<Partial<IntegrationConfig>>({});
+
+  // Collect changes without immediately applying them
+  const handleUpdateConfig = (changes: Partial<IntegrationConfig>) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      ...changes
+    }));
+  };
 
   const handleSave = async () => {
-    // Empty object is replaced with actual config changes when form is implemented
-    const configChanges = {};
-    
-    const success = await updateConfig(configChanges);
+    const success = updateConfig(pendingChanges);
     
     if (success) {
       toast.success("Email settings saved successfully");
+      setPendingChanges({});
     } else {
       toast.error("Failed to save email settings");
     }
@@ -32,6 +40,12 @@ const EmailIntegrationPage = () => {
     } else {
       toast.error(`Email test failed: ${result.message}`);
     }
+  };
+
+  // Merge pending changes with current config for UI display
+  const displayConfig = {
+    ...config,
+    ...pendingChanges
   };
 
   return (
@@ -57,15 +71,15 @@ const EmailIntegrationPage = () => {
           
           <TabsContent value="settings" className="space-y-4">
             <EmailProviderSettings 
-              config={config}
-              onUpdateConfig={updateConfig}
+              config={displayConfig}
+              onUpdateConfig={handleUpdateConfig}
               onTest={handleTest}
               onSave={handleSave}
             />
             
             <NotificationSettings 
-              config={config}
-              onUpdateConfig={updateConfig}
+              config={displayConfig}
+              onUpdateConfig={handleUpdateConfig}
               onSave={handleSave}
             />
           </TabsContent>

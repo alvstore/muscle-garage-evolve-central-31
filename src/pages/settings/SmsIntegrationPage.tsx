@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,18 +9,26 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useIntegrations } from '@/hooks/use-integrations';
 import { toast } from 'sonner';
+import { IntegrationConfig } from '@/services/integrationService';
 
 const SmsIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('sms');
+  const [pendingChanges, setPendingChanges] = useState<Partial<IntegrationConfig>>({});
+
+  // Collect changes without immediately applying them
+  const handleUpdateConfig = (changes: Partial<IntegrationConfig>) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      ...changes
+    }));
+  };
 
   const handleSave = async () => {
-    // Empty object is replaced with actual config changes when form is implemented
-    const configChanges = {};
-    
-    const success = await updateConfig(configChanges);
+    const success = updateConfig(pendingChanges);
     
     if (success) {
       toast.success("SMS settings saved successfully");
+      setPendingChanges({});
     } else {
       toast.error("Failed to save SMS settings");
     }
@@ -33,6 +41,12 @@ const SmsIntegrationPage = () => {
     } else {
       toast.error(`SMS test failed: ${result.message}`);
     }
+  };
+
+  // Merge pending changes with current config for UI display
+  const displayConfig = {
+    ...config,
+    ...pendingChanges
   };
 
   return (
@@ -79,8 +93,8 @@ const SmsIntegrationPage = () => {
                   <select 
                     id="provider"
                     className="w-full p-2 border rounded-md"
-                    value={config.provider || 'msg91'}
-                    onChange={(e) => updateConfig({ provider: e.target.value })}
+                    value={displayConfig.provider || 'msg91'}
+                    onChange={(e) => handleUpdateConfig({ provider: e.target.value })}
                   >
                     <option value="msg91">MSG91</option>
                     <option value="twilio">Twilio</option>
@@ -92,25 +106,25 @@ const SmsIntegrationPage = () => {
                   <Input 
                     id="senderId"
                     placeholder="GYMAPP"
-                    value={config.senderId || ''}
-                    onChange={(e) => updateConfig({ senderId: e.target.value })}
+                    value={displayConfig.senderId || ''}
+                    onChange={(e) => handleUpdateConfig({ senderId: e.target.value })}
                   />
                 </div>
                 
-                {config.provider === 'msg91' && (
+                {displayConfig.provider === 'msg91' && (
                   <div className="space-y-2">
                     <Label htmlFor="authKey">MSG91 Auth Key</Label>
                     <Input 
                       id="authKey"
                       type="password"
                       placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"
-                      value={config.authKey || ''}
-                      onChange={(e) => updateConfig({ authKey: e.target.value })}
+                      value={displayConfig.authKey || ''}
+                      onChange={(e) => handleUpdateConfig({ authKey: e.target.value })}
                     />
                   </div>
                 )}
                 
-                {config.provider === 'twilio' && (
+                {displayConfig.provider === 'twilio' && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="accountSid">Twilio Account SID</Label>
@@ -118,8 +132,8 @@ const SmsIntegrationPage = () => {
                         id="accountSid"
                         type="password"
                         placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx"
-                        value={config.accountSid || ''}
-                        onChange={(e) => updateConfig({ accountSid: e.target.value })}
+                        value={displayConfig.accountSid || ''}
+                        onChange={(e) => handleUpdateConfig({ accountSid: e.target.value })}
                       />
                     </div>
                     
@@ -129,8 +143,8 @@ const SmsIntegrationPage = () => {
                         id="authToken"
                         type="password"
                         placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"
-                        value={config.authToken || ''}
-                        onChange={(e) => updateConfig({ authToken: e.target.value })}
+                        value={displayConfig.authToken || ''}
+                        onChange={(e) => handleUpdateConfig({ authToken: e.target.value })}
                       />
                     </div>
                   </>
@@ -155,11 +169,11 @@ const SmsIntegrationPage = () => {
                     <p className="text-sm text-muted-foreground">Send SMS for membership expiry or renewal</p>
                   </div>
                   <Switch 
-                    checked={config.templates?.membershipAlert || false}
+                    checked={displayConfig.templates?.membershipAlert || false}
                     onCheckedChange={(checked) => {
-                      updateConfig({ 
+                      handleUpdateConfig({ 
                         templates: { 
-                          ...config.templates,
+                          ...displayConfig.templates,
                           membershipAlert: checked 
                         } 
                       });
@@ -173,11 +187,11 @@ const SmsIntegrationPage = () => {
                     <p className="text-sm text-muted-foreground">Send reminder before membership expiry</p>
                   </div>
                   <Switch 
-                    checked={config.templates?.renewalReminder || false}
+                    checked={displayConfig.templates?.renewalReminder || false}
                     onCheckedChange={(checked) => {
-                      updateConfig({ 
+                      handleUpdateConfig({ 
                         templates: { 
-                          ...config.templates,
+                          ...displayConfig.templates,
                           renewalReminder: checked 
                         } 
                       });
@@ -191,11 +205,11 @@ const SmsIntegrationPage = () => {
                     <p className="text-sm text-muted-foreground">Send OTP for login verification</p>
                   </div>
                   <Switch 
-                    checked={config.templates?.otpVerification || false}
+                    checked={displayConfig.templates?.otpVerification || false}
                     onCheckedChange={(checked) => {
-                      updateConfig({ 
+                      handleUpdateConfig({ 
                         templates: { 
-                          ...config.templates,
+                          ...displayConfig.templates,
                           otpVerification: checked 
                         } 
                       });
@@ -209,11 +223,11 @@ const SmsIntegrationPage = () => {
                     <p className="text-sm text-muted-foreground">Send SMS when member checks in</p>
                   </div>
                   <Switch 
-                    checked={config.templates?.attendanceConfirmation || false}
+                    checked={displayConfig.templates?.attendanceConfirmation || false}
                     onCheckedChange={(checked) => {
-                      updateConfig({ 
+                      handleUpdateConfig({ 
                         templates: { 
-                          ...config.templates,
+                          ...displayConfig.templates,
                           attendanceConfirmation: checked 
                         } 
                       });
