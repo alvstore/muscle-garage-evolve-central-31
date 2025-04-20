@@ -1,166 +1,228 @@
 
-import { toast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
+// Define integration configuration types
 export interface IntegrationConfig {
   enabled: boolean;
+  provider?: string;
   apiKey?: string;
-  apiSecret?: string;
-  endpoint?: string;
-  webhookUrl?: string;
-  otherSettings?: Record<string, any>;
+  authKey?: string;
+  accountSid?: string;
+  authToken?: string;
+  fromEmail?: string;
+  senderId?: string;
+  phoneNumberId?: string;
+  businessAccountId?: string;
+  notifications?: {
+    [key: string]: boolean;
+  };
+  templates?: {
+    [key: string]: boolean;
+  };
+  [key: string]: any;
 }
 
-// Default integration configurations
-const defaultIntegrations: Record<string, IntegrationConfig> = {
+// Mock integration configurations
+const mockIntegrations: Record<string, IntegrationConfig> = {
   hikvision: {
     enabled: false,
-    endpoint: '',
-    apiKey: '',
-    apiSecret: '',
-    otherSettings: {
-      pollingInterval: 60, // In seconds
-      deviceIds: []
-    }
-  },
-  sms: {
-    enabled: false,
-    apiKey: '',
-    otherSettings: {
-      sender: 'MuscleGarage',
-      defaultTemplate: 'Welcome to Muscle Garage! Your OTP is: {{otp}}'
-    }
+    apiKey: "",
+    appSecret: "",
+    serverAddress: "",
+    serverPort: "8080",
+    username: "",
+    password: "",
+    channelIds: [],
+    useSsl: false,
   },
   email: {
     enabled: false,
-    apiKey: '',
-    otherSettings: {
-      sender: 'noreply@musclegarage.com',
-      defaultSubject: 'Message from Muscle Garage',
-      templates: {}
-    }
+    provider: "sendgrid",
+    apiKey: "",
+    fromEmail: "noreply@musclegarage.com",
+    notifications: {
+      sendOnRegistration: true,
+      sendOnInvoice: true,
+      sendClassUpdates: false,
+    },
   },
-  razorpay: {
+  sms: {
     enabled: false,
-    apiKey: '',
-    apiSecret: '',
-    webhookUrl: '',
-    otherSettings: {
-      currency: 'INR'
-    }
+    provider: "msg91",
+    authKey: "",
+    senderId: "GYMAPP",
+    templates: {
+      membershipAlert: true,
+      renewalReminder: true,
+      otpVerification: true,
+      attendanceConfirmation: false,
+    },
+  },
+  whatsapp: {
+    enabled: false,
+    apiToken: "",
+    phoneNumberId: "",
+    businessAccountId: "",
+    notifications: {
+      sendWelcomeMessages: true,
+      sendClassReminders: true,
+      sendRenewalReminders: true,
+      sendBirthdayGreetings: false,
+    },
+  },
+};
+
+// Helper function to safely store data in localStorage
+const saveToLocalStorage = (key: string, data: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error(`Failed to save ${key} to localStorage:`, error);
+    return false;
   }
 };
 
-// In-memory storage for integration settings
-// In a real app, this would be stored in a database
-let integrations: Record<string, IntegrationConfig> = { ...defaultIntegrations };
-
-/**
- * Service for managing all external integrations
- */
-export const integrationService = {
-  /**
-   * Get configuration for a specific integration
-   */
-  getConfig: (integrationName: string): IntegrationConfig => {
-    return integrations[integrationName] || { enabled: false };
-  },
-  
-  /**
-   * Update configuration for a specific integration
-   */
-  updateConfig: (integrationName: string, config: Partial<IntegrationConfig>): boolean => {
-    try {
-      if (!integrations[integrationName]) {
-        integrations[integrationName] = { enabled: false };
-      }
-      
-      integrations[integrationName] = {
-        ...integrations[integrationName],
-        ...config
-      };
-      
-      // In a real app, this would save to database
-      
-      toast({
-        title: "Integration updated",
-        description: `${integrationName} integration has been updated successfully.`
-      });
-      
-      return true;
-    } catch (error) {
-      console.error(`Failed to update ${integrationName} integration:`, error);
-      
-      toast({
-        title: "Integration update failed",
-        description: `Could not update ${integrationName} integration.`,
-        variant: "destructive"
-      });
-      
-      return false;
-    }
-  },
-  
-  /**
-   * Enable a specific integration
-   */
-  enableIntegration: (integrationName: string): boolean => {
-    return integrationService.updateConfig(integrationName, { enabled: true });
-  },
-  
-  /**
-   * Disable a specific integration
-   */
-  disableIntegration: (integrationName: string): boolean => {
-    return integrationService.updateConfig(integrationName, { enabled: false });
-  },
-  
-  /**
-   * Test if an integration is properly configured
-   */
-  testIntegration: async (integrationName: string): Promise<boolean> => {
-    const config = integrations[integrationName];
-    
-    if (!config || !config.enabled) {
-      toast({
-        title: "Integration not enabled",
-        description: `${integrationName} integration is not enabled.`,
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    // In a real app, this would make an actual test call to the integration API
-    // For now, we'll simulate a successful test
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Integration test successful",
-      description: `${integrationName} integration is working properly.`
-    });
-    
-    return true;
-  },
-  
-  /**
-   * Get all available integrations
-   */
-  getAllIntegrations: (): Record<string, IntegrationConfig> => {
-    return { ...integrations };
-  },
-  
-  /**
-   * Reset an integration to default settings
-   */
-  resetIntegration: (integrationName: string): boolean => {
-    if (!defaultIntegrations[integrationName]) {
-      return false;
-    }
-    
-    return integrationService.updateConfig(
-      integrationName, 
-      defaultIntegrations[integrationName]
-    );
+// Helper function to safely retrieve data from localStorage
+const getFromLocalStorage = (key: string, defaultValue: any) => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    return storedValue ? JSON.parse(storedValue) : defaultValue;
+  } catch (error) {
+    console.error(`Failed to retrieve ${key} from localStorage:`, error);
+    return defaultValue;
   }
+};
+
+// Initialize integration configs from localStorage or defaults
+const initIntegrations = () => {
+  const stored = getFromLocalStorage('integrations', null);
+  if (stored) {
+    return stored;
+  }
+  
+  // If no stored data, save defaults and return them
+  saveToLocalStorage('integrations', mockIntegrations);
+  return mockIntegrations;
+};
+
+let integrations = initIntegrations();
+
+// Integration service methods
+const integrationService = {
+  // Get all integration configurations
+  getAllIntegrations: (): Record<string, IntegrationConfig> => {
+    return integrations;
+  },
+  
+  // Get a specific integration's configuration
+  getConfig: (name: string): IntegrationConfig => {
+    return integrations[name] || { enabled: false };
+  },
+  
+  // Update a specific integration's configuration
+  updateConfig: (name: string, config: Partial<IntegrationConfig>): boolean => {
+    if (!integrations[name]) {
+      // Integration doesn't exist
+      return false;
+    }
+    
+    integrations = {
+      ...integrations,
+      [name]: {
+        ...integrations[name],
+        ...config,
+      },
+    };
+    
+    // Save to localStorage
+    return saveToLocalStorage('integrations', integrations);
+  },
+  
+  // Enable an integration
+  enableIntegration: (name: string): boolean => {
+    if (!integrations[name]) {
+      // Integration doesn't exist
+      return false;
+    }
+    
+    integrations = {
+      ...integrations,
+      [name]: {
+        ...integrations[name],
+        enabled: true,
+      },
+    };
+    
+    // Save to localStorage
+    return saveToLocalStorage('integrations', integrations);
+  },
+  
+  // Disable an integration
+  disableIntegration: (name: string): boolean => {
+    if (!integrations[name]) {
+      // Integration doesn't exist
+      return false;
+    }
+    
+    integrations = {
+      ...integrations,
+      [name]: {
+        ...integrations[name],
+        enabled: false,
+      },
+    };
+    
+    // Save to localStorage
+    return saveToLocalStorage('integrations', integrations);
+  },
+  
+  // Test an integration's connection
+  testIntegration: async (name: string): Promise<{ success: boolean; message: string }> => {
+    // In a real app, this would make an API call to test the integration
+    if (!integrations[name]) {
+      return { success: false, message: "Integration not found" };
+    }
+    
+    if (!integrations[name].enabled) {
+      return { success: false, message: "Integration is not enabled" };
+    }
+    
+    try {
+      // Simulate API call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Randomly succeed or fail for demo purposes
+      const success = Math.random() > 0.3;
+      return {
+        success,
+        message: success ? "Connection successful" : "Connection failed. Please check your credentials.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "An error occurred while testing the integration",
+      };
+    }
+  },
+  
+  // Reset an integration to default settings
+  resetIntegration: (name: string): boolean => {
+    if (!mockIntegrations[name]) {
+      // Integration doesn't exist in defaults
+      return false;
+    }
+    
+    integrations = {
+      ...integrations,
+      [name]: {
+        ...mockIntegrations[name],
+      },
+    };
+    
+    // Save to localStorage
+    return saveToLocalStorage('integrations', integrations);
+  },
 };
 
 export default integrationService;
