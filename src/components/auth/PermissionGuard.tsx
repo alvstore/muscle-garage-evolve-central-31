@@ -9,9 +9,6 @@ interface PermissionGuardProps {
   children: ReactNode;
 }
 
-/**
- * Component that conditionally renders children based on user permissions
- */
 export const PermissionGuard = ({ 
   permission, 
   isOwner = false, 
@@ -32,12 +29,9 @@ interface PermissionButtonProps {
   isOwner?: boolean;
   disableOnly?: boolean;
   children: ReactNode;
-  [key: string]: any; // Additional props to pass to the button
+  [key: string]: any;
 }
 
-/**
- * Button that is disabled or hidden based on user permissions
- */
 export const PermissionButton = ({ 
   permission, 
   isOwner = false,
@@ -60,48 +54,6 @@ export const PermissionButton = ({
       {children}
     </button>
   );
-};
-
-/**
- * Checks if a user has permission to view a specific route/link
- */
-export const RoutePermissionGuard = ({ 
-  permission, 
-  isOwner = false, 
-  children 
-}: { 
-  permission: Permission; 
-  isOwner?: boolean; 
-  children: ReactNode 
-}) => {
-  const { can } = usePermissions();
-  
-  if (can(permission, isOwner)) {
-    return <>{children}</>;
-  }
-  
-  return null;
-};
-
-/**
- * Component for UI elements that require specific feature permissions
- */
-export const FeaturePermissionGuard = ({
-  permission,
-  fallback = null,
-  children
-}: {
-  permission: Permission;
-  fallback?: ReactNode;
-  children: ReactNode;
-}) => {
-  const { can } = usePermissions();
-  
-  if (can(permission, false)) {
-    return <>{children}</>;
-  }
-  
-  return <>{fallback}</>;
 };
 
 export default PermissionGuard;

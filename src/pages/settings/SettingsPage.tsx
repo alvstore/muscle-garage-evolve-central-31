@@ -1,12 +1,13 @@
-
 import React, { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Settings, Sliders, Building2 } from "lucide-react";
+import { Settings, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Building2 } from "lucide-react";
+import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import GeneralSettings from "@/components/settings/GeneralSettings";
 import AccessControlSettings from "@/components/settings/AccessControlSettings";
 import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
@@ -16,18 +17,14 @@ import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
 import BranchSection from "@/components/settings/BranchSection";
-import { toast } from "sonner";
-import { usePermissions } from "@/hooks/use-permissions";
-import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const { can, isSystemAdmin } = usePermissions();
-  const navigate = useNavigate();
+  const { can } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
 
-  // Redirect if user is not admin
-  if (!user || user.role !== "admin") {
+  // Redirect if user doesn't have permission
+  if (!user || !can('manage_settings')) {
     toast.error("You don't have permission to access this page");
     return <Navigate to="/unauthorized" replace />;
   }
@@ -38,7 +35,7 @@ const SettingsPage = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">System Settings</h1>
-            <p className="text-muted-foreground">Configure your Muscle Garage system settings</p>
+            <p className="text-muted-foreground">Configure your system settings</p>
           </div>
         </div>
         
@@ -46,14 +43,27 @@ const SettingsPage = () => {
           <Card>
             <CardContent className="p-6">
               <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-2">
-                <TabsTrigger value="general" className="flex items-center gap-2">
-                  <Sliders className="h-4 w-4" />
-                  <span className="hidden md:inline">General</span>
-                </TabsTrigger>
-                <TabsTrigger value="branches" className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden md:inline">Branches</span>
-                </TabsTrigger>
+                <PermissionGuard permission="manage_settings">
+                  <TabsTrigger value="general" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden md:inline">General</span>
+                  </TabsTrigger>
+                </PermissionGuard>
+                
+                <PermissionGuard permission="manage_branches">
+                  <TabsTrigger value="branches" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    <span className="hidden md:inline">Branches</span>
+                  </TabsTrigger>
+                </PermissionGuard>
+                
+                <PermissionGuard permission="manage_roles">
+                  <TabsTrigger value="permissions" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden md:inline">Permissions</span>
+                  </TabsTrigger>
+                </PermissionGuard>
+
                 <TabsTrigger value="access" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   <span className="hidden md:inline">Access</span>
@@ -78,12 +88,6 @@ const SettingsPage = () => {
                   <Brain className="h-4 w-4" />
                   <span className="hidden md:inline">Automation</span>
                 </TabsTrigger>
-                <PermissionGuard permission="manage_roles">
-                  <TabsTrigger value="permissions" className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span className="hidden md:inline">Permissions</span>
-                  </TabsTrigger>
-                </PermissionGuard>
               </TabsList>
             </CardContent>
           </Card>
