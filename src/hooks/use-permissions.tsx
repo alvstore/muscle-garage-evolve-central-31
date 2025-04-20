@@ -27,6 +27,23 @@ export type Permission =
   | "view_branch_data"
   | "switch_branches"
   | "access_own_resources"
+  | "manage_staff"
+  | "view_staff"
+  | "manage_trainers"
+  | "view_trainers"
+  | "assign_trainers"
+  | "manage_classes"
+  | "view_classes"
+  | "book_classes"
+  | "manage_finances"
+  | "view_finances"
+  | "process_payments"
+  | "manage_settings"
+  | "manage_roles"
+  | "access_reports"
+  | "access_inventory"
+  | "access_communication"
+  | "access_marketing"
   // Menu access permissions
   | "view_all_users"
   | "view_all_trainers"
@@ -36,16 +53,11 @@ export type Permission =
   | "view_invoices"
   | "manage_integrations"
   | "access_analytics"
-  | "manage_roles"
   | "manage_members"
   | "manage_fitness_data"
-  | "manage_classes"
   | "manage_payments"
-  | "access_communication"
-  | "access_inventory"
   | "access_store"
   | "access_crm"
-  | "access_marketing"
   | "trainer_view_members"
   | "trainer_edit_fitness"
   | "trainer_view_attendance"
@@ -85,7 +97,7 @@ export const usePermissions = () => {
    * @returns Boolean indicating if user has permission
    */
   const can = (permission: Permission, isOwner = false): boolean => {
-    return hasPermission(userRole, permission, isOwner, currentBranch?.id);
+    return hasPermission(userRole, permission, isOwner);
   };
   
   /**

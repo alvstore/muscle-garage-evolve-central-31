@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BookOpen, Users, Dumbbell, CalendarDays, 
-  CreditCard, MessageSquare, Info, Phone 
+  CreditCard, MessageSquare, Info, Phone,
+  Building2
 } from 'lucide-react';
 
 const HelpCenterPage = () => {

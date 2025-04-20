@@ -16,7 +16,7 @@ const SmsIntegrationPage = () => {
   const handleSave = async () => {
     const success = await updateConfig({
       // Update config properties
-    });
+    }, 'sms');
     
     if (success) {
       toast.success("SMS settings saved successfully");
@@ -79,7 +79,7 @@ const SmsIntegrationPage = () => {
                     id="provider"
                     className="w-full p-2 border rounded-md"
                     value={config.provider || 'msg91'}
-                    onChange={(e) => updateConfig({ provider: e.target.value })}
+                    onChange={(e) => updateConfig({ provider: e.target.value }, 'sms')}
                   >
                     <option value="msg91">MSG91</option>
                     <option value="twilio">Twilio</option>
@@ -92,7 +92,7 @@ const SmsIntegrationPage = () => {
                     id="senderId"
                     placeholder="GYMAPP"
                     value={config.senderId || ''}
-                    onChange={(e) => updateConfig({ senderId: e.target.value })}
+                    onChange={(e) => updateConfig({ senderId: e.target.value }, 'sms')}
                   />
                 </div>
                 
@@ -104,7 +104,7 @@ const SmsIntegrationPage = () => {
                       type="password"
                       placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"
                       value={config.authKey || ''}
-                      onChange={(e) => updateConfig({ authKey: e.target.value })}
+                      onChange={(e) => updateConfig({ authKey: e.target.value }, 'sms')}
                     />
                   </div>
                 )}
@@ -118,7 +118,7 @@ const SmsIntegrationPage = () => {
                         type="password"
                         placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx"
                         value={config.accountSid || ''}
-                        onChange={(e) => updateConfig({ accountSid: e.target.value })}
+                        onChange={(e) => updateConfig({ accountSid: e.target.value }, 'sms')}
                       />
                     </div>
                     
@@ -129,7 +129,7 @@ const SmsIntegrationPage = () => {
                         type="password"
                         placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"
                         value={config.authToken || ''}
-                        onChange={(e) => updateConfig({ authToken: e.target.value })}
+                        onChange={(e) => updateConfig({ authToken: e.target.value }, 'sms')}
                       />
                     </div>
                   </>
@@ -161,7 +161,7 @@ const SmsIntegrationPage = () => {
                           ...config.templates,
                           membershipAlert: checked 
                         } 
-                      });
+                      }, 'sms');
                     }}
                   />
                 </div>
@@ -179,7 +179,7 @@ const SmsIntegrationPage = () => {
                           ...config.templates,
                           renewalReminder: checked 
                         } 
-                      });
+                      }, 'sms');
                     }}
                   />
                 </div>
@@ -197,7 +197,7 @@ const SmsIntegrationPage = () => {
                           ...config.templates,
                           otpVerification: checked 
                         } 
-                      });
+                      }, 'sms');
                     }}
                   />
                 </div>
@@ -215,7 +215,7 @@ const SmsIntegrationPage = () => {
                           ...config.templates,
                           attendanceConfirmation: checked 
                         } 
-                      });
+                      }, 'sms');
                     }}
                   />
                 </div>

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const BranchManagementPage = () => {
-  const { branches, fetchBranches } = useBranch();
+  const { branches, isLoading: branchesLoading, fetchBranches } = useBranch();
   const [isCreating, setIsCreating] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
@@ -78,7 +78,7 @@ const BranchManagementPage = () => {
                     <Building2 className="h-5 w-5 mr-2 text-indigo-600" />
                     {branch.name}
                   </CardTitle>
-                  <Badge variant={branch.isActive ? "success" : "destructive"}>
+                  <Badge variant={branch.isActive ? "secondary" : "destructive"}>
                     {branch.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>

@@ -16,7 +16,7 @@ const EmailIntegrationPage = () => {
   const handleSave = async () => {
     const success = await updateConfig({
       // Update config properties
-    });
+    }, 'email');
     
     if (success) {
       toast.success("Email settings saved successfully");
@@ -79,7 +79,7 @@ const EmailIntegrationPage = () => {
                     id="provider"
                     className="w-full p-2 border rounded-md"
                     value={config.provider || 'sendgrid'}
-                    onChange={(e) => updateConfig({ provider: e.target.value })}
+                    onChange={(e) => updateConfig({ provider: e.target.value }, 'email')}
                   >
                     <option value="sendgrid">SendGrid</option>
                     <option value="mailgun">Mailgun</option>
@@ -93,7 +93,7 @@ const EmailIntegrationPage = () => {
                     id="fromEmail"
                     placeholder="noreply@yourgym.com"
                     value={config.fromEmail || ''}
-                    onChange={(e) => updateConfig({ fromEmail: e.target.value })}
+                    onChange={(e) => updateConfig({ fromEmail: e.target.value }, 'email')}
                   />
                 </div>
                 
@@ -105,7 +105,7 @@ const EmailIntegrationPage = () => {
                       type="password"
                       placeholder="SG.xxxxxxxxxxxxxxxxxxxxxxxx"
                       value={config.apiKey || ''}
-                      onChange={(e) => updateConfig({ apiKey: e.target.value })}
+                      onChange={(e) => updateConfig({ apiKey: e.target.value }, 'email')}
                     />
                   </div>
                 )}
@@ -138,7 +138,7 @@ const EmailIntegrationPage = () => {
                           ...config.notifications,
                           sendOnRegistration: checked 
                         } 
-                      });
+                      }, 'email');
                     }}
                   />
                 </div>
@@ -156,7 +156,7 @@ const EmailIntegrationPage = () => {
                           ...config.notifications,
                           sendOnInvoice: checked 
                         } 
-                      });
+                      }, 'email');
                     }}
                   />
                 </div>
@@ -174,7 +174,7 @@ const EmailIntegrationPage = () => {
                           ...config.notifications,
                           sendClassUpdates: checked 
                         } 
-                      });
+                      }, 'email');
                     }}
                   />
                 </div>

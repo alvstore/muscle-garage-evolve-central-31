@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import CreateBranchDialog from './CreateBranchDialog';
 
 const BranchSelector = () => {
-  const { branches, currentBranch, setCurrentBranch, isLoading } = useBranch();
+  const { branches, currentBranch, setCurrentBranch, isLoading, fetchBranches } = useBranch();
   const { updateUserBranch } = useAuth();
   
   const handleChangeBranch = async (branchId: string) => {
@@ -30,6 +30,10 @@ const BranchSelector = () => {
         toast.error("Failed to switch branch");
       }
     }
+  };
+
+  const handleCreateComplete = () => {
+    fetchBranches();
   };
   
   if (isLoading) {
@@ -76,7 +80,7 @@ const BranchSelector = () => {
         </Select>
         
         <PermissionGuard permission="manage_branches">
-          <CreateBranchDialog />
+          <CreateBranchDialog onComplete={handleCreateComplete} />
         </PermissionGuard>
       </div>
     </PermissionGuard>
