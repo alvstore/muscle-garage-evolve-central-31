@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import integrationService, { IntegrationConfig } from '@/services/integrationService';
 
@@ -23,7 +24,7 @@ export const useIntegrations = (integrationName?: string) => {
   }, []);
   
   // Update a specific integration's config
-  const updateConfig = useCallback((name: string, config: Partial<IntegrationConfig>) => {
+  const updateConfig = useCallback((config: Partial<IntegrationConfig>, name: string) => {
     const success = integrationService.updateConfig(name, config);
     
     if (success) {
@@ -84,7 +85,7 @@ export const useIntegrations = (integrationName?: string) => {
     return {
       isLoading,
       config,
-      updateConfig: (config: Partial<IntegrationConfig>) => updateConfig(integrationName, config),
+      updateConfig: (config: Partial<IntegrationConfig>) => updateConfig(config, integrationName),
       enable: () => toggleIntegration(integrationName, true),
       disable: () => toggleIntegration(integrationName, false),
       test: () => testIntegration(integrationName),
