@@ -56,4 +56,21 @@ export const PermissionButton = ({
   );
 };
 
+// Add RoutePermissionGuard component for navigation items
+export const RoutePermissionGuard = ({ 
+  permission, 
+  children 
+}: {
+  permission: Permission;
+  children: ReactNode;
+}) => {
+  const { can } = usePermissions();
+  
+  if (can(permission)) {
+    return <>{children}</>;
+  }
+  
+  return null;
+};
+
 export default PermissionGuard;
