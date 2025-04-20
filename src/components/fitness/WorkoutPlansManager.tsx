@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,19 +17,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Copy, Dumbbell, Users, Check, X } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
-
 interface WorkoutPlansManagerProps {
   members?: Member[];
   trainerId?: string;
   forMemberId?: string;
 }
-
-const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ 
-  members = [], 
+const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
+  members = [],
   trainerId,
-  forMemberId 
+  forMemberId
 }) => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -39,7 +38,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
   const [selectedMemberId, setSelectedMemberId] = useState<string>(forMemberId || "");
   const [memberWorkouts, setMemberWorkouts] = useState<MemberWorkout[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
-  
+
   // Form state for creating/editing workout plans
   const [formData, setFormData] = useState<{
     name: string;
@@ -59,12 +58,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       const plans = await workoutService.getWorkoutPlans();
       setWorkoutPlans(plans);
     };
-
     const fetchTrainers = async () => {
       const trainersList = await trainerService.getTrainers();
       setTrainers(trainersList);
     };
-
     fetchWorkoutPlans();
     fetchTrainers();
   }, []);
@@ -93,7 +90,6 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       });
     }
   }, [selectedPlan, isEditing]);
-
   const handleCreatePlan = () => {
     setIsCreating(true);
     setFormData({
@@ -103,12 +99,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       days: [createNewDay()]
     });
   };
-
   const handleEditPlan = (plan: WorkoutPlan) => {
     setSelectedPlan(plan);
     setIsEditing(true);
   };
-
   const handleDeletePlan = async (planId: string) => {
     if (window.confirm("Are you sure you want to delete this workout plan?")) {
       const success = await workoutService.deleteWorkoutPlan(planId);
@@ -117,18 +111,15 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       }
     }
   };
-
   const handleAssignPlan = (plan: WorkoutPlan) => {
     setSelectedPlan(plan);
     setIsAssigning(true);
   };
-
   const createNewDay = (): WorkoutDay => ({
     id: uuidv4(),
     dayLabel: `Day ${formData.days.length + 1}`,
     exercises: []
   });
-
   const createNewExercise = (): Exercise => ({
     id: uuidv4(),
     name: "",
@@ -139,74 +130,62 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     notes: "",
     muscleGroupTag: ""
   });
-
   const handleAddDay = () => {
     setFormData(prev => ({
       ...prev,
       days: [...prev.days, createNewDay()]
     }));
   };
-
   const handleRemoveDay = (dayId: string) => {
     setFormData(prev => ({
       ...prev,
       days: prev.days.filter(day => day.id !== dayId)
     }));
   };
-
   const handleDayChange = (dayId: string, field: keyof WorkoutDay, value: any) => {
     setFormData(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.id === dayId ? { ...day, [field]: value } : day
-      )
+      days: prev.days.map(day => day.id === dayId ? {
+        ...day,
+        [field]: value
+      } : day)
     }));
   };
-
   const handleAddExercise = (dayId: string) => {
     setFormData(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.id === dayId ? 
-        { ...day, exercises: [...day.exercises, createNewExercise()] } : 
-        day
-      )
+      days: prev.days.map(day => day.id === dayId ? {
+        ...day,
+        exercises: [...day.exercises, createNewExercise()]
+      } : day)
     }));
   };
-
   const handleRemoveExercise = (dayId: string, exerciseId: string) => {
     setFormData(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.id === dayId ? 
-        { ...day, exercises: day.exercises.filter(ex => ex.id !== exerciseId) } : 
-        day
-      )
+      days: prev.days.map(day => day.id === dayId ? {
+        ...day,
+        exercises: day.exercises.filter(ex => ex.id !== exerciseId)
+      } : day)
     }));
   };
-
   const handleExerciseChange = (dayId: string, exerciseId: string, field: keyof Exercise, value: any) => {
     setFormData(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.id === dayId ? 
-        { 
-          ...day, 
-          exercises: day.exercises.map(ex => 
-            ex.id === exerciseId ? { ...ex, [field]: value } : ex
-          ) 
-        } : 
-        day
-      )
+      days: prev.days.map(day => day.id === dayId ? {
+        ...day,
+        exercises: day.exercises.map(ex => ex.id === exerciseId ? {
+          ...ex,
+          [field]: value
+        } : ex)
+      } : day)
     }));
   };
-
   const handleSubmitPlan = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter a name for the workout plan");
       return;
     }
-
     if (formData.days.length === 0) {
       toast.error("Please add at least one day to the workout plan");
       return;
@@ -227,12 +206,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
         }
       }
     }
-
     const planData = {
       ...formData,
-      createdBy: user?.id || "",
+      createdBy: user?.id || ""
     };
-
     if (isEditing && selectedPlan) {
       const updatedPlan = await workoutService.updateWorkoutPlan(selectedPlan.id, planData);
       if (updatedPlan) {
@@ -248,20 +225,17 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       }
     }
   };
-
   const handleAssignSubmit = async () => {
     if (!selectedPlan || !selectedMemberId) {
       toast.error("Please select both a plan and a member");
       return;
     }
-
     const memberWorkout: Omit<MemberWorkout, 'id' | 'assignedAt'> = {
       memberId: selectedMemberId,
       workoutPlanId: selectedPlan.id,
       isCustom: false,
-      assignedBy: user?.id || "",
+      assignedBy: user?.id || ""
     };
-
     const result = await workoutService.assignWorkoutPlan(memberWorkout);
     if (result) {
       toast.success(`Plan assigned to member successfully`);
@@ -269,42 +243,34 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       setSelectedPlan(null);
     }
   };
-
   const getTrainerName = (trainerId: string) => {
     const trainer = trainers.find(t => t.id === trainerId);
     return trainer ? trainer.name : 'Unknown Trainer';
   };
-
-  const renderPlanForm = () => (
-    <div className="space-y-4">
+  const renderPlanForm = () => <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <Label htmlFor="planName">Plan Name</Label>
-          <Input 
-            id="planName" 
-            value={formData.name}
-            onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="e.g., Beginner Strength Training"
-          />
+          <Input id="planName" value={formData.name} onChange={e => setFormData(prev => ({
+          ...prev,
+          name: e.target.value
+        }))} placeholder="e.g., Beginner Strength Training" />
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="planDescription">Description</Label>
-          <Textarea 
-            id="planDescription" 
-            value={formData.description}
-            onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Describe the workout plan and its goals"
-            rows={3}
-          />
+          <Textarea id="planDescription" value={formData.description} onChange={e => setFormData(prev => ({
+          ...prev,
+          description: e.target.value
+        }))} placeholder="Describe the workout plan and its goals" rows={3} />
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="planType">Plan Type</Label>
-          <Select 
-            value={formData.isCommon ? "common" : "private"}
-            onValueChange={value => setFormData(prev => ({ ...prev, isCommon: value === "common" }))}
-          >
+          <Select value={formData.isCommon ? "common" : "private"} onValueChange={value => setFormData(prev => ({
+          ...prev,
+          isCommon: value === "common"
+        }))}>
             <SelectTrigger id="planType">
               <SelectValue placeholder="Select plan type" />
             </SelectTrigger>
@@ -324,219 +290,129 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
           </Button>
         </div>
 
-        {formData.days.map((day, dayIndex) => (
-          <Card key={day.id} className="overflow-hidden">
+        {formData.days.map((day, dayIndex) => <Card key={day.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <Input 
-                    value={day.dayLabel}
-                    onChange={e => handleDayChange(day.id, 'dayLabel', e.target.value)}
-                    placeholder="Day Label"
-                    className="font-medium"
-                  />
+                  <Input value={day.dayLabel} onChange={e => handleDayChange(day.id, 'dayLabel', e.target.value)} placeholder="Day Label" className="font-medium" />
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleRemoveDay(day.id)}
-                  className="ml-2 text-destructive"
-                >
+                <Button variant="ghost" size="sm" onClick={() => handleRemoveDay(day.id)} className="ml-2 text-destructive">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-4">
-                {day.exercises.length > 0 ? (
-                  <div className="space-y-3">
-                    {day.exercises.map((exercise, exIndex) => (
-                      <div key={exercise.id} className="grid grid-cols-12 gap-2 items-center border-b pb-3">
+                {day.exercises.length > 0 ? <div className="space-y-3">
+                    {day.exercises.map((exercise, exIndex) => <div key={exercise.id} className="grid grid-cols-12 gap-2 items-center border-b pb-3">
                         <div className="col-span-4">
                           <Label htmlFor={`ex-name-${exercise.id}`} className="sr-only">Exercise Name</Label>
-                          <Input 
-                            id={`ex-name-${exercise.id}`}
-                            value={exercise.name}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'name', e.target.value)}
-                            placeholder="Exercise name"
-                          />
+                          <Input id={`ex-name-${exercise.id}`} value={exercise.name} onChange={e => handleExerciseChange(day.id, exercise.id, 'name', e.target.value)} placeholder="Exercise name" />
                         </div>
                         <div className="col-span-2">
                           <Label htmlFor={`ex-sets-${exercise.id}`} className="sr-only">Sets</Label>
-                          <Input 
-                            id={`ex-sets-${exercise.id}`}
-                            type="number"
-                            value={exercise.sets}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'sets', parseInt(e.target.value) || 0)}
-                            placeholder="Sets"
-                          />
+                          <Input id={`ex-sets-${exercise.id}`} type="number" value={exercise.sets} onChange={e => handleExerciseChange(day.id, exercise.id, 'sets', parseInt(e.target.value) || 0)} placeholder="Sets" />
                         </div>
                         <div className="col-span-2">
                           <Label htmlFor={`ex-reps-${exercise.id}`} className="sr-only">Reps</Label>
-                          <Input 
-                            id={`ex-reps-${exercise.id}`}
-                            type="number"
-                            value={exercise.reps}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'reps', parseInt(e.target.value) || 0)}
-                            placeholder="Reps"
-                          />
+                          <Input id={`ex-reps-${exercise.id}`} type="number" value={exercise.reps} onChange={e => handleExerciseChange(day.id, exercise.id, 'reps', parseInt(e.target.value) || 0)} placeholder="Reps" />
                         </div>
                         <div className="col-span-3">
                           <Label htmlFor={`ex-muscle-${exercise.id}`} className="sr-only">Target Muscle</Label>
-                          <Input 
-                            id={`ex-muscle-${exercise.id}`}
-                            value={exercise.muscleGroupTag || ''}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'muscleGroupTag', e.target.value)}
-                            placeholder="Target muscle"
-                          />
+                          <Input id={`ex-muscle-${exercise.id}`} value={exercise.muscleGroupTag || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'muscleGroupTag', e.target.value)} placeholder="Target muscle" />
                         </div>
                         <div className="col-span-1 flex justify-end">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleRemoveExercise(day.id, exercise.id)}
-                            className="text-destructive"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleRemoveExercise(day.id, exercise.id)} className="text-destructive">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                         <div className="col-span-12">
                           <Label htmlFor={`ex-media-${exercise.id}`}>Media URL (optional)</Label>
-                          <Input 
-                            id={`ex-media-${exercise.id}`}
-                            value={exercise.mediaUrl || ''}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'mediaUrl', e.target.value)}
-                            placeholder="GIF or video URL showing proper form"
-                            className="mt-1"
-                          />
+                          <Input id={`ex-media-${exercise.id}`} value={exercise.mediaUrl || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'mediaUrl', e.target.value)} placeholder="GIF or video URL showing proper form" className="mt-1" />
                         </div>
                         <div className="col-span-12">
                           <Label htmlFor={`ex-notes-${exercise.id}`}>Notes (optional)</Label>
-                          <Textarea 
-                            id={`ex-notes-${exercise.id}`}
-                            value={exercise.notes || ''}
-                            onChange={e => handleExerciseChange(day.id, exercise.id, 'notes', e.target.value)}
-                            placeholder="Additional instructions or tips"
-                            className="mt-1"
-                            rows={2}
-                          />
+                          <Textarea id={`ex-notes-${exercise.id}`} value={exercise.notes || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'notes', e.target.value)} placeholder="Additional instructions or tips" className="mt-1" rows={2} />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">
+                      </div>)}
+                  </div> : <div className="text-center py-4 text-muted-foreground">
                     No exercises added yet
-                  </div>
-                )}
+                  </div>}
                 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleAddExercise(day.id)}
-                  className="w-full"
-                >
+                <Button variant="outline" size="sm" onClick={() => handleAddExercise(day.id)} className="w-full">
                   <Plus className="w-4 h-4 mr-1" /> Add Exercise
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
       <div className="flex justify-end space-x-2 mt-6">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setIsCreating(false);
-            setIsEditing(false);
-            setSelectedPlan(null);
-          }}
-        >
+        <Button variant="outline" onClick={() => {
+        setIsCreating(false);
+        setIsEditing(false);
+        setSelectedPlan(null);
+      }}>
           Cancel
         </Button>
         <Button onClick={handleSubmitPlan}>
           {isEditing ? 'Update Plan' : 'Create Plan'}
         </Button>
       </div>
-    </div>
-  );
-
-  const renderAssignForm = () => (
-    <div className="space-y-4">
-      {!forMemberId && (
-        <div className="space-y-2">
+    </div>;
+  const renderAssignForm = () => <div className="space-y-4">
+      {!forMemberId && <div className="space-y-2">
           <Label htmlFor="memberSelect">Select Member</Label>
-          <Select
-            value={selectedMemberId}
-            onValueChange={setSelectedMemberId}
-          >
+          <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
             <SelectTrigger id="memberSelect">
               <SelectValue placeholder="Choose a member" />
             </SelectTrigger>
             <SelectContent>
-              {members.map(member => (
-                <SelectItem key={member.id} value={member.id}>
+              {members.map(member => <SelectItem key={member.id} value={member.id}>
                   {member.name}
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
-      )}
+        </div>}
 
-      {selectedPlan && (
-        <div className="mt-4">
+      {selectedPlan && <div className="mt-4">
           <h3 className="font-medium">Selected Plan:</h3>
           <div className="bg-muted p-3 rounded-md mt-2">
             <h4 className="font-medium">{selectedPlan.name}</h4>
             <p className="text-sm text-muted-foreground">{selectedPlan.description}</p>
-            <p className="text-xs mt-1">Days: {selectedPlan.days.length} | Exercises: {
-              selectedPlan.days.reduce((total, day) => total + day.exercises.length, 0)
-            }</p>
+            <p className="text-xs mt-1">Days: {selectedPlan.days.length} | Exercises: {selectedPlan.days.reduce((total, day) => total + day.exercises.length, 0)}</p>
           </div>
-        </div>
-      )}
+        </div>}
 
       <div className="flex justify-end space-x-2 mt-6">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setIsAssigning(false);
-            setSelectedPlan(null);
-          }}
-        >
+        <Button variant="outline" onClick={() => {
+        setIsAssigning(false);
+        setSelectedPlan(null);
+      }}>
           Cancel
         </Button>
         <Button onClick={handleAssignSubmit} disabled={!selectedPlan || !selectedMemberId}>
           Assign Plan
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 
   // If we're creating, editing, or assigning, show the appropriate form
   if (isCreating || isEditing) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle>{isEditing ? "Edit Workout Plan" : "Create New Workout Plan"}</CardTitle>
           <CardDescription>
-            {isEditing 
-              ? "Modify the details of this workout plan" 
-              : "Define a new workout plan with exercises and instructions"}
+            {isEditing ? "Modify the details of this workout plan" : "Define a new workout plan with exercises and instructions"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {renderPlanForm()}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (isAssigning) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle>Assign Workout Plan</CardTitle>
           <CardDescription>
@@ -546,13 +422,11 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
         <CardContent>
           {renderAssignForm()}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
 
   // Default view - list of plans and/or member's assigned plans
-  return (
-    <Card>
+  return <Card>
       <CardHeader>
         <CardTitle>Workout Plans</CardTitle>
         <CardDescription>
@@ -569,15 +443,11 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
           <TabsContent value="all" className="space-y-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Available Workout Plans</h3>
-              <Button onClick={handleCreatePlan}>
-                <Plus className="w-4 h-4 mr-1" /> Create Plan
-              </Button>
+              
             </div>
             
-            {workoutPlans.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {workoutPlans.map(plan => (
-                  <Card key={plan.id} className="overflow-hidden">
+            {workoutPlans.length > 0 ? <div className="grid gap-4 md:grid-cols-2">
+                {workoutPlans.map(plan => <Card key={plan.id} className="overflow-hidden">
                     <CardHeader className="bg-muted/50 p-4">
                       <div className="flex justify-between items-start">
                         <div>
@@ -591,11 +461,9 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                           <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                          {forMemberId && (
-                            <Button variant="ghost" size="sm" onClick={() => handleAssignPlan(plan)}>
+                          {forMemberId && <Button variant="ghost" size="sm" onClick={() => handleAssignPlan(plan)}>
                               <Copy className="w-4 h-4" />
-                            </Button>
-                          )}
+                            </Button>}
                         </div>
                       </div>
                     </CardHeader>
@@ -612,38 +480,28 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-end">
-                      {!forMemberId && (
-                        <Button variant="outline" size="sm" onClick={() => handleAssignPlan(plan)}>
+                      {!forMemberId && <Button variant="outline" size="sm" onClick={() => handleAssignPlan(plan)}>
                           <Users className="w-4 h-4 mr-1" /> Assign to Member
-                        </Button>
-                      )}
+                        </Button>}
                     </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 border rounded-lg">
+                  </Card>)}
+              </div> : <div className="text-center py-8 border rounded-lg">
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-lg font-medium">No Workout Plans</h3>
                 <p className="text-muted-foreground">Create your first workout plan to get started</p>
                 <Button onClick={handleCreatePlan} className="mt-4">
                   <Plus className="w-4 h-4 mr-1" /> Create Plan
                 </Button>
-              </div>
-            )}
+              </div>}
           </TabsContent>
           
-          {forMemberId && (
-            <TabsContent value="assigned" className="space-y-4">
+          {forMemberId && <TabsContent value="assigned" className="space-y-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Assigned Workout Plans</h3>
-                <Button variant="outline" onClick={() => setSelectedMemberId(forMemberId)}>
-                  <Plus className="w-4 h-4 mr-1" /> Assign New Plan
-                </Button>
+                
               </div>
               
-              {memberWorkouts.length > 0 ? (
-                <Table>
+              {memberWorkouts.length > 0 ? <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Plan Name</TableHead>
@@ -655,11 +513,9 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                   </TableHeader>
                   <TableBody>
                     {memberWorkouts.map(memberWorkout => {
-                      const plan = workoutPlans.find(p => p.id === memberWorkout.workoutPlanId);
-                      if (!plan) return null;
-                      
-                      return (
-                        <TableRow key={memberWorkout.id}>
+                const plan = workoutPlans.find(p => p.id === memberWorkout.workoutPlanId);
+                if (!plan) return null;
+                return <TableRow key={memberWorkout.id}>
                           <TableCell className="font-medium">{plan.name}</TableCell>
                           <TableCell>{memberWorkout.isCustom ? "Custom" : "Standard"}</TableCell>
                           <TableCell>{getTrainerName(memberWorkout.assignedBy)}</TableCell>
@@ -669,27 +525,20 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                               <Edit className="w-4 h-4" />
                             </Button>
                           </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                        </TableRow>;
+              })}
                   </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 border rounded-lg">
+                </Table> : <div className="text-center py-8 border rounded-lg">
                   <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-2 text-lg font-medium">No Assigned Plans</h3>
                   <p className="text-muted-foreground">Assign a workout plan to this member</p>
                   <Button variant="outline" onClick={() => setSelectedMemberId(forMemberId)} className="mt-4">
                     <Plus className="w-4 h-4 mr-1" /> Assign Plan
                   </Button>
-                </div>
-              )}
-            </TabsContent>
-          )}
+                </div>}
+            </TabsContent>}
         </Tabs>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default WorkoutPlansManager;
