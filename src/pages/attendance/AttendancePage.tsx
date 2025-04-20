@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
@@ -9,25 +8,23 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addMonths, subMonths } from "date-fns";
-
 const AttendancePage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-  const { user } = useAuth();
-  const { userRole } = usePermissions();
-  
+  const {
+    user
+  } = useAuth();
+  const {
+    userRole
+  } = usePermissions();
   const isMember = userRole === "member";
-  
   const nextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
-
   const prevMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
   };
-
-  return (
-    <Container>
+  return <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">
           {isMember ? "My Attendance" : "Attendance Management"}
@@ -36,51 +33,33 @@ const AttendancePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-1">
             <Card className="dark:bg-background/50 bg-white shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 px-0 mx-0 my-0 py-[11px]">
                 <div className="flex items-center justify-between mb-4">
-                  <button 
-                    onClick={prevMonth}
-                    className="p-2 rounded-full hover:bg-muted transition-colors"
-                    aria-label="Previous month"
-                  >
+                  <button onClick={prevMonth} className="p-2 rounded-full hover:bg-muted transition-colors" aria-label="Previous month">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <h2 className="font-medium">
                     {format(currentMonth, "MMMM yyyy")}
                   </h2>
-                  <button 
-                    onClick={nextMonth}
-                    className="p-2 rounded-full hover:bg-muted transition-colors"
-                    aria-label="Next month"
-                  >
+                  <button onClick={nextMonth} className="p-2 rounded-full hover:bg-muted transition-colors" aria-label="Next month">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-7 text-center mb-2">
-                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                    <div key={day} className="text-xs font-medium py-1">
+                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(day => <div key={day} className="text-xs font-medium py-1">
                       {day}
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
                 
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  month={currentMonth}
-                  onMonthChange={setCurrentMonth}
-                  className="rounded-md border-0 p-0"
-                  classNames={{
-                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                    day_today: "bg-muted text-accent-foreground",
-                    day: "h-9 w-9 p-0 font-normal text-sm",
-                    table: "border-collapse",
-                    head_cell: "text-xs font-medium hidden",
-                    cell: "p-0 text-center"
-                  }}
-                />
+                <Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} month={currentMonth} onMonthChange={setCurrentMonth} className="rounded-md border-0 p-0" classNames={{
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                day_today: "bg-muted text-accent-foreground",
+                day: "h-9 w-9 p-0 font-normal text-sm",
+                table: "border-collapse",
+                head_cell: "text-xs font-medium hidden",
+                cell: "p-0 text-center"
+              }} />
               </CardContent>
             </Card>
           </div>
@@ -90,8 +69,6 @@ const AttendancePage = () => {
           </div>
         </div>
       </div>
-    </Container>
-  );
+    </Container>;
 };
-
 export default AttendancePage;
