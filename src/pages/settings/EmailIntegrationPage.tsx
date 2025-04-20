@@ -14,9 +14,10 @@ const EmailIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('email');
 
   const handleSave = async () => {
-    const success = await updateConfig({
-      // Update config properties
-    });
+    // Empty object is replaced with actual config changes when form is implemented
+    const configChanges = {};
+    
+    const success = await updateConfig(configChanges);
     
     if (success) {
       toast.success("Email settings saved successfully");

@@ -14,9 +14,10 @@ const SmsIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('sms');
 
   const handleSave = async () => {
-    const success = await updateConfig({
-      // Update config properties
-    });
+    // Empty object is replaced with actual config changes when form is implemented
+    const configChanges = {};
+    
+    const success = await updateConfig(configChanges);
     
     if (success) {
       toast.success("SMS settings saved successfully");
