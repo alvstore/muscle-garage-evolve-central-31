@@ -10,6 +10,7 @@ import NotFound from '@/pages/NotFound';
 import Login from '@/pages/auth/Login';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
+import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -48,6 +49,10 @@ export const appRoutes: RouteObject[] = [
           {
             path: '/dashboard/overview',
             element: <Dashboard />
+          },
+          {
+            path: '/dashboard/realtime',
+            element: <RealTimeDashboardPage />
           },
           
           // Include route groups

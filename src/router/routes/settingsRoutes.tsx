@@ -9,6 +9,7 @@ import EmailIntegrationPage from '@/pages/settings/EmailIntegrationPage';
 import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
 import BranchIntegrationSettings from '@/pages/settings/BranchIntegrationSettings';
+import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
 import HelpCenterPage from '@/pages/help/HelpCenterPage';
 
 export const settingsRoutes: RouteObject[] = [
@@ -43,6 +44,10 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings/branches/integration',
     element: <BranchIntegrationSettings />
+  },
+  {
+    path: '/settings/branches/devices',
+    element: <DeviceMappingPage />
   },
   {
     path: '/help',

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Settings, ExternalLink } from "lucide-react";
+import { Plus, Building2, Settings, ExternalLink, Cpu } from "lucide-react";
 import { useBranch } from '@/hooks/use-branch';
 import { useNavigate } from 'react-router-dom';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
@@ -95,10 +95,10 @@ const BranchSection = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => navigate('/settings/branches')}
+                onClick={() => navigate('/settings/branches/devices')}
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View All
+                <Cpu className="mr-2 h-4 w-4" />
+                Device Mapping
               </Button>
             </PermissionGuard>
           </div>

@@ -20,6 +20,8 @@ import {
   Radio,
   Globe,
   Bell,
+  Activity,
+  Cpu,
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -35,9 +37,9 @@ export const adminNavSections: NavSection[] = [
         permission: "access_dashboards" as Permission,
       },
       {
-        href: "/attendance",
-        label: "Attendance",
-        icon: <Clock className="h-5 w-5" />,
+        href: "/dashboard/realtime",
+        label: "Real-Time Dashboard",
+        icon: <Activity className="h-5 w-5" />,
         permission: "view_all_attendance" as Permission,
       }
     ],
@@ -143,6 +145,18 @@ export const adminNavSections: NavSection[] = [
         icon: <Bell className="h-5 w-5" />,
         permission: "access_communication" as Permission,
       },
+      {
+        href: "/communication/feedback",
+        label: "Feedback",
+        icon: <MessageCircle className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/announcements",
+        label: "Announcements",
+        icon: <Bell className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
     ],
   },
   {
@@ -169,6 +183,11 @@ export const adminNavSections: NavSection[] = [
             href: "/settings/branches",
             label: "Branch Management",
             permission: "manage_branches" as Permission,
+          },
+          {
+            href: "/settings/branches/devices",
+            label: "Device Mapping",
+            permission: "manage_integrations" as Permission,
           },
           {
             href: "/settings/integrations",
