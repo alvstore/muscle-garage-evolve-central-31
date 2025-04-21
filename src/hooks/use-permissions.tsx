@@ -1,10 +1,13 @@
-
 import { createContext, useContext, ReactNode } from "react";
 import { UserRole } from "@/types";
 import { useAuth } from "./use-auth";
+import { hasPermission } from "@/services/permissionService";
+
+export type Permission = string;
 
 interface PermissionsContextType {
   userRole: UserRole | null;
+  can: (permission: Permission, isOwner?: boolean) => boolean;
   canCreateAnnouncement: boolean;
   canEditAnnouncement: boolean;
   canDeleteAnnouncement: boolean;
@@ -30,11 +33,9 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const userRole = user?.role as UserRole || null;
   
-  // For branch managers or super admins
   const isBranchManager = !!user?.isBranchManager;
   const isSuperAdmin = userRole === "admin" && !user?.branchId;
   
-  // Calculate permissions based on role
   const canCreateAnnouncement = ["admin", "staff"].includes(userRole as string);
   const canEditAnnouncement = ["admin", "staff"].includes(userRole as string);
   const canDeleteAnnouncement = ["admin", "staff"].includes(userRole as string) || (userRole === "member");
@@ -58,10 +59,16 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   
   const canViewMembersList = ["admin", "staff", "trainer"].includes(userRole as string);
   
+  const can = (permission: Permission, isOwner = false): boolean => {
+    if (!user || !userRole) return false;
+    return hasPermission(userRole, permission as any, isOwner);
+  };
+  
   return (
     <PermissionsContext.Provider
       value={{
         userRole,
+        can,
         canCreateAnnouncement,
         canEditAnnouncement,
         canDeleteAnnouncement,

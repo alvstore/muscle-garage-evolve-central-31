@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,7 +158,6 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ member, onUpdate }) => {
                     id="dateOfBirth"
                     date={dateOfBirth}
                     onSelect={setDateOfBirth}
-                    disabled={!editMode}
                   />
                 </div>
               </div>
@@ -176,7 +174,6 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ member, onUpdate }) => {
                 <div className="space-y-2">
                   <Label htmlFor="membershipId">Membership Plan</Label>
                   <Select
-                    disabled={!editMode}
                     value={formData.membershipId || ''}
                     onValueChange={(value) => handleSelectChange('membershipId', value)}
                   >
@@ -195,7 +192,6 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ member, onUpdate }) => {
                 <div className="space-y-2">
                   <Label htmlFor="membershipStatus">Membership Status</Label>
                   <Select
-                    disabled={!editMode}
                     value={formData.membershipStatus}
                     onValueChange={(value) => handleSelectChange('membershipStatus', value as "active" | "inactive" | "expired")}
                   >
@@ -213,7 +209,6 @@ const MemberProfile: React.FC<MemberProfileProps> = ({ member, onUpdate }) => {
                 <div className="space-y-2">
                   <Label htmlFor="trainerId">Assigned Trainer</Label>
                   <Select
-                    disabled={!editMode}
                     value={formData.trainerId || ''}
                     onValueChange={(value) => handleSelectChange('trainerId', value)}
                   >

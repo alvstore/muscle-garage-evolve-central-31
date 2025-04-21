@@ -33,11 +33,13 @@ export interface WorkoutPlan {
   name: string;
   description: string;
   isCustom: boolean;
+  isCommon?: boolean;
   notes?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
   workoutDays: WorkoutDay[];
+  days?: WorkoutDay[]; // Added for backward compatibility
   memberId: string;
   trainerId: string;
 }

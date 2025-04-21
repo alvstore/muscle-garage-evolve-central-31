@@ -47,7 +47,7 @@ const PrivateRoute = ({
   }
 
   // Check for specific permission if required
-  if (requiredPermission && !can(requiredPermission as any)) {
+  if (requiredPermission && !can(requiredPermission)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
