@@ -15,7 +15,8 @@ import {
   RefreshCw, 
   Mail, 
   MessageSquare, 
-  Calendar 
+  Calendar,
+  Trash
 } from "lucide-react";
 import { Member } from "@/types";
 import { toast } from "sonner";
@@ -26,12 +27,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -165,9 +179,24 @@ const MembersListPage = () => {
       case "workout":
         navigate(`/fitness/workout-plans?memberId=${memberId}`);
         break;
+      case "progress":
+        navigate(`/fitness/progress`);
+        break;
+      case "delete":
+        setMemberToDelete(member);
+        break;
       default:
         toast.error("Action not implemented");
     }
+  };
+
+  const handleDeleteMember = () => {
+    if (!memberToDelete) return;
+    
+    // In a real app, this would make an API call to delete the member
+    setMembers(members.filter(member => member.id !== memberToDelete.id));
+    toast.success(`${memberToDelete.name} has been deleted`);
+    setMemberToDelete(null);
   };
 
   return (
@@ -254,36 +283,64 @@ const MembersListPage = () => {
                           Quick Actions
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent>
+                      <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel>Member Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "message")}>
-                          <Mail className="h-4 w-4 mr-2" /> 
-                          Send Message
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "checkin")}>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Manual Check-in
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "renew")}>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Renew Membership
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "workout")}>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Assign Workout
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem onClick={() => handleQuickAction(member.id, "message")}>
+                            <Mail className="h-4 w-4 mr-2" /> 
+                            Send Message
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleQuickAction(member.id, "checkin")}>
+                            <Calendar className="h-4 w-4 mr-2" />
+                            Manual Check-in
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleQuickAction(member.id, "renew")}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Renew Membership
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleQuickAction(member.id, "workout")}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Assign Workout
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleQuickAction(member.id, "progress")}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            View Progress
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleQuickAction(member.id, "delete")}
+                          className="text-destructive"
+                        >
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete Member
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <div className="border-r"></div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-none h-auto py-2"
-                      onClick={() => toast.info("More options coming soon")}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-none h-auto py-2"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}`)}>
+                          Edit Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "progress")}>
+                          View Progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => toast.info("Attendance history coming soon")}>
+                          Attendance History
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>
@@ -295,6 +352,28 @@ const MembersListPage = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {memberToDelete?.name}'s account and all associated data. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Container>
   );
 };

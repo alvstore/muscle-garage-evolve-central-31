@@ -5,6 +5,7 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 
 // Trainer pages
 import TrainerPage from '@/pages/trainers/TrainerPage';
+import TrainerManagementPage from '@/pages/trainers/TrainerManagementPage';
 import TrainerAllocationPage from '@/pages/trainers/TrainerAllocationPage';
 import TrainerPTPlansPage from '@/pages/trainers/TrainerPTPlansPage';
 import TrainerAttendancePage from '@/pages/trainers/TrainerAttendancePage';
@@ -16,6 +17,22 @@ export const trainerRoutes: RouteObject[] = [
     path: '/trainers',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <TrainerManagementPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/management',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <TrainerManagementPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/dashboard',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TrainerPage />
       </PrivateRoute>
     )

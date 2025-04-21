@@ -23,18 +23,23 @@ export interface Exercise {
 export interface WorkoutDay {
   id: string;
   dayLabel: string;
+  name: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 export interface WorkoutPlan {
   id: string;
   name: string;
   description: string;
-  isCommon: boolean;
+  isCustom: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  days: WorkoutDay[];
+  notes?: string;
+  workoutDays: WorkoutDay[];
+  memberId: string;
+  trainerId: string;
 }
 
 export interface MemberWorkout {
@@ -92,4 +97,44 @@ export interface ClassBooking {
   paidAmount?: number;
   paymentStatus?: string;
   razorpayOrderId?: string;
+}
+
+export interface MealMacros {
+  protein: number;
+  carbs: number;
+  fats: number;
+  calories: number;
+}
+
+export interface MealPlan {
+  id: string;
+  name: string;
+  time: string;
+  items: string[];
+  macros: MealMacros;
+}
+
+export interface DietPlan {
+  id: string;
+  memberId: string;
+  trainerId: string;
+  mealPlans: MealPlan[];
+  notes?: string;
+  isCustom: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Attendance types
+export type AttendanceEntryType = "check-in" | "check-out";
+
+export interface AttendanceEntry {
+  id?: string;
+  memberId: string;
+  memberName: string;
+  time: string;
+  type: AttendanceEntryType;
+  location: string;
+  device: string;
+  status: string;
 }
