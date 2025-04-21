@@ -14,7 +14,7 @@ export const createProfile = async (userData: Partial<User> & { password?: strin
       data: {
         full_name: userData.name,
         role: userData.role,
-        branch_id: userData.branch_id || userData.branchId
+        branch_id: userData.branch_id || userData.branchId || userData.primaryBranchId
       }
     }
   });

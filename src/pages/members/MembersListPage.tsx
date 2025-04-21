@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -7,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
+import { UserPlus, Search } from "lucide-react";
 import { Member } from "@/types";
+import MemberQuickActions from "@/components/members/MemberQuickActions";
+import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 
 const MembersListPage = () => {
@@ -17,89 +18,117 @@ const MembersListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Simulate API call to fetch members
+  const fetchMembers = async () => {
     setLoading(true);
-    
-    setTimeout(() => {
-      // Mock data
-      const mockMembers: Member[] = [
-        {
-          id: "member-1",
-          email: "john.doe@example.com",
-          name: "John Doe",
-          role: "member",
-          phone: "+1 (555) 123-4567",
-          dateOfBirth: "1990-05-15",
-          goal: "Build muscle and improve overall fitness",
-          trainerId: "trainer-123",
-          membershipId: "platinum-12m",
-          membershipStatus: "active",
-          membershipStartDate: "2023-01-15",
-          membershipEndDate: "2024-01-15",
-        },
-        {
-          id: "member-2",
-          email: "jane.smith@example.com",
-          name: "Jane Smith",
-          role: "member",
-          phone: "+1 (555) 987-6543",
-          dateOfBirth: "1988-09-22",
-          goal: "Lose weight and increase endurance",
-          trainerId: "trainer-456",
-          membershipId: "gold-6m",
-          membershipStatus: "active",
-          membershipStartDate: "2023-06-01",
-          membershipEndDate: "2023-12-01",
-        },
-        {
-          id: "member-3",
-          email: "mike.johnson@example.com",
-          name: "Mike Johnson",
-          role: "member",
-          phone: "+1 (555) 456-7890",
-          dateOfBirth: "1992-03-10",
-          goal: "Build strength and improve athletic performance",
-          trainerId: "trainer-789",
-          membershipId: "silver-3m",
-          membershipStatus: "expired",
-          membershipStartDate: "2023-01-01",
-          membershipEndDate: "2023-04-01",
-        },
-        {
-          id: "member-4",
-          email: "sarah.wilson@example.com",
-          name: "Sarah Wilson",
-          role: "member",
-          phone: "+1 (555) 789-0123",
-          dateOfBirth: "1995-11-18",
-          goal: "Tone body and improve flexibility",
-          trainerId: "trainer-123",
-          membershipId: "gold-6m",
-          membershipStatus: "inactive",
-          membershipStartDate: "2023-02-15",
-          membershipEndDate: "2023-08-15",
-        },
-        {
-          id: "member-5",
-          email: "alex.brown@example.com",
-          name: "Alex Brown",
-          role: "member",
-          phone: "+1 (555) 321-6547",
-          dateOfBirth: "1985-07-30",
-          goal: "Maintain fitness and improve cardio",
-          trainerId: "trainer-456",
-          membershipId: "platinum-12m",
-          membershipStatus: "active",
-          membershipStartDate: "2023-05-01",
-          membershipEndDate: "2024-05-01",
-        }
-      ];
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'member');
       
-      setMembers(mockMembers);
+      if (error) throw error;
+      
+      const fetchedMembers = data.map(profile => ({
+        id: profile.id,
+        email: profile.email || '',
+        name: profile.full_name || '',
+        role: 'member' as const,
+        phone: profile.phone,
+        membershipStatus: 'active' as const,
+      }));
+      
+      setMembers(fetchedMembers);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      setTimeout(() => {
+        const mockMembers: Member[] = [
+          {
+            id: "member-1",
+            email: "john.doe@example.com",
+            name: "John Doe",
+            role: "member",
+            phone: "+1 (555) 123-4567",
+            dateOfBirth: "1990-05-15",
+            goal: "Build muscle and improve overall fitness",
+            trainerId: "trainer-123",
+            membershipId: "platinum-12m",
+            membershipStatus: "active",
+            membershipStartDate: "2023-01-15",
+            membershipEndDate: "2024-01-15",
+          },
+          {
+            id: "member-2",
+            email: "jane.smith@example.com",
+            name: "Jane Smith",
+            role: "member",
+            phone: "+1 (555) 987-6543",
+            dateOfBirth: "1988-09-22",
+            goal: "Lose weight and increase endurance",
+            trainerId: "trainer-456",
+            membershipId: "gold-6m",
+            membershipStatus: "active",
+            membershipStartDate: "2023-06-01",
+            membershipEndDate: "2023-12-01",
+          },
+          {
+            id: "member-3",
+            email: "mike.johnson@example.com",
+            name: "Mike Johnson",
+            role: "member",
+            phone: "+1 (555) 456-7890",
+            dateOfBirth: "1992-03-10",
+            goal: "Build strength and improve athletic performance",
+            trainerId: "trainer-789",
+            membershipId: "silver-3m",
+            membershipStatus: "expired",
+            membershipStartDate: "2023-01-01",
+            membershipEndDate: "2023-04-01",
+          },
+          {
+            id: "member-4",
+            email: "sarah.wilson@example.com",
+            name: "Sarah Wilson",
+            role: "member",
+            phone: "+1 (555) 789-0123",
+            dateOfBirth: "1995-11-18",
+            goal: "Tone body and improve flexibility",
+            trainerId: "trainer-123",
+            membershipId: "gold-6m",
+            membershipStatus: "inactive",
+            membershipStartDate: "2023-02-15",
+            membershipEndDate: "2023-08-15",
+          },
+          {
+            id: "member-5",
+            email: "alex.brown@example.com",
+            name: "Alex Brown",
+            role: "member",
+            phone: "+1 (555) 321-6547",
+            dateOfBirth: "1985-07-30",
+            goal: "Maintain fitness and improve cardio",
+            trainerId: "trainer-456",
+            membershipId: "platinum-12m",
+            membershipStatus: "active",
+            membershipStartDate: "2023-05-01",
+            membershipEndDate: "2024-05-01",
+          }
+        ];
+        
+        setMembers(mockMembers);
+      }, 1000);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
   }, []);
+
+  const handleDeleteMember = () => {
+    fetchMembers();
+    toast.success("Member list updated");
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -144,9 +173,6 @@ const MembersListPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
             <Button onClick={() => navigate("/members/new")}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add Member
@@ -194,32 +220,11 @@ const MembersListPage = () => {
                     </div>
                   </div>
                   
-                  <div className="flex border-t">
-                    <Button 
-                      variant="ghost" 
-                      className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                      onClick={() => navigate(`/members/${member.id}`)}
-                    >
-                      View Profile
-                    </Button>
-                    <div className="border-r"></div>
-                    <Button
-                      variant="ghost"
-                      className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                      onClick={() => toast.info("Quick actions coming soon")}
-                    >
-                      Quick Actions
-                    </Button>
-                    <div className="border-r"></div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-none h-auto py-2"
-                      onClick={() => toast.info("More options coming soon")}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <MemberQuickActions 
+                    memberId={member.id} 
+                    memberName={member.name}
+                    onDeleted={handleDeleteMember}
+                  />
                 </CardContent>
               </Card>
             ))}
