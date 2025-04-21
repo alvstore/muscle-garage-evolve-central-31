@@ -9,5 +9,5 @@ export interface AttendanceEntry {
   branch: string;
   status: string;
   time: string;  // Required by the component
-  type: string;  // Required by the component
+  type: "check-in" | "check-out";  // Restricting to specific values
 }

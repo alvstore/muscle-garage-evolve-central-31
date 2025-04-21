@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -15,6 +16,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'full_system_access': { roles: ['admin'] },
   
   // Member Management
+  'manage_members': { roles: ['admin', 'staff'] },
   'register_member': { roles: ['admin', 'staff'] },
   'view_member_profiles': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
   'edit_member_fitness_data': { roles: ['admin', 'staff', 'trainer'] },
@@ -55,7 +57,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'access_communication': { roles: ['admin', 'staff'] },
   'access_marketing': { roles: ['admin'] },
   
-  // Additional permissions that were missing
+  // Additional permissions
   'create_class': { roles: ['admin', 'staff'] },
   'assign_diet_plan': { roles: ['admin', 'trainer'] },
   'assign_workout_plan': { roles: ['admin', 'trainer'] },
