@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Dumbbell, ChevronRight } from 'lucide-react';
+import { Calendar, Dumbbell, ChevronRight, Bell as BellIcon, BarChart2, Trophy } from 'lucide-react';
 import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import Announcements from '@/components/dashboard/Announcements';
 import { toast } from 'sonner';
@@ -14,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import MemberDashboardHeader from '@/components/dashboard/sections/MemberDashboardHeader';
 import QuickStatsSection from '@/components/dashboard/sections/QuickStatsSection';
 import FitnessPlansSection from '@/components/dashboard/sections/FitnessPlansSection';
-import { Announcement } from '@/types';
+import { Announcement, UserRole } from '@/types';
 
 interface MemberDashboardProps {
   classes?: GymClass[];
@@ -45,13 +46,13 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 3);
 
-  const handleBookClass = () => {
+  const handleViewClasses = () => {
     navigate('/classes');
     toast.success("Redirecting to classes page");
   };
   
   // Mock data for recent announcements with the correct typing for priority
-  const recentAnnouncements = [
+  const recentAnnouncements: Announcement[] = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -59,7 +60,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-10T10:00:00Z",
-      targetRoles: ["member"] as UserRole[],
+      targetRoles: ["member" as UserRole],
       channels: ["in-app"],
       sentCount: 120,
       priority: "medium" as "medium", // Type assertion to match the literal type
@@ -72,7 +73,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-12T14:30:00Z",
-      targetRoles: ["member"] as UserRole[],
+      targetRoles: ["member" as UserRole],
       channels: ["in-app"],
       sentCount: 98,
       priority: "low" as "low", // Type assertion to match the literal type
@@ -129,8 +130,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                   </div>
                 ))}
                 
-                <Button className="w-full" onClick={handleBookClass}>
-                  Book Class
+                <Button className="w-full" onClick={handleViewClasses}>
+                  View All Classes
                 </Button>
               </div>
             ) : (
@@ -140,8 +141,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                 <p className="text-sm text-muted-foreground mb-6">
                   You haven't booked any classes yet.
                 </p>
-                <Button onClick={handleBookClass}>
-                  Book Class
+                <Button onClick={handleViewClasses}>
+                  View All Classes
                 </Button>
               </div>
             )}

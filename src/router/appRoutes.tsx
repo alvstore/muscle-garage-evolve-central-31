@@ -31,7 +31,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: '/',
-    element: <Index />
+    element: <Navigate to="/dashboard" replace />
   },
   {
     path: '/unauthorized',

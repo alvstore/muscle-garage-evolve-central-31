@@ -1,4 +1,3 @@
-
 export type UserRole = "admin" | "staff" | "trainer" | "member";
 
 export interface User {
@@ -197,6 +196,8 @@ export interface Lead {
   followUpDate?: string;
 }
 
+export type NotificationChannel = "in-app" | "sms" | "email" | "whatsapp";
+
 export interface Announcement {
   id: string;
   title: string;
@@ -209,7 +210,7 @@ export interface Announcement {
   authorId: string; // Make this required to match notification.ts
   authorName?: string;
   sentCount?: number;
-  channels?: string[];
+  channels?: NotificationChannel[];
   priority?: "low" | "medium" | "high"; // Make this a specific union type
   forRoles?: UserRole[];
 }
