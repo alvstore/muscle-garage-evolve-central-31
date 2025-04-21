@@ -1,4 +1,3 @@
-
 import { UserRole } from './index';
 
 // Extended user type with branch and address information
@@ -20,6 +19,7 @@ export interface User {
   state?: string;
   zipCode?: string;
   country?: string;
+  password?: string; // Added for registration purposes
 }
 
 // Extended member type with branch and address information

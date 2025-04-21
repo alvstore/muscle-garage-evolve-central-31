@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { createProfile } from '@/lib/supabase/profileService';
 import { useAuth } from '@/hooks/use-auth';
+import { useBranch } from '@/hooks/use-branch';
 
 interface MemberRegisterFormData {
   name: string;
@@ -21,6 +22,7 @@ export default function MemberRegisterForm() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
 
   const { register, handleSubmit, formState: { errors } } = useForm<MemberRegisterFormData>();
 
@@ -29,7 +31,8 @@ export default function MemberRegisterForm() {
       setLoading(true);
       await createProfile({
         ...data,
-        role: 'member'
+        role: 'member',
+        branchId: currentBranch?.id
       });
       toast.success('Member registered successfully');
       navigate('/members');

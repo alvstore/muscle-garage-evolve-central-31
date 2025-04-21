@@ -1,4 +1,3 @@
-
 export type UserRole = "admin" | "staff" | "trainer" | "member";
 
 export interface User {
@@ -245,11 +244,15 @@ export interface DashboardSummary {
 export interface AttendanceEntry {
   memberId: string;
   memberName: string;
-  time: string;
-  type: "check-in" | "check-out";
-  location: string;
-  device: string;
-  status: string;
+  time?: string;
+  type?: "check-in" | "check-out";
+  location?: string;
+  device?: string;
+  status?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  accessMethod?: string;
+  branch?: string;
 }
 
 export interface ExpenseCategory {

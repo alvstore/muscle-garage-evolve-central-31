@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { recordPayment } from '@/lib/supabase/membershipService';
 import { useAuth } from '@/hooks/use-auth';
+import { useBranch } from '@/hooks/use-branch';
 
 interface PaymentFormProps {
   memberId: string;
@@ -27,6 +28,7 @@ export default function PaymentForm({
 }: PaymentFormProps) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const remainingAmount = totalAmount - amountPaid;
 
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -38,7 +40,9 @@ export default function PaymentForm({
   });
 
   const onSubmit = async (data: any) => {
-    if (!user?.branchId) {
+    const branchId = currentBranch?.id || user?.branchId;
+    
+    if (!branchId) {
       toast.error('Branch information is missing');
       return;
     }
@@ -50,8 +54,8 @@ export default function PaymentForm({
         membershipId,
         data.amount,
         data.paymentMethod,
-        user.branchId,
-        user.id,
+        branchId,
+        user?.id || '',
         data.notes
       );
       toast.success('Payment recorded successfully');

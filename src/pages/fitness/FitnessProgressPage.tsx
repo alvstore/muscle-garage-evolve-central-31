@@ -23,7 +23,6 @@ const mockMembers: Member[] = [
     email: 'john@example.com',
     role: 'member',
     membershipStatus: 'active',
-    trainerId: 'trainer-1'
   },
   {
     id: 'member-2',
@@ -31,7 +30,6 @@ const mockMembers: Member[] = [
     email: 'jane@example.com',
     role: 'member',
     membershipStatus: 'active',
-    trainerId: 'trainer-1'
   },
   {
     id: 'member-3',
@@ -39,7 +37,6 @@ const mockMembers: Member[] = [
     email: 'robert@example.com',
     role: 'member',
     membershipStatus: 'active',
-    trainerId: 'trainer-2'
   },
   {
     id: 'member-4',
@@ -47,7 +44,6 @@ const mockMembers: Member[] = [
     email: 'sarah@example.com',
     role: 'member',
     membershipStatus: 'active',
-    trainerId: 'trainer-2'
   }
 ];
 
@@ -75,7 +71,7 @@ const FitnessProgressPage = () => {
   
   // If user is a trainer, get members assigned to them
   const trainerAssignedMembers = isTrainer ? 
-    mockMembers.filter(member => member.trainerId === user?.id) : [];
+    mockMembers : [];
   
   // Determine which members to show in the selector
   const availableMembers = canViewAllMembers ? 
@@ -125,7 +121,7 @@ const FitnessProgressPage = () => {
             
             <DatePicker 
               date={selectedDate} 
-              setDate={setSelectedDate} 
+              onSelect={(date) => setSelectedDate(date || new Date())}
             />
             
             <Button variant="outline" size="sm" className="flex items-center gap-1">
@@ -168,8 +164,8 @@ const FitnessProgressPage = () => {
                   <CardContent>
                     {selectedMember && (
                       <MemberBodyMeasurements 
-                        member={selectedMember}
-                        viewOnly={!(isMember || isAdmin || (isTrainer && selectedMember.trainerId === user?.id))}
+                        memberId={selectedMember.id}
+                        viewOnly={!(isMember || isAdmin || isTrainer)}
                       />
                     )}
                   </CardContent>
@@ -177,16 +173,17 @@ const FitnessProgressPage = () => {
               </div>
               
               <div className="lg:col-span-1">
-                {(isMember || isAdmin || (isTrainer && selectedMember?.trainerId === user?.id)) && (
+                {(isMember || isAdmin || isTrainer) && (
                   <Card>
                     <CardHeader>
                       <CardTitle>Add New Measurement</CardTitle>
                       <CardDescription>Record new body measurements</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {selectedMember && (
+                      {selectedMember && user && (
                         <BodyMeasurementForm 
                           memberId={selectedMember.id}
+                          currentUser={user}
                           onSave={() => console.log('Measurement saved')}
                         />
                       )}

@@ -2,10 +2,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 
-export const createProfile = async (userData: Partial<User>) => {
+export const createProfile = async (userData: Partial<User> & { password: string }) => {
   const { data, error } = await supabase.auth.signUp({
     email: userData.email!,
-    password: userData.password!, // You'll need to add password to your User type
+    password: userData.password,
     options: {
       data: {
         full_name: userData.name,

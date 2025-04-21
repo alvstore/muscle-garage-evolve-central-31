@@ -1,284 +1,147 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
-import { Calendar, Clock, Users, User, Filter, Plus, ChevronDown } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import ClassForm from "./ClassForm";
-import { GymClass } from "@/types/class";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Filter, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GymClass } from '@/types/class';
 
-// Mock data fetching function
-const fetchClasses = async (): Promise<GymClass[]> => {
-  // In a real app, this would be an API call
-  return [{
-    id: "1",
-    name: "Morning Yoga",
-    description: "Start your day with energizing yoga poses and breathing exercises",
-    trainer: "Jane Smith",
-    trainerName: "Jane Smith",
-    trainerAvatar: "/placeholder.svg",
-    trainerId: "t1",
-    capacity: 15,
-    enrolled: 8,
-    duration: 60,
-    startTime: "2025-04-15T06:30:00",
-    endTime: "2025-04-15T07:30:00",
-    type: "Yoga",
-    location: "Studio 1",
-    level: "all",
-    difficulty: "all",
-    status: "scheduled",
-    recurring: true,
-    recurringPattern: "MON,WED,FRI",
-    createdAt: "2025-04-10T10:00:00",
-    updatedAt: "2025-04-10T10:00:00"
-  }, {
-    id: "2",
-    name: "HIIT Workout",
-    description: "High-intensity interval training to boost metabolism and burn calories",
-    trainer: "Mike Johnson",
-    trainerName: "Mike Johnson",
-    trainerId: "t2",
-    capacity: 12,
-    enrolled: 10,
-    duration: 60,
-    startTime: "2025-04-15T09:00:00",
-    endTime: "2025-04-15T10:00:00",
-    type: "HIIT",
-    location: "Main Floor",
-    level: "intermediate",
-    difficulty: "intermediate",
-    status: "scheduled",
-    recurring: true,
-    recurringPattern: "TUE,THU",
-    createdAt: "2025-04-10T11:00:00",
-    updatedAt: "2025-04-10T11:00:00"
-  }, {
-    id: "3",
-    name: "Strength Training",
-    description: "Build muscle and improve overall strength with weights",
-    trainer: "Robert Chen",
-    trainerName: "Robert Chen",
-    trainerAvatar: "/placeholder.svg",
-    trainerId: "t3",
-    capacity: 8,
-    enrolled: 6,
-    duration: 90,
-    startTime: "2025-04-15T17:00:00",
-    endTime: "2025-04-15T18:30:00",
-    type: "Strength",
-    location: "Weight Room",
-    level: "advanced",
-    difficulty: "advanced",
-    status: "scheduled",
-    recurring: false,
-    createdAt: "2025-04-10T12:00:00",
-    updatedAt: "2025-04-10T12:00:00"
-  }];
-};
-const ClassList = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
-  const {
-    data: classes,
-    isLoading
-  } = useQuery({
-    queryKey: ['classes'],
-    queryFn: fetchClasses
-  });
-  const handleCreateClass = () => {
-    setSelectedClass(null);
-    setIsOpen(true);
-  };
-  const handleEditClass = (classItem: GymClass) => {
-    setSelectedClass(classItem);
-    setIsOpen(true);
-  };
-  const handleCloseDialog = () => {
-    setIsOpen(false);
-    setSelectedClass(null);
-  };
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "beginner":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "advanced":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+interface ClassListProps {
+  showAddButton?: boolean;
+  onAddClass?: () => void;
+}
+
+const ClassList: React.FC<ClassListProps> = ({ showAddButton, onAddClass }) => {
+  // Mock data for classes
+  const classes: GymClass[] = [
+    {
+      id: '1',
+      name: 'HIIT Workout',
+      description: 'High-intensity interval training',
+      startTime: '2023-07-20T10:00:00Z',
+      endTime: '2023-07-20T11:00:00Z',
+      capacity: 20,
+      enrolled: 15,
+      trainer: 'John Doe',
+      difficulty: 'intermediate',
+      type: 'cardio',
+      location: 'Studio A'
+    },
+    {
+      id: '2',
+      name: 'Yoga Flow',
+      description: 'Vinyasa yoga for all levels',
+      startTime: '2023-07-20T14:00:00Z',
+      endTime: '2023-07-20T15:00:00Z',
+      capacity: 15,
+      enrolled: 10,
+      trainer: 'Jane Smith',
+      difficulty: 'beginner',
+      type: 'yoga',
+      location: 'Studio B'
+    },
+    {
+      id: '3',
+      name: 'Strength Training',
+      description: 'Full body strength workout',
+      startTime: '2023-07-21T09:00:00Z',
+      endTime: '2023-07-21T10:00:00Z',
+      capacity: 12,
+      enrolled: 8,
+      trainer: 'Mike Johnson',
+      difficulty: 'advanced',
+      type: 'strength',
+      location: 'Weights Area'
     }
-  };
-  if (isLoading) {
-    return <div className="space-y-4">
-        {[1, 2, 3].map(i => <Card key={i}>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-8 w-28" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>)}
-      </div>;
-  }
-  return <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Class Schedule</h2>
-          <Badge variant="outline" className="ml-2">
-            {classes?.length || 0} Classes
-          </Badge>
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4 justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search classes..."
+              className="pl-8"
+            />
+          </div>
+          <Select defaultValue="all">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="cardio">Cardio</SelectItem>
+              <SelectItem value="strength">Strength</SelectItem>
+              <SelectItem value="yoga">Yoga</SelectItem>
+              <SelectItem value="pilates">Pilates</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="icon">
+            <Filter className="h-4 w-4" />
+          </Button>
         </div>
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-1" />
-                Filter
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter Classes</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                  Class Type
-                </DropdownMenuLabel>
-                <DropdownMenuItem>
-                  All Types
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Yoga
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  HIIT
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Strength
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                  Difficulty
-                </DropdownMenuLabel>
-                <DropdownMenuItem>
-                  All Levels
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Beginner
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Intermediate
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  Advanced
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          
-        </div>
+        
+        {showAddButton && (
+          <Button onClick={onAddClass} className="flex items-center gap-1">
+            <Plus className="h-4 w-4" />
+            Add Class
+          </Button>
+        )}
       </div>
 
-      <div className="grid gap-4">
-        {classes?.map(classItem => <Card key={classItem.id} className="overflow-hidden">
-            <CardHeader className="pb-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {classes.map((classItem) => (
+          <Card key={classItem.id} className="overflow-hidden">
+            <div className="bg-primary h-2"></div>
+            <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <CardTitle>{classItem.name}</CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditClass(classItem)}>
-                      Edit Class
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      View Bookings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      Cancel Class
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {classItem.description || "No description provided."}
-              </p>
-              
-              <div className="flex flex-wrap gap-4 mt-2">
-                <div className="flex items-center gap-1 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(parseISO(classItem.startTime), "EEE, MMM d")}</span>
+                <div>
+                  <h3 className="font-semibold text-lg">{classItem.name}</h3>
+                  <p className="text-sm text-muted-foreground">{classItem.description}</p>
                 </div>
-                
-                <div className="flex items-center gap-1 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {format(parseISO(classItem.startTime), "h:mm a")} - 
-                    {format(parseISO(classItem.endTime), "h:mm a")}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-1 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {classItem.enrolled}/{classItem.capacity} enrolled
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-1 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>{classItem.trainerName}</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Badge variant="outline" className={getDifficultyColor(classItem.difficulty)}>
-                  {classItem.difficulty === "all" ? "All Levels" : classItem.difficulty}
-                </Badge>
-                
-                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
                   {classItem.type}
-                </Badge>
-                
-                {classItem.recurring && <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                    Recurring
-                  </Badge>}
-                
-                <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                  {classItem.location}
-                </Badge>
+                </span>
               </div>
               
-              <div className="mt-4 flex justify-end">
-                <Button>Book Class</Button>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Time:</span>
+                  <span>{new Date(classItem.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Trainer:</span>
+                  <span>{classItem.trainer}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Location:</span>
+                  <span>{classItem.location}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Capacity:</span>
+                  <span>{classItem.enrolled}/{classItem.capacity}</span>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="outline" size="sm">View Details</Button>
+                <Button size="sm">Book Class</Button>
               </div>
             </CardContent>
-          </Card>)}
+          </Card>
+        ))}
       </div>
-
-      <ClassForm open={isOpen} onOpenChange={setIsOpen} initialData={selectedClass} onClose={handleCloseDialog} />
-    </div>;
+      
+      {classes.length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">No classes found</p>
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default ClassList;
