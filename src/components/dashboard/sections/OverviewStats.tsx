@@ -4,56 +4,76 @@ import StatCard from '@/components/dashboard/StatCard';
 import { Users, CreditCard, Calendar, CheckSquare } from 'lucide-react';
 
 interface OverviewStatsProps {
-  totalMembers: number;
-  activeMembers: number;
-  todayAttendance: number;
-  monthlyRevenue: number;
+  data: {
+    totalMembers: number;
+    newMembersToday: number;
+    activeMembers: number;
+    attendanceToday: number;
+    revenue: {
+      today: number;
+      thisWeek: number;
+      thisMonth: number;
+      lastMonth: number;
+    };
+    pendingPayments: {
+      count: number;
+      total: number;
+    };
+    upcomingRenewals: {
+      today: number;
+      thisWeek: number;
+      thisMonth: number;
+    };
+    classAttendance: {
+      today: number;
+      yesterday: number;
+      lastWeek: number;
+    }
+  }
 }
 
-const OverviewStats = ({ 
-  totalMembers, 
-  activeMembers, 
-  todayAttendance, 
-  monthlyRevenue 
-}: OverviewStatsProps) => {
+const OverviewStats = ({ data }: OverviewStatsProps) => {
+  const calculatePercentChange = (current: number, previous: number): { direction: "up" | "down" | "neutral", value: string } => {
+    if (previous === 0) return { direction: "neutral", value: "0%" };
+    const change = ((current - previous) / previous) * 100;
+    return {
+      direction: change > 0 ? "up" : change < 0 ? "down" : "neutral",
+      value: `${Math.abs(change).toFixed(1)}%`
+    };
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Members"
-        value={totalMembers}
+        value={data.totalMembers}
         change={{
           direction: "up",
-          value: `${activeMembers} active`
+          value: `+${data.newMembersToday} today`
         }}
         icon={Users}
       />
       
       <StatCard
         title="Revenue This Month"
-        value={`₹${monthlyRevenue.toLocaleString()}`}
-        change={{
-          direction: "up",
-          value: `10% increase`
-        }}
+        value={`₹${data.revenue.thisMonth.toLocaleString()}`}
+        change={calculatePercentChange(data.revenue.thisMonth, data.revenue.lastMonth)}
         icon={CreditCard}
       />
       
       <StatCard
         title="Today's Check-ins"
-        value={todayAttendance}
-        change={{
-          direction: "up",
-          value: `15% more than yesterday`
-        }}
+        value={data.attendanceToday}
+        change={calculatePercentChange(data.classAttendance.today, data.classAttendance.yesterday)}
         icon={CheckSquare}
       />
       
       <StatCard
         title="Renewals This Week"
-        value={5}
+        value={data.upcomingRenewals.thisWeek}
         change={{
           direction: "neutral",
-          value: `2 today`
+          value: `${data.upcomingRenewals.today} today`
         }}
         icon={Calendar}
       />

@@ -1,310 +1,507 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { TimeInput } from '@/components/ui/time-input';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useBranch } from '@/hooks/use-branch';
-import { toast } from 'sonner';
-import { addHours, format } from 'date-fns';
 
-export interface ClassFormProps {
-  onSave?: () => void;
-  classData?: any;
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { format, addHours, parseISO } from "date-fns";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { GymClass, ClassDifficulty } from "@/types/class";
+
+interface ClassFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialData: GymClass | null;
+  onClose: () => void;
 }
 
-const classFormSchema = z.object({
-  name: z.string().min(2, { message: "Class name is required" }),
-  description: z.string().optional(),
-  trainerId: z.string().min(1, { message: "Trainer is required" }),
-  capacity: z.coerce.number().min(1, { message: "Capacity must be at least 1" }),
-  startDate: z.date(),
-  startTime: z.string(),
-  duration: z.coerce.number().min(15, { message: "Duration must be at least 15 minutes" }),
-  type: z.string().min(1, { message: "Class type is required" }),
-  difficulty: z.enum(["beginner", "intermediate", "advanced", "all"]),
-  location: z.string().optional(),
-  recurring: z.boolean().default(false),
-  recurringPattern: z.string().optional(),
-});
+interface ClassFormData {
+  name: string;
+  description: string;
+  trainerId: string;
+  capacity: number;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  type: string;
+  location: string;
+  difficulty: ClassDifficulty;
+  recurring: boolean;
+  recurringPattern: string;
+}
 
-type ClassFormValues = z.infer<typeof classFormSchema>;
-
-const ClassForm: React.FC<ClassFormProps> = ({ onSave, classData }) => {
-  const { currentBranch } = useBranch();
+const ClassForm = ({ 
+  open, 
+  onOpenChange, 
+  initialData, 
+  onClose 
+}: ClassFormProps) => {
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState("");
   
-  // Mock data for trainers and class types
+  // Mock trainers data - in real app would come from API
   const trainers = [
-    { id: "trainer1", name: "John Smith" },
-    { id: "trainer2", name: "Sarah Johnson" },
-    { id: "trainer3", name: "Mike Williams" },
+    { id: "t1", name: "Jane Smith" },
+    { id: "t2", name: "Mike Johnson" },
+    { id: "t3", name: "Robert Chen" },
+    { id: "t4", name: "Sarah Williams" }
   ];
   
+  // Class types - in real app might come from API/configuration
   const classTypes = [
-    { id: "yoga", name: "Yoga" },
-    { id: "hiit", name: "HIIT" },
-    { id: "strength", name: "Strength Training" },
-    { id: "cardio", name: "Cardio" },
-    { id: "pilates", name: "Pilates" },
-    { id: "zumba", name: "Zumba" },
+    "Yoga", "Pilates", "HIIT", "Strength", "Cardio", 
+    "Zumba", "Spinning", "Boxing", "CrossFit", "Other"
   ];
   
-  const defaultValues: Partial<ClassFormValues> = {
-    name: classData?.name || "",
-    description: classData?.description || "",
-    trainerId: classData?.trainerId || "",
-    capacity: classData?.capacity || 10,
-    startDate: classData?.startDate ? new Date(classData.startDate) : new Date(),
-    startTime: classData?.startTime || "09:00",
-    duration: classData?.duration || 60,
-    type: classData?.type || "",
-    difficulty: classData?.difficulty || "all",
-    location: classData?.location || "",
-    recurring: classData?.recurring || false,
-    recurringPattern: classData?.recurringPattern || "weekly",
-  };
-  
-  const form = useForm<ClassFormValues>({
-    resolver: zodResolver(classFormSchema),
-    defaultValues,
+  const form = useForm<ClassFormData>({
+    defaultValues: {
+      name: "",
+      description: "",
+      trainerId: "",
+      capacity: 10,
+      date: new Date(),
+      startTime: "08:00",
+      endTime: "09:00",
+      type: "",
+      location: "",
+      difficulty: "all",
+      recurring: false,
+      recurringPattern: "WEEKLY",
+    }
   });
   
-  const onSubmit = async (data: ClassFormValues) => {
-    try {
-      // Calculate end time based on start time and duration
-      const startDateTime = new Date(data.startDate);
-      const [hours, minutes] = data.startTime.split(':').map(Number);
-      startDateTime.setHours(hours, minutes);
+  useEffect(() => {
+    if (initialData) {
+      const startDate = parseISO(initialData.startTime);
+      const startTimeStr = format(startDate, "HH:mm");
+      const endTimeStr = format(parseISO(initialData.endTime), "HH:mm");
       
-      const endDateTime = addHours(startDateTime, data.duration / 60);
+      form.reset({
+        name: initialData.name,
+        description: initialData.description || "",
+        trainerId: initialData.trainerId,
+        capacity: initialData.capacity,
+        date: startDate,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        type: initialData.type,
+        location: initialData.location || "",
+        difficulty: initialData.difficulty,
+        recurring: initialData.recurring,
+        recurringPattern: initialData.recurringPattern || "WEEKLY",
+      });
       
-      const classPayload = {
-        ...data,
-        branchId: currentBranch?.id,
-        startDateTime: startDateTime.toISOString(),
-        endDateTime: endDateTime.toISOString(),
-      };
-      
-      console.log('Class data to submit:', classPayload);
-      
-      // Here you would make an API call to save the class
-      // await createClass(classPayload);
-      
-      toast.success('Class saved successfully');
-      if (onSave) onSave();
-    } catch (error: any) {
-      console.error('Error saving class:', error);
-      toast.error(error.message || 'Failed to save class');
+      setIsRecurring(initialData.recurring);
+      setSelectedTrainer(initialData.trainerId);
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        trainerId: "",
+        capacity: 10,
+        date: new Date(),
+        startTime: "08:00",
+        endTime: "09:00",
+        type: "",
+        location: "",
+        difficulty: "all",
+        recurring: false,
+        recurringPattern: "WEEKLY",
+      });
+      setIsRecurring(false);
+      setSelectedTrainer("");
     }
-  };
+  }, [initialData, form]);
   
+  const onSubmit = (data: ClassFormData) => {
+    // In a real app, would send to API
+    console.log("Form submitted with data:", data);
+    
+    // Mock class creation
+    const newClass: Partial<GymClass> = {
+      name: data.name,
+      description: data.description,
+      trainerId: data.trainerId,
+      trainerName: trainers.find(t => t.id === data.trainerId)?.name || "",
+      capacity: data.capacity,
+      enrolled: initialData?.enrolled || 0,
+      // Combine date and time strings into ISO strings
+      startTime: new Date(
+        data.date.getFullYear(),
+        data.date.getMonth(),
+        data.date.getDate(),
+        parseInt(data.startTime.split(':')[0]),
+        parseInt(data.startTime.split(':')[1])
+      ).toISOString(),
+      endTime: new Date(
+        data.date.getFullYear(),
+        data.date.getMonth(),
+        data.date.getDate(),
+        parseInt(data.endTime.split(':')[0]),
+        parseInt(data.endTime.split(':')[1])
+      ).toISOString(),
+      type: data.type,
+      location: data.location,
+      difficulty: data.difficulty,
+      status: "scheduled",
+      recurring: data.recurring,
+      recurringPattern: data.recurring ? data.recurringPattern : undefined,
+    };
+    
+    console.log("New class data:", newClass);
+    
+    // Close form
+    onClose();
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Class Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter class name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Class Type</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {classTypes.map(type => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="trainerId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trainer</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select trainer" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {trainers.map(trainer => (
-                      <SelectItem key={trainer.id} value={trainer.id}>
-                        {trainer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Capacity</FormLabel>
-                <FormControl>
-                  <Input type="number" min={1} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Start Date</FormLabel>
-                <DatePicker
-                  date={field.value}
-                  onSelect={field.onChange}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="startTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Duration (minutes)</FormLabel>
-                <FormControl>
-                  <Input type="number" min={15} step={15} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="difficulty"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Difficulty Level</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
-                    <SelectItem value="all">All Levels</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Studio 1" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {initialData ? "Edit Class" : "Create New Class"}
+          </DialogTitle>
+        </DialogHeader>
         
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter class description" 
-                  className="min-h-[120px]" 
-                  {...field} 
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter class name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="trainerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trainer</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedTrainer(value);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select trainer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {trainers.map((trainer) => (
+                          <SelectItem key={trainer.id} value={trainer.id}>
+                            {trainer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter class description" 
+                      className="resize-none" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          // Automatically set end time to be 1 hour after start time
+                          const startTime = e.target.value;
+                          if (startTime) {
+                            const [hours, minutes] = startTime.split(':').map(Number);
+                            const startDate = new Date();
+                            startDate.setHours(hours, minutes, 0);
+                            const endDate = addHours(startDate, 1);
+                            form.setValue("endTime", 
+                              `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`
+                            );
+                          }
+                        }}
+                      />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <Input type="time" {...field} />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class Type</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {classTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Difficulty Level</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">All Levels</SelectItem>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacity</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min={1} 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter class location" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex flex-col space-y-4">
+              <FormField
+                control={form.control}
+                name="recurring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Recurring Class</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Create a repeating class schedule
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          setIsRecurring(checked);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {isRecurring && (
+                <FormField
+                  control={form.control}
+                  name="recurringPattern"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recurrence Pattern</FormLabel>
+                      <Select 
+                        value={field.value} 
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select pattern" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="WEEKLY">Weekly</SelectItem>
+                          <SelectItem value="MON,WED,FRI">Monday, Wednesday, Friday</SelectItem>
+                          <SelectItem value="TUE,THU">Tuesday, Thursday</SelectItem>
+                          <SelectItem value="WEEKEND">Weekends</SelectItem>
+                          <SelectItem value="DAILY">Daily</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => form.reset()}>
-            Reset
-          </Button>
-          <Button type="submit">
-            Save Class
-          </Button>
-        </div>
-      </form>
-    </Form>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {initialData ? "Update Class" : "Create Class"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

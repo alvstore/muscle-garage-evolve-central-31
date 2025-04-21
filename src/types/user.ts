@@ -10,10 +10,9 @@ export interface User {
   avatar?: string;
   phone?: string;
   branchId?: string; // Primary branch ID
-  branch_id?: string; // For Supabase schema compatibility 
-  primaryBranchId?: string; // Alternative naming for branchId
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
+  primaryBranchId?: string; // Added for compatibility
   
   // Address fields
   address?: string;
@@ -21,7 +20,6 @@ export interface User {
   state?: string;
   zipCode?: string;
   country?: string;
-  password?: string; // Added for registration purposes
 }
 
 // Extended member type with branch and address information

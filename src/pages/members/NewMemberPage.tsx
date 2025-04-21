@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -214,7 +215,6 @@ const NewMemberPage = () => {
           
           {/* Body Measurements Section */}
           <MemberBodyMeasurements 
-            memberId="new-member" 
             currentUser={user!} 
             onSaveMeasurements={handleSaveMeasurements}
           />
