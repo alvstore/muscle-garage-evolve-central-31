@@ -111,7 +111,26 @@ export type Permission =
   | 'log_attendance'
   | 'assign_plan'
   | 'assign_workout_plan'
-  | 'assign_diet_plan';
+  | 'assign_diet_plan'
+  | 'register_member'
+  | 'view_member_profiles'
+  | 'edit_member_fitness_data'
+  | 'switch_branches'
+  | 'manage_staff'
+  | 'view_staff'
+  | 'manage_trainers'
+  | 'view_trainers'
+  | 'assign_trainers'
+  | 'view_classes'
+  | 'book_classes'
+  | 'manage_finances'
+  | 'view_finances'
+  | 'process_payments'
+  | 'access_dashboards'
+  | 'access_reports'
+  | 'access_inventory'
+  | 'access_communication'
+  | 'access_marketing';
 
 interface PermissionsContextType {
   can: (permission: Permission) => boolean;

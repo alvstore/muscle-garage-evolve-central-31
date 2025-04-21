@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +29,36 @@ const mockAttendanceData = [
     status: 'active'
   },
   // Add more mock data as needed
+];
+
+const mockAttendanceToday = [
+  {
+    memberId: "member1",
+    memberName: "John Doe",
+    checkInTime: "08:15 AM",
+    checkOutTime: "10:30 AM",
+    accessMethod: "Card",
+    branch: "Main Branch",
+    status: "Completed",
+    time: "08:15 AM",
+    type: "check-in"
+  },
+  // ... other entries with the same structure
+];
+
+const mockAttendanceYesterday = [
+  {
+    memberId: "member2",
+    memberName: "Jane Smith",
+    checkInTime: "09:30 AM",
+    checkOutTime: "11:45 AM",
+    accessMethod: "Biometric",
+    branch: "Main Branch",
+    status: "Completed",
+    time: "09:30 AM",
+    type: "check-in"
+  },
+  // ... other entries with the same structure
 ];
 
 const AttendancePage = () => {

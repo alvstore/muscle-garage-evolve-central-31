@@ -12,7 +12,7 @@ export interface User {
   branchId?: string; // Primary branch ID
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
-  primaryBranchId?: string; // Added for compatibility
+  primaryBranchId?: string; // Primary branch ID (alternative naming)
   
   // Address fields
   address?: string;

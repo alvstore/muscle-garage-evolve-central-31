@@ -13,16 +13,15 @@ export const subscribeToTable = (
   callback: (payload: any) => void, 
   event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
 ) => {
-  const channel = supabase.channel(`public:${tableName}`);
+  // Use the channel API with appropriate event
+  const channel = supabase.channel(`table:${tableName}`);
   
   return channel
-    .on(
-      'broadcast',
-      { 
-        event: event
-      },
-      callback
-    )
+    .on('postgres_changes', {
+      event: event,
+      schema: 'public',
+      table: tableName
+    }, callback)
     .subscribe();
 };
 
@@ -33,17 +32,16 @@ export const subscribeToTableWithFilter = (
   callback: (payload: any) => void,
   event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
 ) => {
-  const channel = supabase.channel(`public:${tableName}:${filterColumn}:${filterValue}`);
+  // Use the channel API with filter
+  const channel = supabase.channel(`table:${tableName}:${filterColumn}:${filterValue}`);
   
   return channel
-    .on(
-      'broadcast',
-      {
-        event: event,
-        filter: `${filterColumn}=eq.${filterValue}`,
-      },
-      callback
-    )
+    .on('postgres_changes', {
+      event: event,
+      schema: 'public',
+      table: tableName,
+      filter: `${filterColumn}=eq.${filterValue}`
+    }, callback)
     .subscribe();
 };
 
