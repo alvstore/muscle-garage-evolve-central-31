@@ -40,7 +40,7 @@ const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({
     }
   };
   return <>
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-4 px-[36px]">
         <div className="flex items-center gap-3">
           <Logo variant="white" />
           
