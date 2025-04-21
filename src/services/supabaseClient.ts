@@ -13,13 +13,11 @@ export const subscribeToTable = (
   callback: (payload: any) => void, 
   event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
 ) => {
-  // Create a channel for the table
   const channel = supabase.channel(`table:${tableName}`);
   
-  // Subscribe to changes
   channel
     .on(
-      'postgres_changes', 
+      'presence', 
       {
         event: event,
         schema: 'public',
@@ -39,13 +37,11 @@ export const subscribeToTableWithFilter = (
   callback: (payload: any) => void,
   event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
 ) => {
-  // Create a channel for the filtered table
   const channel = supabase.channel(`table:${tableName}:${filterColumn}:${filterValue}`);
   
-  // Subscribe to changes with filter
   channel
     .on(
-      'postgres_changes',
+      'presence',
       {
         event: event,
         schema: 'public',

@@ -4,10 +4,9 @@ export interface AttendanceEntry {
   memberId: string;
   memberName: string;
   checkInTime: string;
-  checkOutTime?: string | null;
   accessMethod: string;
   branch: string;
   status: string;
-  time: string;  // Required by the component
-  type: "check-in" | "check-out";  // Restricting to specific values
+  time: string;
+  type: "check-in" | "check-out";
 }

@@ -34,6 +34,11 @@ const Announcements: React.FC<AnnouncementsProps> = ({ announcements }) => {
             </div>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{announcement.content}</p>
+          <div className="mt-2">
+            <span className="text-xs text-muted-foreground">
+              By {announcement.authorName}
+            </span>
+          </div>
         </div>
       ))}
     </div>

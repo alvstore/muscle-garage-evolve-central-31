@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -21,7 +20,6 @@ interface MemberRegisterFormData {
 export default function MemberRegisterForm() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { currentBranch } = useBranch();
 
   const { register, handleSubmit, formState: { errors } } = useForm<MemberRegisterFormData>();
@@ -32,7 +30,7 @@ export default function MemberRegisterForm() {
       await createProfile({
         ...data,
         role: 'member',
-        branchId: currentBranch?.id // Use branchId instead of primaryBranchId
+        branch_id: currentBranch?.id
       });
       toast.success('Member registered successfully');
       navigate('/members');
