@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,13 +68,43 @@ const RealTimeDashboardPage = () => {
   };
 
   // Create mock attendance data for the tracker
-  const attendanceData = todayAttendance.map(member => ({
-    memberId: member.id,
-    memberName: member.name,
-    time: new Date(member.checkInTime).toISOString(),
-    type: 'check-in',
-    location: 'Main Entrance',
-    device: 'Hikvision Terminal',
+  const mockAttendanceData: AttendanceEntry[] = [
+    {
+      memberId: "1",
+      memberName: "John Doe",
+      time: new Date().toISOString(),
+      type: "check-in",
+      location: "Main Entrance",
+      device: "RFID Scanner",
+      status: "Success"
+    },
+    {
+      memberId: "2",
+      memberName: "Jane Smith",
+      time: new Date(Date.now() - 15 * 60000).toISOString(),
+      type: "check-in",
+      location: "Main Entrance",
+      device: "Mobile App",
+      status: "Success"
+    },
+    {
+      memberId: "3",
+      memberName: "Mike Johnson",
+      time: new Date(Date.now() - 30 * 60000).toISOString(),
+      type: "check-out",
+      location: "Exit Gate",
+      device: "RFID Scanner",
+      status: "Success"
+    }
+  ];
+
+  const attendanceData = mockAttendanceData.map(member => ({
+    memberId: member.memberId,
+    memberName: member.memberName,
+    time: new Date(member.time).toISOString(),
+    type: member.type,
+    location: member.location,
+    device: member.device,
     status: member.status
   }));
 

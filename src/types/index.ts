@@ -23,6 +23,7 @@ export interface Member extends User {
   state?: string;
   zipCode?: string;
   country?: string;
+  notes?: string;
 }
 
 export interface Trainer extends User {
@@ -80,6 +81,8 @@ export interface DietPlan {
   createdAt: string;
   updatedAt: string;
   mealPlans: MealPlan[];
+  notes?: string;
+  isCustom: boolean;
 }
 
 export interface MealPlan {
@@ -87,10 +90,11 @@ export interface MealPlan {
   name: string;
   time: string;
   items: string[];
-  macros?: {
+  macros: {
     protein: number;
     carbs: number;
     fats: number;
+    calories: number;
   };
 }
 
@@ -101,12 +105,21 @@ export interface WorkoutPlan {
   createdAt: string;
   updatedAt: string;
   workoutDays: WorkoutDay[];
+  days?: WorkoutDay[];
+  isCustom: boolean;
+  isCommon?: boolean;
+  notes?: string;
+  name?: string;
+  description?: string;
+  createdBy?: string;
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
+  dayLabel?: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 export interface Exercise {
@@ -117,6 +130,7 @@ export interface Exercise {
   weight?: number;
   rest: number;
   notes?: string;
+  muscleGroupTag?: string;
 }
 
 export interface ProgressRecord {

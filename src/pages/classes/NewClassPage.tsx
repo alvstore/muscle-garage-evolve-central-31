@@ -48,7 +48,7 @@ const NewClassPage = () => {
           <CardContent>
             <ClassForm 
               initialData={{} as GymClass}
-              onSave={handleSubmit} 
+              handleSubmit={handleSubmit} 
               isLoading={loading} 
               onCancel={() => navigate("/classes")}
             />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,16 +25,12 @@ const WorkoutPlansPage = () => {
   const [memberPlans, setMemberPlans] = useState<WorkoutPlan[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // For staff/admin/trainer, show the full workout plan manager
-  // For members, show only their assigned plans
   const isStaffOrTrainer = userRole === 'admin' || userRole === 'staff' || userRole === 'trainer';
   
   useEffect(() => {
-    // Simulate API call to fetch workout plans
     setLoading(true);
     
     setTimeout(() => {
-      // Mock data for general plans
       const mockGeneralPlans: WorkoutPlan[] = [
         {
           id: 'plan-1',
@@ -51,8 +46,8 @@ const WorkoutPlansPage = () => {
               name: 'Day 1 - Upper Body',
               dayLabel: 'Monday',
               exercises: [
-                { id: 'ex-1', name: 'Push Ups', sets: 3, reps: 10 },
-                { id: 'ex-2', name: 'Dumbbell Rows', sets: 3, reps: 12 }
+                { id: 'ex-1', name: 'Push Ups', sets: 3, reps: 10, rest: 60 },
+                { id: 'ex-2', name: 'Dumbbell Rows', sets: 3, reps: 12, rest: 60 }
               ]
             },
             {
@@ -60,8 +55,8 @@ const WorkoutPlansPage = () => {
               name: 'Day 2 - Lower Body',
               dayLabel: 'Wednesday',
               exercises: [
-                { id: 'ex-3', name: 'Squats', sets: 3, reps: 15 },
-                { id: 'ex-4', name: 'Lunges', sets: 3, reps: 10 }
+                { id: 'ex-3', name: 'Squats', sets: 3, reps: 15, rest: 60 },
+                { id: 'ex-4', name: 'Lunges', sets: 3, reps: 10, rest: 60 }
               ]
             }
           ],
@@ -82,8 +77,8 @@ const WorkoutPlansPage = () => {
               name: 'Push Day',
               dayLabel: 'Monday',
               exercises: [
-                { id: 'ex-1', name: 'Bench Press', sets: 4, reps: 8 },
-                { id: 'ex-2', name: 'Shoulder Press', sets: 3, reps: 10 }
+                { id: 'ex-1', name: 'Bench Press', sets: 4, reps: 8, rest: 90 },
+                { id: 'ex-2', name: 'Shoulder Press', sets: 3, reps: 10, rest: 90 }
               ]
             },
             {
@@ -91,8 +86,8 @@ const WorkoutPlansPage = () => {
               name: 'Pull Day',
               dayLabel: 'Wednesday',
               exercises: [
-                { id: 'ex-3', name: 'Deadlifts', sets: 4, reps: 6 },
-                { id: 'ex-4', name: 'Pull Ups', sets: 3, reps: 8 }
+                { id: 'ex-3', name: 'Deadlifts', sets: 4, reps: 6, rest: 120 },
+                { id: 'ex-4', name: 'Pull Ups', sets: 3, reps: 8, rest: 90 }
               ]
             },
             {
@@ -100,8 +95,8 @@ const WorkoutPlansPage = () => {
               name: 'Leg Day',
               dayLabel: 'Friday',
               exercises: [
-                { id: 'ex-5', name: 'Squats', sets: 4, reps: 8 },
-                { id: 'ex-6', name: 'Leg Press', sets: 3, reps: 12 }
+                { id: 'ex-5', name: 'Squats', sets: 4, reps: 8, rest: 120 },
+                { id: 'ex-6', name: 'Leg Press', sets: 3, reps: 12, rest: 90 }
               ]
             }
           ],
@@ -110,7 +105,6 @@ const WorkoutPlansPage = () => {
         }
       ];
       
-      // Mock data for member specific plans
       const mockMemberPlans: WorkoutPlan[] = [
         {
           id: 'custom-plan-1',
@@ -126,8 +120,8 @@ const WorkoutPlansPage = () => {
               name: 'Day 1 - Chest & Triceps',
               dayLabel: 'Monday',
               exercises: [
-                { id: 'ex-1', name: 'Incline Bench Press', sets: 4, reps: 10 },
-                { id: 'ex-2', name: 'Tricep Dips', sets: 3, reps: 12 }
+                { id: 'ex-1', name: 'Incline Bench Press', sets: 4, reps: 10, rest: 90 },
+                { id: 'ex-2', name: 'Tricep Dips', sets: 3, reps: 12, rest: 60 }
               ]
             },
             {
@@ -135,8 +129,8 @@ const WorkoutPlansPage = () => {
               name: 'Day 2 - Back & Biceps',
               dayLabel: 'Wednesday',
               exercises: [
-                { id: 'ex-3', name: 'Barbell Rows', sets: 4, reps: 10 },
-                { id: 'ex-4', name: 'Hammer Curls', sets: 3, reps: 12 }
+                { id: 'ex-3', name: 'Barbell Rows', sets: 4, reps: 10, rest: 90 },
+                { id: 'ex-4', name: 'Hammer Curls', sets: 3, reps: 12, rest: 60 }
               ]
             }
           ],
@@ -149,9 +143,7 @@ const WorkoutPlansPage = () => {
       setMemberPlans(mockMemberPlans);
       setLoading(false);
       
-      // If memberId is provided in the URL, fetch and select that member
       if (memberId) {
-        // Simulate fetching member by ID
         setTimeout(() => {
           const mockMember: Member = {
             id: memberId,
@@ -168,22 +160,16 @@ const WorkoutPlansPage = () => {
   
   const handleSaveWorkoutPlan = (plan: WorkoutPlan) => {
     if (plan.isCustom && selectedMember) {
-      // Save as a member-specific plan
       if (plan.id && memberPlans.some(p => p.id === plan.id)) {
-        // Update existing plan
         setMemberPlans(prev => prev.map(p => p.id === plan.id ? plan : p));
       } else {
-        // Add new plan
         setMemberPlans(prev => [...prev, { ...plan, id: `custom-plan-${Date.now()}` }]);
       }
       toast.success(`Custom workout plan saved for ${selectedMember.name}`);
     } else {
-      // Save as a general plan
       if (plan.id && generalPlans.some(p => p.id === plan.id)) {
-        // Update existing plan
         setGeneralPlans(prev => prev.map(p => p.id === plan.id ? plan : p));
       } else {
-        // Add new plan
         setGeneralPlans(prev => [...prev, { ...plan, id: `plan-${Date.now()}` }]);
       }
       toast.success("General workout plan saved");
