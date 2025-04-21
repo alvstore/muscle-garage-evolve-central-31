@@ -1,231 +1,245 @@
 
 import React, { useState } from 'react';
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Edit, Trash, Mail, Phone } from "lucide-react";
-import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Mail,
+  Phone,
+  User,
+  Building2,
+  Edit,
+  Trash,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 
-interface Staff {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  department: string;
-  avatar: string;
-  status: 'active' | 'inactive';
-  branchId: string;
-}
+// Mock data for staff members
+const mockStaffMembers = [
+  {
+    id: 'staff-1',
+    name: 'John Smith',
+    email: 'john.smith@example.com',
+    phone: '+1 (555) 123-4567',
+    department: 'Front Desk',
+    position: 'Receptionist',
+    branch: 'Main Branch',
+    isActive: true,
+    avatar: null
+  },
+  {
+    id: 'staff-2',
+    name: 'Emily Johnson',
+    email: 'emily.johnson@example.com',
+    phone: '+1 (555) 987-6543',
+    department: 'Administration',
+    position: 'Office Manager',
+    branch: 'Downtown',
+    isActive: true,
+    avatar: null
+  },
+  {
+    id: 'staff-3',
+    name: 'Michael Davis',
+    email: 'michael.davis@example.com',
+    phone: '+1 (555) 456-7890',
+    department: 'Maintenance',
+    position: 'Facilities Manager',
+    branch: 'Main Branch',
+    isActive: true,
+    avatar: null
+  },
+  {
+    id: 'staff-4',
+    name: 'Sarah Williams',
+    email: 'sarah.williams@example.com',
+    phone: '+1 (555) 789-0123',
+    department: 'Front Desk',
+    position: 'Receptionist',
+    branch: 'Uptown',
+    isActive: false,
+    avatar: null
+  }
+];
 
 const StaffListPage = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
-  // Mock data for staff - will be replaced with Supabase data
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      phone: '(555) 123-4567',
-      role: 'Manager',
-      department: 'Operations',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch1'
-    },
-    {
-      id: '2',
-      name: 'Emily Davis',
-      email: 'emily.davis@example.com',
-      phone: '(555) 987-6543',
-      role: 'Sales Representative',
-      department: 'Sales',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch1'
-    },
-    {
-      id: '3',
-      name: 'Michael Johnson',
-      email: 'michael.j@example.com',
-      phone: '(555) 456-7890',
-      role: 'Front Desk',
-      department: 'Member Services',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch2'
-    },
-    {
-      id: '4',
-      name: 'Sarah Williams',
-      email: 'sarah.w@example.com',
-      phone: '(555) 234-5678',
-      role: 'Cleaner',
-      department: 'Maintenance',
-      avatar: '',
-      status: 'inactive',
-      branchId: 'branch1'
-    },
-    {
-      id: '5',
-      name: 'Robert Brown',
-      email: 'robert.b@example.com',
-      phone: '(555) 345-6789',
-      role: 'Assistant Manager',
-      department: 'Operations',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch3'
-    },
-  ]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false);
 
-  const handleCreateStaff = () => {
-    setShowCreateDialog(true);
-  };
+  // Filter staff members based on search term
+  const filteredStaff = mockStaffMembers.filter(staff => 
+    staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    staff.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    staff.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    staff.branch.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleEditStaff = (id: string) => {
-    toast.info(`Edit staff member with ID: ${id}`);
-  };
-
-  const handleDeleteStaff = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this staff member?')) {
-      setStaffMembers(staffMembers.filter(staff => staff.id !== id));
-      toast.success('Staff member deleted successfully');
-    }
-  };
-
+  // Function to get avatar initials
   const getInitials = (name: string) => {
     return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
+      .split(' ')
+      .map(n => n[0])
+      .join('')
       .toUpperCase();
   };
 
   return (
     <Container>
       <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Staff Management</h1>
-            <p className="text-muted-foreground">Manage staff members across all branches</p>
+            <h1 className="text-2xl font-bold mb-1">Staff Management</h1>
+            <p className="text-muted-foreground">
+              Manage your gym staff members and their roles
+            </p>
           </div>
-          <Button onClick={handleCreateStaff}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Staff Member
-          </Button>
+
+          <div className="flex flex-wrap gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search staff..."
+                className="pl-8 w-[200px] md:w-[260px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <Dialog open={isAddStaffDialogOpen} onOpenChange={setIsAddStaffDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add Staff
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Staff Member</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details to add a new staff member.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="p-4 text-center text-muted-foreground">
+                  Staff form will be implemented here.
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Staff Members</CardTitle>
-            <CardDescription>
-              View and manage all staff members
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Role</TableHead>
-                  <TableHead className="hidden md:table-cell">Department</TableHead>
-                  <TableHead className="hidden md:table-cell">Contact</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staffMembers.map((staff) => (
-                  <TableRow key={staff.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={staff.avatar} alt={staff.name} />
-                          <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{staff.name}</div>
-                          <div className="text-sm text-muted-foreground md:hidden">
-                            {staff.role}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {staff.role}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {staff.department}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex flex-col text-sm">
-                        <div className="flex items-center">
-                          <Mail className="mr-1 h-3 w-3" />
-                          {staff.email}
-                        </div>
-                        <div className="flex items-center mt-1">
-                          <Phone className="mr-1 h-3 w-3" />
-                          {staff.phone}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={staff.status === 'active' ? 'default' : 'outline'}>
-                        {staff.status === 'active' ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEditStaff(staff.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteStaff(staff.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredStaff.map(staff => (
+            <Card key={staff.id} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={staff.avatar || undefined} alt={staff.name} />
+                      <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-lg">{staff.name}</CardTitle>
+                      <CardDescription>{staff.position}</CardDescription>
+                    </div>
+                  </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="flex items-center gap-2">
+                        <Edit className="h-4 w-4" />
+                        Edit Staff
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center gap-2">
+                        <Trash className="h-4 w-4" />
+                        Delete Staff
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center gap-2">
+                        {staff.isActive ? (
+                          <>
+                            <XCircle className="h-4 w-4" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            Activate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center text-sm">
+                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <a href={`mailto:${staff.email}`} className="hover:underline">{staff.email}</a>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <a href={`tel:${staff.phone}`} className="hover:underline">{staff.phone}</a>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{staff.department}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{staff.branch}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex justify-between items-center">
+                  <Badge variant={staff.isActive ? "default" : "destructive"}>
+                    {staff.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                  <Button variant="outline" size="sm">View Details</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          
+          {filteredStaff.length === 0 && (
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 p-8 text-center text-muted-foreground">
+              <p className="text-lg font-medium">No staff members found</p>
+              <p className="text-sm">Try adjusting your search or add a new staff member.</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => setIsAddStaffDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Staff
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Create Staff Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add New Staff Member</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 text-center">
-            <p>Staff creation form will be implemented with Supabase integration</p>
-            <Button
-              className="mt-4"
-              onClick={() => {
-                setShowCreateDialog(false);
-                toast.success('Form will be implemented with Supabase integration');
-              }}
-            >
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 };

@@ -1,288 +1,392 @@
 
-import { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Activity, Clock, DollarSign, RefreshCw, Users } from "lucide-react";
-import AttendanceTracker from "@/components/attendance/AttendanceTracker";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, CheckCircle, Clock, UserRound, Users, Bell, ArrowUpDown } from 'lucide-react';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AttendanceEntry } from '@/types';
+import { useBranch } from '@/hooks/use-branch';
+import { supabase, subscribeToTable } from '@/services/supabaseClient';
 
 const RealTimeDashboardPage = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
+  const [activeTab, setActiveTab] = useState('activity');
+  const [branchFilter, setBranchFilter] = useState('all');
   
-  useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Mock data for real-time attendance - will be replaced with Supabase data
-  const todayAttendance = [
+  // Recent activity entries
+  const [activityEntries, setActivityEntries] = useState<AttendanceEntry[]>([
     {
-      id: "mem1",
-      name: "John Doe",
-      membershipPlan: "Premium",
-      checkInTime: new Date(new Date().setHours(8, 30)).toISOString(),
-      status: "active",
-      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString() }
+      memberId: 'member-1',
+      memberName: 'John Doe',
+      time: new Date(Date.now() - 15 * 60000).toISOString(),
+      type: 'check-in',
+      location: 'Main Entrance',
+      device: 'RFID Scanner 01',
+      status: 'success'
     },
     {
-      id: "mem2",
-      name: "Jane Smith",
-      membershipPlan: "Standard",
-      checkInTime: new Date(new Date().setHours(9, 15)).toISOString(),
-      status: "expiring",
-      expiryDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()
+      memberId: 'member-2',
+      memberName: 'Jane Smith',
+      time: new Date(Date.now() - 30 * 60000).toISOString(),
+      type: 'check-out',
+      location: 'Side Exit',
+      device: 'RFID Scanner 02',
+      status: 'success'
     },
     {
-      id: "mem3",
-      name: "Alice Johnson",
-      membershipPlan: "Basic",
-      checkInTime: new Date(new Date().setHours(10, 0)).toISOString(),
-      status: "active"
-    },
-    {
-      id: "mem4",
-      name: "Robert Williams",
-      membershipPlan: "Premium",
-      checkInTime: new Date(new Date().setHours(11, 45)).toISOString(),
-      status: "overdue",
-      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString() }
+      memberId: 'member-3',
+      memberName: 'Robert Johnson',
+      time: new Date(Date.now() - 45 * 60000).toISOString(),
+      type: 'check-in',
+      location: 'Main Entrance',
+      device: 'Manual Entry',
+      status: 'success'
     }
-  ];
-
-  const refreshData = () => {
-    setIsLoading(true);
-    toast.info("Refreshing real-time data...");
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Real-time data refreshed successfully!");
-    }, 1000);
+  ]);
+  
+  // Alert data
+  const [alerts, setAlerts] = useState([
+    {
+      id: 'alert-1',
+      type: 'attendance_failure',
+      memberId: 'member-4',
+      memberName: 'Alex Williams',
+      time: new Date(Date.now() - 20 * 60000).toISOString(),
+      message: 'Failed to check in: Card not recognized',
+      status: 'unresolved'
+    },
+    {
+      id: 'alert-2',
+      type: 'payment_due',
+      memberId: 'member-5',
+      memberName: 'Sarah Johnson',
+      time: new Date(Date.now() - 60 * 60000).toISOString(),
+      message: 'Membership payment due in 2 days',
+      status: 'unresolved'
+    },
+    {
+      id: 'alert-3',
+      type: 'membership_expired',
+      memberId: 'member-6',
+      memberName: 'Michael Brown',
+      time: new Date(Date.now() - 3 * 3600000).toISOString(),
+      message: 'Membership expired yesterday',
+      status: 'unresolved'
+    }
+  ]);
+  
+  // Currently active members
+  const [activeMembers, setActiveMembers] = useState([
+    {
+      id: 'member-1',
+      name: 'John Doe',
+      checkInTime: new Date(Date.now() - 75 * 60000).toISOString(),
+      location: 'Weights Area',
+      avatar: null,
+      membershipStatus: 'active',
+      paymentDue: false
+    },
+    {
+      id: 'member-3',
+      name: 'Robert Johnson',
+      checkInTime: new Date(Date.now() - 45 * 60000).toISOString(),
+      location: 'Cardio Area',
+      avatar: null,
+      membershipStatus: 'active',
+      paymentDue: false
+    },
+    {
+      id: 'member-7',
+      name: 'Emily Davis',
+      checkInTime: new Date(Date.now() - 30 * 60000).toISOString(),
+      location: 'Yoga Studio',
+      avatar: null,
+      membershipStatus: 'active',
+      paymentDue: true
+    },
+    {
+      id: 'member-8',
+      name: 'David Miller',
+      checkInTime: new Date(Date.now() - 15 * 60000).toISOString(),
+      location: 'Weights Area',
+      avatar: null,
+      membershipStatus: 'expiring',
+      paymentDue: false
+    }
+  ]);
+  
+  // Mock function to resolve an alert
+  const handleResolveAlert = (alertId: string) => {
+    setAlerts(alerts.map(alert => 
+      alert.id === alertId ? { ...alert, status: 'resolved' } : alert
+    ));
   };
-
-  // Create mock attendance data for the tracker
-  const attendanceData = todayAttendance.map(member => ({
-    memberId: member.id,
-    memberName: member.name,
-    time: new Date(member.checkInTime).toISOString(),
-    type: 'check-in',
-    location: 'Main Entrance',
-    device: 'Hikvision Terminal',
-    status: member.status
-  }));
-
+  
+  // Format time function
+  const formatTime = (timeStr: string) => {
+    const date = new Date(timeStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    
+    const hours = date.getHours();
+    const mins = date.getMinutes();
+    return `${hours}:${mins < 10 ? '0' + mins : mins}`;
+  };
+  
+  // Function to get the initials from a name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+  
+  // Subscribe to real-time updates
+  useEffect(() => {
+    // This would use the Supabase real-time subscription in a real application
+    console.log("Setting up real-time subscriptions");
+    
+    // Example of how to set up a Supabase subscription
+    const subscription = subscribeToTable('attendance', (payload) => {
+      console.log('New attendance record:', payload);
+      // Handle new attendance entries here
+    });
+    
+    return () => {
+      // Clean up subscription
+      subscription.unsubscribe();
+    };
+  }, []);
+  
   return (
     <Container>
       <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Real-Time Dashboard</h1>
-            <p className="text-muted-foreground">Live tracking of gym activity and member check-ins</p>
+            <h1 className="text-3xl font-bold">Real-Time Dashboard</h1>
+            <p className="text-muted-foreground">
+              Monitor live activity and alerts
+            </p>
           </div>
-          <Button onClick={refreshData} disabled={isLoading}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+          
+          <div className="flex flex-wrap gap-2">
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select branch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Branches</SelectItem>
+                <SelectItem value="main">Main Branch</SelectItem>
+                <SelectItem value="downtown">Downtown</SelectItem>
+                <SelectItem value="uptown">Uptown</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button variant="secondary" className="flex gap-1 items-center">
+              <ArrowUpDown className="h-4 w-4" />
+              <span>Export Data</span>
+            </Button>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Current Active Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Current Check-ins</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.length}
-              </div>
-              <p className="text-xs text-muted-foreground">members checked in today</p>
+              <div className="text-2xl font-bold">{activeMembers.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Members currently in the facility
+              </p>
             </CardContent>
           </Card>
-
+          
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Real-time Occupancy</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Today's Traffic</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : Math.round(todayAttendance.length / 2)}
-              </div>
-              <p className="text-xs text-muted-foreground">currently in the gym</p>
+              <div className="text-2xl font-bold">158</div>
+              <p className="text-xs text-muted-foreground">
+                Total check-ins today
+              </p>
             </CardContent>
           </Card>
-
+          
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Alerts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.filter(m => m.status === "expiring").length}
-              </div>
-              <p className="text-xs text-muted-foreground">memberships in next 7 days</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.filter(m => m.status === "overdue").length}
-              </div>
-              <p className="text-xs text-muted-foreground">overdue payments</p>
+              <div className="text-2xl font-bold">{alerts.filter(a => a.status === 'unresolved').length}</div>
+              <p className="text-xs text-muted-foreground">
+                Unresolved issues requiring attention
+              </p>
             </CardContent>
           </Card>
         </div>
-
-        <Tabs defaultValue="attendance" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="attendance">Live Attendance</TabsTrigger>
-            <TabsTrigger value="payments">Payment Alerts</TabsTrigger>
-            <TabsTrigger value="expiring">Expiring Memberships</TabsTrigger>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="activity" className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              Recent Activity
+            </TabsTrigger>
+            <TabsTrigger value="members" className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              Active Members
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-1">
+              <AlertTriangle className="h-4 w-4" />
+              Alerts
+            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="attendance" className="space-y-4">
+          
+          <TabsContent value="activity">
             <Card>
               <CardHeader>
-                <CardTitle>Real-Time Check-ins</CardTitle>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Real-time check-ins and check-outs</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="h-96 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-                  </div>
-                ) : (
-                  <AttendanceTracker data={attendanceData} />
-                )}
+                <div className="space-y-5">
+                  {activityEntries.map((entry, index) => (
+                    <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                      <Avatar>
+                        <AvatarImage src={`/avatars/${entry.memberId}.png`} alt={entry.memberName} />
+                        <AvatarFallback>{getInitials(entry.memberName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{entry.memberName}</h4>
+                          <span className="text-xs text-muted-foreground">{formatTime(entry.time)}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          {entry.type === 'check-in' ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Check-in
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              Check-out
+                            </Badge>
+                          )}
+                          <span className="ml-2">via {entry.device} at {entry.location}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="payments" className="space-y-4">
+          
+          <TabsContent value="members">
             <Card>
               <CardHeader>
-                <CardTitle>Payment Alerts</CardTitle>
+                <CardTitle>Currently Active Members</CardTitle>
+                <CardDescription>Members checked in right now</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Amount Due</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {todayAttendance
-                        .filter(member => member.upcomingPayment)
-                        .map(member => (
-                          <TableRow key={member.id}>
-                            <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell>{member.membershipPlan}</TableCell>
-                            <TableCell>
-                              {member.upcomingPayment ? 
-                                `$${(member.upcomingPayment.amount / 100).toFixed(2)}` : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              {member.upcomingPayment ? 
-                                format(new Date(member.upcomingPayment.dueDate), 'MMM dd, yyyy') : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={member.status === "overdue" ? "destructive" : "default"}>
-                                {member.status === "overdue" ? "Overdue" : "Upcoming"}
+                <div className="space-y-5">
+                  {activeMembers.map((member, index) => (
+                    <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                      <Avatar>
+                        <AvatarImage src={member.avatar || undefined} alt={member.name} />
+                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{member.name}</h4>
+                          <span className="text-xs text-muted-foreground">
+                            Since {formatTime(member.checkInTime)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground">
+                            {member.location}
+                          </p>
+                          <div className="flex gap-1">
+                            {member.membershipStatus === 'expiring' && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                Expiring soon
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toast.info(`Payment reminder sent to ${member.name}`)}
-                              >
-                                Send Reminder
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                )}
+                            )}
+                            {member.paymentDue && (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                Payment due
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="expiring" className="space-y-4">
+          
+          <TabsContent value="alerts">
             <Card>
               <CardHeader>
-                <CardTitle>Expiring Memberships</CardTitle>
+                <CardTitle>System Alerts</CardTitle>
+                <CardDescription>Issues that need attention</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Expiry Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {todayAttendance
-                        .filter(member => member.status === "expiring")
-                        .map(member => (
-                          <TableRow key={member.id}>
-                            <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell>{member.membershipPlan}</TableCell>
-                            <TableCell>
-                              {member.expiryDate ? 
-                                format(new Date(member.expiryDate), 'MMM dd, yyyy') : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">Expiring Soon</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toast.info(`Renewal reminder sent to ${member.name}`)}
-                              >
-                                Send Renewal
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                )}
+                <div className="space-y-5">
+                  {alerts.filter(alert => alert.status === 'unresolved').map((alert, index) => (
+                    <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
+                      <div className={`p-2 rounded-full ${
+                        alert.type === 'attendance_failure' ? 'bg-red-100 text-red-600' :
+                        alert.type === 'payment_due' ? 'bg-amber-100 text-amber-600' :
+                        'bg-blue-100 text-blue-600'
+                      }`}>
+                        <AlertTriangle className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">
+                            {alert.memberName} {alert.type === 'attendance_failure' ? 'Access Issue' : 
+                              alert.type === 'payment_due' ? 'Payment Due' : 'Membership Expired'}
+                          </h4>
+                          <span className="text-xs text-muted-foreground">{formatTime(alert.time)}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {alert.message}
+                        </p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleResolveAlert(alert.id)}
+                        className="shrink-0"
+                      >
+                        Resolve
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  {alerts.filter(alert => alert.status === 'unresolved').length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
+                      <h3 className="text-lg font-medium text-center">All clear!</h3>
+                      <p className="text-sm text-muted-foreground text-center">
+                        No unresolved alerts at the moment
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

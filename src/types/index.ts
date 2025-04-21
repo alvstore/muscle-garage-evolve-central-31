@@ -1,3 +1,4 @@
+
 export type UserRole = "admin" | "staff" | "trainer" | "member";
 
 export interface User {
@@ -80,6 +81,8 @@ export interface DietPlan {
   createdAt: string;
   updatedAt: string;
   mealPlans: MealPlan[];
+  notes?: string;
+  isCustom?: boolean;
 }
 
 export interface MealPlan {
@@ -91,6 +94,7 @@ export interface MealPlan {
     protein: number;
     carbs: number;
     fats: number;
+    calories?: number;
   };
 }
 
@@ -101,12 +105,15 @@ export interface WorkoutPlan {
   createdAt: string;
   updatedAt: string;
   workoutDays: WorkoutDay[];
+  notes?: string;
+  isCustom?: boolean;
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 export interface Exercise {
@@ -117,6 +124,7 @@ export interface Exercise {
   weight?: number;
   rest: number;
   notes?: string;
+  muscleGroupTag?: string;
 }
 
 export interface ProgressRecord {
@@ -232,4 +240,48 @@ export interface DashboardSummary {
     expired: number;
   };
   recentNotifications: Notification[];
+}
+
+export interface AttendanceEntry {
+  memberId: string;
+  memberName: string;
+  time: string;
+  type: "check-in" | "check-out";
+  location: string;
+  device: string;
+  status: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  isActive: boolean;
+}
+
+export interface IncomeCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  isActive: boolean;
+}
+
+export interface CurrencySettings {
+  code: string;
+  symbol: string;
+  position: 'before' | 'after';
+  decimalPlaces: number;
+}
+
+export interface PaymentGateway {
+  id: string;
+  name: string;
+  isActive: boolean;
+  apiKey?: string;
+  secretKey?: string;
+  merchantId?: string;
+  webhookUrl?: string;
+  testMode: boolean;
 }

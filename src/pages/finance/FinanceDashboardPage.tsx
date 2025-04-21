@@ -1,312 +1,208 @@
 
-import { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  Calendar, DollarSign, TrendingUp, TrendingDown, 
-  PieChart, BarChart, ArrowUpRight, ArrowDownRight 
-} from "lucide-react";
-import TransactionList from "@/components/finance/TransactionList";
-import RevenueChart from "@/components/dashboard/RevenueChart";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select";
-import { format } from "date-fns";
+import React, { useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  BarChart2,
+  ArrowUp,
+  ArrowDown,
+  CreditCard,
+  Wallet,
+  CalendarDays,
+  CalendarClock,
+  Info,
+} from 'lucide-react';
+import RevenueChart from '@/components/dashboard/RevenueChart';
+import IncomeBreakdown from '@/components/finance/IncomeBreakdown';
+import ExpenseBreakdown from '@/components/finance/ExpenseBreakdown';
+
+// Mock data for demonstration
+const revenueData = [
+  { month: 'Jan', revenue: 12500, expenses: 8000, profit: 4500 },
+  { month: 'Feb', revenue: 14200, expenses: 7800, profit: 6400 },
+  { month: 'Mar', revenue: 13800, expenses: 8200, profit: 5600 },
+  { month: 'Apr', revenue: 15600, expenses: 8500, profit: 7100 },
+  { month: 'May', revenue: 16800, expenses: 9200, profit: 7600 },
+  { month: 'Jun', revenue: 18200, expenses: 10000, profit: 8200 },
+];
+
+const incomeCategoriesData = [
+  { category: 'Memberships', amount: 8500, color: '#8b5cf6' },
+  { category: 'Personal Training', amount: 5200, color: '#0ea5e9' },
+  { category: 'Classes', amount: 2800, color: '#10b981' },
+  { category: 'Store Sales', amount: 1600, color: '#f97316' },
+  { category: 'Other', amount: 700, color: '#ef4444' },
+];
+
+const expenseCategoriesData = [
+  { category: 'Salaries', amount: 5200, color: '#ef4444' },
+  { category: 'Rent', amount: 2000, color: '#f97316' },
+  { category: 'Equipment', amount: 1200, color: '#f59e0b' },
+  { category: 'Utilities', amount: 800, color: '#0ea5e9' },
+  { category: 'Marketing', amount: 600, color: '#8b5cf6' },
+  { category: 'Other', amount: 200, color: '#10b981' },
+];
 
 const FinanceDashboardPage = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("month");
-  
-  useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Mock financial data
-  const financialSummary = {
-    today: {
-      income: 1250,
-      expense: 350,
-      profit: 900
-    },
-    week: {
-      income: 8750,
-      expense: 3200,
-      profit: 5550
-    },
-    month: {
-      income: 38500,
-      expense: 15200,
-      profit: 23300
-    },
-    year: {
-      income: 462000,
-      expense: 182500,
-      profit: 279500
-    }
-  };
-
-  // Mock data for revenue chart
-  const revenueData = [
-    { month: "Jan", revenue: 35000, expenses: 12000, profit: 23000 },
-    { month: "Feb", revenue: 38000, expenses: 14000, profit: 24000 },
-    { month: "Mar", revenue: 32000, expenses: 13500, profit: 18500 },
-    { month: "Apr", revenue: 40000, expenses: 15000, profit: 25000 },
-    { month: "May", revenue: 38500, expenses: 15200, profit: 23300 },
-    { month: "Jun", revenue: 42000, expenses: 16500, profit: 25500 },
-  ];
-
-  const currentPeriodData = financialSummary[timeRange as keyof typeof financialSummary];
-  
-  // Mock data for income sources breakdown
-  const incomeBreakdown = [
-    { name: "Memberships", value: 65, color: "#4caf50" },
-    { name: "Personal Training", value: 20, color: "#2196f3" },
-    { name: "Classes", value: 10, color: "#ff9800" },
-    { name: "Store Sales", value: 5, color: "#9c27b0" },
-  ];
-  
-  // Mock data for expense categories breakdown
-  const expenseBreakdown = [
-    { name: "Salaries", value: 45, color: "#f44336" },
-    { name: "Rent", value: 25, color: "#ff9800" },
-    { name: "Equipment", value: 15, color: "#2196f3" },
-    { name: "Utilities", value: 10, color: "#9c27b0" },
-    { name: "Marketing", value: 5, color: "#4caf50" },
-  ];
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <Container>
       <div className="py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-          <h1 className="text-2xl font-bold">Financial Dashboard</h1>
-          <div className="mt-3 sm:mt-0">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold">Financial Dashboard</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="flex items-center gap-1">
+              <CalendarDays className="h-4 w-4" />
+              <span>This Month</span>
+            </Button>
+            <Button variant="outline" className="flex items-center gap-1">
+              <CalendarClock className="h-4 w-4" />
+              <span>Select Period</span>
+            </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.income.toLocaleString()}`}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>+12% from last period</span>
+              <div className="text-2xl font-bold">$18,200</div>
+              <div className="flex items-center text-xs text-green-500 mt-1">
+                <ArrowUp className="mr-1 h-3 w-3" />
+                <span>+12.5% from last month</span>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
-              <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.expense.toLocaleString()}`}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                <span>+5% from last period</span>
+              <div className="text-2xl font-bold">$10,000</div>
+              <div className="flex items-center text-xs text-red-500 mt-1">
+                <ArrowUp className="mr-1 h-3 w-3" />
+                <span>+8.7% from last month</span>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.profit.toLocaleString()}`}
+              <div className="text-2xl font-bold">$8,200</div>
+              <div className="flex items-center text-xs text-green-500 mt-1">
+                <ArrowUp className="mr-1 h-3 w-3" />
+                <span>+15.2% from last month</span>
               </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$3,450</div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>+8% from last period</span>
+                <Info className="mr-1 h-3 w-3" />
+                <span>12 invoices pending</span>
               </div>
             </CardContent>
           </Card>
         </div>
-        
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="income">Income</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" className="flex items-center">
+              <BarChart2 className="mr-2 h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="income" className="flex items-center">
+              <ArrowUp className="mr-2 h-4 w-4" />
+              Income
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="flex items-center">
+              <ArrowDown className="mr-2 h-4 w-4" />
+              Expenses
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="flex items-center">
+              <CreditCard className="mr-2 h-4 w-4" />
+              Invoices
+            </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="lg:col-span-5">
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
                 <CardHeader>
-                  <CardTitle>Revenue vs Expenses</CardTitle>
+                  <CardTitle>Revenue Overview</CardTitle>
+                  <CardDescription>Monthly revenue breakdown</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-                  ) : (
-                    <RevenueChart data={revenueData} />
-                  )}
+                <CardContent className="h-[350px] pl-2">
+                  <RevenueChart data={revenueData} />
                 </CardContent>
               </Card>
               
-              <Card className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <IncomeBreakdown data={incomeCategoriesData} />
+                <ExpenseBreakdown data={expenseCategoriesData} />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="income">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
                 <CardHeader>
-                  <CardTitle>Quick Stats</CardTitle>
+                  <CardTitle>Income Analysis</CardTitle>
+                  <CardDescription>Detailed breakdown of income sources</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-8">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Current Cash Flow</h4>
-                      <div className="text-2xl font-bold">
-                        ${financialSummary.month.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">+8.2%</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">YTD Profit</h4>
-                      <div className="text-2xl font-bold">
-                        ${financialSummary.year.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">+12.5%</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Profit Margin</h4>
-                      <div className="text-2xl font-bold">
-                        {Math.round((financialSummary.month.profit / financialSummary.month.income) * 100)}%
-                        <span className="ml-2 text-xs font-normal text-green-600">+2.1%</span>
-                      </div>
-                    </div>
+                  <IncomeBreakdown data={incomeCategoriesData} />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="expenses">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expense Analysis</CardTitle>
+                  <CardDescription>Detailed breakdown of expenses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ExpenseBreakdown data={expenseCategoriesData} />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="invoices">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Invoices</CardTitle>
+                  <CardDescription>Latest invoices and payment status</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground">This tab will display recent invoices and payments.</p>
+                    <Button className="mt-4" onClick={() => window.location.href = '/finance/invoices'}>
+                      View All Invoices
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Income Breakdown</CardTitle>
-                  <PieChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : (
-                    <div className="flex justify-center">
-                      <div className="w-full max-w-md">
-                        {incomeBreakdown.map((item, index) => (
-                          <div key={index} className="mb-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm">{item.name}</span>
-                              <span className="text-sm font-medium">{item.value}%</span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Expense Breakdown</CardTitle>
-                  <BarChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : (
-                    <div className="flex justify-center">
-                      <div className="w-full max-w-md">
-                        {expenseBreakdown.map((item, index) => (
-                          <div key={index} className="mb-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm">{item.name}</span>
-                              <span className="text-sm font-medium">{item.value}%</span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="income" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Income Sources</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96 flex items-center justify-center">
-                  <p className="text-muted-foreground">Income breakdown by category (Coming Soon)</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="expenses" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Categories</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-96 flex items-center justify-center">
-                  <p className="text-muted-foreground">Expense breakdown by category (Coming Soon)</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="transactions" className="space-y-4">
-            <TransactionList />
           </TabsContent>
         </Tabs>
       </div>

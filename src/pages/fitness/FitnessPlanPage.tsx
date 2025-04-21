@@ -9,24 +9,90 @@ import DietPlanForm from '@/components/fitness/DietPlanForm';
 import { useAuth } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Member } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { UserRound } from 'lucide-react';
+
+// Mock members data
+const mockMembers: Member[] = [
+  {
+    id: 'member-1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'member',
+    membershipStatus: 'active',
+    trainerId: 'trainer-1'
+  },
+  {
+    id: 'member-2',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    role: 'member',
+    membershipStatus: 'active',
+    trainerId: 'trainer-1'
+  },
+  {
+    id: 'member-3',
+    name: 'Robert Johnson',
+    email: 'robert@example.com',
+    role: 'member',
+    membershipStatus: 'active',
+    trainerId: 'trainer-2'
+  },
+  {
+    id: 'member-4',
+    name: 'Sarah Williams',
+    email: 'sarah@example.com',
+    role: 'member',
+    membershipStatus: 'active',
+    trainerId: 'trainer-2'
+  }
+];
 
 const FitnessPlanPage = () => {
   const { user } = useAuth();
-  const { can, userRole } = usePermissions();
+  const { userRole, can } = usePermissions();
   const isMember = userRole === 'member';
-  const canManagePlans = userRole === 'admin' || userRole === 'trainer' || can('assign_workout_plan') || can('assign_diet_plan');
+  const isAdmin = userRole === 'admin';
+  const isTrainer = userRole === 'trainer';
+  const canManagePlans = isAdmin || isTrainer || can('assign_workout_plan') || can('assign_diet_plan');
   
-  // Mock data for a logged in user/member
-  const mockMember: Member = {
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  
+  // For trainers, filter to only show their assigned members
+  const trainerAssignedMembers = isTrainer ? 
+    mockMembers.filter(member => member.trainerId === user?.id) : [];
+  
+  // Determine which members to show
+  const availableMembers = isAdmin ? 
+    mockMembers : 
+    (isTrainer ? trainerAssignedMembers : []);
+  
+  // If user is a member, get their own profile
+  const userMember: Member | null = isMember ? {
     id: user?.id || '1',
     name: user?.name || 'Current Member',
     email: user?.email || 'member@example.com',
     role: 'member',
     membershipStatus: 'active',
-  };
+  } : null;
+  
+  // Default to the first member or the user's own profile if they're a member
+  React.useEffect(() => {
+    if (isMember && userMember) {
+      setSelectedMemberId(userMember.id);
+    } else if (availableMembers.length > 0 && !selectedMemberId) {
+      setSelectedMemberId(availableMembers[0].id);
+    }
+  }, [availableMembers, isMember, userMember, selectedMemberId]);
+  
+  // Get the selected member object
+  const selectedMember = isMember ? 
+    userMember : 
+    availableMembers.find(m => m.id === selectedMemberId) || availableMembers[0];
   
   // Mock trainer ID - in a real app, this would come from the user's assigned trainer
-  const mockTrainerId = 'trainer-123';
+  const mockTrainerId = user?.role === 'trainer' ? user.id : 'trainer-123';
   
   // Mock handlers for saving plans
   const handleSaveWorkoutPlan = (plan: any) => {
@@ -41,10 +107,34 @@ const FitnessPlanPage = () => {
   
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">
           {isMember ? "My Fitness Plans" : "Fitness Plans Management"}
         </h1>
+        
+        {!isMember && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="member-select" className="whitespace-nowrap">
+              <UserRound className="h-4 w-4 inline mr-1" />
+              Member:
+            </Label>
+            <Select 
+              value={selectedMemberId} 
+              onValueChange={setSelectedMemberId}
+            >
+              <SelectTrigger id="member-select" className="w-[200px]">
+                <SelectValue placeholder="Select member" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMembers.map(member => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
       <Tabs defaultValue="plans">
@@ -61,14 +151,14 @@ const FitnessPlanPage = () => {
         
         <TabsContent value="plans" className="mt-6">
           <FitnessPlanManager 
-            members={[mockMember]} 
+            members={[selectedMember]} 
             trainerId={mockTrainerId}
             readOnly={isMember} 
           />
         </TabsContent>
         
         <TabsContent value="progress" className="mt-6">
-          <ProgressTracker member={mockMember} />
+          {selectedMember && <ProgressTracker member={selectedMember} />}
         </TabsContent>
         
         {canManagePlans && (
@@ -80,12 +170,14 @@ const FitnessPlanPage = () => {
                   <CardDescription>Create or update workout plans for members</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <WorkoutPlanForm 
-                    member={mockMember}
-                    trainerId={mockTrainerId}
-                    onSave={handleSaveWorkoutPlan}
-                    onCancel={() => console.log('Workout plan form canceled')}
-                  />
+                  {selectedMember && (
+                    <WorkoutPlanForm 
+                      member={selectedMember}
+                      trainerId={mockTrainerId}
+                      onSave={handleSaveWorkoutPlan}
+                      onCancel={() => console.log('Workout plan form canceled')}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -97,13 +189,14 @@ const FitnessPlanPage = () => {
                   <CardDescription>Create or update nutrition plans for members</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DietPlanForm 
-                    member={mockMember}
-                    trainerId={mockTrainerId}
-                    onSave={handleSaveDietPlan}
-                    onCancel={() => console.log('Diet plan form canceled')}
-                    showDaysTabs={true}
-                  />
+                  {selectedMember && (
+                    <DietPlanForm 
+                      member={selectedMember}
+                      trainerId={mockTrainerId}
+                      onSave={handleSaveDietPlan}
+                      onCancel={() => console.log('Diet plan form canceled')}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
