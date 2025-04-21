@@ -102,7 +102,6 @@ const FitnessPlanPage = () => {
                     trainerId={mockTrainerId}
                     onSave={handleSaveDietPlan}
                     onCancel={() => console.log('Diet plan form canceled')}
-                    showDaysTabs={true}
                   />
                 </CardContent>
               </Card>

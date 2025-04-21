@@ -80,6 +80,8 @@ export interface DietPlan {
   createdAt: string;
   updatedAt: string;
   mealPlans: MealPlan[];
+  notes?: string;
+  isCustom?: boolean;
 }
 
 export interface MealPlan {
@@ -91,6 +93,7 @@ export interface MealPlan {
     protein: number;
     carbs: number;
     fats: number;
+    calories?: number;
   };
 }
 
@@ -101,12 +104,15 @@ export interface WorkoutPlan {
   createdAt: string;
   updatedAt: string;
   workoutDays: WorkoutDay[];
+  notes?: string;
+  isCustom?: boolean;
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 export interface Exercise {
@@ -117,6 +123,7 @@ export interface Exercise {
   weight?: number;
   rest: number;
   notes?: string;
+  muscleGroupTag?: string;
 }
 
 export interface ProgressRecord {
@@ -196,6 +203,12 @@ export interface Announcement {
   targetRoles: UserRole[];
   targetBranch?: string;
   expiresAt?: string;
+  authorId?: string;
+  authorName?: string;
+  sentCount?: number;
+  channels?: string[];
+  priority?: "low" | "medium" | "high";
+  forRoles?: UserRole[];
 }
 
 export interface Notification {

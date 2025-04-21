@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import MemberDashboardHeader from '@/components/dashboard/sections/MemberDashboardHeader';
 import QuickStatsSection from '@/components/dashboard/sections/QuickStatsSection';
 import FitnessPlansSection from '@/components/dashboard/sections/FitnessPlansSection';
+import { Announcement } from '@/types';
 
 interface MemberDashboardProps {
   classes?: GymClass[];
@@ -25,7 +25,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
   
-  // Example progress data
   const progressData = [
     { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
     { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
@@ -35,28 +34,23 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
   ];
   
-  // Today's date formatted for display
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
   
-  // Format class time
   const formatClassTime = (startTime: string) => {
     return format(new Date(startTime), 'h:mm a');
   };
   
-  // Sort upcoming classes by date
   const upcomingClasses = classes
     .filter(c => new Date(c.startTime) > new Date())
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 3);
 
-  // Handle book class button click
   const handleBookClass = () => {
     navigate('/classes');
     toast.success("Redirecting to classes page");
   };
   
-  // Mock data for recent announcements
-  const recentAnnouncements = [
+  const recentAnnouncements: Announcement[] = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -67,7 +61,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       targetRoles: ["member"],
       channels: ["in-app"],
       sentCount: 120,
-      priority: "medium"
+      priority: "medium",
+      createdBy: "admin1"
     },
     {
       id: "announcement2",
@@ -79,7 +74,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       targetRoles: ["member"],
       channels: ["in-app"],
       sentCount: 98,
-      priority: "low"
+      priority: "low",
+      createdBy: "admin1"
     }
   ];
 
@@ -87,11 +83,9 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     <div className="space-y-6">
       <MemberDashboardHeader username={user?.name || ""} date={today} />
       
-      {/* Quick Stats */}
       <QuickStatsSection />
       
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Progress Chart */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Progress Tracker</CardTitle>
@@ -108,7 +102,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
           </CardContent>
         </Card>
         
-        {/* Upcoming Classes */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Upcoming Classes</CardTitle>
@@ -155,7 +148,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         </Card>
       </div>
       
-      {/* Fitness Plans and Invoices */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <FitnessPlansSection />
         
@@ -211,7 +203,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         </Card>
       </div>
       
-      {/* Announcements Section */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

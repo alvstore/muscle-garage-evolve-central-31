@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Dumbbell, ChevronRight } from 'lucide-react';
+import { Calendar, Dumbbell, ChevronRight, Bell, BarChart2, Trophy } from 'lucide-react';
 import MemberProgressChart from './MemberProgressChart';
 import Announcements from './Announcements';
 import { toast } from 'sonner';
@@ -117,7 +118,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <BarChart className="h-6 w-6 text-primary" />
+              <BarChart2 className="h-6 w-6 text-primary" />
             </div>
             <h3 className="text-2xl font-bold">-6kg</h3>
             <p className="text-sm text-muted-foreground">Weight Loss</p>
