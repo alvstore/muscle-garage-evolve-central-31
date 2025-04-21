@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,6 @@ const mockAttendanceData: AttendanceEntry[] = [
     memberId: '1', 
     memberName: 'John Doe', 
     checkInTime: '2023-05-01T08:30:00Z',
-    checkOutTime: '2023-05-01T10:15:00Z',
     accessMethod: 'rfid',
     branch: 'Main Branch',
     status: 'completed',
@@ -27,7 +25,6 @@ const mockAttendanceData: AttendanceEntry[] = [
     memberId: '2', 
     memberName: 'Jane Smith', 
     checkInTime: '2023-05-01T09:15:00Z',
-    checkOutTime: null,
     accessMethod: 'fingerprint',
     branch: 'Downtown',
     status: 'active',
@@ -43,7 +40,6 @@ const mockAttendanceToday: AttendanceEntry[] = [
     memberId: "member1",
     memberName: "John Doe",
     checkInTime: "08:15 AM",
-    checkOutTime: "10:30 AM",
     accessMethod: "Card",
     branch: "Main Branch",
     status: "Completed",
@@ -58,7 +54,6 @@ const mockAttendanceYesterday: AttendanceEntry[] = [
     memberId: "member2",
     memberName: "Jane Smith",
     checkInTime: "09:30 AM",
-    checkOutTime: "11:45 AM",
     accessMethod: "Biometric",
     branch: "Main Branch",
     status: "Completed",

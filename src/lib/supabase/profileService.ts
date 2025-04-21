@@ -1,3 +1,4 @@
+
 import { supabase } from '@/services/supabaseClient';
 import { User } from '@/types';
 
@@ -13,7 +14,7 @@ export const createProfile = async (userData: Partial<User> & { password?: strin
       data: {
         full_name: userData.name,
         role: userData.role,
-        branch_id: userData.branch_id
+        branch_id: userData.branch_id || userData.branchId
       }
     }
   });

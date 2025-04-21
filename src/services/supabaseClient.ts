@@ -17,7 +17,7 @@ export const subscribeToTable = (
   
   channel
     .on(
-      'presence', 
+      'postgres_changes', 
       {
         event: event,
         schema: 'public',
@@ -41,7 +41,7 @@ export const subscribeToTableWithFilter = (
   
   channel
     .on(
-      'presence',
+      'postgres_changes',
       {
         event: event,
         schema: 'public',

@@ -10,6 +10,7 @@ export interface User {
   avatar?: string;
   phone?: string;
   branchId?: string; // Primary branch ID
+  branch_id?: string; // For Supabase schema compatibility 
   primaryBranchId?: string; // Alternative naming for branchId
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
