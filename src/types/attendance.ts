@@ -4,7 +4,7 @@ export interface AttendanceEntry {
   memberId: string;
   memberName: string;
   checkInTime: string;
-  checkOutTime?: string;
+  checkOutTime?: string | null;
   accessMethod: string;
   branch: string;
   status: string;
