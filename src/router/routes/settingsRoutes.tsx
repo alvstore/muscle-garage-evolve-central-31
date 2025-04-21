@@ -8,6 +8,7 @@ import HikvisionPartnerPage from '@/pages/settings/HikvisionPartnerPage';
 import EmailIntegrationPage from '@/pages/settings/EmailIntegrationPage';
 import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
+import BranchIntegrationSettings from '@/pages/settings/BranchIntegrationSettings';
 import HelpCenterPage from '@/pages/help/HelpCenterPage';
 
 export const settingsRoutes: RouteObject[] = [
@@ -38,6 +39,10 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings/branches',
     element: <BranchManagementPage />
+  },
+  {
+    path: '/settings/branches/integration',
+    element: <BranchIntegrationSettings />
   },
   {
     path: '/help',
