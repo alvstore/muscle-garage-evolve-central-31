@@ -103,15 +103,18 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
       case "confirmed":
+      case "booked":
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmed</Badge>;
       case "attended":
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Attended</Badge>;
       case "cancelled":
         return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
-      case "missed":
+      case "no-show":
         return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Missed</Badge>;
       case "pending":
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Pending</Badge>;
+      case "waitlisted":
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Waitlisted</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -150,7 +153,7 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
                 <div className="flex items-center space-x-4">
                   <Avatar>
                     <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">{booking.memberName}</p>
@@ -165,7 +168,7 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
                 <div className="flex items-center space-x-2">
                   {getStatusBadge(booking.status)}
                   
-                  {booking.status === "confirmed" && (
+                  {(booking.status === "confirmed" || booking.status === "booked") && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">

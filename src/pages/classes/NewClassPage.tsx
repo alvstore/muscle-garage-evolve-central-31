@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { GymClass } from "@/types/class";
 import { usePermissions } from "@/hooks/use-permissions";
-import { Loader2 } from "@/components/ui/loader";
+import { Loader } from "@/components/ui/loader";
 
 const NewClassPage = () => {
   const navigate = useNavigate();
@@ -49,11 +50,21 @@ const NewClassPage = () => {
           <CardContent>
             {isSubmitting ? (
               <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader size="md" />
               </div>
             ) : (
               <ClassForm
-                initialData={{} as GymClass}
+                initialData={{
+                  id: "",
+                  name: "",
+                  trainerId: "",
+                  capacity: 10,
+                  enrolled: 0,
+                  startTime: new Date().toISOString(),
+                  endTime: new Date(Date.now() + 3600000).toISOString(),
+                  type: "Yoga",
+                  location: "Main Studio"
+                } as GymClass}
                 handleSubmit={handleSubmit} 
                 isLoading={loading} 
                 onCancel={() => navigate("/classes")}

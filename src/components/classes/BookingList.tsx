@@ -21,7 +21,7 @@ const fetchBookings = async (): Promise<ClassBooking[]> => {
       memberName: "John Doe",
       memberAvatar: "/placeholder.svg",
       bookingDate: "2025-04-15T06:30:00",
-      status: "booked",
+      status: "confirmed",
       createdAt: "2025-04-10T15:30:00",
       updatedAt: "2025-04-10T15:30:00"
     },
@@ -59,6 +59,7 @@ const BookingList = () => {
 
   const getStatusColor = (status: BookingStatus) => {
     switch (status) {
+      case "confirmed":
       case "booked":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "attended":
@@ -93,7 +94,7 @@ const BookingList = () => {
       </TabsList>
       
       <TabsContent value="upcoming" className="space-y-4">
-        {bookings?.filter(b => b.status === "booked").map(booking => (
+        {bookings?.filter(b => b.status === "confirmed" || b.status === "booked").map(booking => (
           <Card key={booking.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -136,7 +137,7 @@ const BookingList = () => {
           </Card>
         ))}
         
-        {bookings?.filter(b => b.status === "booked").length === 0 && (
+        {(bookings?.filter(b => b.status === "confirmed" || b.status === "booked").length === 0) && (
           <div className="text-center p-8 text-muted-foreground">
             No upcoming bookings found.
           </div>
@@ -235,4 +236,3 @@ const BookingList = () => {
 };
 
 export default BookingList;
-
