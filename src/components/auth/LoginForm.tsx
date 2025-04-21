@@ -140,7 +140,7 @@ const LoginForm = () => {
             <p className="text-gray-500 mt-2">Enter your credentials to access your account</p>
           </div>
           
-          <div className="mb-6 p-4 rounded-lg text-sm bg-gray-950">
+          <div className="mb-6 p-4 rounded-lg text-sm bg-slate-900">
             <div className="font-medium">Admin Email: <span className="text-indigo-600">admin@example.com</span> / Pass: <span className="text-indigo-600">admin123</span></div>
             <div className="mt-1">Member Email: <span className="text-indigo-600">member@example.com</span> / Pass: <span className="text-indigo-600">member123</span></div>
             <div className="mt-1">Staff Email: <span className="text-indigo-600">staff@example.com</span> / Pass: <span className="text-indigo-600">staff123</span></div>
