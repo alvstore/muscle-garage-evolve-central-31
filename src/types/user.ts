@@ -1,6 +1,7 @@
 
-export type UserRole = "admin" | "staff" | "trainer" | "member";
+import { UserRole } from './index';
 
+// Extended user type with branch and address information
 export interface User {
   id: string;
   email: string;
@@ -8,40 +9,41 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
-  branchId?: string;
-  branchIds?: string[];
-  isBranchManager?: boolean;
-  primaryBranchId?: string;
-  dateOfBirth?: string;
+  branchId?: string; // Primary branch ID
+  branchIds?: string[]; // All branches the user has access to
+  isBranchManager?: boolean; // Whether the user is a branch manager
+  primaryBranchId?: string; // Added for compatibility
+  
+  // Address fields
   address?: string;
   city?: string;
   state?: string;
   zipCode?: string;
   country?: string;
-  bio?: string;
-  notes?: string;
-  membershipStatus?: string;
 }
 
-export interface UserProfile extends User {
-  bio?: string;
-  location?: string;
-  website?: string;
-  dateOfBirth?: string;
-}
-
-export interface AuthUser {
+// Extended member type with branch and address information
+export interface MemberWithBranch {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: "member";
   avatar?: string;
-  branchId?: string;
-  branchIds?: string[]; 
-  isBranchManager?: boolean;
-}
-
-export interface MemberWithBranch extends User {
-  branchName?: string;
-  membershipStatus?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  goal?: string;
+  trainerId?: string;
+  membershipId?: string;
+  membershipStatus: "active" | "inactive" | "expired";
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  primaryBranchId: string;
+  accessibleBranchIds: string[];
+  
+  // Address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }

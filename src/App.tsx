@@ -1,33 +1,31 @@
-
-import { Routes, Route } from 'react-router-dom';
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { ThemeProvider } from './providers/ThemeProvider';
-import { appRoutes } from './router/appRoutes';
-import { PermissionsProvider } from './hooks/use-permissions';
+import { AuthProvider } from './hooks/use-auth';
+import { BranchProvider } from './hooks/use-branch';
+import AppRouter from './router/AppRouter';
+import RouteChecker from './components/debug/RouteChecker';
 
+// Create a query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5,
+      staleTime: 60 * 1000, // 1 minute
+      retry: 1,
     },
   },
 });
 
-function App() {
+export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <PermissionsProvider>
-          <Toaster position="top-right" />
-          <Routes>
-            {appRoutes}
-          </Routes>
-        </PermissionsProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <>
+      <RouteChecker />
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <BranchProvider>
+            <AppRouter />
+          </BranchProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </>
   );
 }
-
-export default App;

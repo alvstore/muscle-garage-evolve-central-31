@@ -47,11 +47,10 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
       const newBooking: ClassBooking = {
         id: `booking-${Date.now()}`,
         classId: gymClass.id,
-        className: gymClass.name,
         memberId: member.id,
         memberName: member.name,
         bookingDate: new Date().toISOString(),
-        status: "confirmed",
+        status: "booked",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         notes: notes || undefined
@@ -94,7 +93,7 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
               <p><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
               <p><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
               <p><strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled</p>
-              <p><strong>Trainer:</strong> {gymClass.trainerName || (gymClass.trainer ? gymClass.trainer.name : "Not assigned")}</p>
+              <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer}</p>
             </div>
           </div>
           

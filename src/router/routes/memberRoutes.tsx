@@ -8,7 +8,6 @@ import MembersListPage from '@/pages/members/MembersListPage';
 import NewMemberPage from '@/pages/members/NewMemberPage';
 import MemberProfilePage from '@/pages/members/MemberProfilePage';
 import MemberProgressPage from '@/pages/members/MemberProgressPage';
-import MemberAttendancePage from '@/pages/attendance/MemberAttendancePage';
 
 export const memberRoutes: RouteObject[] = [
   {
@@ -48,22 +47,6 @@ export const memberRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <MemberProgressPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/members/attendance/:id',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <MemberAttendancePage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/members/attendance',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <MemberAttendancePage />
       </PrivateRoute>
     )
   }

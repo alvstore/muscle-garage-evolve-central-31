@@ -9,7 +9,6 @@ import FitnessProgressPage from '@/pages/fitness/FitnessProgressPage';
 import DietPlanPage from '@/pages/fitness/DietPlanPage';
 import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
 import ClassPage from '@/pages/classes/ClassPage';
-import NewClassPage from '@/pages/classes/NewClassPage';
 import MembershipPage from '@/pages/membership/MembershipPage';
 import AttendancePage from '@/pages/attendance/AttendancePage';
 
@@ -51,14 +50,6 @@ export const fitnessRoutes: RouteObject[] = [
     element: (
       <PrivateRoute>
         <ClassPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/classes/new',
-    element: (
-      <PrivateRoute>
-        <NewClassPage />
       </PrivateRoute>
     )
   },

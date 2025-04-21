@@ -43,7 +43,7 @@ const ClassesSection = () => {
     }
   ];
 
-  const handleMarkAttendance = (bookingId: string, status: BookingStatus) => {
+  const handleMarkAttendance = (bookingId: string, status: "attended" | "missed") => {
     console.log(`Marking booking ${bookingId} as ${status}`);
   };
 

@@ -4,7 +4,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/types';
-import { useSafePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 
 interface PrivateRouteProps {
   allowedRoles?: UserRole[];
@@ -20,7 +20,7 @@ const PrivateRoute = ({
   children
 }: PrivateRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
-  const { can } = useSafePermissions(); // Use the safe version that won't throw errors
+  const { can } = usePermissions();
   const location = useLocation();
 
   // Show a loading indicator while checking authentication status
@@ -47,7 +47,7 @@ const PrivateRoute = ({
   }
 
   // Check for specific permission if required
-  if (requiredPermission && !can(requiredPermission)) {
+  if (requiredPermission && !can(requiredPermission as any)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -18,11 +17,7 @@ const fetchClasses = async (): Promise<GymClass[]> => {
     id: "1",
     name: "Morning Yoga",
     description: "Start your day with energizing yoga poses and breathing exercises",
-    trainer: { 
-      id: "t1",
-      name: "Jane Smith",
-      avatar: "/placeholder.svg"
-    },
+    trainer: "Jane Smith",
     trainerName: "Jane Smith",
     trainerAvatar: "/placeholder.svg",
     trainerId: "t1",
@@ -37,16 +32,14 @@ const fetchClasses = async (): Promise<GymClass[]> => {
     difficulty: "all",
     status: "scheduled",
     recurring: true,
-    recurringPattern: "MON,WED,FRI"
+    recurringPattern: "MON,WED,FRI",
+    createdAt: "2025-04-10T10:00:00",
+    updatedAt: "2025-04-10T10:00:00"
   }, {
     id: "2",
     name: "HIIT Workout",
     description: "High-intensity interval training to boost metabolism and burn calories",
-    trainer: {
-      id: "t2",
-      name: "Mike Johnson",
-      avatar: undefined
-    },
+    trainer: "Mike Johnson",
     trainerName: "Mike Johnson",
     trainerId: "t2",
     capacity: 12,
@@ -60,16 +53,14 @@ const fetchClasses = async (): Promise<GymClass[]> => {
     difficulty: "intermediate",
     status: "scheduled",
     recurring: true,
-    recurringPattern: "TUE,THU"
+    recurringPattern: "TUE,THU",
+    createdAt: "2025-04-10T11:00:00",
+    updatedAt: "2025-04-10T11:00:00"
   }, {
     id: "3",
     name: "Strength Training",
     description: "Build muscle and improve overall strength with weights",
-    trainer: {
-      id: "t3",
-      name: "Robert Chen",
-      avatar: "/placeholder.svg"
-    },
+    trainer: "Robert Chen",
     trainerName: "Robert Chen",
     trainerAvatar: "/placeholder.svg",
     trainerId: "t3",
@@ -83,10 +74,11 @@ const fetchClasses = async (): Promise<GymClass[]> => {
     level: "advanced",
     difficulty: "advanced",
     status: "scheduled",
-    recurring: false
+    recurring: false,
+    createdAt: "2025-04-10T12:00:00",
+    updatedAt: "2025-04-10T12:00:00"
   }];
 };
-
 const ClassList = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
@@ -97,29 +89,18 @@ const ClassList = () => {
     queryKey: ['classes'],
     queryFn: fetchClasses
   });
-
   const handleCreateClass = () => {
     setSelectedClass(null);
     setIsOpen(true);
   };
-
   const handleEditClass = (classItem: GymClass) => {
     setSelectedClass(classItem);
     setIsOpen(true);
   };
-
   const handleCloseDialog = () => {
     setIsOpen(false);
     setSelectedClass(null);
   };
-
-  const handleEditSubmit = async (classData: GymClass) => {
-    console.log("Editing class:", classData);
-    // In a real app, this would be an API call to update the class
-    // Then close dialog and refresh data
-    setIsOpen(false);
-  };
-
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner":
@@ -132,7 +113,6 @@ const ClassList = () => {
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
     }
   };
-
   if (isLoading) {
     return <div className="space-y-4">
         {[1, 2, 3].map(i => <Card key={i}>
@@ -153,7 +133,6 @@ const ClassList = () => {
           </Card>)}
       </div>;
   }
-
   return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -211,6 +190,8 @@ const ClassList = () => {
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          
         </div>
       </div>
 
@@ -273,7 +254,7 @@ const ClassList = () => {
               </div>
               
               <div className="flex flex-wrap gap-2 mt-4">
-                <Badge variant="outline" className={getDifficultyColor(classItem.difficulty || 'all')}>
+                <Badge variant="outline" className={getDifficultyColor(classItem.difficulty)}>
                   {classItem.difficulty === "all" ? "All Levels" : classItem.difficulty}
                 </Badge>
                 
@@ -297,28 +278,7 @@ const ClassList = () => {
           </Card>)}
       </div>
 
-      {isOpen && (
-        <ClassForm 
-          open={isOpen} 
-          onOpenChange={setIsOpen} 
-          initialData={selectedClass || {
-            id: "",
-            name: "",
-            trainerId: "",
-            capacity: 10,
-            enrolled: 0,
-            startTime: new Date().toISOString(),
-            endTime: new Date(Date.now() + 3600000).toISOString(),
-            type: "Yoga",
-            location: "Main Studio",
-            difficulty: "all"
-          }} 
-          onCancel={handleCloseDialog}
-          handleSubmit={handleEditSubmit}
-          onClose={handleCloseDialog}
-        />
-      )}
+      <ClassForm open={isOpen} onOpenChange={setIsOpen} initialData={selectedClass} onClose={handleCloseDialog} />
     </div>;
 };
-
 export default ClassList;
