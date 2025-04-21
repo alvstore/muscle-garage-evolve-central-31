@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import { UserRound, Calendar, CheckCircle, UserCheck, XCircle, Clock } from "lucide-react";
+import { AttendanceEntry } from "@/types/attendance";
 
 // Mock attendance data
-const mockAttendanceData = [
+const mockAttendanceData: AttendanceEntry[] = [
   { 
     memberId: '1', 
     memberName: 'John Doe', 
@@ -17,7 +18,9 @@ const mockAttendanceData = [
     checkOutTime: '2023-05-01T10:15:00Z',
     accessMethod: 'rfid',
     branch: 'Main Branch',
-    status: 'completed'
+    status: 'completed',
+    time: '08:30 AM',
+    type: 'check-in'
   },
   { 
     memberId: '2', 
@@ -26,12 +29,14 @@ const mockAttendanceData = [
     checkOutTime: null,
     accessMethod: 'fingerprint',
     branch: 'Downtown',
-    status: 'active'
+    status: 'active',
+    time: '09:15 AM',
+    type: 'check-in'
   },
   // Add more mock data as needed
 ];
 
-const mockAttendanceToday = [
+const mockAttendanceToday: AttendanceEntry[] = [
   {
     memberId: "member1",
     memberName: "John Doe",
@@ -46,7 +51,7 @@ const mockAttendanceToday = [
   // ... other entries with the same structure
 ];
 
-const mockAttendanceYesterday = [
+const mockAttendanceYesterday: AttendanceEntry[] = [
   {
     memberId: "member2",
     memberName: "Jane Smith",

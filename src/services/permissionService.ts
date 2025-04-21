@@ -56,9 +56,9 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'access_marketing': { roles: ['admin'] },
   
   // Additional permissions that were missing
+  'create_class': { roles: ['admin', 'staff'] },
   'assign_diet_plan': { roles: ['admin', 'trainer'] },
   'assign_workout_plan': { roles: ['admin', 'trainer'] },
-  'create_class': { roles: ['admin', 'staff'] },
   'book_class': { roles: ['admin', 'staff', 'member'] },
   'cancel_class': { roles: ['admin', 'staff'] },
   'assign_plan': { roles: ['admin', 'staff'] },
@@ -74,9 +74,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'view_all_attendance': { roles: ['admin', 'staff'] },
   'create_edit_plans': { roles: ['admin', 'staff'] },
   'view_invoices': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
-  'manage_integrations': { roles: ['admin'] },
-  'access_analytics': { roles: ['admin', 'staff'] },
-  'manage_members': { roles: ['admin', 'staff'] },
+  'view_all_member_progress': { roles: ['admin', 'staff'] },
   'manage_fitness_data': { roles: ['admin', 'trainer'] },
   'manage_payments': { roles: ['admin', 'staff'] },
   'access_store': { roles: ['admin', 'staff'] },
@@ -106,7 +104,6 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'feature_sms_campaigns': { roles: ['admin', 'staff'] },
   'feature_whatsapp_campaigns': { roles: ['admin', 'staff'] },
   'feature_social_media_integration': { roles: ['admin'] },
-  'view_all_member_progress': { roles: ['admin', 'staff'] },
   
   // Basic CRUD permissions
   'dashboard_view': { roles: ['admin', 'staff', 'trainer', 'member'] },

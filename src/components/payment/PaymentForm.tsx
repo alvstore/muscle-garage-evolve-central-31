@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ export default function PaymentForm({
   });
 
   const onSubmit = async (data: any) => {
-    const branchId = user?.branchId || user?.primaryBranchId;
+    const branchId = currentBranch?.id;
     
     if (!branchId) {
       toast.error('Branch information is missing');
