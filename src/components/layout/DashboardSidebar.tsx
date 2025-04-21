@@ -57,10 +57,11 @@ export default function DashboardSidebar({
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <SidebarHeader className="p-4">
             <div className="flex flex-col gap-3">
-              <div className="p-1 rounded-md px-[27px] py-[8px] mx-0 my-0 bg-slate-50">
-                <Logo variant="default" />
+              <div className="p-1 rounded-md px-[27px] py-[8px] mx-0 my-0 bg-slate-50 overflow-hidden">
+                <div className="w-36 truncate">
+                  <Logo variant="default" />
+                </div>
               </div>
-              
               {/* Branch selector for admin users */}
               {user?.role === 'admin' && (
                 <PermissionGuard permission="view_branch_data">
@@ -69,7 +70,6 @@ export default function DashboardSidebar({
               )}
             </div>
           </SidebarHeader>
-          
           <ScrollArea className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
             <NavigationSections 
               sections={adminNavSections} 
@@ -78,7 +78,6 @@ export default function DashboardSidebar({
               onLinkClick={closeSidebar} 
             />
           </ScrollArea>
-          
           <SidebarFooter className="mt-auto p-4">
             <Separator className="my-2 bg-indigo-800" />
             <Button 
@@ -96,3 +95,4 @@ export default function DashboardSidebar({
     </Sidebar>
   );
 }
+

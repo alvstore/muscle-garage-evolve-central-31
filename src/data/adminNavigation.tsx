@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -43,7 +42,7 @@ export const adminNavSections: NavSection[] = [
     items: [
       {
         href: "/",
-        label: "Analytics",
+        label: "Analytics Dashboard",
         icon: <BarChart3 className="h-5 w-5" />,
         permission: "access_dashboards" as Permission,
       },
@@ -63,12 +62,6 @@ export const adminNavSections: NavSection[] = [
         label: "Member List",
         icon: <Users className="h-5 w-5" />,
         permission: "manage_members" as Permission,
-      },
-      {
-        href: "/members/new",
-        label: "Add Member",
-        icon: <UserCircle className="h-5 w-5" />,
-        permission: "register_member" as Permission,
       },
       {
         href: "/memberships",
@@ -96,29 +89,6 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance",
-        label: "Overview",
-        icon: <PieChart className="h-5 w-5" />,
-        permission: "view_invoices" as Permission,
-      },
-      {
-        href: "/finance/transactions",
-        label: "Transactions",
-        icon: <CreditCard className="h-5 w-5" />,
-        permission: "manage_payments" as Permission,
-      },
-      {
-        href: "/finance/invoices",
-        label: "Invoices",
-        icon: <CreditCard className="h-5 w-5" />,
-        permission: "view_invoices" as Permission,
-      },
-    ],
-  },
-  {
     name: "Staff",
     items: [
       {
@@ -136,11 +106,11 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "CRM",
+    name: "CRM & Leads",
     items: [
       {
         href: "/crm/leads",
-        label: "Leads",
+        label: "Lead Management",
         icon: <UserPlus className="h-5 w-5" />,
         permission: "access_crm" as Permission,
       },
@@ -159,41 +129,6 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Communication",
-    items: [
-      {
-        href: "/communication/email",
-        label: "Email",
-        icon: <Mail className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/sms",
-        label: "SMS",
-        icon: <MessageCircle className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/notifications",
-        label: "Notifications",
-        icon: <Bell className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/feedback",
-        label: "Feedback",
-        icon: <MessageCircle className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/announcements",
-        label: "Announcements",
-        icon: <Megaphone className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-    ],
-  },
-  {
     name: "Marketing",
     items: [
       {
@@ -204,32 +139,9 @@ export const adminNavSections: NavSection[] = [
       },
       {
         href: "/marketing/referral",
-        label: "Referral Program",
+        label: "Referral Programs",
         icon: <Share2 className="h-5 w-5" />,
         permission: "access_marketing" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Fitness",
-    items: [
-      {
-        href: "/fitness-plans",
-        label: "Fitness Plans",
-        icon: <FolderHeart className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
-      },
-      {
-        href: "/fitness/progress",
-        label: "Member Progress",
-        icon: <Activity className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
-      },
-      {
-        href: "/fitness/workout-plans",
-        label: "Workout Plans",
-        icon: <Dumbbell className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
       },
     ],
   },
@@ -251,6 +163,76 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Fitness",
+    items: [
+      {
+        href: "/fitness-plans",
+        label: "Fitness Plans Management",
+        icon: <FolderHeart className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+      {
+        href: "/fitness/progress",
+        label: "Member Progress",
+        icon: <Activity className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+      {
+        href: "/fitness/workout-plans",
+        label: "Workout Plans",
+        icon: <Dumbbell className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Communication",
+    items: [
+      {
+        href: "/communication/announcements",
+        label: "Announcements",
+        icon: <Megaphone className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/feedback",
+        label: "Feedback Management",
+        icon: <MessageCircle className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/reminder-rules",
+        label: "Reminder Rules",
+        icon: <Clock className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/email",
+        label: "Email Integration",
+        icon: <Mail className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/sms",
+        label: "SMS Integration",
+        icon: <MessageCircle className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/notifications",
+        label: "Notifications",
+        icon: <Bell className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/tasks",
+        label: "Task Manager",
+        icon: <Briefcase className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+    ],
+  },
+  {
     name: "Reports",
     items: [
       {
@@ -258,17 +240,6 @@ export const adminNavSections: NavSection[] = [
         label: "Reports & Analytics",
         icon: <FileText className="h-5 w-5" />,
         permission: "access_reports" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Website",
-    items: [
-      {
-        href: "/website",
-        label: "Front Pages",
-        icon: <Globe className="h-5 w-5" />,
-        permission: "full_system_access" as Permission,
       },
     ],
   },
@@ -294,6 +265,16 @@ export const adminNavSections: NavSection[] = [
           {
             href: "/settings/integrations",
             label: "Integrations",
+            permission: "manage_integrations" as Permission,
+          },
+          {
+            href: "/settings/integrations/email",
+            label: "Email Integration",
+            permission: "manage_integrations" as Permission,
+          },
+          {
+            href: "/settings/integrations/sms",
+            label: "SMS Integration",
             permission: "manage_integrations" as Permission,
           },
         ],
