@@ -166,10 +166,7 @@ const DashboardHeader = ({
                   <MessageSquare className="mr-2 h-4 w-4" />
                   <span>Chat</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  
-                  
-                </DropdownMenuItem>
+                
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup className="p-1">
