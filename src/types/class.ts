@@ -14,7 +14,7 @@ export interface Exercise {
   sets: number;
   reps: number;
   weight?: number;
-  rest?: number;
+  rest: number; // Required field
   notes?: string;
   mediaUrl?: string;
   muscleGroupTag?: string;
@@ -33,10 +33,10 @@ export interface WorkoutPlan {
   name: string;
   description: string;
   isCustom: boolean;
+  notes?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  notes?: string;
   workoutDays: WorkoutDay[];
   memberId: string;
   trainerId: string;
@@ -78,6 +78,7 @@ export interface GymClass {
   recurringPattern?: string;
   createdAt?: string;
   updatedAt?: string;
+  branchId?: string; // Added branch ID for multi-branch support
 }
 
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show";
@@ -132,7 +133,7 @@ export interface AttendanceEntry {
   id?: string;
   memberId: string;
   memberName: string;
-  time: string;
+  time: string; // ISO string format
   type: AttendanceEntryType;
   location: string;
   device: string;

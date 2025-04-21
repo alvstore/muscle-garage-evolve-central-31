@@ -6,12 +6,14 @@ import ClassForm from "@/components/classes/ClassForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GymClass } from "@/types/class";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const NewClassPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { canCreateClass } = usePermissions();
 
-  const handleSubmit = async (classData: Partial<GymClass>) => {
+  const handleSubmit = async (classData: GymClass) => {
     setLoading(true);
     
     try {
@@ -28,6 +30,13 @@ const NewClassPage = () => {
     }
   };
 
+  // Redirect if user doesn't have permission
+  if (!canCreateClass) {
+    toast.error("You don't have permission to create classes");
+    navigate("/classes");
+    return null;
+  }
+
   return (
     <Container>
       <div className="py-6">
@@ -38,8 +47,9 @@ const NewClassPage = () => {
           </CardHeader>
           <CardContent>
             <ClassForm 
-              onSubmit={handleSubmit} 
-              loading={loading} 
+              initialData={{} as GymClass}
+              onSave={handleSubmit} 
+              isLoading={loading} 
               onCancel={() => navigate("/classes")}
             />
           </CardContent>

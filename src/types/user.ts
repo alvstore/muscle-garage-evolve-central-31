@@ -14,6 +14,7 @@ export interface User {
   isBranchManager?: boolean; // Whether the user is a branch manager
   primaryBranchId?: string; // Added for compatibility
   dateOfBirth?: string; // Added date of birth field
+  notes?: string; // Added notes field
   
   // Address fields
   address?: string;
@@ -40,6 +41,32 @@ export interface MemberWithBranch {
   membershipEndDate?: string;
   primaryBranchId: string;
   accessibleBranchIds: string[];
+  notes?: string; // Added notes field
+  
+  // Address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+// Extended member interface with notes and other fields
+export interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  goal?: string;
+  trainerId?: string;
+  membershipId?: string;
+  membershipStatus: "active" | "inactive" | "expired";
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  notes?: string;
   
   // Address fields
   address?: string;
