@@ -20,6 +20,7 @@ export interface User {
   country?: string;
   bio?: string;
   notes?: string;
+  membershipStatus?: string;
 }
 
 export interface UserProfile extends User {
@@ -42,4 +43,5 @@ export interface AuthUser {
 
 export interface MemberWithBranch extends User {
   branchName?: string;
+  membershipStatus?: string;
 }

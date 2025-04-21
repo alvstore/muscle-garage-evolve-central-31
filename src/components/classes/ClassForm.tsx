@@ -39,7 +39,9 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [endTime, setEndTime] = useState(initialData.endTime || '');
   const [type, setType] = useState(initialData.type || '');
   const [location, setLocation] = useState(initialData.location || '');
-  const [difficulty, setDifficulty] = useState(initialData.difficulty || 'intermediate');
+  const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced' | 'all'>(
+    initialData.difficulty as 'beginner' | 'intermediate' | 'advanced' | 'all' || 'intermediate'
+  );
 
   useEffect(() => {
     setName(initialData.name || '');
@@ -50,7 +52,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
     setEndTime(initialData.endTime || '');
     setType(initialData.type || '');
     setLocation(initialData.location || '');
-    setDifficulty(initialData.difficulty || 'intermediate');
+    setDifficulty(initialData.difficulty as 'beginner' | 'intermediate' | 'advanced' | 'all' || 'intermediate');
   }, [initialData]);
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -67,7 +69,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
       endTime,
       type,
       location,
-      difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
+      difficulty,
     };
 
     // Use the appropriate handler - onSave has priority if provided
@@ -80,6 +82,13 @@ const ClassForm: React.FC<ClassFormProps> = ({
     // Call onClose if available after submission
     if (onClose) {
       onClose();
+    }
+  };
+
+  // Type guard function to handle the string type issues
+  const handleDifficultyChange = (value: string) => {
+    if (value === 'beginner' || value === 'intermediate' || value === 'advanced' || value === 'all') {
+      setDifficulty(value);
     }
   };
 
@@ -167,7 +176,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
         </div>
         <div>
           <Label htmlFor="difficulty">Difficulty</Label>
-          <Select value={difficulty} onValueChange={setDifficulty}>
+          <Select value={difficulty} onValueChange={handleDifficultyChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select difficulty" />
             </SelectTrigger>
@@ -175,6 +184,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
               <SelectItem value="beginner">Beginner</SelectItem>
               <SelectItem value="intermediate">Intermediate</SelectItem>
               <SelectItem value="advanced">Advanced</SelectItem>
+              <SelectItem value="all">All Levels</SelectItem>
             </SelectContent>
           </Select>
         </div>

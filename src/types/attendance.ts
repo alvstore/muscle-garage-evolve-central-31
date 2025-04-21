@@ -14,3 +14,6 @@ export interface AttendanceEntry {
   checkOutTime?: string;
   branchId?: string;
 }
+
+// Add BookingStatus to fix import errors
+export type BookingStatus = 'confirmed' | 'cancelled' | 'waitlisted' | 'attended' | 'no-show' | 'pending' | 'booked' | 'missed';

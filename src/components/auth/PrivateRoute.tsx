@@ -20,7 +20,7 @@ const PrivateRoute = ({
   children
 }: PrivateRouteProps) => {
   const { isAuthenticated, user, isLoading } = useAuth();
-  const { can } = useSafePermissions();
+  const { can } = useSafePermissions(); // Use the safe version that won't throw errors
   const location = useLocation();
 
   // Show a loading indicator while checking authentication status

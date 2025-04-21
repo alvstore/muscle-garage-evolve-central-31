@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, Edit, Trash2, Search } from 'lucide-react';
 import { WorkoutPlan, Exercise } from '@/types/workout';
 import { v4 as uuidv4 } from 'uuid';
-import { WorkoutPlansManager } from '@/components/fitness/WorkoutPlansManager';
+import WorkoutPlansManager from '@/components/fitness/WorkoutPlansManager';
 import { toast } from 'sonner';
 
 const WorkoutPlansPage: React.FC = () => {
