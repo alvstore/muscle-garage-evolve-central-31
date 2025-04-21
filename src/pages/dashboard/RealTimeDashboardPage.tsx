@@ -1,321 +1,384 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, DollarSign, RefreshCw, Users } from "lucide-react";
-import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subHours } from 'date-fns';
+import { Loader2, Search, RefreshCw, Filter, Download, Clock, Users, MapPin, Timer, Info } from 'lucide-react';
 import { toast } from "sonner";
+import { AttendanceEntry } from '@/types/attendance';
 
 const RealTimeDashboardPage = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [attendanceData, setAttendanceData] = useState<AttendanceEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<AttendanceEntry[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [timeRange, setTimeRange] = useState("today");
   
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    // Fetch attendance data (mock for now)
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Mock data
+        const mockAttendanceData: AttendanceEntry[] = [
+          {
+            memberId: "m1",
+            memberName: "John Smith",
+            time: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "Main Branch",
+            device: "East Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m2",
+            memberName: "Emily Johnson",
+            time: format(subHours(new Date(), 1), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "Main Branch",
+            device: "West Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m3",
+            memberName: "Michael Brown",
+            time: format(subHours(new Date(), 2), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "Downtown Branch",
+            device: "Main Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m4",
+            memberName: "Sarah Davis",
+            time: format(subHours(new Date(), 3), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-out",
+            location: "Main Branch",
+            device: "East Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m5",
+            memberName: "Kevin Wilson",
+            time: format(subHours(new Date(), 4), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-out",
+            location: "Downtown Branch",
+            device: "West Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m6",
+            memberName: "Laura Martinez",
+            time: format(subHours(new Date(), 5), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "West Side Location",
+            device: "Main Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m7",
+            memberName: "Daniel Garcia",
+            time: format(subHours(new Date(), 6), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-out",
+            location: "West Side Location",
+            device: "East Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m8",
+            memberName: "Jessica Rodriguez",
+            time: format(subHours(new Date(), 7), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "Main Branch",
+            device: "West Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m9",
+            memberName: "Christopher Lee",
+            time: format(subHours(new Date(), 8), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-out",
+            location: "Downtown Branch",
+            device: "Main Entrance",
+            status: "Valid"
+          },
+          {
+            memberId: "m10",
+            memberName: "Ashley Perez",
+            time: format(subHours(new Date(), 9), "yyyy-MM-dd'T'HH:mm:ss"),
+            type: "check-in",
+            location: "West Side Location",
+            device: "East Entrance",
+            status: "Valid"
+          }
+        ];
+        
+        setAttendanceData(mockAttendanceData);
+        setFilteredData(mockAttendanceData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching attendance data:", error);
+        toast.error("Failed to fetch attendance data");
+        setLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Mock data for real-time attendance - will be replaced with Supabase data
-  const todayAttendance = [
-    {
-      id: "mem1",
-      name: "John Doe",
-      membershipPlan: "Premium",
-      checkInTime: new Date(new Date().setHours(8, 30)).toISOString(),
-      status: "active",
-      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString() }
-    },
-    {
-      id: "mem2",
-      name: "Jane Smith",
-      membershipPlan: "Standard",
-      checkInTime: new Date(new Date().setHours(9, 15)).toISOString(),
-      status: "expiring",
-      expiryDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()
-    },
-    {
-      id: "mem3",
-      name: "Alice Johnson",
-      membershipPlan: "Basic",
-      checkInTime: new Date(new Date().setHours(10, 0)).toISOString(),
-      status: "active"
-    },
-    {
-      id: "mem4",
-      name: "Robert Williams",
-      membershipPlan: "Premium",
-      checkInTime: new Date(new Date().setHours(11, 45)).toISOString(),
-      status: "overdue",
-      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString() }
+    fetchData();
+    
+    // Set up real-time updates (simulated)
+    const interval = setInterval(() => {
+      // Add a random new check-in occasionally
+      if (Math.random() > 0.7) {
+        const newEntry: AttendanceEntry = {
+          memberId: `m${Math.floor(Math.random() * 100)}`,
+          memberName: ["John Smith", "Emily Johnson", "Michael Brown", "Sarah Davis", "Kevin Wilson"][Math.floor(Math.random() * 5)],
+          time: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+          type: Math.random() > 0.5 ? "check-in" : "check-out",
+          location: ["Main Branch", "Downtown Branch", "West Side Location"][Math.floor(Math.random() * 3)],
+          device: ["Main Entrance", "East Entrance", "West Entrance"][Math.floor(Math.random() * 3)],
+          status: Math.random() > 0.9 ? "Invalid" : "Valid"
+        };
+        
+        setAttendanceData(prev => [newEntry, ...prev]);
+        
+        // Apply current filters to the new data
+        if (
+          (filterType === "all" || filterType === newEntry.type) &&
+          (newEntry.memberName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           newEntry.memberId.toLowerCase().includes(searchTerm.toLowerCase()))
+        ) {
+          setFilteredData(prev => [newEntry, ...prev]);
+          if (newEntry.status === "Invalid") {
+            toast.error(`Invalid check-in: ${newEntry.memberName}`);
+          }
+        }
+      }
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [searchTerm, filterType]);
+  
+  // Filter data based on search term and type
+  useEffect(() => {
+    const filtered = attendanceData.filter(entry => {
+      const matchesSearch = entry.memberName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             entry.memberId.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === "all" || entry.type === filterType;
+      return matchesSearch && matchesType;
+    });
+    setFilteredData(filtered);
+  }, [searchTerm, filterType, attendanceData]);
+  
+  // Prepare chart data
+  const chartData = filteredData.reduce((acc: any, entry) => {
+    const hour = format(new Date(entry.time), "HH");
+    const existingHour = acc.find((item: any) => item.hour === hour);
+    
+    if (existingHour) {
+      existingHour[entry.type] = (existingHour[entry.type] || 0) + 1;
+    } else {
+      acc.push({ hour, [entry.type]: 1 });
     }
-  ];
-
-  const refreshData = () => {
-    setIsLoading(true);
-    toast.info("Refreshing real-time data...");
     
+    return acc;
+  }, []);
+  
+  // Sort chart data by hour
+  chartData.sort((a: any, b: any) => parseInt(a.hour) - parseInt(b.hour));
+  
+  const handleRefreshData = () => {
+    setLoading(true);
     setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Real-time data refreshed successfully!");
+      setLoading(false);
+      toast.success("Attendance data refreshed");
     }, 1000);
   };
-
-  // Create mock attendance data for the tracker
-  const mockAttendanceData: AttendanceEntry[] = [
-    {
-      memberId: "1",
-      memberName: "John Doe",
-      time: new Date().toISOString(),
-      type: "check-in",
-      location: "Main Entrance",
-      device: "RFID Scanner",
-      status: "Success"
-    },
-    {
-      memberId: "2",
-      memberName: "Jane Smith",
-      time: new Date(Date.now() - 15 * 60000).toISOString(),
-      type: "check-in",
-      location: "Main Entrance",
-      device: "Mobile App",
-      status: "Success"
-    },
-    {
-      memberId: "3",
-      memberName: "Mike Johnson",
-      time: new Date(Date.now() - 30 * 60000).toISOString(),
-      type: "check-out",
-      location: "Exit Gate",
-      device: "RFID Scanner",
-      status: "Success"
-    }
-  ];
-
-  const attendanceData = mockAttendanceData.map(member => ({
-    memberId: member.memberId,
-    memberName: member.memberName,
-    time: new Date(member.time).toISOString(),
-    type: member.type,
-    location: member.location,
-    device: member.device,
-    status: member.status
-  }));
-
+  
+  const handleDownloadData = () => {
+    toast.info("Downloading attendance data...");
+  };
+  
   return (
     <Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Real-Time Dashboard</h1>
-            <p className="text-muted-foreground">Live tracking of gym activity and member check-ins</p>
-          </div>
-          <Button onClick={refreshData} disabled={isLoading}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Current Active Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.length}
-              </div>
-              <p className="text-xs text-muted-foreground">members checked in today</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Real-time Occupancy</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : Math.round(todayAttendance.length / 2)}
-              </div>
-              <p className="text-xs text-muted-foreground">currently in the gym</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.filter(m => m.status === "expiring").length}
-              </div>
-              <p className="text-xs text-muted-foreground">memberships in next 7 days</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isLoading ? "..." : todayAttendance.filter(m => m.status === "overdue").length}
-              </div>
-              <p className="text-xs text-muted-foreground">overdue payments</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="attendance" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="attendance">Live Attendance</TabsTrigger>
-            <TabsTrigger value="payments">Payment Alerts</TabsTrigger>
-            <TabsTrigger value="expiring">Expiring Memberships</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="attendance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Real-Time Check-ins</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-96 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      <div className="py-6 space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Real-Time Attendance Dashboard</CardTitle>
+              <Badge variant="secondary" className="space-x-1">
+                <Clock className="h-4 w-4" />
+                <span>Live Updates</span>
+              </Badge>
+            </div>
+            <CardDescription>
+              Monitor gym attendance in real-time with live updates and detailed analytics
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-50">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Total Check-ins</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{filteredData.filter(entry => entry.type === "check-in").length}</div>
+                  <div className="text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 inline-block mr-1" />
+                    <span>Today's Visitors</span>
                   </div>
-                ) : (
-                  <AttendanceTracker data={attendanceData} />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="payments" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-50">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Current Occupancy</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{filteredData.filter(entry => entry.type === "check-in").length - filteredData.filter(entry => entry.type === "check-out").length}</div>
+                  <div className="text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 inline-block mr-1" />
+                    <span>Active Members</span>
                   </div>
-                ) : (
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-yellow-50 dark:bg-yellow-950 text-yellow-900 dark:text-yellow-50">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Average Visit Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">35 mins</div>
+                  <div className="text-sm text-muted-foreground">
+                    <Timer className="h-4 w-4 inline-block mr-1" />
+                    <span>Typical Workout</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  placeholder="Search member..."
+                  className="max-w-md"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="check-in">Check-in</SelectItem>
+                    <SelectItem value="check-out">Check-out</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={handleRefreshData} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleDownloadData}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Data
+                </Button>
+              </div>
+            </div>
+            
+            <Tabs defaultValue="analytics" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="realtime">Real-Time Data</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="analytics" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Hourly Attendance</CardTitle>
+                    <CardDescription>Visual representation of hourly check-ins and check-outs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="hour" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="check-in" fill="#82ca9d" name="Check-ins" />
+                        <Bar dataKey="check-out" fill="#8884d8" name="Check-outs" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="realtime" className="space-y-4">
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Member</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Amount Due</TableHead>
-                        <TableHead>Due Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Device</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {todayAttendance
-                        .filter(member => member.upcomingPayment)
-                        .map(member => (
-                          <TableRow key={member.id}>
-                            <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell>{member.membershipPlan}</TableCell>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredData.length > 0 ? (
+                        filteredData.map(entry => (
+                          <TableRow key={entry.memberId + entry.time}>
+                            <TableCell className="font-medium">{entry.memberName} ({entry.memberId})</TableCell>
+                            <TableCell>{format(new Date(entry.time), "hh:mm:ss a")}</TableCell>
+                            <TableCell>{entry.type}</TableCell>
+                            <TableCell>{entry.location}</TableCell>
+                            <TableCell>{entry.device}</TableCell>
                             <TableCell>
-                              {member.upcomingPayment ? 
-                                `$${(member.upcomingPayment.amount / 100).toFixed(2)}` : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              {member.upcomingPayment ? 
-                                format(new Date(member.upcomingPayment.dueDate), 'MMM dd, yyyy') : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={member.status === "overdue" ? "destructive" : "default"}>
-                                {member.status === "overdue" ? "Overdue" : "Upcoming"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toast.info(`Payment reminder sent to ${member.name}`)}
-                              >
-                                Send Reminder
-                              </Button>
+                              {entry.status === "Invalid" ? (
+                                <Badge variant="destructive">
+                                  <Info className="h-4 w-4 mr-1" />
+                                  Invalid
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">Valid</Badge>
+                              )}
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4">
+                            No attendance data found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="expiring" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expiring Memberships</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Expiry Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {todayAttendance
-                        .filter(member => member.status === "expiring")
-                        .map(member => (
-                          <TableRow key={member.id}>
-                            <TableCell className="font-medium">{member.name}</TableCell>
-                            <TableCell>{member.membershipPlan}</TableCell>
-                            <TableCell>
-                              {member.expiryDate ? 
-                                format(new Date(member.expiryDate), 'MMM dd, yyyy') : 
-                                'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">Expiring Soon</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toast.info(`Renewal reminder sent to ${member.name}`)}
-                              >
-                                Send Renewal
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </Container>
   );

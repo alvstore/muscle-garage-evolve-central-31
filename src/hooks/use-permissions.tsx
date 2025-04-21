@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode } from "react";
 import { UserRole } from "@/types";
 import { useAuth } from "./use-auth";
@@ -61,7 +62,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   
   const can = (permission: Permission, isOwner = false): boolean => {
     if (!user || !userRole) return false;
-    return hasPermission(userRole, permission as any, isOwner);
+    return hasPermission(userRole, permission, isOwner);
   };
   
   return (
