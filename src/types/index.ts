@@ -9,6 +9,13 @@ export interface User {
   phone?: string;
   branchId?: string; // Primary branch ID
   dateOfBirth?: string; // Add this field to fix MemberRegisterForm error
+  gender?: string;
+  goal?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }
 
 export interface Member extends User {
@@ -208,7 +215,7 @@ export interface Announcement {
   targetBranch?: string;
   expiresAt?: string;
   authorId: string; // Make this required to match notification.ts
-  authorName?: string;
+  authorName?: string; // Add this property to match notification.ts
   sentCount?: number;
   channels?: NotificationChannel[];
   priority?: "low" | "medium" | "high"; // Make this a specific union type

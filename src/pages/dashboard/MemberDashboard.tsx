@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,7 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import MemberDashboardHeader from '@/components/dashboard/sections/MemberDashboardHeader';
 import QuickStatsSection from '@/components/dashboard/sections/QuickStatsSection';
 import FitnessPlansSection from '@/components/dashboard/sections/FitnessPlansSection';
-import { Announcement, UserRole } from '@/types';
+import { Announcement as NotificationAnnouncement } from '@/types/notification';
+import { UserRole } from '@/types';
 
 interface MemberDashboardProps {
   classes?: GymClass[];
@@ -51,8 +51,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     toast.success("Redirecting to classes page");
   };
   
-  // Mock data for recent announcements with the correct typing for priority
-  const recentAnnouncements: Announcement[] = [
+  const recentAnnouncements: NotificationAnnouncement[] = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -63,7 +62,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       targetRoles: ["member" as UserRole],
       channels: ["in-app"],
       sentCount: 120,
-      priority: "medium" as "medium", // Type assertion to match the literal type
+      priority: "medium",
       createdBy: "admin1"
     },
     {
@@ -76,7 +75,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       targetRoles: ["member" as UserRole],
       channels: ["in-app"],
       sentCount: 98,
-      priority: "low" as "low", // Type assertion to match the literal type
+      priority: "low",
       createdBy: "admin1"
     }
   ];

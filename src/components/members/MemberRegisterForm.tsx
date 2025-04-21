@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +14,24 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { User } from '@/types';
+
+interface MemberFormValues {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  dateOfBirth?: Date;
+  gender?: string;
+  goal?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  membershipType?: string;
+}
 
 const membershipSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -34,8 +51,6 @@ const membershipSchema = z.object({
   membershipType: z.string().optional(),
 });
 
-type MemberFormValues = z.infer<typeof membershipSchema>;
-
 interface MemberRegisterFormProps {
   onSubmit: (data: Partial<User> & { password?: string }) => void;
   isLoading?: boolean;
@@ -52,17 +67,26 @@ const MemberRegisterForm: React.FC<MemberRegisterFormProps> = ({ onSubmit, isLoa
       phone: initialData.phone || '',
       dateOfBirth: initialData.dateOfBirth ? new Date(initialData.dateOfBirth) : undefined,
       gender: initialData.gender || '',
-      goal: initialData?.goal || '',
-      address: initialData?.address || '',
-      city: initialData?.city || '',
-      state: initialData?.state || '',
-      zipCode: initialData?.zipCode || '',
-      country: initialData?.country || '',
+      goal: initialData.goal || '',
+      address: initialData.address || '',
+      city: initialData.city || '',
+      state: initialData.state || '',
+      zipCode: initialData.zipCode || '',
+      country: initialData.country || '',
       emergencyContactName: '',
       emergencyContactPhone: '',
       membershipType: '',
     },
   });
+
+  const handleFormSubmit = (data: MemberFormValues) => {
+    const formattedData: Partial<User> & { password?: string } = {
+      ...data,
+      dateOfBirth: data.dateOfBirth ? format(data.dateOfBirth, 'yyyy-MM-dd') : undefined,
+    };
+    
+    onSubmit(formattedData);
+  };
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -72,7 +96,7 @@ const MemberRegisterForm: React.FC<MemberRegisterFormProps> = ({ onSubmit, isLoa
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
