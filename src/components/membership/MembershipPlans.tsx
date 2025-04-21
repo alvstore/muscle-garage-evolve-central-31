@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,70 +7,60 @@ import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { MembershipPlan } from "@/types/membership";
 import MembershipPlanForm from "./MembershipPlanForm";
 import { toast } from "sonner";
-
-const mockPlans: MembershipPlan[] = [
-  {
-    id: "basic-1m",
-    name: "Basic Monthly",
-    description: "Access to basic facilities with limited class bookings",
-    price: 1999,
-    durationDays: 30,
-    durationLabel: "1-month",
-    benefits: ["Access to gym equipment", "2 group classes per week", "Locker access"],
-    allowedClasses: "basic-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "premium-3m",
-    name: "Premium Quarterly",
-    description: "Full access to all facilities and classes with added benefits",
-    price: 5499,
-    durationDays: 90,
-    durationLabel: "3-month",
-    benefits: ["Full access to gym equipment", "Unlimited group classes", "Personal trainer (1 session/month)", "Nutrition consultation"],
-    allowedClasses: "group-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "platinum-12m",
-    name: "Platinum Annual",
-    description: "Our most comprehensive package with all premium features",
-    price: 18999,
-    durationDays: 365,
-    durationLabel: "12-month",
-    benefits: ["24/7 access to gym equipment", "Unlimited group & premium classes", "Personal trainer (2 sessions/month)", "Nutrition consultation", "Free supplements"],
-    allowedClasses: "all",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-];
-
+const mockPlans: MembershipPlan[] = [{
+  id: "basic-1m",
+  name: "Basic Monthly",
+  description: "Access to basic facilities with limited class bookings",
+  price: 1999,
+  durationDays: 30,
+  durationLabel: "1-month",
+  benefits: ["Access to gym equipment", "2 group classes per week", "Locker access"],
+  allowedClasses: "basic-only",
+  status: "active",
+  createdAt: new Date(2023, 0, 1).toISOString(),
+  updatedAt: new Date(2023, 0, 1).toISOString()
+}, {
+  id: "premium-3m",
+  name: "Premium Quarterly",
+  description: "Full access to all facilities and classes with added benefits",
+  price: 5499,
+  durationDays: 90,
+  durationLabel: "3-month",
+  benefits: ["Full access to gym equipment", "Unlimited group classes", "Personal trainer (1 session/month)", "Nutrition consultation"],
+  allowedClasses: "group-only",
+  status: "active",
+  createdAt: new Date(2023, 0, 1).toISOString(),
+  updatedAt: new Date(2023, 0, 1).toISOString()
+}, {
+  id: "platinum-12m",
+  name: "Platinum Annual",
+  description: "Our most comprehensive package with all premium features",
+  price: 18999,
+  durationDays: 365,
+  durationLabel: "12-month",
+  benefits: ["24/7 access to gym equipment", "Unlimited group & premium classes", "Personal trainer (2 sessions/month)", "Nutrition consultation", "Free supplements"],
+  allowedClasses: "all",
+  status: "active",
+  createdAt: new Date(2023, 0, 1).toISOString(),
+  updatedAt: new Date(2023, 0, 1).toISOString()
+}];
 const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>(mockPlans);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
-
   const handleAddPlan = () => {
     setEditingPlan(null);
     setIsFormOpen(true);
   };
-
   const handleEditPlan = (plan: MembershipPlan) => {
     setEditingPlan(plan);
     setIsFormOpen(true);
   };
-
   const handleDeletePlan = (id: string) => {
     // In a real application, you would make an API call
     setPlans(plans.filter(plan => plan.id !== id));
     toast.success("Membership plan deleted successfully");
   };
-
   const handleSavePlan = (plan: MembershipPlan) => {
     // In a real application, you would make an API call
     if (editingPlan) {
@@ -82,33 +71,27 @@ const MembershipPlans = () => {
         ...plan,
         id: `plan-${Date.now()}`,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       setPlans([...plans, newPlan]);
       toast.success("Membership plan created successfully");
     }
     setIsFormOpen(false);
   };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'USD'
     }).format(price);
   };
-
   const getStatusColor = (status: string) => {
     return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
-
-  return (
-    <>
+  return <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Membership Plans</CardTitle>
-          <Button onClick={handleAddPlan} className="flex items-center gap-1">
-            <PlusIcon className="h-4 w-4" /> Add Plan
-          </Button>
+          
         </CardHeader>
         <CardContent>
           <Table>
@@ -123,15 +106,12 @@ const MembershipPlans = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {plans.map((plan) => (
-                <TableRow key={plan.id}>
+              {plans.map(plan => <TableRow key={plan.id}>
                   <TableCell className="font-medium">{plan.name}</TableCell>
                   <TableCell>{plan.durationLabel}</TableCell>
                   <TableCell>{formatPrice(plan.price)}</TableCell>
                   <TableCell>
-                    {plan.allowedClasses === 'all' ? 'All Classes' : 
-                     plan.allowedClasses === 'group-only' ? 'Group Classes Only' : 
-                     'Basic Classes Only'}
+                    {plan.allowedClasses === 'all' ? 'All Classes' : plan.allowedClasses === 'group-only' ? 'Group Classes Only' : 'Basic Classes Only'}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusColor(plan.status)}>
@@ -148,22 +128,13 @@ const MembershipPlans = () => {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {isFormOpen && (
-        <MembershipPlanForm
-          plan={editingPlan}
-          onSave={handleSavePlan}
-          onCancel={() => setIsFormOpen(false)}
-        />
-      )}
-    </>
-  );
+      {isFormOpen && <MembershipPlanForm plan={editingPlan} onSave={handleSavePlan} onCancel={() => setIsFormOpen(false)} />}
+    </>;
 };
-
 export default MembershipPlans;
