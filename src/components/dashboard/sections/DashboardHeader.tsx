@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, Moon, Sun, Bell, Search, X, Settings, User, LogOut, HelpCircle, Mail, CheckSquare, MessageSquare, Calendar, Star } from 'lucide-react';
@@ -9,14 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
-
 interface DashboardHeaderProps {
   toggleSidebar?: () => void;
   toggleTheme?: () => void;
   isDarkMode?: boolean;
   sidebarOpen?: boolean;
 }
-
 const DashboardHeader = ({
   toggleSidebar,
   toggleTheme,
@@ -30,7 +27,6 @@ const DashboardHeader = ({
   } = useAuth();
   const navigate = useNavigate();
   const [showSearch, setShowSearch] = useState(false);
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -39,11 +35,9 @@ const DashboardHeader = ({
       console.error("Logout failed:", error);
     }
   };
-
   const handleHelpClick = () => {
     navigate('/help'); // Navigate to help page when implemented
   };
-
   const notifications = [{
     id: 1,
     title: "New Member Registration",
@@ -73,7 +67,6 @@ const DashboardHeader = ({
     icon: <CheckSquare className="h-4 w-4 text-green-500" />,
     color: "bg-green-50 dark:bg-green-900/20"
   }];
-
   return <div className="sticky top-0 z-30 shadow-sm">
       <div className="flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-900 border-b dark:border-gray-800">
         <div className="flex items-center gap-4">
@@ -174,8 +167,8 @@ const DashboardHeader = ({
                   <span>Chat</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  
+                  
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -195,5 +188,4 @@ const DashboardHeader = ({
       </div>
     </div>;
 };
-
 export default DashboardHeader;
