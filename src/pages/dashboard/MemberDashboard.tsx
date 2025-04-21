@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,16 +7,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CalendarCheck, MessageSquare, TrendingUp, Utensils } from 'lucide-react';
+import { CalendarCheck, MessageSquare, TrendingUp, Utensils, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 import UpcomingClasses from '@/components/dashboard/sections/UpcomingClasses';
 import FitnessGoals from '@/components/dashboard/sections/FitnessGoals';
 import DietRecommendations from '@/components/dashboard/sections/DietRecommendations';
 import Announcements from '@/components/dashboard/Announcements';
 import { Announcement } from '@/types/notification';
+import { toast } from 'sonner';
 
 const MemberDashboard = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Mock data for upcoming classes
   const upcomingClasses = [
     {
@@ -108,15 +112,45 @@ const MemberDashboard = () => {
     }
   ];
 
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+    toast.success(`Searching for: ${searchTerm}`);
+    // In a real app, this would perform the actual search
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your Muscle Garage dashboard</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="h-8">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-auto">
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 w-full"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
+            />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-0 top-0 h-full"
+              onClick={handleSearch}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="outline" className="h-10">
             Today
           </Button>
         </div>
@@ -214,6 +248,18 @@ const MemberDashboard = () => {
           </CardHeader>
           <CardContent>
             <DietRecommendations recommendations={dietRecommendations} />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  toast.success("Diet plan PDF generated");
+                  // In a real implementation, this would generate and download a PDF
+                }}
+              >
+                Print Plan
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

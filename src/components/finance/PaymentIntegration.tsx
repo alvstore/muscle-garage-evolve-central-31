@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -7,10 +8,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Invoice } from "@/types/finance";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { razorpayService } from "@/services/integrations/razorpayService";
 
 interface PaymentIntegrationProps {
   invoice: Invoice;
   onPaymentComplete: (paymentId: string) => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
 }
 
 const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationProps) => {
@@ -24,45 +32,93 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
   const [sendEmail, setSendEmail] = useState(false);
   const [webhookEvents, setWebhookEvents] = useState(true);
 
-  const generatePaymentLink = () => {
+  const generatePaymentLink = async () => {
     setGeneratingLink(true);
     
-    setTimeout(() => {
-      const mockPaymentLink = `https://rzp.io/i/gym${invoice.id}`;
-      setPaymentLink(mockPaymentLink);
+    try {
+      // In a real implementation, this would call the backend to create a Razorpay order
+      const order = await razorpayService.createOrder(
+        invoice.amount * 100, // Convert to paisa
+        'INR',
+        `INV-${invoice.id}`
+      );
+      
+      if (order) {
+        const mockPaymentLink = `https://rzp.io/i/gym${invoice.id}`;
+        setPaymentLink(mockPaymentLink);
+        setShowPaymentModal(true);
+      } else {
+        toast.error("Failed to generate payment link");
+      }
+    } catch (error) {
+      console.error("Payment link generation failed:", error);
+      toast.error("Failed to generate payment link");
+    } finally {
       setGeneratingLink(false);
-      setShowPaymentModal(true);
-    }, 1500);
+    }
   };
 
   const simulatePayment = () => {
     setProcessing(true);
     
-    setTimeout(() => {
-      const mockPaymentId = `pay_${Date.now()}`;
-      onPaymentComplete(mockPaymentId);
-      setProcessing(false);
-      setShowPaymentModal(false);
-      
-      const notificationSent = (sendSms || sendWhatsapp || sendEmail);
-      const notificationMethods = [];
-      if (sendSms) notificationMethods.push("SMS");
-      if (sendWhatsapp) notificationMethods.push("WhatsApp");
-      if (sendEmail) notificationMethods.push("Email");
-      
-      toast.success(
-        notificationSent
-          ? `Payment successful. Receipt sent via ${notificationMethods.join(" and ")}`
-          : "Payment successful"
-      );
-      
-      if (webhookEvents) {
-        toast.info("Webhook events will be processed automatically", {
-          description: "Payment captured webhook will update the invoice status",
-          duration: 5000
-        });
+    // In a real implementation, this would handle the actual Razorpay checkout
+    const options = {
+      key: "rzp_test_YOUR_TEST_KEY", // Replace with your actual test key
+      amount: invoice.amount * 100, // in paisa
+      currency: "INR",
+      name: "Muscle Garage",
+      description: `Payment for Invoice #${invoice.id}`,
+      order_id: `order_${Date.now()}`, // This would come from the backend
+      prefill: {
+        name: invoice.memberId || "Member",
+        email: "member@example.com",
+        contact: "+91 9999999999"
+      },
+      theme: {
+        color: "#3399cc"
+      },
+      handler: function(response: any) {
+        // This function is called when payment is successful
+        const paymentId = response.razorpay_payment_id;
+        onPaymentComplete(paymentId);
+        setProcessing(false);
+        setShowPaymentModal(false);
+        
+        const notificationSent = (sendSms || sendWhatsapp || sendEmail);
+        const notificationMethods = [];
+        if (sendSms) notificationMethods.push("SMS");
+        if (sendWhatsapp) notificationMethods.push("WhatsApp");
+        if (sendEmail) notificationMethods.push("Email");
+        
+        toast.success(
+          notificationSent
+            ? `Payment successful. Receipt sent via ${notificationMethods.join(" and ")}`
+            : "Payment successful"
+        );
+        
+        if (webhookEvents) {
+          toast.info("Webhook events will be processed automatically", {
+            description: "Payment captured webhook will update the invoice status",
+            duration: 5000
+          });
+        }
       }
-    }, 2000);
+    };
+    
+    try {
+      // For the demo, we'll simulate a successful payment after a delay
+      setTimeout(() => {
+        // In a real implementation, we would call:
+        // const razorpay = new window.Razorpay(options);
+        // razorpay.open();
+        
+        // For now, we'll just simulate the handler being called
+        options.handler({ razorpay_payment_id: `pay_${Date.now()}` });
+      }, 2000);
+    } catch (error) {
+      toast.error("Payment initialization failed");
+      setProcessing(false);
+    }
   };
 
   const handleSendLink = () => {
@@ -79,6 +135,10 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
     toast.success(`Payment link sent via ${notificationMethods.join(" and ")}`);
   };
 
+  const handleDirectPayment = () => {
+    simulatePayment();
+  };
+
   return (
     <>
       <Button
@@ -86,7 +146,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
         disabled={generatingLink || invoice.status === "paid"}
         className="w-full"
       >
-        {generatingLink ? "Generating..." : "Generate Razorpay Link"}
+        {generatingLink ? "Generating..." : "Pay Now with Razorpay"}
       </Button>
       
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
@@ -121,14 +181,14 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Share this link with the member to complete payment via Razorpay
+                    Share this link to complete payment via Razorpay
                   </p>
                 </div>
                 
                 <div className="space-y-2 rounded-md bg-muted p-3">
                   <h4 className="font-medium">Invoice Summary</h4>
                   <p>Amount: ₹{invoice.amount.toFixed(2)}</p>
-                  <p>Member: {invoice.memberId}</p>
+                  <p>Member: {invoice.memberId || "Not specified"}</p>
                   <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
                 </div>
                 
@@ -147,11 +207,11 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                 </div>
                 
                 <Button
-                  onClick={simulatePayment}
+                  onClick={handleDirectPayment}
                   disabled={processing}
                   className="w-full"
                 >
-                  {processing ? "Processing..." : "Simulate Successful Payment"}
+                  {processing ? "Processing..." : "Pay Now"}
                 </Button>
               </div>
             </TabsContent>

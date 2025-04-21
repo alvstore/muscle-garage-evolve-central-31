@@ -8,8 +8,10 @@ import { Calendar, Dumbbell, CreditCard, Bell, Trophy, BarChart, ChevronRight } 
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { GymClass } from '@/types/class';
-import { Badge } from '@/components/ui/badge'; // Add this import
+import { Badge } from '@/components/ui/badge';
 import MemberProgressChart from './MemberProgressChart';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface MemberDashboardProps {
   classes?: GymClass[];
@@ -18,6 +20,7 @@ interface MemberDashboardProps {
 const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
   // Example progress data
   const progressData = [
@@ -42,6 +45,12 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     .filter(c => new Date(c.startTime) > new Date())
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 3);
+
+  // Handle book class button click
+  const handleBookClass = () => {
+    navigate('/classes');
+    toast.success("Redirecting to classes page");
+  };
   
   return (
     <div className="space-y-6">
@@ -144,8 +153,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                   </div>
                 ))}
                 
-                <Button className="w-full" asChild>
-                  <a href="/classes">View All Classes</a>
+                <Button className="w-full" onClick={handleBookClass}>
+                  Book Class
                 </Button>
               </div>
             ) : (
@@ -155,8 +164,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                 <p className="text-sm text-muted-foreground mb-6">
                   You haven't booked any classes yet.
                 </p>
-                <Button asChild>
-                  <a href="/classes">Browse Classes</a>
+                <Button onClick={handleBookClass}>
+                  Book Class
                 </Button>
               </div>
             )}
@@ -225,9 +234,15 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                       <p className="text-xs text-muted-foreground">Protein: 35g, Carbs: 40g, Fats: 15g</p>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-3">
+                  <div className="flex justify-between mt-3">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast.success("Diet plan PDF generated");
+                      // In a real implementation, this would generate and download a PDF
+                    }}>
+                      Print Plan
+                    </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <a href="/fitness/plans">View Full Plan</a>
+                      <a href="/fitness/diet">View Full Plan</a>
                     </Button>
                   </div>
                 </div>
@@ -271,7 +286,12 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                 </div>
                 <div className="text-right">
                   <p className="font-bold">₹899</p>
-                  <Badge className="bg-green-500">Paid</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500">Pending</Badge>
+                    <Button size="sm" variant="outline" onClick={() => navigate('/invoices')}>
+                      Pay
+                    </Button>
+                  </div>
                 </div>
               </div>
               

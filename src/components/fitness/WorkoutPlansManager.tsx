@@ -17,11 +17,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Copy, Dumbbell, Users, Check, X } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
+
 interface WorkoutPlansManagerProps {
   members?: Member[];
   trainerId?: string;
   forMemberId?: string;
 }
+
 const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
   members = [],
   trainerId,
@@ -38,6 +40,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
   const [selectedMemberId, setSelectedMemberId] = useState<string>(forMemberId || "");
   const [memberWorkouts, setMemberWorkouts] = useState<MemberWorkout[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const isMember = user?.role === 'member';
 
   // Form state for creating/editing workout plans
   const [formData, setFormData] = useState<{
@@ -90,6 +93,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       });
     }
   }, [selectedPlan, isEditing]);
+
   const handleCreatePlan = () => {
     setIsCreating(true);
     setFormData({
@@ -99,10 +103,12 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       days: [createNewDay()]
     });
   };
+  
   const handleEditPlan = (plan: WorkoutPlan) => {
     setSelectedPlan(plan);
     setIsEditing(true);
   };
+  
   const handleDeletePlan = async (planId: string) => {
     if (window.confirm("Are you sure you want to delete this workout plan?")) {
       const success = await workoutService.deleteWorkoutPlan(planId);
@@ -111,15 +117,18 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       }
     }
   };
+  
   const handleAssignPlan = (plan: WorkoutPlan) => {
     setSelectedPlan(plan);
     setIsAssigning(true);
   };
+  
   const createNewDay = (): WorkoutDay => ({
     id: uuidv4(),
     dayLabel: `Day ${formData.days.length + 1}`,
     exercises: []
   });
+  
   const createNewExercise = (): Exercise => ({
     id: uuidv4(),
     name: "",
@@ -130,18 +139,21 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     notes: "",
     muscleGroupTag: ""
   });
+  
   const handleAddDay = () => {
     setFormData(prev => ({
       ...prev,
       days: [...prev.days, createNewDay()]
     }));
   };
+  
   const handleRemoveDay = (dayId: string) => {
     setFormData(prev => ({
       ...prev,
       days: prev.days.filter(day => day.id !== dayId)
     }));
   };
+  
   const handleDayChange = (dayId: string, field: keyof WorkoutDay, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -151,6 +163,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       } : day)
     }));
   };
+  
   const handleAddExercise = (dayId: string) => {
     setFormData(prev => ({
       ...prev,
@@ -160,6 +173,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       } : day)
     }));
   };
+  
   const handleRemoveExercise = (dayId: string, exerciseId: string) => {
     setFormData(prev => ({
       ...prev,
@@ -169,6 +183,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       } : day)
     }));
   };
+  
   const handleExerciseChange = (dayId: string, exerciseId: string, field: keyof Exercise, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -181,6 +196,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       } : day)
     }));
   };
+
   const handleSubmitPlan = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter a name for the workout plan");
@@ -225,6 +241,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       }
     }
   };
+
   const handleAssignSubmit = async () => {
     if (!selectedPlan || !selectedMemberId) {
       toast.error("Please select both a plan and a member");
@@ -243,10 +260,12 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       setSelectedPlan(null);
     }
   };
+
   const getTrainerName = (trainerId: string) => {
     const trainer = trainers.find(t => t.id === trainerId);
     return trainer ? trainer.name : 'Unknown Trainer';
   };
+
   const renderPlanForm = () => <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
@@ -360,6 +379,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
         </Button>
       </div>
     </div>;
+    
   const renderAssignForm = () => <div className="space-y-4">
       {!forMemberId && <div className="space-y-2">
           <Label htmlFor="memberSelect">Select Member</Label>
@@ -430,7 +450,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
       <CardHeader>
         <CardTitle>Workout Plans</CardTitle>
         <CardDescription>
-          Manage and assign workout plans to members
+          {isMember ? "View your assigned workout plans" : "Manage and assign workout plans to members"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -443,7 +463,11 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
           <TabsContent value="all" className="space-y-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium">Available Workout Plans</h3>
-              
+              {!isMember && (
+                <Button onClick={handleCreatePlan}>
+                  <Plus className="w-4 h-4 mr-1" /> Create Plan
+                </Button>
+              )}
             </div>
             
             {workoutPlans.length > 0 ? <div className="grid gap-4 md:grid-cols-2">
@@ -454,17 +478,16 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                           <CardTitle className="text-base">{plan.name}</CardTitle>
                           <CardDescription>{plan.isCommon ? "Common Plan" : "Private Plan"}</CardDescription>
                         </div>
-                        <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          {forMemberId && <Button variant="ghost" size="sm" onClick={() => handleAssignPlan(plan)}>
-                              <Copy className="w-4 h-4" />
-                            </Button>}
-                        </div>
+                        {!isMember && (
+                          <div className="flex space-x-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="p-4">
@@ -480,25 +503,32 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-end">
-                      {!forMemberId && <Button variant="outline" size="sm" onClick={() => handleAssignPlan(plan)}>
+                      {!isMember && !forMemberId && (
+                        <Button variant="outline" size="sm" onClick={() => handleAssignPlan(plan)}>
                           <Users className="w-4 h-4 mr-1" /> Assign to Member
-                        </Button>}
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>)}
               </div> : <div className="text-center py-8 border rounded-lg">
                 <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-lg font-medium">No Workout Plans</h3>
-                <p className="text-muted-foreground">Create your first workout plan to get started</p>
-                <Button onClick={handleCreatePlan} className="mt-4">
-                  <Plus className="w-4 h-4 mr-1" /> Create Plan
-                </Button>
+                <p className="text-muted-foreground">
+                  {isMember 
+                    ? "No workout plans are available yet." 
+                    : "Create your first workout plan to get started"}
+                </p>
+                {!isMember && (
+                  <Button onClick={handleCreatePlan} className="mt-4">
+                    <Plus className="w-4 h-4 mr-1" /> Create Plan
+                  </Button>
+                )}
               </div>}
           </TabsContent>
           
           {forMemberId && <TabsContent value="assigned" className="space-y-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Assigned Workout Plans</h3>
-                
               </div>
               
               {memberWorkouts.length > 0 ? <Table>
@@ -508,7 +538,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                       <TableHead>Type</TableHead>
                       <TableHead>Assigned By</TableHead>
                       <TableHead>Assigned On</TableHead>
-                      <TableHead>Actions</TableHead>
+                      {!isMember && <TableHead>Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -520,25 +550,34 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
                           <TableCell>{memberWorkout.isCustom ? "Custom" : "Standard"}</TableCell>
                           <TableCell>{getTrainerName(memberWorkout.assignedBy)}</TableCell>
                           <TableCell>{new Date(memberWorkout.assignedAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
+                          {!isMember && (
+                            <TableCell>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>;
               })}
                   </TableBody>
                 </Table> : <div className="text-center py-8 border rounded-lg">
                   <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-2 text-lg font-medium">No Assigned Plans</h3>
-                  <p className="text-muted-foreground">Assign a workout plan to this member</p>
-                  <Button variant="outline" onClick={() => setSelectedMemberId(forMemberId)} className="mt-4">
-                    <Plus className="w-4 h-4 mr-1" /> Assign Plan
-                  </Button>
+                  <p className="text-muted-foreground">
+                    {isMember 
+                      ? "You don't have any workout plans assigned yet." 
+                      : "Assign a workout plan to this member"}
+                  </p>
+                  {!isMember && (
+                    <Button variant="outline" onClick={() => setSelectedMemberId(forMemberId)} className="mt-4">
+                      <Plus className="w-4 h-4 mr-1" /> Assign Plan
+                    </Button>
+                  )}
                 </div>}
             </TabsContent>}
         </Tabs>
       </CardContent>
     </Card>;
 };
+
 export default WorkoutPlansManager;

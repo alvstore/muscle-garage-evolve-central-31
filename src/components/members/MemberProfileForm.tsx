@@ -4,13 +4,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Member } from "@/types";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 interface MemberProfileFormProps {
   member: Member;
@@ -19,6 +18,9 @@ interface MemberProfileFormProps {
 }
 
 const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps) => {
+  const { user } = useAuth();
+  const isMember = user?.role === 'member';
+  
   const [formData, setFormData] = useState<Member & {
     address?: string;
     city?: string;
@@ -40,17 +42,6 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChange = (name: string, date: Date | undefined) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: date ? date.toISOString() : undefined 
-    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +73,15 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
     // Simulate API call
     setTimeout(() => {
       const updatedMember = {
-        ...formData,
+        ...member, // Keep original properties
+        // Only update editable fields
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
         avatar: avatarPreview
       };
       onSave(updatedMember as Member);
@@ -124,17 +123,20 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Read-only fields */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
-                onChange={handleChange}
-                required
+                readOnly={isMember}
+                disabled={isMember}
+                className={isMember ? "bg-muted" : ""}
               />
             </div>
             
+            {/* Editable fields */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -157,15 +159,20 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               />
             </div>
             
+            {/* Read-only fields */}
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <DatePicker
+              <Input
                 id="dateOfBirth"
-                date={formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined}
-                onSelect={(date) => handleDateChange("dateOfBirth", date)}
+                name="dateOfBirth"
+                value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : ""}
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
             
+            {/* Editable address fields */}
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
@@ -218,21 +225,17 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               />
             </div>
             
+            {/* Read-only membership fields */}
             <div className="space-y-2">
               <Label htmlFor="membershipStatus">Membership Status</Label>
-              <Select 
-                value={formData.membershipStatus} 
-                onValueChange={(value) => handleSelectChange("membershipStatus", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="membershipStatus"
+                name="membershipStatus"
+                value={formData.membershipStatus}
+                readOnly
+                disabled
+                className="bg-muted"
+              />
             </div>
             
             <div className="space-y-2">
@@ -241,46 +244,57 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
                 id="membershipId"
                 name="membershipId"
                 value={formData.membershipId || ""}
-                onChange={handleChange}
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="membershipStartDate">Start Date</Label>
-              <DatePicker
+              <Input
                 id="membershipStartDate"
-                date={formData.membershipStartDate ? new Date(formData.membershipStartDate) : undefined}
-                onSelect={(date) => handleDateChange("membershipStartDate", date)}
+                name="membershipStartDate"
+                value={formData.membershipStartDate ? new Date(formData.membershipStartDate).toLocaleDateString() : ""}
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="membershipEndDate">End Date</Label>
-              <DatePicker
+              <Input
                 id="membershipEndDate"
-                date={formData.membershipEndDate ? new Date(formData.membershipEndDate) : undefined}
-                onSelect={(date) => handleDateChange("membershipEndDate", date)}
+                name="membershipEndDate"
+                value={formData.membershipEndDate ? new Date(formData.membershipEndDate).toLocaleDateString() : ""}
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="trainerId">Assigned Trainer ID</Label>
+              <Label htmlFor="trainerId">Assigned Trainer</Label>
               <Input
                 id="trainerId"
                 name="trainerId"
                 value={formData.trainerId || ""}
-                onChange={handleChange}
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
             
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="goal">Fitness Goal</Label>
-              <Textarea
+              <Input
                 id="goal"
                 name="goal"
                 value={formData.goal || ""}
-                onChange={handleChange}
-                className="min-h-[80px]"
+                readOnly
+                disabled
+                className="bg-muted"
               />
             </div>
           </div>
