@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -144,8 +145,8 @@ const AttendancePage = () => {
               <CardContent>
                 <AttendanceTracker 
                   date={date}
-                  data={mockAttendanceData} 
-                  historyMode 
+                  data={mockAttendanceData}
+                  historyMode={true} 
                 />
               </CardContent>
             </Card>

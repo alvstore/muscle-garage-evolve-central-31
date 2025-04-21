@@ -18,9 +18,10 @@ interface AttendanceEntry {
 export interface AttendanceTrackerProps {
   data: AttendanceEntry[];
   date?: Date;
+  historyMode?: boolean;
 }
 
-const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data, date = new Date() }) => {
+const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data, date = new Date(), historyMode = false }) => {
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -53,7 +54,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data, date = new 
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium">Today's Check-ins</h3>
+          <h3 className="text-lg font-medium">{historyMode ? "Attendance History" : "Today's Check-ins"}</h3>
           <p className="text-sm text-muted-foreground">
             {format(date, 'EEEE, MMMM d, yyyy')}
           </p>
@@ -67,7 +68,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data, date = new 
 
       {sortedData.length === 0 ? (
         <div className="text-center py-8 border rounded">
-          <p className="text-muted-foreground">No attendance records for today yet</p>
+          <p className="text-muted-foreground">No attendance records {historyMode ? "found" : "for today yet"}</p>
         </div>
       ) : (
         <Table>

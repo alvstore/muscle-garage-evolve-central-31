@@ -10,9 +10,9 @@ export interface User {
   avatar?: string;
   phone?: string;
   branchId?: string; // Primary branch ID
+  primaryBranchId?: string; // Alternative naming for branchId
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
-  primaryBranchId?: string; // Primary branch ID (alternative naming)
   
   // Address fields
   address?: string;
