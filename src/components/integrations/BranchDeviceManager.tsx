@@ -309,7 +309,7 @@ const BranchDeviceManager = () => {
                     <TableCell>
                       <div className="flex items-center">
                         {device.isActive ? (
-                          <Badge variant="success" className="bg-green-500 hover:bg-green-600">Active</Badge>
+                          <Badge variant="default" className="bg-green-500 hover:bg-green-600">Active</Badge>
                         ) : (
                           <Badge variant="destructive">Inactive</Badge>
                         )}

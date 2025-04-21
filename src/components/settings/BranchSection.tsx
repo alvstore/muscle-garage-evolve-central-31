@@ -65,7 +65,7 @@ const BranchSection = () => {
                     <span className="text-sm">{branch.name}</span>
                   </div>
                   {branch.isActive ? (
-                    <Badge variant="success" className="bg-green-500 text-white text-xs">Active</Badge>
+                    <Badge variant="default" className="bg-green-500 text-white text-xs">Active</Badge>
                   ) : (
                     <Badge variant="secondary" className="text-xs">Inactive</Badge>
                   )}
