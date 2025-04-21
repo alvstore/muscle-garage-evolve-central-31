@@ -11,6 +11,15 @@ export interface User {
   branchId?: string;
   branchIds?: string[];
   isBranchManager?: boolean;
+  primaryBranchId?: string;
+  dateOfBirth?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  bio?: string;
+  notes?: string;
 }
 
 export interface UserProfile extends User {
@@ -29,4 +38,8 @@ export interface AuthUser {
   branchId?: string;
   branchIds?: string[]; 
   isBranchManager?: boolean;
+}
+
+export interface MemberWithBranch extends User {
+  branchName?: string;
 }

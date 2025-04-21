@@ -1,391 +1,359 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from 'uuid';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { WorkoutPlan, WorkoutDay, Exercise, Member } from "@/types";
-import { Pencil, Plus, Save, Trash, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { Loader2, PlusCircle, Edit, Trash2, Copy, GripVertical } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  WorkoutPlan,
+  WorkoutDay,
+  Exercise
+} from "@/types/workout";
+import { useAuth } from "@/hooks/use-auth";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface WorkoutPlansManagerProps {
-  selectedMember: Member | null;
-  onSave: (plan: WorkoutPlan) => void;
-  onCancel: () => void;
+  memberId?: string;
 }
 
-const WorkoutPlansManager = ({ selectedMember, onSave, onCancel }: WorkoutPlansManagerProps) => {
-  const [planName, setPlanName] = useState("");
-  const [planDescription, setPlanDescription] = useState("");
-  const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [exerciseName, setExerciseName] = useState("");
-  const [exerciseSets, setExerciseSets] = useState(3);
-  const [exerciseReps, setExerciseReps] = useState(10);
-  const [exerciseWeight, setExerciseWeight] = useState<number | undefined>(undefined);
-  const [exerciseRest, setExerciseRest] = useState(60);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
-
+const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ memberId }) => {
+  const { user: currentUser } = useAuth();
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateDescription, setNewTemplateDescription] = useState("");
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  
   useEffect(() => {
-    if (selectedMember) {
-      setPlanName(`${selectedMember.name}'s Custom Plan`);
-      setPlanDescription(`Custom workout plan for ${selectedMember.name}`);
-    }
-  }, [selectedMember]);
-
-  const resetForm = () => {
-    setPlanName("");
-    setPlanDescription("");
-    setWorkoutDays([]);
-    setSelectedDay(null);
-    setExerciseName("");
-    setExerciseSets(3);
-    setExerciseReps(10);
-    setExerciseWeight(undefined);
-    setExerciseRest(60);
-    setIsEditDialogOpen(false);
-    setEditingExercise(null);
+    // Mock data for demonstration
+    const mockWorkoutPlans: WorkoutPlan[] = [
+      {
+        id: "wp1",
+        name: "Full Body Blast",
+        description: "Comprehensive workout targeting all major muscle groups.",
+        trainerId: "trainer1",
+        memberId: memberId,
+        workoutDays: [
+          {
+            id: "wd1",
+            name: "Day 1",
+            dayLabel: "Monday",
+            exercises: [
+              { id: "ex1", name: "Squats", sets: 3, reps: 12, rest: 60 },
+              { id: "ex2", name: "Bench Press", sets: 3, reps: 8, rest: 60 },
+            ],
+          },
+          {
+            id: "wd2",
+            name: "Day 2",
+            dayLabel: "Wednesday",
+            exercises: [
+              { id: "ex3", name: "Deadlifts", sets: 1, reps: 5, rest: 120 },
+              { id: "ex4", name: "Overhead Press", sets: 3, reps: 8, rest: 60 },
+            ],
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isCustom: true,
+        notes: "Focus on form and controlled movements.",
+      },
+      {
+        id: "wp2",
+        name: "Upper/Lower Split",
+        description: "Alternating upper and lower body workouts.",
+        trainerId: "trainer2",
+        memberId: memberId,
+        workoutDays: [
+          {
+            id: "wd3",
+            name: "Day 1",
+            dayLabel: "Tuesday",
+            exercises: [
+              { id: "ex5", name: "Pull-ups", sets: 3, reps: "AMRAP", rest: 60 },
+              { id: "ex6", name: "Dips", sets: 3, reps: "AMRAP", rest: 60 },
+            ],
+          },
+          {
+            id: "wd4",
+            name: "Day 2",
+            dayLabel: "Thursday",
+            exercises: [
+              { id: "ex7", name: "Leg Press", sets: 3, reps: 12, rest: 60 },
+              { id: "ex8", name: "Hamstring Curls", sets: 3, reps: 15, rest: 45 },
+            ],
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isCustom: true,
+        notes: "Adjust reps based on strength level.",
+      },
+    ];
+    setWorkoutPlans(mockWorkoutPlans);
+  }, [memberId]);
+  
+  const dayOptions = [
+    { label: "Monday", value: "monday" },
+    { label: "Tuesday", value: "tuesday" },
+    { label: "Wednesday", value: "wednesday" },
+    { label: "Thursday", value: "thursday" },
+    { label: "Friday", value: "friday" },
+    { label: "Saturday", value: "saturday" },
+    { label: "Sunday", value: "sunday" },
+  ];
+  
+  const handleDragStart = () => {
+    setIsDragging(true);
   };
-
-  const handleAddDay = () => {
-    const newDay: WorkoutDay = {
-      id: `day-${Date.now()}`,
-      name: `Day ${workoutDays.length + 1}`,
-      dayLabel: "",
+  
+  const handleDragEnd = (result: any) => {
+    setIsDragging(false);
+    if (!result.destination) {
+      return;
+    }
+    
+    const items = Array.from(workoutPlans);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setWorkoutPlans(items);
+  };
+  
+  const createPlanTemplate = () => {
+    const workoutDay: WorkoutDay = {
+      id: uuidv4(),
+      name: "Day 1", // Add name property
+      dayLabel: "Monday",
       exercises: []
     };
-    setWorkoutDays([...workoutDays, newDay]);
+    
+    return workoutDay;
   };
-
-  const handleDayNameChange = (dayId: string, newName: string) => {
-    setWorkoutDays(prevDays =>
-      prevDays.map(day =>
-        day.id === dayId ? { ...day, name: newName } : day
-      )
+  
+  const handleDayToggle = (day: string) => {
+    setSelectedDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
   };
-
-  const handleRemoveDay = (dayId: string) => {
-    setWorkoutDays(prevDays => prevDays.filter(day => day.id !== dayId));
-    if (selectedDay === dayId) {
-      setSelectedDay(null);
+  
+  const handleAddWorkoutPlan = async (planData: Omit<WorkoutPlan, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      setIsSaving(true);
+      // Add the missing properties to match the WorkoutPlan type
+      const completeData: Omit<WorkoutPlan, "id" | "createdAt" | "updatedAt"> = {
+        ...planData,
+        trainerId: currentUser?.id,
+        workoutDays: planData.days || []
+      };
+      
+      // Create fake ID for demo purposes
+      const newPlan: WorkoutPlan = {
+        ...completeData,
+        id: uuidv4(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Add to local state
+      setWorkoutPlans([...workoutPlans, newPlan]);
+      toast.success("Workout plan created successfully!");
+      
+      // Reset form
+      setShowTemplateDialog(false);
+      setNewTemplateName("");
+      setNewTemplateDescription("");
+      setSelectedDays([]);
+      
+    } catch (error) {
+      console.error("Error creating workout plan:", error);
+      toast.error("Failed to create workout plan");
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  const handleSelectDay = (dayId: string) => {
-    setSelectedDay(dayId);
-  };
-
-  const handleAddExercise = () => {
-    if (!exerciseName.trim()) {
-      toast.error("Please enter an exercise name");
-      return;
-    }
-
-    const newExercise: Exercise = {
-      id: `ex-${Date.now()}`,
-      name: exerciseName,
-      sets: exerciseSets,
-      reps: exerciseReps,
-      weight: exerciseWeight,
-      rest: exerciseRest
-    };
-
-    setWorkoutDays(prevDays =>
-      prevDays.map(day =>
-        day.id === selectedDay ? { ...day, exercises: [...day.exercises, newExercise] } : day
-      )
-    );
-
-    setExerciseName("");
-    setExerciseSets(3);
-    setExerciseReps(10);
-    setExerciseWeight(undefined);
-    setExerciseRest(60);
-  };
-
-  const handleEditExercise = (exercise: Exercise) => {
-    setEditingExercise(exercise);
-    setExerciseName(exercise.name);
-    setExerciseSets(exercise.sets);
-    setExerciseReps(exercise.reps);
-    setExerciseWeight(exercise.weight);
-    setExerciseRest(exercise.rest);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateExercise = () => {
-    if (!editingExercise) return;
-
-    const updatedExercise: Exercise = {
-      ...editingExercise,
-      name: exerciseName,
-      sets: exerciseSets,
-      reps: exerciseReps,
-      weight: exerciseWeight,
-      rest: exerciseRest
-    };
-
-    setWorkoutDays(prevDays =>
-      prevDays.map(day =>
-        day.id === selectedDay
-          ? {
-              ...day,
-              exercises: day.exercises.map(ex =>
-                ex.id === editingExercise.id ? updatedExercise : ex
-              )
-            }
-          : day
-      )
-    );
-
-    setIsEditDialogOpen(false);
-    setEditingExercise(null);
-    setExerciseName("");
-    setExerciseSets(3);
-    setExerciseReps(10);
-    setExerciseWeight(undefined);
-    setExerciseRest(60);
-  };
-
-  const handleRemoveExercise = (exerciseId: string) => {
-    setWorkoutDays(prevDays =>
-      prevDays.map(day =>
-        day.id === selectedDay
-          ? { ...day, exercises: day.exercises.filter(ex => ex.id !== exerciseId) }
-          : day
-      )
-    );
-  };
-
-  const handleSavePlan = () => {
-    if (!planName.trim()) {
-      toast.error("Please enter a plan name");
-      return;
-    }
-
-    if (workoutDays.length === 0) {
-      toast.error("Please add at least one workout day");
-      return;
-    }
-
-    const plan: Omit<WorkoutPlan, "id" | "createdAt" | "updatedAt"> = {
-      name: planName,
-      description: planDescription,
-      memberId: selectedMember ? selectedMember.id : "",
-      trainerId: "trainer-123", // This would come from the current user context
-      isCustom: !!selectedMember,
-      workoutDays: workoutDays,
-      createdBy: "Current User", // This would come from the auth context
-    };
-
-    onSave(plan);
-    resetForm();
-  };
-
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Workout Plan</CardTitle>
-        <CardDescription>
-          {selectedMember
-            ? `Create a custom workout plan for ${selectedMember.name}`
-            : "Create a general workout plan"}
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <CardTitle>Workout Plans</CardTitle>
+          <CardDescription>Manage workout plans for members</CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Input
-            type="text"
-            placeholder="Plan Name"
-            value={planName}
-            onChange={(e) => setPlanName(e.target.value)}
-          />
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Plan Description"
-            value={planDescription}
-            onChange={(e) => setPlanDescription(e.target.value)}
-          />
-        </div>
-
-        <Tabs defaultValue={selectedDay || "no-day"}>
-          <TabsList>
-            {workoutDays.map((day) => (
-              <TabsTrigger
-                key={day.id}
-                value={day.id}
-                onClick={() => handleSelectDay(day.id)}
-                className={selectedDay === day.id ? "bg-secondary text-secondary-foreground" : ""}
-              >
-                {day.name}
-                <Button variant="ghost" size="icon" onClick={() => handleRemoveDay(day.id)} className="ml-2">
-                  <X className="h-4 w-4" />
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Input placeholder="Search workout plans..." className="max-w-md" />
+            <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Template
                 </Button>
-              </TabsTrigger>
-            ))}
-            <Button onClick={handleAddDay} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Day
-            </Button>
-          </TabsList>
-          <div className="mt-4">
-            {workoutDays.length === 0 ? (
-              <p className="text-muted-foreground">No workout days added yet.</p>
-            ) : selectedDay ? (
-              <TabsContent value={selectedDay} className="space-y-4">
-                <Input
-                  type="text"
-                  placeholder="Day Name"
-                  value={workoutDays.find(day => day.id === selectedDay)?.name || ""}
-                  onChange={(e) => handleDayNameChange(selectedDay, e.target.value)}
-                />
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Exercises:</h4>
-                  {workoutDays.find(day => day.id === selectedDay)?.exercises.map((exercise) => (
-                    <div key={exercise.id} className="flex items-center justify-between p-2 border rounded-md">
-                      <span>{exercise.name} ({exercise.sets} sets x {exercise.reps} reps)</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="icon" onClick={() => handleEditExercise(exercise)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveExercise(exercise.id)} className="text-destructive">
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="space-y-2">
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Workout Plan Template</DialogTitle>
+                  <DialogDescription>
+                    Define a template for quick workout plan creation
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Template Name</Label>
                     <Input
-                      type="text"
-                      placeholder="Exercise Name"
-                      value={exerciseName}
-                      onChange={(e) => setExerciseName(e.target.value)}
+                      id="name"
+                      placeholder="e.g., Strength Building"
+                      value={newTemplateName}
+                      onChange={(e) => setNewTemplateName(e.target.value)}
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Sets"
-                        value={exerciseSets}
-                        onChange={(e) => setExerciseSets(Number(e.target.value))}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Reps"
-                        value={exerciseReps}
-                        onChange={(e) => setExerciseReps(Number(e.target.value))}
-                      />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Describe the template"
+                      value={newTemplateDescription}
+                      onChange={(e) => setNewTemplateDescription(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Select Days</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {dayOptions.map(day => (
+                        <Button
+                          key={day.value}
+                          variant={selectedDays.includes(day.value) ? "default" : "outline"}
+                          onClick={() => handleDayToggle(day.value)}
+                        >
+                          {day.label}
+                        </Button>
+                      ))}
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Weight (kg)"
-                        value={exerciseWeight || ""}
-                        onChange={(e) => setExerciseWeight(e.target.value === "" ? undefined : Number(e.target.value))}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Rest (seconds)"
-                        value={exerciseRest}
-                        onChange={(e) => setExerciseRest(Number(e.target.value))}
-                      />
-                    </div>
-                    <Button onClick={handleAddExercise} variant="secondary" size="sm">
-                      Add Exercise
-                    </Button>
                   </div>
                 </div>
-              </TabsContent>
-            ) : (
-              <p className="text-muted-foreground">Select a workout day to add exercises.</p>
-            )}
+                <div className="flex justify-end space-x-2">
+                  <Button variant="secondary" onClick={() => setShowTemplateDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleAddWorkoutPlan({
+                        name: newTemplateName,
+                        description: newTemplateDescription,
+                        days: selectedDays.map(day => ({
+                          id: uuidv4(),
+                          name: `Day ${dayOptions.findIndex(d => d.value === day) + 1}`,
+                          dayLabel: dayOptions.find(d => d.value === day)?.label,
+                          exercises: []
+                        }))
+                      });
+                    }}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Template"
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        </Tabs>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button onClick={handleSavePlan}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Plan
-          </Button>
+          
+          <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <Droppable droppableId="workoutPlans">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  <ScrollArea className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]"></TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {workoutPlans.map((plan, index) => (
+                          <Draggable key={plan.id} draggableId={plan.id} index={index}>
+                            {(provided) => (
+                              <TableRow
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                ref={provided.innerRef}
+                                className="group"
+                              >
+                                <TableCell className="w-[50px] text-center">
+                                  <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-gray-600 cursor-move" />
+                                </TableCell>
+                                <TableCell className="font-medium">{plan.name}</TableCell>
+                                <TableCell>{plan.description}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button variant="ghost" size="sm">
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Duplicate
+                                    </Button>
+                                    <Button variant="ghost" size="sm">
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="text-red-500 hover:bg-red-50">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+          
+          {workoutPlans.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">No workout plans found.</p>
+            </div>
+          )}
         </div>
       </CardContent>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Exercise</DialogTitle>
-            <DialogDescription>
-              Update the details for this exercise.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="name">Exercise Name</label>
-              <Input
-                id="name"
-                value={exerciseName}
-                onChange={(e) => setExerciseName(e.target.value)}
-                placeholder="e.g., Bench Press"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="grid gap-2">
-                <label htmlFor="sets">Sets</label>
-                <Input
-                  id="sets"
-                  type="number"
-                  value={exerciseSets}
-                  onChange={(e) => setExerciseSets(Number(e.target.value))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="reps">Reps</label>
-                <Input
-                  id="reps"
-                  type="number"
-                  value={exerciseReps}
-                  onChange={(e) => setExerciseReps(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="grid gap-2">
-                <label htmlFor="weight">Weight (kg)</label>
-                <Input
-                  id="weight"
-                  type="number"
-                  value={exerciseWeight || ""}
-                  onChange={(e) => setExerciseWeight(e.target.value === "" ? undefined : Number(e.target.value))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="rest">Rest (seconds)</label>
-                <Input
-                  id="rest"
-                  type="number"
-                  value={exerciseRest}
-                  onChange={(e) => setExerciseRest(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateExercise}>
-              Update Exercise
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };

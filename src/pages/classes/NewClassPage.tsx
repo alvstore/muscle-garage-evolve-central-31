@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { useNavigate } from "react-router-dom";
@@ -7,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { GymClass } from "@/types/class";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Loader2 } from "@/components/ui/loader";
 
 const NewClassPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { canCreateClass } = usePermissions();
 
   const handleSubmit = async (classData: GymClass) => {
@@ -46,12 +47,18 @@ const NewClassPage = () => {
             <CardDescription>Add a new fitness class to your schedule</CardDescription>
           </CardHeader>
           <CardContent>
-            <ClassForm 
-              initialData={{} as GymClass}
-              handleSubmit={handleSubmit} 
-              isLoading={loading} 
-              onCancel={() => navigate("/classes")}
-            />
+            {isSubmitting ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <ClassForm
+                initialData={{} as GymClass}
+                handleSubmit={handleSubmit} 
+                isLoading={loading} 
+                onCancel={() => navigate("/classes")}
+              />
+            )}
           </CardContent>
         </Card>
       </div>

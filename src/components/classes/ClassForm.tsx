@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,22 @@ export interface ClassFormProps {
   isLoading?: boolean;
   onCancel: () => void;
   handleSubmit: (classData: GymClass) => Promise<void>;
+  open?: boolean; 
+  onOpenChange?: React.Dispatch<React.SetStateAction<boolean>>;
+  onClose?: () => void;
+  onSave?: (classData: GymClass) => Promise<void>;
 }
 
-const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel, handleSubmit }) => {
+const ClassForm: React.FC<ClassFormProps> = ({ 
+  initialData, 
+  isLoading, 
+  onCancel, 
+  handleSubmit,
+  open,
+  onOpenChange,
+  onClose,
+  onSave 
+}) => {
   const [name, setName] = useState(initialData.name || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [trainerId, setTrainerId] = useState(initialData.trainerId || '');
@@ -25,6 +39,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel,
   const [endTime, setEndTime] = useState(initialData.endTime || '');
   const [type, setType] = useState(initialData.type || '');
   const [location, setLocation] = useState(initialData.location || '');
+  const [difficulty, setDifficulty] = useState(initialData.difficulty || 'intermediate');
 
   useEffect(() => {
     setName(initialData.name || '');
@@ -35,6 +50,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel,
     setEndTime(initialData.endTime || '');
     setType(initialData.type || '');
     setLocation(initialData.location || '');
+    setDifficulty(initialData.difficulty || 'intermediate');
   }, [initialData]);
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -51,9 +67,20 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel,
       endTime,
       type,
       location,
+      difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
     };
 
-    await handleSubmit(classData);
+    // Use the appropriate handler - onSave has priority if provided
+    if (onSave) {
+      await onSave(classData);
+    } else {
+      await handleSubmit(classData);
+    }
+
+    // Call onClose if available after submission
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -75,7 +102,7 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel,
           <Textarea
             id="description"
             placeholder="Class Description"
-            value={description}
+            value={description || ''}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
@@ -135,6 +162,19 @@ const ClassForm: React.FC<ClassFormProps> = ({ initialData, isLoading, onCancel,
               <SelectItem value="Zumba">Zumba</SelectItem>
               <SelectItem value="Strength Training">Strength Training</SelectItem>
               <SelectItem value="Cardio">Cardio</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="difficulty">Difficulty</Label>
+          <Select value={difficulty} onValueChange={setDifficulty}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
             </SelectContent>
           </Select>
         </div>

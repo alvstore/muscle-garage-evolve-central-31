@@ -12,4 +12,5 @@ export interface AttendanceEntry {
   status?: string;
   checkInTime?: string;
   checkOutTime?: string;
+  branchId?: string;
 }

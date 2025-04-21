@@ -30,6 +30,29 @@ interface PermissionsContextType {
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
 
+// Fallback permissions for unauthorized routes, preventing runtime errors
+const fallbackPermissions: PermissionsContextType = {
+  userRole: null,
+  can: () => false,
+  canCreateAnnouncement: false,
+  canEditAnnouncement: false,
+  canDeleteAnnouncement: false,
+  canViewFinance: false,
+  canEditFinance: false,
+  canCreateClass: false,
+  canEditClass: false,
+  canEditSettings: false,
+  canViewAllBranches: false,
+  canEditProfiles: false,
+  canDeleteProfiles: false,
+  canAssignTrainers: false,
+  canCreateFitnessPlan: false,
+  canEditFitnessPlan: false,
+  canViewMembersList: false,
+  isBranchManager: false,
+  isSuperAdmin: false,
+};
+
 export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const userRole = user?.role as UserRole || null;
@@ -100,4 +123,10 @@ export const usePermissions = () => {
     throw new Error("usePermissions must be used within a PermissionsProvider");
   }
   return context;
+};
+
+// Safe version of usePermissions that won't throw errors outside of PermissionsProvider
+export const useSafePermissions = () => {
+  const context = useContext(PermissionsContext);
+  return context || fallbackPermissions;
 };
