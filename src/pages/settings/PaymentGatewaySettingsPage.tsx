@@ -1,505 +1,734 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CreditCard, RefreshCw, DollarSign, KeyRound, Lock, Globe, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Info, CreditCard, Shield } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
-import { Navigate } from "react-router-dom";
 
-interface PaymentGatewayConfig {
-  enabled: boolean;
-  live: boolean;
-  apiKey: string;
-  secretKey: string;
-  merchantId?: string;
-  callbackUrl: string;
-  webhookUrl: string;
-  additionalConfig?: Record<string, string>;
-}
-
-const initialConfigs: Record<string, PaymentGatewayConfig> = {
-  razorpay: {
-    enabled: true,
-    live: false,
-    apiKey: "rzp_test_1234567890abcdef",
-    secretKey: "••••••••••••••••••••••••••",
-    callbackUrl: "https://yourdomain.com/api/payments/razorpay/callback",
-    webhookUrl: "https://yourdomain.com/api/payments/razorpay/webhook",
-  },
-  payu: {
-    enabled: false,
-    live: false,
-    apiKey: "",
-    secretKey: "",
-    merchantId: "",
-    callbackUrl: "https://yourdomain.com/api/payments/payu/callback",
-    webhookUrl: "https://yourdomain.com/api/payments/payu/webhook",
-  },
-  ccavenue: {
-    enabled: false,
-    live: false,
-    apiKey: "",
-    secretKey: "",
-    merchantId: "",
-    callbackUrl: "https://yourdomain.com/api/payments/ccavenue/callback",
-    webhookUrl: "https://yourdomain.com/api/payments/ccavenue/webhook",
-  },
-  phonepe: {
-    enabled: false,
-    live: false,
-    apiKey: "",
-    secretKey: "",
-    merchantId: "",
-    callbackUrl: "https://yourdomain.com/api/payments/phonepe/callback",
-    webhookUrl: "https://yourdomain.com/api/payments/phonepe/webhook",
-  }
-};
-
-const PaymentGatewaySettingsPage = () => {
-  const [configs, setConfigs] = useState<Record<string, PaymentGatewayConfig>>(initialConfigs);
-  const [activeTab, setActiveTab] = useState("razorpay");
+const PaymentGatewaySettingsPage: React.FC = () => {
   const { can } = usePermissions();
+  const [activeTab, setActiveTab] = useState('razorpay');
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Check if user has permission to manage settings
-  if (!can("manage_settings")) {
-    toast.error("You don't have permission to access payment gateway settings");
-    return <Navigate to="/unauthorized" replace />;
-  }
-  
-  const handleConfigChange = (gateway: string, field: keyof PaymentGatewayConfig, value: any) => {
-    setConfigs({
-      ...configs,
-      [gateway]: {
-        ...configs[gateway],
-        [field]: value
-      }
-    });
+  const [razorpaySettings, setRazorpaySettings] = useState({
+    isEnabled: true,
+    liveMode: false,
+    keyId: 'rzp_test_1234567890abcdef',
+    keySecret: '••••••••••••••••',
+    webhookSecret: '••••••••••••••••',
+    enableRefunds: true,
+    enablePartialPayments: false,
+    prefillContactInfo: true,
+    collectShippingAddress: false
+  });
+
+  const [payuSettings, setPayuSettings] = useState({
+    isEnabled: false,
+    liveMode: false,
+    merchantKey: '',
+    merchantSalt: '••••••••••••••••',
+    merchantId: '',
+    authHeader: '••••••••••••••••',
+    enableRefunds: true,
+    autoCapture: true
+  });
+
+  const [ccavenueSettings, setCcavenueSettings] = useState({
+    isEnabled: false,
+    liveMode: false,
+    merchantId: '',
+    accessCode: '',
+    workingKey: '••••••••••••••••',
+    redirectUrl: 'https://musclegrm.com/payment/ccavenue/callback',
+    enableRefunds: false
+  });
+
+  const [phonepeSettings, setPhonepeSettings] = useState({
+    isEnabled: false,
+    liveMode: false,
+    merchantId: '',
+    saltKey: '••••••••••••••••',
+    saltIndex: '1',
+    redirectUrl: 'https://musclegrm.com/payment/phonepe/callback',
+    enableRefunds: true
+  });
+
+  const handleSaveSettings = () => {
+    setIsLoading(true);
+    
+    // Simulate API request
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success('Payment gateway settings saved successfully');
+    }, 1000);
   };
-  
-  const handleAdditionalConfigChange = (gateway: string, field: string, value: string) => {
-    setConfigs({
-      ...configs,
-      [gateway]: {
-        ...configs[gateway],
-        additionalConfig: {
-          ...configs[gateway].additionalConfig,
-          [field]: value
-        }
-      }
-    });
-  };
-  
-  const handleSaveChanges = (gateway: string) => {
-    toast.success(`${gateway.charAt(0).toUpperCase() + gateway.slice(1)} settings saved successfully`);
-  };
-  
+
   const handleTestConnection = (gateway: string) => {
-    toast.success(`${gateway.charAt(0).toUpperCase() + gateway.slice(1)} connection test successful`);
+    toast.info(`Testing ${gateway} connection...`);
+    
+    // Simulate connection test
+    setTimeout(() => {
+      toast.success(`${gateway} connection test successful!`);
+    }, 1500);
   };
-  
+
   return (
     <Container>
       <div className="py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Payment Gateway Settings</h1>
-          <p className="text-muted-foreground">Configure your payment gateway credentials</p>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Payment Gateway Settings</h1>
+            <p className="text-muted-foreground">Configure payment processing options for your gym</p>
+          </div>
         </div>
-        
+
         <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Security Notice</AlertTitle>
+          <ShieldAlert className="h-4 w-4" />
           <AlertDescription>
-            These are global settings for all branches. Your API keys and secrets are encrypted 
-            before storage. Never share these credentials with unauthorized personnel.
+            These are global settings that apply to all branches. API keys and credentials are stored securely.
           </AlertDescription>
         </Alert>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-2">
-            <TabsTrigger value="razorpay">Razorpay</TabsTrigger>
-            <TabsTrigger value="payu">PayU</TabsTrigger>
-            <TabsTrigger value="ccavenue">CCAvenue</TabsTrigger>
-            <TabsTrigger value="phonepe">PhonePe</TabsTrigger>
+
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <TabsTrigger value="razorpay" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span>Razorpay</span>
+            </TabsTrigger>
+            <TabsTrigger value="payu" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span>PayU</span>
+            </TabsTrigger>
+            <TabsTrigger value="ccavenue" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span>CC Avenue</span>
+            </TabsTrigger>
+            <TabsTrigger value="phonepe" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              <span>PhonePe</span>
+            </TabsTrigger>
           </TabsList>
-          
-          {/* Razorpay */}
+
+          {/* Razorpay Settings */}
           <TabsContent value="razorpay">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Razorpay Settings</CardTitle>
-                    <CardDescription>Configure your Razorpay payment gateway</CardDescription>
+                    <CardTitle>Razorpay Configuration</CardTitle>
+                    <CardDescription>Connect your Razorpay account for payment processing</CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.razorpay.enabled}
-                      onCheckedChange={(value) => handleConfigChange("razorpay", "enabled", value)}
-                      id="razorpay-enabled"
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Enable</span>
+                    <Switch 
+                      checked={razorpaySettings.isEnabled} 
+                      onCheckedChange={(checked) => setRazorpaySettings({...razorpaySettings, isEnabled: checked})}
+                      disabled={!can('manage_settings')}
                     />
-                    <Label htmlFor="razorpay-enabled">
-                      {configs.razorpay.enabled ? "Enabled" : "Disabled"}
-                    </Label>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.razorpay.live}
-                      onCheckedChange={(value) => handleConfigChange("razorpay", "live", value)}
-                      id="razorpay-live"
-                    />
-                    <Label htmlFor="razorpay-live">
-                      {configs.razorpay.live ? "Live Mode" : "Test Mode"}
-                    </Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="razorpay-live-mode" 
+                    checked={razorpaySettings.liveMode}
+                    onCheckedChange={(checked) => 
+                      setRazorpaySettings({
+                        ...razorpaySettings, 
+                        liveMode: checked as boolean
+                      })
+                    }
+                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                  />
+                  <label
+                    htmlFor="razorpay-live-mode"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Live Mode (uncheck for test mode)
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="razorpay-key-id">API Key ID</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="razorpay-key-id" 
+                        className="pl-9"
+                        value={razorpaySettings.keyId}
+                        onChange={(e) => setRazorpaySettings({...razorpaySettings, keyId: e.target.value})}
+                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Find this in your Razorpay Dashboard &gt; Settings &gt; API Keys</p>
                   </div>
                   
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpay-api-key">API Key</Label>
-                      <Input
-                        id="razorpay-api-key"
-                        value={configs.razorpay.apiKey}
-                        onChange={(e) => handleConfigChange("razorpay", "apiKey", e.target.value)}
-                        placeholder="rzp_live_xxxxxxxxxx"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Your Razorpay API key ({configs.razorpay.live ? "Live" : "Test"})
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="razorpay-secret-key">Secret Key</Label>
-                      <Input
-                        id="razorpay-secret-key"
-                        type="password"
-                        value={configs.razorpay.secretKey}
-                        onChange={(e) => handleConfigChange("razorpay", "secretKey", e.target.value)}
-                        placeholder="••••••••••••••••••••••••••"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Your Razorpay secret key ({configs.razorpay.live ? "Live" : "Test"})
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Webhook Configuration</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="razorpay-webhook-url">Webhook URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="razorpay-webhook-url"
-                        value={configs.razorpay.webhookUrl}
-                        onChange={(e) => handleConfigChange("razorpay", "webhookUrl", e.target.value)}
-                        placeholder="https://yourdomain.com/api/payments/razorpay/webhook"
-                        className="flex-1"
+                    <Label htmlFor="razorpay-key-secret">API Key Secret</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="razorpay-key-secret" 
+                        type="password"
+                        className="pl-9"
+                        value={razorpaySettings.keySecret}
+                        onChange={(e) => setRazorpaySettings({...razorpaySettings, keySecret: e.target.value})}
+                        placeholder="••••••••••••••••"
+                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
                       />
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          navigator.clipboard.writeText(configs.razorpay.webhookUrl);
-                          toast.success("Webhook URL copied to clipboard");
-                        }}
-                      >
-                        Copy
-                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Add this URL in your Razorpay dashboard to receive payment events
-                    </p>
+                    <p className="text-xs text-muted-foreground">Keep this secret and secure</p>
                   </div>
                 </div>
-                
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => handleTestConnection("razorpay")}>
-                    <Shield className="mr-2 h-4 w-4" />
+
+                <div className="space-y-2">
+                  <Label htmlFor="razorpay-webhook-secret">Webhook Secret</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="razorpay-webhook-secret" 
+                      type="password"
+                      className="pl-9"
+                      value={razorpaySettings.webhookSecret}
+                      onChange={(e) => setRazorpaySettings({...razorpaySettings, webhookSecret: e.target.value})}
+                      placeholder="••••••••••••••••"
+                      disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Set this in your Razorpay Dashboard &gt; Settings &gt; Webhooks
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Payment Options</Label>
+                  <div className="grid gap-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="razorpay-refunds" 
+                        checked={razorpaySettings.enableRefunds}
+                        onCheckedChange={(checked) => 
+                          setRazorpaySettings({
+                            ...razorpaySettings, 
+                            enableRefunds: checked as boolean
+                          })
+                        }
+                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                      />
+                      <label
+                        htmlFor="razorpay-refunds"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Enable Refunds
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="razorpay-partial" 
+                        checked={razorpaySettings.enablePartialPayments}
+                        onCheckedChange={(checked) => 
+                          setRazorpaySettings({
+                            ...razorpaySettings, 
+                            enablePartialPayments: checked as boolean
+                          })
+                        }
+                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                      />
+                      <label
+                        htmlFor="razorpay-partial"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Enable Partial Payments
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="razorpay-prefill" 
+                        checked={razorpaySettings.prefillContactInfo}
+                        onCheckedChange={(checked) => 
+                          setRazorpaySettings({
+                            ...razorpaySettings, 
+                            prefillContactInfo: checked as boolean
+                          })
+                        }
+                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                      />
+                      <label
+                        htmlFor="razorpay-prefill"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Prefill Contact Information
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleTestConnection('Razorpay')}
+                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled || isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
-                  <Button onClick={() => handleSaveChanges("razorpay")}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Save Changes
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Settings'
+                    )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          {/* PayU */}
+
+          {/* PayU Settings */}
           <TabsContent value="payu">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>PayU Settings</CardTitle>
-                    <CardDescription>Configure your PayU payment gateway</CardDescription>
+                    <CardTitle>PayU Configuration</CardTitle>
+                    <CardDescription>Connect your PayU account for payment processing</CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.payu.enabled}
-                      onCheckedChange={(value) => handleConfigChange("payu", "enabled", value)}
-                      id="payu-enabled"
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Enable</span>
+                    <Switch 
+                      checked={payuSettings.isEnabled} 
+                      onCheckedChange={(checked) => setPayuSettings({...payuSettings, isEnabled: checked})}
+                      disabled={!can('manage_settings')}
                     />
-                    <Label htmlFor="payu-enabled">
-                      {configs.payu.enabled ? "Enabled" : "Disabled"}
-                    </Label>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="payu-live-mode" 
+                    checked={payuSettings.liveMode}
+                    onCheckedChange={(checked) => 
+                      setPayuSettings({
+                        ...payuSettings, 
+                        liveMode: checked as boolean
+                      })
+                    }
+                    disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                  />
+                  <label
+                    htmlFor="payu-live-mode"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Live Mode (uncheck for test mode)
+                  </label>
+                </div>
+
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.payu.live}
-                      onCheckedChange={(value) => handleConfigChange("payu", "live", value)}
-                      id="payu-live"
-                    />
-                    <Label htmlFor="payu-live">
-                      {configs.payu.live ? "Live Mode" : "Test Mode"}
-                    </Label>
-                  </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="payu-merchant-id">Merchant ID</Label>
-                      <Input
-                        id="payu-merchant-id"
-                        value={configs.payu.merchantId || ""}
-                        onChange={(e) => handleConfigChange("payu", "merchantId", e.target.value)}
-                        placeholder="Enter your PayU Merchant ID"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="payu-api-key">API Key</Label>
-                      <Input
-                        id="payu-api-key"
-                        value={configs.payu.apiKey}
-                        onChange={(e) => handleConfigChange("payu", "apiKey", e.target.value)}
-                        placeholder="Enter your PayU API key"
+                  <div className="space-y-2">
+                    <Label htmlFor="payu-merchant-key">Merchant Key</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="payu-merchant-key" 
+                        className="pl-9"
+                        value={payuSettings.merchantKey}
+                        onChange={(e) => setPayuSettings({...payuSettings, merchantKey: e.target.value})}
+                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="payu-secret-key">Secret Key</Label>
-                    <Input
-                      id="payu-secret-key"
-                      type="password"
-                      value={configs.payu.secretKey}
-                      onChange={(e) => handleConfigChange("payu", "secretKey", e.target.value)}
-                      placeholder="••••••••••••••••••••••••••"
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Callback URLs</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="payu-success-url">Success URL</Label>
-                      <Input
-                        id="payu-success-url"
-                        value={configs.payu.callbackUrl}
-                        onChange={(e) => handleConfigChange("payu", "callbackUrl", e.target.value)}
-                        placeholder="https://yourdomain.com/api/payments/payu/callback"
+                    <Label htmlFor="payu-merchant-salt">Merchant Salt</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="payu-merchant-salt" 
+                        type="password"
+                        className="pl-9"
+                        value={payuSettings.merchantSalt}
+                        onChange={(e) => setPayuSettings({...payuSettings, merchantSalt: e.target.value})}
+                        placeholder="••••••••••••••••"
+                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="payu-webhook-url">Webhook URL</Label>
-                      <Input
-                        id="payu-webhook-url"
-                        value={configs.payu.webhookUrl}
-                        onChange={(e) => handleConfigChange("payu", "webhookUrl", e.target.value)}
-                        placeholder="https://yourdomain.com/api/payments/payu/webhook"
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="payu-merchant-id">Merchant ID</Label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="payu-merchant-id" 
+                        className="pl-9"
+                        value={payuSettings.merchantId}
+                        onChange={(e) => setPayuSettings({...payuSettings, merchantId: e.target.value})}
+                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
                       />
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => handleTestConnection("payu")}>
-                    <Shield className="mr-2 h-4 w-4" />
+
+                <div>
+                  <Label>Payment Options</Label>
+                  <div className="grid gap-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="payu-refunds" 
+                        checked={payuSettings.enableRefunds}
+                        onCheckedChange={(checked) => 
+                          setPayuSettings({
+                            ...payuSettings, 
+                            enableRefunds: checked as boolean
+                          })
+                        }
+                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                      />
+                      <label
+                        htmlFor="payu-refunds"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Enable Refunds
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="payu-auto-capture" 
+                        checked={payuSettings.autoCapture}
+                        onCheckedChange={(checked) => 
+                          setPayuSettings({
+                            ...payuSettings, 
+                            autoCapture: checked as boolean
+                          })
+                        }
+                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                      />
+                      <label
+                        htmlFor="payu-auto-capture"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Auto-capture Payments
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleTestConnection('PayU')}
+                    disabled={!can('manage_settings') || !payuSettings.isEnabled || isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
-                  <Button onClick={() => handleSaveChanges("payu")}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Save Changes
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={!can('manage_settings') || !payuSettings.isEnabled || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Settings'
+                    )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          {/* CCAvenue */}
+
+          {/* CC Avenue Settings */}
           <TabsContent value="ccavenue">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>CCAvenue Settings</CardTitle>
-                    <CardDescription>Configure your CCAvenue payment gateway</CardDescription>
+                    <CardTitle>CC Avenue Configuration</CardTitle>
+                    <CardDescription>Connect your CC Avenue account for payment processing</CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.ccavenue.enabled}
-                      onCheckedChange={(value) => handleConfigChange("ccavenue", "enabled", value)}
-                      id="ccavenue-enabled"
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Enable</span>
+                    <Switch 
+                      checked={ccavenueSettings.isEnabled} 
+                      onCheckedChange={(checked) => setCcavenueSettings({...ccavenueSettings, isEnabled: checked})}
+                      disabled={!can('manage_settings')}
                     />
-                    <Label htmlFor="ccavenue-enabled">
-                      {configs.ccavenue.enabled ? "Enabled" : "Disabled"}
-                    </Label>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="ccavenue-live-mode" 
+                    checked={ccavenueSettings.liveMode}
+                    onCheckedChange={(checked) => 
+                      setCcavenueSettings({
+                        ...ccavenueSettings, 
+                        liveMode: checked as boolean
+                      })
+                    }
+                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                  />
+                  <label
+                    htmlFor="ccavenue-live-mode"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Live Mode (uncheck for test mode)
+                  </label>
+                </div>
+
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.ccavenue.live}
-                      onCheckedChange={(value) => handleConfigChange("ccavenue", "live", value)}
-                      id="ccavenue-live"
-                    />
-                    <Label htmlFor="ccavenue-live">
-                      {configs.ccavenue.live ? "Live Mode" : "Test Mode"}
-                    </Label>
-                  </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="ccavenue-merchant-id">Merchant ID</Label>
-                      <Input
-                        id="ccavenue-merchant-id"
-                        value={configs.ccavenue.merchantId || ""}
-                        onChange={(e) => handleConfigChange("ccavenue", "merchantId", e.target.value)}
-                        placeholder="Enter your CCAvenue Merchant ID"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ccavenue-api-key">Access Code</Label>
-                      <Input
-                        id="ccavenue-api-key"
-                        value={configs.ccavenue.apiKey}
-                        onChange={(e) => handleConfigChange("ccavenue", "apiKey", e.target.value)}
-                        placeholder="Enter your CCAvenue Access Code"
+                  <div className="space-y-2">
+                    <Label htmlFor="ccavenue-merchant-id">Merchant ID</Label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="ccavenue-merchant-id" 
+                        className="pl-9"
+                        value={ccavenueSettings.merchantId}
+                        onChange={(e) => setCcavenueSettings({...ccavenueSettings, merchantId: e.target.value})}
+                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="ccavenue-secret-key">Working Key</Label>
-                    <Input
-                      id="ccavenue-secret-key"
-                      type="password"
-                      value={configs.ccavenue.secretKey}
-                      onChange={(e) => handleConfigChange("ccavenue", "secretKey", e.target.value)}
-                      placeholder="••••••••••••••••••••••••••"
-                    />
+                    <Label htmlFor="ccavenue-access-code">Access Code</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="ccavenue-access-code" 
+                        className="pl-9"
+                        value={ccavenueSettings.accessCode}
+                        onChange={(e) => setCcavenueSettings({...ccavenueSettings, accessCode: e.target.value})}
+                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="ccavenue-working-key">Working Key</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="ccavenue-working-key" 
+                        type="password"
+                        className="pl-9"
+                        value={ccavenueSettings.workingKey}
+                        onChange={(e) => setCcavenueSettings({...ccavenueSettings, workingKey: e.target.value})}
+                        placeholder="••••••••••••••••"
+                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="ccavenue-redirect-url">Redirect URL</Label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="ccavenue-redirect-url" 
+                        className="pl-9"
+                        value={ccavenueSettings.redirectUrl}
+                        onChange={(e) => setCcavenueSettings({...ccavenueSettings, redirectUrl: e.target.value})}
+                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      This URL must be configured in your CC Avenue dashboard
+                    </p>
                   </div>
                 </div>
-                
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => handleTestConnection("ccavenue")}>
-                    <Shield className="mr-2 h-4 w-4" />
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleTestConnection('CC Avenue')}
+                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled || isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
-                  <Button onClick={() => handleSaveChanges("ccavenue")}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Save Changes
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Settings'
+                    )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          {/* PhonePe */}
+
+          {/* PhonePe Settings */}
           <TabsContent value="phonepe">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>PhonePe Settings</CardTitle>
-                    <CardDescription>Configure your PhonePe payment gateway</CardDescription>
+                    <CardTitle>PhonePe Configuration</CardTitle>
+                    <CardDescription>Connect your PhonePe account for payment processing</CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.phonepe.enabled}
-                      onCheckedChange={(value) => handleConfigChange("phonepe", "enabled", value)}
-                      id="phonepe-enabled"
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Enable</span>
+                    <Switch 
+                      checked={phonepeSettings.isEnabled} 
+                      onCheckedChange={(checked) => setPhonepeSettings({...phonepeSettings, isEnabled: checked})}
+                      disabled={!can('manage_settings')}
                     />
-                    <Label htmlFor="phonepe-enabled">
-                      {configs.phonepe.enabled ? "Enabled" : "Disabled"}
-                    </Label>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={configs.phonepe.live}
-                      onCheckedChange={(value) => handleConfigChange("phonepe", "live", value)}
-                      id="phonepe-live"
-                    />
-                    <Label htmlFor="phonepe-live">
-                      {configs.phonepe.live ? "Live Mode" : "Test Mode"}
-                    </Label>
-                  </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="phonepe-merchant-id">Merchant ID</Label>
-                      <Input
-                        id="phonepe-merchant-id"
-                        value={configs.phonepe.merchantId || ""}
-                        onChange={(e) => handleConfigChange("phonepe", "merchantId", e.target.value)}
-                        placeholder="Enter your PhonePe Merchant ID"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phonepe-api-key">API Key</Label>
-                      <Input
-                        id="phonepe-api-key"
-                        value={configs.phonepe.apiKey}
-                        onChange={(e) => handleConfigChange("phonepe", "apiKey", e.target.value)}
-                        placeholder="Enter your PhonePe API key"
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="phonepe-live-mode" 
+                    checked={phonepeSettings.liveMode}
+                    onCheckedChange={(checked) => 
+                      setPhonepeSettings({
+                        ...phonepeSettings, 
+                        liveMode: checked as boolean
+                      })
+                    }
+                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                  />
+                  <label
+                    htmlFor="phonepe-live-mode"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Production Mode (uncheck for test mode)
+                  </label>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="phonepe-merchant-id">Merchant ID</Label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="phonepe-merchant-id" 
+                        className="pl-9"
+                        value={phonepeSettings.merchantId}
+                        onChange={(e) => setPhonepeSettings({...phonepeSettings, merchantId: e.target.value})}
+                        disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phonepe-secret-key">Secret Key</Label>
-                    <Input
-                      id="phonepe-secret-key"
+                    <Label htmlFor="phonepe-salt-index">Salt Index</Label>
+                    <div className="relative">
+                      <Input 
+                        id="phonepe-salt-index" 
+                        value={phonepeSettings.saltIndex}
+                        onChange={(e) => setPhonepeSettings({...phonepeSettings, saltIndex: e.target.value})}
+                        disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phonepe-salt-key">Salt Key</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="phonepe-salt-key" 
                       type="password"
-                      value={configs.phonepe.secretKey}
-                      onChange={(e) => handleConfigChange("phonepe", "secretKey", e.target.value)}
-                      placeholder="••••••••••••••••••••••••••"
+                      className="pl-9"
+                      value={phonepeSettings.saltKey}
+                      onChange={(e) => setPhonepeSettings({...phonepeSettings, saltKey: e.target.value})}
+                      placeholder="••••••••••••••••"
+                      disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
                     />
                   </div>
                 </div>
                 
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => handleTestConnection("phonepe")}>
-                    <Shield className="mr-2 h-4 w-4" />
+                <div className="space-y-2">
+                  <Label htmlFor="phonepe-redirect-url">Redirect URL</Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="phonepe-redirect-url" 
+                      className="pl-9"
+                      value={phonepeSettings.redirectUrl}
+                      onChange={(e) => setPhonepeSettings({...phonepeSettings, redirectUrl: e.target.value})}
+                      disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This URL must be registered with PhonePe
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="phonepe-refunds" 
+                    checked={phonepeSettings.enableRefunds}
+                    onCheckedChange={(checked) => 
+                      setPhonepeSettings({
+                        ...phonepeSettings, 
+                        enableRefunds: checked as boolean
+                      })
+                    }
+                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                  />
+                  <label
+                    htmlFor="phonepe-refunds"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Enable Refunds
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleTestConnection('PhonePe')}
+                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled || isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
-                  <Button onClick={() => handleSaveChanges("phonepe")}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Save Changes
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Settings'
+                    )}
                   </Button>
                 </div>
               </CardContent>

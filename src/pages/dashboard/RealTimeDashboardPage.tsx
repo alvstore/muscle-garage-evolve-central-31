@@ -23,7 +23,7 @@ const RealTimeDashboardPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mock data for real-time attendance
+  // Mock data for real-time attendance - will be replaced with Supabase data
   const todayAttendance = [
     {
       id: "mem1",
@@ -67,6 +67,17 @@ const RealTimeDashboardPage = () => {
       toast.success("Real-time data refreshed successfully!");
     }, 1000);
   };
+
+  // Create mock attendance data for the tracker
+  const attendanceData = todayAttendance.map(member => ({
+    memberId: member.id,
+    memberName: member.name,
+    time: new Date(member.checkInTime).toISOString(),
+    type: 'check-in',
+    location: 'Main Entrance',
+    device: 'Hikvision Terminal',
+    status: member.status
+  }));
 
   return (
     <Container>
@@ -154,7 +165,7 @@ const RealTimeDashboardPage = () => {
                     <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
                   </div>
                 ) : (
-                  <AttendanceTracker />
+                  <AttendanceTracker data={attendanceData} />
                 )}
               </CardContent>
             </Card>
@@ -256,7 +267,7 @@ const RealTimeDashboardPage = () => {
                                 'N/A'}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="warning">Expiring Soon</Badge>
+                              <Badge variant="outline">Expiring Soon</Badge>
                             </TableCell>
                             <TableCell>
                               <Button 

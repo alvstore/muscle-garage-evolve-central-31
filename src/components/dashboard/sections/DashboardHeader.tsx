@@ -15,6 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import NotificationsPanel from "@/components/notifications/NotificationsPanel";
 
 interface DashboardHeaderProps {
   toggleSidebar: () => void;
@@ -34,6 +35,7 @@ const DashboardHeader = ({
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +57,7 @@ const DashboardHeader = ({
           <Menu className="h-5 w-5" />
         </Button>
         <div className="hidden md:flex items-center">
-          <span className="text-lg font-semibold">
+          <span className="text-lg font-semibold max-w-[200px] truncate">
             {currentBranch?.name || "Muscle Garage"}
           </span>
         </div>
@@ -100,17 +102,25 @@ const DashboardHeader = ({
           {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
         
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
+        {/* Notifications */}
+        <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <NotificationsPanel onClose={() => setNotificationsOpen(false)} />
+          </SheetContent>
+        </Sheet>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.photoURL || ""} alt={user?.displayName || "User"} />
+                <AvatarImage src={user?.avatar || ""} alt={user?.name || "User"} />
                 <AvatarFallback>
-                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>

@@ -10,7 +10,6 @@ import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
 import BranchIntegrationSettings from '@/pages/settings/BranchIntegrationSettings';
 import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
-import HelpCenterPage from '@/pages/help/HelpCenterPage';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
 import ClassTypesPage from '@/pages/classes/ClassTypesPage';
 import TaskManagerPage from '@/pages/communication/TaskManagerPage';
@@ -63,9 +62,5 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/communication/tasks',
     element: <TaskManagerPage />
-  },
-  {
-    path: '/help',
-    element: <HelpCenterPage />
   }
 ];

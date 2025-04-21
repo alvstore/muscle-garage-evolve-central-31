@@ -1,251 +1,231 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Mail, Phone, Plus, Search, Trash2, UserPlus } from "lucide-react";
+import { Plus, Edit, Trash, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useBranch } from "@/hooks/use-branch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-interface StaffMember {
+interface Staff {
   id: string;
   name: string;
   email: string;
   phone: string;
-  position: string;
+  role: string;
   department: string;
+  avatar: string;
+  status: 'active' | 'inactive';
   branchId: string;
-  avatar?: string;
-  status: "active" | "inactive";
-  joined: string;
 }
 
-const MOCK_STAFF: StaffMember[] = [
-  {
-    id: "staff1",
-    name: "Daniel Wilson",
-    email: "daniel.wilson@example.com",
-    phone: "+1 (555) 123-4567",
-    position: "Branch Manager",
-    department: "Management",
-    branchId: "branch-1",
-    avatar: "/placeholder.svg",
-    status: "active",
-    joined: "2022-01-15",
-  },
-  {
-    id: "staff2",
-    name: "Sophia Martinez",
-    email: "sophia.martinez@example.com",
-    phone: "+1 (555) 987-6543",
-    position: "Front Desk Executive",
-    department: "Customer Service",
-    branchId: "branch-1",
-    avatar: "/placeholder.svg",
-    status: "active",
-    joined: "2022-03-10",
-  },
-  {
-    id: "staff3",
-    name: "James Taylor",
-    email: "james.taylor@example.com",
-    phone: "+1 (555) 765-4321",
-    position: "Maintenance Supervisor",
-    department: "Facilities",
-    branchId: "branch-1",
-    avatar: "/placeholder.svg",
-    status: "active",
-    joined: "2022-05-22",
-  },
-  {
-    id: "staff4",
-    name: "Emily Davis",
-    email: "emily.davis@example.com",
-    phone: "+1 (555) 432-1098",
-    position: "Membership Coordinator",
-    department: "Sales",
-    branchId: "branch-2",
-    avatar: "/placeholder.svg",
-    status: "inactive",
-    joined: "2021-11-05",
-  },
-];
-
 const StaffListPage = () => {
-  const [staff, setStaff] = useState<StaffMember[]>(MOCK_STAFF);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [staffToDelete, setStaffToDelete] = useState<StaffMember | null>(null);
-  const { currentBranch } = useBranch();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
-  const filteredStaff = staff.filter(s => 
-    (currentBranch?.id ? s.branchId === currentBranch.id : true) &&
-    (s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     s.position.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-  
-  const activeStaff = filteredStaff.filter(s => s.status === "active");
-  const inactiveStaff = filteredStaff.filter(s => s.status === "inactive");
-  
-  const handleAddStaff = () => {
-    toast.info("Add staff functionality will be implemented");
+  // Mock data for staff - will be replaced with Supabase data
+  const [staffMembers, setStaffMembers] = useState<Staff[]>([
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john.smith@example.com',
+      phone: '(555) 123-4567',
+      role: 'Manager',
+      department: 'Operations',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch1'
+    },
+    {
+      id: '2',
+      name: 'Emily Davis',
+      email: 'emily.davis@example.com',
+      phone: '(555) 987-6543',
+      role: 'Sales Representative',
+      department: 'Sales',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch1'
+    },
+    {
+      id: '3',
+      name: 'Michael Johnson',
+      email: 'michael.j@example.com',
+      phone: '(555) 456-7890',
+      role: 'Front Desk',
+      department: 'Member Services',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch2'
+    },
+    {
+      id: '4',
+      name: 'Sarah Williams',
+      email: 'sarah.w@example.com',
+      phone: '(555) 234-5678',
+      role: 'Cleaner',
+      department: 'Maintenance',
+      avatar: '',
+      status: 'inactive',
+      branchId: 'branch1'
+    },
+    {
+      id: '5',
+      name: 'Robert Brown',
+      email: 'robert.b@example.com',
+      phone: '(555) 345-6789',
+      role: 'Assistant Manager',
+      department: 'Operations',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch3'
+    },
+  ]);
+
+  const handleCreateStaff = () => {
+    setShowCreateDialog(true);
   };
-  
-  const confirmDelete = (staff: StaffMember) => {
-    setStaffToDelete(staff);
-    setDeleteDialogOpen(true);
+
+  const handleEditStaff = (id: string) => {
+    toast.info(`Edit staff member with ID: ${id}`);
   };
-  
-  const handleDelete = () => {
-    if (staffToDelete) {
-      setStaff(staff.filter(s => s.id !== staffToDelete.id));
-      toast.success(`${staffToDelete.name} has been removed`);
-      setDeleteDialogOpen(false);
-      setStaffToDelete(null);
+
+  const handleDeleteStaff = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this staff member?')) {
+      setStaffMembers(staffMembers.filter(staff => staff.id !== id));
+      toast.success('Staff member deleted successfully');
     }
   };
-  
-  const StaffList = ({ staffMembers }: { staffMembers: StaffMember[] }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {staffMembers.length === 0 ? (
-        <div className="col-span-3 text-center py-10">
-          <p className="text-muted-foreground">No staff members found</p>
-        </div>
-      ) : (
-        staffMembers.map((member) => (
-          <Card key={member.id} className="overflow-hidden">
-            <CardHeader className="pb-0">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={member.avatar} alt={member.name} />
-                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg">{member.name}</CardTitle>
-                    <CardDescription>{member.position}</CardDescription>
-                  </div>
-                </div>
-                <Badge variant={member.status === "active" ? "success" : "secondary"}>
-                  {member.status === "active" ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{member.email}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{member.phone}</span>
-                </div>
-                <div className="text-sm mt-1">
-                  <span className="text-muted-foreground">Department: </span>
-                  <span>{member.department}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Joined: </span>
-                  <span>{new Date(member.joined).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <div className="flex justify-between w-full">
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => confirmDelete(member)}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remove
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
-        ))
-      )}
-    </div>
-  );
-  
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   return (
     <Container>
       <div className="py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0 mb-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Staff Management</h1>
-            <p className="text-muted-foreground">
-              Manage your gym staff and employees
-            </p>
+            <p className="text-muted-foreground">Manage staff members across all branches</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search staff..."
-                className="pl-8 w-full sm:w-[250px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleAddStaff}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Staff
+          <Button onClick={handleCreateStaff}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Staff Member
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Staff Members</CardTitle>
+            <CardDescription>
+              View and manage all staff members
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Role</TableHead>
+                  <TableHead className="hidden md:table-cell">Department</TableHead>
+                  <TableHead className="hidden md:table-cell">Contact</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {staffMembers.map((staff) => (
+                  <TableRow key={staff.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={staff.avatar} alt={staff.name} />
+                          <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{staff.name}</div>
+                          <div className="text-sm text-muted-foreground md:hidden">
+                            {staff.role}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {staff.role}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {staff.department}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex flex-col text-sm">
+                        <div className="flex items-center">
+                          <Mail className="mr-1 h-3 w-3" />
+                          {staff.email}
+                        </div>
+                        <div className="flex items-center mt-1">
+                          <Phone className="mr-1 h-3 w-3" />
+                          {staff.phone}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={staff.status === 'active' ? 'default' : 'outline'}>
+                        {staff.status === 'active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditStaff(staff.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteStaff(staff.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Create Staff Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Staff Member</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 text-center">
+            <p>Staff creation form will be implemented with Supabase integration</p>
+            <Button
+              className="mt-4"
+              onClick={() => {
+                setShowCreateDialog(false);
+                toast.success('Form will be implemented with Supabase integration');
+              }}
+            >
+              Close
             </Button>
           </div>
-        </div>
-        
-        <Tabs defaultValue="active">
-          <TabsList className="mb-4">
-            <TabsTrigger value="active">Active Staff ({activeStaff.length})</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive Staff ({inactiveStaff.length})</TabsTrigger>
-            <TabsTrigger value="all">All Staff ({filteredStaff.length})</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="active">
-            <StaffList staffMembers={activeStaff} />
-          </TabsContent>
-          
-          <TabsContent value="inactive">
-            <StaffList staffMembers={inactiveStaff} />
-          </TabsContent>
-          
-          <TabsContent value="all">
-            <StaffList staffMembers={filteredStaff} />
-          </TabsContent>
-        </Tabs>
-        
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Confirm Staff Removal</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              Are you sure you want to remove <span className="font-semibold">{staffToDelete?.name}</span>?
-              This action cannot be undone.
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={handleDelete}>Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

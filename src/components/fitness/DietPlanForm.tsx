@@ -1,285 +1,347 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Plus, Trash, ArrowLeft } from "lucide-react";
 import { Member, DietPlan, MealPlan } from "@/types";
-import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
 
 interface DietPlanFormProps {
   member: Member;
-  trainerId: string;
   existingPlan?: DietPlan;
+  trainerId: string;
   onSave: (plan: DietPlan) => void;
   onCancel: () => void;
-  showDaysTabs?: boolean;
 }
 
-const generateId = () => Math.random().toString(36).substring(2, 9);
+const DietPlanForm: React.FC<DietPlanFormProps> = ({
+  member,
+  existingPlan,
+  trainerId,
+  onSave,
+  onCancel
+}) => {
+  const [formData, setFormData] = useState<Omit<DietPlan, 'id' | 'createdAt' | 'updatedAt'>>({
+    memberId: member.id,
+    trainerId: trainerId,
+    mealPlans: existingPlan?.mealPlans || [createEmptyMeal()],
+    notes: existingPlan?.notes || '',
+    isCustom: existingPlan?.isCustom || false
+  });
 
-const DietPlanForm = ({ 
-  member, 
-  trainerId, 
-  existingPlan, 
-  onSave, 
-  onCancel,
-  showDaysTabs = false
-}: DietPlanFormProps) => {
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>(
-    existingPlan?.mealPlans || [
-      {
-        id: generateId(),
-        name: "Breakfast",
-        time: "08:00",
-        items: ["2 eggs, scrambled", "1 slice whole grain toast", "1 cup black coffee"],
-        macros: {
-          protein: 15,
-          carbs: 20,
-          fats: 10
-        }
+  function createEmptyMeal(): MealPlan {
+    return {
+      id: uuidv4(),
+      name: '',
+      time: '',
+      items: [''],
+      macros: {
+        protein: 0,
+        carbs: 0,
+        fats: 0,
+        calories: 0
       }
-    ]
-  );
-
-  const addMealPlan = () => {
-    setMealPlans([
-      ...mealPlans,
-      {
-        id: generateId(),
-        name: "New Meal",
-        time: "",
-        items: [""],
-        macros: {
-          protein: 0,
-          carbs: 0,
-          fats: 0
-        }
-      }
-    ]);
-  };
-
-  const removeMealPlan = (mealId: string) => {
-    setMealPlans(mealPlans.filter(meal => meal.id !== mealId));
-  };
-
-  const updateMealField = (mealId: string, field: keyof MealPlan, value: any) => {
-    setMealPlans(
-      mealPlans.map(meal => 
-        meal.id === mealId ? { ...meal, [field]: value } : meal
-      )
-    );
-  };
-
-  const updateMacros = (mealId: string, macroType: 'protein' | 'carbs' | 'fats', value: number) => {
-    setMealPlans(
-      mealPlans.map(meal => {
-        if (meal.id === mealId) {
-          return {
-            ...meal,
-            macros: {
-              ...meal.macros,
-              [macroType]: value
-            }
-          };
-        }
-        return meal;
-      })
-    );
-  };
-
-  const updateMealItems = (mealId: string, itemsText: string) => {
-    const items = itemsText.split('\n').filter(item => item.trim() !== "");
-    
-    setMealPlans(
-      mealPlans.map(meal => {
-        if (meal.id === mealId) {
-          return {
-            ...meal,
-            items
-          };
-        }
-        return meal;
-      })
-    );
-  };
-
-  const handleSave = () => {
-    // Validate if there are any empty fields
-    const hasEmptyFields = mealPlans.some(meal => 
-      !meal.name.trim() || !meal.time.trim() || meal.items.length === 0
-    );
-
-    if (hasEmptyFields) {
-      toast.error("Please fill in all meal plan details");
-      return;
-    }
-
-    // Create diet plan object
-    const dietPlan: DietPlan = {
-      id: existingPlan?.id || generateId(),
-      memberId: member.id,
-      trainerId: trainerId,
-      createdAt: existingPlan?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      mealPlans: mealPlans
     };
+  }
 
-    onSave(dietPlan);
+  const handleAddMeal = () => {
+    setFormData({
+      ...formData,
+      mealPlans: [...formData.mealPlans, createEmptyMeal()]
+    });
   };
 
-  const renderMealForm = () => (
-    <div className="space-y-6">
-      {mealPlans.map((meal) => (
-        <Card key={meal.id} className="overflow-hidden">
-          <CardHeader className="bg-muted/50 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 mr-4">
-                <Input
-                  placeholder="Meal Name (e.g. Breakfast, Lunch, Post-Workout)"
-                  value={meal.name}
-                  onChange={(e) => updateMealField(meal.id, "name", e.target.value)}
-                  className="font-medium"
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeMealPlan(meal.id)}
-                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 space-y-4">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor={`meal-time-${meal.id}`}>Meal Time</Label>
-                <Input
-                  id={`meal-time-${meal.id}`}
-                  placeholder="Time (e.g. 8:00 AM)"
-                  value={meal.time}
-                  onChange={(e) => updateMealField(meal.id, "time", e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor={`meal-items-${meal.id}`}>Food Items</Label>
-                <Textarea
-                  id={`meal-items-${meal.id}`}
-                  placeholder="Enter each food item on a new line"
-                  value={meal.items.join('\n')}
-                  onChange={(e) => updateMealItems(meal.id, e.target.value)}
-                  rows={4}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter each food item on a new line, with quantity (e.g. "2 eggs, scrambled")
-                </p>
-              </div>
-              
-              <div>
-                <Label>Macronutrients (g)</Label>
-                <div className="grid grid-cols-3 gap-3 mt-2">
-                  <div>
-                    <Label htmlFor={`meal-protein-${meal.id}`} className="text-xs">Protein</Label>
-                    <Input
-                      id={`meal-protein-${meal.id}`}
-                      type="number"
-                      min="0"
-                      value={meal.macros?.protein || 0}
-                      onChange={(e) => updateMacros(meal.id, "protein", parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`meal-carbs-${meal.id}`} className="text-xs">Carbs</Label>
-                    <Input
-                      id={`meal-carbs-${meal.id}`}
-                      type="number"
-                      min="0"
-                      value={meal.macros?.carbs || 0}
-                      onChange={(e) => updateMacros(meal.id, "carbs", parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`meal-fats-${meal.id}`} className="text-xs">Fats</Label>
-                    <Input
-                      id={`meal-fats-${meal.id}`}
-                      type="number"
-                      min="0"
-                      value={meal.macros?.fats || 0}
-                      onChange={(e) => updateMacros(meal.id, "fats", parseInt(e.target.value))}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-      
-      <Button 
-        variant="outline" 
-        onClick={addMealPlan}
-        className="w-full"
-      >
-        <Plus className="h-4 w-4 mr-1" />
-        Add Another Meal
-      </Button>
-    </div>
-  );
+  const handleRemoveMeal = (index: number) => {
+    setFormData({
+      ...formData,
+      mealPlans: formData.mealPlans.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleMealChange = (index: number, field: keyof MealPlan, value: any) => {
+    const updatedMeals = [...formData.mealPlans];
+    updatedMeals[index] = {
+      ...updatedMeals[index],
+      [field]: value
+    };
+    setFormData({
+      ...formData,
+      mealPlans: updatedMeals
+    });
+  };
+
+  const handleAddMealItem = (mealIndex: number) => {
+    const updatedMeals = [...formData.mealPlans];
+    updatedMeals[mealIndex] = {
+      ...updatedMeals[mealIndex],
+      items: [...updatedMeals[mealIndex].items, '']
+    };
+    setFormData({
+      ...formData,
+      mealPlans: updatedMeals
+    });
+  };
+
+  const handleRemoveMealItem = (mealIndex: number, itemIndex: number) => {
+    const updatedMeals = [...formData.mealPlans];
+    updatedMeals[mealIndex] = {
+      ...updatedMeals[mealIndex],
+      items: updatedMeals[mealIndex].items.filter((_, i) => i !== itemIndex)
+    };
+    setFormData({
+      ...formData,
+      mealPlans: updatedMeals
+    });
+  };
+
+  const handleMealItemChange = (mealIndex: number, itemIndex: number, value: string) => {
+    const updatedMeals = [...formData.mealPlans];
+    const updatedItems = [...updatedMeals[mealIndex].items];
+    updatedItems[itemIndex] = value;
+    updatedMeals[mealIndex] = {
+      ...updatedMeals[mealIndex],
+      items: updatedItems
+    };
+    setFormData({
+      ...formData,
+      mealPlans: updatedMeals
+    });
+  };
+
+  const handleMacrosChange = (mealIndex: number, macroField: keyof typeof formData.mealPlans[0]['macros'], value: number) => {
+    const updatedMeals = [...formData.mealPlans];
+    updatedMeals[mealIndex] = {
+      ...updatedMeals[mealIndex],
+      macros: {
+        ...updatedMeals[mealIndex].macros,
+        [macroField]: value
+      }
+    };
+    setFormData({
+      ...formData,
+      mealPlans: updatedMeals
+    });
+  };
+
+  const handleSubmit = () => {
+    // Calculate calories if not explicitly set
+    const mealPlansWithCalories = formData.mealPlans.map(meal => {
+      if (!meal.macros.calories) {
+        const calculatedCalories = 
+          meal.macros.protein * 4 + 
+          meal.macros.carbs * 4 + 
+          meal.macros.fats * 9;
+        
+        return {
+          ...meal,
+          macros: {
+            ...meal.macros,
+            calories: calculatedCalories
+          }
+        };
+      }
+      return meal;
+    });
+
+    const finalPlan: DietPlan = {
+      id: existingPlan?.id || uuidv4(),
+      memberId: member.id,
+      trainerId,
+      mealPlans: mealPlansWithCalories,
+      notes: formData.notes,
+      isCustom: formData.isCustom,
+      createdAt: existingPlan?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    onSave(finalPlan);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">
-            {existingPlan ? "Edit Diet Plan" : "Create Diet Plan"}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            For: {member.name}
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save Plan
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>{existingPlan ? 'Edit Diet Plan' : 'Create New Diet Plan'}</CardTitle>
+            <CardDescription>
+              {existingPlan 
+                ? `Modify diet plan for ${member.name}` 
+                : `Create a new diet plan for ${member.name}`}
+            </CardDescription>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
           </Button>
         </div>
-      </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Meal Plans</h3>
+            <Button size="sm" onClick={handleAddMeal}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Meal
+            </Button>
+          </div>
 
-      {showDaysTabs ? (
-        <Tabs defaultValue="everyday">
-          <TabsList>
-            <TabsTrigger value="everyday">Everyday</TabsTrigger>
-            <TabsTrigger value="weekday">Weekdays</TabsTrigger>
-            <TabsTrigger value="weekend">Weekends</TabsTrigger>
-          </TabsList>
-          <TabsContent value="everyday">
-            {renderMealForm()}
-          </TabsContent>
-          <TabsContent value="weekday">
-            <div className="p-6 text-center text-muted-foreground">
-              <p>Weekday meal plans work the same as everyday plans.</p>
-              <p className="mt-2">This is just a UI placeholder for demonstration.</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="weekend">
-            <div className="p-6 text-center text-muted-foreground">
-              <p>Weekend meal plans work the same as everyday plans.</p>
-              <p className="mt-2">This is just a UI placeholder for demonstration.</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      ) : (
-        renderMealForm()
-      )}
-    </div>
+          {formData.mealPlans.map((meal, mealIndex) => (
+            <Card key={meal.id} className="border border-gray-200">
+              <CardHeader className="py-3 px-4 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div>
+                      <Label htmlFor={`meal-name-${mealIndex}`}>Meal Name</Label>
+                      <Input
+                        id={`meal-name-${mealIndex}`}
+                        placeholder="e.g., Breakfast, Lunch, etc."
+                        value={meal.name}
+                        onChange={(e) => handleMealChange(mealIndex, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`meal-time-${mealIndex}`}>Time</Label>
+                      <Input
+                        id={`meal-time-${mealIndex}`}
+                        placeholder="e.g., 8:00 AM"
+                        value={meal.time}
+                        onChange={(e) => handleMealChange(mealIndex, 'time', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveMeal(mealIndex)}
+                    className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Food Items</Label>
+                    <div className="space-y-2 mt-2">
+                      {meal.items.map((item, itemIndex) => (
+                        <div key={itemIndex} className="flex gap-2">
+                          <Input
+                            placeholder="Food item description"
+                            value={item}
+                            onChange={(e) => handleMealItemChange(mealIndex, itemIndex, e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMealItem(mealIndex, itemIndex)}
+                            disabled={meal.items.length <= 1}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddMealItem(mealIndex)}
+                      className="mt-2"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Food Item
+                    </Button>
+                  </div>
+
+                  <div>
+                    <Label>Macronutrients</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      <div>
+                        <Label htmlFor={`protein-${mealIndex}`} className="text-xs">Protein (g)</Label>
+                        <Input
+                          id={`protein-${mealIndex}`}
+                          type="number"
+                          value={meal.macros.protein}
+                          onChange={(e) => handleMacrosChange(mealIndex, 'protein', Number(e.target.value))}
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`carbs-${mealIndex}`} className="text-xs">Carbs (g)</Label>
+                        <Input
+                          id={`carbs-${mealIndex}`}
+                          type="number"
+                          value={meal.macros.carbs}
+                          onChange={(e) => handleMacrosChange(mealIndex, 'carbs', Number(e.target.value))}
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`fats-${mealIndex}`} className="text-xs">Fats (g)</Label>
+                        <Input
+                          id={`fats-${mealIndex}`}
+                          type="number"
+                          value={meal.macros.fats}
+                          onChange={(e) => handleMacrosChange(mealIndex, 'fats', Number(e.target.value))}
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`calories-${mealIndex}`} className="text-xs">Calories (kcal)</Label>
+                        <Input
+                          id={`calories-${mealIndex}`}
+                          type="number"
+                          value={meal.macros.calories || meal.macros.protein * 4 + meal.macros.carbs * 4 + meal.macros.fats * 9}
+                          onChange={(e) => handleMacrosChange(mealIndex, 'calories', Number(e.target.value))}
+                          min="0"
+                          className="bg-gray-50"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="diet-notes">Additional Notes</Label>
+          <Textarea
+            id="diet-notes"
+            placeholder="Add any instructions, restrictions, or guidelines..."
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            rows={4}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="diet-plan-custom"
+            checked={formData.isCustom}
+            onChange={(e) => setFormData({...formData, isCustom: e.target.checked})}
+            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+          <Label htmlFor="diet-plan-custom" className="cursor-pointer">
+            This is a custom plan specific for this member
+          </Label>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit}>
+          {existingPlan ? 'Update Plan' : 'Create Plan'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

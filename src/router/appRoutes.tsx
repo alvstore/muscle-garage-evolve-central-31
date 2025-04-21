@@ -22,6 +22,7 @@ import { marketingRoutes } from './routes/marketingRoutes';
 import { financeRoutes } from './routes/financeRoutes';
 import { settingsRoutes } from './routes/settingsRoutes';
 import { miscRoutes } from './routes/miscRoutes';
+import { staffRoutes } from './routes/staffRoutes';
 
 export const appRoutes: RouteObject[] = [
   {
@@ -65,6 +66,7 @@ export const appRoutes: RouteObject[] = [
           ...financeRoutes,
           ...settingsRoutes,
           ...miscRoutes,
+          ...staffRoutes,
         ]
       }
     ]
