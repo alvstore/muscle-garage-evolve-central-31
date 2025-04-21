@@ -22,6 +22,17 @@ import {
   Bell,
   Activity,
   Cpu,
+  Package,
+  Store,
+  FileText,
+  Megaphone,
+  RefreshCcw,
+  TrendingUp,
+  UserPlus,
+  FolderHeart,
+  Gift,
+  Wallet,
+  Archive
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -125,6 +136,29 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "CRM",
+    items: [
+      {
+        href: "/crm/leads",
+        label: "Leads",
+        icon: <UserPlus className="h-5 w-5" />,
+        permission: "access_crm" as Permission,
+      },
+      {
+        href: "/crm/funnel",
+        label: "Sales Funnel",
+        icon: <TrendingUp className="h-5 w-5" />,
+        permission: "access_crm" as Permission,
+      },
+      {
+        href: "/crm/follow-up",
+        label: "Follow-Up",
+        icon: <RefreshCcw className="h-5 w-5" />,
+        permission: "access_crm" as Permission,
+      },
+    ],
+  },
+  {
     name: "Communication",
     items: [
       {
@@ -154,8 +188,76 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/communication/announcements",
         label: "Announcements",
-        icon: <Bell className="h-5 w-5" />,
+        icon: <Megaphone className="h-5 w-5" />,
         permission: "access_communication" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Marketing",
+    items: [
+      {
+        href: "/marketing/promo",
+        label: "Promotions",
+        icon: <Gift className="h-5 w-5" />,
+        permission: "access_marketing" as Permission,
+      },
+      {
+        href: "/marketing/referral",
+        label: "Referral Program",
+        icon: <Share2 className="h-5 w-5" />,
+        permission: "access_marketing" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Fitness",
+    items: [
+      {
+        href: "/fitness-plans",
+        label: "Fitness Plans",
+        icon: <FolderHeart className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+      {
+        href: "/fitness/progress",
+        label: "Member Progress",
+        icon: <Activity className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+      {
+        href: "/fitness/workout-plans",
+        label: "Workout Plans",
+        icon: <Dumbbell className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Inventory & Shop",
+    items: [
+      {
+        href: "/inventory",
+        label: "Inventory",
+        icon: <Package className="h-5 w-5" />,
+        permission: "access_inventory" as Permission,
+      },
+      {
+        href: "/store",
+        label: "Store",
+        icon: <Store className="h-5 w-5" />,
+        permission: "access_store" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Reports",
+    items: [
+      {
+        href: "/reports",
+        label: "Reports & Analytics",
+        icon: <FileText className="h-5 w-5" />,
+        permission: "access_reports" as Permission,
       },
     ],
   },

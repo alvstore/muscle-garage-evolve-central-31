@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Users, Activity, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"; // Added missing import
 import { useToast } from "@/hooks/use-toast";
 import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import { format } from "date-fns";

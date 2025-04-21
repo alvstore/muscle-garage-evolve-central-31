@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 
-// Form schema
 const deviceSchema = z.object({
   deviceId: z.string().optional(),
   deviceName: z.string().min(3, { message: "Device name must be at least 3 characters" }),
@@ -67,7 +65,6 @@ const BranchDeviceManager = () => {
     },
   });
 
-  // Mock data for demonstration
   useEffect(() => {
     if (currentBranch) {
       fetchDevices();
@@ -77,10 +74,8 @@ const BranchDeviceManager = () => {
   const fetchDevices = async () => {
     setIsLoading(true);
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Example of branch-specific device data
       if (currentBranch?.id === 'branch1') {
         setDevices([
           {
@@ -172,7 +167,6 @@ const BranchDeviceManager = () => {
     if (!selectedDevice) return;
     
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setDevices(devices.filter(d => d.id !== selectedDevice.id));
@@ -194,11 +188,9 @@ const BranchDeviceManager = () => {
     
     setIsSubmitting(true);
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 800));
       
       if (isEditing && selectedDevice) {
-        // Update existing device
         const updatedDevices = devices.map(d => 
           d.id === selectedDevice.id 
             ? { 
@@ -215,7 +207,6 @@ const BranchDeviceManager = () => {
         setDevices(updatedDevices);
         toast.success('Device updated successfully');
       } else {
-        // Add new device
         const newDevice: DeviceMapping = {
           id: `dev${Date.now()}`,
           branchId: currentBranch.id,
@@ -242,7 +233,6 @@ const BranchDeviceManager = () => {
 
   const handleTestConnection = async (deviceId: string) => {
     toast.success('Testing connection...', { duration: 1000 });
-    // Mock API call
     await new Promise(resolve => setTimeout(resolve, 1200));
     toast.success('Connection successful');
   };
@@ -309,7 +299,7 @@ const BranchDeviceManager = () => {
                     <TableCell>
                       <div className="flex items-center">
                         {device.isActive ? (
-                          <Badge variant="default" className="bg-green-500 hover:bg-green-600">Active</Badge>
+                          <Badge variant="default" className="bg-green-500 text-white">Active</Badge>
                         ) : (
                           <Badge variant="destructive">Inactive</Badge>
                         )}

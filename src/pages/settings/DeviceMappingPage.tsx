@@ -7,8 +7,8 @@ import BranchDeviceManager from '@/components/integrations/BranchDeviceManager';
 import { usePermissions } from '@/hooks/use-permissions';
 
 const DeviceMappingPage = () => {
-  const { hasPermission } = usePermissions();
-  const canManageDevices = hasPermission('manage_integrations');
+  const { can } = usePermissions();
+  const canManageDevices = can('manage_integrations');
   
   return (
     <Container>
