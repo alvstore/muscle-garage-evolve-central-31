@@ -50,7 +50,8 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     toast.success("Redirecting to classes page");
   };
   
-  const recentAnnouncements: Announcement[] = [
+  // Mock data for recent announcements with the correct typing for priority
+  const recentAnnouncements = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -58,10 +59,10 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-10T10:00:00Z",
-      targetRoles: ["member"],
+      targetRoles: ["member"] as UserRole[],
       channels: ["in-app"],
       sentCount: 120,
-      priority: "medium",
+      priority: "medium" as "medium", // Type assertion to match the literal type
       createdBy: "admin1"
     },
     {
@@ -71,10 +72,10 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-12T14:30:00Z",
-      targetRoles: ["member"],
+      targetRoles: ["member"] as UserRole[],
       channels: ["in-app"],
       sentCount: 98,
-      priority: "low",
+      priority: "low" as "low", // Type assertion to match the literal type
       createdBy: "admin1"
     }
   ];

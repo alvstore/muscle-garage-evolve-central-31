@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,7 +72,7 @@ const RealTimeDashboardPage = () => {
     memberId: member.id,
     memberName: member.name,
     time: new Date(member.checkInTime).toISOString(),
-    type: 'check-in',
+    type: 'check-in' as const,
     location: 'Main Entrance',
     device: 'Hikvision Terminal',
     status: member.status

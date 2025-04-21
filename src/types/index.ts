@@ -1,3 +1,4 @@
+
 export type UserRole = "admin" | "staff" | "trainer" | "member";
 
 export interface User {
@@ -7,6 +8,8 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
+  branchId?: string; // Primary branch ID
+  dateOfBirth?: string; // Add this field to fix MemberRegisterForm error
 }
 
 export interface Member extends User {
@@ -80,8 +83,8 @@ export interface DietPlan {
   createdAt: string;
   updatedAt: string;
   mealPlans: MealPlan[];
-  notes?: string;
-  isCustom?: boolean;
+  notes?: string; // Add this field
+  isCustom?: boolean; // Add this field
 }
 
 export interface MealPlan {
@@ -93,7 +96,7 @@ export interface MealPlan {
     protein: number;
     carbs: number;
     fats: number;
-    calories?: number;
+    calories?: number; // Add this field
   };
 }
 
@@ -104,15 +107,15 @@ export interface WorkoutPlan {
   createdAt: string;
   updatedAt: string;
   workoutDays: WorkoutDay[];
-  notes?: string;
-  isCustom?: boolean;
+  notes?: string; // Add this field
+  isCustom?: boolean; // Add this field
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
   exercises: Exercise[];
-  notes?: string;
+  notes?: string; // Add this field
 }
 
 export interface Exercise {
@@ -123,7 +126,7 @@ export interface Exercise {
   weight?: number;
   rest: number;
   notes?: string;
-  muscleGroupTag?: string;
+  muscleGroupTag?: string; // Add this field
 }
 
 export interface ProgressRecord {
@@ -203,11 +206,11 @@ export interface Announcement {
   targetRoles: UserRole[];
   targetBranch?: string;
   expiresAt?: string;
-  authorId?: string;
+  authorId: string; // Make this required to match notification.ts
   authorName?: string;
   sentCount?: number;
   channels?: string[];
-  priority?: "low" | "medium" | "high";
+  priority?: "low" | "medium" | "high"; // Make this a specific union type
   forRoles?: UserRole[];
 }
 
