@@ -32,9 +32,9 @@ const CreateBranchDialog = ({
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="ml-2">
+          <Button variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-1" />
-            New Branch
+            Add Branch
           </Button>
         </DialogTrigger>
       )}

@@ -51,7 +51,7 @@ const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ onLinkClick
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <Logo variant="white" />
-          <h1 className="text-lg font-semibold">Muscle Garage</h1>
+          <h1 className="text-lg font-semibold truncate max-w-[120px]">Muscle Garage</h1>
         </div>
       </SidebarHeader>
       

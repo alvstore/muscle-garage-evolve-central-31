@@ -11,6 +11,9 @@ import BranchManagementPage from '@/pages/settings/BranchManagementPage';
 import BranchIntegrationSettings from '@/pages/settings/BranchIntegrationSettings';
 import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
 import HelpCenterPage from '@/pages/help/HelpCenterPage';
+import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
+import ClassTypesPage from '@/pages/classes/ClassTypesPage';
+import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const settingsRoutes: RouteObject[] = [
   {
@@ -48,6 +51,18 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings/branches/devices',
     element: <DeviceMappingPage />
+  },
+  {
+    path: '/settings/payment-gateways',
+    element: <PaymentGatewaySettingsPage />
+  },
+  {
+    path: '/classes/types',
+    element: <ClassTypesPage />
+  },
+  {
+    path: '/communication/tasks',
+    element: <TaskManagerPage />
   },
   {
     path: '/help',

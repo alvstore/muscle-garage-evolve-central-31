@@ -1,233 +1,277 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Users, Activity, RefreshCcw } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // Added missing import
-import { useToast } from "@/hooks/use-toast";
-import AttendanceChart from "@/components/dashboard/AttendanceChart";
+import { Activity, Clock, DollarSign, RefreshCw, Users } from "lucide-react";
+import AttendanceTracker from "@/components/attendance/AttendanceTracker";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const RealTimeDashboardPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Mock data for demonstration
-  const [attendanceData, setAttendanceData] = useState({
-    currentUsers: 78,
-    todayTotal: 152,
-    peakTime: "18:00 - 19:00",
-    occupancyRate: "65%",
-    attendanceTrend: [
-      { date: '2023-06-20', count: 120 },
-      { date: '2023-06-21', count: 132 },
-      { date: '2023-06-22', count: 125 },
-      { date: '2023-06-23', count: 140 },
-      { date: '2023-06-24', count: 147 },
-      { date: '2023-06-25', count: 138 },
-      { date: '2023-06-26', count: 152 }
-    ],
-    recentCheckins: [
-      { id: "1", memberName: "John Doe", timestamp: "2023-06-26T14:32:00Z", memberType: "Premium" },
-      { id: "2", memberName: "Sarah Smith", timestamp: "2023-06-26T14:28:00Z", memberType: "Standard" },
-      { id: "3", memberName: "Mike Johnson", timestamp: "2023-06-26T14:15:00Z", memberType: "Premium" },
-      { id: "4", memberName: "Emily Wilson", timestamp: "2023-06-26T14:05:00Z", memberType: "Standard" },
-      { id: "5", memberName: "Robert Brown", timestamp: "2023-06-26T13:55:00Z", memberType: "Basic" }
-    ]
-  });
-  
-  const handleRefresh = () => {
-    setIsLoading(true);
-    toast({
-      title: "Refreshing dashboard data",
-      description: "Fetching latest attendance information."
-    });
-    
-    // Simulate API call
-    setTimeout(() => {
-      // Update with random fluctuation in current users
-      const newCount = Math.max(50, Math.min(120, attendanceData.currentUsers + Math.floor(Math.random() * 11) - 5));
-      setAttendanceData(prev => ({
-        ...prev,
-        currentUsers: newCount,
-      }));
-      
-      setLastUpdated(new Date());
-      setIsLoading(false);
-      
-      toast({
-        title: "Dashboard updated",
-        description: `Data refreshed at ${format(new Date(), "HH:mm:ss")}`
-      });
-    }, 1500);
-  };
-  
-  // Auto-refresh every 60 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      handleRefresh();
-    }, 60000);
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
     
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, []);
-  
+
+  // Mock data for real-time attendance
+  const todayAttendance = [
+    {
+      id: "mem1",
+      name: "John Doe",
+      membershipPlan: "Premium",
+      checkInTime: new Date(new Date().setHours(8, 30)).toISOString(),
+      status: "active",
+      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString() }
+    },
+    {
+      id: "mem2",
+      name: "Jane Smith",
+      membershipPlan: "Standard",
+      checkInTime: new Date(new Date().setHours(9, 15)).toISOString(),
+      status: "expiring",
+      expiryDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()
+    },
+    {
+      id: "mem3",
+      name: "Alice Johnson",
+      membershipPlan: "Basic",
+      checkInTime: new Date(new Date().setHours(10, 0)).toISOString(),
+      status: "active"
+    },
+    {
+      id: "mem4",
+      name: "Robert Williams",
+      membershipPlan: "Premium",
+      checkInTime: new Date(new Date().setHours(11, 45)).toISOString(),
+      status: "overdue",
+      upcomingPayment: { amount: 1999, dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString() }
+    }
+  ];
+
+  const refreshData = () => {
+    setIsLoading(true);
+    toast.info("Refreshing real-time data...");
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success("Real-time data refreshed successfully!");
+    }, 1000);
+  };
+
   return (
     <Container>
-      <div className="py-6 space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="py-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-1">Real-Time Dashboard</h1>
-            <p className="text-muted-foreground">
-              Live gym attendance and analytics
-            </p>
+            <h1 className="text-2xl font-bold">Real-Time Dashboard</h1>
+            <p className="text-muted-foreground">Live tracking of gym activity and member check-ins</p>
           </div>
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-muted-foreground">
-              Last updated: {format(lastUpdated, "HH:mm:ss")}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-1"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
+          <Button onClick={refreshData} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
         </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Current Active Members</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : todayAttendance.length}
+              </div>
+              <p className="text-xs text-muted-foreground">members checked in today</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Real-time Occupancy</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : Math.round(todayAttendance.length / 2)}
+              </div>
+              <p className="text-xs text-muted-foreground">currently in the gym</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : todayAttendance.filter(m => m.status === "expiring").length}
+              </div>
+              <p className="text-xs text-muted-foreground">memberships in next 7 days</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? "..." : todayAttendance.filter(m => m.status === "overdue").length}
+              </div>
+              <p className="text-xs text-muted-foreground">overdue payments</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="attendance" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="trends">Attendance Trends</TabsTrigger>
-            <TabsTrigger value="recent">Recent Check-ins</TabsTrigger>
+            <TabsTrigger value="attendance">Live Attendance</TabsTrigger>
+            <TabsTrigger value="payments">Payment Alerts</TabsTrigger>
+            <TabsTrigger value="expiring">Expiring Memberships</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="overview" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Current Members</p>
-                      <h3 className="text-3xl font-bold">{attendanceData.currentUsers}</h3>
-                    </div>
-                    <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Today's Total</p>
-                      <h3 className="text-3xl font-bold">{attendanceData.todayTotal}</h3>
-                    </div>
-                    <div className="h-10 w-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                      <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Peak Time</p>
-                      <h3 className="text-xl font-bold">{attendanceData.peakTime}</h3>
-                    </div>
-                    <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Occupancy Rate</p>
-                      <h3 className="text-3xl font-bold">{attendanceData.occupancyRate}</h3>
-                    </div>
-                    <div className="h-10 w-10 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Weekly Attendance</CardTitle>
-                  <CardDescription>
-                    Member check-ins over the past 7 days
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <AttendanceChart data={attendanceData.attendanceTrend} />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="trends" className="space-y-4 mt-4">
+
+          <TabsContent value="attendance" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Attendance Patterns</CardTitle>
-                <CardDescription>
-                  Analyzing weekly and daily attendance patterns
-                </CardDescription>
+                <CardTitle>Real-Time Check-ins</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-96">
-                  <AttendanceChart data={attendanceData.attendanceTrend} />
-                </div>
+                {isLoading ? (
+                  <div className="h-96 flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <AttendanceTracker />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
-          
-          <TabsContent value="recent" className="space-y-4 mt-4">
+
+          <TabsContent value="payments" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Check-ins</CardTitle>
-                <CardDescription>
-                  Live member entry records
-                </CardDescription>
+                <CardTitle>Payment Alerts</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {attendanceData.recentCheckins.map(checkin => (
-                    <div key={checkin.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{checkin.memberName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(checkin.timestamp), "HH:mm:ss")}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline">{checkin.memberType}</Badge>
-                    </div>
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Amount Due</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {todayAttendance
+                        .filter(member => member.upcomingPayment)
+                        .map(member => (
+                          <TableRow key={member.id}>
+                            <TableCell className="font-medium">{member.name}</TableCell>
+                            <TableCell>{member.membershipPlan}</TableCell>
+                            <TableCell>
+                              {member.upcomingPayment ? 
+                                `$${(member.upcomingPayment.amount / 100).toFixed(2)}` : 
+                                'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              {member.upcomingPayment ? 
+                                format(new Date(member.upcomingPayment.dueDate), 'MMM dd, yyyy') : 
+                                'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={member.status === "overdue" ? "destructive" : "default"}>
+                                {member.status === "overdue" ? "Overdue" : "Upcoming"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast.info(`Payment reminder sent to ${member.name}`)}
+                              >
+                                Send Reminder
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="expiring" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Expiring Memberships</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="h-64 flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Expiry Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {todayAttendance
+                        .filter(member => member.status === "expiring")
+                        .map(member => (
+                          <TableRow key={member.id}>
+                            <TableCell className="font-medium">{member.name}</TableCell>
+                            <TableCell>{member.membershipPlan}</TableCell>
+                            <TableCell>
+                              {member.expiryDate ? 
+                                format(new Date(member.expiryDate), 'MMM dd, yyyy') : 
+                                'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="warning">Expiring Soon</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast.info(`Renewal reminder sent to ${member.name}`)}
+                              >
+                                Send Renewal
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
