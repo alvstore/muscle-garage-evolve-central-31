@@ -162,10 +162,7 @@ const DashboardHeader = ({
                   <span>Profile</span>
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem className="cursor-pointer">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  <span>Chat</span>
-                </DropdownMenuItem>
+                
                 
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
