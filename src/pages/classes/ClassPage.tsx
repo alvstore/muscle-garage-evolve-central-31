@@ -45,7 +45,7 @@ const ClassPage = () => {
         <Tabs defaultValue="classes" onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="classes">Class Schedule</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="bookings">My Bookings</TabsTrigger>
           </TabsList>
           
           <TabsContent value="classes">

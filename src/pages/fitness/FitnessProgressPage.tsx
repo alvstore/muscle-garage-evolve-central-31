@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Container } from '@/components/ui/container';
-import ProgressTracker from '@/components/fitness/ProgressTracker';
-import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProgressTracker from '@/components/fitness/ProgressTracker';
+import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { useAuth } from '@/hooks/use-auth';
 import { Member } from '@/types';
+import MemberProgressSection from '@/components/dashboard/sections/MemberProgressSection';
 
 const FitnessProgressPage = () => {
   const { user } = useAuth();

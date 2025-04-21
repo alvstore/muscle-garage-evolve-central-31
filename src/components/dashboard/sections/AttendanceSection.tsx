@@ -17,10 +17,9 @@ interface AttendanceSectionProps {
 
 const AttendanceSection = ({ data }: AttendanceSectionProps) => {
   const { user } = useAuth();
-  const { data: filteredData } = useMemberSpecificData<AttendanceData[], AttendanceData[]>(
-    data,
-    (items, userId) => items.filter(item => item.memberId === userId)
-  );
+  
+  // Filter attendance data to only show the current member's data
+  const memberData = data.filter(item => !item.memberId || item.memberId === user?.id);
 
   return (
     <Card className="col-span-4">
@@ -31,7 +30,7 @@ const AttendanceSection = ({ data }: AttendanceSectionProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        <AttendanceChart data={filteredData || []} />
+        <AttendanceChart data={memberData} />
       </CardContent>
     </Card>
   );
