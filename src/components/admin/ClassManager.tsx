@@ -105,7 +105,9 @@ const ClassManager = ({ classId, onSuccess, onCancel }: ClassManagerProps) => {
     };
 
     fetchTrainers();
-    fetchClassDetails();
+    if (classId) {
+      fetchClassDetails();
+    }
   }, [classId, currentBranch?.id, form]);
 
   const onSubmit = async (values: FormValues) => {

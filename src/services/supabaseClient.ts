@@ -18,7 +18,7 @@ export const subscribeToTable = (
   channel
     .on(
       'postgres_changes', 
-      {
+      { 
         event: event,
         schema: 'public',
         table: tableName

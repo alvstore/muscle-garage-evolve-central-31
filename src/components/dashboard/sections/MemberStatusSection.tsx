@@ -4,31 +4,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import MemberStatusChart from '@/components/dashboard/MemberStatusChart';
 
 interface MemberStatusSectionProps {
-  data: {
-    active: number;
-    inactive: number;
-    expired: number;
-  };
+  data?: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
 }
 
 const MemberStatusSection = ({ data }: MemberStatusSectionProps) => {
-  // Transform data for the chart component
-  const chartData = [
-    { name: 'Active', value: data.active, color: '#10b981' },
-    { name: 'Inactive', value: data.inactive, color: '#f59e0b' },
-    { name: 'Expired', value: data.expired, color: '#ef4444' }
+  const defaultData = [
+    { name: 'Active', value: 187, color: '#10b981' },
+    { name: 'Inactive', value: 43, color: '#f59e0b' },
+    { name: 'Expired', value: 26, color: '#ef4444' },
   ];
 
   return (
-    <Card className="col-span-3">
+    <Card>
       <CardHeader>
-        <CardTitle>Member Status</CardTitle>
+        <CardTitle>Membership Status</CardTitle>
         <CardDescription>
-          Current membership status breakdown
+          Distribution of member statuses
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <MemberStatusChart data={chartData} />
+      <CardContent className="p-6">
+        <MemberStatusChart data={data || defaultData} />
       </CardContent>
     </Card>
   );

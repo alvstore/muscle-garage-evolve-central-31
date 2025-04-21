@@ -31,8 +31,8 @@ export default function MemberRegisterForm() {
       await createProfile({
         ...data,
         role: 'member',
-        branch_id: currentBranch?.id,
-        branchId: currentBranch?.id
+        branchId: currentBranch?.id,
+        primaryBranchId: currentBranch?.id
       });
       toast.success('Member registered successfully');
       navigate('/members');

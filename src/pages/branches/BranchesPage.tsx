@@ -30,6 +30,8 @@ const BranchesPage = () => {
         email: branch.email || '',
         isActive: branch.is_active,
         manager: branch.manager || '',
+        createdAt: branch.created_at || new Date().toISOString(),
+        updatedAt: branch.updated_at || new Date().toISOString(),
         // Map other fields as needed
       }));
       
@@ -48,6 +50,8 @@ const BranchesPage = () => {
           email: 'main@musclegrgage.com',
           isActive: true,
           manager: 'John Manager',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         {
           id: 'branch-2',
@@ -57,6 +61,8 @@ const BranchesPage = () => {
           email: 'downtown@musclegrgage.com',
           isActive: true,
           manager: 'Jane Leader',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
       ]);
     } finally {
