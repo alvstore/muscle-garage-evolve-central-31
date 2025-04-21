@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './use-auth';
 
@@ -101,7 +100,18 @@ export type Permission =
   | 'payment_gateways_edit'
   | 'analytics_view'
   | 'manage_members'
-  | 'view_all_member_progress'; // Added this permission
+  | 'view_all_member_progress'
+  | 'view_branch_data'
+  | 'manage_branches'
+  | 'manage_settings'
+  | 'manage_roles'
+  | 'manage_integrations'
+  | 'manage_classes'
+  | 'full_system_access'
+  | 'log_attendance'
+  | 'assign_plan'
+  | 'assign_workout_plan'
+  | 'assign_diet_plan';
 
 interface PermissionsContextType {
   can: (permission: Permission) => boolean;

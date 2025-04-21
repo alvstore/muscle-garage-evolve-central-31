@@ -1,15 +1,20 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { User } from '@/types';
 
-export const createProfile = async (userData: Partial<User> & { password: string }) => {
+export const createProfile = async (userData: Partial<User> & { password?: string }) => {
+  if (!userData.email || !userData.password) {
+    throw new Error('Email and password are required');
+  }
+  
   const { data, error } = await supabase.auth.signUp({
-    email: userData.email!,
+    email: userData.email,
     password: userData.password,
     options: {
       data: {
         full_name: userData.name,
         role: userData.role,
+        branch_id: userData.primaryBranchId || userData.branchId
       }
     }
   });

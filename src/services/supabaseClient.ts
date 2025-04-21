@@ -17,11 +17,9 @@ export const subscribeToTable = (
   
   return channel
     .on(
-      'postgres_changes',
+      'broadcast',
       { 
-        event: event, 
-        schema: 'public', 
-        table: tableName 
+        event: event
       },
       callback
     )
@@ -39,11 +37,9 @@ export const subscribeToTableWithFilter = (
   
   return channel
     .on(
-      'postgres_changes',
+      'broadcast',
       {
         event: event,
-        schema: 'public',
-        table: tableName,
         filter: `${filterColumn}=eq.${filterValue}`,
       },
       callback

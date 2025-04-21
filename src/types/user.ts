@@ -1,3 +1,4 @@
+
 import { UserRole } from './index';
 
 // Extended user type with branch and address information

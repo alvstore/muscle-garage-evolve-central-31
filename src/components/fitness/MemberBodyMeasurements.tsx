@@ -1,13 +1,21 @@
 
 import React from 'react';
-import { Member } from '@/types';
+import { Member, User } from '@/types';
+import { BodyMeasurement } from '@/types/fitness';
 
 export interface MemberBodyMeasurementsProps {
   memberId: string;
   viewOnly?: boolean;
+  currentUser?: User;
+  onSaveMeasurements?: (measurements: Partial<BodyMeasurement>) => void;
 }
 
-const MemberBodyMeasurements: React.FC<MemberBodyMeasurementsProps> = ({ memberId, viewOnly = false }) => {
+const MemberBodyMeasurements: React.FC<MemberBodyMeasurementsProps> = ({ 
+  memberId, 
+  viewOnly = false,
+  currentUser,
+  onSaveMeasurements
+}) => {
   // Placeholder implementation for compatibility
   return (
     <div>
