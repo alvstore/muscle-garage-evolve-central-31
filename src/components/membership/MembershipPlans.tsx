@@ -120,12 +120,8 @@ const MembershipPlans = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
-                        <EditIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
+                      
+                      
                     </div>
                   </TableCell>
                 </TableRow>)}
