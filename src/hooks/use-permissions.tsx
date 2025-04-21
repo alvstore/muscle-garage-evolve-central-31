@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './use-auth';
 
@@ -193,7 +194,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const can = (permission: Permission): boolean => {
     if (!user) return false;
     
-    // Super Admin has all permissions
+    // Super Admin has all permissions - always return true for admin
     if (user.role === 'admin') return true;
     
     // Staff has most permissions but not all
@@ -207,7 +208,10 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
         'staff_edit',
         'staff_delete',
         'payment_gateways_edit',
-        'settings_edit'
+        'settings_edit',
+        'manage_branches',
+        'manage_roles',
+        'manage_settings'
       ];
       
       return !restrictedForStaff.includes(permission);
@@ -242,6 +246,9 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
         'classes_view',
         'feedback_create',
         'feedback_view',
+        'member_view_profile',
+        'member_view_plans',
+        'member_book_classes'
       ];
       
       return memberPermissions.includes(permission);

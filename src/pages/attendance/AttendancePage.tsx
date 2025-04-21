@@ -10,7 +10,7 @@ import AttendanceTracker from "@/components/attendance/AttendanceTracker";
 import { UserRound, Calendar, CheckCircle, UserCheck, XCircle, Clock } from "lucide-react";
 import { AttendanceEntry } from "@/types/attendance";
 
-// Mock attendance data
+// Mock attendance data with the correct type
 const mockAttendanceData: AttendanceEntry[] = [
   { 
     memberId: '1', 
@@ -37,6 +37,7 @@ const mockAttendanceData: AttendanceEntry[] = [
   // Add more mock data as needed
 ];
 
+// Ensure all mock data has the required properties
 const mockAttendanceToday: AttendanceEntry[] = [
   {
     memberId: "member1",

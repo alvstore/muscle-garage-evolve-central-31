@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Settings, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Building2 } from "lucide-react";
 import { toast } from "sonner";
-import { usePermissions, Permission } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import GeneralSettings from "@/components/settings/GeneralSettings";
 import AccessControlSettings from "@/components/settings/AccessControlSettings";
@@ -24,8 +24,11 @@ const SettingsPage = () => {
   const { can } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
 
-  // Redirect if user doesn't have permission
-  if (!user || !can('manage_settings')) {
+  // For admin users, we won't check permissions to ensure they can always access settings
+  const isAdmin = user?.role === 'admin';
+  
+  // We'll only check permissions for non-admin users
+  if (!user || (!isAdmin && !can('manage_settings'))) {
     toast.error("You don't have permission to access this page");
     return <Navigate to="/unauthorized" replace />;
   }
@@ -44,26 +47,24 @@ const SettingsPage = () => {
           <Card>
             <CardContent className="p-6">
               <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-2">
-                <PermissionGuard permission="manage_settings">
-                  <TabsTrigger value="general" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden md:inline">General</span>
-                  </TabsTrigger>
-                </PermissionGuard>
+                <TabsTrigger value="general" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden md:inline">General</span>
+                </TabsTrigger>
                 
-                <PermissionGuard permission="manage_branches">
+                {isAdmin && (
                   <TabsTrigger value="branches" className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
                     <span className="hidden md:inline">Branches</span>
                   </TabsTrigger>
-                </PermissionGuard>
+                )}
                 
-                <PermissionGuard permission="manage_roles">
+                {isAdmin && (
                   <TabsTrigger value="permissions" className="flex items-center gap-2">
                     <Shield className="h-4 w-4" />
                     <span className="hidden md:inline">Permissions</span>
                   </TabsTrigger>
-                </PermissionGuard>
+                )}
 
                 <TabsTrigger value="access" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
@@ -98,7 +99,7 @@ const SettingsPage = () => {
           </TabsContent>
           
           <TabsContent value="branches">
-            <BranchSection />
+            {isAdmin ? <BranchSection /> : <Navigate to="/unauthorized" replace />}
           </TabsContent>
           
           <TabsContent value="access">
@@ -126,9 +127,7 @@ const SettingsPage = () => {
           </TabsContent>
           
           <TabsContent value="permissions">
-            <PermissionGuard permission="manage_roles" fallback={<Navigate to="/unauthorized" replace />}>
-              <PermissionsSettings />
-            </PermissionGuard>
+            {isAdmin ? <PermissionsSettings /> : <Navigate to="/unauthorized" replace />}
           </TabsContent>
         </Tabs>
       </div>

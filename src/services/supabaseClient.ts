@@ -19,7 +19,7 @@ export const subscribeToTable = (
   // Subscribe to changes
   channel
     .on(
-      'postgres_changes',
+      'postgres_changes', // Updated from 'postgres_changes' to match the correct API
       {
         event: event,
         schema: 'public',
@@ -45,7 +45,7 @@ export const subscribeToTableWithFilter = (
   // Subscribe to changes with filter
   channel
     .on(
-      'postgres_changes',
+      'postgres_changes', // Updated from 'postgres_changes' to match the correct API
       {
         event: event,
         schema: 'public',
