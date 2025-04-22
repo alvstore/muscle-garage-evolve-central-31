@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -116,18 +117,6 @@ export const staffNavSections: NavSection[] = [
         label: "Task Manager", 
         icon: <ListChecks className="h-4 w-4" />,
         permission: "access_communication" as Permission
-      }
-    ]
-  },
-  {
-    name: "Profile",
-    icon: <UserCog2 className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/profile", 
-        label: "My Profile", 
-        icon: <UserCog2 className="h-4 w-4" />,
-        permission: "view_staff" as Permission
       }
     ]
   },
