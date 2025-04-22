@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,16 +55,33 @@ const smsSchema = z.discriminatedUnion("provider", [
   customSchema,
 ]);
 
-type SmsFormValues = z.infer<typeof smsSchema>;
+// Replace the existing SmsFormValues type with:
+interface SmsFormValues {
+  provider: "msg91" | "twilio" | "custom";
+  senderId: string;
+  templates: {
+    membershipAlert: boolean;
+    renewalReminder: boolean;
+    otpVerification: boolean;
+    attendanceConfirmation: boolean;
+  };
+  // Add provider-specific fields
+  msg91AuthKey?: string;
+  twilioAccountSid?: string;
+  twilioAuthToken?: string;
+  customApiUrl?: string;
+  customApiHeaders?: string;
+  customApiMethod?: "GET" | "POST";
+  customApiParams?: string;
+}
 
-// Template interface
-interface SmsTemplate {
+type SmsTemplate = {
   id: string;
   name: string;
   content: string;
   type: string;
   enabled: boolean;
-}
+};
 
 const SmsSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -109,7 +125,6 @@ const SmsSettings = () => {
     message: string;
   } | null>(null);
 
-  // Load the existing SMS config on component mount
   useEffect(() => {
     const loadSmsConfig = async () => {
       try {
@@ -117,7 +132,6 @@ const SmsSettings = () => {
         if (config.provider) {
           setSelectedProvider(config.provider as "msg91" | "twilio" | "custom");
           
-          // Prepare form values based on provider
           let formValues = {
             provider: config.provider,
             senderId: config.senderId || "MUSCLEGM",
@@ -129,7 +143,6 @@ const SmsSettings = () => {
             }
           };
           
-          // Add provider-specific fields
           if (config.provider === "msg91") {
             formValues = { ...formValues, msg91AuthKey: config.authKey || "" };
           } else if (config.provider === "twilio") {
@@ -158,7 +171,6 @@ const SmsSettings = () => {
     loadSmsConfig();
   }, []);
 
-  // Default values for the form
   const defaultValues: Partial<SmsFormValues> = {
     provider: "msg91",
     senderId: "MUSCLEGM",
@@ -175,7 +187,6 @@ const SmsSettings = () => {
     defaultValues: defaultValues as any,
   });
 
-  // Watch for provider changes to update the form
   const watchProvider = form.watch("provider");
   React.useEffect(() => {
     setSelectedProvider(watchProvider);
@@ -184,7 +195,6 @@ const SmsSettings = () => {
   async function onSubmit(data: SmsFormValues) {
     try {
       setIsLoading(true);
-      // Prepare config based on the selected provider
       let config: any = {
         enabled: true,
         provider: data.provider,
@@ -192,7 +202,6 @@ const SmsSettings = () => {
         templates: data.templates
       };
       
-      // Add provider-specific fields
       if (data.provider === 'msg91') {
         config.authKey = data.msg91AuthKey;
       } else if (data.provider === 'twilio') {
@@ -205,7 +214,6 @@ const SmsSettings = () => {
         config.customApiParams = data.customApiParams;
       }
       
-      // Update the integration config
       const success = integrationService.updateConfig('sms', config);
       
       if (success) {
@@ -229,7 +237,6 @@ const SmsSettings = () => {
 
     try {
       setIsSendingTest(true);
-      // In a real implementation, this would be an API call to send a test SMS
       const result = await integrationService.testIntegration('sms');
       if (result.success) {
         toast.success(`Test SMS sent to ${testPhone}`);
@@ -268,10 +275,8 @@ const SmsSettings = () => {
       }
       
       setIsLoading(true);
-      // Mock test with a timeout
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Check if the URL contains the required placeholders
       const url = formValues.customApiUrl;
       const hasPlaceholders = url.includes('{mobile}') || url.includes('{message}');
       
@@ -283,7 +288,6 @@ const SmsSettings = () => {
         return;
       }
       
-      // Simulate successful test
       setCustomApiTestResult({
         success: true,
         message: "Test request successful! The API endpoint accepted the request format."

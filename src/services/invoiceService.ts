@@ -1,4 +1,3 @@
-
 import { supabase } from '@/services/supabaseClient';
 import { Invoice, InvoiceItem } from '@/types/finance';
 import { toast } from 'sonner';
@@ -9,9 +8,54 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export const invoiceService = {
   /**
+   * Creates a new invoice
+   */
+  createInvoice: async (invoiceData: {
+    memberId: string;
+    memberName: string;
+    amount: number;
+    description: string;
+    dueDate: Date;
+    status: string;
+    items: Array<{
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      amount: number;
+    }>;
+  }): Promise<Invoice | null> => {
+    try {
+      // In a real app, this would save to a database
+      console.log('Creating invoice:', invoiceData);
+      
+      // Mock response
+      return {
+        id: uuidv4(),
+        memberId: invoiceData.memberId,
+        memberName: invoiceData.memberName,
+        amount: invoiceData.amount,
+        status: invoiceData.status,
+        issuedDate: new Date().toISOString(),
+        dueDate: invoiceData.dueDate.toISOString(),
+        paidDate: invoiceData.status === 'paid' ? new Date().toISOString() : null,
+        items: invoiceData.items.map(item => ({
+          id: uuidv4(),
+          name: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        }))
+      };
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toast.error('Failed to create invoice');
+      return null;
+    }
+  },
+
+  /**
    * Generates an invoice automatically when a membership plan is assigned to a member
    */
-  async generateInvoiceForMembership(
+  generateInvoiceForMembership: async (
     memberId: string,
     memberName: string,
     planId: string,
@@ -20,7 +64,7 @@ export const invoiceService = {
     startDate: string,
     createdBy: string,
     branchId: string
-  ): Promise<Invoice | null> {
+  ): Promise<Invoice | null> => {
     try {
       // Create invoice items
       const invoiceItems: InvoiceItem[] = [
@@ -87,13 +131,13 @@ export const invoiceService = {
   /**
    * Records payment for an invoice
    */
-  async recordPayment(
+  recordPayment: async (
     invoiceId: string,
     amount: number,
     paymentMethod: string,
     recordedBy: string,
     branchId: string
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     try {
       // Get current invoice details
       const { data: invoice, error: fetchError } = await supabase
@@ -181,7 +225,7 @@ export const invoiceService = {
   /**
    * Generates a payment link for online payments
    */
-  async generatePaymentLink(invoiceId: string): Promise<string | null> {
+  generatePaymentLink: async (invoiceId: string): Promise<string | null> => {
     try {
       // In a real application, this would integrate with Razorpay or another payment gateway
       // For now, we'll return a mock payment link

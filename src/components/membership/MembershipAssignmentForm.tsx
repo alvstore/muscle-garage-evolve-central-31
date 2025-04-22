@@ -13,9 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useBranch } from '@/hooks/use-branch';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/utils/formatters';
 import { Member } from '@/types/member';
-// Import MembershipPlan instead of Membership to avoid conflict
 import { MembershipPlan } from '@/types/membership';
 import { MembershipAssignment } from '@/types/membership-assignment';
 import { invoiceService } from '@/services/invoiceService';
@@ -76,7 +75,6 @@ const MembershipAssignmentForm = () => {
   });
 
   useEffect(() => {
-    // Mock data for members
     const mockMembers: Member[] = [
       {
         id: '1',
@@ -91,10 +89,8 @@ const MembershipAssignmentForm = () => {
         role: 'member',
         branchId: currentBranch?.id
       },
-      // ... more mock members
     ];
 
-    // Mock data for plans
     const mockPlans: MembershipPlan[] = [
       {
         id: '1',
@@ -156,7 +152,6 @@ const MembershipAssignmentForm = () => {
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     
-    // Create a membership assignment object
     const assignment: MembershipAssignment = {
       memberId: data.memberId,
       membershipId: data.planId,
@@ -173,13 +168,10 @@ const MembershipAssignmentForm = () => {
       paymentMethod: data.paymentMethod
     };
     
-    // Simulate API call
     setTimeout(() => {
       console.log('Membership assignment created:', assignment);
       
-      // Create an invoice for this membership
       if (data.createInvoice) {
-        // Generate invoice
         invoiceService.createInvoice({
           memberId: data.memberId,
           memberName: selectedMember?.name || '',
@@ -294,7 +286,7 @@ const MembershipAssignmentForm = () => {
                       <DatePicker
                         className="rounded-md border"
                         onSelect={field.onChange}
-                        defaultValue={field.value}
+                        date={field.value}
                       />
                       <FormDescription>
                         The date the membership starts.
@@ -313,7 +305,7 @@ const MembershipAssignmentForm = () => {
                       <DatePicker
                         className="rounded-md border"
                         onSelect={field.onChange}
-                        defaultValue={field.value}
+                        date={field.value}
                       />
                       <FormDescription>The date the membership ends.</FormDescription>
                       <FormMessage />
