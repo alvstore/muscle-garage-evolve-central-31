@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
@@ -24,12 +23,9 @@ const AttendancePage = () => {
   const isMember = userRole === "member";
 
   useEffect(() => {
-    // Simulate fetching attendance data
     const fetchAttendanceData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, this would be an API call
-        // For now, let's create some mock data based on the selected date
         const mockData = generateMockAttendanceData(selectedDate);
         setTimeout(() => {
           setAttendanceData(mockData);
@@ -45,41 +41,40 @@ const AttendancePage = () => {
     fetchAttendanceData();
   }, [selectedDate, user?.id]);
 
-  // Generate mock attendance data for demo purposes
   const generateMockAttendanceData = (date: Date) => {
-    // Only generate data for current date and past 7 days
     const now = new Date();
     const selected = new Date(date);
     
-    // Set hours to 0 for date comparison
     now.setHours(0, 0, 0, 0);
     selected.setHours(0, 0, 0, 0);
     
-    // If selected date is in the future, return empty array
     if (selected > now) {
       return [];
     }
     
-    // Generate mock data
     const entries = [];
     
-    // Check-in entry (current user)
+    const checkInDate = new Date(selected);
+    checkInDate.setHours(9, 30, 0, 0);
+    
+    const checkOutDate = new Date(selected);
+    checkOutDate.setHours(11, 45, 0, 0);
+    
     entries.push({
       memberId: user?.id || 'unknown',
       memberName: user?.name || 'Current User',
-      time: new Date(selected).setHours(9, 30, 0).toString(),
+      time: checkInDate.toISOString(),
       type: 'check-in' as const,
       location: 'Main Entrance',
       device: 'Access Card',
       status: 'active'
     });
     
-    // Add check-out if not today
     if (selected.getTime() !== now.getTime()) {
       entries.push({
         memberId: user?.id || 'unknown',
         memberName: user?.name || 'Current User',
-        time: new Date(selected).setHours(11, 45, 0).toString(),
+        time: checkOutDate.toISOString(),
         type: 'check-out' as const,
         location: 'Main Entrance',
         device: 'Access Card',

@@ -1,7 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Utensils } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Utensils, Printer } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { toast } from 'sonner';
 
 interface DietItem {
   id: string;
@@ -14,6 +18,33 @@ interface DietRecommendationsProps {
 }
 
 const DietRecommendations: React.FC<DietRecommendationsProps> = ({ recommendations }) => {
+  const handlePrintPlan = async () => {
+    try {
+      const element = document.getElementById('diet-plan-content');
+      if (!element) {
+        toast.error("Could not generate PDF");
+        return;
+      }
+
+      const canvas = await html2canvas(element);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF();
+      
+      // Calculate dimensions to fit the content
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save('diet-plan.pdf');
+      
+      toast.success("Diet plan downloaded successfully");
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
   if (!recommendations || recommendations.length === 0) {
     return (
       <div className="text-center py-10">
@@ -27,13 +58,27 @@ const DietRecommendations: React.FC<DietRecommendationsProps> = ({ recommendatio
   }
 
   return (
-    <div className="space-y-3">
-      {recommendations.map((diet) => (
-        <div key={diet.id} className="p-3 border rounded-lg">
-          <h3 className="font-medium">{diet.name}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{diet.description}</p>
-        </div>
-      ))}
+    <div className="space-y-4">
+      <div id="diet-plan-content" className="space-y-3">
+        {recommendations.map((diet) => (
+          <div key={diet.id} className="p-3 border rounded-lg">
+            <h3 className="font-medium">{diet.name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{diet.description}</p>
+          </div>
+        ))}
+      </div>
+      
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePrintPlan}
+          className="flex items-center gap-2"
+        >
+          <Printer className="h-4 w-4" />
+          Print Plan
+        </Button>
+      </div>
     </div>
   );
 };
