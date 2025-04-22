@@ -1,161 +1,262 @@
 
-import React from 'react';
-import { DietPlan } from '@/types/diet';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Trash, FileText } from 'lucide-react';
+import React, { useState } from 'react';
 import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
-import { format } from 'date-fns';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { DietPlan } from "@/types/diet";
+import { AlertCircle, MoreVertical, Edit, Trash, Copy, Eye } from "lucide-react";
+import { formatDistance } from 'date-fns';
 
 interface DietPlanListProps {
   plans: DietPlan[];
-  isLoading?: boolean;
-  onEdit?: (planId: string) => void;
+  onEdit?: (plan: DietPlan) => void;
   onDelete?: (planId: string) => void;
-  onPlanCreated?: (plan: DietPlan) => void;
-  onPlanUpdated?: (plan: DietPlan) => void;
-  onPlanDeleted?: (planId: string) => void;
-  canCreateGlobal?: boolean;
+  onDuplicate?: (plan: DietPlan) => void;
+  onView?: (plan: DietPlan) => void;
+  emptyState?: React.ReactNode;
+  isLoading?: boolean;
+  showActions?: boolean;
+  showFilters?: boolean;
 }
 
-export const DietPlanList: React.FC<DietPlanListProps> = ({ 
-  plans, 
+export const DietPlanList = ({
+  plans,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onView,
+  emptyState,
   isLoading = false,
-  onEdit = () => {},
-  onDelete = () => {},
-  onPlanCreated,
-  onPlanUpdated,
-  onPlanDeleted,
-  canCreateGlobal
-}) => {
+  showActions = true,
+  showFilters = true,
+}: DietPlanListProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [showGlobalOnly, setShowGlobalOnly] = useState(false);
+  const [showCustomOnly, setShowCustomOnly] = useState(false);
+
+  const handleDeleteClick = (planId: string) => {
+    setPlanToDelete(planId);
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = () => {
+    if (planToDelete && onDelete) {
+      onDelete(planToDelete);
+    }
+    setShowConfirmDelete(false);
+    setPlanToDelete(null);
+  };
+
+  // Filter plans based on search query and filters
+  const filteredPlans = plans.filter(plan => {
+    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          plan.diet_type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (showGlobalOnly && !plan.is_global) return false;
+    if (showCustomOnly && !plan.is_custom) return false;
+    
+    return matchesSearch;
+  });
+
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Loading diet plans...</p>
+      <div className="w-full h-48 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-2">
+          <div className="h-8 w-8 bg-muted rounded-full"></div>
+          <div className="h-4 w-32 bg-muted rounded"></div>
+        </div>
       </div>
     );
   }
-  
+
   if (plans.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No diet plans found</p>
+      <div className="w-full rounded-lg border border-dashed p-8 flex flex-col items-center justify-center">
+        {emptyState || (
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">No Diet Plans</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You haven't created any diet plans yet.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
-  
-  // Function to render diet type badge
-  const renderDietTypeBadge = (dietType?: string) => {
-    switch (dietType) {
-      case 'vegetarian':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Vegetarian</Badge>;
-      case 'vegan':
-        return <Badge variant="outline" className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300">Vegan</Badge>;
-      case 'keto':
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Keto</Badge>;
-      case 'paleo':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">Paleo</Badge>;
-      case 'gluten-free':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Gluten-Free</Badge>;
-      default:
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">Standard</Badge>;
-    }
-  };
-  
-  // Function to render goal badge
-  const renderGoalBadge = (goal?: string) => {
-    switch (goal) {
-      case 'weight-loss':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Weight Loss</Badge>;
-      case 'muscle-gain':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Muscle Gain</Badge>;
-      default:
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">Maintenance</Badge>;
-    }
-  };
-  
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {plans.map((plan) => (
-        <Card key={plan.id} className="flex flex-col">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-lg">{plan.name || "Unnamed Plan"}</h3>
-              <div className="flex flex-wrap gap-1">
-                {renderDietTypeBadge(plan.diet_type)}
-                {renderGoalBadge(plan.goal)}
-              </div>
+    <div className="space-y-6">
+      {showFilters && (
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex-1">
+            <Input
+              placeholder="Search diet plans..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="global-only" 
+                checked={showGlobalOnly} 
+                onCheckedChange={(checked) => setShowGlobalOnly(checked === true)}
+              />
+              <Label htmlFor="global-only">Global Plans</Label>
             </div>
-            
-            <p className="text-sm text-muted-foreground mb-4">
-              {plan.description || 'No description provided'}
-            </p>
-            
-            <div className="space-y-1 mb-4">
-              <div className="text-sm">
-                <span className="font-medium">Daily Calories:</span> {plan.daily_calories || "Not specified"}
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updated_at), 'MMM d, yyyy')}
-              </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="custom-only" 
+                checked={showCustomOnly} 
+                onCheckedChange={(checked) => setShowCustomOnly(checked === true)}
+              />
+              <Label htmlFor="custom-only">Custom Plans</Label>
             </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-between mt-auto pt-4 border-t">
-            <Button variant="outline" size="sm" onClick={() => onEdit(plan.id)}>
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive">
-                  <Trash className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Confirm Deletion</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to delete the diet plan "{plan.name}"? 
-                    This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="mt-4">
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      onDelete(plan.id);
-                      if (onPlanDeleted) onPlanDeleted(plan.id);
-                    }}
-                  >
-                    Delete
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredPlans.map((plan) => (
+          <Card key={plan.id} className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {plan.diet_type} • {plan.daily_calories} calories
+                  </CardDescription>
+                </div>
+                {showActions && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {onView && (
+                        <DropdownMenuItem onClick={() => onView(plan)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </DropdownMenuItem>
+                      )}
+                      {onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(plan)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
+                      {onDuplicate && (
+                        <DropdownMenuItem onClick={() => onDuplicate(plan)}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
+                      )}
+                      {onDelete && (
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(plan.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+              <div className="flex gap-2 mt-2">
+                {plan.is_global && <Badge variant="outline">Global</Badge>}
+                {plan.is_custom && <Badge variant="outline">Custom</Badge>}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div>
+                  <h4 className="text-sm font-medium">Meals</h4>
+                  <p className="text-sm text-muted-foreground">{plan.meal_plans?.length || 0} meals planned</p>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-medium">Last Updated</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {plan.updated_at ? 
+                      formatDistance(new Date(plan.updated_at), new Date(), { addSuffix: true }) : 
+                      'Never updated'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-muted/50 pt-3">
+              <div className="w-full flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">
+                  {plan.meal_plans?.length || 0} meals • {plan.daily_calories} cal
+                </div>
+                {onView && (
+                  <Button variant="ghost" size="sm" onClick={() => onView(plan)}>
+                    View Plan
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            
-            <Button variant="outline" size="sm">
-              <FileText className="h-4 w-4 mr-1" />
-              PDF
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
+                )}
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this diet plan? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+export default DietPlanList;

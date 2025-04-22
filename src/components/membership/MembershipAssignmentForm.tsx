@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -28,7 +27,6 @@ import { MembershipAssignment } from "@/types/membership-assignment";
 import invoiceService from "@/services/invoiceService";
 import { useBranch } from "@/hooks/use-branch";
 
-// Mock data
 const mockMembers: Member[] = [
   {
     id: "1",
@@ -280,6 +278,7 @@ const MembershipAssignmentForm = ({
                 date={startDate} 
                 onSelect={setStartDate}
                 className={isLoading ? "opacity-50 pointer-events-none" : ""}
+                disabled={isLoading}
               />
             </div>
             
@@ -289,6 +288,7 @@ const MembershipAssignmentForm = ({
                 date={endDate} 
                 onSelect={setEndDate}
                 className={isLoading ? "opacity-50 pointer-events-none" : ""}
+                disabled={isLoading}
               />
             </div>
             

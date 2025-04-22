@@ -1,647 +1,597 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, PlusCircle, Edit, Trash, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { 
-  Plus, 
-  PencilLine, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  RefreshCw, 
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Loader2
-} from "lucide-react";
-import { DeviceMapping, BranchDeviceSettings, DeviceMappingFormValues, ApiTestResult } from "@/types/device-mapping";
-import { Branch } from "@/types/branch";
-import { useBranch } from "@/hooks/use-branch";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useBranch } from '@/hooks/use-branch';
+import { DeviceMapping, DeviceMappingFormValues, ApiTestResult } from '@/types/device-mapping';
+import { Branch } from '@/types/branch';
 
 // Mock branches data
 const mockBranches: Branch[] = [
-  { id: 'branch1', name: 'Main Branch', address: '123 Main St', city: 'Mumbai', state: 'Maharashtra', country: 'India', created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: 'branch2', name: 'Downtown Branch', address: '456 Downtown Ave', city: 'Delhi', state: 'Delhi', country: 'India', created_at: '2024-01-02', updated_at: '2024-01-02' },
-  { id: 'branch3', name: 'East Wing', address: '789 East Blvd', city: 'Bangalore', state: 'Karnataka', country: 'India', created_at: '2024-01-03', updated_at: '2024-01-03' },
+  { id: "1", name: "Main Branch", address: "123 Main St", city: "Mumbai", isActive: true },
+  { id: "2", name: "Downtown Branch", address: "456 MG Road", city: "Delhi", isActive: true },
+  { id: "3", name: "West Side", address: "789 West Avenue", city: "Bangalore", isActive: true }
 ];
 
-// Mock devices data
-const mockDevices: DeviceMapping[] = [
+// Mock device mappings data
+const mockDeviceMappings: DeviceMapping[] = [
   {
-    id: 'device1',
-    branchId: 'branch1',
-    deviceId: 'HKVS001',
-    deviceName: 'Main Entrance',
-    deviceType: 'entry',
-    deviceSerial: 'DS-K1T671M20210615001',
-    deviceLocation: 'Main door',
+    id: "1",
+    branchId: "1",
+    deviceId: "device1",
+    deviceName: "Main Entrance",
+    deviceType: "entry",
+    deviceSerial: "HK-1234567",
+    deviceLocation: "Front Door",
     isActive: true,
-    apiMethod: 'OpenAPI',
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-01T10:00:00Z',
-    lastSyncTime: '2024-04-20T08:30:00Z',
-    syncStatus: 'success'
+    createdAt: "2023-01-15T09:30:00Z",
+    updatedAt: "2023-01-15T09:30:00Z",
+    apiMethod: "OpenAPI",
+    ipAddress: "192.168.1.100",
+    port: "8000",
+    username: "admin",
+    password: "password123",
+    useISAPIFallback: true,
+    lastSuccessfulSync: "2023-01-15T10:30:00Z"
   },
   {
-    id: 'device2',
-    branchId: 'branch1',
-    deviceId: 'HKVS002',
-    deviceName: 'Swimming Pool Gate',
-    deviceType: 'swimming',
-    deviceSerial: 'DS-K1T671M20210615002',
-    deviceLocation: 'Pool entrance',
+    id: "2",
+    branchId: "1",
+    deviceId: "device2",
+    deviceName: "Gym Area",
+    deviceType: "gym",
+    deviceSerial: "HK-7654321",
+    deviceLocation: "Gym Entrance",
     isActive: true,
-    apiMethod: 'OpenAPI',
-    ipAddress: '192.168.1.101',
-    port: '8000',
-    username: 'admin',
-    password: 'admin123',
-    createdAt: '2024-01-02T10:00:00Z',
-    updatedAt: '2024-01-02T10:00:00Z',
-    lastSyncTime: '2024-04-20T12:15:00Z',
-    syncStatus: 'failed',
-    lastFailedSync: '2024-04-20T12:15:00Z',
-    useISAPIFallback: true
+    createdAt: "2023-01-15T09:35:00Z",
+    updatedAt: "2023-01-15T09:35:00Z",
+    apiMethod: "ISAPI",
+    ipAddress: "192.168.1.101",
+    port: "8000",
+    username: "admin",
+    password: "password456",
+    syncStatus: "success"
   },
   {
-    id: 'device3',
-    branchId: 'branch2',
-    deviceId: 'HKVS003',
-    deviceName: 'Downtown Main Gate',
-    deviceType: 'entry',
-    deviceSerial: 'DS-K1T671M20210615003',
-    deviceLocation: 'Front entrance',
+    id: "3",
+    branchId: "2",
+    deviceId: "device3",
+    deviceName: "Swimming Pool",
+    deviceType: "swimming",
+    deviceSerial: "HK-9876543",
+    deviceLocation: "Pool Entrance",
     isActive: true,
-    apiMethod: 'ISAPI',
-    ipAddress: '192.168.2.100',
-    port: '8000',
-    username: 'admin',
-    password: 'admin123',
-    createdAt: '2024-01-03T10:00:00Z',
-    updatedAt: '2024-01-03T10:00:00Z',
-    lastSyncTime: '2024-04-21T09:45:00Z',
-    syncStatus: 'success',
-    lastSuccessfulSync: '2024-04-21T09:45:00Z'
+    createdAt: "2023-01-16T10:00:00Z",
+    updatedAt: "2023-01-16T10:00:00Z",
+    apiMethod: "OpenAPI",
+    ipAddress: "192.168.2.100",
+    port: "8000",
+    username: "admin",
+    password: "password789",
+    useISAPIFallback: false,
+    syncStatus: "failed",
+    lastFailedSync: "2023-01-16T12:30:00Z"
   }
 ];
-
-// Mock branch device settings
-const mockBranchSettings: Record<string, BranchDeviceSettings> = {
-  'branch1': {
-    branchId: 'branch1',
-    devices: mockDevices.filter(d => d.branchId === 'branch1'),
-    defaultAccessRules: {
-      gymOnlyAccess: true,
-      swimmingOnlyAccess: true,
-      premiumAccess: true
-    },
-    syncFrequency: 'hourly',
-    integrationEnabled: true,
-    useISAPIWhenOpenAPIFails: true
-  },
-  'branch2': {
-    branchId: 'branch2',
-    devices: mockDevices.filter(d => d.branchId === 'branch2'),
-    defaultAccessRules: {
-      gymOnlyAccess: true,
-      swimmingOnlyAccess: false,
-      premiumAccess: true
-    },
-    syncFrequency: '15min',
-    integrationEnabled: true,
-    useISAPIWhenOpenAPIFails: false
-  },
-  'branch3': {
-    branchId: 'branch3',
-    devices: [],
-    defaultAccessRules: {
-      gymOnlyAccess: true,
-      swimmingOnlyAccess: false,
-      premiumAccess: true
-    },
-    syncFrequency: 'daily',
-    integrationEnabled: false,
-    useISAPIWhenOpenAPIFails: true
-  }
-};
 
 // Form schema for device mapping
-const deviceFormSchema = z.object({
-  deviceName: z.string().min(1, { message: "Device name is required" }),
-  deviceType: z.enum(['entry', 'exit', 'swimming', 'gym', 'special']),
-  deviceSerial: z.string().min(1, { message: "Device serial number is required" }),
-  deviceLocation: z.string().optional(),
+const deviceSchema = z.object({
+  deviceName: z.string().min(1, "Device name is required"),
+  deviceType: z.enum(["entry", "exit", "swimming", "gym", "special"]),
+  deviceSerial: z.string().min(1, "Serial number is required"),
+  deviceLocation: z.string().min(1, "Location is required"),
   isActive: z.boolean().default(true),
-  apiMethod: z.enum(['OpenAPI', 'ISAPI']),
-  ipAddress: z.string().optional(),
-  port: z.string().optional(),
-  username: z.string().optional(),
-  password: z.string().optional(),
-  useISAPIFallback: z.boolean().default(true),
+  apiMethod: z.enum(["OpenAPI", "ISAPI"]),
+  ipAddress: z.string().min(1, "IP address is required"),
+  port: z.string().min(1, "Port is required"),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+  useISAPIFallback: z.boolean().default(false)
 });
 
 const BranchDeviceManager = () => {
-  const { can } = usePermissions();
-  const { currentBranch } = useBranch();
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+  const [devices, setDevices] = useState<DeviceMapping[]>(mockDeviceMappings);
+  const [isLoading, setIsLoading] = useState(false);
   const [branches, setBranches] = useState<Branch[]>(mockBranches);
-  const [devices, setDevices] = useState<DeviceMapping[]>(mockDevices);
-  const [branchSettings, setBranchSettings] = useState<Record<string, BranchDeviceSettings>>(mockBranchSettings);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<DeviceMapping | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<Record<string, ApiTestResult>>({});
-  const [isTestingApi, setIsTestingApi] = useState<Record<string, boolean>>({});
+  const { currentBranch } = useBranch();
 
-  // Initialize form
-  const form = useForm<z.infer<typeof deviceFormSchema>>({
-    resolver: zodResolver(deviceFormSchema),
+  const form = useForm<DeviceMappingFormValues>({
+    resolver: zodResolver(deviceSchema),
     defaultValues: {
-      deviceName: '',
-      deviceType: 'entry',
-      deviceSerial: '',
-      deviceLocation: '',
+      deviceName: "",
+      deviceType: "entry",
+      deviceSerial: "",
+      deviceLocation: "",
       isActive: true,
-      apiMethod: 'OpenAPI',
-      ipAddress: '',
-      port: '8000',
-      username: 'admin',
-      password: '',
-      useISAPIFallback: true,
-    },
+      apiMethod: "OpenAPI",
+      ipAddress: "",
+      port: "8000",
+      username: "admin",
+      password: "",
+      useISAPIFallback: false
+    }
   });
 
-  // Set active branch when mounted
-  useEffect(() => {
-    if (currentBranch?.id) {
-      setSelectedBranchId(currentBranch.id);
-    } else if (branches.length > 0) {
-      setSelectedBranchId(branches[0].id);
-    }
-  }, [currentBranch, branches]);
+  // Filter devices based on selected branch
+  const filteredDevices = selectedBranchId === "all" 
+    ? devices 
+    : devices.filter(device => device.branchId === selectedBranchId);
 
-  // Update form when editing device
-  useEffect(() => {
-    if (editingDevice) {
-      form.reset({
-        deviceName: editingDevice.deviceName,
-        deviceType: editingDevice.deviceType,
-        deviceSerial: editingDevice.deviceSerial,
-        deviceLocation: editingDevice.deviceLocation || '',
-        isActive: editingDevice.isActive,
-        apiMethod: editingDevice.apiMethod,
-        ipAddress: editingDevice.ipAddress || '',
-        port: editingDevice.port || '8000',
-        username: editingDevice.username || 'admin',
-        password: editingDevice.password || '',
-        useISAPIFallback: editingDevice.useISAPIFallback || true,
-      });
-    } else {
-      form.reset({
-        deviceName: '',
-        deviceType: 'entry',
-        deviceSerial: '',
-        deviceLocation: '',
-        isActive: true,
-        apiMethod: 'OpenAPI',
-        ipAddress: '',
-        port: '8000',
-        username: 'admin',
-        password: '',
-        useISAPIFallback: true,
-      });
-    }
-  }, [editingDevice, form]);
+  // Handle branch change
+  const handleBranchChange = (branchId: string) => {
+    setSelectedBranchId(branchId);
+  };
 
+  // Open dialog for adding a new device
   const handleAddDevice = () => {
     setEditingDevice(null);
+    form.reset({
+      deviceName: "",
+      deviceType: "entry",
+      deviceSerial: "",
+      deviceLocation: "",
+      isActive: true,
+      apiMethod: "OpenAPI",
+      ipAddress: "",
+      port: "8000",
+      username: "admin",
+      password: "",
+      useISAPIFallback: false
+    });
     setIsDialogOpen(true);
   };
 
+  // Open dialog for editing a device
   const handleEditDevice = (device: DeviceMapping) => {
     setEditingDevice(device);
+    form.reset({
+      deviceName: device.deviceName,
+      deviceType: device.deviceType,
+      deviceSerial: device.deviceSerial,
+      deviceLocation: device.deviceLocation,
+      isActive: device.isActive,
+      apiMethod: device.apiMethod,
+      ipAddress: device.ipAddress || "",
+      port: device.port || "8000",
+      username: device.username || "admin",
+      password: device.password || "",
+      useISAPIFallback: device.useISAPIFallback || false
+    });
     setIsDialogOpen(true);
   };
 
-  const handleDeleteDevice = (deviceId: string) => {
-    // In a real application, this would call an API to delete the device
-    setDevices(devices.filter(d => d.id !== deviceId));
+  // Handle form submission
+  const onSubmit = (data: DeviceMappingFormValues) => {
+    setIsLoading(true);
     
-    // Update branch settings
-    if (selectedBranchId) {
-      const updatedBranchSettings = { ...branchSettings };
-      updatedBranchSettings[selectedBranchId] = {
-        ...updatedBranchSettings[selectedBranchId],
-        devices: updatedBranchSettings[selectedBranchId].devices.filter(d => d.id !== deviceId)
-      };
-      setBranchSettings(updatedBranchSettings);
-    }
-    
-    toast.success("Device removed successfully");
-  };
-
-  const onSubmit = (data: z.infer<typeof deviceFormSchema>) => {
-    if (!selectedBranchId) {
-      toast.error("Please select a branch first");
-      return;
-    }
-
-    const timestamp = new Date().toISOString();
-    let newDevice: DeviceMapping = {
-      id: editingDevice?.id || `device-${Date.now()}`,
-      branchId: selectedBranchId,
-      deviceId: `HKVS${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      deviceName: data.deviceName,
-      deviceType: data.deviceType,
-      deviceSerial: data.deviceSerial,
-      deviceLocation: data.deviceLocation || '',
-      isActive: data.isActive,
-      apiMethod: data.apiMethod,
-      ipAddress: data.ipAddress,
-      port: data.port,
-      username: data.username,
-      password: data.password,
-      useISAPIFallback: data.useISAPIFallback,
-      createdAt: editingDevice?.createdAt || timestamp,
-      updatedAt: timestamp
-    };
-
-    if (editingDevice) {
-      // Update existing device
-      setDevices(devices.map(d => d.id === editingDevice.id ? newDevice : d));
-      toast.success("Device updated successfully");
-    } else {
-      // Add new device
-      setDevices([...devices, newDevice]);
-      toast.success("Device added successfully");
-    }
-
-    // Update branch settings
-    if (selectedBranchId) {
-      const updatedBranchSettings = { ...branchSettings };
-      const branchDevices = updatedBranchSettings[selectedBranchId]?.devices || [];
-      
+    setTimeout(() => {
       if (editingDevice) {
-        updatedBranchSettings[selectedBranchId] = {
-          ...updatedBranchSettings[selectedBranchId],
-          devices: branchDevices.map(d => d.id === editingDevice.id ? newDevice : d)
-        };
+        // Update existing device
+        const updatedDevices = devices.map(device => 
+          device.id === editingDevice.id 
+            ? { ...device, ...data, updatedAt: new Date().toISOString() } 
+            : device
+        );
+        setDevices(updatedDevices);
+        toast.success("Device updated successfully");
       } else {
-        updatedBranchSettings[selectedBranchId] = {
-          ...updatedBranchSettings[selectedBranchId],
-          devices: [...branchDevices, newDevice]
+        // Add new device
+        const newDevice: DeviceMapping = {
+          id: `device-${Date.now()}`,
+          branchId: selectedBranchId !== "all" ? selectedBranchId : (currentBranch?.id || "1"),
+          deviceId: `device-${Date.now()}`,
+          ...data,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
+        setDevices([...devices, newDevice]);
+        toast.success("Device added successfully");
       }
       
-      setBranchSettings(updatedBranchSettings);
-    }
-
-    setIsDialogOpen(false);
+      setIsLoading(false);
+      setIsDialogOpen(false);
+    }, 1000);
   };
 
-  const testDeviceApi = async (device: DeviceMapping, apiMethod: 'OpenAPI' | 'ISAPI') => {
-    // Set testing state for this device
-    setIsTestingApi(prev => ({ ...prev, [device.id]: true }));
-    
-    try {
-      // In a real application, this would call an API to test the connection
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success or failure (80% success rate for demo)
-      const success = Math.random() > 0.2;
-      
-      // Create test result
-      const result: ApiTestResult = {
-        success,
-        message: success 
-          ? `Successfully connected to device using ${apiMethod}` 
-          : `Failed to connect using ${apiMethod}. ${apiMethod === 'OpenAPI' && device.useISAPIFallback ? 'Will try ISAPI fallback.' : 'Please check credentials.'}`,
-        apiMethod,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Save test result
-      setTestResults(prev => ({ ...prev, [device.id]: result }));
-      
-      // If OpenAPI failed and fallback is enabled, test ISAPI after a short delay
-      if (!success && apiMethod === 'OpenAPI' && device.useISAPIFallback) {
-        toast.info("OpenAPI connection failed. Trying ISAPI fallback...");
-        
-        // Wait a moment before trying ISAPI
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate ISAPI fallback (90% success rate for fallback)
-        const isapiFallbackSuccess = Math.random() > 0.1;
-        
-        const fallbackResult: ApiTestResult = {
-          success: isapiFallbackSuccess,
-          message: isapiFallbackSuccess 
-            ? "ISAPI fallback connection successful" 
-            : "Both OpenAPI and ISAPI fallback failed. Please check device configuration.",
-          apiMethod: 'ISAPI',
-          timestamp: new Date().toISOString()
-        };
-        
-        // Save fallback result
-        setTestResults(prev => ({ ...prev, [device.id]: fallbackResult }));
-        
-        if (isapiFallbackSuccess) {
-          toast.success("ISAPI fallback connection successful");
-        } else {
-          toast.error("Both OpenAPI and ISAPI fallback failed");
-        }
-      } else {
-        // Show simple success/failure toast
-        if (success) {
-          toast.success(`${apiMethod} connection successful`);
-        } else {
-          toast.error(`${apiMethod} connection failed`);
-        }
-      }
-    } catch (error) {
-      console.error("Error testing device:", error);
-      toast.error("An error occurred while testing the connection");
-      
-      // Save error result
-      setTestResults(prev => ({ 
-        ...prev, 
-        [device.id]: {
-          success: false,
-          message: "Error testing connection",
-          apiMethod,
-          timestamp: new Date().toISOString()
-        }
-      }));
-    } finally {
-      // Clear testing state
-      setIsTestingApi(prev => ({ ...prev, [device.id]: false }));
+  // Handle device deletion
+  const handleDeleteDevice = (id: string) => {
+    setDeleteId(id);
+    setIsDeleting(true);
+  };
+
+  // Confirm device deletion
+  const confirmDelete = () => {
+    if (deleteId) {
+      const filteredDevices = devices.filter(device => device.id !== deleteId);
+      setDevices(filteredDevices);
+      toast.success("Device deleted successfully");
+      setDeleteId(null);
+      setIsDeleting(false);
     }
   };
 
-  const toggleGlobalFallback = (enabled: boolean) => {
-    if (!selectedBranchId) return;
+  // Test API connection
+  const testApiConnection = async (device: DeviceMapping) => {
+    if (isTesting) return;
     
-    const updatedBranchSettings = { ...branchSettings };
-    updatedBranchSettings[selectedBranchId] = {
-      ...updatedBranchSettings[selectedBranchId],
-      useISAPIWhenOpenAPIFails: enabled
-    };
+    setIsTesting(true);
     
-    setBranchSettings(updatedBranchSettings);
-    toast.success(`Global ISAPI fallback ${enabled ? 'enabled' : 'disabled'} for this branch`);
+    // Simulate API call with a timeout
+    setTimeout(() => {
+      const isSuccess = Math.random() > 0.3; // 70% success rate for demo
+      
+      if (isSuccess) {
+        setTestResults(prev => ({
+          ...prev,
+          [device.id]: {
+            success: true,
+            message: `Successfully connected to ${device.deviceName} using ${device.apiMethod}`,
+            apiMethod: device.apiMethod,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        
+        toast.success(`Successfully connected to ${device.deviceName}`);
+      } else {
+        const isOpenApiFailed = device.apiMethod === "OpenAPI";
+        
+        if (isOpenApiFailed && device.useISAPIFallback) {
+          // Simulate fallback to ISAPI
+          setTimeout(() => {
+            const fallbackSuccess = Math.random() > 0.2; // 80% success rate for fallback
+            
+            if (fallbackSuccess) {
+              setTestResults(prev => ({
+                ...prev,
+                [device.id]: {
+                  success: true,
+                  message: `OpenAPI failed, successfully connected using ISAPI fallback`,
+                  apiMethod: "ISAPI",
+                  timestamp: new Date().toISOString()
+                }
+              }));
+              
+              toast.success(`OpenAPI failed but ISAPI fallback succeeded for ${device.deviceName}`);
+              
+              // Update device with the last successful sync
+              const updatedDevices = devices.map(d => 
+                d.id === device.id 
+                  ? { 
+                      ...d, 
+                      lastSuccessfulSync: new Date().toISOString(),
+                      syncStatus: "success"
+                    } 
+                  : d
+              );
+              setDevices(updatedDevices);
+            } else {
+              setTestResults(prev => ({
+                ...prev,
+                [device.id]: {
+                  success: false,
+                  message: `Both OpenAPI and ISAPI fallback failed to connect`,
+                  apiMethod: device.apiMethod,
+                  timestamp: new Date().toISOString()
+                }
+              }));
+              
+              toast.error(`Both OpenAPI and ISAPI failed for ${device.deviceName}`);
+              
+              // Update device with the last failed sync
+              const updatedDevices = devices.map(d => 
+                d.id === device.id 
+                  ? { 
+                      ...d, 
+                      lastFailedSync: new Date().toISOString(),
+                      syncStatus: "failed"
+                    } 
+                  : d
+              );
+              setDevices(updatedDevices);
+            }
+            
+            setIsTesting(false);
+          }, 1500);
+        } else {
+          setTestResults(prev => ({
+            ...prev,
+            [device.id]: {
+              success: false,
+              message: `Failed to connect to ${device.deviceName} using ${device.apiMethod}`,
+              apiMethod: device.apiMethod,
+              timestamp: new Date().toISOString()
+            }
+          }));
+          
+          toast.error(`Failed to connect to ${device.deviceName}`);
+          
+          // Update device with the last failed sync
+          const updatedDevices = devices.map(d => 
+            d.id === device.id 
+              ? { 
+                  ...d, 
+                  lastFailedSync: new Date().toISOString(),
+                  syncStatus: "failed"
+                } 
+              : d
+          );
+          setDevices(updatedDevices);
+          
+          setIsTesting(false);
+        }
+      }
+      
+      if (!isOpenApiFailed) {
+        setIsTesting(false);
+      }
+    }, 1500);
   };
-
-  // Get displayed devices for the selected branch
-  const displayedDevices = selectedBranchId 
-    ? devices.filter(device => device.branchId === selectedBranchId)
-    : [];
-
-  // Get branch settings for the selected branch
-  const selectedBranchSettings = selectedBranchId 
-    ? branchSettings[selectedBranchId] 
-    : null;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-y-1">
-          <h3 className="text-xl font-medium">Device Mapping</h3>
-          <p className="text-sm text-muted-foreground">
-            Map access control devices to branches and configure their settings
-          </p>
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div>
+          <Label htmlFor="branch-selector">Filter by Branch</Label>
+          <Select
+            value={selectedBranchId}
+            onValueChange={handleBranchChange}
+          >
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Select a branch" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        {can('manage_branches') && (
-          <Button onClick={handleAddDevice}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Device
-          </Button>
-        )}
+        <Button onClick={handleAddDevice} className="self-end">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Device
+        </Button>
       </div>
-      
+
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <CardTitle>Branch Devices</CardTitle>
-            
-            <Select
-              value={selectedBranchId || ''}
-              onValueChange={(value) => setSelectedBranchId(value)}
-            >
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <SelectValue placeholder="Select Branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <CardHeader>
+          <CardTitle>
+            {selectedBranchId === "all" 
+              ? "All Branch Devices" 
+              : `${branches.find(b => b.id === selectedBranchId)?.name || "Branch"} Devices`}
+          </CardTitle>
+          <CardDescription>
+            Manage access control devices mapped to branches
+          </CardDescription>
         </CardHeader>
-        
         <CardContent>
-          {selectedBranchId && selectedBranchSettings && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                <div className="space-y-0.5">
-                  <h4 className="font-medium">ISAPI Fallback Mode</h4>
-                  <p className="text-sm text-muted-foreground">
-                    When enabled, system will automatically try ISAPI if OpenAPI fails
-                  </p>
-                </div>
-                <Switch 
-                  checked={selectedBranchSettings.useISAPIWhenOpenAPIFails}
-                  onCheckedChange={toggleGlobalFallback}
-                />
-              </div>
-              
-              {displayedDevices.length > 0 ? (
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Device Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>API Method</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {displayedDevices.map((device) => (
-                        <TableRow key={device.id}>
-                          <TableCell className="font-medium">
-                            <div>{device.deviceName}</div>
-                            <div className="text-xs text-muted-foreground">{device.deviceSerial}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {device.deviceType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={device.apiMethod === 'OpenAPI' ? 'default' : 'secondary'}
-                                className="capitalize"
-                              >
-                                {device.apiMethod}
-                              </Badge>
-                              {device.useISAPIFallback && device.apiMethod === 'OpenAPI' && (
-                                <Badge variant="outline" className="text-xs">
-                                  +Fallback
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {device.syncStatus === 'success' ? (
-                              <div className="flex items-center">
-                                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1.5" />
-                                <span className="text-sm">OK</span>
-                              </div>
-                            ) : device.syncStatus === 'failed' ? (
-                              <div className="flex items-center">
-                                <XCircle className="h-4 w-4 text-red-500 mr-1.5" />
-                                <span className="text-sm">Failed</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 text-muted-foreground mr-1.5" />
-                                <span className="text-sm">Pending</span>
-                              </div>
-                            )}
-                            {device.lastSyncTime && (
-                              <span className="text-xs text-muted-foreground block mt-0.5">
-                                {new Date(device.lastSyncTime).toLocaleString()}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => testDeviceApi(device, device.apiMethod)}
-                                disabled={isTestingApi[device.id]}
-                              >
-                                {isTestingApi[device.id] ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <RefreshCw className="h-4 w-4" />
-                                )}
-                                <span className="sr-only">Test</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditDevice(device)}
-                              >
-                                <PencilLine className="h-4 w-4" />
-                                <span className="sr-only">Edit</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteDevice(device.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete</span>
-                              </Button>
-                            </div>
-                            
-                            {/* Test result display */}
-                            {testResults[device.id] && (
-                              <div className={`mt-2 p-2 text-xs rounded ${
-                                testResults[device.id].success 
-                                  ? 'bg-green-50 text-green-700 border border-green-100' 
-                                  : 'bg-red-50 text-red-700 border border-red-100'
-                              }`}>
-                                <div className="flex items-start gap-1.5">
-                                  {testResults[device.id].success 
-                                    ? <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" /> 
-                                    : <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />}
-                                  <div>
-                                    <span className="font-medium">{testResults[device.id].apiMethod}:</span>{' '}
-                                    {testResults[device.id].message}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-6 border rounded-md bg-muted/10">
-                  <p className="text-muted-foreground">No devices mapped to this branch yet</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={handleAddDevice}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Device
-                  </Button>
-                </div>
-              )}
+          {filteredDevices.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No devices found for this branch.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-4"
+                onClick={handleAddDevice}
+              >
+                Add a device
+              </Button>
             </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Device Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>API Method</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredDevices.map((device) => (
+                  <TableRow key={device.id}>
+                    <TableCell className="font-medium">
+                      {device.deviceName}
+                      <div className="text-xs text-muted-foreground">
+                        {device.deviceSerial}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {device.deviceType.charAt(0).toUpperCase() + device.deviceType.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={device.apiMethod === "OpenAPI" ? "default" : "secondary"}
+                          className="font-normal"
+                        >
+                          {device.apiMethod}
+                        </Badge>
+                        {device.useISAPIFallback && (
+                          <Badge variant="outline" className="text-xs font-normal">
+                            Fallback Enabled
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {device.ipAddress}:{device.port}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {device.isActive ? (
+                          <Badge variant="success" className="font-normal">Active</Badge>
+                        ) : (
+                          <Badge variant="destructive" className="font-normal">Inactive</Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {device.syncStatus === "success" && device.lastSuccessfulSync && (
+                          <span className="text-green-600">Last sync successful</span>
+                        )}
+                        {device.syncStatus === "failed" && device.lastFailedSync && (
+                          <span className="text-red-600">Last sync failed</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {branches.find(b => b.id === device.branchId)?.name || "Unknown Branch"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => testApiConnection(device)}
+                          disabled={isTesting}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditDevice(device)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteDevice(device.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
       {/* Add/Edit Device Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{editingDevice ? 'Edit Device' : 'Add New Device'}</DialogTitle>
+            <DialogTitle>{editingDevice ? "Edit Device" : "Add New Device"}</DialogTitle>
             <DialogDescription>
               {editingDevice 
-                ? 'Update the device configuration and connection settings.' 
-                : 'Configure a new access control device for this branch.'}
+                ? "Update the device configuration settings." 
+                : "Configure a new access control device for a branch."}
             </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedBranchId === "all" && (
+                  <FormField
+                    control={form.control}
+                    name="deviceName"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Branch</FormLabel>
+                        <Select
+                          value={editingDevice?.branchId || (currentBranch?.id || "1")}
+                          onValueChange={() => {}}
+                          disabled={!!editingDevice}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a branch" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {branches.map((branch) => (
+                              <SelectItem key={branch.id} value={branch.id}>
+                                {branch.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          The branch this device belongs to
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
                 <FormField
                   control={form.control}
                   name="deviceName"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
+                    <FormItem>
                       <FormLabel>Device Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Main Entrance" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        A descriptive name for the device
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -653,23 +603,24 @@ const BranchDeviceManager = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Device Type</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select device type" />
+                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="entry">Entry</SelectItem>
-                          <SelectItem value="exit">Exit</SelectItem>
-                          <SelectItem value="swimming">Swimming</SelectItem>
-                          <SelectItem value="gym">Gym</SelectItem>
-                          <SelectItem value="special">Special</SelectItem>
+                          <SelectItem value="entry">Entry Gate</SelectItem>
+                          <SelectItem value="exit">Exit Gate</SelectItem>
+                          <SelectItem value="gym">Gym Area</SelectItem>
+                          <SelectItem value="swimming">Swimming Pool</SelectItem>
+                          <SelectItem value="special">Special Area</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        The type of access this device controls
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -680,10 +631,13 @@ const BranchDeviceManager = () => {
                   name="deviceSerial"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Device Serial</FormLabel>
+                      <FormLabel>Serial Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="DS-K1T671M..." {...field} />
+                        <Input placeholder="HK-1234567" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        The device serial number
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -693,52 +647,40 @@ const BranchDeviceManager = () => {
                   control={form.control}
                   name="deviceLocation"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Location (Optional)</FormLabel>
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input placeholder="Main entrance, first floor" {...field} />
+                        <Input placeholder="Main Door" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Where the device is installed
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <Separator className="col-span-2 my-2" />
-                
-                <div className="col-span-2">
-                  <h4 className="text-sm font-medium mb-2">Connection Settings</h4>
-                </div>
-                
                 <FormField
                   control={form.control}
                   name="apiMethod"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 space-y-3">
+                    <FormItem>
                       <FormLabel>API Method</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="OpenAPI" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              OpenAPI (Recommended)
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="ISAPI" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              ISAPI (Legacy)
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select API method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="OpenAPI">OpenAPI (Recommended)</SelectItem>
+                          <SelectItem value="ISAPI">ISAPI (Legacy)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        The API method to communicate with the device
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -792,88 +734,99 @@ const BranchDeviceManager = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <div className="flex">
-                        <FormControl>
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="••••••••" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="ml-2"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                {form.watch('apiMethod') === 'OpenAPI' && (
-                  <FormField
-                    control={form.control}
-                    name="useISAPIFallback"
-                    render={({ field }) => (
-                      <FormItem className="col-span-2 flex items-center space-x-2 space-y-0 rounded-md border p-3">
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Enable ISAPI Fallback</FormLabel>
-                          <FormDescription>
-                            If OpenAPI fails, automatically try ISAPI method
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                )}
-                
                 <FormField
                   control={form.control}
                   name="isActive"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 flex items-center space-x-2 space-y-0 rounded-md border p-3">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 col-span-1 md:col-span-2">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Device Active
+                        </FormLabel>
+                        <FormDescription>
+                          Activate or deactivate this device
+                        </FormDescription>
+                      </div>
                       <FormControl>
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="useISAPIFallback"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 col-span-1 md:col-span-2">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">Device Active</FormLabel>
+                        <FormLabel className="text-base">
+                          Enable ISAPI Fallback
+                        </FormLabel>
                         <FormDescription>
-                          When disabled, the device will not sync attendance data
+                          If OpenAPI fails, try using ISAPI as a fallback method
                         </FormDescription>
                       </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={form.watch("apiMethod") === "ISAPI"}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
               </div>
               
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingDevice ? 'Update Device' : 'Add Device'}
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {editingDevice ? "Updating..." : "Adding..."}
+                    </>
+                  ) : (
+                    editingDevice ? "Update Device" : "Add Device"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this device? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,216 +1,325 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/hooks/use-auth';
-import { toast } from 'sonner';
-import { DietPlan } from '@/types/diet';
-import DietPlanForm from '@/components/fitness/DietPlanForm';
-import { DietPlanList } from '@/components/fitness';
+import { DietPlanList } from "@/components/fitness";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
+import { useBranch } from "@/hooks/use-branch";
+import { toast } from "sonner";
+import { DietPlan, adaptToDietPlanClient, adaptToDietPlanDb } from '@/types/diet';
 
-// Mock data for initial development
+// Mock diet plans
 const mockDietPlans: DietPlan[] = [
   {
-    id: "diet-plan-1",
-    name: "Weight Loss Meal Plan",
-    description: "A balanced meal plan designed for healthy weight loss",
-    member_id: "",
-    trainer_id: "trainer1",
-    notes: "Drink at least 2 liters of water daily. Avoid processed foods and added sugars.",
+    id: "1",
+    name: "High Protein Plan",
+    diet_type: "High Protein",
+    description: "For serious bodybuilding and muscle gain",
+    daily_calories: 2500,
+    protein_ratio: 0.4,
+    carbs_ratio: 0.4,
+    fat_ratio: 0.2,
     is_custom: false,
     is_global: true,
-    diet_type: "standard",
-    goal: "weight-loss",
-    daily_calories: 1600,
-    created_at: "2025-01-15T10:00:00Z",
-    updated_at: "2025-01-15T10:00:00Z"
+    trainer_id: "trainer-1",
+    branch_id: "branch-1",
+    meal_plans: [
+      {
+        id: "m1",
+        name: "Breakfast",
+        time: "08:00",
+        calories: 600,
+        protein: 40,
+        carbs: 60,
+        fat: 15,
+        food_items: [
+          {
+            id: "f1",
+            name: "Eggs",
+            quantity: "4 whole",
+            calories: 320,
+            protein: 24,
+            carbs: 0,
+            fat: 20,
+            notes: "Boiled or scrambled"
+          },
+          {
+            id: "f2",
+            name: "Oatmeal",
+            quantity: "1 cup",
+            calories: 280,
+            protein: 16,
+            carbs: 60,
+            fat: 5,
+            notes: "With berries"
+          }
+        ]
+      }
+    ],
+    created_at: "2023-01-10T09:30:00Z",
+    updated_at: "2023-01-15T14:45:00Z"
   },
   {
-    id: "diet-plan-2",
-    name: "Muscle Building Plan",
-    description: "High protein meal plan designed for muscle growth",
-    member_id: "",
-    trainer_id: "trainer1",
-    notes: "Aim for 1g of protein per pound of body weight. Time your carbs around workouts.",
+    id: "2",
+    name: "Weight Loss Plan",
+    diet_type: "Calorie Deficit",
+    description: "For effective weight loss",
+    daily_calories: 1800,
+    protein_ratio: 0.35,
+    carbs_ratio: 0.35,
+    fat_ratio: 0.3,
     is_custom: false,
     is_global: true,
-    diet_type: "standard",
-    goal: "muscle-gain",
-    daily_calories: 2800,
-    created_at: "2025-02-01T10:00:00Z",
-    updated_at: "2025-02-01T10:00:00Z"
+    trainer_id: "trainer-1",
+    branch_id: "branch-1",
+    meal_plans: [
+      {
+        id: "m2",
+        name: "Breakfast",
+        time: "08:00",
+        calories: 400,
+        protein: 30,
+        carbs: 40,
+        fat: 10,
+        food_items: [
+          {
+            id: "f3",
+            name: "Greek Yogurt",
+            quantity: "1 cup",
+            calories: 200,
+            protein: 20,
+            carbs: 10,
+            fat: 5,
+            notes: "Low-fat"
+          },
+          {
+            id: "f4",
+            name: "Fruits",
+            quantity: "1 cup mixed",
+            calories: 200,
+            protein: 10,
+            carbs: 30,
+            fat: 5,
+            notes: "Berries and apple"
+          }
+        ]
+      }
+    ],
+    created_at: "2023-01-12T10:45:00Z",
+    updated_at: "2023-01-16T11:30:00Z"
+  },
+  {
+    id: "3",
+    name: "Custom Plan for John",
+    diet_type: "Maintenance",
+    description: "Customized for John's needs",
+    daily_calories: 2200,
+    protein_ratio: 0.3,
+    carbs_ratio: 0.5,
+    fat_ratio: 0.2,
+    is_custom: true,
+    is_global: false,
+    member_id: "member-1",
+    trainer_id: "trainer-1",
+    branch_id: "branch-1",
+    meal_plans: [
+      {
+        id: "m3",
+        name: "Lunch",
+        time: "13:00",
+        calories: 700,
+        protein: 50,
+        carbs: 70,
+        fat: 20,
+        food_items: [
+          {
+            id: "f5",
+            name: "Chicken Breast",
+            quantity: "200g",
+            calories: 350,
+            protein: 40,
+            carbs: 0,
+            fat: 10,
+            notes: "Grilled"
+          },
+          {
+            id: "f6",
+            name: "Brown Rice",
+            quantity: "1 cup",
+            calories: 350,
+            protein: 10,
+            carbs: 70,
+            fat: 10,
+            notes: "Cooked"
+          }
+        ]
+      }
+    ],
+    created_at: "2023-01-20T08:15:00Z",
+    updated_at: "2023-01-22T16:20:00Z"
   }
 ];
 
-// Type adapter function to convert between the different DietPlan type formats
-const adaptDietPlan = (plan: any): DietPlan => {
-  return {
-    id: plan.id,
-    name: plan.name,
-    description: plan.description || '',
-    member_id: plan.member_id || '',
-    trainer_id: plan.trainer_id,
-    notes: plan.notes || '',
-    is_custom: plan.is_custom || false,
-    is_global: plan.is_global || false,
-    diet_type: plan.diet_type || 'standard',
-    goal: plan.goal || '',
-    daily_calories: plan.daily_calories || 0,
-    created_at: plan.created_at || new Date().toISOString(),
-    updated_at: plan.updated_at || new Date().toISOString()
-  };
-};
-
 const TrainerDietPlansPage = () => {
   const { user } = useAuth();
-  const [dietPlans, setDietPlans] = useState<DietPlan[]>(mockDietPlans);
+  const { currentBranch } = useBranch();
+  const [activeTab, setActiveTab] = useState("all");
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<DietPlan | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  
-  // For the actual implementation, you would fetch diet plans from the API
-  /*
-  useEffect(() => {
-    const fetchDietPlans = async () => {
-      try {
-        const response = await dietPlanService.getTrainerDietPlans(user?.id);
-        setDietPlans(response);
-      } catch (error) {
-        toast.error("Failed to load diet plans");
-      }
-    };
-    
-    fetchDietPlans();
-  }, [user?.id]);
-  */
-  
-  const handleCreatePlan = () => {
-    setSelectedPlan(null);
-    setShowForm(true);
+  const [dietPlans] = useState<DietPlan[]>(mockDietPlans);
+
+  // Handler for viewing a diet plan
+  const handleViewPlan = (plan: DietPlan) => {
+    setSelectedPlan(plan);
+    setIsViewDialogOpen(true);
   };
-  
-  const handleEditPlan = (planId: string) => {
-    const plan = dietPlans.find(p => p.id === planId);
-    if (plan) {
-      setSelectedPlan(plan);
-      setShowForm(true);
-    }
+
+  // Handler for editing a diet plan
+  const handleEditPlan = (plan: DietPlan) => {
+    // This would navigate to an edit page in a real app
+    toast.info("Edit plan functionality would open here");
+    console.log("Edit plan:", plan);
   };
-  
+
+  // Handler for duplicating a diet plan
+  const handleDuplicatePlan = (plan: DietPlan) => {
+    toast.success("Diet plan duplicated");
+    console.log("Duplicate plan:", plan);
+  };
+
+  // Handler for deleting a diet plan
   const handleDeletePlan = (planId: string) => {
-    // In a real implementation, you would call an API to delete the plan
-    // For now, we'll just filter it out from our state
-    setDietPlans(dietPlans.filter(p => p.id !== planId));
-    toast.success("Diet plan deleted successfully");
+    toast.success("Diet plan deleted");
+    console.log("Delete plan ID:", planId);
   };
-  
-  const handleSavePlan = (plan: any) => {
-    // In a real implementation, you would call an API to save the plan
-    const adaptedPlan = adaptDietPlan(plan);
-    
-    if (selectedPlan) {
-      // Update existing plan
-      setDietPlans(dietPlans.map(p => p.id === adaptedPlan.id ? adaptedPlan : p));
-      toast.success("Diet plan updated successfully");
-    } else {
-      // Create new plan
-      setDietPlans([...dietPlans, adaptedPlan]);
-      toast.success("Diet plan created successfully");
+
+  // Filter plans based on the active tab
+  const getFilteredPlans = () => {
+    switch (activeTab) {
+      case "global":
+        return dietPlans.filter(plan => plan.is_global);
+      case "custom":
+        return dietPlans.filter(plan => plan.is_custom);
+      default:
+        return dietPlans;
     }
-    
-    setShowForm(false);
-    setSelectedPlan(null);
   };
-  
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setSelectedPlan(null);
-  };
-  
-  // Mock member for the form
-  const mockMember = {
-    id: user?.id || 'member-1',
-    name: user?.name || 'Member Name',
-    email: user?.email || 'member@example.com',
-    role: 'member' as const,
-    membershipStatus: 'active' as const,
-  };
-  
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Diet Plans</h1>
-        {!showForm && (
-          <Button onClick={handleCreatePlan}>Create New Diet Plan</Button>
-        )}
+    <Container>
+      <div className="py-6">
+        <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Diet Plans</h1>
+            <p className="text-muted-foreground">
+              Manage diet plans for your clients
+            </p>
+          </div>
+          <Button>Create New Diet Plan</Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Diet Plans</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="all">All Plans</TabsTrigger>
+                <TabsTrigger value="global">Global Plans</TabsTrigger>
+                <TabsTrigger value="custom">Custom Plans</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value={activeTab} className="space-y-4">
+                <DietPlanList 
+                  plans={getFilteredPlans()}
+                  onEdit={handleEditPlan}
+                  onDelete={handleDeletePlan}
+                  onDuplicate={handleDuplicatePlan}
+                  onView={handleViewPlan}
+                  showFilters={true}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* View Diet Plan Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Diet Plan Details</DialogTitle>
+            </DialogHeader>
+            {selectedPlan && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedPlan.name}</h3>
+                  <p className="text-muted-foreground">{selectedPlan.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-lg font-bold">{selectedPlan.daily_calories}</div>
+                    <div className="text-xs text-muted-foreground">Calories</div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-lg font-bold">{Math.round(selectedPlan.protein_ratio * 100)}%</div>
+                    <div className="text-xs text-muted-foreground">Protein</div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-lg font-bold">{Math.round(selectedPlan.carbs_ratio * 100)}%</div>
+                    <div className="text-xs text-muted-foreground">Carbs</div>
+                  </div>
+                  <div className="rounded-lg border p-3 text-center">
+                    <div className="text-lg font-bold">{Math.round(selectedPlan.fat_ratio * 100)}%</div>
+                    <div className="text-xs text-muted-foreground">Fat</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Meal Plans</h4>
+                  {selectedPlan.meal_plans && selectedPlan.meal_plans.length > 0 ? (
+                    selectedPlan.meal_plans.map((meal) => (
+                      <div key={meal.id} className="rounded-lg border p-4 mb-4">
+                        <div className="flex justify-between mb-2">
+                          <div className="font-medium">{meal.name}</div>
+                          <div className="text-sm text-muted-foreground">{meal.time}</div>
+                        </div>
+                        <div className="text-sm mb-3">{meal.calories} calories</div>
+                        
+                        <h5 className="text-sm font-medium mb-2">Food Items</h5>
+                        <ul className="space-y-2">
+                          {meal.food_items.map((food) => (
+                            <li key={food.id} className="text-sm flex justify-between">
+                              <span>{food.name} ({food.quantity})</span>
+                              <span>{food.calories} cal</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">No meal plans defined</p>
+                  )}
+                </div>
+                
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <div>
+                    Created: {new Date(selectedPlan.created_at).toLocaleDateString()}
+                  </div>
+                  <div>
+                    Updated: {new Date(selectedPlan.updated_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      {showForm ? (
-        <DietPlanForm
-          member={mockMember}
-          existingPlan={selectedPlan || undefined}
-          trainerId={user?.id || 'trainer1'}
-          onSave={handleSavePlan}
-          onCancel={handleCancelForm}
-        />
-      ) : (
-        <Tabs defaultValue="global">
-          <TabsList className="mb-6">
-            <TabsTrigger value="global">Global Diet Plans</TabsTrigger>
-            <TabsTrigger value="custom">My Custom Plans</TabsTrigger>
-            <TabsTrigger value="assigned">Assigned Plans</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="global">
-            <Card>
-              <CardHeader>
-                <CardTitle>Global Diet Plans</CardTitle>
-                <CardDescription>Standard diet plans that can be assigned to any member</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DietPlanList
-                  plans={dietPlans.filter(p => p.is_global)}
-                  onEdit={handleEditPlan}
-                  onDelete={handleDeletePlan}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="custom">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Custom Plans</CardTitle>
-                <CardDescription>Diet plans you've created specifically for your members</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DietPlanList
-                  plans={dietPlans.filter(p => !p.is_global && p.trainer_id === user?.id)}
-                  onEdit={handleEditPlan}
-                  onDelete={handleDeletePlan}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="assigned">
-            <Card>
-              <CardHeader>
-                <CardTitle>Assigned Plans</CardTitle>
-                <CardDescription>Diet plans currently assigned to members</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DietPlanList
-                  plans={dietPlans.filter(p => p.member_id !== "")}
-                  onEdit={handleEditPlan}
-                  onDelete={handleDeletePlan}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
+    </Container>
   );
 };
 
