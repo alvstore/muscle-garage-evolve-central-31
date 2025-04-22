@@ -1,65 +1,49 @@
 
-export interface Macros {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-}
-
-export interface MealItem {
-  id: string;
-  name: string;
-  quantity: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-}
-
-export interface MealPlan {
-  id: string;
-  name: string;
-  time: string;
-  items: string[];
-  macros: Macros;
-}
-
 export interface DietPlan {
   id: string;
-  name?: string;
+  name: string;
   description?: string;
-  memberId: string;
-  trainerId: string;
-  mealPlans: MealPlan[];
+  member_id?: string;
+  trainer_id: string;
+  diet_type?: string;
+  goal?: string;
   notes?: string;
-  isCustom: boolean;
-  isGlobal?: boolean;
-  branchId?: string;  // Added branchId property
-  dietType?: 'standard' | 'vegetarian' | 'vegan' | 'keto' | 'paleo' | 'gluten-free';
-  goal?: 'weight-loss' | 'maintenance' | 'muscle-gain';
-  dailyCalories?: number;
-  createdAt: string;
-  updatedAt: string;
+  daily_calories?: number;
+  is_custom: boolean;
+  is_global: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DietAssignment {
   id: string;
-  planId: string;
-  memberId: string;
-  trainerId: string;
-  assignedAt: string;
-  startDate?: string;
-  endDate?: string;
-  isActive: boolean;
+  plan_id: string;
+  member_id: string;
+  trainer_id: string;
+  start_date: string;
+  end_date?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface FoodItem {
+export interface MealPlan {
   id: string;
+  diet_plan_id: string;
   name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  servingSize: string;
-  category: string;
+  time?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MealItem {
+  id: string;
+  meal_plan_id: string;
+  name: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fats?: number;
+  created_at: string;
+  updated_at: string;
 }

@@ -1,176 +1,80 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { useAuth } from '@/hooks/use-auth';
+import { Container } from '@/components/ui/container';
+import { DietPlanList } from '@/components/fitness';
+import { dietPlanService } from '@/services/dietPlanService';
 import { toast } from 'sonner';
 import { DietPlan } from '@/types/diet';
-import DietPlanForm from '@/components/fitness/DietPlanForm';
-import { DietPlanList } from '@/components/fitness/DietPlanList';
-import { dietPlanService } from '@/services/dietPlanService';
-import { useBranch } from '@/hooks/use-branch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminDietPlansPage = () => {
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
   const [dietPlans, setDietPlans] = useState<DietPlan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<DietPlan | null>(null);
-  const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
-    const fetchAllDietPlans = async () => {
-      setIsLoading(true);
+    const fetchDietPlans = async () => {
       try {
-        // Admin can view all plans across branches
-        const response = await dietPlanService.getAllDietPlans();
-        setDietPlans(response);
+        setIsLoading(true);
+        const plans = await dietPlanService.getAllDietPlans();
+        setDietPlans(plans);
       } catch (error) {
-        toast.error("Failed to load diet plans");
-        console.error("Error fetching diet plans:", error);
+        console.error('Error fetching diet plans:', error);
+        toast.error('Failed to load diet plans');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAllDietPlans();
+    fetchDietPlans();
   }, []);
 
-  const handleCreatePlan = () => {
-    setSelectedPlan(null);
-    setShowForm(true);
+  const handlePlanCreated = (plan: DietPlan) => {
+    setDietPlans(prev => [...prev, plan]);
+    toast.success('Diet plan created successfully');
   };
 
-  const handleEditPlan = (planId: string) => {
-    const plan = dietPlans.find(p => p.id === planId);
-    if (plan) {
-      setSelectedPlan(plan);
-      setShowForm(true);
-    }
-  };
-
-  const handleDeletePlan = async (planId: string) => {
-    try {
-      const success = await dietPlanService.deleteDietPlan(planId);
-      if (success) {
-        setDietPlans(dietPlans.filter(p => p.id !== planId));
-        toast.success("Diet plan deleted successfully");
-      }
-    } catch (error) {
-      toast.error("Failed to delete diet plan");
-    }
-  };
-
-  const handleSavePlan = async (plan: DietPlan) => {
-    try {
-      if (selectedPlan) {
-        const updatedPlan = await dietPlanService.updateDietPlan(plan.id, plan);
-        if (updatedPlan) {
-          setDietPlans(dietPlans.map(p => p.id === plan.id ? updatedPlan : p));
-          toast.success("Diet plan updated successfully");
-        }
-      } else {
-        const newPlan = await dietPlanService.createDietPlan({
-          ...plan,
-          branchId: currentBranch?.id
-        });
-        if (newPlan) {
-          setDietPlans([...dietPlans, newPlan]);
-          toast.success("Diet plan created successfully");
-        }
-      }
-      setShowForm(false);
-      setSelectedPlan(null);
-    } catch (error) {
-      toast.error("Failed to save diet plan");
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-6 space-y-6">
-        <h1 className="text-3xl font-bold">Diet Plans Management</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-7 bg-muted rounded w-2/3"></div>
-                <div className="h-4 bg-muted rounded w-1/2 mt-2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded w-5/6"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+  const handlePlanUpdated = (updatedPlan: DietPlan) => {
+    setDietPlans(prev => 
+      prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
     );
-  }
+    toast.success('Diet plan updated successfully');
+  };
+
+  const handlePlanDeleted = (planId: string) => {
+    setDietPlans(prev => prev.filter(plan => plan.id !== planId));
+    toast.success('Diet plan deleted successfully');
+  };
+
+  const filteredPlans = activeTab === 'all' 
+    ? dietPlans
+    : activeTab === 'global'
+      ? dietPlans.filter(plan => plan.is_global)
+      : dietPlans.filter(plan => !plan.is_global && plan.is_custom);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Diet Plans Management</h1>
-        {!showForm && (
-          <Button onClick={handleCreatePlan}>Create New Diet Plan</Button>
-        )}
-      </div>
-
-      {showForm ? (
-        <DietPlanForm
-          member={{
-            id: 'default',
-            name: 'New Plan',
-            email: '',
-            role: 'member',
-            membershipStatus: 'active'
-          }}
-          existingPlan={selectedPlan || undefined}
-          trainerId={user?.id || 'admin'}
-          onSave={handleSavePlan}
-          onCancel={() => {
-            setShowForm(false);
-            setSelectedPlan(null);
-          }}
-        />
-      ) : (
-        <Tabs defaultValue="all">
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All Diet Plans</TabsTrigger>
+    <Container>
+      <div className="py-6">
+        <h1 className="text-2xl font-bold mb-6">Diet Plans Management</h1>
+        
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All Plans</TabsTrigger>
             <TabsTrigger value="global">Global Plans</TabsTrigger>
-            <TabsTrigger value="branch">Branch Plans</TabsTrigger>
+            <TabsTrigger value="custom">Custom Plans</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="all">
-            <DietPlanList
-              plans={dietPlans}
-              onEdit={handleEditPlan}
-              onDelete={handleDeletePlan}
-            />
-          </TabsContent>
-
-          <TabsContent value="global">
-            <DietPlanList
-              plans={dietPlans.filter(p => p.isGlobal)}
-              onEdit={handleEditPlan}
-              onDelete={handleDeletePlan}
-            />
-          </TabsContent>
-
-          <TabsContent value="branch">
-            <DietPlanList
-              plans={dietPlans.filter(p => !p.isGlobal && p.branchId === currentBranch?.id)}
-              onEdit={handleEditPlan}
-              onDelete={handleDeletePlan}
-            />
-          </TabsContent>
         </Tabs>
-      )}
-    </div>
+        
+        <DietPlanList 
+          plans={filteredPlans}
+          isLoading={isLoading}
+          onPlanCreated={handlePlanCreated}
+          onPlanUpdated={handlePlanUpdated}
+          onPlanDeleted={handlePlanDeleted}
+          canCreateGlobal={true}
+        />
+      </div>
+    </Container>
   );
 };
 
