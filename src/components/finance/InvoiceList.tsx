@@ -31,6 +31,7 @@ const mockInvoices: Invoice[] = [
       }
     ],
     branchId: "branch-1",
+    notes: "",
   },
   {
     id: "INV-002",
@@ -40,6 +41,7 @@ const mockInvoices: Invoice[] = [
     status: "pending",
     dueDate: new Date(2023, 4, 15).toISOString(),
     issuedDate: new Date(2023, 4, 1).toISOString(),
+    paidDate: null,
     items: [
       {
         id: "item-2",
@@ -50,6 +52,7 @@ const mockInvoices: Invoice[] = [
     ],
     razorpayOrderId: "order_123456",
     branchId: "branch-1",
+    notes: "",
   },
   {
     id: "INV-003",
@@ -59,6 +62,7 @@ const mockInvoices: Invoice[] = [
     status: "overdue",
     dueDate: new Date(2023, 3, 30).toISOString(),
     issuedDate: new Date(2023, 3, 15).toISOString(),
+    paidDate: null,
     items: [
       {
         id: "item-3",
@@ -68,6 +72,7 @@ const mockInvoices: Invoice[] = [
       }
     ],
     branchId: "branch-1",
+    notes: "",
   },
 ];
 

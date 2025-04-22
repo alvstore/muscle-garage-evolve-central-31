@@ -92,6 +92,7 @@ export const invoiceService = {
         items: invoiceItems,
         branchId,
         membershipPlanId: planId,
+        paidDate: null,
       };
 
       // Save to database

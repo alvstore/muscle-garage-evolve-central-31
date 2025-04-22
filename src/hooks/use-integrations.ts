@@ -77,7 +77,7 @@ export const useIntegrations = (integrationName?: string) => {
   
   // Test an integration's connection
   const testIntegration = useCallback(async (name: string) => {
-    return await integrationService.test(name);
+    return await integrationService.testIntegration(name);
   }, []);
   
   // Reset an integration to default settings

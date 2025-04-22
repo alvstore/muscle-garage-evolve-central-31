@@ -49,6 +49,7 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
     status: "pending",
     dueDate: new Date().toISOString(),
     issuedDate: new Date().toISOString(),
+    paidDate: null,
     items: [
       {
         id: `item-${Date.now()}`,

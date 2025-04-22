@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { FinancialTransaction, Transaction } from "@/types/finance";
+import { FinancialTransaction } from "@/types/finance";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MemberTransactionHistory = () => {
