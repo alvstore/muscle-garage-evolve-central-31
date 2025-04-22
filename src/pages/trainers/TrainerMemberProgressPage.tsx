@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useMemberProgress } from '@/hooks/use-member-progress';
+import { useMemberProgress, MemberProgress } from '@/hooks/use-member-progress';
 import { 
   Card, 
   CardContent, 
@@ -21,20 +21,126 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
 import { Container } from "@/components/ui/container";
-import { mockMembers } from '@/data/mockData';
+import { supabase } from "@/services/supabaseClient";
+import { Loader2, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
+
+// Interface for member data
+interface Member {
+  id: string;
+  name: string;
+  trainerId: string;
+  goal?: string;
+}
 
 const TrainerMemberProgressPage = () => {
   const { user } = useAuth();
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
-  
-  // Filter members assigned to this trainer
-  const trainerMembers = mockMembers.filter(member => member.trainerId === user?.id);
+  const [trainerMembers, setTrainerMembers] = useState<Member[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   
   const { 
     progress, 
     isLoading, 
-    error 
+    error,
+    updateProgress
   } = useMemberProgress(selectedMemberId);
+  
+  // Fetch members assigned to this trainer
+  useEffect(() => {
+    const fetchAssignedMembers = async () => {
+      if (!user) return;
+      
+      try {
+        // In a real implementation, this would fetch from the trainer_assignments table
+        // For now, we'll use mock data but structure it as if it came from Supabase
+        const { data, error } = await supabase
+          .from('trainer_assignments')
+          .select(`
+            id,
+            member_id,
+            profiles:member_id (id, full_name, gender)
+          `)
+          .eq('trainer_id', user.id)
+          .eq('is_active', true);
+        
+        if (error) throw error;
+        
+        // Transform the data to match our Member interface
+        const members: Member[] = data?.map(assignment => ({
+          id: assignment.profiles.id,
+          name: assignment.profiles.full_name,
+          trainerId: user.id,
+          goal: assignment.profiles.gender === 'male' ? 'Muscle Gain' : 'Weight Loss' // Simplified example
+        })) || [];
+        
+        setTrainerMembers(members);
+        
+        // If there are members and none is selected, select the first one
+        if (members.length > 0 && !selectedMemberId) {
+          setSelectedMemberId(members[0].id);
+        }
+      } catch (err) {
+        console.error("Error fetching assigned members:", err);
+        // Fallback to mock data if there's an error
+        const mockMembers: Member[] = [
+          { id: 'member1', name: 'John Doe', trainerId: user.id, goal: 'Weight Loss' },
+          { id: 'member2', name: 'Jane Smith', trainerId: user.id, goal: 'Muscle Gain' },
+          { id: 'member3', name: 'Mike Johnson', trainerId: user.id, goal: 'General Fitness' }
+        ];
+        setTrainerMembers(mockMembers);
+        if (!selectedMemberId && mockMembers.length > 0) {
+          setSelectedMemberId(mockMembers[0].id);
+        }
+      } finally {
+        setIsLoadingMembers(false);
+      }
+    };
+    
+    fetchAssignedMembers();
+  }, [user, selectedMemberId]);
+  
+  // Function to create a new progress entry
+  const createProgressEntry = async () => {
+    if (!selectedMemberId || !user) return;
+    
+    try {
+      // Default progress data
+      const newProgress: Partial<MemberProgress> = {
+        member_id: selectedMemberId,
+        trainer_id: user.id,
+        weight: 75,
+        bmi: 24.5,
+        fat_percent: 18,
+        muscle_mass: 30,
+        workout_completion_percent: 80,
+        diet_adherence_percent: 75
+      };
+      
+      const { data, error } = await supabase
+        .from('member_progress')
+        .insert(newProgress)
+        .select();
+      
+      if (error) throw error;
+      
+      toast.success('Progress entry created successfully');
+    } catch (err) {
+      console.error("Error creating progress entry:", err);
+      toast.error('Failed to create progress entry');
+    }
+  };
+  
+  // Render loading state for members
+  if (isLoadingMembers) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Container>
+    );
+  }
   
   return (
     <Container>
@@ -46,6 +152,12 @@ const TrainerMemberProgressPage = () => {
               Track fitness metrics for your assigned members
             </p>
           </div>
+          {selectedMemberId && !progress && (
+            <Button onClick={createProgressEntry}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Progress Entry
+            </Button>
+          )}
         </div>
         
         <Card>
@@ -81,6 +193,18 @@ const TrainerMemberProgressPage = () => {
           </CardHeader>
           
           <CardContent>
+            {isLoading && (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center py-12 text-red-500">
+                Error loading progress data: {error}
+              </div>
+            )}
+            
             {selectedMemberId && progress ? (
               <div className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
@@ -141,9 +265,11 @@ const TrainerMemberProgressPage = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                Select a member to view their progress
-              </div>
+              !isLoading && (
+                <div className="text-center py-12 text-muted-foreground">
+                  {selectedMemberId ? 'No progress data available for this member' : 'Select a member to view their progress'}
+                </div>
+              )
             )}
           </CardContent>
         </Card>

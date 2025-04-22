@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from './use-auth';
 
-interface MemberProgress {
+export interface MemberProgress {
   id: string;
   member_id: string;
   trainer_id: string;
@@ -14,6 +14,7 @@ interface MemberProgress {
   workout_completion_percent: number;
   diet_adherence_percent: number;
   last_updated: string;
+  branch_id?: string;
 }
 
 export const useMemberProgress = (memberId: string) => {
@@ -38,6 +39,7 @@ export const useMemberProgress = (memberId: string) => {
         if (error) throw error;
         setProgress(data);
       } catch (err) {
+        console.error('Error fetching member progress:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setIsLoading(false);
@@ -46,9 +48,9 @@ export const useMemberProgress = (memberId: string) => {
 
     fetchMemberProgress();
 
-    // Real-time subscription
+    // Real-time subscription with proper channel name
     const channel = supabase
-      .channel('member_progress_realtime')
+      .channel(`member_progress_changes_${memberId}`)
       .on(
         'postgres_changes',
         {
@@ -58,7 +60,8 @@ export const useMemberProgress = (memberId: string) => {
           filter: `member_id=eq.${memberId}`
         },
         (payload) => {
-          if (payload.eventType === 'UPDATE') {
+          console.log('Real-time update:', payload);
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             setProgress(payload.new as MemberProgress);
           }
         }
@@ -70,5 +73,27 @@ export const useMemberProgress = (memberId: string) => {
     };
   }, [memberId, user?.id]);
 
-  return { progress, isLoading, error };
+  const updateProgress = async (updatedProgress: Partial<MemberProgress>) => {
+    if (!progress || !user) return { error: 'Not authorized or no progress data found' };
+    
+    try {
+      const { data, error } = await supabase
+        .from('member_progress')
+        .update({
+          ...updatedProgress,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', progress.id)
+        .eq('trainer_id', user.id)
+        .select();
+        
+      if (error) throw error;
+      return { data };
+    } catch (err) {
+      console.error('Error updating progress:', err);
+      return { error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  };
+
+  return { progress, isLoading, error, updateProgress };
 };

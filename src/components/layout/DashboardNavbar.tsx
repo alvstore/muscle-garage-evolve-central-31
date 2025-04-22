@@ -1,5 +1,5 @@
 
-import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, Sun, Moon, Settings, LogOut } from "lucide-react";
+import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -78,13 +78,24 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
     }
   };
 
+  // Function to handle search
+  const [searchQuery, setSearchQuery] = useState('');
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      console.log('Searching for:', searchQuery);
+      // Implement search functionality here
+    }
+  };
+
   return (
-    <div className="sticky top-0 z-30 flex h-16 items-center border-b bg-white px-4 md:px-6">
+    <div className="sticky top-0 z-30 flex h-16 items-center border-b bg-white px-4 md:px-6 dark:bg-gray-800 dark:border-gray-700">
       <div className="flex items-center gap-4 md:hidden">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
+          className="md:hidden"
         >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle Menu</span>
@@ -93,12 +104,14 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
       </div>
       
       <div className="flex-1 md:ml-4">
-        <form className="hidden md:block relative max-w-lg">
+        <form className="relative max-w-lg" onSubmit={handleSearch}>
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search..."
-            className="bg-gray-50 border-gray-200 pl-8 md:w-80 lg:w-96 focus:bg-white"
+            placeholder="Search members, workout plans..."
+            className="bg-gray-50 border-gray-200 pl-8 md:w-80 lg:w-96 focus:bg-white dark:bg-gray-700 dark:border-gray-600"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </form>
       </div>
@@ -106,7 +119,8 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
       <div className="flex items-center gap-3">
         {/* Theme toggle - a placeholder since you haven't implemented theme switching yet */}
         <Button variant="ghost" size="icon" className="hidden md:flex">
-          <Sun className="h-5 w-5" />
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
         </Button>
         
@@ -220,10 +234,13 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
+            {/* Settings menu item - only show for non-trainer roles */}
+            {user.role !== 'trainer' && (
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

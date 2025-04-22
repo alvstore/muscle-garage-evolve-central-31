@@ -109,15 +109,10 @@ const DashboardLayout = () => {
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        {/* Desktop Sidebar */}
-        {!isMobile && (
+        {/* Sidebar - always render but control visibility with classes */}
+        <div className={`transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0'}`}>
           <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
-        )}
-        
-        {/* Mobile Sidebar */}
-        {isMobile && (
-          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
-        )}
+        </div>
         
         {/* Main Content */}
         <div className="flex-1">
