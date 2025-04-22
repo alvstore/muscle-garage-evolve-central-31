@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,7 +126,6 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleSubmit = () => {
-    // Calculate calories if not explicitly set
     const mealPlansWithCalories = formData.mealPlans.map(meal => {
       if (!meal.macros.calories) {
         const calculatedCalories = 

@@ -14,7 +14,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1", "branch2", "branch3"],
     isBranchManager: true,
-    avatar: "/admin-avatar.png", // Changed from null to a placeholder path
+    avatar: "/admin-avatar.png",
   },
   staff: {
     id: "staff1",
@@ -25,7 +25,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/staff-avatar.png", // Changed from null to a placeholder path
+    avatar: "/staff-avatar.png",
   },
   trainer: {
     id: "trainer1",
@@ -36,7 +36,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/trainer-avatar.png", // Changed from null to a placeholder path
+    avatar: "/trainer-avatar.png",
   },
   member: {
     id: "member1",
@@ -47,7 +47,7 @@ const MOCK_USERS = {
     branchId: "branch1",
     branchIds: ["branch1"],
     isBranchManager: false,
-    avatar: "/member-avatar.png", // Changed from null to a placeholder path
+    avatar: "/member-avatar.png",
   }
 };
 
@@ -59,6 +59,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   register: (userData: any) => Promise<void>;
   updateUserBranch: (branchId: string) => void;
+  userRole?: UserRole; // Add userRole property to the context
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -210,6 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         register,
         updateUserBranch,
+        userRole: user?.role, // Add userRole to the context value
       }}
     >
       {children}

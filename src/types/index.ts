@@ -77,9 +77,11 @@ export interface DietPlan {
   id: string;
   memberId: string;
   trainerId: string;
+  mealPlans: MealPlan[];
+  notes?: string;
+  isCustom?: boolean;
   createdAt: string;
   updatedAt: string;
-  mealPlans: MealPlan[];
 }
 
 export interface MealPlan {
@@ -87,10 +89,11 @@ export interface MealPlan {
   name: string;
   time: string;
   items: string[];
-  macros?: {
+  macros: {
     protein: number;
     carbs: number;
     fats: number;
+    calories?: number;
   };
 }
 
@@ -98,15 +101,18 @@ export interface WorkoutPlan {
   id: string;
   memberId: string;
   trainerId: string;
+  workoutDays: WorkoutDay[];
+  notes?: string;
+  isCustom?: boolean;
   createdAt: string;
   updatedAt: string;
-  workoutDays: WorkoutDay[];
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 export interface Exercise {
@@ -115,8 +121,9 @@ export interface Exercise {
   sets: number;
   reps: number;
   weight?: number;
-  rest: number;
+  rest?: number;
   notes?: string;
+  muscleGroupTag?: string;
 }
 
 export interface ProgressRecord {

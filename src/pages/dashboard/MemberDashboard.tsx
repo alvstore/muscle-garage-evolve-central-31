@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -20,6 +21,67 @@ import { toast } from 'sonner';
 
 const MemberDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Define mock data for components
+  const mockUpcomingClasses = [
+    {
+      id: '1',
+      name: 'Yoga Class',
+      time: '10:00 AM',
+      trainer: 'John Doe'
+    },
+    {
+      id: '2',
+      name: 'CrossFit',
+      time: '2:00 PM',
+      trainer: 'Jane Smith'
+    }
+  ];
+  
+  const mockFitnessGoals = [
+    {
+      id: '1',
+      name: 'Weight Loss',
+      target: '10kg in 3 months',
+      progress: 65
+    },
+    {
+      id: '2',
+      name: 'Muscle Gain',
+      target: '5kg in 2 months',
+      progress: 40
+    }
+  ];
+  
+  const mockDietRecommendations = [
+    {
+      id: '1',
+      name: 'Breakfast',
+      description: 'Oatmeal with fruits and nuts'
+    },
+    {
+      id: '2',
+      name: 'Lunch',
+      description: 'Grilled chicken with vegetables'
+    }
+  ];
+  
+  const mockAnnouncements = [
+    {
+      id: '1',
+      title: 'Gym Holiday Hours',
+      content: 'The gym will be closed on Christmas Day.',
+      createdAt: new Date().toISOString(),
+      createdBy: 'Admin'
+    },
+    {
+      id: '2',
+      title: 'New Equipment',
+      content: 'We have added new treadmills to the cardio section.',
+      createdAt: new Date().toISOString(),
+      createdBy: 'Admin'
+    }
+  ];
 
   const handleSearch = () => {
     if (!searchTerm.trim()) {
@@ -129,7 +191,7 @@ const MemberDashboard = () => {
             <CardDescription>Your scheduled classes for the week</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpcomingClasses classes={upcomingClasses} />
+            <UpcomingClasses classes={mockUpcomingClasses} />
           </CardContent>
         </Card>
 
@@ -141,7 +203,7 @@ const MemberDashboard = () => {
             <CardDescription>Track your fitness journey</CardDescription>
           </CardHeader>
           <CardContent>
-            <FitnessGoals goals={fitnessGoals} />
+            <FitnessGoals goals={mockFitnessGoals} />
           </CardContent>
         </Card>
       </div>
@@ -159,7 +221,7 @@ const MemberDashboard = () => {
             <CardDescription>Personalized diet tips for you</CardDescription>
           </CardHeader>
           <CardContent>
-            <DietRecommendations recommendations={dietRecommendations} />
+            <DietRecommendations recommendations={mockDietRecommendations} />
             <div className="flex justify-end mt-4">
               <Button 
                 variant="outline" 
@@ -186,7 +248,7 @@ const MemberDashboard = () => {
             <CardDescription>Stay updated with gym news</CardDescription>
           </CardHeader>
           <CardContent>
-            <Announcements announcements={recentAnnouncements} />
+            <Announcements announcements={mockAnnouncements} />
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,7 +136,6 @@ const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
     onSave(finalPlan);
   };
 
-  // Common muscle groups for dropdown
   const muscleGroups = [
     'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 
     'Legs', 'Glutes', 'Hamstrings', 'Quadriceps', 'Calves', 
