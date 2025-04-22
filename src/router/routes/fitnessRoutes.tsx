@@ -5,75 +5,40 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 
 // Fitness pages
 import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
-import FitnessProgressPage from '@/pages/fitness/FitnessProgressPage';
-import DietPlanPage from '@/pages/fitness/DietPlanPage';
 import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
-import ClassPage from '@/pages/classes/ClassPage';
-import MembershipPage from '@/pages/membership/MembershipPage';
-import AttendancePage from '@/pages/attendance/AttendancePage';
+import DietPlansPage from '@/pages/fitness/DietPlansPage';
 
 export const fitnessRoutes: RouteObject[] = [
   {
     path: '/fitness-plans',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <FitnessPlanPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/fitness/progress',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <FitnessProgressPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/fitness/diet',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <DietPlanPage />
       </PrivateRoute>
     )
   },
   {
     path: '/fitness/workout-plans',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <WorkoutPlansPage />
       </PrivateRoute>
     )
   },
   {
-    path: '/classes',
+    path: '/fitness/diet-plans',
     element: (
-      <PrivateRoute>
-        <ClassPage />
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <DietPlansPage />
       </PrivateRoute>
     )
   },
+  // Member-specific fitness routes
   {
-    path: '/membership',
+    path: '/my-plans',
     element: (
-      <PrivateRoute>
-        <MembershipPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/memberships',
-    element: (
-      <PrivateRoute>
-        <MembershipPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/attendance',
-    element: (
-      <PrivateRoute>
-        <AttendancePage />
+      <PrivateRoute allowedRoles={['member']}>
+        <FitnessPlanPage />
       </PrivateRoute>
     )
   }

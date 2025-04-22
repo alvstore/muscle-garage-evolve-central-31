@@ -1,15 +1,14 @@
 
 import React from 'react';
-import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import WorkoutPlansManager from '@/components/fitness/WorkoutPlansManager';
-import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useNavigate } from 'react-router-dom';
+import DietPlansManager from '@/components/fitness/DietPlansManager';
 
-const WorkoutPlansPage = () => {
+const DietPlansPage = () => {
   const { user } = useAuth();
   const { userRole, can } = usePermissions();
   const navigate = useNavigate();
@@ -17,15 +16,15 @@ const WorkoutPlansPage = () => {
   // Determine user capabilities based on role
   const isStaffOrTrainer = userRole === 'admin' || userRole === 'staff' || userRole === 'trainer';
   const canCreatePlans = userRole === 'admin' || userRole === 'trainer' || can('create_edit_plans');
-  const canAssignPlans = isStaffOrTrainer || can('assign_workout_plan');
+  const canAssignPlans = isStaffOrTrainer || can('assign_diet_plan');
   
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Workout Plans</h1>
+        <h1 className="text-3xl font-bold">Diet Plans</h1>
         
         {canCreatePlans && (
-          <Button onClick={() => navigate("/fitness/workout-plans/create")}>
+          <Button onClick={() => navigate("/fitness/diet-plans/create")}>
             <Plus className="h-4 w-4 mr-2" />
             Create New Plan
           </Button>
@@ -41,22 +40,22 @@ const WorkoutPlansPage = () => {
           
           {canCreatePlans && (
             <TabsContent value="manage" className="mt-6">
-              <WorkoutPlansManager readOnly={!canCreatePlans} />
+              <DietPlansManager readOnly={!canCreatePlans} />
             </TabsContent>
           )}
           
           {canAssignPlans && (
             <TabsContent value="assign" className="mt-6">
-              <WorkoutPlansManager assignOnly={true} />
+              <DietPlansManager assignOnly={true} />
             </TabsContent>
           )}
         </Tabs>
       ) : (
         // Member view - only show their assigned plans
-        <WorkoutPlansManager forMemberId={user?.id} readOnly={true} />
+        <DietPlansManager forMemberId={user?.id} readOnly={true} />
       )}
     </div>
   );
 };
 
-export default WorkoutPlansPage;
+export default DietPlansPage;

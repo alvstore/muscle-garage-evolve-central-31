@@ -31,7 +31,10 @@ import {
   FolderHeart,
   Gift,
   Wallet,
-  Archive
+  Archive,
+  Utensils,
+  CheckSquare,
+  Target
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -182,6 +185,36 @@ export const adminNavSections: NavSection[] = [
         label: "Workout Plans",
         icon: <Dumbbell className="h-5 w-5" />,
         permission: "manage_fitness_data" as Permission,
+        children: [
+          {
+            href: "/fitness/workout-plans/create",
+            label: "Create Plans",
+            permission: "create_edit_plans" as Permission,
+          },
+          {
+            href: "/fitness/workout-plans/assign",
+            label: "Assign Plans",
+            permission: "assign_workout_plan" as Permission,
+          }
+        ]
+      },
+      {
+        href: "/fitness/diet-plans",
+        label: "Diet Plans",
+        icon: <Utensils className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+        children: [
+          {
+            href: "/fitness/diet-plans/create",
+            label: "Create Plans",
+            permission: "create_edit_plans" as Permission,
+          },
+          {
+            href: "/fitness/diet-plans/assign",
+            label: "Assign Plans",
+            permission: "assign_diet_plan" as Permission,
+          }
+        ]
       },
     ],
   },
