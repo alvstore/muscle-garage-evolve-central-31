@@ -4,7 +4,7 @@ import { DietPlan } from '@/types/diet';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash, Copy, Users, FileText } from 'lucide-react';
+import { Edit, Trash, FileText } from 'lucide-react';
 import { 
   Dialog,
   DialogContent,
@@ -19,15 +19,33 @@ import { format } from 'date-fns';
 
 interface DietPlanListProps {
   plans: DietPlan[];
-  onEdit: (planId: string) => void;
-  onDelete: (planId: string) => void;
+  isLoading?: boolean;
+  onEdit?: (planId: string) => void;
+  onDelete?: (planId: string) => void;
+  onPlanCreated?: (plan: DietPlan) => void;
+  onPlanUpdated?: (plan: DietPlan) => void;
+  onPlanDeleted?: (planId: string) => void;
+  canCreateGlobal?: boolean;
 }
 
 export const DietPlanList: React.FC<DietPlanListProps> = ({ 
   plans, 
-  onEdit,
-  onDelete 
+  isLoading = false,
+  onEdit = () => {},
+  onDelete = () => {},
+  onPlanCreated,
+  onPlanUpdated,
+  onPlanDeleted,
+  canCreateGlobal
 }) => {
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Loading diet plans...</p>
+      </div>
+    );
+  }
+  
   if (plans.length === 0) {
     return (
       <div className="text-center py-12">
@@ -35,11 +53,6 @@ export const DietPlanList: React.FC<DietPlanListProps> = ({
       </div>
     );
   }
-  
-  // Function to calculate total calories for a plan
-  const calculateTotalCalories = (plan: DietPlan) => {
-    return plan.mealPlans.reduce((total, meal) => total + meal.macros.calories, 0);
-  };
   
   // Function to render diet type badge
   const renderDietTypeBadge = (dietType?: string) => {
@@ -79,7 +92,7 @@ export const DietPlanList: React.FC<DietPlanListProps> = ({
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-semibold text-lg">{plan.name || "Unnamed Plan"}</h3>
               <div className="flex flex-wrap gap-1">
-                {renderDietTypeBadge(plan.dietType)}
+                {renderDietTypeBadge(plan.diet_type)}
                 {renderGoalBadge(plan.goal)}
               </div>
             </div>
@@ -90,28 +103,11 @@ export const DietPlanList: React.FC<DietPlanListProps> = ({
             
             <div className="space-y-1 mb-4">
               <div className="text-sm">
-                <span className="font-medium">Daily Calories:</span> {plan.dailyCalories || calculateTotalCalories(plan)}
+                <span className="font-medium">Daily Calories:</span> {plan.daily_calories || "Not specified"}
               </div>
               <div className="text-sm">
-                <span className="font-medium">Meals:</span> {plan.mealPlans.length}
+                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updated_at), 'MMM d, yyyy')}
               </div>
-              <div className="text-sm">
-                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updatedAt), 'MMM d, yyyy')}
-              </div>
-            </div>
-            
-            <div className="space-y-2 mt-4">
-              <h4 className="text-sm font-medium">Meal Overview:</h4>
-              <ul className="text-xs space-y-1">
-                {plan.mealPlans.slice(0, 3).map((meal) => (
-                  <li key={meal.id} className="text-muted-foreground">
-                    <span className="font-medium text-foreground">{meal.name}</span> ({meal.time}): {meal.macros.calories} kcal
-                  </li>
-                ))}
-                {plan.mealPlans.length > 3 && (
-                  <li className="text-muted-foreground italic">... and {plan.mealPlans.length - 3} more meals</li>
-                )}
-              </ul>
             </div>
           </CardContent>
           
@@ -142,7 +138,10 @@ export const DietPlanList: React.FC<DietPlanListProps> = ({
                   </DialogClose>
                   <Button 
                     variant="destructive" 
-                    onClick={() => onDelete(plan.id)}
+                    onClick={() => {
+                      onDelete(plan.id);
+                      if (onPlanDeleted) onPlanDeleted(plan.id);
+                    }}
                   >
                     Delete
                   </Button>

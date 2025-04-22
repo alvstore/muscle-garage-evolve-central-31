@@ -232,7 +232,7 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
                 <DatePicker 
                   date={startDate} 
                   onSelect={setStartDate}
-                  disabled={isLoading}
+                  className={isLoading ? "opacity-50 pointer-events-none" : ""}
                 />
               </div>
               

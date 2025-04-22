@@ -1,5 +1,5 @@
 
-export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled";
+export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled" | "partial";
 export type PaymentMethod = "cash" | "card" | "bank-transfer" | "razorpay" | "other";
 export type ExpenseCategory = "rent" | "salary" | "utilities" | "equipment" | "maintenance" | "marketing" | "other";
 export type IncomeCategory = "membership" | "personal-training" | "product-sales" | "class-fees" | "other";

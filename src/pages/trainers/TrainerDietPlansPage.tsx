@@ -15,119 +15,31 @@ const mockDietPlans: DietPlan[] = [
     id: "diet-plan-1",
     name: "Weight Loss Meal Plan",
     description: "A balanced meal plan designed for healthy weight loss",
-    memberId: "",
-    trainerId: "trainer1",
-    mealPlans: [
-      {
-        id: "meal-1",
-        name: "Breakfast",
-        time: "8:00 AM",
-        items: ["Oatmeal with berries", "Greek yogurt", "Black coffee"],
-        macros: {
-          calories: 350,
-          protein: 20,
-          carbs: 45,
-          fats: 10
-        }
-      },
-      {
-        id: "meal-2",
-        name: "Lunch",
-        time: "12:30 PM",
-        items: ["Grilled chicken salad", "Whole grain bread", "Apple"],
-        macros: {
-          calories: 450,
-          protein: 35,
-          carbs: 50,
-          fats: 15
-        }
-      },
-      {
-        id: "meal-3",
-        name: "Dinner",
-        time: "7:00 PM",
-        items: ["Baked salmon", "Brown rice", "Steamed vegetables"],
-        macros: {
-          calories: 500,
-          protein: 30,
-          carbs: 55,
-          fats: 20
-        }
-      }
-    ],
+    member_id: "",
+    trainer_id: "trainer1",
     notes: "Drink at least 2 liters of water daily. Avoid processed foods and added sugars.",
-    isCustom: false,
-    isGlobal: true,
-    dietType: "standard",
+    is_custom: false,
+    is_global: true,
+    diet_type: "standard",
     goal: "weight-loss",
-    dailyCalories: 1600,
-    createdAt: "2025-01-15T10:00:00Z",
-    updatedAt: "2025-01-15T10:00:00Z"
+    daily_calories: 1600,
+    created_at: "2025-01-15T10:00:00Z",
+    updated_at: "2025-01-15T10:00:00Z"
   },
   {
     id: "diet-plan-2",
     name: "Muscle Building Plan",
     description: "High protein meal plan designed for muscle growth",
-    memberId: "",
-    trainerId: "trainer1",
-    mealPlans: [
-      {
-        id: "meal-1",
-        name: "Breakfast",
-        time: "7:00 AM",
-        items: ["Protein pancakes", "Eggs", "Spinach"],
-        macros: {
-          calories: 500,
-          protein: 40,
-          carbs: 50,
-          fats: 15
-        }
-      },
-      {
-        id: "meal-2",
-        name: "Mid-morning Snack",
-        time: "10:00 AM",
-        items: ["Protein shake", "Banana"],
-        macros: {
-          calories: 300,
-          protein: 25,
-          carbs: 30,
-          fats: 5
-        }
-      },
-      {
-        id: "meal-3",
-        name: "Lunch",
-        time: "1:00 PM",
-        items: ["Grilled steak", "Sweet potato", "Broccoli"],
-        macros: {
-          calories: 600,
-          protein: 45,
-          carbs: 60,
-          fats: 20
-        }
-      },
-      {
-        id: "meal-4",
-        name: "Dinner",
-        time: "7:00 PM",
-        items: ["Chicken breast", "Quinoa", "Mixed vegetables"],
-        macros: {
-          calories: 550,
-          protein: 40,
-          carbs: 55,
-          fats: 15
-        }
-      }
-    ],
+    member_id: "",
+    trainer_id: "trainer1",
     notes: "Aim for 1g of protein per pound of body weight. Time your carbs around workouts.",
-    isCustom: false,
-    isGlobal: true,
-    dietType: "standard",
+    is_custom: false,
+    is_global: true,
+    diet_type: "standard",
     goal: "muscle-gain",
-    dailyCalories: 2800,
-    createdAt: "2025-02-01T10:00:00Z",
-    updatedAt: "2025-02-01T10:00:00Z"
+    daily_calories: 2800,
+    created_at: "2025-02-01T10:00:00Z",
+    updated_at: "2025-02-01T10:00:00Z"
   }
 ];
 
@@ -236,7 +148,7 @@ const TrainerDietPlansPage = () => {
               </CardHeader>
               <CardContent>
                 <DietPlanList
-                  plans={dietPlans.filter(p => p.isGlobal)}
+                  plans={dietPlans.filter(p => p.is_global)}
                   onEdit={handleEditPlan}
                   onDelete={handleDeletePlan}
                 />
@@ -252,7 +164,7 @@ const TrainerDietPlansPage = () => {
               </CardHeader>
               <CardContent>
                 <DietPlanList
-                  plans={dietPlans.filter(p => !p.isGlobal && p.trainerId === user?.id)}
+                  plans={dietPlans.filter(p => !p.is_global && p.trainer_id === user?.id)}
                   onEdit={handleEditPlan}
                   onDelete={handleDeletePlan}
                 />
@@ -268,7 +180,7 @@ const TrainerDietPlansPage = () => {
               </CardHeader>
               <CardContent>
                 <DietPlanList
-                  plans={dietPlans.filter(p => p.memberId !== "")}
+                  plans={dietPlans.filter(p => p.member_id !== "")}
                   onEdit={handleEditPlan}
                   onDelete={handleDeletePlan}
                 />
