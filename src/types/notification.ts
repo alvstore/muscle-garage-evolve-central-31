@@ -31,6 +31,7 @@ export interface Feedback {
   rating?: number;
   comments?: string;
   anonymous?: boolean;
+  relatedId?: string;
 }
 
 export interface MotivationalMessage {
@@ -57,6 +58,8 @@ export interface ReminderRule {
   description?: string;
   sendVia?: NotificationChannel[];
   targetRoles?: string[];
+  triggerDays?: number;
+  type?: string;
 }
 
-export type ReminderTriggerType = 'membership_expiry' | 'missed_classes' | 'birthday' | 'payment_due' | 'missed_attendance';
+export type ReminderTriggerType = 'membership_expiry' | 'missed_classes' | 'birthday' | 'payment_due' | 'missed_attendance' | 'inactive_member';

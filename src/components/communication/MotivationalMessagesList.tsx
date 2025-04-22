@@ -36,7 +36,7 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "motivation",
     tags: ["workout", "consistency"],
-    active: true,
+    isActive: true,
     createdAt: "2023-01-15T10:00:00Z",
     updatedAt: "2023-01-15T10:00:00Z",
   },
@@ -47,7 +47,7 @@ const mockMessages: MotivationalMessage[] = [
     author: "Andrew Murphy",
     category: "motivation",
     tags: ["mindset", "strength"],
-    active: true,
+    isActive: true,
     createdAt: "2023-02-10T15:30:00Z",
     updatedAt: "2023-02-10T15:30:00Z",
   },
@@ -58,7 +58,7 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "nutrition",
     tags: ["food", "health"],
-    active: true,
+    isActive: true,
     createdAt: "2023-03-05T09:45:00Z",
     updatedAt: "2023-03-05T09:45:00Z",
   },
@@ -69,7 +69,7 @@ const mockMessages: MotivationalMessage[] = [
     author: "Dwayne Johnson",
     category: "motivation",
     tags: ["consistency", "success"],
-    active: false,
+    isActive: false,
     createdAt: "2023-04-20T14:20:00Z",
     updatedAt: "2023-04-20T14:20:00Z",
   },
@@ -80,7 +80,7 @@ const mockMessages: MotivationalMessage[] = [
     author: "Gene Tunney",
     category: "wellness",
     tags: ["health", "exercise"],
-    active: true,
+    isActive: true,
     createdAt: "2023-05-12T11:15:00Z",
     updatedAt: "2023-05-12T11:15:00Z",
   }
@@ -106,7 +106,7 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
   const handleToggleActive = (id: string, currentStatus: boolean) => {
     // In a real app, this would be an API call
     const updatedMessages = messages.map(message => 
-      message.id === id ? { ...message, active: !currentStatus } : message
+      message.id === id ? { ...message, isActive: !currentStatus } : message
     );
     setMessages(updatedMessages);
     
@@ -231,8 +231,8 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
                     </TableCell>
                     <TableCell>
                       <Switch 
-                        checked={message.active} 
-                        onCheckedChange={() => handleToggleActive(message.id, message.active)} 
+                        checked={message.isActive} 
+                        onCheckedChange={(checked) => handleToggleActive(message.id, checked)}
                       />
                     </TableCell>
                     <TableCell className="text-right">

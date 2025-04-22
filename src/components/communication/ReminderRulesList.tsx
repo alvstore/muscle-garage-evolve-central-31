@@ -1,277 +1,267 @@
-
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { ReminderRule, ReminderTriggerType, NotificationChannel } from "@/types/notification";
-import { toast } from "sonner";
-import { 
-  BellRing, 
-  Pencil, 
-  RefreshCw, 
-  MoreVertical, 
-  Trash2, 
-  PlayCircle 
-} from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-
-// Mock data for reminder rules
-const mockReminderRules: ReminderRule[] = [
-  {
-    id: "1",
-    name: "Membership Expiry Reminder",
-    description: "Remind members before their membership expires",
-    triggerType: "membership_expiry",
-    triggerValue: 7,
-    message: "Your membership will expire soon. Please renew to continue enjoying our services.",
-    sendVia: ["email", "in-app"],
-    active: true,
-    createdAt: "2023-05-10T09:00:00Z",
-    updatedAt: "2023-05-10T09:00:00Z",
-    // Compatibility fields
-    type: "membership-renewal",
-    triggerDays: 7,
-    channels: ["email", "in-app"],
-    enabled: true,
-    targetRoles: ["member"]
-  },
-  {
-    id: "2",
-    name: "Birthday Wish",
-    description: "Send birthday wishes to members",
-    triggerType: "birthday",
-    triggerValue: 0,
-    message: "Happy Birthday! Enjoy a special discount on your next purchase.",
-    sendVia: ["email", "whatsapp", "sms"],
-    active: true,
-    createdAt: "2023-05-15T10:00:00Z",
-    updatedAt: "2023-05-15T10:00:00Z",
-    // Compatibility fields
-    type: "birthday",
-    triggerDays: 0,
-    channels: ["email", "whatsapp", "sms"],
-    enabled: true,
-    targetRoles: ["member", "trainer", "staff"]
-  },
-  {
-    id: "3",
-    name: "Missed Attendance Follow-up",
-    description: "Follow up with members who haven't visited recently",
-    triggerType: "missed_attendance",
-    triggerValue: 3,
-    message: "We've noticed you haven't visited recently. Is everything okay?",
-    sendVia: ["sms", "whatsapp"],
-    active: false,
-    createdAt: "2023-05-20T11:00:00Z",
-    updatedAt: "2023-05-20T11:00:00Z",
-    // Compatibility fields
-    type: "missed-attendance",
-    triggerDays: 3,
-    channels: ["sms", "whatsapp"],
-    enabled: false,
-    targetRoles: ["member"]
-  },
-  {
-    id: "4",
-    name: "Membership Renewal Reminder",
-    description: "Remind members to renew their membership",
-    triggerType: "membership_expiry",
-    triggerValue: 3,
-    message: "Your membership is expiring soon. Renew now to avoid interruption.",
-    sendVia: ["email", "in-app", "sms"],
-    active: true,
-    createdAt: "2023-05-25T12:00:00Z",
-    updatedAt: "2023-05-25T12:00:00Z",
-    // Compatibility fields
-    type: "payment-due",
-    triggerDays: 3,
-    channels: ["email", "in-app", "sms"],
-    enabled: true,
-    targetRoles: ["member"]
-  }
-];
+import React, { useState, useEffect } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ReminderRule } from '@/types/notification';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import ReminderRuleForm from './ReminderRuleForm';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface ReminderRulesListProps {
-  onEdit: (rule: ReminderRule) => void;
+  rules: ReminderRule[];
+  onUpdate: (rule: ReminderRule) => void;
+  onDelete: (id: string) => void;
+  onCreate: (rule: ReminderRule) => void;
 }
 
-const ReminderRulesList = ({ onEdit }: ReminderRulesListProps) => {
-  const [rules, setRules] = useState<ReminderRule[]>([]);
-  const [loading, setLoading] = useState(true);
+const ReminderRulesList: React.FC<ReminderRulesListProps> = ({ rules, onUpdate, onDelete, onCreate }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredRules, setFilteredRules] = useState<ReminderRule[]>(rules);
+  const [open, setOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<ReminderRule | null>(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setRules(mockReminderRules);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleToggleActive = (id: string, currentStatus: boolean) => {
-    // In a real app, this would be an API call
-    const updatedRules = rules.map(rule => 
-      rule.id === id ? { ...rule, active: !currentStatus } : rule
+    setFilteredRules(
+      rules.filter(rule =>
+        rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rule.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTypeLabel(rule.triggerType).toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
-    setRules(updatedRules);
-    
-    toast.success(`Rule ${currentStatus ? 'disabled' : 'enabled'} successfully`);
-  };
+  }, [searchQuery, rules]);
 
-  const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
-    setRules(rules.filter(rule => rule.id !== id));
-    toast.success("Reminder rule deleted successfully");
-  };
-
-  const handleManualTrigger = (id: string, name: string) => {
-    // Simulate sending reminders manually
-    toast.success(`Manually triggered "${name}" reminders`);
-  };
-
-  const getTriggerDisplay = (rule: ReminderRule) => {
-    if (rule.type === "birthday") {
-      return "On birthday date";
-    } else if (rule.type === "missed-attendance") {
-      return `After ${rule.triggerDays} days of absence`;
-    } else {
-      return `${rule.triggerDays} days before ${rule.type === "membership-renewal" ? "expiry" : "payment"}`;
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'membership_expiry':
+        return 'Membership Expiry';
+      case 'missed_classes':
+        return 'Missed Classes';
+      case 'birthday':
+        return 'Birthday';
+      case 'payment_due':
+        return 'Payment Due';
+      case 'missed_attendance':
+        return 'Missed Attendance';
+      case 'inactive_member':
+        return 'Inactive Member';
+      default:
+        return 'Unknown';
     }
   };
 
+  const handleToggleActive = (id: string, checked: boolean) => {
+    const ruleToUpdate = rules.find(rule => rule.id === id);
+    if (ruleToUpdate) {
+      const updatedRule = { ...ruleToUpdate, isActive: checked };
+      onUpdate(updatedRule);
+      toast.success(`Reminder rule ${checked ? 'activated' : 'deactivated'}`);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    onDelete(id);
+    toast.success('Reminder rule deleted successfully');
+  };
+
+  const handleEdit = (rule: ReminderRule) => {
+    setSelectedRule(rule);
+    setOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedRule(null);
+    setOpen(true);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Reminder Rules</CardTitle>
-            <CardDescription>Configure automated notifications and reminders</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={loading}
-            onClick={() => {
-              setLoading(true);
-              setTimeout(() => {
-                setRules(mockReminderRules);
-                setLoading(false);
-              }, 1000);
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Reminder Rules</h2>
+        <Button onClick={handleCreate}>Add Rule</Button>
+      </div>
+
+      <div className="mb-4">
+        <Label htmlFor="search">Search Rules</Label>
+        <Input
+          type="text"
+          id="search"
+          placeholder="Search by name, description, or type..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      <ScrollArea className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Schedule</TableHead>
+              <TableHead>Channels</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRules.map((rule) => (
+              <TableRow key={rule.id}>
+                <TableCell className="font-medium">{rule.name}</TableCell>
+                <TableCell>{rule.description}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{getTypeLabel(rule.triggerType)}</Badge>
+                </TableCell>
+                <TableCell>{`${rule.triggerValue} days before ${getTypeLabel(rule.triggerType)}`}</TableCell>
+                <TableCell>
+                  {rule.channels.map((channel) => (
+                    <Badge key={channel} className="mr-1">
+                      {channel}
+                    </Badge>
+                  ))}
+                </TableCell>
+                <TableCell>
+                  <Switch
+                    checked={rule.isActive}
+                    onCheckedChange={(checked) => handleToggleActive(rule.id, checked)}
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(rule)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(rule.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>{selectedRule ? 'Edit Rule' : 'Create Rule'}</DialogTitle>
+            <DialogDescription>
+              {selectedRule
+                ? 'Make changes to your reminder rule here. Click save when you\'re done.'
+                : 'Create a new reminder rule here. Click save when you\'re done.'}
+            </DialogDescription>
+          </DialogHeader>
+          <ReminderRuleForm
+            selectedRule={selectedRule}
+            onSave={(rule) => {
+              if (selectedRule) {
+                onUpdate(rule);
+              } else {
+                onCreate(rule);
+              }
+              setOpen(false);
             }}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="h-80 flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading reminder rules...</p>
-            </div>
-          </div>
-        ) : rules.length === 0 ? (
-          <div className="text-center py-10">
-            <BellRing className="h-10 w-10 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No reminder rules</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create your first automated reminder rule
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rule Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Trigger</TableHead>
-                  <TableHead>Channels</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rules.map((rule) => (
-                  <TableRow key={rule.id}>
-                    <TableCell className="font-medium">{rule.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {rule.type.replace("-", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getTriggerDisplay(rule)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {rule.channels.map((channel) => (
-                          <Badge key={channel} variant="secondary" className="capitalize">
-                            {channel}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Switch 
-                        checked={rule.active} 
-                        onCheckedChange={() => handleToggleActive(rule.id, rule.active || false)} 
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(rule)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleManualTrigger(rule.id, rule.name)}>
-                            <PlayCircle className="h-4 w-4 mr-2" />
-                            Trigger Manually
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(rule.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            onCancel={() => setOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
+
+const mockRules: ReminderRule[] = [
+  {
+    id: '1',
+    name: 'Membership Expiry Reminder',
+    description: 'Reminds members 7 days before their membership expires',
+    triggerType: 'membership_expiry',
+    triggerValue: 7,
+    message: 'Your membership expires in 7 days. Renew now!',
+    channels: ['email', 'in-app'],
+    isActive: true,
+    sendVia: ['email'],
+    targetRoles: ['member']
+  },
+  {
+    id: '2',
+    name: 'Missed Class Follow Up',
+    description: 'Follows up with members who missed a class',
+    triggerType: 'missed_classes',
+    triggerValue: 1,
+    message: 'We noticed you missed your class. Book another one soon!',
+    channels: ['sms', 'in-app'],
+    isActive: false,
+    sendVia: ['sms'],
+    targetRoles: ['member']
+  },
+  {
+    id: '3',
+    name: 'Birthday Wish',
+    description: 'Sends birthday wishes to members',
+    triggerType: 'birthday',
+    triggerValue: 0,
+    message: 'Happy birthday! Enjoy a free class on us.',
+    channels: ['email', 'in-app'],
+    isActive: true,
+    sendVia: ['email'],
+    targetRoles: ['member']
+  },
+  {
+    id: '4',
+    name: 'Payment Due Reminder',
+    description: 'Reminds members about upcoming payments',
+    triggerType: 'payment_due',
+    triggerValue: 3,
+    message: 'Your payment is due in 3 days. Please make the payment to continue enjoying our services.',
+    channels: ['email', 'in-app'],
+    isActive: true,
+    sendVia: ['email'],
+    targetRoles: ['member']
+  },
+  {
+    id: '5',
+    name: 'Missed Attendance Follow Up',
+    description: 'Follows up with members who missed gym attendance',
+    triggerType: 'missed_attendance',
+    triggerValue: 2,
+    message: 'We missed you at the gym! Come back soon.',
+    channels: ['sms', 'in-app'],
+    isActive: false,
+    sendVia: ['sms'],
+    targetRoles: ['member']
+  },
+  {
+    id: '6',
+    name: 'Inactive Member Reminder',
+    description: 'Reminds inactive members to come back',
+    triggerType: 'inactive_member',
+    triggerValue: 30,
+    message: 'We miss you! Get back in shape with our special offers.',
+    channels: ['email', 'in-app'],
+    isActive: true,
+    sendVia: ['email'],
+    targetRoles: ['member']
+  }
+];
 
 export default ReminderRulesList;

@@ -1,286 +1,237 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Checkbox } from '@/components/ui/checkbox';
+import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from 'sonner';
 import { ReminderRule, ReminderTriggerType, NotificationChannel } from '@/types/notification';
 
-export interface ReminderRuleFormProps {
-  onComplete: () => void;
-  editRule?: ReminderRule;
+interface ReminderRuleFormProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  onSave: (rule: ReminderRule) => void;
+  onUpdate: (rule: ReminderRule) => void;
+  selectedRule?: ReminderRule;
 }
 
-const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRule }) => {
-  const [formData, setFormData] = useState<ReminderRule>(
-    editRule || {
-      id: '',
-      name: '',
-      description: '',
-      triggerType: 'membership_expiry' as ReminderTriggerType,
-      triggerValue: 3,
-      message: '',
-      sendVia: [] as NotificationChannel[],
-      active: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Compatibility fields
-      type: 'membership-renewal',
-      triggerDays: 3,
-      channels: [] as NotificationChannel[],
-      targetRoles: [] as string[],
-      enabled: true
+const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ open, setOpen, onSave, onUpdate, selectedRule }) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const triggerTypeOptions: Record<ReminderTriggerType, string> = {
+    membership_expiry: 'Membership Expiry',
+    missed_classes: 'Missed Classes',
+    birthday: 'Birthday',
+    payment_due: 'Payment Due',
+    missed_attendance: 'Missed Attendance',
+    inactive_member: 'Inactive Member'
+  };
+
+  const channelOptions: Record<NotificationChannel, string> = {
+    'in-app': 'In-App Notification',
+    email: 'Email',
+    sms: 'SMS',
+    whatsapp: 'WhatsApp'
+  };
+
+  const [formData, setFormData] = useState<ReminderRule>({
+    id: selectedRule?.id || uuidv4(),
+    name: selectedRule?.name || '',
+    description: selectedRule?.description || '',
+    triggerType: selectedRule?.triggerType || 'membership_expiry',
+    triggerValue: selectedRule?.triggerValue || 7,
+    message: selectedRule?.message || '',
+    sendVia: selectedRule?.sendVia || ['in-app'],
+    channels: selectedRule?.channels || ['in-app'],
+    targetRoles: selectedRule?.targetRoles || ['member'],
+    isActive: selectedRule?.isActive ?? true
+  });
+
+  useEffect(() => {
+    if (selectedRule) {
+      setFormData({
+        id: selectedRule.id,
+        name: selectedRule.name,
+        description: selectedRule.description || '',
+        triggerType: selectedRule.triggerType,
+        triggerValue: selectedRule.triggerValue,
+        message: selectedRule.message,
+        sendVia: selectedRule.sendVia || ['in-app'],
+        channels: selectedRule.channels,
+        targetRoles: selectedRule.targetRoles || ['member'],
+        isActive: selectedRule.isActive
+      });
+    } else {
+      // Reset to default values when creating a new rule
+      setFormData({
+        id: uuidv4(),
+        name: '',
+        description: '',
+        triggerType: 'membership_expiry',
+        triggerValue: 7,
+        message: '',
+        sendVia: ['in-app'],
+        channels: ['in-app'],
+        targetRoles: ['member'],
+        isActive: true
+      });
     }
-  );
+  }, [selectedRule]);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    console.log('Form submitted with data:', formData);
-    // Here you would typically send the data to your backend
-    onComplete();
-  };
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (!formData.name || !formData.message) {
+        toast.error('Please fill in all required fields.');
+        return;
+      }
 
-  const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleTriggerTypeChange = (value: ReminderTriggerType) => {
-    setFormData((prev) => ({ ...prev, triggerType: value, type: mapTriggerTypeToType(value) }));
-  };
-
-  const mapTriggerTypeToType = (triggerType: ReminderTriggerType): string => {
-    const typeMap: Record<ReminderTriggerType, string> = {
-      membership_expiry: 'membership-renewal',
-      missed_attendance: 'missed-attendance',
-      birthday: 'birthday',
-      inactive_member: 'inactive-member',
-      special_event: 'special-event'
-    };
-    return typeMap[triggerType];
+      if (selectedRule) {
+        // Update existing rule
+        onUpdate(formData);
+        toast.success('Reminder rule updated successfully!');
+      } else {
+        // Save new rule
+        onSave(formData);
+        toast.success('Reminder rule created successfully!');
+      }
+      setOpen(false);
+    } catch (error: any) {
+      console.error('Error saving reminder rule:', error);
+      toast.error(error?.message || 'Failed to save reminder rule.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{editRule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Rule Name</Label>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{selectedRule ? 'Edit Reminder Rule' : 'Create Reminder Rule'}</DialogTitle>
+          <DialogDescription>
+            {selectedRule
+              ? 'Update the settings for your reminder rule.'
+              : 'Create a new automated reminder rule.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ruleName">Name</Label>
               <Input
-                id="name"
+                id="ruleName"
+                placeholder="Rule Name"
                 value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                placeholder="Enter a name for this reminder rule"
-                required
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
 
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Brief description of this reminder's purpose"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="triggerType">Trigger Type</Label>
-              <Select 
-                value={formData.triggerType} 
-                onValueChange={handleTriggerTypeChange}
-              >
-                <SelectTrigger id="triggerType">
-                  <SelectValue placeholder="Select when to trigger" />
+            <div className="space-y-2">
+              <Label htmlFor="ruleTrigger">Trigger</Label>
+              <Select value={formData.triggerType} onValueChange={(value) => setFormData({ ...formData, triggerType: value as ReminderTriggerType })}>
+                <SelectTrigger id="ruleTrigger">
+                  <SelectValue placeholder="Select trigger" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="membership_expiry">Membership Expiry</SelectItem>
-                  <SelectItem value="missed_attendance">Attendance Reminder</SelectItem>
-                  <SelectItem value="birthday">Birthday Wishes</SelectItem>
-                  <SelectItem value="inactive_member">Inactive Member</SelectItem>
-                  <SelectItem value="special_event">Special Event</SelectItem>
+                  {Object.entries(triggerTypeOptions).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div>
-              <Label htmlFor="triggerValue">Days In Advance</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ruleValue">Trigger Value (Days)</Label>
               <Input
-                id="triggerValue"
+                id="ruleValue"
                 type="number"
-                min="0"
-                value={formData.triggerValue}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  handleChange('triggerValue', value);
-                  handleChange('triggerDays', value); // For compatibility
-                }}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="message">Message Template</Label>
-              <Textarea
-                id="message"
-                value={formData.message}
-                onChange={(e) => handleChange('message', e.target.value)}
-                placeholder="Enter the message to be sent. Use {name} for the member's name."
-                required
+                placeholder="Days"
+                value={formData.triggerValue?.toString()}
+                onChange={(e) => setFormData({ ...formData, triggerValue: parseInt(e.target.value) })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Notification Channels</Label>
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendEmail" 
-                    checked={formData.sendVia.includes('email')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...formData.sendVia, 'email' as NotificationChannel] 
-                        : formData.sendVia.filter(channel => channel !== 'email');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('channels', newSendVia); // For compatibility
-                    }}
-                  />
-                  <Label htmlFor="sendEmail" className="cursor-pointer">Email</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendSMS" 
-                    checked={formData.sendVia.includes('sms')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...formData.sendVia, 'sms' as NotificationChannel] 
-                        : formData.sendVia.filter(channel => channel !== 'sms');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('channels', newSendVia); // For compatibility
-                    }}
-                  />
-                  <Label htmlFor="sendSMS" className="cursor-pointer">SMS</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendInApp" 
-                    checked={formData.sendVia.includes('in-app')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...formData.sendVia, 'in-app' as NotificationChannel] 
-                        : formData.sendVia.filter(channel => channel !== 'in-app');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('channels', newSendVia); // For compatibility
-                    }}
-                  />
-                  <Label htmlFor="sendInApp" className="cursor-pointer">In-App Notification</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendWhatsapp" 
-                    checked={formData.sendVia.includes('whatsapp')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...formData.sendVia, 'whatsapp' as NotificationChannel] 
-                        : formData.sendVia.filter(channel => channel !== 'whatsapp');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('channels', newSendVia); // For compatibility
-                    }}
-                  />
-                  <Label htmlFor="sendWhatsapp" className="cursor-pointer">WhatsApp</Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Target Audience</Label>
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetAdmins" 
-                    checked={formData.targetRoles?.includes('admin')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'admin'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'admin');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetAdmins" className="cursor-pointer">Admins</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetStaff" 
-                    checked={formData.targetRoles?.includes('staff')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'staff'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'staff');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetStaff" className="cursor-pointer">Staff</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetTrainers" 
-                    checked={formData.targetRoles?.includes('trainer')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'trainer'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'trainer');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetTrainers" className="cursor-pointer">Trainers</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetMembers" 
-                    checked={formData.targetRoles?.includes('member')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'member'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'member');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetMembers" className="cursor-pointer">Members</Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="active" 
-                checked={formData.active}
-                onCheckedChange={(checked) => {
-                  handleChange('active', checked);
-                  handleChange('enabled', checked); // For compatibility
-                }}
-              />
-              <Label htmlFor="active">Active</Label>
+              <Label htmlFor="ruleChannels">Channels</Label>
+              <Select
+                value={formData.channels}
+                onValueChange={(value) => setFormData({ ...formData, channels: value as NotificationChannel[] })}
+                multiple
+              >
+                <SelectTrigger id="ruleChannels">
+                  <SelectValue placeholder="Select channels" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(channelOptions).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={onComplete}>Cancel</Button>
-          <Button type="submit">
-            {editRule ? 'Update Rule' : 'Create Rule'}
+
+          <div className="space-y-2">
+            <Label htmlFor="ruleMessage">Message</Label>
+            <Textarea
+              id="ruleMessage"
+              placeholder="Reminder Message"
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ruleDescription">Description</Label>
+            <Textarea
+              id="ruleDescription"
+              placeholder="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={2}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-x-2 flex items-center">
+              <Label htmlFor="ruleActive">Active</Label>
+              <Switch 
+                id="ruleActive" 
+                checked={formData.isActive} 
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+            Cancel
           </Button>
-        </CardFooter>
-      </form>
-    </Card>
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

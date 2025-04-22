@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -79,13 +80,13 @@ export const adminNavSections: NavSection[] = [
         permission: "manage_transactions" as Permission,
       },
       {
-        href: "/finance/income",
+        href: "/finance/income-records",
         label: "Income Records",
         icon: <BanknoteIcon className="h-5 w-5" />,
         permission: "manage_income" as Permission,
       },
       {
-        href: "/finance/expenses",
+        href: "/finance/expense-records",
         label: "Expense Records",
         icon: <WalletIcon className="h-5 w-5" />,
         permission: "manage_expenses" as Permission,

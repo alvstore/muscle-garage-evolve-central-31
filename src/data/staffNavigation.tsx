@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -33,6 +32,36 @@ export const staffNavSections: NavSection[] = [
         label: "Dashboard", 
         icon: <BarChart3 className="h-4 w-4" />,
         permission: "feature_staff_dashboard" as Permission
+      }
+    ]
+  },
+  {
+    name: "Finance",
+    icon: <WalletIcon className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/finance/invoices", 
+        label: "Invoices", 
+        icon: <FileText className="h-4 w-4" />,
+        permission: "view_invoices" as Permission
+      },
+      { 
+        href: "/finance/transactions", 
+        label: "Transactions", 
+        icon: <CreditCard className="h-4 w-4" />,
+        permission: "manage_transactions" as Permission
+      },
+      { 
+        href: "/finance/income-records", 
+        label: "Income Records", 
+        icon: <BanknoteIcon className="h-4 w-4" />,
+        permission: "manage_income" as Permission
+      },
+      { 
+        href: "/finance/expense-records", 
+        label: "Expense Records", 
+        icon: <WalletIcon className="h-4 w-4" />,
+        permission: "manage_expenses" as Permission
       }
     ]
   },
@@ -117,30 +146,6 @@ export const staffNavSections: NavSection[] = [
         label: "Task Manager", 
         icon: <ListChecks className="h-4 w-4" />,
         permission: "access_communication" as Permission
-      }
-    ]
-  },
-  {
-    name: "Finance",
-    icon: <WalletIcon className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/finance/invoices", 
-        label: "Invoices", 
-        icon: <FileText className="h-4 w-4" />,
-        permission: "view_invoices" as Permission
-      },
-      { 
-        href: "/finance/transactions", 
-        label: "Transactions", 
-        icon: <CreditCard className="h-4 w-4" />,
-        permission: "manage_transactions" as Permission
-      },
-      { 
-        href: "/finance/income", 
-        label: "Income Records", 
-        icon: <BanknoteIcon className="h-4 w-4" />,
-        permission: "manage_income" as Permission
       }
     ]
   }

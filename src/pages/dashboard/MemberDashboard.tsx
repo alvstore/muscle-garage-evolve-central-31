@@ -64,33 +64,35 @@ const MemberDashboard = () => {
       description: 'Grilled chicken with vegetables'
     }
   ];
-  
-  const mockAnnouncements: Announcement[] = [
+
+  const announcements = [
     {
       id: '1',
-      title: 'Gym Holiday Hours',
-      content: 'The gym will be closed on Christmas Day.',
-      createdAt: new Date().toISOString(),
-      createdBy: 'Admin',
-      authorId: 'admin1',
-      authorName: 'Admin',
+      title: 'New Yoga Class Schedule',
+      content: 'We have updated our yoga class schedule. Check out the new timings!',
+      createdAt: '2023-04-15T10:30:00.000Z',
+      createdBy: 'admin',
+      authorId: 'auth0|123456',
+      authorName: 'Jane Smith',
       targetRoles: ['member'],
-      channels: ['in-app'],
-      priority: 'medium',
-      forRoles: ['member']
+      channels: ['in-app'] as ['in-app'],
+      priority: 'medium' as 'medium',
+      forRoles: ['member'],
+      sentCount: 156
     },
     {
       id: '2',
-      title: 'New Equipment',
-      content: 'We have added new treadmills to the cardio section.',
-      createdAt: new Date().toISOString(),
-      createdBy: 'Admin',
-      authorId: 'admin1',
-      authorName: 'Admin',
-      targetRoles: ['member'],
-      channels: ['in-app'],
-      priority: 'low',
-      forRoles: ['member']
+      title: 'Gym Maintenance',
+      content: 'The gym will be closed for maintenance on Sunday from 2 PM to 5 PM.',
+      createdAt: '2023-04-14T15:45:00.000Z',
+      createdBy: 'admin',
+      authorId: 'auth0|654321',
+      authorName: 'John Doe',
+      targetRoles: ['member', 'trainer'],
+      channels: ['in-app'] as ['in-app'],
+      priority: 'low' as 'low',
+      forRoles: ['member', 'trainer'],
+      sentCount: 234
     }
   ];
 
@@ -228,7 +230,7 @@ const MemberDashboard = () => {
             <CardDescription>Stay updated with gym news</CardDescription>
           </CardHeader>
           <CardContent>
-            <Announcements announcements={mockAnnouncements} />
+            <Announcements announcements={announcements} />
           </CardContent>
         </Card>
       </div>

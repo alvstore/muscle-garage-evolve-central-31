@@ -31,64 +31,65 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from '@/hooks/use-auth';
 
-const mockFeedbackData: Feedback[] = [
+const mockFeedback: Feedback[] = [
   {
-    id: "feedback1",
-    memberId: "member1",
-    memberName: "David Miller",
-    type: "class",
-    relatedId: "class1",
-    rating: 4,
-    comments: "Great class, but the room was a bit crowded.",
-    createdAt: "2023-06-15T10:30:00Z",
-    anonymous: false,
-    title: "HIIT Class Review"
-  },
-  {
-    id: "feedback2",
-    memberId: "member2",
-    memberName: "Sarah Parker",
-    type: "trainer",
-    relatedId: "trainer1",
+    id: '1',
+    title: 'Great trainer experience',
+    content: 'I had an excellent session with the trainer. Very knowledgeable!',
+    type: 'trainer',
+    memberId: 'user123',
+    memberName: 'John Doe',
+    createdAt: '2023-04-15T10:30:00.000Z',
+    status: 'resolved',
     rating: 5,
-    comments: "Excellent trainer, very motivating!",
-    createdAt: "2023-06-16T14:20:00Z",
-    anonymous: false,
-    title: "Trainer Review"
+    comments: 'Thank you for your feedback!',
+    relatedId: 'trainer456'
   },
   {
-    id: "feedback3",
-    memberId: "member3",
-    type: "fitness-plan",
-    relatedId: "plan1",
-    rating: 3,
-    comments: "Plan is good but too challenging for beginners.",
-    createdAt: "2023-06-17T09:15:00Z",
-    anonymous: true,
-    title: "Fitness Plan Feedback"
+    id: '2',
+    title: 'Need more evening classes',
+    content: 'Would love to see more yoga classes in the evening after work hours.',
+    type: 'suggestion',
+    memberId: 'user456',
+    memberName: 'Jane Smith',
+    createdAt: '2023-04-14T15:45:00.000Z',
+    status: 'pending',
+    relatedId: null
   },
   {
-    id: "feedback4",
-    memberId: "member4",
-    memberName: "Emily Davidson",
-    type: "general",
-    rating: 2,
-    comments: "The gym needs better ventilation.",
-    createdAt: "2023-06-18T16:45:00Z",
-    anonymous: false,
-    title: "Facility Feedback"
+    id: '3',
+    title: 'Equipment issue',
+    content: 'The treadmill #3 has been making strange noises when used at high speeds.',
+    type: 'complaint',
+    memberId: 'user789',
+    memberName: 'Robert Johnson',
+    createdAt: '2023-04-13T09:15:00.000Z',
+    status: 'in-progress',
+    comments: 'Maintenance team notified, will check tomorrow.',
+    relatedId: 'equipment123'
   },
   {
-    id: "feedback5",
-    memberId: "member5",
-    memberName: "Michael Wong",
-    type: "class",
-    relatedId: "class2",
+    id: '4',
+    title: 'General feedback about gym',
+    content: 'Overall very satisfied with the facilities and staff.',
+    type: 'general',
+    memberId: 'user321',
+    memberName: 'Sarah Williams',
+    createdAt: '2023-04-12T11:30:00.000Z',
+    status: 'resolved',
     rating: 5,
-    comments: "Best HIIT class I've ever taken!",
-    createdAt: "2023-06-19T11:30:00Z",
-    anonymous: false,
-    title: "Yoga Class Review"
+    comments: 'Thank you for your feedback!'
+  },
+  {
+    id: '5',
+    title: 'Diet plan suggestions',
+    content: 'The high protein diet plan works well, but I think we could adjust the carbs intake for post-workout days.',
+    type: 'diet-plan',
+    memberId: 'user654',
+    memberName: 'Michael Brown',
+    createdAt: '2023-04-11T14:20:00.000Z',
+    status: 'pending',
+    relatedId: 'diet789'
   }
 ];
 
@@ -97,7 +98,7 @@ interface FeedbackListProps {
   isLoading?: boolean;
 }
 
-const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: FeedbackListProps) => {
+const FeedbackList = ({ feedbacks = mockFeedback, isLoading = false }: FeedbackListProps) => {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
