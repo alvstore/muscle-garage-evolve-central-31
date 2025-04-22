@@ -1,4 +1,14 @@
-import React from 'react';
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import Logo from "@/components/Logo";
+import { memberNavSections } from "@/data/memberNavigation";
+import { useAuth } from "@/hooks/use-auth";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import NavigationSections from "@/components/navigation/NavigationSections";
 
 export interface MemberSidebarContentProps {
   closeSidebar?: () => void;

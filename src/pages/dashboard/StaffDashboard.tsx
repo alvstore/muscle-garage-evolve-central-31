@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, CalendarCheck2, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -13,6 +12,16 @@ import { Announcement } from "@/types/notification";
 import { supabase } from "@/services/supabaseClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useBranch } from "@/hooks/use-branch";
+
+interface StaffProfile {
+  full_name: string;
+  avatar_url: string;
+  phone?: string;
+}
+
+interface MembershipPlan {
+  name: string;
+}
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,10 +48,8 @@ const StaffDashboard = () => {
     setIsLoading(true);
     
     try {
-      // Fetch dashboard summary data based on branch
       const branchFilter = currentBranch?.id ? { branch_id: currentBranch.id } : {};
       
-      // 1. Fetch total members count
       const { count: membersCount, error: membersError } = await supabase
         .from('profiles')
         .select('id', { count: 'exact' })
@@ -51,7 +58,6 @@ const StaffDashboard = () => {
       
       if (membersError) throw membersError;
       
-      // 2. Fetch today's check-ins
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -63,7 +69,6 @@ const StaffDashboard = () => {
       
       if (checkInsError) throw checkInsError;
       
-      // 3. Fetch pending payments
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')
         .select('amount')
@@ -74,7 +79,6 @@ const StaffDashboard = () => {
       
       const pendingPaymentsTotal = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
       
-      // 4. Fetch upcoming renewals
       const oneWeekLater = new Date();
       oneWeekLater.setDate(oneWeekLater.getDate() + 7);
       
@@ -88,7 +92,6 @@ const StaffDashboard = () => {
       
       if (renewalsError) throw renewalsError;
       
-      // 5. Fetch attendance trend (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
@@ -100,10 +103,8 @@ const StaffDashboard = () => {
       
       if (attendanceError) throw attendanceError;
       
-      // Process attendance data into a format that can be used by the chart
       const attendanceTrend = processAttendanceTrend(attendanceData);
       
-      // 6. Fetch recent activities
       const { data: activities, error: activitiesError } = await supabase
         .from('member_attendance')
         .select(`
@@ -118,7 +119,6 @@ const StaffDashboard = () => {
       
       if (activitiesError) throw activitiesError;
       
-      // Format activities
       const formattedActivities = activities.map(activity => ({
         id: activity.id,
         title: "Member Check-in",
@@ -131,7 +131,6 @@ const StaffDashboard = () => {
         type: "check-in"
       }));
       
-      // 7. Fetch pending payments for display
       const { data: pendingPaymentsData, error: pendingPaymentsError } = await supabase
         .from('payments')
         .select(`
@@ -149,7 +148,6 @@ const StaffDashboard = () => {
       
       if (pendingPaymentsError) throw pendingPaymentsError;
       
-      // Format pending payments
       const formattedPendingPayments = pendingPaymentsData.map(payment => ({
         id: payment.id,
         memberId: payment.member_id,
@@ -162,7 +160,6 @@ const StaffDashboard = () => {
         contactInfo: payment.profiles?.phone || 'No phone'
       }));
       
-      // 8. Fetch upcoming renewals for display
       const { data: upcomingRenewalsData, error: upcomingRenewalsError } = await supabase
         .from('member_memberships')
         .select(`
@@ -183,7 +180,6 @@ const StaffDashboard = () => {
       
       if (upcomingRenewalsError) throw upcomingRenewalsError;
       
-      // Format upcoming renewals
       const formattedUpcomingRenewals = upcomingRenewalsData.map(renewal => ({
         id: renewal.id,
         memberName: renewal.profiles?.full_name || 'Unknown Member',
@@ -194,7 +190,6 @@ const StaffDashboard = () => {
         renewalAmount: Number(renewal.total_amount)
       }));
       
-      // 9. Fetch announcements
       const { data: announcementsData, error: announcementsError } = await supabase
         .from('announcements')
         .select(`
@@ -211,23 +206,21 @@ const StaffDashboard = () => {
       
       if (announcementsError) throw announcementsError;
       
-      // Format announcements
       const formattedAnnouncements = announcementsData.map(announcement => ({
         id: announcement.id,
         title: announcement.title,
         content: announcement.content,
         authorId: announcement.created_by,
-        authorName: announcement.profiles?.full_name || 'Staff Member',
+        authorName: (announcement.profiles as StaffProfile)?.full_name || 'Staff Member',
         createdAt: announcement.created_at,
         priority: announcement.priority || 'medium',
         targetRoles: ['member', 'trainer', 'staff'],
-        channels: ['in-app'],
+        channels: ['in-app'] as NotificationChannel[],
         sentCount: 0,
         forRoles: ['member', 'trainer', 'staff'],
         createdBy: announcement.created_by
       }));
       
-      // Update state with all fetched data
       setDashboardData({
         totalMembers: membersCount || 0,
         todayCheckIns: checkInsCount || 0,
@@ -255,7 +248,6 @@ const StaffDashboard = () => {
     }
   };
 
-  // Helper function to process attendance data into a chart-friendly format
   const processAttendanceTrend = (attendanceData) => {
     const days = [];
     const counts = new Array(7).fill(0);
@@ -266,7 +258,6 @@ const StaffDashboard = () => {
       date.setHours(0, 0, 0, 0);
       days.push(formatDate(date));
       
-      // Count check-ins for this day
       for (const attendance of attendanceData) {
         const checkInDate = new Date(attendance.check_in);
         checkInDate.setHours(0, 0, 0, 0);
@@ -283,13 +274,11 @@ const StaffDashboard = () => {
     }));
   };
 
-  // Helper function to format date
-  const formatDate = (date) => {
-    const options = { weekday: 'short' };
+  const formatDate = (date: Date) => {
+    const options = { weekday: 'short' as const };
     return new Intl.DateTimeFormat('en-US', options).format(date);
   };
 
-  // Helper function to format relative time
   const formatRelativeTime = (date) => {
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -15,7 +14,10 @@ import {
   Utensils,
   Target,
   CheckSquare,
-  MessageCircle
+  MessageCircle,
+  CreditCard,
+  BanknoteIcon,
+  WalletIcon
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 import { Permission } from '@/hooks/use-permissions';
@@ -126,6 +128,30 @@ export const staffNavSections: NavSection[] = [
         label: "My Profile", 
         icon: <UserCog2 className="h-4 w-4" />,
         permission: "view_staff" as Permission
+      }
+    ]
+  },
+  {
+    name: "Finance",
+    icon: <WalletIcon className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/finance/invoices", 
+        label: "Invoices", 
+        icon: <FileText className="h-4 w-4" />,
+        permission: "view_invoices" as Permission
+      },
+      { 
+        href: "/finance/transactions", 
+        label: "Transactions", 
+        icon: <CreditCard className="h-4 w-4" />,
+        permission: "manage_transactions" as Permission
+      },
+      { 
+        href: "/finance/income", 
+        label: "Income Records", 
+        icon: <BanknoteIcon className="h-4 w-4" />,
+        permission: "manage_income" as Permission
       }
     ]
   }
