@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -19,7 +18,6 @@ import { WorkoutPlan } from '@/types/workout';
 import { Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Mock data - would be replaced with API calls
 const mockWorkoutPlans: WorkoutPlan[] = [
   {
     id: '1',
@@ -94,7 +92,6 @@ const TrainerWorkoutPlansPage = () => {
   );
   
   const handleCreatePlan = (newPlan: WorkoutPlan) => {
-    // In a real app, this would be an API call
     const planWithIds = {
       ...newPlan,
       id: `plan-${Date.now()}`,
@@ -109,7 +106,6 @@ const TrainerWorkoutPlansPage = () => {
   };
   
   const handleUpdatePlan = (updatedPlan: WorkoutPlan) => {
-    // In a real app, this would be an API call
     const updatedPlans = workoutPlans.map(plan => 
       plan.id === updatedPlan.id ? { ...updatedPlan, updatedAt: new Date().toISOString() } : plan
     );
@@ -120,7 +116,6 @@ const TrainerWorkoutPlansPage = () => {
   };
   
   const handleDeletePlan = (planId: string) => {
-    // In a real app, this would be an API call
     const updatedPlans = workoutPlans.filter(plan => plan.id !== planId);
     setWorkoutPlans(updatedPlans);
     toast.success("Workout plan deleted successfully");
@@ -130,7 +125,13 @@ const TrainerWorkoutPlansPage = () => {
     return (
       <div className="container mx-auto py-6">
         <WorkoutPlanForm 
-          member={{ id: 'default', name: 'New Member', role: 'member', membershipStatus: 'active' }}
+          member={{ 
+            id: 'default', 
+            name: 'New Member', 
+            role: 'member', 
+            membershipStatus: 'active',
+            email: 'default@example.com' 
+          }}
           trainerId={user?.id || 'unknown'}
           onSave={handleCreatePlan}
           onCancel={() => setIsCreatingPlan(false)}
@@ -146,7 +147,13 @@ const TrainerWorkoutPlansPage = () => {
     return (
       <div className="container mx-auto py-6">
         <WorkoutPlanForm
-          member={{ id: planToEdit.memberId || 'default', name: 'Member', role: 'member', membershipStatus: 'active' }}
+          member={{ 
+            id: planToEdit.memberId || 'default', 
+            name: 'Member', 
+            role: 'member', 
+            membershipStatus: 'active',
+            email: 'member@example.com' 
+          }}
           trainerId={user?.id || 'unknown'}
           existingPlan={planToEdit}
           onSave={handleUpdatePlan}

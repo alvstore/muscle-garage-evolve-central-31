@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +8,7 @@ import DietPlanForm from '@/components/fitness/DietPlanForm';
 import { useAuth } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Member } from '@/types';
+import { WorkoutPlan } from '@/types/workout';
 
 const FitnessPlanPage = () => {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ const FitnessPlanPage = () => {
   const mockTrainerId = 'trainer-123';
   
   // Mock handlers for saving plans
-  const handleSaveWorkoutPlan = (plan: any) => {
+  const handleSaveWorkoutPlan = (plan: WorkoutPlan) => {
     console.log('Saving workout plan:', plan);
     // Logic to save workout plan
   };

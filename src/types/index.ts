@@ -99,13 +99,19 @@ export interface MealPlan {
 
 export interface WorkoutPlan {
   id: string;
-  memberId: string;
+  name: string;
+  description?: string;
   trainerId: string;
   workoutDays: WorkoutDay[];
-  notes?: string;
-  isCustom?: boolean;
+  targetGoals?: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  isGlobal: boolean;
   createdAt: string;
   updatedAt: string;
+  memberId: string;
+  createdBy?: string;
+  days?: WorkoutDay[];
+  isCommon?: boolean;
 }
 
 export interface WorkoutDay {
