@@ -13,6 +13,7 @@ import TrainerTaskPage from '@/pages/trainers/TrainerTaskPage';
 import TrainerWorkoutPlansPage from '@/pages/trainers/TrainerWorkoutPlansPage';
 import TrainerPlanAssignmentsPage from '@/pages/trainers/TrainerPlanAssignmentsPage';
 import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
+import TrainerDietPlansPage from '@/pages/trainers/TrainerDietPlansPage';
 
 export const trainerRoutes: RouteObject[] = [
   {
@@ -84,6 +85,22 @@ export const trainerRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TrainerAnnouncementPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/diet-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerDietPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/diet-assignments',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerPlanAssignmentsPage />
       </PrivateRoute>
     )
   }

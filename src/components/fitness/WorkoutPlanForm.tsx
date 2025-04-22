@@ -1,490 +1,370 @@
 
 import React, { useState } from 'react';
-import { WorkoutPlan, WorkoutDay, Exercise } from '@/types/workout';
-import { useAuth } from '@/hooks/use-auth';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Plus, Trash2, ChevronLeft, Save, Dumbbell } from 'lucide-react';
+import { Label } from "@/components/ui/label";
+import { Plus, Trash, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Member, WorkoutPlan, WorkoutDay, Exercise } from "@/types";
+import { v4 as uuidv4 } from 'uuid';
 
 interface WorkoutPlanFormProps {
+  member: Member;
   existingPlan?: WorkoutPlan;
+  trainerId: string;
   onSave: (plan: WorkoutPlan) => void;
   onCancel: () => void;
 }
 
-export const WorkoutPlanForm: React.FC<WorkoutPlanFormProps> = ({
+export function WorkoutPlanForm({
+  member,
   existingPlan,
+  trainerId,
   onSave,
   onCancel
-}) => {
-  const { user } = useAuth();
-  const isEditing = !!existingPlan;
-  
-  const [name, setName] = useState(existingPlan?.name || '');
-  const [description, setDescription] = useState(existingPlan?.description || '');
-  const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>(
-    existingPlan?.difficulty || 'beginner'
-  );
-  const [isGlobal, setIsGlobal] = useState(existingPlan?.isGlobal || false);
-  const [targetGoals, setTargetGoals] = useState<string[]>(existingPlan?.targetGoals || []);
-  const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>(existingPlan?.workoutDays || [
-    {
-      id: `day-${Date.now()}`,
-      name: 'Day 1',
-      exercises: []
-    }
-  ]);
-  
-  const availableGoals = [
-    'Strength', 'Muscle Gain', 'Weight Loss', 'Endurance', 
-    'Flexibility', 'Cardiovascular Health', 'Core Strength'
-  ];
-  
+}: WorkoutPlanFormProps) {
+  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'createdAt' | 'updatedAt'>>({
+    name: existingPlan?.name || '',
+    description: existingPlan?.description || '',
+    trainerId,
+    workoutDays: existingPlan?.workoutDays || [createEmptyWorkoutDay()],
+    targetGoals: existingPlan?.targetGoals || [],
+    difficulty: existingPlan?.difficulty || 'beginner',
+    isGlobal: existingPlan?.isGlobal || false,
+    memberId: existingPlan?.memberId || member.id
+  });
+
+  function createEmptyWorkoutDay(): WorkoutDay {
+    return {
+      id: uuidv4(),
+      name: '',
+      description: '',
+      exercises: [createEmptyExercise()]
+    };
+  }
+
+  function createEmptyExercise(): Exercise {
+    return {
+      id: uuidv4(),
+      name: '',
+      sets: 3,
+      reps: 10
+    };
+  }
+
   const handleAddWorkoutDay = () => {
-    setWorkoutDays([
-      ...workoutDays, 
-      {
-        id: `day-${Date.now()}`,
-        name: `Day ${workoutDays.length + 1}`,
-        exercises: []
-      }
-    ]);
+    setFormData({
+      ...formData,
+      workoutDays: [...formData.workoutDays, createEmptyWorkoutDay()]
+    });
   };
-  
-  const handleRemoveWorkoutDay = (dayId: string) => {
-    setWorkoutDays(workoutDays.filter(day => day.id !== dayId));
+
+  const handleRemoveWorkoutDay = (index: number) => {
+    setFormData({
+      ...formData,
+      workoutDays: formData.workoutDays.filter((_, i) => i !== index)
+    });
   };
-  
-  const handleAddExercise = (dayId: string) => {
-    setWorkoutDays(workoutDays.map(day => {
-      if (day.id === dayId) {
-        return {
-          ...day,
-          exercises: [
-            ...day.exercises,
-            {
-              id: `exercise-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              name: '',
-              sets: 3,
-              reps: 10
-            }
-          ]
-        };
-      }
-      return day;
-    }));
+
+  const handleWorkoutDayChange = (index: number, field: keyof WorkoutDay, value: any) => {
+    const updatedWorkoutDays = [...formData.workoutDays];
+    updatedWorkoutDays[index] = {
+      ...updatedWorkoutDays[index],
+      [field]: value
+    };
+    setFormData({
+      ...formData,
+      workoutDays: updatedWorkoutDays
+    });
   };
-  
-  const handleRemoveExercise = (dayId: string, exerciseId: string) => {
-    setWorkoutDays(workoutDays.map(day => {
-      if (day.id === dayId) {
-        return {
-          ...day,
-          exercises: day.exercises.filter(ex => ex.id !== exerciseId)
-        };
-      }
-      return day;
-    }));
+
+  const handleAddExercise = (dayIndex: number) => {
+    const updatedWorkoutDays = [...formData.workoutDays];
+    updatedWorkoutDays[dayIndex] = {
+      ...updatedWorkoutDays[dayIndex],
+      exercises: [...updatedWorkoutDays[dayIndex].exercises, createEmptyExercise()]
+    };
+    setFormData({
+      ...formData,
+      workoutDays: updatedWorkoutDays
+    });
   };
-  
-  const handleUpdateExercise = (dayId: string, exerciseId: string, field: keyof Exercise, value: any) => {
-    setWorkoutDays(workoutDays.map(day => {
-      if (day.id === dayId) {
-        return {
-          ...day,
-          exercises: day.exercises.map(ex => {
-            if (ex.id === exerciseId) {
-              return {
-                ...ex,
-                [field]: value
-              };
-            }
-            return ex;
-          })
-        };
-      }
-      return day;
-    }));
+
+  const handleRemoveExercise = (dayIndex: number, exerciseIndex: number) => {
+    const updatedWorkoutDays = [...formData.workoutDays];
+    updatedWorkoutDays[dayIndex] = {
+      ...updatedWorkoutDays[dayIndex],
+      exercises: updatedWorkoutDays[dayIndex].exercises.filter((_, i) => i !== exerciseIndex)
+    };
+    setFormData({
+      ...formData,
+      workoutDays: updatedWorkoutDays
+    });
   };
-  
-  const handleUpdateWorkoutDay = (dayId: string, field: keyof WorkoutDay, value: string) => {
-    setWorkoutDays(workoutDays.map(day => {
-      if (day.id === dayId) {
-        return {
-          ...day,
-          [field]: value
-        };
-      }
-      return day;
-    }));
+
+  const handleExerciseChange = (dayIndex: number, exerciseIndex: number, field: keyof Exercise, value: any) => {
+    const updatedWorkoutDays = [...formData.workoutDays];
+    const updatedExercises = [...updatedWorkoutDays[dayIndex].exercises];
+    updatedExercises[exerciseIndex] = {
+      ...updatedExercises[exerciseIndex],
+      [field]: value
+    };
+    updatedWorkoutDays[dayIndex] = {
+      ...updatedWorkoutDays[dayIndex],
+      exercises: updatedExercises
+    };
+    setFormData({
+      ...formData,
+      workoutDays: updatedWorkoutDays
+    });
   };
-  
-  const handleToggleGoal = (goal: string) => {
-    if (targetGoals.includes(goal)) {
-      setTargetGoals(targetGoals.filter(g => g !== goal));
-    } else {
-      setTargetGoals([...targetGoals, goal]);
-    }
-  };
-  
-  const handleSave = () => {
-    // Validate
-    if (!name.trim()) {
-      alert('Please enter a name for the workout plan');
-      return;
-    }
-    
-    if (workoutDays.some(day => !day.name.trim())) {
-      alert('All workout days must have a name');
-      return;
-    }
-    
-    if (workoutDays.some(day => 
-      day.exercises.some(ex => !ex.name.trim() || ex.sets <= 0 || ex.reps <= 0)
-    )) {
-      alert('All exercises must have a name, sets, and reps');
-      return;
-    }
-    
-    const newPlan: WorkoutPlan = {
-      id: existingPlan?.id || `plan-${Date.now()}`,
-      name,
-      description,
-      trainerId: user?.id || 'unknown',
-      workoutDays,
-      targetGoals,
-      difficulty,
-      isGlobal,
+
+  const handleSubmit = () => {
+    const finalPlan: WorkoutPlan = {
+      id: existingPlan?.id || uuidv4(),
+      name: formData.name,
+      description: formData.description,
+      trainerId,
+      workoutDays: formData.workoutDays,
+      targetGoals: formData.targetGoals,
+      difficulty: formData.difficulty,
+      isGlobal: formData.isGlobal,
       createdAt: existingPlan?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      memberId: formData.memberId
     };
     
-    onSave(newPlan);
+    onSave(finalPlan);
   };
-  
+
   return (
-    <div>
-      <div className="flex items-center mb-6">
-        <Button variant="ghost" onClick={onCancel} className="mr-4">
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{isEditing ? 'Edit Workout Plan' : 'Create Workout Plan'}</h1>
-          <p className="text-muted-foreground">
-            {isEditing ? 'Modify the existing workout plan' : 'Create a new workout plan for your members'}
-          </p>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>{existingPlan ? 'Edit Workout Plan' : 'Create New Workout Plan'}</CardTitle>
+            <CardDescription>
+              {existingPlan 
+                ? `Modify workout plan for ${member.name}` 
+                : `Create a new workout plan for ${member.name}`}
+            </CardDescription>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plan Details</CardTitle>
-              <CardDescription>Basic information about the workout plan</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="plan-name">Plan Name *</Label>
-                <Input 
-                  id="plan-name" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="e.g., Full Body Strength" 
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="plan-description">Description</Label>
-                <Textarea 
-                  id="plan-description" 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)} 
-                  placeholder="Describe the workout plan..."
-                  rows={4}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Difficulty Level *</Label>
-                <RadioGroup 
-                  value={difficulty} 
-                  onValueChange={(value) => setDifficulty(value as 'beginner' | 'intermediate' | 'advanced')}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="beginner" id="beginner" />
-                    <Label htmlFor="beginner">Beginner</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="intermediate" id="intermediate" />
-                    <Label htmlFor="intermediate">Intermediate</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="advanced" id="advanced" />
-                    <Label htmlFor="advanced">Advanced</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Target Goals</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableGoals.map((goal) => (
-                    <div key={goal} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`goal-${goal}`} 
-                        checked={targetGoals.includes(goal)}
-                        onCheckedChange={() => handleToggleGoal(goal)}
-                      />
-                      <Label htmlFor={`goal-${goal}`}>{goal}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="global-plan" 
-                    checked={isGlobal}
-                    onCheckedChange={(checked) => setIsGlobal(!!checked)}
-                  />
-                  <Label htmlFor="global-plan">Make this plan available to all trainers</Label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <Label htmlFor="plan-name">Plan Name</Label>
+            <Input
+              id="plan-name"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              placeholder="e.g., 12-Week Strength Program"
+            />
+          </div>
+          <div>
+            <Label htmlFor="plan-description">Description</Label>
+            <Textarea
+              id="plan-description"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Describe the workout plan and its goals"
+              rows={3}
+            />
+          </div>
+          <div>
+            <Label htmlFor="plan-difficulty">Difficulty Level</Label>
+            <Select 
+              value={formData.difficulty} 
+              onValueChange={(value) => setFormData({...formData, difficulty: value as 'beginner' | 'intermediate' | 'advanced'})}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Workout Days</CardTitle>
-                  <CardDescription>Define the exercises for each day of the workout</CardDescription>
-                </div>
-                <Button onClick={handleAddWorkoutDay} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Day
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue={workoutDays[0]?.id}>
-                <TabsList className="mb-4 flex flex-wrap">
-                  {workoutDays.map((day, index) => (
-                    <TabsTrigger key={day.id} value={day.id} className="relative pr-8">
-                      Day {index + 1}
-                      {workoutDays.length > 1 && (
-                        <button
-                          className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveWorkoutDay(day.id);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                
-                {workoutDays.map((day) => (
-                  <TabsContent key={day.id} value={day.id} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`day-name-${day.id}`}>Day Name *</Label>
-                      <Input 
-                        id={`day-name-${day.id}`} 
-                        value={day.name} 
-                        onChange={(e) => handleUpdateWorkoutDay(day.id, 'name', e.target.value)} 
-                        placeholder="e.g., Upper Body, Legs Day, etc." 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`day-description-${day.id}`}>Description</Label>
-                      <Textarea 
-                        id={`day-description-${day.id}`} 
-                        value={day.description || ''} 
-                        onChange={(e) => handleUpdateWorkoutDay(day.id, 'description', e.target.value)} 
-                        placeholder="Describe this workout day..."
-                        rows={2}
-                      />
-                    </div>
-                    
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Workout Days</h3>
+            <Button size="sm" onClick={handleAddWorkoutDay}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Workout Day
+            </Button>
+          </div>
+
+          {formData.workoutDays.map((day, dayIndex) => (
+            <Card key={day.id} className="border border-gray-200">
+              <CardHeader className="py-3 px-4 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <div className="grid grid-cols-1 gap-2 flex-1">
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <Label>Exercises</Label>
-                        <Button 
-                          onClick={() => handleAddExercise(day.id)} 
-                          size="sm" 
-                          variant="outline"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Exercise
-                        </Button>
-                      </div>
-                      
-                      {day.exercises.length === 0 ? (
-                        <div className="text-center py-8 border rounded-md bg-muted/40">
-                          <Dumbbell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground">No exercises added yet</p>
-                          <Button 
-                            onClick={() => handleAddExercise(day.id)} 
-                            variant="outline" 
-                            className="mt-2"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Exercise
-                          </Button>
-                        </div>
-                      ) : (
-                        <Accordion type="multiple" className="w-full">
-                          {day.exercises.map((exercise, index) => (
-                            <AccordionItem key={exercise.id} value={exercise.id}>
-                              <AccordionTrigger className="hover:no-underline">
-                                <div className="flex items-center">
-                                  <span className="text-muted-foreground mr-2">{index + 1}.</span>
-                                  {exercise.name || 'Unnamed Exercise'}
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="space-y-4 pt-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`exercise-name-${exercise.id}`}>Exercise Name *</Label>
-                                    <Input 
-                                      id={`exercise-name-${exercise.id}`} 
-                                      value={exercise.name} 
-                                      onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'name', e.target.value)} 
-                                      placeholder="e.g., Bench Press" 
-                                    />
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`exercise-sets-${exercise.id}`}>Sets *</Label>
-                                      <Input 
-                                        id={`exercise-sets-${exercise.id}`} 
-                                        type="number" 
-                                        value={exercise.sets} 
-                                        onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'sets', parseInt(e.target.value))} 
-                                        min="1"
-                                      />
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`exercise-reps-${exercise.id}`}>Reps *</Label>
-                                      <Input 
-                                        id={`exercise-reps-${exercise.id}`} 
-                                        type="number" 
-                                        value={exercise.reps} 
-                                        onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'reps', parseInt(e.target.value))} 
-                                        min="1"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`exercise-weight-${exercise.id}`}>Weight (optional)</Label>
-                                    <Input 
-                                      id={`exercise-weight-${exercise.id}`} 
-                                      value={exercise.weight || ''} 
-                                      onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'weight', e.target.value)} 
-                                      placeholder="e.g., 50kg or 'Body Weight'" 
-                                    />
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`exercise-rest-${exercise.id}`}>Rest Time (optional)</Label>
-                                    <Input 
-                                      id={`exercise-rest-${exercise.id}`} 
-                                      value={exercise.restTime || ''} 
-                                      onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'restTime', e.target.value)} 
-                                      placeholder="e.g., 60 seconds" 
-                                    />
-                                  </div>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <Label htmlFor={`exercise-notes-${exercise.id}`}>Notes (optional)</Label>
-                                  <Textarea 
-                                    id={`exercise-notes-${exercise.id}`} 
-                                    value={exercise.notes || ''} 
-                                    onChange={(e) => handleUpdateExercise(day.id, exercise.id, 'notes', e.target.value)} 
-                                    placeholder="Additional instructions for this exercise..." 
-                                    rows={2}
-                                  />
-                                </div>
-                                
-                                <div className="text-right">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleRemoveExercise(day.id, exercise.id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Remove Exercise
-                                  </Button>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
-                      )}
+                      <Label htmlFor={`day-name-${dayIndex}`}>Day Name</Label>
+                      <Input
+                        id={`day-name-${dayIndex}`}
+                        placeholder="e.g., Upper Body, Leg Day, etc."
+                        value={day.name}
+                        onChange={(e) => handleWorkoutDayChange(dayIndex, 'name', e.target.value)}
+                      />
                     </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveWorkoutDay(dayIndex)}
+                    className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor={`day-description-${dayIndex}`}>Description</Label>
+                    <Textarea
+                      id={`day-description-${dayIndex}`}
+                      placeholder="Details about this workout day"
+                      value={day.description || ''}
+                      onChange={(e) => handleWorkoutDayChange(dayIndex, 'description', e.target.value)}
+                      rows={2}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Exercises</Label>
+                      <Button size="sm" variant="outline" onClick={() => handleAddExercise(dayIndex)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Exercise
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {day.exercises.map((exercise, exerciseIndex) => (
+                        <div key={exercise.id} className="grid grid-cols-1 gap-2 p-3 border rounded-md">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <Label htmlFor={`exercise-name-${dayIndex}-${exerciseIndex}`}>Exercise Name</Label>
+                              <Input
+                                id={`exercise-name-${dayIndex}-${exerciseIndex}`}
+                                placeholder="e.g., Bench Press, Squat, etc."
+                                value={exercise.name}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'name', e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveExercise(dayIndex, exerciseIndex)}
+                              className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div>
+                              <Label htmlFor={`exercise-sets-${dayIndex}-${exerciseIndex}`}>Sets</Label>
+                              <Input
+                                id={`exercise-sets-${dayIndex}-${exerciseIndex}`}
+                                type="number"
+                                min="1"
+                                value={exercise.sets}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'sets', parseInt(e.target.value))}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`exercise-reps-${dayIndex}-${exerciseIndex}`}>Reps</Label>
+                              <Input
+                                id={`exercise-reps-${dayIndex}-${exerciseIndex}`}
+                                type="number"
+                                min="1"
+                                value={exercise.reps}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'reps', parseInt(e.target.value))}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div>
+                              <Label htmlFor={`exercise-weight-${dayIndex}-${exerciseIndex}`}>Weight (optional)</Label>
+                              <Input
+                                id={`exercise-weight-${dayIndex}-${exerciseIndex}`}
+                                placeholder="e.g., 50kg, Body weight"
+                                value={exercise.weight || ''}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'weight', e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`exercise-rest-${dayIndex}-${exerciseIndex}`}>Rest Time (optional)</Label>
+                              <Input
+                                id={`exercise-rest-${dayIndex}-${exerciseIndex}`}
+                                placeholder="e.g., 60 seconds"
+                                value={exercise.restTime || ''}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'restTime', e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2">
+                            <Label htmlFor={`exercise-notes-${dayIndex}-${exerciseIndex}`}>Notes (optional)</Label>
+                            <Textarea
+                              id={`exercise-notes-${dayIndex}-${exerciseIndex}`}
+                              placeholder="Additional instructions or tips"
+                              value={exercise.notes || ''}
+                              onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'notes', e.target.value)}
+                              rows={2}
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </div>
-      
-      <div className="flex justify-end mt-6 space-x-2">
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="workout-plan-global"
+            checked={formData.isGlobal}
+            onChange={(e) => setFormData({...formData, isGlobal: e.target.checked})}
+            className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+          <Label htmlFor="workout-plan-global" className="cursor-pointer">
+            Make this a global template (available to all trainers)
+          </Label>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSave}>
-          <Save className="h-4 w-4 mr-1" />
-          {isEditing ? 'Update Plan' : 'Create Plan'}
+        <Button onClick={handleSubmit} disabled={!formData.name}>
+          {existingPlan ? 'Update Plan' : 'Create Plan'}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
-};
+}
