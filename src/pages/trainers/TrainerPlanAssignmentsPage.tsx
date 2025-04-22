@@ -85,7 +85,8 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     difficulty: 'beginner',
     isGlobal: true,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    memberId: 'default' // Added memberId
   },
   {
     id: '2',
@@ -114,7 +115,8 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     difficulty: 'intermediate',
     isGlobal: true,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    memberId: 'default' // Added memberId
   }
 ];
 

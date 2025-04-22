@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -319,8 +318,8 @@ export function WorkoutPlanForm({
                               <Input
                                 id={`exercise-rest-${dayIndex}-${exerciseIndex}`}
                                 placeholder="e.g., 60 seconds"
-                                value={exercise.restTime || ''}
-                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'restTime', e.target.value)}
+                                value={exercise.rest || ''}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, 'rest', e.target.value)}
                                 className="mt-1"
                               />
                             </div>

@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationSections from "@/components/navigation/NavigationSections";
+import { NavSection } from "@/types/navigation";
 
 interface TrainerSidebarContentProps {
   closeSidebar?: () => void;
@@ -20,6 +21,17 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
   const { logout } = useAuth();
   
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
+
+  // Convert trainerNavSections to match NavSection interface
+  const navSections: NavSection[] = trainerNavSections.map(section => ({
+    name: section.name,
+    items: section.links.map(link => ({
+      href: link.href,
+      label: link.title,
+      icon: link.icon,
+      permission: 'read' // Default permission
+    }))
+  }));
 
   const toggleSection = (sectionName: string) => {
     if (expandedSections.includes(sectionName)) {
@@ -52,7 +64,7 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
       
       <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
         <NavigationSections
-          sections={trainerNavSections}
+          sections={navSections}
           expandedSections={expandedSections}
           toggleSection={toggleSection}
           onLinkClick={closeSidebar}

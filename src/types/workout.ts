@@ -15,6 +15,7 @@ export interface Exercise {
   reps: number;
   weight?: number;
   rest?: number;
+  restTime?: string; // Added restTime property
   notes?: string;
   mediaUrl?: string;
   muscleGroupTag?: string;
@@ -56,4 +57,16 @@ export interface MemberWorkout {
   customDays?: WorkoutDay[];
   assignedBy: string;
   assignedAt: string;
+}
+
+// Add WorkoutAssignment interface
+export interface WorkoutAssignment {
+  id: string;
+  planId: string;
+  memberId: string;
+  trainerId: string;
+  assignedAt: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
 }
