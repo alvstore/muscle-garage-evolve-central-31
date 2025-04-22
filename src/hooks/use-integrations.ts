@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import integrationService, { IntegrationConfig } from '@/services/integrationService';
 
@@ -60,8 +59,8 @@ export const useIntegrations = (integrationName?: string) => {
   // Toggle an integration on/off
   const toggleIntegration = useCallback((name: string, enable: boolean) => {
     const success = enable 
-      ? integrationService.enableIntegration(name)
-      : integrationService.disableIntegration(name);
+      ? integrationService.enable(name)
+      : integrationService.disable(name);
     
     if (success) {
       setConfigs(prev => ({
@@ -78,7 +77,7 @@ export const useIntegrations = (integrationName?: string) => {
   
   // Test an integration's connection
   const testIntegration = useCallback(async (name: string) => {
-    return await integrationService.testIntegration(name);
+    return await integrationService.test(name);
   }, []);
   
   // Reset an integration to default settings
@@ -97,7 +96,7 @@ export const useIntegrations = (integrationName?: string) => {
   
   // If a specific integration was requested, return only that config
   if (integrationName) {
-    const config = configs[integrationName] || { enabled: false };
+    const config = configs[integrationName] || integrationService.getConfig(integrationName);
     
     return {
       isLoading,

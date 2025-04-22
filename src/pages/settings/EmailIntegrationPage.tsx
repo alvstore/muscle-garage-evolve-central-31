@@ -23,7 +23,13 @@ const EmailIntegrationPage = () => {
   };
 
   const handleSave = async () => {
-    const success = updateConfig(pendingChanges);
+    // Make sure to include the required fields
+    const updatedConfig: Partial<IntegrationConfig> = {
+      ...pendingChanges,
+      provider: (pendingChanges.provider || config.provider)
+    };
+    
+    const success = updateConfig(updatedConfig);
     
     if (success) {
       toast.success("Email settings saved successfully");
@@ -42,10 +48,11 @@ const EmailIntegrationPage = () => {
     }
   };
 
-  // Merge pending changes with current config for UI display
-  const displayConfig = {
+  // Merge pending changes with current config for UI display, ensuring provider is always defined
+  const displayConfig: IntegrationConfig = {
     ...config,
-    ...pendingChanges
+    ...pendingChanges,
+    provider: (pendingChanges.provider || config.provider)
   };
 
   return (

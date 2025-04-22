@@ -18,6 +18,11 @@ export interface IntegrationConfig {
   customApiHeaders?: string;
   customApiMethod?: "GET" | "POST";
   customApiParams?: string;
+  // WhatsApp specific fields
+  apiToken?: string;
+  phoneNumberId?: string;
+  businessAccountId?: string;
+  notifications?: any;
   // Other properties
   [key: string]: any;
 }
@@ -48,6 +53,19 @@ const integrationService = {
           otpVerification: true,
           attendanceConfirmation: false
         }
+      },
+      whatsapp: {
+        enabled: false,
+        provider: 'meta',
+        apiToken: '',
+        phoneNumberId: '',
+        businessAccountId: '',
+        notifications: {
+          sendWelcomeMessages: true,
+          sendClassReminders: true,
+          sendRenewalReminders: true,
+          sendBirthdayGreetings: false
+        }
       }
     };
     
@@ -60,6 +78,15 @@ const integrationService = {
         otpVerification: false,
         attendanceConfirmation: false
       }
+    };
+  },
+  
+  getAllIntegrations: (): Record<string, IntegrationConfig> => {
+    // In a real app, this would fetch all integrations from API/database
+    return {
+      sms: integrationService.getConfig('sms'),
+      email: integrationService.getConfig('email'),
+      whatsapp: integrationService.getConfig('whatsapp')
     };
   },
   
@@ -81,13 +108,35 @@ const integrationService = {
     };
   },
   
+  // Alias for test for backward compatibility
+  testIntegration: async (type: string): Promise<{ success: boolean, message: string }> => {
+    return integrationService.test(type);
+  },
+  
   enable: (type: string): boolean => {
     console.log(`Enabling ${type} integration`);
     return true;
   },
   
+  // Alias for enable for backward compatibility
+  enableIntegration: (type: string): boolean => {
+    return integrationService.enable(type);
+  },
+  
   disable: (type: string): boolean => {
     console.log(`Disabling ${type} integration`);
+    return true;
+  },
+  
+  // Alias for disable for backward compatibility
+  disableIntegration: (type: string): boolean => {
+    return integrationService.disable(type);
+  },
+  
+  // New method to reset integration to default settings
+  resetIntegration: (type: string): boolean => {
+    console.log(`Resetting ${type} integration to defaults`);
+    // In a real app, this would reset to default settings in API/database
     return true;
   }
 };

@@ -17,7 +17,12 @@ export const NotificationSettings = ({
   onUpdateConfig,
   onSave
 }: NotificationSettingsProps) => {
-  const templates = config.templates || {};
+  const templates = config.templates || {
+    membershipAlert: false,
+    renewalReminder: false,
+    otpVerification: false,
+    attendanceConfirmation: false
+  };
 
   const handleTemplateChange = (key: string, value: boolean) => {
     onUpdateConfig({

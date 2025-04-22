@@ -1,5 +1,6 @@
+
 import { supabase } from '@/services/supabaseClient';
-import { Invoice, InvoiceItem } from '@/types/finance';
+import { Invoice, InvoiceItem, InvoiceStatus } from '@/types/finance';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,7 +17,7 @@ export const invoiceService = {
     amount: number;
     description: string;
     dueDate: Date;
-    status: string;
+    status: InvoiceStatus;
     items: Array<{
       description: string;
       quantity: number;
