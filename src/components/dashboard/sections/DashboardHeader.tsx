@@ -40,12 +40,29 @@ const DashboardHeader = ({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      toast.info(`Searching for: ${searchQuery}`);
+      // Enhanced search functionality for staff
+      const lowerQuery = searchQuery.toLowerCase();
+      if (lowerQuery.includes('member') || lowerQuery.includes('customer')) {
+        navigate('/members');
+        toast.info(`Searching for members with query: ${searchQuery}`);
+      } else if (lowerQuery.includes('diet')) {
+        navigate('/fitness/diet-plans');
+        toast.info(`Searching for diet plans with query: ${searchQuery}`);
+      } else if (lowerQuery.includes('workout')) {
+        navigate('/fitness/workout-plans');
+        toast.info(`Searching for workout plans with query: ${searchQuery}`);
+      } else if (lowerQuery.includes('invoice')) {
+        navigate('/finance/invoices');
+        toast.info(`Searching for invoices with query: ${searchQuery}`);
+      } else {
+        toast.info(`Searching for: ${searchQuery}`);
+      }
     }
   };
 
-  // Check if user is a member
+  // Check if user is a member or staff
   const isMember = user?.role === 'member';
+  const isStaff = user?.role === 'staff';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4">
@@ -72,7 +89,7 @@ const DashboardHeader = ({
             <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
               <Input
                 type="search"
-                placeholder="Search..."
+                placeholder="Search members, plans, invoices..."
                 className="w-64 pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -90,7 +107,7 @@ const DashboardHeader = ({
                 <form onSubmit={handleSearch} className="flex items-center relative">
                   <Input
                     type="search"
-                    placeholder="Search..."
+                    placeholder="Search members, plans, invoices..."
                     className="w-full pl-8"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -133,8 +150,8 @@ const DashboardHeader = ({
             <DropdownMenuItem onClick={() => navigate("/profile")}>
               Profile
             </DropdownMenuItem>
-            {/* Only show settings for non-member users */}
-            {!isMember && (
+            {/* Only show settings for admin users, not staff or members */}
+            {user?.role === 'admin' && (
               <DropdownMenuItem onClick={() => navigate("/settings")}>
                 Settings
               </DropdownMenuItem>

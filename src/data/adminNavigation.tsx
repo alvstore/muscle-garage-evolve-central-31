@@ -1,10 +1,10 @@
+
 import React from 'react';
 import {
   BarChart3,
   Users,
   CalendarDays,
   CreditCard,
-  Settings,
   Dumbbell,
   UserCircle,
   Briefcase,
@@ -183,6 +183,12 @@ export const adminNavSections: NavSection[] = [
         icon: <Dumbbell className="h-5 w-5" />,
         permission: "manage_fitness_data" as Permission,
       },
+      {
+        href: "/fitness/diet-plans",
+        label: "Diet Plans",
+        icon: <FileText className="h-5 w-5" />,
+        permission: "manage_fitness_data" as Permission,
+      },
     ],
   },
   {
@@ -256,44 +262,6 @@ export const adminNavSections: NavSection[] = [
           }
         ]
       },
-    ],
-  },
-  {
-    name: "Settings",
-    items: [
-      {
-        href: "/settings",
-        label: "System Settings",
-        icon: <Settings className="h-5 w-5" />,
-        permission: "manage_settings" as Permission,
-        children: [
-          {
-            href: "/settings/branches",
-            label: "Branch Management",
-            permission: "manage_branches" as Permission,
-          },
-          {
-            href: "/settings/branches/devices",
-            label: "Device Mapping",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations",
-            label: "Integrations",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/email",
-            label: "Email Integration",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/sms",
-            label: "SMS Integration",
-            permission: "manage_integrations" as Permission,
-          },
-        ],
-      }
     ],
   },
 ];
