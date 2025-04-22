@@ -1,322 +1,125 @@
-import { useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
+import React from 'react';
+import { Container } from "@/components/ui/container";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
+import { ArrowRight, Bell, ChevronRight, CreditCard, Layers, MessageCircle, Settings, Shield } from "lucide-react";
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { usePermissions } from '@/hooks/use-permissions';
-import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
-import PushNotificationManager from '@/components/integrations/PushNotificationManager';
-import RazorpayWebhookConfig from '@/components/integrations/RazorpayWebhookConfig';
+import { Link } from 'react-router-dom';
+
+interface IntegrationCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  link: string;
+  status: "configured" | "not-configured" | "partially-configured";
+}
+
+const IntegrationCard: React.FC<IntegrationCardProps> = ({
+  title,
+  description,
+  icon,
+  link,
+  status
+}) => {
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="p-2 rounded-md bg-primary/10">
+            {icon}
+          </div>
+          <div className={`text-xs px-2 py-1 rounded-full ${
+            status === "configured" 
+              ? "bg-green-100 text-green-800" 
+              : status === "partially-configured" 
+                ? "bg-amber-100 text-amber-800"
+                : "bg-slate-100 text-slate-800"
+          }`}>
+            {status === "configured" 
+              ? "Configured" 
+              : status === "partially-configured" 
+                ? "Partially Configured"
+                : "Not Configured"}
+          </div>
+        </div>
+        <CardTitle className="text-lg mt-3">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardFooter className="pt-1 pb-4">
+        <Button asChild variant="ghost" className="w-full justify-between">
+          <Link to={link}>
+            Configure
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
 
 const IntegrationsPage = () => {
-  const { can } = usePermissions();
-  const [activeTab, setActiveTab] = useState('access-control');
-  
-  // Hikvision settings
-  const [hikvisionSettings, setHikvisionSettings] = useState({
-    apiUrl: '',
-    username: '',
-    password: '',
-    enabled: false
-  });
-  
-  // Razorpay settings
-  const [razorpaySettings, setRazorpaySettings] = useState({
-    apiKey: '',
-    secretKey: '',
-    enabled: true
-  });
-  
-  // Messaging settings
-  const [messagingSettings, setMessagingSettings] = useState({
-    whatsappEnabled: true,
-    smsEnabled: true,
-    emailEnabled: true,
-    pushEnabled: true,
-    whatsappApiKey: '',
-    smsApiKey: '',
-    emailApiKey: ''
-  });
-  
-  const handleSaveHikvisionSettings = () => {
-    // In a real app, this would save settings to backend
-    toast.success('Hikvision settings saved successfully');
-  };
-  
-  const handleSaveRazorpaySettings = () => {
-    // In a real app, this would save settings to backend
-    toast.success('Razorpay settings saved successfully');
-  };
-  
-  const handleSaveMessagingSettings = () => {
-    // In a real app, this would save settings to backend
-    toast.success('Messaging settings saved successfully');
-  };
-  
-  if (!can('manage_branches')) {
-    return (
-      <Container>
-        <div className="py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Unauthorized Access</h1>
-          <p className="text-muted-foreground">
-            You don't have permission to access integration settings.
-          </p>
-        </div>
-      </Container>
-    );
-  }
-  
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Integration Settings</h1>
+        <Breadcrumb className="mb-6">
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/settings">
+              <Settings className="h-4 w-4 mr-1" />
+              Settings
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/settings/integrations" isCurrentPage>
+              <Layers className="h-4 w-4 mr-1" />
+              Integration Settings
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
+
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Integration Settings</h1>
+            <p className="text-muted-foreground">Configure third-party integrations and services</p>
+          </div>
+        </div>
         
-        <Tabs defaultValue="access-control" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="access-control">Access Control</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>
-            <TabsTrigger value="messaging">Messaging</TabsTrigger>
-            <TabsTrigger value="notifications">Push Notifications</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <IntegrationCard
+            title="Access Control"
+            description="Configure Hikvision access control integration"
+            icon={<Shield className="h-5 w-5 text-primary" />}
+            link="/settings/integrations/access-control"
+            status="configured"
+          />
           
-          <TabsContent value="access-control">
-            <div className="grid gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Hikvision Access Control Settings</CardTitle>
-                  <CardDescription>
-                    Configure your Hikvision access control system integration
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="hikvision-enabled">Enable Hikvision Integration</Label>
-                      <Switch
-                        id="hikvision-enabled"
-                        checked={hikvisionSettings.enabled}
-                        onCheckedChange={(checked) => 
-                          setHikvisionSettings({...hikvisionSettings, enabled: checked})
-                        }
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="hikvision-api-url">API URL</Label>
-                      <Input
-                        id="hikvision-api-url"
-                        placeholder="https://your-hikvision-controller-ip"
-                        value={hikvisionSettings.apiUrl}
-                        onChange={(e) => 
-                          setHikvisionSettings({...hikvisionSettings, apiUrl: e.target.value})
-                        }
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="hikvision-username">Username</Label>
-                      <Input
-                        id="hikvision-username"
-                        value={hikvisionSettings.username}
-                        onChange={(e) => 
-                          setHikvisionSettings({...hikvisionSettings, username: e.target.value})
-                        }
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="hikvision-password">Password</Label>
-                      <Input
-                        id="hikvision-password"
-                        type="password"
-                        value={hikvisionSettings.password}
-                        onChange={(e) => 
-                          setHikvisionSettings({...hikvisionSettings, password: e.target.value})
-                        }
-                      />
-                    </div>
-                    
-                    <Button onClick={handleSaveHikvisionSettings}>
-                      Save Hikvision Settings
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <HikvisionWebhookHandler />
-            </div>
-          </TabsContent>
+          <IntegrationCard
+            title="Payment Gateways"
+            description="Configure payment providers like Razorpay"
+            icon={<CreditCard className="h-5 w-5 text-primary" />}
+            link="/settings/integrations/payment"
+            status="partially-configured"
+          />
           
-          <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Razorpay Payment Gateway Settings</CardTitle>
-                <CardDescription>
-                  Configure your Razorpay payment gateway integration
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="razorpay-enabled">Enable Razorpay Integration</Label>
-                    <Switch
-                      id="razorpay-enabled"
-                      checked={razorpaySettings.enabled}
-                      onCheckedChange={(checked) => 
-                        setRazorpaySettings({...razorpaySettings, enabled: checked})
-                      }
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="razorpay-api-key">API Key (Public Key)</Label>
-                    <Input
-                      id="razorpay-api-key"
-                      value={razorpaySettings.apiKey}
-                      onChange={(e) => 
-                        setRazorpaySettings({...razorpaySettings, apiKey: e.target.value})
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your Razorpay API key (starts with 'rzp_test_' or 'rzp_live_')
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="razorpay-secret-key">Secret Key</Label>
-                    <Input
-                      id="razorpay-secret-key"
-                      type="password"
-                      value={razorpaySettings.secretKey}
-                      onChange={(e) => 
-                        setRazorpaySettings({...razorpaySettings, secretKey: e.target.value})
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This will be securely stored and only used on the server
-                    </p>
-                  </div>
-                  
-                  <Button onClick={handleSaveRazorpaySettings}>
-                    Save Razorpay Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <IntegrationCard
+            title="Messaging Services"
+            description="Configure SMS and WhatsApp integrations"
+            icon={<MessageCircle className="h-5 w-5 text-primary" />}
+            link="/settings/integrations/messaging"
+            status="partially-configured"
+          />
           
-          <TabsContent value="webhooks">
-            <RazorpayWebhookConfig />
-          </TabsContent>
-          
-          <TabsContent value="messaging">
-            <Card>
-              <CardHeader>
-                <CardTitle>Messaging Integration Settings</CardTitle>
-                <CardDescription>
-                  Configure WhatsApp, SMS, and Email notification settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-4">WhatsApp Cloud API</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="whatsapp-enabled">Enable WhatsApp Integration</Label>
-                        <Switch
-                          id="whatsapp-enabled"
-                          checked={messagingSettings.whatsappEnabled}
-                          onCheckedChange={(checked) => 
-                            setMessagingSettings({...messagingSettings, whatsappEnabled: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="whatsapp-api-key">WhatsApp API Key</Label>
-                        <Input
-                          id="whatsapp-api-key"
-                          value={messagingSettings.whatsappApiKey}
-                          onChange={(e) => 
-                            setMessagingSettings({...messagingSettings, whatsappApiKey: e.target.value})
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-b pb-4">
-                    <h3 className="text-lg font-medium mb-4">SMS Integration (Twilio/MSG91)</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="sms-enabled">Enable SMS Integration</Label>
-                        <Switch
-                          id="sms-enabled"
-                          checked={messagingSettings.smsEnabled}
-                          onCheckedChange={(checked) => 
-                            setMessagingSettings({...messagingSettings, smsEnabled: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="sms-api-key">SMS API Key</Label>
-                        <Input
-                          id="sms-api-key"
-                          value={messagingSettings.smsApiKey}
-                          onChange={(e) => 
-                            setMessagingSettings({...messagingSettings, smsApiKey: e.target.value})
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="pb-4">
-                    <h3 className="text-lg font-medium mb-4">Email Integration (SendGrid/Mailgun)</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="email-enabled">Enable Email Integration</Label>
-                        <Switch
-                          id="email-enabled"
-                          checked={messagingSettings.emailEnabled}
-                          onCheckedChange={(checked) => 
-                            setMessagingSettings({...messagingSettings, emailEnabled: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email-api-key">Email API Key</Label>
-                        <Input
-                          id="email-api-key"
-                          value={messagingSettings.emailApiKey}
-                          onChange={(e) => 
-                            setMessagingSettings({...messagingSettings, emailApiKey: e.target.value})
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button onClick={handleSaveMessagingSettings}>
-                    Save Messaging Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="notifications">
-            <PushNotificationManager />
-          </TabsContent>
-        </Tabs>
+          <IntegrationCard
+            title="Push Notifications"
+            description="Configure Firebase and OneSignal for push notifications"
+            icon={<Bell className="h-5 w-5 text-primary" />}
+            link="/settings/integrations/push"
+            status="not-configured"
+          />
+        </div>
       </div>
     </Container>
   );

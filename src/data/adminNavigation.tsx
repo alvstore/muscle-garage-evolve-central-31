@@ -31,7 +31,13 @@ import {
   Gift,
   Wallet,
   Archive,
-  Settings
+  Settings,
+  Layers,
+  KeyRound,
+  Repeat,
+  LayoutTemplate,
+  Zap,
+  Smartphone
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -275,8 +281,59 @@ export const adminNavSections: NavSection[] = [
       },
       {
         href: "/settings/integrations",
-        label: "Integrations",
-        icon: <Globe className="h-5 w-5" />,
+        label: "Integration Settings",
+        icon: <Layers className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+        children: [
+          {
+            href: "/settings/integrations/access-control",
+            label: "Access Control",
+            permission: "manage_integrations" as Permission,
+          },
+          {
+            href: "/settings/integrations/payment",
+            label: "Payment Gateways",
+            permission: "manage_integrations" as Permission,
+          },
+          {
+            href: "/settings/integrations/messaging",
+            label: "Messaging Services",
+            permission: "manage_integrations" as Permission,
+          },
+          {
+            href: "/settings/integrations/push",
+            label: "Push Notifications",
+            permission: "manage_integrations" as Permission,
+          }
+        ]
+      },
+      {
+        href: "/settings/templates",
+        label: "Email & SMS Templates",
+        icon: <LayoutTemplate className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+        children: [
+          {
+            href: "/settings/templates/email",
+            label: "Email Templates",
+            permission: "manage_templates" as Permission,
+          },
+          {
+            href: "/settings/templates/sms",
+            label: "SMS Templates",
+            permission: "manage_templates" as Permission,
+          },
+          {
+            href: "/settings/templates/whatsapp",
+            label: "WhatsApp Templates",
+            permission: "manage_templates" as Permission,
+          }
+        ]
+      },
+      {
+        href: "/settings/automation",
+        label: "Automation Rules",
+        icon: <Zap className="h-5 w-5" />,
         permission: "access_settings" as Permission,
       },
       {
@@ -286,10 +343,22 @@ export const adminNavSections: NavSection[] = [
         permission: "access_settings" as Permission,
       },
       {
-        href: "/settings/payment-gateways",
-        label: "Payment Gateways",
-        icon: <CreditCard className="h-5 w-5" />,
+        href: "/settings/attendance",
+        label: "Attendance Settings",
+        icon: <Smartphone className="h-5 w-5" />,
         permission: "access_settings" as Permission,
+        children: [
+          {
+            href: "/settings/attendance/devices",
+            label: "Device Mapping",
+            permission: "manage_devices" as Permission,
+          },
+          {
+            href: "/settings/attendance/access-rules",
+            label: "Access Rules",
+            permission: "manage_devices" as Permission,
+          }
+        ]
       }
     ],
   },
