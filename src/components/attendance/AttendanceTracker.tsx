@@ -16,11 +16,11 @@ interface AttendanceEntry {
 }
 
 export interface AttendanceTrackerProps {
-  data: AttendanceEntry[];
+  data?: AttendanceEntry[];
   date?: Date;
 }
 
-const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data, date = new Date() }) => {
+const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({ data = [], date = new Date() }) => {
   const getInitials = (name: string) => {
     return name
       .split(" ")
