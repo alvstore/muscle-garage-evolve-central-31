@@ -69,9 +69,9 @@ export interface MemberStatusData {
 
 export interface DashboardSummary {
   totalMembers: number;
-  newMembersToday: number;
-  activeMembers: number;
-  attendanceToday: number;
+  newMembersToday?: number;
+  activeMembers?: number;
+  attendanceToday?: number;
   todayCheckIns: number;
   upcomingRenewals: number;
   pendingPayments: {
@@ -79,12 +79,15 @@ export interface DashboardSummary {
     total: number;
   };
   revenue: {
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-    lastMonth: number;
+    today?: number;
+    thisWeek?: number;
+    thisMonth?: number;
+    lastMonth?: number;
+    daily?: number;
+    weekly?: number;
+    monthly?: number;
   };
-  classAttendance: {
+  classAttendance?: {
     today: number;
     yesterday: number;
     lastWeek: number;

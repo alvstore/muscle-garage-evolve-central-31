@@ -20,6 +20,16 @@ const StaffDashboard = () => {
   const { currentBranch } = useBranch();
   const { recentActivities, pendingPayments, announcements } = getStaffActivityData();
   
+  // Mock revenue data for the RevenueSection component
+  const revenueData = [
+    { month: "Jan", revenue: 12500, expenses: 8500, profit: 4000 },
+    { month: "Feb", revenue: 13200, expenses: 8700, profit: 4500 },
+    { month: "Mar", revenue: 14800, expenses: 9200, profit: 5600 },
+    { month: "Apr", revenue: 15700, expenses: 9800, profit: 5900 },
+    { month: "May", revenue: 16500, expenses: 10500, profit: 6000 },
+    { month: "Jun", revenue: 18200, expenses: 11200, profit: 7000 }
+  ];
+  
   useEffect(() => {
     setTimeout(() => {
       console.log(`Loading branch-specific data for branch: ${currentBranch?.id}`);
