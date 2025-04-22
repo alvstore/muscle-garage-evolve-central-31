@@ -23,36 +23,54 @@ const RouteChecker = () => {
     console.log('📍 Available routes:', allRoutes);
     
     // Check admin navigation
-    checkNavSections(adminNavSections, 'Admin');
+    if (adminNavSections) {
+      checkNavSections(adminNavSections, 'Admin');
+    }
     
     // Check member navigation
-    checkNavSections(memberNavSections, 'Member');
+    if (memberNavSections) {
+      checkNavSections(memberNavSections, 'Member');
+    }
     
-    // Check trainer navigation
-    checkNavSections(trainerNavSections, 'Trainer');
+    // Check trainer navigation - this is likely the issue
+    // Make sure trainerNavSections exists and is properly formatted
+    if (trainerNavSections && Array.isArray(trainerNavSections)) {
+      checkNavSections(trainerNavSections, 'Trainer');
+    }
     
   }, []);
   
   const checkNavSections = (sections: any[], navType: string) => {
+    if (!sections || !Array.isArray(sections)) {
+      console.warn(`⚠️ ${navType} navigation sections is not a valid array`);
+      return;
+    }
+    
     let invalidLinks: Array<{section: string, item: string, href: string}> = [];
     
     sections.forEach(section => {
+      // Check if section has items array before iterating
+      if (!section || !section.items || !Array.isArray(section.items)) {
+        console.warn(`⚠️ Invalid section structure in ${navType} navigation:`, section);
+        return;
+      }
+      
       section.items.forEach((item: any) => {
         if (!isValidRoute(item.href)) {
           invalidLinks.push({
-            section: section.name,
-            item: item.label,
+            section: section.name || 'Unknown Section',
+            item: item.label || item.title || 'Unknown Item',
             href: item.href
           });
         }
         
         // Check children if any
-        if (item.children) {
+        if (item.children && Array.isArray(item.children)) {
           item.children.forEach((child: any) => {
             if (!isValidRoute(child.href)) {
               invalidLinks.push({
-                section: section.name,
-                item: `${item.label} > ${child.label}`,
+                section: section.name || 'Unknown Section',
+                item: `${item.label || item.title || 'Unknown Item'} > ${child.label || child.title || 'Unknown Child'}`,
                 href: child.href
               });
             }

@@ -1,3 +1,5 @@
+
+import React from 'react';
 import {
   Activity,
   CalendarDays,
@@ -7,105 +9,123 @@ import {
   LayoutDashboard,
   Users,
   UserCog2,
-  Menu as MenuIcon,
   Bell,
   Megaphone,
   Clock,
   Utensils,
-  MessageSquare,
-  CalendarRange,
   Target,
+  CalendarRange,
 } from "lucide-react";
+import { NavSection } from '@/types/navigation';
+import { Permission } from '@/hooks/use-permissions';
 
-export const trainerNavSections = [
+export const trainerNavSections: NavSection[] = [
   {
     name: "Dashboard",
-    links: [
-      {
-        title: "Overview",
-        href: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/dashboard", 
+        label: "Dashboard", 
         icon: <LayoutDashboard className="h-4 w-4" />,
-      },
-    ],
+        permission: "access_dashboards" as Permission
+      }
+    ]
   },
   {
     name: "Schedule",
-    links: [
-      {
-        title: "Classes",
-        href: "/trainers/classes",
+    icon: <CalendarDays className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/classes", 
+        label: "Classes", 
         icon: <CalendarRange className="h-4 w-4" />,
+        permission: "trainer_view_classes" as Permission
       },
-      {
-        title: "Attendance",
-        href: "/trainers/attendance",
+      { 
+        href: "/trainers/attendance", 
+        label: "Attendance", 
         icon: <Clock className="h-4 w-4" />,
-      },
-    ],
+        permission: "trainer_view_attendance" as Permission
+      }
+    ]
   },
   {
     name: "Training",
-    links: [
-      {
-        title: "Member Allocation",
-        href: "/trainers/allocation",
+    icon: <Dumbbell className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/allocation", 
+        label: "Member Allocation", 
         icon: <Users className="h-4 w-4" />,
+        permission: "trainer_view_members" as Permission
       },
-      {
-        title: "PT Plans",
-        href: "/trainers/pt-plans",
+      { 
+        href: "/trainers/pt-plans", 
+        label: "PT Plans", 
         icon: <Activity className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
       },
-      {
-        title: "Workout Plans",
-        href: "/trainers/workout-plans",
+      { 
+        href: "/trainers/workout-plans", 
+        label: "Workout Plans", 
         icon: <Dumbbell className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
       },
-      {
-        title: "Workout Assignments",
-        href: "/trainers/workout-assignments",
+      { 
+        href: "/trainers/workout-assignments", 
+        label: "Workout Assignments", 
         icon: <ClipboardList className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
       },
-      {
-        title: "Diet Plans",
-        href: "/trainers/diet-plans",
+      { 
+        href: "/trainers/diet-plans", 
+        label: "Diet Plans", 
         icon: <Utensils className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
       },
-      {
-        title: "Member Progress",
-        href: "/trainers/member-progress",
+      { 
+        href: "/trainers/member-progress", 
+        label: "Member Progress", 
         icon: <Target className="h-4 w-4" />,
-      },
-    ],
+        permission: "trainer_view_members" as Permission
+      }
+    ]
   },
   {
     name: "Management",
-    links: [
-      {
-        title: "Tasks",
-        href: "/trainers/tasks",
+    icon: <ListChecks className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/tasks", 
+        label: "Tasks", 
         icon: <ListChecks className="h-4 w-4" />,
+        permission: "trainer_view_tasks" as Permission
       },
-      {
-        title: "Announcements",
-        href: "/trainers/announcements",
+      { 
+        href: "/trainers/announcements", 
+        label: "Announcements", 
         icon: <Megaphone className="h-4 w-4" />,
+        permission: "trainer_view_announcements" as Permission
       },
-      {
-        title: "Notifications",
-        href: "/trainers/notifications",
+      { 
+        href: "/communication/notifications", 
+        label: "Notifications", 
         icon: <Bell className="h-4 w-4" />,
-      },
-    ],
+        permission: "access_communication" as Permission
+      }
+    ]
   },
   {
     name: "Profile",
-    links: [
-      {
-        title: "My Profile",
-        href: "/trainers/profile",
+    icon: <UserCog2 className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/profile", 
+        label: "My Profile", 
         icon: <UserCog2 className="h-4 w-4" />,
-      },
-    ],
-  },
+        permission: "trainer_view_profile" as Permission
+      }
+    ]
+  }
 ];
