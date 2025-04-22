@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import BranchForm from "./BranchForm";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface CreateBranchDialogProps {
   open?: boolean;
@@ -23,31 +25,37 @@ const CreateBranchDialog = ({
   onComplete 
 }: CreateBranchDialogProps) => {
   const [internalOpen, setInternalOpen] = React.useState(false);
+  const { userRole } = usePermissions();
   
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? setControlledOpen : setInternalOpen;
 
+  // Only show for admin role
+  if (userRole !== 'admin') return null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {!isControlled && (
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-1" />
-            Add Branch
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="sm:max-w-[800px]">
-        <DialogHeader>
-          <DialogTitle>Create New Branch</DialogTitle>
-        </DialogHeader>
-        <BranchForm onComplete={() => {
-          setOpen(false);
-          onComplete();
-        }} />
-      </DialogContent>
-    </Dialog>
+    <PermissionGuard permission="manage_branches">
+      <Dialog open={open} onOpenChange={setOpen}>
+        {!isControlled && (
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              Add Branch
+            </Button>
+          </DialogTrigger>
+        )}
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Create New Branch</DialogTitle>
+          </DialogHeader>
+          <BranchForm onComplete={() => {
+            setOpen(false);
+            onComplete();
+          }} />
+        </DialogContent>
+      </Dialog>
+    </PermissionGuard>
   );
 };
 
