@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -7,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CalendarCheck, MessageSquare, TrendingUp, Utensils, Search } from 'lucide-react';
+import { CalendarCheck, MessageSquare, TrendingUp, Utensils, Search, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -15,102 +14,12 @@ import UpcomingClasses from '@/components/dashboard/sections/UpcomingClasses';
 import FitnessGoals from '@/components/dashboard/sections/FitnessGoals';
 import DietRecommendations from '@/components/dashboard/sections/DietRecommendations';
 import Announcements from '@/components/dashboard/Announcements';
+import MemberInvoiceList from '@/components/finance/MemberInvoiceList';
 import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
 
 const MemberDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Mock data for upcoming classes
-  const upcomingClasses = [
-    {
-      id: "class1",
-      name: "Yoga for Beginners",
-      time: "Mon, 6:00 PM",
-      trainer: "Sarah Johnson"
-    },
-    {
-      id: "class2",
-      name: "HIIT Workout",
-      time: "Tue, 7:00 AM",
-      trainer: "David Miller"
-    },
-    {
-      id: "class3",
-      name: "Pilates",
-      time: "Wed, 5:30 PM",
-      trainer: "Emily White"
-    }
-  ];
-
-  // Mock data for fitness goals
-  const fitnessGoals = [
-    {
-      id: "goal1",
-      name: "Weight Loss",
-      target: "Lose 10 lbs",
-      progress: 60
-    },
-    {
-      id: "goal2",
-      name: "Increase Strength",
-      target: "Bench press 150 lbs",
-      progress: 40
-    },
-    {
-      id: "goal3",
-      name: "Improve Endurance",
-      target: "Run 5k in 30 mins",
-      progress: 80
-    }
-  ];
-
-  // Mock data for diet recommendations
-  const dietRecommendations = [
-    {
-      id: "diet1",
-      name: "High Protein Meal",
-      description: "Grilled chicken with quinoa and steamed vegetables"
-    },
-    {
-      id: "diet2",
-      name: "Post-Workout Snack",
-      description: "Protein shake with banana and almond butter"
-    },
-    {
-      id: "diet3",
-      name: "Healthy Breakfast",
-      description: "Oatmeal with berries and nuts"
-    }
-  ];
-
-  // Mock data for recent announcements
-  const recentAnnouncements: Announcement[] = [
-    {
-      id: "announcement1",
-      title: "Gym Closure for Maintenance",
-      content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
-      authorId: "admin1",
-      authorName: "Admin",
-      createdAt: "2023-07-10T10:00:00Z",
-      targetRoles: ["member"],
-      channels: ["in-app"],
-      sentCount: 120,
-      priority: "medium"
-    },
-    {
-      id: "announcement2",
-      title: "New Fitness Classes Added",
-      content: "We're excited to announce new Zumba and Pilates classes starting next week!",
-      authorId: "admin1",
-      authorName: "Admin",
-      createdAt: "2023-07-12T14:30:00Z",
-      targetRoles: ["member"],
-      channels: ["in-app"],
-      sentCount: 98,
-      priority: "low"
-    }
-  ];
 
   const handleSearch = () => {
     if (!searchTerm.trim()) {
@@ -118,7 +27,6 @@ const MemberDashboard = () => {
       return;
     }
     toast.success(`Searching for: ${searchTerm}`);
-    // In a real app, this would perform the actual search
   };
 
   return (
@@ -236,6 +144,10 @@ const MemberDashboard = () => {
             <FitnessGoals goals={fitnessGoals} />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <MemberInvoiceList showPendingOnly={true} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

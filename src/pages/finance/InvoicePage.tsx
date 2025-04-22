@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvoiceList from "@/components/finance/InvoiceList";
+import MemberInvoiceList from "@/components/finance/MemberInvoiceList";
 import WebhookLogs from "@/components/finance/WebhookLogs";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -11,20 +12,29 @@ const InvoicePage = () => {
   const isMember = user?.role === "member";
   const [activeTab, setActiveTab] = useState(isMember ? "invoices" : "all-invoices");
 
+  if (isMember) {
+    return (
+      <Container>
+        <div className="py-6">
+          <h1 className="text-2xl font-bold mb-6">My Invoices</h1>
+          <MemberInvoiceList />
+        </div>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">
-          {isMember ? "My Invoices" : "Invoice Management"}
-        </h1>
+        <h1 className="text-2xl font-bold mb-6">Invoice Management</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            {!isMember && <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>}
-            <TabsTrigger value="invoices">{isMember ? "Invoices" : "Pending Invoices"}</TabsTrigger>
-            {!isMember && <TabsTrigger value="paid">Paid Invoices</TabsTrigger>}
-            {!isMember && <TabsTrigger value="overdue">Overdue Invoices</TabsTrigger>}
-            {!isMember && <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>}
+            <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
+            <TabsTrigger value="invoices">Pending Invoices</TabsTrigger>
+            <TabsTrigger value="paid">Paid Invoices</TabsTrigger>
+            <TabsTrigger value="overdue">Overdue Invoices</TabsTrigger>
+            <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>
           </TabsList>
           
           {!isMember && (
