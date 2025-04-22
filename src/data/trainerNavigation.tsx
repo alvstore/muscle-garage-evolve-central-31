@@ -1,4 +1,3 @@
-
 import {
   Activity,
   CalendarDays,
@@ -15,6 +14,7 @@ import {
   Utensils,
   MessageSquare,
   CalendarRange,
+  Target,
 } from "lucide-react";
 
 export const trainerNavSections = [
@@ -70,6 +70,11 @@ export const trainerNavSections = [
         title: "Diet Plans",
         href: "/trainers/diet-plans",
         icon: <Utensils className="h-4 w-4" />,
+      },
+      {
+        title: "Member Progress",
+        href: "/trainers/member-progress",
+        icon: <Target className="h-4 w-4" />,
       },
     ],
   },

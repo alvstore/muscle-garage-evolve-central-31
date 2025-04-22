@@ -453,6 +453,51 @@ export type Database = {
           },
         ]
       }
+      member_progress: {
+        Row: {
+          bmi: number | null
+          created_at: string | null
+          diet_adherence_percent: number | null
+          fat_percent: number | null
+          id: string
+          last_updated: string | null
+          member_id: string
+          muscle_mass: number | null
+          trainer_id: string
+          updated_at: string | null
+          weight: number | null
+          workout_completion_percent: number | null
+        }
+        Insert: {
+          bmi?: number | null
+          created_at?: string | null
+          diet_adherence_percent?: number | null
+          fat_percent?: number | null
+          id?: string
+          last_updated?: string | null
+          member_id: string
+          muscle_mass?: number | null
+          trainer_id: string
+          updated_at?: string | null
+          weight?: number | null
+          workout_completion_percent?: number | null
+        }
+        Update: {
+          bmi?: number | null
+          created_at?: string | null
+          diet_adherence_percent?: number | null
+          fat_percent?: number | null
+          id?: string
+          last_updated?: string | null
+          member_id?: string
+          muscle_mass?: number | null
+          trainer_id?: string
+          updated_at?: string | null
+          weight?: number | null
+          workout_completion_percent?: number | null
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
           created_at: string | null

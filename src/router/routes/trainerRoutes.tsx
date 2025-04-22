@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -15,6 +14,7 @@ import TrainerPlanAssignmentsPage from '@/pages/trainers/TrainerPlanAssignmentsP
 import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
 import TrainerDietPlansPage from '@/pages/trainers/TrainerDietPlansPage';
 import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
+import TrainerMemberProgressPage from '@/pages/trainers/TrainerMemberProgressPage';
 
 export const trainerRoutes: RouteObject[] = [
   {
@@ -110,6 +110,14 @@ export const trainerRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TrainerClassesPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/member-progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerMemberProgressPage />
       </PrivateRoute>
     )
   }
