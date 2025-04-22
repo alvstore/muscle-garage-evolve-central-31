@@ -1,3 +1,4 @@
+
 export interface MealPlan {
   id: string;
   name: string;
@@ -73,6 +74,15 @@ export interface DietPlanClient {
   mealPlans: MealPlan[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DietPlanListProps {
+  plans: DietPlan[];
+  isLoading: boolean;
+  onPlanCreated?: (plan: DietPlan) => void;
+  onPlanUpdated?: (updatedPlan: DietPlan) => void;
+  onPlanDeleted?: (planId: string) => void;
+  canCreateGlobal?: boolean;
 }
 
 export function adaptToDietPlanClient(plan: DietPlan): DietPlanClient {

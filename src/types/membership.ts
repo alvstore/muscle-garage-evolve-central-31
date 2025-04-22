@@ -28,3 +28,18 @@ export interface MembershipSubscription {
   paymentStatus: "paid" | "pending" | "failed";
   invoiceId?: string;
 }
+
+// Adding this compatibility interface for transitioning to the new MembershipPlan format
+export interface Membership {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration_days: number;
+  is_active: boolean;
+  features: {
+    gym: boolean;
+    pool: boolean;
+    classes: boolean;
+  };
+}

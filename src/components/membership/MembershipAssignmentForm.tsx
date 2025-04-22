@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Member } from "@/types/member";
-import { MembershipPlan } from "@/types/membership";
+import { MembershipPlan, Membership } from "@/types/membership";
 import { MembershipAssignment } from "@/types/membership-assignment";
 import { invoiceService } from "@/services/invoiceService";
 import { useBranch } from "@/hooks/use-branch";
@@ -54,7 +54,7 @@ const mockMembers: Member[] = [
   }
 ];
 
-const mockMembershipPlans: MembershipPlan[] = [
+const mockMembershipPlans: Membership[] = [
   {
     id: "basic",
     name: "Basic Membership",
@@ -175,17 +175,19 @@ const MembershipAssignmentForm = ({
         throw new Error("Selected member or plan not found");
       }
       
-      const membershipAssignment = {
+      const membershipAssignment: MembershipAssignment = {
         memberId: selectedMemberId,
-        planId: selectedPlanId,
-        planName: selectedPlan.name,
+        membershipId: selectedPlanId,
         startDate: startDate,
         endDate: endDate,
+        amount: totalAmount,
+        paymentStatus: recordPayment ? "paid" : "pending",
+        branchId: currentBranch?.id,
+        planId: selectedPlanId,
+        planName: selectedPlan.name,
         totalAmount: totalAmount,
         amountPaid: recordPayment ? paymentAmount : 0,
-        paymentMethod: recordPayment ? paymentMethod : null,
-        branchId: currentBranch?.id,
-        paymentStatus: recordPayment ? "paid" : "pending",
+        paymentMethod: recordPayment ? paymentMethod : undefined
       };
       
       await onAssignMembership(membershipAssignment);

@@ -12,4 +12,10 @@ export interface MembershipAssignment {
   branchId?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Additional properties needed for the form
+  planId?: string;
+  planName?: string;
+  totalAmount?: number;
+  amountPaid?: number;
+  paymentMethod?: string;
 }

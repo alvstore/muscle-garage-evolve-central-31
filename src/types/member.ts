@@ -10,4 +10,5 @@ export interface Member {
   membershipStartDate: Date | null;
   membershipEndDate: Date | null;
   role: 'member' | 'trainer' | 'staff' | 'admin';
+  branchId?: string;
 }

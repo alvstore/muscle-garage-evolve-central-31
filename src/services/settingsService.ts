@@ -69,7 +69,7 @@ export interface SmsSettings {
     otpVerification: boolean;
     attendanceConfirmation: boolean;
   };
-  // Add these missing properties
+  // Add missing properties
   msg91AuthKey?: string;
   twilioAccountSid?: string;
   twilioAuthToken?: string;

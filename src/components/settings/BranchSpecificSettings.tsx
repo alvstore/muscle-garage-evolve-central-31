@@ -69,6 +69,7 @@ const BranchSpecificSettings = () => {
     },
     syncFrequency: "hourly",
     integrationEnabled: true,
+    useISAPIWhenOpenAPIFails: true,
   });
   
   const form = useForm<DeviceMappingFormValues>({
