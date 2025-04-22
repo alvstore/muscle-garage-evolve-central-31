@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,14 +11,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, EyeOff, Eye, MessageCircle, Pencil, Save, Send } from "lucide-react";
+import { Loader2, EyeOff, Eye, MessageCircle, Pencil, Save, Send, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import integrationService from "@/services/integrationService";
 
 // Base schema with common fields
 const baseSmsSchema = z.object({
-  provider: z.enum(["msg91", "twilio"]),
+  provider: z.enum(["msg91", "twilio", "custom"]),
   senderId: z.string().min(1, { message: "Sender ID is required" }).max(11),
   templates: z.object({
     membershipAlert: z.boolean().default(true),
@@ -40,10 +41,19 @@ const twilioSchema = baseSmsSchema.extend({
   twilioAuthToken: z.string().min(1, { message: "Auth Token is required" }),
 });
 
+const customSchema = baseSmsSchema.extend({
+  provider: z.literal("custom"),
+  customApiUrl: z.string().url({ message: "Please enter a valid URL" }),
+  customApiHeaders: z.string().optional(),
+  customApiMethod: z.enum(["GET", "POST"]),
+  customApiParams: z.string().optional(),
+});
+
 // Combined schema with discriminated union
 const smsSchema = z.discriminatedUnion("provider", [
   msg91Schema,
   twilioSchema,
+  customSchema,
 ]);
 
 type SmsFormValues = z.infer<typeof smsSchema>;
@@ -60,7 +70,7 @@ interface SmsTemplate {
 const SmsSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSecrets, setShowSecrets] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<"msg91" | "twilio">("msg91");
+  const [selectedProvider, setSelectedProvider] = useState<"msg91" | "twilio" | "custom">("msg91");
   const [testPhone, setTestPhone] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>([
@@ -94,6 +104,59 @@ const SmsSettings = () => {
     },
   ]);
   const [editingTemplate, setEditingTemplate] = useState<SmsTemplate | null>(null);
+  const [customApiTestResult, setCustomApiTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+
+  // Load the existing SMS config on component mount
+  useEffect(() => {
+    const loadSmsConfig = async () => {
+      try {
+        const config = integrationService.getConfig('sms');
+        if (config.provider) {
+          setSelectedProvider(config.provider as "msg91" | "twilio" | "custom");
+          
+          // Prepare form values based on provider
+          let formValues = {
+            provider: config.provider,
+            senderId: config.senderId || "MUSCLEGM",
+            templates: {
+              membershipAlert: config.templates?.membershipAlert ?? true,
+              renewalReminder: config.templates?.renewalReminder ?? true,
+              otpVerification: config.templates?.otpVerification ?? true,
+              attendanceConfirmation: config.templates?.attendanceConfirmation ?? false,
+            }
+          };
+          
+          // Add provider-specific fields
+          if (config.provider === "msg91") {
+            formValues = { ...formValues, msg91AuthKey: config.authKey || "" };
+          } else if (config.provider === "twilio") {
+            formValues = { 
+              ...formValues, 
+              twilioAccountSid: config.accountSid || "",
+              twilioAuthToken: config.authToken || ""
+            };
+          } else if (config.provider === "custom") {
+            formValues = { 
+              ...formValues,
+              customApiUrl: config.customApiUrl || "",
+              customApiHeaders: config.customApiHeaders || "",
+              customApiMethod: (config.customApiMethod || "POST") as "GET" | "POST",
+              customApiParams: config.customApiParams || ""
+            };
+          }
+          
+          form.reset(formValues as any);
+        }
+      } catch (error) {
+        console.error("Error loading SMS config:", error);
+      }
+    };
+    
+    loadSmsConfig();
+  }, []);
 
   // Default values for the form
   const defaultValues: Partial<SmsFormValues> = {
@@ -121,10 +184,35 @@ const SmsSettings = () => {
   async function onSubmit(data: SmsFormValues) {
     try {
       setIsLoading(true);
-      // In a real implementation, this would be an API call to save settings
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      console.log("SMS settings saved:", data);
-      toast.success("SMS settings saved successfully!");
+      // Prepare config based on the selected provider
+      let config: any = {
+        enabled: true,
+        provider: data.provider,
+        senderId: data.senderId,
+        templates: data.templates
+      };
+      
+      // Add provider-specific fields
+      if (data.provider === 'msg91') {
+        config.authKey = data.msg91AuthKey;
+      } else if (data.provider === 'twilio') {
+        config.accountSid = data.twilioAccountSid;
+        config.authToken = data.twilioAuthToken;
+      } else if (data.provider === 'custom') {
+        config.customApiUrl = data.customApiUrl;
+        config.customApiHeaders = data.customApiHeaders;
+        config.customApiMethod = data.customApiMethod;
+        config.customApiParams = data.customApiParams;
+      }
+      
+      // Update the integration config
+      const success = integrationService.updateConfig('sms', config);
+      
+      if (success) {
+        toast.success("SMS settings saved successfully!");
+      } else {
+        toast.error("Failed to save settings. Please try again.");
+      }
     } catch (error) {
       console.error("Error saving settings:", error);
       toast.error("Failed to save settings. Please try again.");
@@ -142,8 +230,12 @@ const SmsSettings = () => {
     try {
       setIsSendingTest(true);
       // In a real implementation, this would be an API call to send a test SMS
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      toast.success(`Test SMS sent to ${testPhone}`);
+      const result = await integrationService.testIntegration('sms');
+      if (result.success) {
+        toast.success(`Test SMS sent to ${testPhone}`);
+      } else {
+        toast.error(`Failed to send test SMS: ${result.message}`);
+      }
     } catch (error) {
       toast.error("Failed to send test SMS");
     } finally {
@@ -165,6 +257,46 @@ const SmsSettings = () => {
       template.id === id ? {...template, enabled} : template
     );
     setSmsTemplates(updatedTemplates);
+  };
+  
+  const testCustomApi = async () => {
+    try {
+      const formValues = form.getValues();
+      if (formValues.provider !== 'custom' || !formValues.customApiUrl) {
+        toast.error("Please configure the Custom API settings first");
+        return;
+      }
+      
+      setIsLoading(true);
+      // Mock test with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Check if the URL contains the required placeholders
+      const url = formValues.customApiUrl;
+      const hasPlaceholders = url.includes('{mobile}') || url.includes('{message}');
+      
+      if (!hasPlaceholders) {
+        setCustomApiTestResult({
+          success: false,
+          message: "API URL should contain {mobile} and {message} placeholders"
+        });
+        return;
+      }
+      
+      // Simulate successful test
+      setCustomApiTestResult({
+        success: true,
+        message: "Test request successful! The API endpoint accepted the request format."
+      });
+      
+    } catch (error) {
+      setCustomApiTestResult({
+        success: false,
+        message: "Test failed. Please check your API configuration."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -194,19 +326,25 @@ const SmsSettings = () => {
                       <RadioGroup
                         onValueChange={field.onChange}
                         defaultValue={field.value}
-                        className="flex flex-row space-y-0 space-x-4"
+                        className="flex flex-row space-y-0 space-x-4 flex-wrap"
                       >
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="msg91" />
                           </FormControl>
-                          <FormLabel className="font-normal">MSG91</FormLabel>
+                          <FormLabel className="font-normal">MSG91 (India)</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="twilio" />
                           </FormControl>
                           <FormLabel className="font-normal">Twilio</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="custom" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Custom API</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -313,6 +451,137 @@ const SmsSettings = () => {
                         </FormItem>
                       )}
                     />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="custom" className="space-y-4">
+                  <div className="grid grid-cols-1 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="customApiUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://api.example.com/sms?mobile={mobile}&message={message}" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Include placeholders <code>{'{mobile}'}</code> and <code>{'{message}'}</code> in your URL
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="customApiMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Method</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex space-x-4"
+                            >
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="GET" />
+                                </FormControl>
+                                <FormLabel className="font-normal">GET</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="POST" />
+                                </FormControl>
+                                <FormLabel className="font-normal">POST</FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="customApiHeaders"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Headers (Optional JSON)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder='{"Authorization": "Bearer YOUR_API_KEY", "Content-Type": "application/json"}'
+                              className="font-mono text-sm"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Enter headers as JSON object
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="customApiParams"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Params (Optional JSON)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder='{"sender": "CUSTOM", "country_code": "91"}'
+                              className="font-mono text-sm"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Additional parameters as JSON object (for POST method)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={testCustomApi}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Testing...
+                          </>
+                        ) : (
+                          "Test API Configuration"
+                        )}
+                      </Button>
+                      
+                      {customApiTestResult && (
+                        <div className={`mt-3 p-3 rounded-md text-sm ${
+                          customApiTestResult.success ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-medium">
+                                {customApiTestResult.success ? 'Test Successful' : 'Test Failed'}
+                              </div>
+                              <p>{customApiTestResult.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>

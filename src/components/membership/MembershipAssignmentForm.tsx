@@ -1,14 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
+  DialogTitle 
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Select, 
   SelectContent, 
@@ -16,71 +15,100 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Check, CreditCard } from "lucide-react";
-import { Member } from "@/types";
-import { MembershipPlan } from "@/types/membership";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { addDays, format } from "date-fns";
-import { supabase } from '@/services/supabaseClient';
-import { useAuth } from '@/hooks/use-auth';
-import { useBranch } from '@/hooks/use-branch';
-import { invoiceService } from '@/services/invoiceService';
+import { Member } from "@/types/member";
+import { Membership } from "@/types/membership";
+import { MembershipAssignment } from "@/types/membership-assignment";
+import invoiceService from "@/services/invoiceService";
+import { useBranch } from "@/hooks/use-branch";
+
+// Mock data
+const mockMembers: Member[] = [
+  {
+    id: "1",
+    name: "John Smith",
+    email: "john@example.com",
+    phone: "9876543210",
+    status: "active",
+    membershipStatus: "active",
+    membershipId: "basic",
+    membershipStartDate: new Date(2023, 0, 1),
+    membershipEndDate: new Date(2023, 11, 31),
+    role: "member"
+  },
+  {
+    id: "2",
+    name: "Alice Johnson",
+    email: "alice@example.com",
+    phone: "9876543211",
+    status: "active",
+    membershipStatus: "expired",
+    membershipId: null,
+    membershipStartDate: null,
+    membershipEndDate: null,
+    role: "member"
+  }
+];
+
+const mockMembershipPlans: Membership[] = [
+  {
+    id: "basic",
+    name: "Basic Membership",
+    description: "Access to gym only",
+    price: 1000,
+    duration_days: 30,
+    is_active: true,
+    features: { gym: true, pool: false, classes: false }
+  },
+  {
+    id: "premium",
+    name: "Premium Membership",
+    description: "Access to gym and swimming pool",
+    price: 2000,
+    duration_days: 30,
+    is_active: true,
+    features: { gym: true, pool: true, classes: false }
+  },
+  {
+    id: "gold",
+    name: "Gold Membership",
+    description: "Access to all facilities including classes",
+    price: 3000,
+    duration_days: 90,
+    is_active: true,
+    features: { gym: true, pool: true, classes: true }
+  }
+];
 
 interface MembershipAssignmentFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAssignMembership: (assignment: any) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAssignMembership: (assignment: MembershipAssignment) => Promise<void>;
 }
 
-const mockMembers: Member[] = [
-  { id: "member-1", name: "John Doe", email: "john@example.com", role: "member", membershipStatus: "active" },
-  { id: "member-2", name: "Jane Smith", email: "jane@example.com", role: "member", membershipStatus: "active" },
-  { id: "member-3", name: "Bob Johnson", email: "bob@example.com", role: "member", membershipStatus: "expired" },
-];
-
-const mockMembershipPlans: MembershipPlan[] = [
-  {
-    id: "basic-1m",
-    name: "Basic Monthly",
-    description: "Basic gym access",
-    price: 1999,
-    durationDays: 30,
-    durationLabel: "1-month",
-    benefits: ["Gym access", "Locker access"],
-    allowedClasses: "basic-only",
-    status: "active",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "premium-3m",
-    name: "Premium Quarterly",
-    description: "Premium features",
-    price: 5499,
-    durationDays: 90,
-    durationLabel: "3-month",
-    benefits: ["Gym access", "Unlimited classes", "Personal trainer session"],
-    allowedClasses: "group-only",
-    status: "active",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: MembershipAssignmentFormProps) => {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
-  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+const MembershipAssignmentForm = ({
+  open,
+  onOpenChange,
+  onAssignMembership
+}: MembershipAssignmentFormProps) => {
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [autoRenew, setAutoRenew] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [recordPayment, setRecordPayment] = useState<boolean>(true);
-  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const { user } = useAuth();
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [recordPayment, setRecordPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [membershipPlans, setMembershipPlans] = useState<Membership[]>([]);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
@@ -94,28 +122,42 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
   }, [selectedPlanId, startDate]);
 
   const updateEndDate = () => {
-    const selectedPlan = membershipPlans.find(plan => plan.id === selectedPlanId);
-    if (selectedPlan && startDate) {
-      const calculatedEndDate = addDays(startDate, selectedPlan.durationDays);
-      setEndDate(calculatedEndDate);
-    } else {
-      setEndDate(null);
-    }
+    if (!selectedPlanId) return;
+    
+    const plan = membershipPlans.find(p => p.id === selectedPlanId);
+    if (!plan) return;
+    
+    const newEndDate = new Date(startDate);
+    newEndDate.setDate(newEndDate.getDate() + (plan.duration_days - 1));
+    setEndDate(newEndDate);
+    
+    setTotalAmount(plan.price);
+    setPaymentAmount(plan.price);
+  };
+
+  const resetForm = () => {
+    setSelectedMemberId("");
+    setSelectedPlanId("");
+    setStartDate(new Date());
+    setTotalAmount(0);
+    setPaymentAmount(0);
+    setRecordPayment(false);
+    setPaymentMethod("cash");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedMemberId || !selectedPlanId || !startDate || !endDate) {
-      toast.error("Please fill all required fields");
+    if (!selectedMemberId || !selectedPlanId) {
+      toast.error("Please select a member and a plan");
       return;
     }
     
-    setIsLoading(true);
-    
     try {
-      const selectedMember = members.find(member => member.id === selectedMemberId);
-      const selectedPlan = membershipPlans.find(plan => plan.id === selectedPlanId);
+      setIsSubmitting(true);
+      
+      const selectedMember = members.find(m => m.id === selectedMemberId);
+      const selectedPlan = membershipPlans.find(p => p.id === selectedPlanId);
       
       if (!selectedMember || !selectedPlan) {
         throw new Error("Selected member or plan not found");
@@ -124,12 +166,13 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
       const membershipAssignment = {
         memberId: selectedMemberId,
         planId: selectedPlanId,
-        startDate: format(startDate, "yyyy-MM-dd"),
-        endDate: format(endDate, "yyyy-MM-dd"),
-        status: "active",
-        autoRenew,
-        totalAmount: selectedPlan.price,
-        amountPaid: recordPayment ? selectedPlan.price : 0,
+        planName: selectedPlan.name,
+        startDate: startDate,
+        endDate: endDate,
+        totalAmount: totalAmount,
+        amountPaid: recordPayment ? paymentAmount : 0,
+        paymentMethod: recordPayment ? paymentMethod : null,
+        branchId: currentBranch?.id,
         paymentStatus: recordPayment ? "paid" : "pending",
       };
       
@@ -139,154 +182,193 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
         const invoice = await invoiceService.generateInvoiceForMembership(
           selectedMemberId,
           selectedMember.name,
-          selectedPlanId,
+          selectedPlan.id,
           selectedPlan.name,
-          selectedPlan.price,
-          format(startDate, "yyyy-MM-dd"),
-          user?.id || "",
+          totalAmount,
+          startDate.toISOString(),
+          endDate.toISOString(),
           currentBranch.id
         );
         
         if (recordPayment && invoice) {
           await invoiceService.recordPayment(
             invoice.id,
-            selectedPlan.price,
+            paymentAmount,
             paymentMethod,
-            user?.id || "",
+            new Date().toISOString(),
             currentBranch.id
           );
         }
-        
-        toast.success("Membership assigned and invoice generated successfully");
       }
       
-      onClose();
+      resetForm();
+      onOpenChange(false);
+      toast.success("Membership plan assigned successfully");
+      
     } catch (error) {
       console.error("Error assigning membership:", error);
-      toast.error("Failed to assign membership");
+      toast.error("Failed to assign membership plan");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePaymentAmountChange = (value: string) => {
+    const amount = parseFloat(value);
+    if (isNaN(amount)) {
+      setPaymentAmount(0);
+    } else {
+      setPaymentAmount(Math.min(amount, totalAmount));
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Assign Membership Plan</DialogTitle>
+          <DialogDescription>
+            Assign a membership plan to a member and set its duration.
+          </DialogDescription>
+        </DialogHeader>
+        
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Assign Membership Plan</DialogTitle>
-          </DialogHeader>
-          
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="member">Select Member</Label>
-              <Select 
-                value={selectedMemberId} 
+              <Select
+                value={selectedMemberId}
                 onValueChange={setSelectedMemberId}
                 disabled={isLoading}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="Select a member" />
                 </SelectTrigger>
                 <SelectContent>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.name}
+                      {member.name} ({member.email})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="plan">Select Membership Plan</Label>
-              <Select 
-                value={selectedPlanId} 
+            <div className="grid gap-2">
+              <Label htmlFor="plan">Select Plan</Label>
+              <Select
+                value={selectedPlanId}
                 onValueChange={setSelectedPlanId}
                 disabled={isLoading}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent>
                   {membershipPlans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} - {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(plan.price)}
+                      {plan.name} (₹{plan.price})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <DatePicker 
-                  date={startDate} 
-                  onSelect={setStartDate}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <div className="border rounded-md p-3 bg-muted/20">
-                  {endDate ? format(endDate, "MMM dd, yyyy") : "Select a plan"}
-                </div>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <DatePicker 
+                date={startDate} 
+                onSelect={setStartDate}
+                className={isLoading ? "opacity-50 pointer-events-none" : ""}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <DatePicker 
+                date={endDate} 
+                onSelect={setEndDate}
+                className={isLoading ? "opacity-50 pointer-events-none" : ""}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="totalAmount">Total Amount</Label>
+              <Input
+                id="totalAmount"
+                placeholder="Enter amount"
+                type="number"
+                value={totalAmount.toString()}
+                onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
+                disabled={isLoading}
+              />
             </div>
             
             <div className="flex items-center space-x-2 pt-2">
-              <Switch 
-                id="autoRenew" 
-                checked={autoRenew} 
-                onCheckedChange={setAutoRenew}
+              <Switch
+                id="recordPayment"
+                checked={recordPayment}
+                onCheckedChange={setRecordPayment}
                 disabled={isLoading}
               />
-              <Label htmlFor="autoRenew">Auto-renew membership</Label>
+              <Label htmlFor="recordPayment">Record Payment Now</Label>
             </div>
             
-            <div className="space-y-4 pt-2 border-t mt-4">
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="recordPayment" 
-                  checked={recordPayment} 
-                  onCheckedChange={setRecordPayment}
-                  disabled={isLoading}
-                />
-                <Label htmlFor="recordPayment">Record payment now</Label>
-              </div>
-              
-              {recordPayment && (
-                <div className="space-y-2 pl-6">
+            {recordPayment && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="paymentAmount">Payment Amount</Label>
+                  <Input
+                    id="paymentAmount"
+                    placeholder="Enter payment amount"
+                    type="number"
+                    value={paymentAmount.toString()}
+                    onChange={(e) => handlePaymentAmountChange(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
                   <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Select 
-                    value={paymentMethod} 
+                  <Select
+                    value={paymentMethod}
                     onValueChange={setPaymentMethod}
                     disabled={isLoading}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="card">Credit/Debit Card</SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="razorpay">Razorpay</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Processing..." : "Assign Plan"}
+            <Button type="submit" disabled={isSubmitting || isLoading}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                "Assign Plan"
+              )}
             </Button>
           </DialogFooter>
         </form>
