@@ -275,9 +275,26 @@ export const adminNavSections: NavSection[] = [
     items: [
       {
         href: "/settings",
-        label: "Global Settings",
+        label: "System Settings",
         icon: <Settings className="h-5 w-5" />,
         permission: "access_settings" as Permission,
+        children: [
+          {
+            href: "/settings",
+            label: "General Settings",
+            permission: "manage_settings" as Permission,
+          },
+          {
+            href: "/settings/branches",
+            label: "Branch Management",
+            permission: "manage_branches" as Permission,
+          },
+          {
+            href: "/settings/automation",
+            label: "Automation Rules",
+            permission: "manage_settings" as Permission,
+          }
+        ]
       },
       {
         href: "/settings/integrations",
@@ -309,7 +326,7 @@ export const adminNavSections: NavSection[] = [
       },
       {
         href: "/settings/templates",
-        label: "Email & SMS Templates",
+        label: "Message Templates",
         icon: <LayoutTemplate className="h-5 w-5" />,
         permission: "access_settings" as Permission,
         children: [
@@ -329,18 +346,6 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_templates" as Permission,
           }
         ]
-      },
-      {
-        href: "/settings/automation",
-        label: "Automation Rules",
-        icon: <Zap className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-      },
-      {
-        href: "/settings/branches",
-        label: "Branch Management",
-        icon: <Building2 className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
       },
       {
         href: "/settings/attendance",
