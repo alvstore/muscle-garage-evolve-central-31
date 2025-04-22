@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -85,15 +84,12 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
   const { currentBranch } = useBranch();
 
   useEffect(() => {
-    // In a real application, fetch members and plans from the database
-    // For now, using mock data
     setMembers(mockMembers);
     setMembershipPlans(mockMembershipPlans);
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    // Update end date when plan or start date changes
     updateEndDate();
   }, [selectedPlanId, startDate]);
 
@@ -125,7 +121,6 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
         throw new Error("Selected member or plan not found");
       }
       
-      // Create membership assignment
       const membershipAssignment = {
         memberId: selectedMemberId,
         planId: selectedPlanId,
@@ -138,10 +133,8 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
         paymentStatus: recordPayment ? "paid" : "pending",
       };
       
-      // Call the parent component's callback to save the assignment
       await onAssignMembership(membershipAssignment);
       
-      // Generate invoice automatically
       if (selectedMember && selectedPlan && currentBranch?.id) {
         const invoice = await invoiceService.generateInvoiceForMembership(
           selectedMemberId,
@@ -154,7 +147,6 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
           currentBranch.id
         );
         
-        // If we need to record payment immediately
         if (recordPayment && invoice) {
           await invoiceService.recordPayment(
             invoice.id,
@@ -232,7 +224,6 @@ const MembershipAssignmentForm = ({ isOpen, onClose, onAssignMembership }: Membe
                 <DatePicker 
                   date={startDate} 
                   onSelect={setStartDate}
-                  className={isLoading ? "opacity-50 pointer-events-none" : ""}
                 />
               </div>
               

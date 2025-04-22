@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { DietPlan } from '@/types/diet';
 import DietPlanForm from '@/components/fitness/DietPlanForm';
-import { DietPlanList } from '@/components/fitness/DietPlanList';
+import { DietPlanList } from '@/components/fitness';
 
 // Mock data for initial development
 const mockDietPlans: DietPlan[] = [
@@ -42,6 +42,25 @@ const mockDietPlans: DietPlan[] = [
     updated_at: "2025-02-01T10:00:00Z"
   }
 ];
+
+// Type adapter function to convert between the different DietPlan type formats
+const adaptDietPlan = (plan: any): DietPlan => {
+  return {
+    id: plan.id,
+    name: plan.name,
+    description: plan.description || '',
+    member_id: plan.member_id || '',
+    trainer_id: plan.trainer_id,
+    notes: plan.notes || '',
+    is_custom: plan.is_custom || false,
+    is_global: plan.is_global || false,
+    diet_type: plan.diet_type || 'standard',
+    goal: plan.goal || '',
+    daily_calories: plan.daily_calories || 0,
+    created_at: plan.created_at || new Date().toISOString(),
+    updated_at: plan.updated_at || new Date().toISOString()
+  };
+};
 
 const TrainerDietPlansPage = () => {
   const { user } = useAuth();
@@ -85,15 +104,17 @@ const TrainerDietPlansPage = () => {
     toast.success("Diet plan deleted successfully");
   };
   
-  const handleSavePlan = (plan: DietPlan) => {
+  const handleSavePlan = (plan: any) => {
     // In a real implementation, you would call an API to save the plan
+    const adaptedPlan = adaptDietPlan(plan);
+    
     if (selectedPlan) {
       // Update existing plan
-      setDietPlans(dietPlans.map(p => p.id === plan.id ? plan : p));
+      setDietPlans(dietPlans.map(p => p.id === adaptedPlan.id ? adaptedPlan : p));
       toast.success("Diet plan updated successfully");
     } else {
       // Create new plan
-      setDietPlans([...dietPlans, plan]);
+      setDietPlans([...dietPlans, adaptedPlan]);
       toast.success("Diet plan created successfully");
     }
     
