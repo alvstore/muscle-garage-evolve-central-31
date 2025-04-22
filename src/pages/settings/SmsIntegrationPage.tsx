@@ -6,7 +6,7 @@ import { useIntegrations } from '@/hooks/use-integrations';
 import { IntegrationConfig } from '@/services/integrationService';
 import { SmsSettingsHeader } from '@/components/settings/sms/SmsSettingsHeader';
 import { SmsProviderSettings } from '@/components/settings/sms/SmsProviderSettings';
-import { NotificationSettings } from '@/components/settings/sms/NotificationSettings';
+import NotificationSettings from '@/components/settings/sms/NotificationSettings'; // Fixed import
 
 const SmsIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('sms');
@@ -69,9 +69,13 @@ const SmsIntegrationPage = () => {
           />
           
           <NotificationSettings 
-            config={displayConfig}
-            onUpdateConfig={handleUpdateConfig}
-            onSave={handleSave}
+            templates={displayConfig.templates || {
+              membershipAlert: false,
+              renewalReminder: false,
+              otpVerification: false,
+              attendanceConfirmation: false
+            }}
+            onChange={(templates) => handleUpdateConfig({ templates })}
           />
         </div>
       </div>

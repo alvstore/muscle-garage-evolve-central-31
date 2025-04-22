@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationSettings from "./sms/NotificationSettings";
 import { useIntegrations } from "@/hooks/use-integrations";
-import { IntegrationConfig } from "@/types";
+import { IntegrationConfig } from "@/services/integrationService"; // Updated import path
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,10 +74,7 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState("provider");
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
-  const { getConfig, updateConfig, test } = useIntegrations();
-  
-  // Get the current SMS config
-  const currentConfig = getConfig("sms") as any;
+  const { config, updateConfig, test } = useIntegrations('sms'); // Fixed to use direct properties from the hook
   
   // Set default templates if they don't exist in the config
   const defaultTemplates = {
@@ -91,23 +88,23 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
   const form = useForm<z.infer<typeof smsConfigSchema>>({
     resolver: zodResolver(smsConfigSchema),
     defaultValues: {
-      provider: (currentConfig?.provider as "msg91" | "twilio" | "custom") || "msg91",
-      senderId: currentConfig?.senderId || "",
+      provider: (config?.provider as "msg91" | "twilio" | "custom") || "msg91",
+      senderId: config?.senderId || "",
       // Provider-specific fields with type assertion
-      ...(currentConfig?.provider === "msg91" ? {
-        msg91AuthKey: currentConfig.msg91AuthKey || "",
+      ...(config?.provider === "msg91" ? {
+        msg91AuthKey: config.msg91AuthKey || "",
       } : {}),
-      ...(currentConfig?.provider === "twilio" ? {
-        twilioAccountSid: currentConfig.twilioAccountSid || "",
-        twilioAuthToken: currentConfig.twilioAuthToken || "",
+      ...(config?.provider === "twilio" ? {
+        twilioAccountSid: config.twilioAccountSid || "",
+        twilioAuthToken: config.twilioAuthToken || "",
       } : {}),
-      ...(currentConfig?.provider === "custom" ? {
-        customApiUrl: currentConfig.customApiUrl || "",
-        customApiMethod: currentConfig.customApiMethod || "POST",
-        customApiHeaders: currentConfig.customApiHeaders || "",
-        customApiParams: currentConfig.customApiParams || "",
+      ...(config?.provider === "custom" ? {
+        customApiUrl: config.customApiUrl || "",
+        customApiMethod: config.customApiMethod || "POST",
+        customApiHeaders: config.customApiHeaders || "",
+        customApiParams: config.customApiParams || "",
       } : {}),
-      templates: currentConfig?.templates || defaultTemplates,
+      templates: config?.templates || defaultTemplates,
     } as any,
   });
   
@@ -155,7 +152,7 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
         templates: fullTemplates,
       } as IntegrationConfig;
       
-      const success = updateConfig("sms", updatedConfig);
+      const success = updateConfig(updatedConfig); // Fixed function call to use single argument
       
       if (success) {
         toast.success("SMS settings saved successfully");
@@ -194,10 +191,10 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
       } as IntegrationConfig;
       
       // Update config temporarily for testing
-      updateConfig("sms", testConfig);
+      updateConfig(testConfig); // Fixed to use single argument
       
       // Run test
-      const result = await test("sms");
+      const result = await test(); // Fixed to use no arguments as per hook expectation
       
       if (result.success) {
         setTestStatus("success");
@@ -410,7 +407,7 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Parameter template with {{phone}} and {{message}} placeholders
+                            Parameter template with placeholders for phone and message
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -508,3 +505,4 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
 };
 
 export default SmsSettings;
+
