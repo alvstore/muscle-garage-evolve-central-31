@@ -4,19 +4,19 @@ import {
   LayoutDashboard,
   Users,
   Dumbbell,
-  ClipboardList,
   Activity,
   CalendarDays,
   Bell,
   MessageSquare,
-  FileText,
-  Settings,
   User,
   Calendar,
   UserCircle,
   ChefHat,
   ListTodo,
-  MessageCircle
+  MessageCircle,
+  Search,
+  TrendingUp,
+  FileText
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 import { Permission } from '@/hooks/use-permissions';
@@ -42,25 +42,7 @@ export const trainerNavSections: NavSection[] = [
     ]
   },
   {
-    name: "My Profile",
-    icon: <User className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/trainers/profile", 
-        label: "Profile", 
-        icon: <User className="h-4 w-4" />,
-        permission: "access_own_resources" as Permission
-      },
-      { 
-        href: "/trainers/attendance", 
-        label: "My Attendance", 
-        icon: <Calendar className="h-4 w-4" />,
-        permission: "trainer_view_attendance" as Permission
-      },
-    ]
-  },
-  {
-    name: "Members",
+    name: "My Members",
     icon: <Users className="h-4 w-4" />,
     items: [
       { 
@@ -70,34 +52,58 @@ export const trainerNavSections: NavSection[] = [
         permission: "trainer_view_members" as Permission
       },
       { 
-        href: "/trainers/pt-plans", 
-        label: "PT Plans", 
+        href: "/members/progress", 
+        label: "Member Progress", 
+        icon: <TrendingUp className="h-4 w-4" />,
+        permission: "trainer_view_members" as Permission
+      },
+    ]
+  },
+  {
+    name: "Workout Plans",
+    icon: <Dumbbell className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/workout-plans", 
+        label: "Manage Plans", 
         icon: <Dumbbell className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
+      },
+      { 
+        href: "/trainers/workout-assignments", 
+        label: "Assign Plans", 
+        icon: <Users className="h-4 w-4" />,
         permission: "trainer_edit_fitness" as Permission
       },
     ]
   },
   {
-    name: "Fitness & Diet",
-    icon: <Activity className="h-4 w-4" />,
+    name: "Diet Plans",
+    icon: <ChefHat className="h-4 w-4" />,
+    items: [
+      { 
+        href: "/trainers/diet-plans", 
+        label: "Manage Diet Plans", 
+        icon: <ChefHat className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
+      },
+      { 
+        href: "/trainers/diet-assignments", 
+        label: "Assign Diet Plans", 
+        icon: <Users className="h-4 w-4" />,
+        permission: "trainer_edit_fitness" as Permission
+      },
+    ]
+  },
+  {
+    name: "Classes",
+    icon: <Calendar className="h-4 w-4" />,
     items: [
       { 
         href: "/classes", 
-        label: "Classes", 
+        label: "My Classes", 
         icon: <Calendar className="h-4 w-4" />,
         permission: "trainer_view_classes" as Permission
-      },
-      { 
-        href: "/fitness/workout-plans", 
-        label: "Workout Plans", 
-        icon: <Activity className="h-4 w-4" />,
-        permission: "trainer_edit_fitness" as Permission
-      },
-      { 
-        href: "/fitness/diet", 
-        label: "Diet Plans", 
-        icon: <ChefHat className="h-4 w-4" />,
-        permission: "trainer_edit_fitness" as Permission
       },
     ]
   },
@@ -107,7 +113,7 @@ export const trainerNavSections: NavSection[] = [
     items: [
       { 
         href: "/communication/announcements", 
-        label: "Announcements", 
+        label: "Member Announcements", 
         icon: <Bell className="h-4 w-4" />,
         permission: "access_communication" as Permission
       },
@@ -121,21 +127,21 @@ export const trainerNavSections: NavSection[] = [
     ]
   },
   {
-    name: "Other",
-    icon: <FileText className="h-4 w-4" />,
+    name: "Profile",
+    icon: <User className="h-4 w-4" />,
     items: [
       { 
-        href: "/reports", 
-        label: "Reports", 
-        icon: <FileText className="h-4 w-4" />, 
-        permission: "access_analytics" as Permission
+        href: "/trainers/profile", 
+        label: "My Profile", 
+        icon: <User className="h-4 w-4" />,
+        permission: "access_own_resources" as Permission
       },
       { 
-        href: "/settings", 
-        label: "Settings", 
-        icon: <Settings className="h-4 w-4" />, 
-        permission: "access_own_resources" as Permission
-      }
+        href: "/trainers/attendance", 
+        label: "My Attendance", 
+        icon: <Calendar className="h-4 w-4" />,
+        permission: "trainer_view_attendance" as Permission
+      },
     ]
   }
 ];

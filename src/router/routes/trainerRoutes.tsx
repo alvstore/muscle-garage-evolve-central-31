@@ -10,6 +10,9 @@ import TrainerPTPlansPage from '@/pages/trainers/TrainerPTPlansPage';
 import TrainerAttendancePage from '@/pages/trainers/TrainerAttendancePage';
 import TrainerProfilePage from '@/pages/trainers/TrainerProfilePage';
 import TrainerTaskPage from '@/pages/trainers/TrainerTaskPage';
+import TrainerWorkoutPlansPage from '@/pages/trainers/TrainerWorkoutPlansPage';
+import TrainerPlanAssignmentsPage from '@/pages/trainers/TrainerPlanAssignmentsPage';
+import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
 
 export const trainerRoutes: RouteObject[] = [
   {
@@ -57,6 +60,30 @@ export const trainerRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TrainerTaskPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/workout-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerWorkoutPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/workout-assignments',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerPlanAssignmentsPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/announcements',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerAnnouncementPage />
       </PrivateRoute>
     )
   }
