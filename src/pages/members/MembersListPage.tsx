@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -21,6 +20,26 @@ import {
 import { supabase } from "@/services/supabaseClient";
 import { useBranch } from "@/hooks/use-branch";
 
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string;
+  avatar_url: string;
+  role: string;
+  member_memberships: {
+    id: string;
+    membership_id: string;
+    status: string;
+    start_date: string;
+    end_date: string;
+    memberships: {
+      name: string;
+    }[];
+  }[];
+}
+
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +57,6 @@ const MembersListPage = () => {
     try {
       const branchFilter = currentBranch?.id ? { branch_id: currentBranch.id } : {};
       
-      // Get all members with their latest membership status
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -66,7 +84,6 @@ const MembersListPage = () => {
       
       if (error) throw error;
       
-      // Format member data for display
       const formattedMembers = data.map(member => {
         const latestMembership = member.member_memberships && member.member_memberships.length > 0 
           ? member.member_memberships.sort((a, b) => 
@@ -125,6 +142,10 @@ const MembersListPage = () => {
     member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const sortedMembers = members.sort((a: Member, b: Member) => 
+    a.name.localeCompare(b.name)
+  );
+
   const handleViewProfile = (memberId: string) => {
     navigate(`/members/${memberId}`);
   };
@@ -176,7 +197,7 @@ const MembersListPage = () => {
           </div>
         ) : filteredMembers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMembers.map(member => (
+            {sortedMembers.map(member => (
               <Card key={member.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   <div className="p-4">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,11 +36,13 @@ const MotivationalPage = () => {
           
           <TabsContent value="create" className="space-y-4">
             <MotivationalMessageForm 
-              message={editMessage || undefined} 
-              onComplete={() => {
+              open={activeTab === "create"}
+              setOpen={(open) => setActiveTab(open ? "create" : "list")}
+              selectedMessage={editMessage}
+              onSubmit={() => {
                 setActiveTab("list");
                 setEditMessage(null);
-              }} 
+              }}
             />
           </TabsContent>
         </Tabs>
