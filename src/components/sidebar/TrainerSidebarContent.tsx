@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import { NavSection } from "@/types/navigation";
+import { Permission } from "@/hooks/use-permissions";
 
 interface TrainerSidebarContentProps {
   closeSidebar?: () => void;
@@ -29,7 +30,7 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
       href: link.href,
       label: link.title,
       icon: link.icon,
-      permission: 'read' // Default permission
+      permission: 'trainer_view_classes' as Permission // Use a valid Permission value
     }))
   }));
 
