@@ -29,7 +29,7 @@ import { Feedback } from "@/types/notification";
 import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from '@/hooks/use-auth';
 
 const mockFeedbackData: Feedback[] = [
   {

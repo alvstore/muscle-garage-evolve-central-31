@@ -17,7 +17,7 @@ import Announcements from '@/components/dashboard/Announcements';
 import MemberInvoiceList from '@/components/finance/MemberInvoiceList';
 import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth';
+import { useAuth } from '@/hooks/use-auth';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
