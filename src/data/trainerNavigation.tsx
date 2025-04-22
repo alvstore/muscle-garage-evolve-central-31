@@ -23,7 +23,7 @@ export const trainerNavSections: NavSection[] = [
         href: "/dashboard", 
         label: "Dashboard", 
         icon: <LayoutDashboard className="h-4 w-4" />,
-        permission: "access_dashboards"
+        permission: "feature_trainer_dashboard"
       }
     ]
   },
@@ -71,13 +71,13 @@ export const trainerNavSections: NavSection[] = [
         href: "/trainers/tasks", 
         label: "Tasks", 
         icon: <ListChecks className="h-4 w-4" />,
-        permission: "trainer_view_tasks"
+        permission: "manage_staff"
       },
       { 
         href: "/trainers/announcements", 
         label: "Announcements", 
         icon: <Megaphone className="h-4 w-4" />,
-        permission: "trainer_view_announcements"
+        permission: "feature_email_campaigns"
       },
       { 
         href: "/communication/notifications", 
@@ -95,7 +95,7 @@ export const trainerNavSections: NavSection[] = [
         href: "/trainers/profile", 
         label: "My Profile", 
         icon: <UserCog2 className="h-4 w-4" />,
-        permission: "trainer_view_profile"
+        permission: "view_staff"
       }
     ]
   }
