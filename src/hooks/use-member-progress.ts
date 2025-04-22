@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from './use-auth';
+import { useBranch } from './use-branch';
 
 export interface MemberProgress {
   id: string;
@@ -22,6 +23,7 @@ export const useMemberProgress = (memberId: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
     const fetchMemberProgress = async () => {
@@ -52,7 +54,7 @@ export const useMemberProgress = (memberId: string) => {
               workout_completion_percent: 85,
               diet_adherence_percent: 70,
               last_updated: new Date().toISOString(),
-              branch_id: user.branchId
+              branch_id: currentBranch?.id || undefined
             });
           } else {
             throw error;
@@ -93,7 +95,7 @@ export const useMemberProgress = (memberId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [memberId, user]);
+  }, [memberId, user, currentBranch]);
 
   const updateProgress = async (updatedProgress: Partial<MemberProgress>) => {
     if (!progress || !user) return { error: 'Not authorized or no progress data found' };
