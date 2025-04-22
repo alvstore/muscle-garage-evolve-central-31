@@ -1,4 +1,3 @@
-
 export interface MealPlan {
   id: string;
   name: string;
@@ -22,7 +21,20 @@ export interface FoodItem {
   notes?: string;
 }
 
-// Database model version with snake_case fields
+export interface DietAssignment {
+  id: string;
+  memberId: string;
+  dietPlanId: string;
+  assignedDate: string;
+  startDate: string;
+  endDate?: string;
+  status: 'active' | 'completed' | 'cancelled';
+  notes?: string;
+  trainerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DietPlan {
   id: string;
   name: string;
@@ -43,7 +55,6 @@ export interface DietPlan {
   updated_at: string;
 }
 
-// Client-friendly version with camelCase fields
 export interface DietPlanClient {
   id: string;
   name: string;
@@ -64,7 +75,6 @@ export interface DietPlanClient {
   updatedAt: string;
 }
 
-// Adapter functions to convert between DB model and client model
 export function adaptToDietPlanClient(plan: DietPlan): DietPlanClient {
   return {
     id: plan.id,

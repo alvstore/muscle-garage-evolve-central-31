@@ -61,7 +61,7 @@ export interface EmailSettings {
 }
 
 export interface SmsSettings {
-  provider: "msg91" | "twilio";
+  provider: "msg91" | "twilio" | "custom";
   senderId: string;
   templates: {
     membershipAlert: boolean;
@@ -69,9 +69,13 @@ export interface SmsSettings {
     otpVerification: boolean;
     attendanceConfirmation: boolean;
   };
+  // Add these missing properties
   msg91AuthKey?: string;
   twilioAccountSid?: string;
   twilioAuthToken?: string;
+  customApiUrl?: string;
+  customApiHeaders?: string;
+  customApiBody?: string;
 }
 
 export interface NotificationSettings {

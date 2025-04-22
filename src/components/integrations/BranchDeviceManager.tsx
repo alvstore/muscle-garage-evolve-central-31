@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -55,11 +54,11 @@ import { useBranch } from '@/hooks/use-branch';
 import { DeviceMapping, DeviceMappingFormValues, ApiTestResult } from '@/types/device-mapping';
 import { Branch } from '@/types/branch';
 
-// Mock branches data
+// Mock branches data - Remove city properties or add them to the Branch interface
 const mockBranches: Branch[] = [
-  { id: "1", name: "Main Branch", address: "123 Main St", city: "Mumbai", isActive: true },
-  { id: "2", name: "Downtown Branch", address: "456 MG Road", city: "Delhi", isActive: true },
-  { id: "3", name: "West Side", address: "789 West Avenue", city: "Bangalore", isActive: true }
+  { id: "1", name: "Main Branch", address: "123 Main St", isActive: true },
+  { id: "2", name: "Downtown Branch", address: "456 MG Road", isActive: true },
+  { id: "3", name: "West Side", address: "789 West Avenue", isActive: true }
 ];
 
 // Mock device mappings data
@@ -275,8 +274,21 @@ const BranchDeviceManager = () => {
     // Simulate API call with a timeout
     setTimeout(() => {
       const isSuccess = Math.random() > 0.3; // 70% success rate for demo
+      const isOpenApiMethod = device.apiMethod === "OpenAPI";
       
       if (isSuccess) {
+        const updatedDevices = devices.map(d => 
+          d.id === device.id 
+            ? { 
+                ...d, 
+                lastSuccessfulSync: new Date().toISOString(),
+                syncStatus: "success" as const
+              } 
+            : d
+        );
+        
+        setDevices(updatedDevices);
+        
         setTestResults(prev => ({
           ...prev,
           [device.id]: {
@@ -289,14 +301,25 @@ const BranchDeviceManager = () => {
         
         toast.success(`Successfully connected to ${device.deviceName}`);
       } else {
-        const isOpenApiFailed = device.apiMethod === "OpenAPI";
-        
-        if (isOpenApiFailed && device.useISAPIFallback) {
+        // OpenAPI failed and fallback is enabled
+        if (isOpenApiMethod && device.useISAPIFallback) {
           // Simulate fallback to ISAPI
           setTimeout(() => {
             const fallbackSuccess = Math.random() > 0.2; // 80% success rate for fallback
             
             if (fallbackSuccess) {
+              const updatedDevices = devices.map(d => 
+                d.id === device.id 
+                  ? { 
+                      ...d, 
+                      lastSuccessfulSync: new Date().toISOString(),
+                      syncStatus: "success" as const
+                    } 
+                  : d
+              );
+              
+              setDevices(updatedDevices);
+              
               setTestResults(prev => ({
                 ...prev,
                 [device.id]: {
@@ -308,19 +331,19 @@ const BranchDeviceManager = () => {
               }));
               
               toast.success(`OpenAPI failed but ISAPI fallback succeeded for ${device.deviceName}`);
-              
-              // Update device with the last successful sync
+            } else {
               const updatedDevices = devices.map(d => 
                 d.id === device.id 
                   ? { 
                       ...d, 
-                      lastSuccessfulSync: new Date().toISOString(),
-                      syncStatus: "success"
+                      lastFailedSync: new Date().toISOString(),
+                      syncStatus: "failed" as const
                     } 
                   : d
               );
+              
               setDevices(updatedDevices);
-            } else {
+              
               setTestResults(prev => ({
                 ...prev,
                 [device.id]: {
@@ -332,23 +355,24 @@ const BranchDeviceManager = () => {
               }));
               
               toast.error(`Both OpenAPI and ISAPI failed for ${device.deviceName}`);
-              
-              // Update device with the last failed sync
-              const updatedDevices = devices.map(d => 
-                d.id === device.id 
-                  ? { 
-                      ...d, 
-                      lastFailedSync: new Date().toISOString(),
-                      syncStatus: "failed"
-                    } 
-                  : d
-              );
-              setDevices(updatedDevices);
             }
             
             setIsTesting(false);
           }, 1500);
         } else {
+          // No fallback or not OpenAPI
+          const updatedDevices = devices.map(d => 
+            d.id === device.id 
+              ? { 
+                  ...d, 
+                  lastFailedSync: new Date().toISOString(),
+                  syncStatus: "failed" as const
+                } 
+              : d
+          );
+          
+          setDevices(updatedDevices);
+          
           setTestResults(prev => ({
             ...prev,
             [device.id]: {
@@ -360,24 +384,11 @@ const BranchDeviceManager = () => {
           }));
           
           toast.error(`Failed to connect to ${device.deviceName}`);
-          
-          // Update device with the last failed sync
-          const updatedDevices = devices.map(d => 
-            d.id === device.id 
-              ? { 
-                  ...d, 
-                  lastFailedSync: new Date().toISOString(),
-                  syncStatus: "failed"
-                } 
-              : d
-          );
-          setDevices(updatedDevices);
-          
           setIsTesting(false);
         }
       }
       
-      if (!isOpenApiFailed) {
+      if (!isOpenApiMethod) {
         setIsTesting(false);
       }
     }, 1500);
@@ -483,7 +494,7 @@ const BranchDeviceManager = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {device.isActive ? (
-                          <Badge variant="success" className="font-normal">Active</Badge>
+                          <Badge variant="outline" className="text-green-600 bg-green-50 font-normal">Active</Badge>
                         ) : (
                           <Badge variant="destructive" className="font-normal">Inactive</Badge>
                         )}
@@ -652,9 +663,6 @@ const BranchDeviceManager = () => {
                       <FormControl>
                         <Input placeholder="Main Door" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Where the device is installed
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

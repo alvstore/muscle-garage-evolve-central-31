@@ -32,7 +32,6 @@ const BranchSpecificSettings = () => {
   const [showAddDeviceDialog, setShowAddDeviceDialog] = useState(false);
   const [editingDevice, setEditingDevice] = useState<DeviceMapping | null>(null);
   
-  // Mock data for demonstration
   const [branchSettings, setBranchSettings] = useState<BranchDeviceSettings>({
     branchId: currentBranch?.id || "",
     devices: [
@@ -47,6 +46,7 @@ const BranchSpecificSettings = () => {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        apiMethod: "OpenAPI",
       },
       {
         id: "device2",
@@ -59,6 +59,7 @@ const BranchSpecificSettings = () => {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        apiMethod: "ISAPI",
       }
     ],
     defaultAccessRules: {
@@ -107,7 +108,6 @@ const BranchSpecificSettings = () => {
   const handleSaveSettings = () => {
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -143,7 +143,6 @@ const BranchSpecificSettings = () => {
   
   const handleAddDevice = (data: DeviceMappingFormValues) => {
     if (editingDevice) {
-      // Update existing device
       setBranchSettings(prev => ({
         ...prev,
         devices: prev.devices.map(device => 
@@ -156,7 +155,8 @@ const BranchSpecificSettings = () => {
                 deviceSerial: data.deviceSerial,
                 deviceLocation: data.deviceLocation,
                 isActive: data.isActive,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                apiMethod: data.apiMethod
               } 
             : device
         )
@@ -167,7 +167,6 @@ const BranchSpecificSettings = () => {
         description: `${data.deviceName} has been updated successfully.`,
       });
     } else {
-      // Add new device
       const newDevice: DeviceMapping = {
         id: `device${Date.now()}`,
         branchId: currentBranch?.id || "",
@@ -179,6 +178,7 @@ const BranchSpecificSettings = () => {
         isActive: data.isActive,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        apiMethod: data.apiMethod
       };
       
       setBranchSettings(prev => ({
@@ -428,6 +428,31 @@ const BranchSpecificSettings = () => {
                                       onCheckedChange={field.onChange}
                                     />
                                   </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="apiMethod"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>API Method</FormLabel>
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select API method" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="OpenAPI">OpenAPI</SelectItem>
+                                      <SelectItem value="ISAPI">ISAPI</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
                                 </FormItem>
                               )}
                             />

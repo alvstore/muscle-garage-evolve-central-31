@@ -22,9 +22,9 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Member } from "@/types/member";
-import { Membership } from "@/types/membership";
+import { MembershipPlan } from "@/types/membership";
 import { MembershipAssignment } from "@/types/membership-assignment";
-import invoiceService from "@/services/invoiceService";
+import { invoiceService } from "@/services/invoiceService";
 import { useBranch } from "@/hooks/use-branch";
 
 const mockMembers: Member[] = [
@@ -54,7 +54,7 @@ const mockMembers: Member[] = [
   }
 ];
 
-const mockMembershipPlans: Membership[] = [
+const mockMembershipPlans: MembershipPlan[] = [
   {
     id: "basic",
     name: "Basic Membership",
@@ -84,10 +84,24 @@ const mockMembershipPlans: Membership[] = [
   }
 ];
 
+interface Membership {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration_days: number;
+  is_active: boolean;
+  features: {
+    gym: boolean;
+    pool: boolean;
+    classes: boolean;
+  }
+}
+
 interface MembershipAssignmentFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAssignMembership: (assignment: MembershipAssignment) => Promise<void>;
+  onAssignMembership: (assignment: MembershipAssignment) => void;
 }
 
 const MembershipAssignmentForm = ({

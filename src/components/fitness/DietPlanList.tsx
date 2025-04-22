@@ -46,6 +46,10 @@ interface DietPlanListProps {
   onDelete?: (planId: string) => void;
   onDuplicate?: (plan: DietPlan) => void;
   onView?: (plan: DietPlan) => void;
+  onPlanCreated?: (plan: DietPlan) => void; // Add missing prop
+  onPlanUpdated?: (updatedPlan: DietPlan) => void; // Add missing prop
+  onPlanDeleted?: (planId: string) => void; // Add missing prop
+  canCreateGlobal?: boolean; // Add missing prop
   emptyState?: React.ReactNode;
   isLoading?: boolean;
   showActions?: boolean;
@@ -58,6 +62,10 @@ export const DietPlanList = ({
   onDelete,
   onDuplicate,
   onView,
+  onPlanCreated,
+  onPlanUpdated,
+  onPlanDeleted,
+  canCreateGlobal,
   emptyState,
   isLoading = false,
   showActions = true,
