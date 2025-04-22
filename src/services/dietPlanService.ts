@@ -1,4 +1,3 @@
-
 import api from './api';
 import { DietPlan, DietAssignment } from '@/types/diet';
 import { toast } from 'sonner';
@@ -131,6 +130,18 @@ export const dietPlanService = {
       const errorMessage = error.response?.data?.message || 'Failed to generate PDF';
       toast.error(errorMessage);
       return null;
+    }
+  },
+
+  // Add new admin-specific method
+  async getAllDietPlans(): Promise<DietPlan[]> {
+    try {
+      const response = await api.get<DietPlan[]>('/diet-plans/all');
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to fetch diet plans';
+      toast.error(errorMessage);
+      return [];
     }
   }
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -31,7 +30,8 @@ import {
   FolderHeart,
   Gift,
   Wallet,
-  Archive
+  Archive,
+  Settings
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -264,18 +264,50 @@ export const adminNavSections: NavSection[] = [
       },
     ],
   },
+  {
+    name: "Settings",
+    items: [
+      {
+        href: "/settings",
+        label: "Global Settings",
+        icon: <Settings className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+      },
+      {
+        href: "/settings/integrations",
+        label: "Integrations",
+        icon: <Globe className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+      },
+      {
+        href: "/settings/branches",
+        label: "Branch Management",
+        icon: <Building2 className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+      },
+      {
+        href: "/settings/payment-gateways",
+        label: "Payment Gateways",
+        icon: <CreditCard className="h-5 w-5" />,
+        permission: "access_settings" as Permission,
+      }
+    ],
+  },
 ];
 
-export const staffNavSections: NavSection[] = adminNavSections.map(section => {
-  if (section.name === "Communication") {
-    return {
-      ...section,
-      items: section.items.filter(item => 
-        item.href !== "/communication/reminder-rules" &&
-        item.href !== "/communication/email" &&
-        item.href !== "/communication/sms"
-      )
-    };
-  }
-  return section;
-});
+// Filter out Settings section for non-admin staff
+export const staffNavSections: NavSection[] = adminNavSections
+  .filter(section => section.name !== "Settings")
+  .map(section => {
+    if (section.name === "Communication") {
+      return {
+        ...section,
+        items: section.items.filter(item => 
+          item.href !== "/communication/reminder-rules" &&
+          item.href !== "/communication/email" &&
+          item.href !== "/communication/sms"
+        )
+      };
+    }
+    return section;
+  });
