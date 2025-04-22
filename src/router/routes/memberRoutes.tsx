@@ -49,5 +49,38 @@ export const memberRoutes: RouteObject[] = [
         <MemberProgressPage />
       </PrivateRoute>
     )
+  },
+  // Member-specific profile routes
+  {
+    path: '/profile',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/payments',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/attendance',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <MemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/bookings',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
   }
 ];

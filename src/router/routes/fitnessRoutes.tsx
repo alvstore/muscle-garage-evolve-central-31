@@ -7,6 +7,7 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
 import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
 import DietPlansPage from '@/pages/fitness/DietPlansPage';
+import FitnessProgressPage from '@/pages/fitness/FitnessProgressPage';
 
 export const fitnessRoutes: RouteObject[] = [
   {
@@ -33,12 +34,36 @@ export const fitnessRoutes: RouteObject[] = [
       </PrivateRoute>
     )
   },
+  {
+    path: '/fitness/progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <FitnessProgressPage />
+      </PrivateRoute>
+    )
+  },
   // Member-specific fitness routes
   {
     path: '/my-plans',
     element: (
       <PrivateRoute allowedRoles={['member']}>
         <FitnessPlanPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/my-workouts',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <WorkoutPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/my-diet',
+    element: (
+      <PrivateRoute allowedRoles={['member']}>
+        <DietPlansPage />
       </PrivateRoute>
     )
   }

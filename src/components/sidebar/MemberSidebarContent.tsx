@@ -9,9 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NavSection } from "@/types/navigation";
 import NavigationSections from "@/components/navigation/NavigationSections";
+import { Permission } from "@/hooks/use-permissions";
 
 interface MemberSidebarContentProps {
   closeSidebar?: () => void;
+  onLinkClick?: () => void;
 }
 
 // Define member navigation
@@ -24,7 +26,7 @@ const memberNavSections: NavSection[] = [
         href: "/dashboard", 
         label: "Dashboard", 
         icon: <LayoutDashboard className="h-4 w-4" />,
-        permission: "feature_member_dashboard"
+        permission: "feature_member_dashboard" as Permission
       }
     ]
   },
@@ -36,7 +38,7 @@ const memberNavSections: NavSection[] = [
         href: "/profile", 
         label: "Profile", 
         icon: <UserCircle className="h-4 w-4" />,
-        permission: "member_view_profile"
+        permission: "member_view_profile" as Permission
       }
     ]
   },
@@ -48,19 +50,19 @@ const memberNavSections: NavSection[] = [
         href: "/my-plans", 
         label: "My Plans", 
         icon: <FileText className="h-4 w-4" />,
-        permission: "member_view_plans"
+        permission: "member_view_plans" as Permission
       },
       { 
         href: "/my-workouts", 
         label: "Workout Plans", 
         icon: <Dumbbell className="h-4 w-4" />,
-        permission: "member_view_plans"
+        permission: "member_view_plans" as Permission
       },
       { 
         href: "/my-diet", 
         label: "Diet Plans", 
         icon: <Utensils className="h-4 w-4" />,
-        permission: "member_view_plans"
+        permission: "member_view_plans" as Permission
       }
     ]
   },
@@ -72,7 +74,7 @@ const memberNavSections: NavSection[] = [
         href: "/bookings", 
         label: "My Bookings", 
         icon: <Calendar className="h-4 w-4" />,
-        permission: "member_book_classes"
+        permission: "member_book_classes" as Permission
       }
     ]
   },
@@ -84,7 +86,7 @@ const memberNavSections: NavSection[] = [
         href: "/payments", 
         label: "Payment History", 
         icon: <CreditCard className="h-4 w-4" />,
-        permission: "member_view_invoices"
+        permission: "member_view_invoices" as Permission
       }
     ]
   },
@@ -96,7 +98,7 @@ const memberNavSections: NavSection[] = [
         href: "/attendance", 
         label: "My Attendance", 
         icon: <Clock className="h-4 w-4" />,
-        permission: "member_view_attendance"
+        permission: "member_view_attendance" as Permission
       }
     ]
   }
