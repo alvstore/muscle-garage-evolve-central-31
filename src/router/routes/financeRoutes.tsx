@@ -7,7 +7,9 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 import InvoicePage from '@/pages/finance/InvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';
 import FinanceDashboardPage from '@/pages/finance/FinanceDashboardPage';
-import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
+import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
+import IncomeRecordsPage from '@/pages/finance/IncomeRecordsPage';
+import ExpenseCategoryPage from '@/pages/finance/ExpenseCategoryPage';
 
 export const financeRoutes: RouteObject[] = [
   {
@@ -43,18 +45,26 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/settings/payment-gateways',
+    path: '/finance/income',
     element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <PaymentGatewaySettingsPage />
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <IncomeRecordsPage />
       </PrivateRoute>
     )
   },
   {
-    path: '/reports',
+    path: '/finance/expenses',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FinanceDashboardPage />
+        <ExpenseRecordsPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/finance/expenses/categories',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <ExpenseCategoryPage />
       </PrivateRoute>
     )
   }

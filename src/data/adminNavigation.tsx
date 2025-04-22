@@ -244,6 +244,39 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Finance",
+    items: [
+      {
+        href: "/finance/dashboard",
+        label: "Finance Dashboard",
+        icon: <PieChart className="h-5 w-5" />,
+        permission: "access_finance" as Permission,
+        children: [
+          {
+            href: "/finance/invoices",
+            label: "Invoices",
+            permission: "manage_invoices" as Permission,
+          },
+          {
+            href: "/finance/transactions",
+            label: "Transactions",
+            permission: "manage_transactions" as Permission,
+          },
+          {
+            href: "/finance/income",
+            label: "Income Records",
+            permission: "manage_income" as Permission,
+          },
+          {
+            href: "/finance/expenses",
+            label: "Expense Management",
+            permission: "manage_expenses" as Permission,
+          }
+        ]
+      },
+    ],
+  },
+  {
     name: "Settings",
     items: [
       {
