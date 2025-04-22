@@ -34,6 +34,7 @@ export interface DietPlan {
   notes?: string;
   isCustom: boolean;
   isGlobal?: boolean;
+  branchId?: string;  // Added branchId property
   dietType?: 'standard' | 'vegetarian' | 'vegan' | 'keto' | 'paleo' | 'gluten-free';
   goal?: 'weight-loss' | 'maintenance' | 'muscle-gain';
   dailyCalories?: number;
