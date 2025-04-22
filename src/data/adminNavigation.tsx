@@ -201,24 +201,6 @@ export const adminNavSections: NavSection[] = [
         permission: "access_communication" as Permission,
       },
       {
-        href: "/communication/reminder-rules",
-        label: "Reminder Rules",
-        icon: <Clock className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/email",
-        label: "Email Integration",
-        icon: <Mail className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/sms",
-        label: "SMS Integration",
-        icon: <MessageCircle className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
         href: "/communication/notifications",
         label: "Notifications",
         icon: <Bell className="h-5 w-5" />,
@@ -288,7 +270,6 @@ export const adminNavSections: NavSection[] = [
           {
             href: "/settings/branches",
             label: "Branch Management",
-            // Changed permission to restrict branch management to admin only
             permission: "manage_branches" as Permission,
           },
           {
@@ -316,3 +297,17 @@ export const adminNavSections: NavSection[] = [
     ],
   },
 ];
+
+export const staffNavSections: NavSection[] = adminNavSections.map(section => {
+  if (section.name === "Communication") {
+    return {
+      ...section,
+      items: section.items.filter(item => 
+        item.href !== "/communication/reminder-rules" &&
+        item.href !== "/communication/email" &&
+        item.href !== "/communication/sms"
+      )
+    };
+  }
+  return section;
+});
