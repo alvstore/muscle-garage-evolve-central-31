@@ -1,50 +1,94 @@
 
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
-import FeedbackTabs from '@/components/communication/feedback/FeedbackTabs';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { Feedback } from '@/types/notification';
+import { useAuth } from '@/hooks/use-auth';
+import { useBranch } from '@/hooks/use-branch';
+import { useMemberSpecificData } from '@/hooks/use-member-specific-data';
+import FeedbackForm from '@/components/communication/FeedbackForm';
 import FeedbackHeader from '@/components/communication/feedback/FeedbackHeader';
 import BranchInfo from '@/components/communication/feedback/BranchInfo';
+import FeedbackTabs from '@/components/communication/feedback/FeedbackTabs';
 import { useFeedback } from '@/hooks/use-feedback';
-import { toast } from 'sonner';
 
 const FeedbackPage = () => {
-  const { feedbackList, isLoading, error, addFeedback, updateFeedback, deleteFeedback } = useFeedback();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { currentBranch } = useBranch();
+  const isMember = user?.role === 'member';
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
+  const { data: feedbacks, isLoading, refetch } = useFeedback(currentBranch?.id, user?.id);
 
-  const handleDeleteFeedback = (id: string) => {
-    try {
-      deleteFeedback(id);
-      toast.success('Feedback deleted successfully');
-    } catch (error) {
-      toast.error('Failed to delete feedback');
+  // Filter feedback types based on user role
+  const memberFeedbackTypes = ['general', 'trainer', 'class'];
+  
+  // Fix for the TypeScript error: Properly define the function return type to match hook expectations
+  const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
+    feedbacks || [],
+    (feedbackArray: Feedback[], userId: string) => {
+      // When a member is logged in, only return their feedbacks
+      if (userId) {
+        return feedbackArray.filter(item => item.memberId === userId);
+      }
+      // For non-members, return all feedbacks
+      return feedbackArray;
     }
-  };
+  );
+
+  const addFeedbackMutation = useMutation({
+    mutationFn: async (newFeedback: Feedback) => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return { 
+        ...newFeedback, 
+        id: `feedback${Date.now()}`,
+        branchId: currentBranch?.id,
+        memberId: user?.id
+      };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Feedback submitted",
+        description: "Your feedback has been submitted successfully."
+      });
+      refetch();
+      setIsModalOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error submitting feedback",
+        description: "There was an error submitting your feedback. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <Container>
-      <div className="py-6 space-y-6">
-        <FeedbackHeader />
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="md:col-span-3">
-            <FeedbackTabs 
-              feedbackList={feedbackList}
-              isLoading={isLoading}
-              error={error} 
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              onDeleteFeedback={handleDeleteFeedback}
-            />
-          </div>
-          
-          <div className="md:col-span-1">
-            <BranchInfo />
-          </div>
-        </div>
+      <div className="py-6">
+        <FeedbackHeader onNewFeedback={() => setIsModalOpen(true)} />
+        <BranchInfo branch={currentBranch} />
+
+        <FeedbackTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          feedbacks={filteredFeedbacks as Feedback[]}
+          isLoading={isLoading}
+          isMember={isMember}
+          memberFeedbackTypes={memberFeedbackTypes}
+        />
+
+        {isModalOpen && (
+          <FeedbackForm
+            onComplete={() => {
+              setIsModalOpen(false);
+            }}
+            allowedFeedbackTypes={isMember ? memberFeedbackTypes as any[] : undefined}
+          />
+        )}
       </div>
     </Container>
   );

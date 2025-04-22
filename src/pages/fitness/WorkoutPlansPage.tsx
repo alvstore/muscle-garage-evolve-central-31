@@ -5,55 +5,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WorkoutPlansManager from '@/components/fitness/WorkoutPlansManager';
 import { useAuth } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 const WorkoutPlansPage = () => {
   const { user } = useAuth();
-  const { userRole, can } = usePermissions();
-  const navigate = useNavigate();
+  const { userRole } = usePermissions();
   
-  // Determine user capabilities based on role
+  // For staff/admin/trainer, show the full workout plan manager
+  // For members, show only their assigned plans
   const isStaffOrTrainer = userRole === 'admin' || userRole === 'staff' || userRole === 'trainer';
-  const canCreatePlans = userRole === 'admin' || userRole === 'trainer' || can('create_edit_plans');
-  const canAssignPlans = isStaffOrTrainer || can('assign_workout_plan');
   
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Workout Plans</h1>
-        
-        {canCreatePlans && (
-          <Button onClick={() => navigate("/fitness/workout-plans/create")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Plan
-          </Button>
-        )}
       </div>
       
       {isStaffOrTrainer ? (
-        <Tabs defaultValue={canCreatePlans ? "manage" : "assign"}>
+        <Tabs defaultValue="manage">
           <TabsList className="grid w-full md:w-auto grid-cols-2 h-auto">
-            {canCreatePlans && <TabsTrigger value="manage">Manage Plans</TabsTrigger>}
-            {canAssignPlans && <TabsTrigger value="assign">Assign Plans</TabsTrigger>}
+            <TabsTrigger value="manage">Manage Plans</TabsTrigger>
+            <TabsTrigger value="assign">Assign Plans</TabsTrigger>
           </TabsList>
           
-          {canCreatePlans && (
-            <TabsContent value="manage" className="mt-6">
-              <WorkoutPlansManager readOnly={!canCreatePlans} />
-            </TabsContent>
-          )}
+          <TabsContent value="manage" className="mt-6">
+            <WorkoutPlansManager />
+          </TabsContent>
           
-          {canAssignPlans && (
-            <TabsContent value="assign" className="mt-6">
-              <WorkoutPlansManager assignOnly={true} />
-            </TabsContent>
-          )}
+          <TabsContent value="assign" className="mt-6">
+            <WorkoutPlansManager />
+          </TabsContent>
         </Tabs>
       ) : (
         // Member view - only show their assigned plans
-        <WorkoutPlansManager forMemberId={user?.id} readOnly={true} />
+        <WorkoutPlansManager forMemberId={user?.id} />
       )}
     </div>
   );

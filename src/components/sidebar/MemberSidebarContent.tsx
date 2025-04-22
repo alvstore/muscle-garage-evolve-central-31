@@ -2,114 +2,29 @@
 import React, { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, UserCircle, Calendar, FileText, CreditCard, Clock, Dumbbell, Utensils } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Logo from "@/components/Logo";
+import { memberNavSections } from "@/data/memberNavigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { NavSection } from "@/types/navigation";
-import NavigationSections from "@/components/navigation/NavigationSections";
-import { Permission } from "@/hooks/use-permissions";
+import {
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+import SidebarNavSection from "./SidebarNavSection";
 
 interface MemberSidebarContentProps {
-  closeSidebar?: () => void;
   onLinkClick?: () => void;
 }
 
-// Define member navigation
-const memberNavSections: NavSection[] = [
-  {
-    name: "Dashboard",
-    icon: <LayoutDashboard className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/dashboard", 
-        label: "Dashboard", 
-        icon: <LayoutDashboard className="h-4 w-4" />,
-        permission: "feature_member_dashboard" as Permission
-      }
-    ]
-  },
-  {
-    name: "My Profile",
-    icon: <UserCircle className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/profile", 
-        label: "Profile", 
-        icon: <UserCircle className="h-4 w-4" />,
-        permission: "member_view_profile" as Permission
-      }
-    ]
-  },
-  {
-    name: "Fitness",
-    icon: <Dumbbell className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/my-plans", 
-        label: "My Plans", 
-        icon: <FileText className="h-4 w-4" />,
-        permission: "member_view_plans" as Permission
-      },
-      { 
-        href: "/my-workouts", 
-        label: "Workout Plans", 
-        icon: <Dumbbell className="h-4 w-4" />,
-        permission: "member_view_plans" as Permission
-      },
-      { 
-        href: "/my-diet", 
-        label: "Diet Plans", 
-        icon: <Utensils className="h-4 w-4" />,
-        permission: "member_view_plans" as Permission
-      }
-    ]
-  },
-  {
-    name: "Classes",
-    icon: <Calendar className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/bookings", 
-        label: "My Bookings", 
-        icon: <Calendar className="h-4 w-4" />,
-        permission: "member_book_classes" as Permission
-      }
-    ]
-  },
-  {
-    name: "Payments",
-    icon: <CreditCard className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/payments", 
-        label: "Payment History", 
-        icon: <CreditCard className="h-4 w-4" />,
-        permission: "member_view_invoices" as Permission
-      }
-    ]
-  },
-  {
-    name: "Attendance",
-    icon: <Clock className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/attendance", 
-        label: "My Attendance", 
-        icon: <Clock className="h-4 w-4" />,
-        permission: "member_view_attendance" as Permission
-      }
-    ]
-  }
-];
-
-const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ closeSidebar }) => {
+const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ onLinkClick }) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
   
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard', 'Fitness']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleSection = (sectionName: string) => {
     if (expandedSections.includes(sectionName)) {
@@ -132,24 +47,31 @@ const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ closeSideba
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 flex items-center gap-3">
-        <div className="bg-white p-1 rounded-md">
-          <Logo variant="default" />
+    <>
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-3">
+          <Logo variant="white" />
+          <h1 className="text-lg font-semibold truncate max-w-[120px]">Muscle Garage</h1>
         </div>
-        <h1 className="text-lg font-semibold">Muscle Garage</h1>
-      </div>
+      </SidebarHeader>
       
-      <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
-        <NavigationSections
-          sections={memberNavSections}
-          expandedSections={expandedSections}
-          toggleSection={toggleSection}
-          onLinkClick={closeSidebar}
-        />
-      </ScrollArea>
+      <SidebarContent>
+        <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
+          <div className="p-2">
+            {memberNavSections.map((section, index) => (
+              <SidebarNavSection
+                key={index}
+                section={section}
+                isExpanded={expandedSections.includes(section.name)}
+                onToggle={() => toggleSection(section.name)}
+                onLinkClick={onLinkClick}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+      </SidebarContent>
       
-      <div className="mt-auto p-4">
+      <SidebarFooter className="mt-auto p-4">
         <Separator className="my-2 bg-white/10" />
         <Button
           variant="ghost"
@@ -160,8 +82,8 @@ const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ closeSideba
           <LogOut className="mr-2 h-4 w-4" />
           {isLoggingOut ? "Logging out..." : "Logout"}
         </Button>
-      </div>
-    </div>
+      </SidebarFooter>
+    </>
   );
 };
 

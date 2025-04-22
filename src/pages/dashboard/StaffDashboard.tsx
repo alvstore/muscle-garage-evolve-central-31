@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, CalendarCheck2, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -8,303 +7,135 @@ import PendingPayments from "@/components/dashboard/PendingPayments";
 import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
 import { Button } from "@/components/ui/button";
+import { mockDashboardSummary } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { Announcement } from "@/types/notification";
-import { supabase } from "@/services/supabaseClient";
-import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branch";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
-    totalMembers: 0,
-    todayCheckIns: 0,
-    pendingPayments: { total: 0, count: 0 },
-    upcomingRenewals: 0,
-    attendanceTrend: []
-  });
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [pendingPayments, setPendingPayments] = useState([]);
-  const [upcomingRenewals, setUpcomingRenewals] = useState([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
   
   useEffect(() => {
-    fetchDashboardData();
-  }, [currentBranch?.id]);
-
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Fetch dashboard summary data based on branch
-      const branchFilter = currentBranch?.id ? { branch_id: currentBranch.id } : {};
-      
-      // 1. Fetch total members count
-      const { count: membersCount, error: membersError } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact' })
-        .eq('role', 'member')
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (membersError) throw membersError;
-      
-      // 2. Fetch today's check-ins
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const { count: checkInsCount, error: checkInsError } = await supabase
-        .from('member_attendance')
-        .select('id', { count: 'exact' })
-        .gte('check_in', today.toISOString())
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (checkInsError) throw checkInsError;
-      
-      // 3. Fetch pending payments
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'pending')
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (paymentsError) throw paymentsError;
-      
-      const pendingPaymentsTotal = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-      
-      // 4. Fetch upcoming renewals
-      const oneWeekLater = new Date();
-      oneWeekLater.setDate(oneWeekLater.getDate() + 7);
-      
-      const { count: renewalsCount, error: renewalsError } = await supabase
-        .from('member_memberships')
-        .select('id', { count: 'exact' })
-        .lte('end_date', oneWeekLater.toISOString().split('T')[0])
-        .gt('end_date', today.toISOString().split('T')[0])
-        .eq('status', 'active')
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (renewalsError) throw renewalsError;
-      
-      // 5. Fetch attendance trend (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const { data: attendanceData, error: attendanceError } = await supabase
-        .from('member_attendance')
-        .select('check_in')
-        .gte('check_in', sevenDaysAgo.toISOString())
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (attendanceError) throw attendanceError;
-      
-      // Process attendance data into a format that can be used by the chart
-      const attendanceTrend = processAttendanceTrend(attendanceData);
-      
-      // 6. Fetch recent activities
-      const { data: activities, error: activitiesError } = await supabase
-        .from('member_attendance')
-        .select(`
-          id,
-          check_in,
-          member_id,
-          profiles:member_id (full_name, avatar_url)
-        `)
-        .order('check_in', { ascending: false })
-        .limit(5)
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (activitiesError) throw activitiesError;
-      
-      // Format activities
-      const formattedActivities = activities.map(activity => ({
-        id: activity.id,
-        title: "Member Check-in",
-        description: `${activity.profiles?.full_name || 'Member'} checked in`,
-        user: {
-          name: activity.profiles?.full_name || 'Unknown Member',
-          avatar: activity.profiles?.avatar_url || '/placeholder.svg',
-        },
-        time: formatRelativeTime(new Date(activity.check_in)),
-        type: "check-in"
-      }));
-      
-      // 7. Fetch pending payments for display
-      const { data: pendingPaymentsData, error: pendingPaymentsError } = await supabase
-        .from('payments')
-        .select(`
-          id,
-          amount,
-          payment_date,
-          status,
-          member_id,
-          profiles:member_id (full_name, avatar_url, phone)
-        `)
-        .eq('status', 'pending')
-        .order('payment_date', { ascending: false })
-        .limit(5)
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (pendingPaymentsError) throw pendingPaymentsError;
-      
-      // Format pending payments
-      const formattedPendingPayments = pendingPaymentsData.map(payment => ({
-        id: payment.id,
-        memberId: payment.member_id,
-        memberName: payment.profiles?.full_name || 'Unknown Member',
-        memberAvatar: payment.profiles?.avatar_url || '/placeholder.svg',
-        membershipPlan: 'Membership Payment',
-        amount: Number(payment.amount),
-        dueDate: payment.payment_date,
-        status: payment.status,
-        contactInfo: payment.profiles?.phone || 'No phone'
-      }));
-      
-      // 8. Fetch upcoming renewals for display
-      const { data: upcomingRenewalsData, error: upcomingRenewalsError } = await supabase
-        .from('member_memberships')
-        .select(`
-          id,
-          end_date,
-          total_amount,
-          status,
-          member_id,
-          profiles:member_id (full_name, avatar_url),
-          memberships:membership_id (name)
-        `)
-        .lte('end_date', oneWeekLater.toISOString().split('T')[0])
-        .gt('end_date', today.toISOString().split('T')[0])
-        .eq('status', 'active')
-        .order('end_date', { ascending: true })
-        .limit(5)
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '');
-      
-      if (upcomingRenewalsError) throw upcomingRenewalsError;
-      
-      // Format upcoming renewals
-      const formattedUpcomingRenewals = upcomingRenewalsData.map(renewal => ({
-        id: renewal.id,
-        memberName: renewal.profiles?.full_name || 'Unknown Member',
-        memberAvatar: renewal.profiles?.avatar_url || '/placeholder.svg',
-        membershipPlan: renewal.memberships?.name || 'Standard Membership',
-        expiryDate: renewal.end_date,
-        status: renewal.status,
-        renewalAmount: Number(renewal.total_amount)
-      }));
-      
-      // 9. Fetch announcements
-      const { data: announcementsData, error: announcementsError } = await supabase
-        .from('announcements')
-        .select(`
-          id,
-          title,
-          content,
-          created_at,
-          priority,
-          created_by,
-          profiles:created_by (full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (announcementsError) throw announcementsError;
-      
-      // Format announcements
-      const formattedAnnouncements = announcementsData.map(announcement => ({
-        id: announcement.id,
-        title: announcement.title,
-        content: announcement.content,
-        authorId: announcement.created_by,
-        authorName: announcement.profiles?.full_name || 'Staff Member',
-        createdAt: announcement.created_at,
-        priority: announcement.priority || 'medium',
-        targetRoles: ['member', 'trainer', 'staff'],
-        channels: ['in-app'],
-        sentCount: 0,
-        forRoles: ['member', 'trainer', 'staff'],
-        createdBy: announcement.created_by
-      }));
-      
-      // Update state with all fetched data
-      setDashboardData({
-        totalMembers: membersCount || 0,
-        todayCheckIns: checkInsCount || 0,
-        pendingPayments: { 
-          total: pendingPaymentsTotal,
-          count: payments.length 
-        },
-        upcomingRenewals: renewalsCount || 0,
-        attendanceTrend
-      });
-      
-      setRecentActivities(formattedActivities);
-      setPendingPayments(formattedPendingPayments);
-      setUpcomingRenewals(formattedUpcomingRenewals);
-      setAnnouncements(formattedAnnouncements);
-      
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Failed to load dashboard data",
-        description: "Please try refreshing the page"
-      });
-    } finally {
+    // Simulate API call
+    setTimeout(() => {
+      setDashboardData(mockDashboardSummary);
       setIsLoading(false);
-    }
-  };
+    }, 1000);
+  }, []);
 
-  // Helper function to process attendance data into a chart-friendly format
-  const processAttendanceTrend = (attendanceData) => {
-    const days = [];
-    const counts = new Array(7).fill(0);
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      days.push(formatDate(date));
-      
-      // Count check-ins for this day
-      for (const attendance of attendanceData) {
-        const checkInDate = new Date(attendance.check_in);
-        checkInDate.setHours(0, 0, 0, 0);
-        
-        if (checkInDate.getTime() === date.getTime()) {
-          counts[6 - i]++;
-        }
-      }
+  const recentActivities = [
+    {
+      id: "1",
+      title: "New Member Registration",
+      description: "Sarah Parker has registered as a new member",
+      user: {
+        name: "Sarah Parker",
+        avatar: "/placeholder.svg",
+      },
+      time: "10 minutes ago",
+      type: "membership" as const,
+    },
+    {
+      id: "2",
+      title: "Class Attendance",
+      description: "Michael Wong checked in for HIIT Extreme class",
+      user: {
+        name: "Michael Wong",
+        avatar: "/placeholder.svg",
+      },
+      time: "30 minutes ago",
+      type: "check-in" as const,
+    },
+    {
+      id: "3",
+      title: "Payment Received",
+      description: "Emily Davidson paid $99 for Standard Monthly membership",
+      user: {
+        name: "Emily Davidson",
+        avatar: "/placeholder.svg",
+      },
+      time: "1 hour ago",
+      type: "payment" as const,
     }
-    
-    return days.map((day, index) => ({
-      name: day,
-      total: counts[index]
-    }));
-  };
+  ];
 
-  // Helper function to format date
-  const formatDate = (date) => {
-    const options = { weekday: 'short' };
-    return new Intl.DateTimeFormat('en-US', options).format(date);
-  };
-
-  // Helper function to format relative time
-  const formatRelativeTime = (date) => {
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMins = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
-    if (diffInMins < 60) {
-      return `${diffInMins} minute${diffInMins !== 1 ? 's' : ''} ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
-    } else {
-      return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+  const pendingPayments = [
+    {
+      id: "payment1",
+      memberId: "member2",
+      memberName: "Sarah Parker",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Standard Monthly",
+      amount: 99,
+      dueDate: "2023-07-25T00:00:00Z",
+      status: "pending" as const,
+      contactInfo: "+1234567894",
+    },
+    {
+      id: "payment2",
+      memberId: "member5",
+      memberName: "David Miller",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Premium Annual",
+      amount: 999,
+      dueDate: "2023-07-15T00:00:00Z",
+      status: "overdue" as const,
+      contactInfo: "+1234567897",
     }
-  };
+  ];
+
+  const upcomingRenewals = [
+    {
+      id: "renewal1",
+      memberName: "Emily Davidson",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Premium Annual",
+      expiryDate: "2023-07-28T00:00:00Z",
+      status: "active" as const,
+      renewalAmount: 999
+    },
+    {
+      id: "renewal2",
+      memberName: "Michael Wong",
+      memberAvatar: "/placeholder.svg",
+      membershipPlan: "Basic Quarterly",
+      expiryDate: "2023-07-30T00:00:00Z",
+      status: "active" as const,
+      renewalAmount: 249
+    }
+  ];
+
+  const mockAnnouncements: Announcement[] = [
+    {
+      id: "announcement1",
+      title: "Gym Closure for Maintenance",
+      content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-10T10:00:00Z",
+      priority: "high",
+      targetRoles: ["member", "trainer", "staff"],
+      channels: ["in-app", "email"],
+      sentCount: 120,
+      forRoles: ["member", "trainer", "staff"],
+      createdBy: "admin1"
+    },
+    {
+      id: "announcement2",
+      title: "New Fitness Classes Added",
+      content: "We're excited to announce new Zumba and Pilates classes starting next week!",
+      authorId: "admin1",
+      authorName: "Admin User",
+      createdAt: "2023-07-12T14:30:00Z",
+      priority: "medium",
+      targetRoles: ["member", "trainer"],
+      channels: ["in-app", "email"],
+      sentCount: 98,
+      forRoles: ["member", "trainer"],
+      createdBy: "admin1"
+    }
+  ];
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -312,8 +143,13 @@ const StaffDashboard = () => {
       title: "Refreshing dashboard data",
       description: "Please wait while we fetch the latest information."
     });
-    
-    fetchDashboardData();
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Dashboard updated",
+        description: "All data has been refreshed with the latest information."
+      });
+    }, 1000);
   };
 
   return (
@@ -400,7 +236,7 @@ const StaffDashboard = () => {
           {isLoading ? (
             <div className="h-96 animate-pulse rounded-lg bg-muted"></div>
           ) : (
-            <Announcements announcements={announcements} />
+            <Announcements announcements={mockAnnouncements} />
           )}
         </div>
       </div>

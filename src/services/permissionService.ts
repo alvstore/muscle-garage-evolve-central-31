@@ -2,211 +2,112 @@
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
-// Define permissions for each role
-const rolePermissions: Record<UserRole, Permission[]> = {
-  admin: [
-    'full_system_access',
-    'register_member',
-    'view_member_profiles',
-    'edit_member_fitness_data',
-    'assign_diet_plan',
-    'assign_workout_plan',
-    'create_class',
-    'book_class',
-    'cancel_class',
-    'assign_plan',
-    'purchase_plan',
-    'create_invoice',
-    'log_attendance',
-    'check_in',
-    'send_email_notification',
-    'access_dashboards',
-    'manage_branches',
-    'view_branch_data',
-    'switch_branches',
-    'access_own_resources',
-    'manage_staff',
-    'view_staff',
-    'manage_trainers',
-    'view_trainers',
-    'assign_trainers',
-    'manage_classes',
-    'view_classes',
-    'book_classes',
-    'manage_finances',
-    'view_finances',
-    'process_payments',
-    'manage_settings',
-    'manage_roles',
-    'access_reports',
-    'access_inventory',
-    'access_communication',
-    'access_marketing',
-    'view_all_users',
-    'view_all_trainers',
-    'view_all_classes',
-    'view_all_attendance',
-    'create_edit_plans',
-    'view_invoices',
-    'manage_integrations',
-    'access_analytics',
-    'manage_members',
-    'manage_fitness_data',
-    'manage_payments',
-    'access_store',
-    'access_crm',
-    'trainer_view_members',
-    'trainer_edit_fitness',
-    'trainer_view_attendance',
-    'trainer_view_classes',
-    'feature_admin_dashboard',
-    'feature_reporting',
-    'feature_inventory_management',
-    'feature_class_scheduling',
-    'feature_attendance_tracking',
-    'feature_membership_management',
-    'feature_payment_processing',
-    'feature_email_campaigns',
-    'feature_sms_campaigns',
-    'feature_whatsapp_campaigns',
-    'feature_social_media_integration'
-  ],
-  staff: [
-    'register_member',
-    'view_member_profiles',
-    'assign_workout_plan',
-    'assign_diet_plan',
-    'book_class',
-    'cancel_class',
-    'assign_plan',
-    'purchase_plan',
-    'create_invoice',
-    'log_attendance',
-    'check_in',
-    'send_email_notification',
-    'access_dashboards',
-    'view_branch_data',
-    'access_own_resources',
-    'view_staff',
-    'view_trainers',
-    'assign_trainers',
-    'view_classes',
-    'book_classes',
-    'view_finances',
-    'process_payments',
-    'view_all_classes',
-    'view_all_attendance',
-    'view_invoices',
-    'manage_members',
-    'manage_fitness_data',
-    'manage_payments',
-    'access_store',
-    'trainer_view_members',
-    'feature_staff_dashboard',
-    'feature_class_scheduling',
-    'feature_attendance_tracking',
-    'feature_membership_management',
-    'feature_payment_processing'
-  ],
-  trainer: [
-    'view_member_profiles',
-    'edit_member_fitness_data',
-    'assign_diet_plan',
-    'assign_workout_plan',
-    'create_class',
-    'log_attendance',
-    'access_dashboards',
-    'view_branch_data',
-    'access_own_resources',
-    'view_trainers',
-    'view_classes',
-    'access_reports',
-    'trainer_view_members',
-    'trainer_edit_fitness',
-    'trainer_view_attendance',
-    'trainer_view_classes',
-    'create_edit_plans',
-    'feature_trainer_dashboard',
-    'feature_class_scheduling',
-    'feature_attendance_tracking'
-  ],
-  member: [
-    'access_own_resources',
-    'book_classes',
-    'check_in',
-    'member_view_profile',
-    'member_view_invoices',
-    'member_make_payments',
-    'member_view_plans',
-    'member_book_classes',
-    'member_view_attendance',
-    'feature_member_dashboard'
-  ]
+// Define role hierarchy for permission inheritance
+const roleHierarchy: Record<UserRole, UserRole[]> = {
+  admin: ['admin', 'staff', 'trainer', 'member'],
+  staff: ['staff', 'trainer', 'member'],
+  trainer: ['trainer', 'member'],
+  member: ['member']
 };
 
-// Common routes for all authenticated users
-const commonRoutes = [
-  '/',
-  '/dashboard',
-  '/profile'
-];
-
-// Role-specific routes
-const roleRoutes: Record<UserRole, string[]> = {
-  admin: [
-    '/members',
-    '/trainers',
-    '/classes',
-    '/reports',
-    '/settings',
-    '/finances',
-    '/marketing',
-    '/inventory',
-    '/fitness',
-    '/fitness-plans',
-    '/fitness/workout-plans',
-    '/fitness/diet-plans'
-  ],
-  staff: [
-    '/members',
-    '/classes',
-    '/tasks',
-    '/announcements',
-    '/fitness',
-    '/fitness/workout-plans',
-    '/fitness/diet-plans'
-  ],
-  trainer: [
-    '/trainers',
-    '/fitness',
-    '/fitness-plans',
-    '/trainers/classes',
-    '/trainers/allocation',
-    '/trainers/pt-plans',
-    '/trainers/workout-plans',
-    '/trainers/workout-assignments',
-    '/trainers/diet-plans',
-    '/trainers/member-progress',
-    '/trainers/attendance',
-    '/trainers/profile',
-    '/trainers/tasks',
-    '/trainers/announcements'
-  ],
-  member: [
-    '/membership',
-    '/bookings',
-    '/payments',
-    '/my-plans',
-    '/attendance'
-  ]
+// Define a permissions matrix according to requirements
+const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?: boolean }> = {
+  // System Access
+  'full_system_access': { roles: ['admin'] },
+  
+  // Member Management
+  'register_member': { roles: ['admin', 'staff'] },
+  'view_member_profiles': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'edit_member_fitness_data': { roles: ['admin', 'staff', 'trainer'] },
+  
+  // Branch Management
+  'manage_branches': { roles: ['admin'] },
+  'view_branch_data': { roles: ['admin', 'staff', 'trainer'] },
+  'switch_branches': { roles: ['admin', 'staff'] },
+  
+  // Staff Management
+  'manage_staff': { roles: ['admin'] },
+  'view_staff': { roles: ['admin', 'staff'] },
+  
+  // Trainer Management
+  'manage_trainers': { roles: ['admin'] },
+  'view_trainers': { roles: ['admin', 'staff', 'trainer'] },
+  'assign_trainers': { roles: ['admin', 'staff'] },
+  
+  // Class Management
+  'manage_classes': { roles: ['admin', 'staff'] },
+  'view_classes': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  'book_classes': { roles: ['admin', 'staff', 'member'] },
+  
+  // Finance Management
+  'manage_finances': { roles: ['admin'] },
+  'view_finances': { roles: ['admin', 'staff'] },
+  'process_payments': { roles: ['admin', 'staff'] },
+  
+  // Settings Management
+  'manage_settings': { roles: ['admin'] },
+  'manage_roles': { roles: ['admin'] },
+  
+  // Feature Access
+  'access_dashboards': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  'access_reports': { roles: ['admin', 'staff'] },
+  'access_inventory': { roles: ['admin', 'staff'] },
+  'access_communication': { roles: ['admin', 'staff'] },
+  'access_marketing': { roles: ['admin'] },
+  
+  // Additional permissions that were missing
+  'assign_diet_plan': { roles: ['admin', 'trainer'] },
+  'assign_workout_plan': { roles: ['admin', 'trainer'] },
+  'create_class': { roles: ['admin', 'staff'] },
+  'book_class': { roles: ['admin', 'staff', 'member'] },
+  'cancel_class': { roles: ['admin', 'staff'] },
+  'assign_plan': { roles: ['admin', 'staff'] },
+  'purchase_plan': { roles: ['member'] },
+  'create_invoice': { roles: ['admin', 'staff'] },
+  'log_attendance': { roles: ['admin', 'staff'] },
+  'check_in': { roles: ['member'] },
+  'send_email_notification': { roles: ['admin', 'staff'] },
+  'access_own_resources': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  'view_all_users': { roles: ['admin', 'staff'] },
+  'view_all_trainers': { roles: ['admin', 'staff'] },
+  'view_all_classes': { roles: ['admin', 'staff', 'trainer'] },
+  'view_all_attendance': { roles: ['admin', 'staff'] },
+  'create_edit_plans': { roles: ['admin', 'staff'] },
+  'view_invoices': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'manage_integrations': { roles: ['admin'] },
+  'access_analytics': { roles: ['admin', 'staff'] },
+  'manage_members': { roles: ['admin', 'staff'] },
+  'manage_fitness_data': { roles: ['admin', 'trainer'] },
+  'manage_payments': { roles: ['admin', 'staff'] },
+  'access_store': { roles: ['admin', 'staff'] },
+  'access_crm': { roles: ['admin', 'staff'] },
+  'trainer_view_members': { roles: ['admin', 'trainer'] },
+  'trainer_edit_fitness': { roles: ['admin', 'trainer'] },
+  'trainer_view_attendance': { roles: ['admin', 'trainer'] },
+  'trainer_view_classes': { roles: ['admin', 'trainer'] },
+  'member_view_profile': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'member_view_invoices': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'member_make_payments': { roles: ['admin', 'staff', 'member'], memberSelfOnly: true },
+  'member_view_plans': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  'member_book_classes': { roles: ['admin', 'staff', 'member'] },
+  'member_view_attendance': { roles: ['admin', 'staff', 'trainer', 'member'], memberSelfOnly: true },
+  'feature_trainer_dashboard': { roles: ['admin', 'trainer'] },
+  'feature_staff_dashboard': { roles: ['admin', 'staff'] },
+  'feature_member_dashboard': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  'feature_admin_dashboard': { roles: ['admin'] },
+  'feature_pos_system': { roles: ['admin', 'staff'] },
+  'feature_reporting': { roles: ['admin', 'staff'] },
+  'feature_inventory_management': { roles: ['admin', 'staff'] },
+  'feature_class_scheduling': { roles: ['admin', 'staff'] },
+  'feature_attendance_tracking': { roles: ['admin', 'staff', 'trainer'] },
+  'feature_membership_management': { roles: ['admin', 'staff'] },
+  'feature_payment_processing': { roles: ['admin', 'staff'] },
+  'feature_email_campaigns': { roles: ['admin', 'staff'] },
+  'feature_sms_campaigns': { roles: ['admin', 'staff'] },
+  'feature_whatsapp_campaigns': { roles: ['admin', 'staff'] },
+  'feature_social_media_integration': { roles: ['admin'] }
 };
 
-/**
- * Check if the user has a specific permission based on their role
- * @param role User role
- * @param permission Permission to check
- * @param isOwner Whether the user owns the resource (for member-specific permissions)
- */
 export const hasPermission = (
   role: UserRole | undefined,
   permission: Permission,
@@ -214,33 +115,62 @@ export const hasPermission = (
 ): boolean => {
   if (!role) return false;
   
-  // Admin has all permissions
-  if (role === 'admin') return true;
+  const permissionConfig = permissionsMatrix[permission];
+  if (!permissionConfig) return false;
   
-  // Resource owners have access to their own resources
-  if (permission === 'access_own_resources' && isOwner) return true;
+  // Check if role has permission through hierarchy
+  const hasRolePermission = permissionConfig.roles.some(allowedRole => 
+    roleHierarchy[role].includes(allowedRole)
+  );
   
-  // Check role-specific permissions
-  return rolePermissions[role].includes(permission);
+  // If no permission through role hierarchy
+  if (!hasRolePermission) return false;
+  
+  // If permission requires ownership check
+  if (permissionConfig.memberSelfOnly && role === 'member') {
+    return isOwner;
+  }
+  
+  return true;
 };
 
-/**
- * Check if the user has access to a specific route
- * @param role User role
- * @param route Route to check
- */
-export const hasRouteAccess = (
-  role: UserRole | undefined,
-  route: string
-): boolean => {
+export const hasRouteAccess = (role: UserRole | undefined, route: string): boolean => {
   if (!role) return false;
   
   // Admin has access to all routes
   if (role === 'admin') return true;
   
-  // Check common routes
-  if (commonRoutes.some(r => route.startsWith(r))) return true;
+  const routePermissions: Record<string, UserRole[]> = {
+    '/dashboard': ['admin', 'staff', 'trainer', 'member'],
+    '/members': ['admin', 'staff', 'trainer'],
+    '/trainers': ['admin', 'staff'],
+    '/classes': ['admin', 'staff', 'trainer', 'member'],
+    '/finances': ['admin', 'staff'],
+    '/settings': ['admin'],
+    '/profile': ['admin', 'staff', 'trainer', 'member'],
+    '/branches': ['admin', 'staff'],
+  };
   
-  // Check role-specific routes
-  return roleRoutes[role].some(r => route.startsWith(r));
+  for (const [routePath, roles] of Object.entries(routePermissions)) {
+    if (route.startsWith(routePath) && roles.includes(role)) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+// Helper functions for role-based access
+export const isSystemAdmin = (role: UserRole): boolean => role === 'admin';
+export const isBranchManager = (role: UserRole): boolean => ['admin', 'staff'].includes(role);
+export const isTrainer = (role: UserRole): boolean => role === 'trainer';
+export const isMember = (role: UserRole): boolean => role === 'member';
+
+export default {
+  hasPermission,
+  hasRouteAccess,
+  isSystemAdmin,
+  isBranchManager,
+  isTrainer,
+  isMember
 };

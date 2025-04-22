@@ -8,11 +8,11 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Logo from "@/components/Logo";
+import NavigationSections from "@/components/navigation/NavigationSections";
 import { adminNavSections } from "@/data/adminNavigation";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
-import NavigationSections from "@/components/navigation/NavigationSections";
-import Logo from "@/components/Logo";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -95,3 +95,4 @@ export default function DashboardSidebar({
     </Sidebar>
   );
 }
+
