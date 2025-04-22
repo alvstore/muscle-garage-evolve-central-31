@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -47,7 +48,7 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     isGlobal: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    memberId: 'default' // Added memberId
+    memberId: 'default'
   },
   {
     id: '2',
@@ -59,15 +60,15 @@ const mockWorkoutPlans: WorkoutPlan[] = [
         id: 'day1',
         name: 'Day 1: Chest & Triceps',
         exercises: [
-          { id: 'ex1', name: 'Bench Press', sets: 4, reps: 8, weight: '60kg' },
-          { id: 'ex2', name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: '20kg' }
+          { id: 'ex1', name: 'Bench Press', sets: 4, reps: 8, weight: 60 }, // Converted to number
+          { id: 'ex2', name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: 20 } // Converted to number
         ]
       },
       {
         id: 'day2',
         name: 'Day 2: Back & Biceps',
         exercises: [
-          { id: 'ex3', name: 'Deadlifts', sets: 4, reps: 6, weight: '80kg' },
+          { id: 'ex3', name: 'Deadlifts', sets: 4, reps: 6, weight: 80 }, // Converted to number
           { id: 'ex4', name: 'Pull-Ups', sets: 3, reps: 8 }
         ]
       }
@@ -77,7 +78,7 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     isGlobal: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    memberId: 'default' // Added memberId
+    memberId: 'default'
   }
 ];
 

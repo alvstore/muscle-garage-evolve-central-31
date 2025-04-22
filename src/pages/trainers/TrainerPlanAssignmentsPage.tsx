@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -86,7 +85,7 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     isGlobal: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    memberId: 'default' // Added memberId
+    memberId: 'default'
   },
   {
     id: '2',
@@ -98,15 +97,15 @@ const mockWorkoutPlans: WorkoutPlan[] = [
         id: 'day1',
         name: 'Day 1: Chest & Triceps',
         exercises: [
-          { id: 'ex1', name: 'Bench Press', sets: 4, reps: 8, weight: '60kg' },
-          { id: 'ex2', name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: '20kg' }
+          { id: 'ex1', name: 'Bench Press', sets: 4, reps: 8, weight: 60 },
+          { id: 'ex2', name: 'Incline Dumbbell Press', sets: 3, reps: 10, weight: 20 }
         ]
       },
       {
         id: 'day2',
         name: 'Day 2: Back & Biceps',
         exercises: [
-          { id: 'ex3', name: 'Deadlifts', sets: 4, reps: 6, weight: '80kg' },
+          { id: 'ex3', name: 'Deadlifts', sets: 4, reps: 6, weight: 80 },
           { id: 'ex4', name: 'Pull-Ups', sets: 3, reps: 8 }
         ]
       }
@@ -116,7 +115,7 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     isGlobal: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    memberId: 'default' // Added memberId
+    memberId: 'default'
   }
 ];
 
@@ -182,7 +181,6 @@ const TrainerPlanAssignmentsPage = () => {
   const [members, setMembers] = useState<Member[]>(mockMembers);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>(mockWorkoutPlans);
   
-  // New assignment state
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [startDate, setStartDate] = useState<Date>(new Date());
@@ -212,14 +210,12 @@ const TrainerPlanAssignmentsPage = () => {
       return;
     }
     
-    // Check if selected member is assigned to the current trainer
     const member = members.find(m => m.id === selectedMemberId);
     if (member?.trainerId !== user?.id) {
       toast.error("You can only assign plans to members assigned to you");
       return;
     }
     
-    // In a real app, this would be an API call
     const newAssignment: WorkoutAssignment = {
       id: `assign-${Date.now()}`,
       planId: selectedPlanId,
@@ -235,7 +231,6 @@ const TrainerPlanAssignmentsPage = () => {
     setIsDialogOpen(false);
     toast.success("Workout plan assigned successfully");
     
-    // Reset form
     setSelectedMemberId('');
     setSelectedPlanId('');
     setStartDate(new Date());
@@ -243,7 +238,6 @@ const TrainerPlanAssignmentsPage = () => {
   };
   
   const handleDeleteAssignment = (assignmentId: string) => {
-    // In a real app, this would be an API call
     setAssignments(assignments.filter(a => a.id !== assignmentId));
     toast.success("Assignment removed successfully");
   };
