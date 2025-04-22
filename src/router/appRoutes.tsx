@@ -11,6 +11,7 @@ import Login from '@/pages/auth/Login';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
+import FrontPagesManager from '@/pages/frontpages/FrontPagesManager';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -23,6 +24,7 @@ import { financeRoutes } from './routes/financeRoutes';
 import { settingsRoutes } from './routes/settingsRoutes';
 import { miscRoutes } from './routes/miscRoutes';
 import { staffRoutes } from './routes/staffRoutes';
+import { adminRoutes } from './routes/adminRoutes';
 
 export const appRoutes: RouteObject[] = [
   {
@@ -55,6 +57,14 @@ export const appRoutes: RouteObject[] = [
             path: '/dashboard/realtime',
             element: <RealTimeDashboardPage />
           },
+          {
+            path: '/frontpages',
+            element: (
+              <PrivateRoute allowedRoles={['admin']}>
+                <FrontPagesManager />
+              </PrivateRoute>
+            )
+          },
           
           // Include route groups
           ...memberRoutes,
@@ -67,6 +77,7 @@ export const appRoutes: RouteObject[] = [
           ...settingsRoutes,
           ...miscRoutes,
           ...staffRoutes,
+          ...adminRoutes,
         ]
       }
     ]

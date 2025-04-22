@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -231,38 +232,38 @@ export const adminNavSections: NavSection[] = [
     name: "Website",
     items: [
       {
-        href: "/website",
+        href: "/frontpages",
         label: "Website Management",
         icon: <Globe className="h-5 w-5" />,
         permission: "manage_website" as Permission,
         children: [
           {
-            href: "/website/home",
+            href: "/frontpages?tab=home",
             label: "Home Page",
             permission: "manage_website" as Permission,
           },
           {
-            href: "/website/about",
+            href: "/frontpages?tab=about",
             label: "About Us",
             permission: "manage_website" as Permission,
           },
           {
-            href: "/website/services",
+            href: "/frontpages?tab=services",
             label: "Services & Pricing",
             permission: "manage_website" as Permission,
           },
           {
-            href: "/website/classes",
+            href: "/frontpages?tab=classes",
             label: "Classes & Trainers",
             permission: "manage_website" as Permission,
           },
           {
-            href: "/website/testimonials",
+            href: "/frontpages?tab=testimonials",
             label: "Testimonials",
             permission: "manage_website" as Permission,
           },
           {
-            href: "/website/contact",
+            href: "/frontpages?tab=contact",
             label: "Contact Page",
             permission: "manage_website" as Permission,
           }
