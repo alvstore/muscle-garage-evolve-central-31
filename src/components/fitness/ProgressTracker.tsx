@@ -1,53 +1,67 @@
 
-import React, { useState } from 'react';
-import { format, subMonths } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, TrendingDown, Camera, Save, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, Camera, Save, Plus, Loader2 } from "lucide-react";
 import { ProgressMetrics } from "@/types/class";
 import { Member } from "@/types";
 import { toast } from "sonner";
 import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
+import { supabase } from '@/services/supabaseClient';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemberMeasurements } from '@/hooks/use-member-measurements';
+import { useMemberProgress } from '@/hooks/use-member-progress';
 
 interface ProgressTrackerProps {
   member: Member;
 }
 
 const ProgressTracker = ({ member }: ProgressTrackerProps) => {
-  // Mock history data
-  const generateMockHistory = () => {
-    const history = [];
-    const now = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = subMonths(now, i);
-      history.push({
-        date: format(date, 'yyyy-MM-dd'),
-        metrics: {
-          weight: 85 - (i * 1.5),
-          bodyFatPercentage: 22 - (i * 0.7),
-          bmi: 27 - (i * 0.4),
-          muscleGain: i * 0.8
-        }
-      });
-    }
-    
-    return history;
-  };
-  
-  const [progressHistory, setProgressHistory] = useState(generateMockHistory());
+  const { measurements, latestMeasurement, isLoading: measurementsLoading } = useMemberMeasurements(member.id);
+  const { progress, isLoading: progressLoading, updateProgress } = useMemberProgress(member.id);
   
   // Current progress metrics
   const [currentMetrics, setCurrentMetrics] = useState<ProgressMetrics>({
-    weight: 78.5,
-    bodyFatPercentage: 18.5,
-    bmi: 24.2,
-    muscleGain: 4.2
+    weight: 0,
+    bodyFatPercentage: 0,
+    bmi: 0,
+    muscleGain: 0
   });
+  
+  // Update current metrics when data is loaded
+  useEffect(() => {
+    if (latestMeasurement) {
+      setCurrentMetrics({
+        weight: latestMeasurement.weight || 0,
+        bodyFatPercentage: latestMeasurement.bodyFat || 0,
+        bmi: latestMeasurement.bmi || 0,
+        muscleGain: progress?.muscle_mass || 0
+      });
+    } else if (progress) {
+      setCurrentMetrics({
+        weight: progress.weight || 0,
+        bodyFatPercentage: progress.fat_percent || 0,
+        bmi: progress.bmi || 0,
+        muscleGain: progress.muscle_mass || 0
+      });
+    }
+  }, [latestMeasurement, progress]);
+  
+  // Transform measurements for chart display
+  const progressHistory = measurements.map(measurement => ({
+    date: measurement.date,
+    metrics: {
+      weight: measurement.weight || 0,
+      bodyFatPercentage: measurement.bodyFat || 0,
+      bmi: measurement.bmi || 0,
+      muscleGain: 0 // This isn't tracked in measurements table
+    }
+  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   // Handle input changes
   const handleMetricChange = (metric: keyof ProgressMetrics, value: string) => {
@@ -57,16 +71,43 @@ const ProgressTracker = ({ member }: ProgressTrackerProps) => {
     });
   };
   
-  // Handle save
-  const handleSaveProgress = () => {
-    // In a real app, this would send data to an API
-    const newEntry = {
-      date: format(new Date(), 'yyyy-MM-dd'),
-      metrics: currentMetrics
-    };
-    
-    setProgressHistory([...progressHistory, newEntry]);
-    toast.success("Progress saved successfully");
+  // Handle save progress
+  const handleSaveProgress = async () => {
+    try {
+      // Save to measurements table
+      const { data, error } = await supabase
+        .from('measurements')
+        .insert([
+          {
+            member_id: member.id,
+            weight: currentMetrics.weight,
+            body_fat_percentage: currentMetrics.bodyFatPercentage,
+            bmi: currentMetrics.bmi,
+            recorded_by: member.id, // This would ideally be the current user's ID
+            notes: 'Recorded from admin dashboard'
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      
+      // Update member_progress table if it exists
+      if (progress) {
+        const result = await updateProgress({
+          weight: currentMetrics.weight,
+          fat_percent: currentMetrics.bodyFatPercentage,
+          bmi: currentMetrics.bmi,
+          muscle_mass: currentMetrics.muscleGain
+        });
+        
+        if (result.error) throw new Error(result.error);
+      }
+      
+      toast.success("Progress saved successfully");
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      toast.error("Failed to save progress");
+    }
   };
   
   // Calculate changes since last entry
@@ -99,6 +140,21 @@ const ProgressTracker = ({ member }: ProgressTrackerProps) => {
       <TrendingUp className={`h-4 w-4 ${isGood ? 'text-green-500' : 'text-red-500'}`} /> : 
       <TrendingDown className={`h-4 w-4 ${isGood ? 'text-green-500' : 'text-red-500'}`} />;
   };
+  
+  const isLoading = measurementsLoading || progressLoading;
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -229,26 +285,32 @@ const ProgressTracker = ({ member }: ProgressTrackerProps) => {
               <CardTitle>Progress Charts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <h3 className="font-medium mb-4">Body Metrics</h3>
-                  <MemberProgressChart 
-                    data={progressHistory} 
-                    memberId={member.id}
-                    memberName={member.name}
-                    metricType="weight"
-                  />
+              {progressHistory.length > 0 ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <h3 className="font-medium mb-4">Body Metrics</h3>
+                    <MemberProgressChart 
+                      data={progressHistory} 
+                      memberId={member.id}
+                      memberName={member.name}
+                      metricType="weight"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-4">Body Fat Percentage</h3>
+                    <MemberProgressChart 
+                      data={progressHistory} 
+                      memberId={member.id}
+                      memberName={member.name}
+                      metricType="bodyFatPercentage"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium mb-4">Body Fat Percentage</h3>
-                  <MemberProgressChart 
-                    data={progressHistory} 
-                    memberId={member.id}
-                    memberName={member.name}
-                    metricType="bodyFatPercentage"
-                  />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No historical data available for this member</p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -264,7 +326,7 @@ const ProgressTracker = ({ member }: ProgressTrackerProps) => {
                 <div>
                   <h3 className="font-medium">No progress photos yet</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Upload photos to track your visual progress
+                    Upload photos to track visual progress
                   </p>
                 </div>
                 <Button className="mt-4">

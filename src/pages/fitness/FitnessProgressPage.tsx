@@ -1,33 +1,78 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Container } from '@/components/ui/container';
 import ProgressTracker from '@/components/fitness/ProgressTracker';
-import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/use-auth';
 import { Member } from '@/types';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/services/supabaseClient';
+import { useBranch } from '@/hooks/use-branch';
 
 const FitnessProgressPage = () => {
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   
-  // Mock data for member progress charts
-  const progressData = [
-    { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
-    { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
-    { date: '2025-03-01', metrics: { weight: 77, bodyFatPercentage: 20, bmi: 25.4, muscleGain: 2.2 } },
-    { date: '2025-04-01', metrics: { weight: 76, bodyFatPercentage: 19, bmi: 25.1, muscleGain: 2.8 } },
-    { date: '2025-05-01', metrics: { weight: 75, bodyFatPercentage: 18, bmi: 24.8, muscleGain: 3.5 } },
-    { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
-  ];
+  // Fetch all members
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setLoading(true);
+      try {
+        // If current user has a branch, filter by that branch
+        let query = supabase
+          .from('profiles')
+          .select('id, full_name, email, role, branch_id')
+          .eq('role', 'member');
+
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
+
+        const { data, error } = await query;
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          const formattedMembers: Member[] = data.map(member => ({
+            id: member.id,
+            name: member.full_name || 'Unknown',
+            email: member.email || '',
+            role: 'member',
+            membershipStatus: 'active', // Default value as we don't have this info yet
+          }));
+          
+          setMembers(formattedMembers);
+        }
+      } catch (error) {
+        console.error('Error fetching members:', error);
+        toast.error('Failed to load members');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchMembers();
+  }, [currentBranch]);
   
-  // Mock data for member - properly typed as Member
-  const mockMember: Member = {
-    id: user?.id || '1',
-    name: user?.name || 'Current Member',
-    email: user?.email || 'member@example.com',
-    role: 'member',
-    membershipStatus: 'active',
+  const handleMemberChange = (value: string) => {
+    setSelectedMemberId(value);
+    const member = members.find(m => m.id === value) || null;
+    setSelectedMember(member);
   };
   
   return (
@@ -36,63 +81,79 @@ const FitnessProgressPage = () => {
         <h1 className="text-3xl font-bold">Fitness Progress</h1>
       </div>
       
-      <Tabs defaultValue="tracker">
-        <TabsList className="grid w-full md:w-auto grid-cols-2 h-auto">
-          <TabsTrigger value="tracker">Progress Tracker</TabsTrigger>
-          <TabsTrigger value="charts">Progress Charts</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="tracker" className="mt-6">
-          <ProgressTracker member={mockMember} />
-        </TabsContent>
-        
-        <TabsContent value="charts" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Body Metrics</CardTitle>
-                <CardDescription>Track your body metrics over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MemberProgressChart 
-                  data={progressData} 
-                  memberId={user?.id || "member1"} 
-                  memberName={user?.name || "Member"} 
-                />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Key Measurements</CardTitle>
-                <CardDescription>View your progress milestones</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-accent/20 p-4 rounded-lg text-center">
-                      <h3 className="text-sm font-medium text-muted-foreground">Starting Weight</h3>
-                      <p className="text-2xl font-bold">{progressData[0].metrics.weight} kg</p>
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle>Member Selection</CardTitle>
+          <CardDescription>Select a member to view their fitness progress</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <Select value={selectedMemberId} onValueChange={handleMemberChange}>
+              <SelectTrigger className="w-full md:w-80">
+                <SelectValue placeholder="Select a member" />
+              </SelectTrigger>
+              <SelectContent>
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </CardContent>
+      </Card>
+      
+      {selectedMember ? (
+        <Tabs defaultValue="tracker">
+          <TabsList className="grid w-full md:w-auto grid-cols-2 h-auto">
+            <TabsTrigger value="tracker">Progress Tracker</TabsTrigger>
+            <TabsTrigger value="charts">Progress Charts</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="tracker" className="mt-6">
+            <ProgressTracker member={selectedMember} />
+          </TabsContent>
+          
+          <TabsContent value="charts" className="mt-6">
+            {selectedMember && (
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Body Metrics</CardTitle>
+                    <CardDescription>Track body metrics over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Progress charts will be rendered by the ProgressTracker component */}
+                    <p className="text-muted-foreground">Select metrics in the tracker to view detailed charts</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Key Measurements</CardTitle>
+                    <CardDescription>View progress milestones</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Data will be displayed when measurements are available</p>
                     </div>
-                    <div className="bg-accent/20 p-4 rounded-lg text-center">
-                      <h3 className="text-sm font-medium text-muted-foreground">Current Weight</h3>
-                      <p className="text-2xl font-bold">{progressData[progressData.length - 1].metrics.weight} kg</p>
-                    </div>
-                    <div className="bg-accent/20 p-4 rounded-lg text-center">
-                      <h3 className="text-sm font-medium text-muted-foreground">Total Loss</h3>
-                      <p className="text-2xl font-bold">{(progressData[0].metrics.weight - progressData[progressData.length - 1].metrics.weight).toFixed(1)} kg</p>
-                    </div>
-                    <div className="bg-accent/20 p-4 rounded-lg text-center">
-                      <h3 className="text-sm font-medium text-muted-foreground">Muscle Gain</h3>
-                      <p className="text-2xl font-bold">{progressData[progressData.length - 1].metrics.muscleGain} kg</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Card className="bg-muted/40">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-lg text-muted-foreground mb-2">Please select a member to view their progress</p>
+            <p className="text-sm text-muted-foreground">Member fitness data will be displayed here after selection</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

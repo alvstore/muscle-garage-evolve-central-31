@@ -6,6 +6,7 @@ import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
 import MemberProgressPage from '@/pages/members/MemberProgressPage';
 import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
 import AdminDietPlansPage from '@/pages/admin/AdminDietPlansPage';
+import FitnessProgressPage from '@/pages/fitness/FitnessProgressPage';
 
 export const adminFitnessRoutes: RouteObject[] = [
   {
@@ -17,10 +18,18 @@ export const adminFitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/fitness/progress',
+    path: '/members/progress',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <MemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/fitness/progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <FitnessProgressPage />
       </PrivateRoute>
     )
   },
