@@ -41,9 +41,11 @@ const DashboardHeader = ({
     e.preventDefault();
     if (searchQuery.trim()) {
       toast.info(`Searching for: ${searchQuery}`);
-      // Implement search functionality here
     }
   };
+
+  // Check if user is a member
+  const isMember = user?.role === 'member';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4">
@@ -64,45 +66,47 @@ const DashboardHeader = ({
       </div>
       
       <div className="flex items-center gap-4">
-        {/* Search on desktop */}
-        <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-64 pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
-        </form>
-        
-        {/* Search on mobile */}
-        <Sheet open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Search className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="top" className="pt-10">
-            <form onSubmit={handleSearch} className="flex items-center relative">
+        {/* Only show search for non-member users */}
+        {!isMember && (
+          <>
+            <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
               <Input
                 type="search"
                 placeholder="Search..."
-                className="w-full pl-8"
+                className="w-64 pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
               />
               <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
             </form>
-          </SheetContent>
-        </Sheet>
+            
+            <Sheet open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Search className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="top" className="pt-10">
+                <form onSubmit={handleSearch} className="flex items-center relative">
+                  <Input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-full pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
+                </form>
+              </SheetContent>
+            </Sheet>
+          </>
+        )}
         
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
         
-        {/* Notifications */}
         <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -129,9 +133,12 @@ const DashboardHeader = ({
             <DropdownMenuItem onClick={() => navigate("/profile")}>
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              Settings
-            </DropdownMenuItem>
+            {/* Only show settings for non-member users */}
+            {!isMember && (
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                Settings
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

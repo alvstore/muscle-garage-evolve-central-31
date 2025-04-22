@@ -29,6 +29,7 @@ import { Feedback } from "@/types/notification";
 import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
 
 const mockFeedbackData: Feedback[] = [
   {
@@ -102,13 +103,17 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const { user } = useAuth();
 
   useEffect(() => {
     setTimeout(() => {
-      setFeedback(feedbacks);
+      const filteredFeedbacks = user?.role === 'member'
+        ? feedbacks.filter(f => f.memberId === user.id)
+        : feedbacks;
+      setFeedback(filteredFeedbacks);
       setLoading(isLoading);
     }, 1000);
-  }, [feedbacks, isLoading]);
+  }, [feedbacks, isLoading, user]);
 
   const handleViewDetails = (feedback: Feedback) => {
     setSelectedFeedback(feedback);

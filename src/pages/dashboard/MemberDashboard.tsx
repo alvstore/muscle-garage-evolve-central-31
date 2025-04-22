@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -18,11 +17,11 @@ import Announcements from '@/components/dashboard/Announcements';
 import MemberInvoiceList from '@/components/finance/MemberInvoiceList';
 import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/auth';
 
 const MemberDashboard = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
   
-  // Define mock data for components
   const mockUpcomingClasses = [
     {
       id: '1',
@@ -66,7 +65,6 @@ const MemberDashboard = () => {
     }
   ];
   
-  // Updated to match the Announcement type
   const mockAnnouncements: Announcement[] = [
     {
       id: '1',
@@ -96,14 +94,6 @@ const MemberDashboard = () => {
     }
   ];
 
-  const handleSearch = () => {
-    if (!searchTerm.trim()) {
-      toast.error("Please enter a search term");
-      return;
-    }
-    toast.success(`Searching for: ${searchTerm}`);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -111,32 +101,9 @@ const MemberDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your Muscle Garage dashboard</p>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-auto">
-            <Input
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10 w-full"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-            />
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-0 top-0 h-full"
-              onClick={handleSearch}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-          <Button variant="outline" className="h-10">
-            Today
-          </Button>
-        </div>
+        <Button variant="outline" className="h-10">
+          Today
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
