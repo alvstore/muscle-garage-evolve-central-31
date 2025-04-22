@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
@@ -11,6 +10,10 @@ import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
 import ClassPage from '@/pages/classes/ClassPage';
 import MembershipPage from '@/pages/membership/MembershipPage';
 import AttendancePage from '@/pages/attendance/AttendancePage';
+
+// Admin/Staff specific pages - reusing trainer components but with different permissions
+import TrainerWorkoutPlansPage from '@/pages/trainers/TrainerWorkoutPlansPage';
+import TrainerDietPlansPage from '@/pages/trainers/TrainerDietPlansPage';
 
 export const fitnessRoutes: RouteObject[] = [
   {
@@ -74,6 +77,38 @@ export const fitnessRoutes: RouteObject[] = [
     element: (
       <PrivateRoute>
         <AttendancePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/admin/workout-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <TrainerWorkoutPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/admin/diet-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <TrainerDietPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/fitness/workout-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <WorkoutPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/fitness/diet',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <DietPlanPage />
       </PrivateRoute>
     )
   }
