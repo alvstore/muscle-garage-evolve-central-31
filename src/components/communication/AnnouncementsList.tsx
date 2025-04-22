@@ -6,27 +6,13 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { format, parseISO } from "date-fns";
-import { Announcement } from "@/types/notification";
-import { Megaphone, MoreVertical, Eye, RefreshCw, Pencil, Trash2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { usePermissions } from "@/hooks/use-permissions";
+import { Announcement } from "@/types/notification";
+import AnnouncementsLoading from "./announcements/AnnouncementsLoading";
+import AnnouncementsEmpty from "./announcements/AnnouncementsEmpty";
+import AnnouncementsTable from "./announcements/AnnouncementsTable";
 import AnnouncementDetailDialog from "./AnnouncementDetailDialog";
 
 const mockAnnouncements: Announcement[] = [
@@ -84,14 +70,18 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const { userRole } = usePermissions();
 
   useEffect(() => {
+    loadAnnouncements();
+  }, []);
+
+  const loadAnnouncements = () => {
+    setLoading(true);
     setTimeout(() => {
       setAnnouncements(mockAnnouncements);
       setLoading(false);
     }, 1000);
-  }, []);
+  };
 
   const handleDelete = (id: string) => {
     setAnnouncements(announcements.filter(a => a.id !== id));
@@ -107,9 +97,6 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
     setDetailDialogOpen(true);
   };
 
-  const canEdit = userRole !== 'member';
-  const canResend = userRole === 'admin' || userRole === 'staff';
-
   return (
     <>
       <Card>
@@ -123,13 +110,7 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
               variant="outline" 
               size="sm" 
               disabled={loading}
-              onClick={() => {
-                setLoading(true);
-                setTimeout(() => {
-                  setAnnouncements(mockAnnouncements);
-                  setLoading(false);
-                }, 1000);
-              }}
+              onClick={loadAnnouncements}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -138,106 +119,17 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-80 flex items-center justify-center">
-              <div className="text-center">
-                <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
-                <p className="mt-2 text-sm text-muted-foreground">Loading announcements...</p>
-              </div>
-            </div>
+            <AnnouncementsLoading />
           ) : announcements.length === 0 ? (
-            <div className="text-center py-10">
-              <Megaphone className="h-10 w-10 mx-auto text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium">No announcements</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Create your first announcement to notify members and staff
-              </p>
-            </div>
+            <AnnouncementsEmpty />
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Channels</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {announcements.map((announcement) => (
-                    <TableRow key={announcement.id}>
-                      <TableCell className="font-medium">{announcement.title}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {announcement.targetRoles.map((role) => (
-                            <Badge key={role} variant="outline" className="capitalize">
-                              {role}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {announcement.channels.map((channel) => (
-                            <Badge key={channel} variant="secondary" className="capitalize">
-                              {channel}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>{format(parseISO(announcement.createdAt), "MMM dd, yyyy")}</TableCell>
-                      <TableCell>
-                        {announcement.expiresAt 
-                          ? format(parseISO(announcement.expiresAt), "MMM dd, yyyy")
-                          : "Never"
-                        }
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleView(announcement)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </DropdownMenuItem>
-                            
-                            {canEdit && (
-                              <DropdownMenuItem onClick={() => onEdit(announcement)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                            )}
-                            
-                            {canResend && (
-                              <DropdownMenuItem onClick={() => handleResend(announcement.id)}>
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                Resend
-                              </DropdownMenuItem>
-                            )}
-                            
-                            {canEdit && (
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(announcement.id)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <AnnouncementsTable
+              announcements={announcements}
+              onEdit={onEdit}
+              onView={handleView}
+              onDelete={handleDelete}
+              onResend={handleResend}
+            />
           )}
         </CardContent>
       </Card>
