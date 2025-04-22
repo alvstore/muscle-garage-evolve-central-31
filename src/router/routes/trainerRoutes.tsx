@@ -14,6 +14,7 @@ import TrainerWorkoutPlansPage from '@/pages/trainers/TrainerWorkoutPlansPage';
 import TrainerPlanAssignmentsPage from '@/pages/trainers/TrainerPlanAssignmentsPage';
 import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
 import TrainerDietPlansPage from '@/pages/trainers/TrainerDietPlansPage';
+import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
 
 export const trainerRoutes: RouteObject[] = [
   {
@@ -101,6 +102,14 @@ export const trainerRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TrainerPlanAssignmentsPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainers/classes',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TrainerClassesPage />
       </PrivateRoute>
     )
   }

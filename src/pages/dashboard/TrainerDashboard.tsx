@@ -156,8 +156,15 @@ const TrainerDashboard = () => {
       <div className="grid gap-4 md:grid-cols-6">
         <Card className="md:col-span-4">
           <CardHeader>
-            <CardTitle>Today's Schedule</CardTitle>
-            <CardDescription>Your appointments for today</CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Today's Schedule</CardTitle>
+                <CardDescription>Your appointments for today</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => navigate("/trainers/classes")}>
+                Manage Classes
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {appointments.length > 0 ? (
