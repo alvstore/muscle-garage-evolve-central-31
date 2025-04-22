@@ -1,4 +1,3 @@
-
 import api from "./api";
 
 // Settings interfaces
@@ -69,7 +68,6 @@ export interface SmsSettings {
     otpVerification: boolean;
     attendanceConfirmation: boolean;
   };
-  // Add missing properties
   msg91AuthKey?: string;
   twilioAccountSid?: string;
   twilioAuthToken?: string;

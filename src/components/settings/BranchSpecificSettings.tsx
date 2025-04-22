@@ -179,7 +179,7 @@ const BranchSpecificSettings = () => {
         isActive: data.isActive,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        apiMethod: data.apiMethod
+        apiMethod: data.apiMethod || "OpenAPI"
       };
       
       setBranchSettings(prev => ({

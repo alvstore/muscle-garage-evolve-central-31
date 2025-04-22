@@ -1,395 +1,441 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { Member } from "@/types/member";
-import { MembershipPlan, Membership } from "@/types/membership";
-import { MembershipAssignment } from "@/types/membership-assignment";
-import { invoiceService } from "@/services/invoiceService";
-import { useBranch } from "@/hooks/use-branch";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { DatePicker } from '@/components/ui/date-picker';
+import { useToast } from '@/hooks/use-toast';
+import { useBranch } from '@/hooks/use-branch';
+import { formatCurrency } from '@/lib/utils';
+import { Member } from '@/types/member';
+// Import MembershipPlan instead of Membership to avoid conflict
+import { MembershipPlan } from '@/types/membership';
+import { MembershipAssignment } from '@/types/membership-assignment';
+import { invoiceService } from '@/services/invoiceService';
 
-const mockMembers: Member[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john@example.com",
-    phone: "9876543210",
-    status: "active",
-    membershipStatus: "active",
-    membershipId: "basic",
-    membershipStartDate: new Date(2023, 0, 1),
-    membershipEndDate: new Date(2023, 11, 31),
-    role: "member"
-  },
-  {
-    id: "2",
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    phone: "9876543211",
-    status: "active",
-    membershipStatus: "expired",
-    membershipId: null,
-    membershipStartDate: null,
-    membershipEndDate: null,
-    role: "member"
-  }
-];
-
-const mockMembershipPlans: Membership[] = [
-  {
-    id: "basic",
-    name: "Basic Membership",
-    description: "Access to gym only",
-    price: 1000,
-    duration_days: 30,
-    is_active: true,
-    features: { gym: true, pool: false, classes: false }
-  },
-  {
-    id: "premium",
-    name: "Premium Membership",
-    description: "Access to gym and swimming pool",
-    price: 2000,
-    duration_days: 30,
-    is_active: true,
-    features: { gym: true, pool: true, classes: false }
-  },
-  {
-    id: "gold",
-    name: "Gold Membership",
-    description: "Access to all facilities including classes",
-    price: 3000,
-    duration_days: 90,
-    is_active: true,
-    features: { gym: true, pool: true, classes: true }
-  }
-];
-
-interface Membership {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration_days: number;
-  is_active: boolean;
-  features: {
-    gym: boolean;
-    pool: boolean;
-    classes: boolean;
-  }
-}
+const formSchema = z.object({
+  memberId: z.string().min(1, {
+    message: "Please select a member.",
+  }),
+  planId: z.string().min(1, {
+    message: "Please select a membership plan.",
+  }),
+  startDate: z.date({
+    required_error: "Please select a start date.",
+  }),
+  endDate: z.date({
+    required_error: "Please select an end date.",
+  }),
+  totalAmount: z.number().min(1, {
+    message: "Total amount must be greater than 0.",
+  }),
+  amountPaid: z.number().min(0, {
+    message: "Amount paid cannot be negative.",
+  }),
+  paymentMethod: z.enum(['cash', 'card', 'bank', 'pending'], {
+    required_error: "Please select a payment method.",
+  }),
+  notes: z.string().optional(),
+  createInvoice: z.boolean().default(false),
+});
 
 interface MembershipAssignmentFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAssignMembership: (assignment: MembershipAssignment) => void;
+  // Define any props here
 }
 
-const MembershipAssignmentForm = ({
-  open,
-  onOpenChange,
-  onAssignMembership
-}: MembershipAssignmentFormProps) => {
-  const [selectedMemberId, setSelectedMemberId] = useState("");
-  const [selectedPlanId, setSelectedPlanId] = useState("");
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [totalAmount, setTotalAmount] = useState<number>(0);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [recordPayment, setRecordPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+const MembershipAssignmentForm = () => {
+  
   const [members, setMembers] = useState<Member[]>([]);
-  const [membershipPlans, setMembershipPlans] = useState<Membership[]>([]);
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
+  const { toast } = useToast();
   const { currentBranch } = useBranch();
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      memberId: "",
+      planId: "",
+      startDate: new Date(),
+      endDate: new Date(),
+      totalAmount: 0,
+      amountPaid: 0,
+      paymentMethod: 'cash',
+      notes: "",
+      createInvoice: false,
+    },
+  });
+
   useEffect(() => {
+    // Mock data for members
+    const mockMembers: Member[] = [
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        phone: '+1234567890',
+        status: 'active',
+        membershipStatus: 'active',
+        membershipId: '1',
+        membershipStartDate: new Date(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+        role: 'member',
+        branchId: currentBranch?.id
+      },
+      // ... more mock members
+    ];
+
+    // Mock data for plans
+    const mockPlans: MembershipPlan[] = [
+      {
+        id: '1',
+        name: 'Basic',
+        description: 'Access to gym only',
+        price: 1999,
+        durationDays: 30,
+        durationLabel: '1-month',
+        benefits: ['Gym access', '24/7 entry'],
+        allowedClasses: 'basic-only',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Premium',
+        description: 'Full access to all facilities',
+        price: 3999,
+        durationDays: 90,
+        durationLabel: '3-month',
+        benefits: ['Gym access', 'Pool access', 'Group classes', 'Personal trainer session'],
+        allowedClasses: 'all',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        name: 'Annual',
+        description: 'Full year access to all facilities',
+        price: 14999,
+        durationDays: 365,
+        durationLabel: '12-month',
+        benefits: ['Gym access', 'Pool access', 'Group classes', 'Personal trainer sessions'],
+        allowedClasses: 'all',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+
     setMembers(mockMembers);
-    setMembershipPlans(mockMembershipPlans);
-    setIsLoading(false);
-  }, []);
+    setPlans(mockPlans);
+  }, [currentBranch?.id]);
 
-  useEffect(() => {
-    updateEndDate();
-  }, [selectedPlanId, startDate]);
-
-  const updateEndDate = () => {
-    if (!selectedPlanId) return;
-    
-    const plan = membershipPlans.find(p => p.id === selectedPlanId);
-    if (!plan) return;
-    
-    const newEndDate = new Date(startDate);
-    newEndDate.setDate(newEndDate.getDate() + (plan.duration_days - 1));
-    setEndDate(newEndDate);
-    
-    setTotalAmount(plan.price);
-    setPaymentAmount(plan.price);
+  const handlePlanChange = (planId: string) => {
+    const plan = plans.find((plan) => plan.id === planId);
+    setSelectedPlan(plan);
+    form.setValue("totalAmount", plan?.price || 0);
+    form.setValue("amountPaid", plan?.price || 0);
   };
 
-  const resetForm = () => {
-    setSelectedMemberId("");
-    setSelectedPlanId("");
-    setStartDate(new Date());
-    setTotalAmount(0);
-    setPaymentAmount(0);
-    setRecordPayment(false);
-    setPaymentMethod("cash");
+  const handleMemberChange = (memberId: string) => {
+    const member = members.find((member) => member.id === memberId);
+    setSelectedMember(member);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
     
-    if (!selectedMemberId || !selectedPlanId) {
-      toast.error("Please select a member and a plan");
-      return;
-    }
+    // Create a membership assignment object
+    const assignment: MembershipAssignment = {
+      memberId: data.memberId,
+      membershipId: data.planId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      amount: selectedPlan?.price || 0,
+      paymentStatus: data.paymentMethod === 'pending' ? 'pending' : 'paid',
+      notes: data.notes,
+      branchId: currentBranch?.id,
+      planId: data.planId,
+      planName: selectedPlan?.name,
+      totalAmount: data.totalAmount,
+      amountPaid: data.amountPaid,
+      paymentMethod: data.paymentMethod
+    };
     
-    try {
-      setIsSubmitting(true);
+    // Simulate API call
+    setTimeout(() => {
+      console.log('Membership assignment created:', assignment);
       
-      const selectedMember = members.find(m => m.id === selectedMemberId);
-      const selectedPlan = membershipPlans.find(p => p.id === selectedPlanId);
-      
-      if (!selectedMember || !selectedPlan) {
-        throw new Error("Selected member or plan not found");
+      // Create an invoice for this membership
+      if (data.createInvoice) {
+        // Generate invoice
+        invoiceService.createInvoice({
+          memberId: data.memberId,
+          memberName: selectedMember?.name || '',
+          amount: data.totalAmount,
+          description: `Membership: ${selectedPlan?.name || 'Unknown Plan'}`,
+          dueDate: new Date(new Date().setDate(new Date().getDate() + 7)),
+          status: data.paymentMethod === 'pending' ? 'pending' : 'paid',
+          items: [
+            {
+              description: `${selectedPlan?.name || 'Membership'} (${selectedPlan?.durationLabel || 'Unknown duration'})`,
+              quantity: 1,
+              unitPrice: selectedPlan?.price || 0,
+              amount: selectedPlan?.price || 0
+            }
+          ]
+        });
       }
       
-      const membershipAssignment: MembershipAssignment = {
-        memberId: selectedMemberId,
-        membershipId: selectedPlanId,
-        startDate: startDate,
-        endDate: endDate,
-        amount: totalAmount,
-        paymentStatus: recordPayment ? "paid" : "pending",
-        branchId: currentBranch?.id,
-        planId: selectedPlanId,
-        planName: selectedPlan.name,
-        totalAmount: totalAmount,
-        amountPaid: recordPayment ? paymentAmount : 0,
-        paymentMethod: recordPayment ? paymentMethod : undefined
-      };
+      toast({
+        title: "Membership Assigned",
+        description: `Successfully assigned ${selectedPlan?.name} plan to ${selectedMember?.name}`,
+      });
       
-      await onAssignMembership(membershipAssignment);
-      
-      if (selectedMember && selectedPlan && currentBranch?.id) {
-        const invoice = await invoiceService.generateInvoiceForMembership(
-          selectedMemberId,
-          selectedMember.name,
-          selectedPlan.id,
-          selectedPlan.name,
-          totalAmount,
-          startDate.toISOString(),
-          endDate.toISOString(),
-          currentBranch.id
-        );
-        
-        if (recordPayment && invoice) {
-          await invoiceService.recordPayment(
-            invoice.id,
-            paymentAmount,
-            paymentMethod,
-            new Date().toISOString(),
-            currentBranch.id
-          );
-        }
-      }
-      
-      resetForm();
-      onOpenChange(false);
-      toast.success("Membership plan assigned successfully");
-      
-    } catch (error) {
-      console.error("Error assigning membership:", error);
-      toast.error("Failed to assign membership plan");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePaymentAmountChange = (value: string) => {
-    const amount = parseFloat(value);
-    if (isNaN(amount)) {
-      setPaymentAmount(0);
-    } else {
-      setPaymentAmount(Math.min(amount, totalAmount));
-    }
+      setLoading(false);
+      form.reset();
+    }, 1500);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Assign Membership Plan</DialogTitle>
-          <DialogDescription>
-            Assign a membership plan to a member and set its duration.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="member">Select Member</Label>
-              <Select
-                value={selectedMemberId}
-                onValueChange={setSelectedMemberId}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {members.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name} ({member.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="plan">Select Plan</Label>
-              <Select
-                value={selectedPlanId}
-                onValueChange={setSelectedPlanId}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {membershipPlans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} (₹{plan.price})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <DatePicker 
-                date={startDate} 
-                onSelect={setStartDate}
-                className={isLoading ? "opacity-50 pointer-events-none" : ""}
-                disabled={isLoading}
+    <Card>
+      <CardHeader>
+        <CardTitle>Assign Membership</CardTitle>
+        <CardDescription>Assign a membership plan to a member</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="memberId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Member</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleMemberChange(value);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a member" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {members.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the member to assign the membership to.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="planId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Membership Plan</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handlePlanChange(value);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a plan" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {plans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the membership plan to assign.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date</FormLabel>
+                      <DatePicker
+                        className="rounded-md border"
+                        onSelect={field.onChange}
+                        defaultValue={field.value}
+                      />
+                      <FormDescription>
+                        The date the membership starts.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date</FormLabel>
+                      <DatePicker
+                        className="rounded-md border"
+                        onSelect={field.onChange}
+                        defaultValue={field.value}
+                      />
+                      <FormDescription>The date the membership ends.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="totalAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Amount</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0.00" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The total amount for the membership.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="amountPaid"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount Paid</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0.00" {...field} />
+                      </FormControl>
+                      <FormDescription>The amount paid by the member.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="card">Card</SelectItem>
+                        <SelectItem value="bank">Bank Transfer</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the payment method used.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Additional notes about the membership"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Any additional notes about the membership.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="createInvoice"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Create Invoice</FormLabel>
+                      <FormDescription>
+                        Generate an invoice for this membership assignment
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <DatePicker 
-                date={endDate} 
-                onSelect={setEndDate}
-                className={isLoading ? "opacity-50 pointer-events-none" : ""}
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="totalAmount">Total Amount</Label>
-              <Input
-                id="totalAmount"
-                placeholder="Enter amount"
-                type="number"
-                value={totalAmount.toString()}
-                onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
-                disabled={isLoading}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="recordPayment"
-                checked={recordPayment}
-                onCheckedChange={setRecordPayment}
-                disabled={isLoading}
-              />
-              <Label htmlFor="recordPayment">Record Payment Now</Label>
-            </div>
-            
-            {recordPayment && (
-              <>
-                <div className="grid gap-2">
-                  <Label htmlFor="paymentAmount">Payment Amount</Label>
-                  <Input
-                    id="paymentAmount"
-                    placeholder="Enter payment amount"
-                    type="number"
-                    value={paymentAmount.toString()}
-                    onChange={(e) => handlePaymentAmountChange(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Select
-                    value={paymentMethod}
-                    onValueChange={setPaymentMethod}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Credit/Debit Card</SelectItem>
-                      <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isLoading}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Assigning...
-                </>
-              ) : (
-                "Assign Plan"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <Separator />
+            <CardFooter className="flex justify-between">
+              <Button variant="outline">Cancel</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Assigning..." : "Assign Membership"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

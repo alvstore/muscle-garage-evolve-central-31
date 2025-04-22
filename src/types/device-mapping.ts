@@ -13,11 +13,23 @@ export interface DeviceMapping {
   deviceLocation: string;
   isActive: boolean;
   apiMethod: ApiMethod;
+  ipAddress?: string;
+  port?: string;
+  username?: string;
+  password?: string;
+  useISAPIFallback?: boolean;
   lastSuccessfulSync?: string;
   lastFailedSync?: string;
   syncStatus?: SyncStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApiTestResult {
+  success: boolean;
+  message: string;
+  apiMethod: ApiMethod;
+  timestamp: string;
 }
 
 export interface BranchDeviceSettings {
@@ -41,4 +53,9 @@ export interface DeviceMappingFormValues {
   deviceLocation: string;
   isActive: boolean;
   apiMethod?: ApiMethod;
+  ipAddress?: string;
+  port?: string;
+  username?: string;
+  password?: string;
+  useISAPIFallback?: boolean;
 }

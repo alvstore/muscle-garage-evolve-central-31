@@ -51,10 +51,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useBranch } from '@/hooks/use-branch';
-import { DeviceMapping, DeviceMappingFormValues, ApiTestResult } from '@/types/device-mapping';
+import { DeviceMapping, DeviceMappingFormValues, ApiMethod, DeviceType, SyncStatus, ApiTestResult } from '@/types/device-mapping';
 import { Branch } from '@/types/branch';
 
-// Mock branches data - Remove city properties or add them to the Branch interface
+// Mock branches data
 const mockBranches: Branch[] = [
   { id: "1", name: "Main Branch", address: "123 Main St", isActive: true },
   { id: "2", name: "Downtown Branch", address: "456 MG Road", isActive: true },
@@ -150,7 +150,7 @@ const BranchDeviceManager = () => {
   const [testResults, setTestResults] = useState<Record<string, ApiTestResult>>({});
   const { currentBranch } = useBranch();
 
-  const form = useForm<DeviceMappingFormValues>({
+  const form = useForm<z.infer<typeof deviceSchema>>({
     resolver: zodResolver(deviceSchema),
     defaultValues: {
       deviceName: "",
@@ -167,17 +167,14 @@ const BranchDeviceManager = () => {
     }
   });
 
-  // Filter devices based on selected branch
   const filteredDevices = selectedBranchId === "all" 
     ? devices 
     : devices.filter(device => device.branchId === selectedBranchId);
 
-  // Handle branch change
   const handleBranchChange = (branchId: string) => {
     setSelectedBranchId(branchId);
   };
 
-  // Open dialog for adding a new device
   const handleAddDevice = () => {
     setEditingDevice(null);
     form.reset({
@@ -196,7 +193,6 @@ const BranchDeviceManager = () => {
     setIsDialogOpen(true);
   };
 
-  // Open dialog for editing a device
   const handleEditDevice = (device: DeviceMapping) => {
     setEditingDevice(device);
     form.reset({
@@ -215,27 +211,48 @@ const BranchDeviceManager = () => {
     setIsDialogOpen(true);
   };
 
-  // Handle form submission
-  const onSubmit = (data: DeviceMappingFormValues) => {
+  const onSubmit = (data: z.infer<typeof deviceSchema>) => {
     setIsLoading(true);
     
     setTimeout(() => {
       if (editingDevice) {
-        // Update existing device
         const updatedDevices = devices.map(device => 
           device.id === editingDevice.id 
-            ? { ...device, ...data, updatedAt: new Date().toISOString() } 
+            ? { 
+                ...device, 
+                deviceName: data.deviceName,
+                deviceType: data.deviceType,
+                deviceSerial: data.deviceSerial,
+                deviceLocation: data.deviceLocation,
+                isActive: data.isActive,
+                apiMethod: data.apiMethod,
+                ipAddress: data.ipAddress,
+                port: data.port,
+                username: data.username,
+                password: data.password,
+                useISAPIFallback: data.useISAPIFallback,
+                updatedAt: new Date().toISOString() 
+              } 
             : device
         );
         setDevices(updatedDevices);
         toast.success("Device updated successfully");
       } else {
-        // Add new device
         const newDevice: DeviceMapping = {
           id: `device-${Date.now()}`,
           branchId: selectedBranchId !== "all" ? selectedBranchId : (currentBranch?.id || "1"),
           deviceId: `device-${Date.now()}`,
-          ...data,
+          deviceName: data.deviceName,
+          deviceType: data.deviceType,
+          deviceSerial: data.deviceSerial,
+          deviceLocation: data.deviceLocation,
+          isActive: data.isActive,
+          apiMethod: data.apiMethod,
+          ipAddress: data.ipAddress,
+          port: data.port,
+          username: data.username,
+          password: data.password,
+          useISAPIFallback: data.useISAPIFallback,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -248,13 +265,11 @@ const BranchDeviceManager = () => {
     }, 1000);
   };
 
-  // Handle device deletion
   const handleDeleteDevice = (id: string) => {
     setDeleteId(id);
     setIsDeleting(true);
   };
 
-  // Confirm device deletion
   const confirmDelete = () => {
     if (deleteId) {
       const filteredDevices = devices.filter(device => device.id !== deleteId);
@@ -265,13 +280,11 @@ const BranchDeviceManager = () => {
     }
   };
 
-  // Test API connection
   const testApiConnection = async (device: DeviceMapping) => {
     if (isTesting) return;
     
     setIsTesting(true);
     
-    // Simulate API call with a timeout
     setTimeout(() => {
       const isSuccess = Math.random() > 0.3; // 70% success rate for demo
       const isOpenApiMethod = device.apiMethod === "OpenAPI";
@@ -282,7 +295,7 @@ const BranchDeviceManager = () => {
             ? { 
                 ...d, 
                 lastSuccessfulSync: new Date().toISOString(),
-                syncStatus: "success" as const
+                syncStatus: "success" as SyncStatus
               } 
             : d
         );
@@ -301,9 +314,7 @@ const BranchDeviceManager = () => {
         
         toast.success(`Successfully connected to ${device.deviceName}`);
       } else {
-        // OpenAPI failed and fallback is enabled
         if (isOpenApiMethod && device.useISAPIFallback) {
-          // Simulate fallback to ISAPI
           setTimeout(() => {
             const fallbackSuccess = Math.random() > 0.2; // 80% success rate for fallback
             
@@ -313,7 +324,7 @@ const BranchDeviceManager = () => {
                   ? { 
                       ...d, 
                       lastSuccessfulSync: new Date().toISOString(),
-                      syncStatus: "success" as const
+                      syncStatus: "success" as SyncStatus
                     } 
                   : d
               );
@@ -337,7 +348,7 @@ const BranchDeviceManager = () => {
                   ? { 
                       ...d, 
                       lastFailedSync: new Date().toISOString(),
-                      syncStatus: "failed" as const
+                      syncStatus: "failed" as SyncStatus
                     } 
                   : d
               );
@@ -360,13 +371,12 @@ const BranchDeviceManager = () => {
             setIsTesting(false);
           }, 1500);
         } else {
-          // No fallback or not OpenAPI
           const updatedDevices = devices.map(d => 
             d.id === device.id 
               ? { 
                   ...d, 
                   lastFailedSync: new Date().toISOString(),
-                  syncStatus: "failed" as const
+                  syncStatus: "failed" as SyncStatus
                 } 
               : d
           );
@@ -545,7 +555,6 @@ const BranchDeviceManager = () => {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Device Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -561,34 +570,28 @@ const BranchDeviceManager = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {selectedBranchId === "all" && (
-                  <FormField
-                    control={form.control}
-                    name="deviceName"
-                    render={({ field }) => (
-                      <FormItem className="col-span-2">
-                        <FormLabel>Branch</FormLabel>
-                        <Select
-                          value={editingDevice?.branchId || (currentBranch?.id || "1")}
-                          onValueChange={() => {}}
-                          disabled={!!editingDevice}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a branch" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {branches.map((branch) => (
-                              <SelectItem key={branch.id} value={branch.id}>
-                                {branch.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          The branch this device belongs to
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
+                  <div className="col-span-2">
+                    <FormLabel>Branch</FormLabel>
+                    <Select
+                      value={editingDevice?.branchId || (currentBranch?.id || "1")}
+                      onValueChange={() => {}}
+                      disabled={!!editingDevice}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>
+                            {branch.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      The branch this device belongs to
+                    </p>
+                  </div>
                 )}
                 
                 <FormField
@@ -822,7 +825,6 @@ const BranchDeviceManager = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
         <DialogContent>
           <DialogHeader>
