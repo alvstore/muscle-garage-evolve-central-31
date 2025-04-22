@@ -17,6 +17,8 @@ export interface Announcement {
   expiresAt?: string;
 }
 
+export type FeedbackType = 'suggestion' | 'complaint' | 'general' | 'class' | 'trainer' | 'fitness-plan' | 'diet-plan';
+
 export interface Feedback {
   id: string;
   title: string;
@@ -26,9 +28,10 @@ export interface Feedback {
   memberName: string;
   createdAt: string;
   status: 'pending' | 'resolved' | 'in-progress';
+  rating?: number;
+  comments?: string;
+  anonymous?: boolean;
 }
-
-export type FeedbackType = 'suggestion' | 'complaint' | 'general';
 
 export interface MotivationalMessage {
   id: string;
@@ -37,6 +40,10 @@ export interface MotivationalMessage {
   targetAudience: string[];
   isActive: boolean;
   createdBy: string;
+  title?: string;
+  author?: string;
+  category?: string;
+  tags?: string[];
 }
 
 export interface ReminderRule {
@@ -47,6 +54,9 @@ export interface ReminderRule {
   message: string;
   channels: NotificationChannel[];
   isActive: boolean;
+  description?: string;
+  sendVia?: NotificationChannel[];
+  targetRoles?: string[];
 }
 
-export type ReminderTriggerType = 'membership_expiry' | 'missed_classes' | 'birthday' | 'payment_due';
+export type ReminderTriggerType = 'membership_expiry' | 'missed_classes' | 'birthday' | 'payment_due' | 'missed_attendance';

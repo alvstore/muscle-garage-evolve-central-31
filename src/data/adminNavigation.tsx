@@ -60,6 +60,41 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Finance",
+    items: [
+      {
+        href: "/finance/dashboard",
+        label: "Finance Dashboard",
+        icon: <BarChart3 className="h-5 w-5" />,
+        permission: "access_finance" as Permission,
+      },
+      {
+        href: "/finance/invoices",
+        label: "Invoices",
+        icon: <FileText className="h-5 w-5" />,
+        permission: "manage_invoices" as Permission,
+      },
+      {
+        href: "/finance/transactions",
+        label: "Transactions",
+        icon: <CreditCard className="h-5 w-5" />,
+        permission: "manage_transactions" as Permission,
+      },
+      {
+        href: "/finance/income",
+        label: "Income Records",
+        icon: <BanknoteIcon className="h-5 w-5" />,
+        permission: "manage_income" as Permission,
+      },
+      {
+        href: "/finance/expenses",
+        label: "Expense Records",
+        icon: <WalletIcon className="h-5 w-5" />,
+        permission: "manage_expenses" as Permission,
+      }
+    ],
+  },
+  {
     name: "Members",
     items: [
       {
@@ -268,17 +303,6 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Reports",
-    items: [
-      {
-        href: "/reports",
-        label: "Reports & Analytics",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "access_reports" as Permission,
-      },
-    ],
-  },
-  {
     name: "Settings",
     items: [
       {
@@ -313,41 +337,6 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_integrations" as Permission,
           },
         ],
-      }
-    ],
-  },
-  {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance/dashboard",
-        label: "Finance Dashboard",
-        icon: <BarChart3 className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-      },
-      {
-        href: "/finance/invoices",
-        label: "Invoices",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "manage_invoices" as Permission,
-      },
-      {
-        href: "/finance/transactions",
-        label: "Transactions",
-        icon: <CreditCard className="h-5 w-5" />,
-        permission: "manage_transactions" as Permission,
-      },
-      {
-        href: "/finance/income",
-        label: "Income Records",
-        icon: <BanknoteIcon className="h-5 w-5" />,
-        permission: "manage_income" as Permission,
-      },
-      {
-        href: "/finance/expenses",
-        label: "Expense Records",
-        icon: <WalletIcon className="h-5 w-5" />,
-        permission: "manage_expenses" as Permission,
       }
     ],
   },
