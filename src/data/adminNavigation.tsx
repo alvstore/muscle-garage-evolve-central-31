@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -227,6 +228,49 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Website",
+    items: [
+      {
+        href: "/website",
+        label: "Website Management",
+        icon: <Globe className="h-5 w-5" />,
+        permission: "manage_website" as Permission,
+        children: [
+          {
+            href: "/website/home",
+            label: "Home Page",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/about",
+            label: "About Us",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/services",
+            label: "Services & Pricing",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/classes",
+            label: "Classes & Trainers",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/testimonials",
+            label: "Testimonials",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/contact",
+            label: "Contact Page",
+            permission: "manage_website" as Permission,
+          }
+        ]
+      },
+    ],
+  },
+  {
     name: "Reports",
     items: [
       {
@@ -376,7 +420,7 @@ export const adminNavSections: NavSection[] = [
 
 // Filter out Settings section for non-admin staff
 export const staffNavSections: NavSection[] = adminNavSections
-  .filter(section => section.name !== "Settings")
+  .filter(section => section.name !== "Settings" && section.name !== "Website")
   .map(section => {
     if (section.name === "Communication") {
       return {

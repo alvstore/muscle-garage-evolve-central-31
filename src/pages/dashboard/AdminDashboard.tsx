@@ -26,12 +26,14 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     setIsLoading(true);
+    toast.info(`Loading data for ${currentBranch?.name || 'all branches'}`);
+    
     setTimeout(() => {
-      const scopedData = getScopedDashboardData(isSystemAdmin(), currentBranch?.id);
+      const scopedData = getScopedDashboardData(currentBranch?.id);
       setDashboardData(scopedData);
       setIsLoading(false);
     }, 1000);
-  }, [isSystemAdmin, currentBranch]);
+  }, [currentBranch]);
 
   function getDashboardDataDefaults() {
     return {
@@ -69,7 +71,7 @@ const AdminDashboard = () => {
     };
   }
 
-  function getScopedDashboardData(isAdmin: boolean, branchId?: string) {
+  function getScopedDashboardData(branchId?: string) {
     const mockData = {
       totalMembers: 328,
       newMembersToday: 5,
@@ -119,33 +121,34 @@ const AdminDashboard = () => {
       ]
     };
 
-    if (!isAdmin && branchId) {
+    if (branchId) {
+      const branchMultiplier = Math.random() * 0.5 + 0.2;
       return {
         ...mockData,
-        totalMembers: Math.floor(mockData.totalMembers * 0.4),
-        newMembersToday: Math.floor(mockData.newMembersToday * 0.4),
-        activeMembers: Math.floor(mockData.activeMembers * 0.4),
-        attendanceToday: Math.floor(mockData.attendanceToday * 0.4),
+        totalMembers: Math.floor(mockData.totalMembers * branchMultiplier),
+        newMembersToday: Math.floor(mockData.newMembersToday * branchMultiplier),
+        activeMembers: Math.floor(mockData.activeMembers * branchMultiplier),
+        attendanceToday: Math.floor(mockData.attendanceToday * branchMultiplier),
         revenue: {
-          today: Math.floor(mockData.revenue.today * 0.4),
-          thisWeek: Math.floor(mockData.revenue.thisWeek * 0.4),
-          thisMonth: Math.floor(mockData.revenue.thisMonth * 0.4),
-          lastMonth: Math.floor(mockData.revenue.lastMonth * 0.4)
+          today: Math.floor(mockData.revenue.today * branchMultiplier),
+          thisWeek: Math.floor(mockData.revenue.thisWeek * branchMultiplier),
+          thisMonth: Math.floor(mockData.revenue.thisMonth * branchMultiplier),
+          lastMonth: Math.floor(mockData.revenue.lastMonth * branchMultiplier)
         },
         pendingPayments: {
-          count: Math.floor(mockData.pendingPayments.count * 0.4),
-          total: Math.floor(mockData.pendingPayments.total * 0.4)
+          count: Math.floor(mockData.pendingPayments.count * branchMultiplier),
+          total: Math.floor(mockData.pendingPayments.total * branchMultiplier)
         },
         membersByStatus: {
-          active: Math.floor(mockData.membersByStatus.active * 0.4),
-          inactive: Math.floor(mockData.membersByStatus.inactive * 0.4),
-          expired: Math.floor(mockData.membersByStatus.expired * 0.4)
+          active: Math.floor(mockData.membersByStatus.active * branchMultiplier),
+          inactive: Math.floor(mockData.membersByStatus.inactive * branchMultiplier),
+          expired: Math.floor(mockData.membersByStatus.expired * branchMultiplier)
         },
         revenueData: mockData.revenueData.map(item => ({
           ...item,
-          revenue: Math.floor(item.revenue * 0.4),
-          expenses: Math.floor(item.expenses * 0.4),
-          profit: Math.floor(item.profit * 0.4)
+          revenue: Math.floor(item.revenue * branchMultiplier),
+          expenses: Math.floor(item.expenses * branchMultiplier),
+          profit: Math.floor(item.profit * branchMultiplier)
         }))
       };
     }
@@ -207,22 +210,22 @@ const AdminDashboard = () => {
   const handleRefresh = () => {
     setIsLoading(true);
     toast("Refreshing dashboard data", {
-      description: "Please wait while we fetch the latest information."
+      description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
     });
     setTimeout(() => {
-      const scopedData = getScopedDashboardData(isSystemAdmin(), currentBranch?.id);
+      const scopedData = getScopedDashboardData(currentBranch?.id);
       setDashboardData(scopedData);
       setIsLoading(false);
-      toast("Dashboard updated", {
+      toast.success("Dashboard updated", {
         description: "All data has been refreshed with the latest information."
       });
     }, 1000);
   };
 
-  const dashboardTitle = isSystemAdmin() ? "Admin Dashboard" : "Branch Dashboard";
-  const scopeDescription = isSystemAdmin() 
-    ? "Global view of all branches" 
-    : `Branch: ${currentBranch?.name || 'Unknown Branch'}`;
+  const dashboardTitle = currentBranch ? `${currentBranch.name} Dashboard` : "All Branches Dashboard";
+  const scopeDescription = currentBranch 
+    ? `Showing data for ${currentBranch.name}` 
+    : isSystemAdmin() ? "Showing data for all branches" : "Please select a branch";
 
   return (
     <div className="space-y-6">

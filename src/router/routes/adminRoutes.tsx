@@ -7,6 +7,7 @@ import { adminClassRoutes } from './admin/classRoutes';
 import { adminFitnessRoutes } from './admin/fitnessRoutes';
 import { adminCommunicationRoutes } from './admin/communicationRoutes';
 import { adminCrmRoutes } from './admin/crmRoutes';
+import { adminWebsiteRoutes } from './admin/websiteRoutes';
 import StaffListPage from '@/pages/staff/StaffListPage';
 import TrainerPage from '@/pages/trainers/TrainerPage';
 import PromoPage from '@/pages/marketing/PromoPage';
@@ -28,6 +29,7 @@ export const adminRoutes: RouteObject[] = [
   ...adminFitnessRoutes,
   ...adminCommunicationRoutes,
   ...adminCrmRoutes,
+  ...adminWebsiteRoutes,
   {
     path: '/staff',
     element: (
