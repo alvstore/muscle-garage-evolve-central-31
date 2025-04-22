@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, CalendarCheck2, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -9,7 +8,7 @@ import UpcomingRenewals from "@/components/dashboard/UpcomingRenewals";
 import Announcements from "@/components/dashboard/Announcements";
 import { Button } from "@/components/ui/button";
 import { mockDashboardSummary } from "@/data/mockData";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
 import { Announcement } from "@/types/notification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RenewalsSection from "@/components/dashboard/sections/RenewalsSection";
@@ -23,9 +22,7 @@ const StaffDashboard = () => {
   const { currentBranch } = useBranch();
   
   useEffect(() => {
-    // Simulate API call with branch-specific filter
     setTimeout(() => {
-      // In a real implementation, you would fetch data filtered by branch ID
       console.log(`Loading branch-specific data for branch: ${currentBranch?.id}`);
       setDashboardData(mockDashboardSummary);
       setIsLoading(false);
@@ -156,14 +153,12 @@ const StaffDashboard = () => {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    toast({
-      title: "Refreshing dashboard data",
+    toast("Refreshing dashboard data", {
       description: "Please wait while we fetch the latest information."
     });
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Dashboard updated",
+      toast("Dashboard updated", {
         description: "All data has been refreshed with the latest information."
       });
     }, 1000);

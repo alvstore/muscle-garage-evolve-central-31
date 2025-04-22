@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -25,13 +24,9 @@ const AdminDashboard = () => {
   const { isSystemAdmin } = usePermissions();
   const { currentBranch } = useBranch();
 
-  // Load dashboard data with role-based scoping
   useEffect(() => {
     setIsLoading(true);
-    // Simulate API call with proper scoping based on role
     setTimeout(() => {
-      // In a real implementation, you would fetch data from your API with the appropriate scoping
-      // For admin, fetch all data; for staff, filter by branch
       const scopedData = getScopedDashboardData(isSystemAdmin(), currentBranch?.id);
       setDashboardData(scopedData);
       setIsLoading(false);
@@ -74,7 +69,6 @@ const AdminDashboard = () => {
     };
   }
 
-  // Mock function to simulate fetching scoped data
   function getScopedDashboardData(isAdmin: boolean, branchId?: string) {
     const mockData = {
       totalMembers: 328,
@@ -125,7 +119,6 @@ const AdminDashboard = () => {
       ]
     };
 
-    // If not admin (staff) and branchId exists, filter/reduce the data to simulate branch-specific data
     if (!isAdmin && branchId) {
       return {
         ...mockData,
@@ -148,7 +141,6 @@ const AdminDashboard = () => {
           inactive: Math.floor(mockData.membersByStatus.inactive * 0.4),
           expired: Math.floor(mockData.membersByStatus.expired * 0.4)
         },
-        // Simulate different data patterns for branch
         revenueData: mockData.revenueData.map(item => ({
           ...item,
           revenue: Math.floor(item.revenue * 0.4),
@@ -214,16 +206,14 @@ const AdminDashboard = () => {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    toast({
-      title: "Refreshing dashboard data",
+    toast("Refreshing dashboard data", {
       description: "Please wait while we fetch the latest information."
     });
     setTimeout(() => {
       const scopedData = getScopedDashboardData(isSystemAdmin(), currentBranch?.id);
       setDashboardData(scopedData);
       setIsLoading(false);
-      toast({
-        title: "Dashboard updated",
+      toast("Dashboard updated", {
         description: "All data has been refreshed with the latest information."
       });
     }, 1000);
