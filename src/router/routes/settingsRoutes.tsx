@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import SettingsPage from '@/pages/settings/SettingsPage';
@@ -9,13 +10,14 @@ import PushNotificationSettingsPage from '@/pages/settings/PushNotificationSetti
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
 import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
 import AccessRulesPage from '@/pages/settings/AccessRulesPage';
-import TemplatesPage from '@/pages/settings/TemplatesPage';
+import MessageTemplatesPage from '@/pages/settings/MessageTemplatesPage';
 import EmailTemplatesPage from '@/pages/settings/EmailTemplatesPage';
 import SmsTemplatesPage from '@/pages/settings/SmsTemplatesPage';
 import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
 import AutomationRulesPage from '@/pages/settings/AutomationRulesPage';
 import ClassTypesPage from '@/pages/classes/ClassTypesPage';
 import TaskManagerPage from '@/pages/communication/TaskManagerPage';
+import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 
 export const settingsRoutes: RouteObject[] = [
   {
@@ -39,12 +41,16 @@ export const settingsRoutes: RouteObject[] = [
     element: <MessagingSettingsPage />
   },
   {
+    path: '/settings/integrations/sms',
+    element: <SmsIntegrationPage />
+  },
+  {
     path: '/settings/integrations/push',
     element: <PushNotificationSettingsPage />
   },
   {
     path: '/settings/templates',
-    element: <TemplatesPage />
+    element: <MessageTemplatesPage />
   },
   {
     path: '/settings/templates/email',

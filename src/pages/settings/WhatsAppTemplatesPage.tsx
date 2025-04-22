@@ -38,31 +38,29 @@ const WhatsAppTemplatesPage = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">WhatsApp Templates</h1>
-            <p className="text-muted-foreground">Manage WhatsApp notification templates with custom tags</p>
+            <p className="text-muted-foreground">Manage WhatsApp message templates with custom tags</p>
           </div>
+          <Button>Create Template</Button>
         </div>
         
         <Card>
           <CardHeader>
-            <CardTitle>Missed Check-in Follow-up</CardTitle>
+            <CardTitle>WhatsApp Template Management</CardTitle>
             <CardDescription>
-              Sent to members who haven't checked in for a while
+              This feature will be implemented soon. Here you'll be able to create and manage WhatsApp message templates.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="border p-4 rounded-md bg-slate-50">
-                <h3 className="font-medium mb-2">Available tags:</h3>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{"{member_name}"}</span>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{"{days_inactive}"}</span>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">{"{gym_name}"}</span>
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline">Preview Template</Button>
-                <Button>Edit Template</Button>
+                <h3 className="font-medium mb-2">Coming Soon:</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>WhatsApp Cloud API integration</li>
+                  <li>Template creation and submission</li>
+                  <li>Interactive message components</li>
+                  <li>Media support (images, documents, etc.)</li>
+                  <li>Test message functionality</li>
+                </ul>
               </div>
             </div>
           </CardContent>

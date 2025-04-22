@@ -318,6 +318,11 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_integrations" as Permission,
           },
           {
+            href: "/settings/integrations/sms",
+            label: "SMS Services",
+            permission: "manage_integrations" as Permission,
+          },
+          {
             href: "/settings/integrations/push",
             label: "Push Notifications",
             permission: "manage_integrations" as Permission,
