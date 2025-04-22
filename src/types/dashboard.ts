@@ -66,3 +66,47 @@ export interface MemberStatusData {
   value: number;
   color: string;
 }
+
+export interface DashboardSummary {
+  totalMembers: number;
+  newMembersToday: number;
+  activeMembers: number;
+  attendanceToday: number;
+  todayCheckIns: number;
+  upcomingRenewals: number;
+  pendingPayments: {
+    count: number;
+    total: number;
+  };
+  revenue: {
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+    lastMonth: number;
+  };
+  classAttendance: {
+    today: number;
+    yesterday: number;
+    lastWeek: number;
+  };
+  attendanceTrend: AttendanceData[];
+  membersByStatus?: {
+    active: number;
+    inactive: number;
+    expired: number;
+  };
+  revenueData?: {
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }[];
+}
+
+export interface BranchAnalytics {
+  branchId: string;
+  branchName: string;
+  memberCount: number;
+  revenue: number;
+  attendance: number;
+}

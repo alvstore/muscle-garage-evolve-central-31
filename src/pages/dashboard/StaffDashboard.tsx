@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Users, DollarSign, UserCheck, CalendarCheck2, RefreshCcw } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
@@ -10,19 +11,26 @@ import { Button } from "@/components/ui/button";
 import { mockDashboardSummary } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { Announcement } from "@/types/notification";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import RenewalsSection from "@/components/dashboard/sections/RenewalsSection";
+import RevenueSection from "@/components/dashboard/sections/RevenueSection";
+import { useBranch } from "@/hooks/use-branch";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
   const { toast } = useToast();
+  const { currentBranch } = useBranch();
   
   useEffect(() => {
-    // Simulate API call
+    // Simulate API call with branch-specific filter
     setTimeout(() => {
+      // In a real implementation, you would fetch data filtered by branch ID
+      console.log(`Loading branch-specific data for branch: ${currentBranch?.id}`);
       setDashboardData(mockDashboardSummary);
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [currentBranch]);
 
   const recentActivities = [
     {
@@ -137,6 +145,15 @@ const StaffDashboard = () => {
     }
   ];
 
+  const revenueData = [
+    { month: 'Jan', revenue: 8500, expenses: 2500, profit: 6000 },
+    { month: 'Feb', revenue: 9200, expenses: 2800, profit: 6400 },
+    { month: 'Mar', revenue: 8800, expenses: 2600, profit: 6200 },
+    { month: 'Apr', revenue: 9500, expenses: 2700, profit: 6800 },
+    { month: 'May', revenue: 10200, expenses: 2900, profit: 7300 },
+    { month: 'Jun', revenue: 11500, expenses: 3100, profit: 8400 }
+  ];
+
   const handleRefresh = () => {
     setIsLoading(true);
     toast({
@@ -155,7 +172,12 @@ const StaffDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Staff Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Staff Dashboard</h1>
+          <p className="text-muted-foreground">
+            Branch: {currentBranch?.name || 'Unknown Branch'}
+          </p>
+        </div>
         <Button 
           size="sm" 
           variant="outline" 
@@ -212,7 +234,14 @@ const StaffDashboard = () => {
           {isLoading ? (
             <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
           ) : (
-            <UpcomingRenewals renewals={upcomingRenewals} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RevenueSection data={revenueData} />
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
