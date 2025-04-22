@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { classService } from '@/services/classService';
 import { GymClass, ClassBooking } from '@/types/class';
+import { toast } from 'sonner';
 
 export const useClasses = () => {
   return useQuery({
@@ -42,11 +43,21 @@ export const useBookClass = () => {
       classService.bookClass(classId, memberId),
     onSuccess: (data, variables) => {
       if (data) {
+        // Invalidate affected queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['classes', variables.classId, 'bookings'] });
         queryClient.invalidateQueries({ queryKey: ['members', variables.memberId, 'bookings'] });
         queryClient.invalidateQueries({ queryKey: ['classes', variables.classId] });
+        queryClient.invalidateQueries({ queryKey: ['classes'] }); // Refresh all classes to update enrolled count
       }
     },
+    onError: (error: any) => {
+      console.error('Booking error:', error);
+      
+      // Detailed error handling based on error type
+      const errorMessage = error?.response?.data?.message || 
+                        'Failed to book class. Please try again later.';
+      toast.error(errorMessage);
+    }
   });
 };
 
@@ -57,12 +68,17 @@ export const useCancelBooking = () => {
     mutationFn: (bookingId: string) => classService.cancelBooking(bookingId),
     onSuccess: (data, bookingId) => {
       if (data) {
-        // Since we don't know exactly which class and member this booking belongs to,
-        // we invalidate all bookings queries
+        // Invalidate all related queries
         queryClient.invalidateQueries({ queryKey: ['classes'] });
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
       }
     },
+    onError: (error: any) => {
+      console.error('Cancellation error:', error);
+      const errorMessage = error?.response?.data?.message || 
+                        'Failed to cancel booking. Please try again later.';
+      toast.error(errorMessage);
+    }
   });
 };
 
@@ -73,10 +89,16 @@ export const useMarkAttendance = () => {
     mutationFn: (bookingId: string) => classService.markAttendance(bookingId),
     onSuccess: (data, bookingId) => {
       if (data) {
-        // Invalidate all bookings queries
+        // Invalidate all related queries
         queryClient.invalidateQueries({ queryKey: ['classes'] });
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
       }
     },
+    onError: (error: any) => {
+      console.error('Attendance marking error:', error);
+      const errorMessage = error?.response?.data?.message || 
+                        'Failed to mark attendance. Please try again later.';
+      toast.error(errorMessage);
+    }
   });
 };

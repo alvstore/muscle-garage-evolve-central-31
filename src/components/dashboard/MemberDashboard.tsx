@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
-  // Example progress data
   const progressData = [
     { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
     { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
@@ -32,24 +30,24 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
   ];
   
-  // Today's date formatted for display
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
   
-  // Format class time
   const formatClassTime = (startTime: string) => {
     return format(new Date(startTime), 'h:mm a');
   };
   
-  // Sort upcoming classes by date
   const upcomingClasses = classes
     .filter(c => new Date(c.startTime) > new Date())
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 3);
 
-  // Handle book class button click
   const handleBookClass = () => {
     navigate('/classes');
     toast.success("Redirecting to classes page");
+  };
+  
+  const handleBookSpecificClass = (classId: string) => {
+    navigate(`/classes?select=${classId}`);
   };
   
   return (
@@ -65,7 +63,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         </Button>
       </div>
       
-      {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
@@ -109,7 +106,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Progress Chart */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Progress Tracker</CardTitle>
@@ -126,7 +122,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
           </CardContent>
         </Card>
         
-        {/* Upcoming Classes */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Upcoming Classes</CardTitle>
@@ -145,16 +140,24 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(classItem.startTime), 'EEE, MMM d')} at {formatClassTime(classItem.startTime)}
                         </p>
+                        <p className="text-xs text-muted-foreground">
+                          {classItem.enrolled}/{classItem.capacity} enrolled
+                        </p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <ChevronRight className="h-4 w-4" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleBookSpecificClass(classItem.id)}
+                      disabled={classItem.enrolled >= classItem.capacity}
+                    >
+                      {classItem.enrolled >= classItem.capacity ? "Full" : "Book"}
                     </Button>
                   </div>
                 ))}
                 
                 <Button className="w-full" onClick={handleBookClass}>
-                  Book Class
+                  Browse All Classes
                 </Button>
               </div>
             ) : (
@@ -173,7 +176,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         </Card>
       </div>
       
-      {/* Fitness Plans and Invoices */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>

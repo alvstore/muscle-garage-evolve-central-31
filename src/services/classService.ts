@@ -28,14 +28,56 @@ export const classService = {
     }
   },
   
+  // Check if class is available for booking
+  async checkClassAvailability(classId: string): Promise<{ available: boolean; message?: string }> {
+    try {
+      const response = await api.get<{ available: boolean; message?: string }>(`/classes/${classId}/availability`);
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to check class availability';
+      return { available: false, message: errorMessage };
+    }
+  },
+  
   // Create a new class booking
   async bookClass(classId: string, memberId: string): Promise<ClassBooking | null> {
     try {
+      // First check availability
+      const availability = await this.checkClassAvailability(classId);
+      if (!availability.available) {
+        toast.error(availability.message || 'Class is not available for booking');
+        return null;
+      }
+      
       const response = await api.post<ClassBooking>('/bookings', { classId, memberId });
       toast.success('Class booked successfully');
       return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to book class';
+      // Provide detailed error messages based on error types
+      let errorMessage = 'Failed to book class';
+      
+      if (error.response) {
+        const statusCode = error.response.status;
+        const responseData = error.response.data;
+        
+        switch (statusCode) {
+          case 400:
+            errorMessage = responseData.message || 'Invalid booking request';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to book this class';
+            break;
+          case 409:
+            errorMessage = responseData.message || 'Scheduling conflict detected';
+            break;
+          case 422:
+            errorMessage = responseData.message || 'Class is full or unavailable';
+            break;
+          default:
+            errorMessage = responseData.message || 'Failed to book class';
+        }
+      }
+      
       toast.error(errorMessage);
       return null;
     }

@@ -1,10 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { useBookClass } from "@/hooks/use-classes";
 import { toast } from "sonner";
-import { GymClass, ClassBooking, BookingStatus } from "@/types/class";
+import { GymClass, ClassBooking } from "@/types/class";
 
 interface ClassBookingFormProps {
   gymClass: GymClass;
@@ -14,11 +17,28 @@ interface ClassBookingFormProps {
 }
 
 const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassBookingFormProps) => {
-  const [loading, setLoading] = useState(false);
-  const [memberId, setMemberId] = useState("");
   const [notes, setNotes] = useState("");
+  const { user } = useAuth();
   
-  // Mock member list - in a real app, this would be fetched from an API
+  const { mutate: bookClass, isPending } = useBookClass();
+  
+  // For admin/staff - allow selecting a member
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  
+  // Reset form when opened with a new class
+  useEffect(() => {
+    if (open) {
+      setNotes("");
+      if (user?.role === 'member') {
+        setSelectedMemberId(user.id);
+      } else {
+        setSelectedMemberId("");
+      }
+    }
+  }, [open, user]);
+  
+  // Mock member list for admin booking on behalf of members
+  // In a real app, this would be fetched from an API
   const mockMembers = [
     { id: "member-1", name: "John Doe" },
     { id: "member-2", name: "Jane Smith" },
@@ -26,42 +46,44 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
   ];
 
   const handleSubmit = () => {
+    // Validate form
+    const memberId = user?.role === 'member' ? user.id : selectedMemberId;
+    
     if (!memberId) {
       toast.error("Please select a member");
       return;
     }
-
-    setLoading(true);
     
-    // Create a booking
-    setTimeout(() => {
-      const member = mockMembers.find(m => m.id === memberId);
-      
-      if (!member) {
-        toast.error("Invalid member selection");
-        setLoading(false);
-        return;
+    // Validation for class capacity
+    if (gymClass.enrolled >= gymClass.capacity) {
+      toast.error("This class is already full");
+      return;
+    }
+    
+    // Validation for class time (don't book past classes)
+    if (new Date(gymClass.startTime) < new Date()) {
+      toast.error("Cannot book a class that has already started or ended");
+      return;
+    }
+    
+    // Book the class
+    bookClass(
+      { classId: gymClass.id, memberId },
+      {
+        onSuccess: (data) => {
+          if (data) {
+            onBookingComplete(data);
+            toast.success(`Successfully booked for ${gymClass.name}`);
+            onClose();
+          }
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.response?.data?.message || 
+                            "There was an error booking the class. Please try again.";
+          toast.error(errorMessage);
+        }
       }
-      
-      // Create a new booking
-      const newBooking: ClassBooking = {
-        id: `booking-${Date.now()}`,
-        classId: gymClass.id,
-        memberId: member.id,
-        memberName: member.name,
-        bookingDate: new Date().toISOString(),
-        status: "booked",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        notes: notes || undefined
-      };
-      
-      // In a real app, this would be an API call
-      onBookingComplete(newBooking);
-      toast.success(`Booked ${member.name} for ${gymClass.name}`);
-      setLoading(false);
-      onClose();
-    }, 1000);
+    );
   };
 
   return (
@@ -71,28 +93,34 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           <DialogTitle>Book Class: {gymClass.name}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Member</label>
-            <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a member" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockMembers.map(member => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Only show member selection for admin/staff users */}
+          {user?.role !== 'member' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Member</label>
+              <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockMembers.map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           <div className="space-y-2">
             <label className="text-sm font-medium">Class Details</label>
             <div className="rounded-md bg-accent/20 p-3 text-sm">
               <p><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
               <p><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
-              <p><strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled</p>
+              <p className={gymClass.enrolled >= gymClass.capacity ? "text-red-500 font-medium" : ""}>
+                <strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled
+                {gymClass.enrolled >= gymClass.capacity && " (Class Full)"}
+              </p>
               <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer}</p>
             </div>
           </div>
@@ -113,9 +141,9 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || gymClass.enrolled >= gymClass.capacity}
+            disabled={isPending || gymClass.enrolled >= gymClass.capacity || new Date(gymClass.startTime) < new Date()}
           >
-            {loading ? "Booking..." : "Confirm Booking"}
+            {isPending ? "Booking..." : "Confirm Booking"}
           </Button>
         </DialogFooter>
       </DialogContent>

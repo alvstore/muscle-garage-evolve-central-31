@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ClassForm from "./ClassForm";
-import { GymClass } from "@/types/class";
+import ClassBookingForm from "./ClassBookingForm";
+import { GymClass, ClassBooking } from "@/types/class";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
-// Mock data fetching function
 const fetchClasses = async (): Promise<GymClass[]> => {
-  // In a real app, this would be an API call
   return [{
     id: "1",
     name: "Morning Yoga",
@@ -79,9 +80,14 @@ const fetchClasses = async (): Promise<GymClass[]> => {
     updatedAt: "2025-04-10T12:00:00"
   }];
 };
+
 const ClassList = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [classToBook, setClassToBook] = useState<GymClass | null>(null);
+  const { user, userRole } = useAuth();
+  
   const {
     data: classes,
     isLoading
@@ -89,18 +95,44 @@ const ClassList = () => {
     queryKey: ['classes'],
     queryFn: fetchClasses
   });
+  
   const handleCreateClass = () => {
     setSelectedClass(null);
     setIsOpen(true);
   };
+  
   const handleEditClass = (classItem: GymClass) => {
     setSelectedClass(classItem);
     setIsOpen(true);
   };
+  
   const handleCloseDialog = () => {
     setIsOpen(false);
     setSelectedClass(null);
   };
+  
+  const handleBookClass = (classItem: GymClass) => {
+    if (classItem.enrolled >= classItem.capacity) {
+      toast.error("This class is already full. Please choose another class.");
+      return;
+    }
+    
+    if (new Date(classItem.startTime) < new Date()) {
+      toast.error("Cannot book a class that has already started or ended.");
+      return;
+    }
+    
+    setClassToBook(classItem);
+    setShowBookingForm(true);
+  };
+  
+  const handleBookingComplete = (booking: ClassBooking) => {
+    toast.success(`Successfully booked ${booking.classId}`);
+    
+    setShowBookingForm(false);
+    setClassToBook(null);
+  };
+  
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner":
@@ -113,6 +145,7 @@ const ClassList = () => {
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
     }
   };
+  
   if (isLoading) {
     return <div className="space-y-4">
         {[1, 2, 3].map(i => <Card key={i}>
@@ -133,6 +166,7 @@ const ClassList = () => {
           </Card>)}
       </div>;
   }
+  
   return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -191,7 +225,12 @@ const ClassList = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          
+          {(userRole === 'admin' || userRole === 'staff') && (
+            <Button size="sm" onClick={handleCreateClass}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Class
+            </Button>
+          )}
         </div>
       </div>
 
@@ -200,25 +239,27 @@ const ClassList = () => {
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle>{classItem.name}</CardTitle>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditClass(classItem)}>
-                      Edit Class
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      View Bookings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      Cancel Class
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {(userRole === 'admin' || userRole === 'staff') && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditClass(classItem)}>
+                        Edit Class
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        View Bookings
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive">
+                        Cancel Class
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -242,7 +283,7 @@ const ClassList = () => {
                 
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>
+                  <span className={classItem.enrolled >= classItem.capacity ? "text-red-500 font-medium" : ""}>
                     {classItem.enrolled}/{classItem.capacity} enrolled
                   </span>
                 </div>
@@ -272,13 +313,29 @@ const ClassList = () => {
               </div>
               
               <div className="mt-4 flex justify-end">
-                <Button>Book Class</Button>
+                <Button 
+                  onClick={() => handleBookClass(classItem)}
+                  disabled={classItem.enrolled >= classItem.capacity || new Date(classItem.startTime) < new Date()}
+                >
+                  {classItem.enrolled >= classItem.capacity ? "Class Full" : 
+                   new Date(classItem.startTime) < new Date() ? "Class Passed" : "Book Class"}
+                </Button>
               </div>
             </CardContent>
           </Card>)}
       </div>
 
       <ClassForm open={isOpen} onOpenChange={setIsOpen} initialData={selectedClass} onClose={handleCloseDialog} />
+      
+      {classToBook && (
+        <ClassBookingForm 
+          gymClass={classToBook}
+          open={showBookingForm} 
+          onClose={() => setShowBookingForm(false)}
+          onBookingComplete={handleBookingComplete}
+        />
+      )}
     </div>;
 };
+
 export default ClassList;
