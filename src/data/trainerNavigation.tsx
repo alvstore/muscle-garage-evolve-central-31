@@ -11,6 +11,9 @@ import {
   Clock,
   Utensils,
   Target,
+  Dumbbell,
+  FileText,
+  CheckSquare
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 
@@ -47,13 +50,37 @@ export const trainerNavSections: NavSection[] = [
   },
   {
     name: "Training",
-    icon: <Users className="h-4 w-4" />,
+    icon: <Dumbbell className="h-4 w-4" />,
     items: [
       { 
         href: "/trainers/allocation", 
         label: "Member Allocation", 
         icon: <Users className="h-4 w-4" />,
         permission: "trainer_view_members"
+      },
+      { 
+        href: "/trainers/pt-plans", 
+        label: "PT Plans", 
+        icon: <FileText className="h-4 w-4" />,
+        permission: "trainer_edit_fitness"
+      },
+      { 
+        href: "/trainers/workout-plans", 
+        label: "Workout Plans", 
+        icon: <Dumbbell className="h-4 w-4" />,
+        permission: "trainer_edit_fitness"
+      },
+      { 
+        href: "/trainers/workout-assignments", 
+        label: "Workout Assignments", 
+        icon: <CheckSquare className="h-4 w-4" />,
+        permission: "trainer_edit_fitness"
+      },
+      { 
+        href: "/trainers/diet-plans", 
+        label: "Diet Plans", 
+        icon: <Utensils className="h-4 w-4" />,
+        permission: "trainer_edit_fitness"
       },
       { 
         href: "/trainers/member-progress", 
@@ -100,3 +127,4 @@ export const trainerNavSections: NavSection[] = [
     ]
   }
 ];
+
