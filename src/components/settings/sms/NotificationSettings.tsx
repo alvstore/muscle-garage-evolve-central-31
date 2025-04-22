@@ -1,153 +1,82 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { Save } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
-interface NotificationSetting {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  type: 'member' | 'admin' | 'system';
+export interface NotificationTemplatesProps {
+  membershipAlert: boolean;
+  renewalReminder: boolean;
+  otpVerification: boolean;
+  attendanceConfirmation: boolean;
 }
 
-const NotificationSettings = () => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSetting[]>([
-    {
-      id: 'membership_expiry',
-      name: 'Membership Expiry',
-      description: 'Send SMS reminder when membership is about to expire',
-      enabled: true,
-      type: 'member'
-    },
-    {
-      id: 'payment_due',
-      name: 'Payment Due',
-      description: 'Send SMS reminder when payment is due',
-      enabled: true,
-      type: 'member'
-    },
-    {
-      id: 'class_reminder',
-      name: 'Class Reminder',
-      description: 'Send SMS reminder before scheduled classes',
-      enabled: true,
-      type: 'member'
-    },
-    {
-      id: 'birthday_wish',
-      name: 'Birthday Wish',
-      description: 'Send birthday greetings to members',
-      enabled: true,
-      type: 'member'
-    },
-    {
-      id: 'new_member',
-      name: 'New Member Registration',
-      description: 'Notify admin when a new member joins',
-      enabled: true,
-      type: 'admin'
-    },
-    {
-      id: 'payment_received',
-      name: 'Payment Received',
-      description: 'Notify admin when a payment is received',
-      enabled: true,
-      type: 'admin'
-    },
-    {
-      id: 'attendance_alert',
-      name: 'Attendance Alert',
-      description: 'Notify system about attendance status',
-      enabled: true,
-      type: 'system'
-    },
-    {
-      id: 'error_notifications',
-      name: 'Error Notifications',
-      description: 'Send system error notifications to administrators',
-      enabled: true,
-      type: 'system'
-    }
-  ]);
+export interface NotificationSettingsProps {
+  templates: NotificationTemplatesProps;
+  onChange: (templates: NotificationTemplatesProps) => void;
+}
 
-  const handleToggleNotification = (id: string, enabled: boolean) => {
-    setNotificationSettings(prevSettings => 
-      prevSettings.map(setting => 
-        setting.id === id ? { ...setting, enabled } : setting
-      )
-    );
-  };
-
-  const handleSaveSettings = () => {
-    setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      toast.success('SMS notification settings saved successfully');
-      setIsSaving(false);
-    }, 1000);
+const NotificationSettings: React.FC<NotificationSettingsProps> = ({ 
+  templates, 
+  onChange 
+}) => {
+  const handleToggle = (key: keyof NotificationTemplatesProps, value: boolean) => {
+    onChange({
+      ...templates,
+      [key]: value
+    });
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>SMS Notification Settings</CardTitle>
-        <CardDescription>
-          Configure which SMS notifications are sent to members, admins, and for system events
-        </CardDescription>
+        <CardTitle>Template Configuration</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="member">
-          <TabsList className="mb-4">
-            <TabsTrigger value="member">Member Notifications</TabsTrigger>
-            <TabsTrigger value="admin">Admin Notifications</TabsTrigger>
-            <TabsTrigger value="system">System Notifications</TabsTrigger>
-          </TabsList>
-
-          {['member', 'admin', 'system'].map((type) => (
-            <TabsContent key={type} value={type} className="space-y-4">
-              {notificationSettings
-                .filter(setting => setting.type === type)
-                .map(setting => (
-                  <div key={setting.id} className="flex items-center justify-between space-x-2 rounded-md border p-4">
-                    <div>
-                      <h4 className="font-medium">{setting.name}</h4>
-                      <p className="text-sm text-muted-foreground">{setting.description}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id={`switch-${setting.id}`}
-                        checked={setting.enabled}
-                        onCheckedChange={(checked) => handleToggleNotification(setting.id, checked)}
-                      />
-                      <Label htmlFor={`switch-${setting.id}`} className="sr-only">
-                        Toggle {setting.name}
-                      </Label>
-                    </div>
-                  </div>
-                ))
-              }
-            </TabsContent>
-          ))}
-        </Tabs>
-
-        <div className="mt-6 flex justify-end">
-          <Button onClick={handleSaveSettings} disabled={isSaving}>
-            {isSaving ? (
-              <>Saving...</>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Save Notification Settings
-              </>
-            )}
-          </Button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Membership Alerts</Label>
+              <p className="text-sm text-muted-foreground">Notifications for membership status changes</p>
+            </div>
+            <Switch 
+              checked={templates.membershipAlert}
+              onCheckedChange={(value) => handleToggle('membershipAlert', value)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Renewal Reminders</Label>
+              <p className="text-sm text-muted-foreground">Scheduled reminders before membership expires</p>
+            </div>
+            <Switch 
+              checked={templates.renewalReminder}
+              onCheckedChange={(value) => handleToggle('renewalReminder', value)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">OTP Verification</Label>
+              <p className="text-sm text-muted-foreground">One-time password for account verification</p>
+            </div>
+            <Switch 
+              checked={templates.otpVerification}
+              onCheckedChange={(value) => handleToggle('otpVerification', value)}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-base">Attendance Confirmation</Label>
+              <p className="text-sm text-muted-foreground">Confirmation messages for class attendance</p>
+            </div>
+            <Switch 
+              checked={templates.attendanceConfirmation}
+              onCheckedChange={(value) => handleToggle('attendanceConfirmation', value)}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

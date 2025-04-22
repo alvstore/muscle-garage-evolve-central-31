@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { UserRole } from '@/types';
+import { User } from '@/types/user';
 
 export type Permission = 
   | 'view_all_branches'
@@ -170,7 +171,8 @@ export const PermissionsProvider = ({ children }: { children: React.ReactNode })
   
   // Check if user is a branch admin
   const isBranchAdmin = (): boolean => {
-    return user?.role === 'staff' && user?.isBranchManager === true;
+    // Use optional chaining to safely check for isBranchManager property
+    return user?.role === 'staff' && (user as any)?.isBranchManager === true;
   };
   
   return (
