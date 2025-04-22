@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";
@@ -9,7 +8,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addMonths, subMonths } from "date-fns";
-
 const AttendancePage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -20,10 +18,6 @@ const AttendancePage = () => {
     userRole
   } = usePermissions();
   const isMember = userRole === "member";
-  
-  // Create empty attendance data array to satisfy the prop requirement
-  const emptyAttendanceData = [];
-
   const nextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
@@ -71,7 +65,7 @@ const AttendancePage = () => {
           </div>
           
           <div className="md:col-span-3">
-            <AttendanceTracker date={selectedDate} data={emptyAttendanceData} />
+            <AttendanceTracker date={selectedDate} />
           </div>
         </div>
       </div>

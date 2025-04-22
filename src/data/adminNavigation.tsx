@@ -31,9 +31,7 @@ import {
   FolderHeart,
   Gift,
   Wallet,
-  Archive,
-  DollarSign,
-  Receipt
+  Archive
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -43,7 +41,7 @@ export const adminNavSections: NavSection[] = [
     name: "Dashboard",
     items: [
       {
-        href: "/dashboard",
+        href: "/",
         label: "Analytics Dashboard",
         icon: <BarChart3 className="h-5 w-5" />,
         permission: "access_dashboards" as Permission,
@@ -104,29 +102,6 @@ export const adminNavSections: NavSection[] = [
         label: "Trainers",
         icon: <Dumbbell className="h-5 w-5" />,
         permission: "view_all_trainers" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance/dashboard",
-        label: "Finance Overview",
-        icon: <DollarSign className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-      },
-      {
-        href: "/finance/invoices",
-        label: "Invoices",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-      },
-      {
-        href: "/finance/transactions",
-        label: "Transactions",
-        icon: <Receipt className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
       },
     ],
   },

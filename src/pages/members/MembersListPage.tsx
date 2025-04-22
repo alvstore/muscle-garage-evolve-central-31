@@ -7,26 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { 
-  UserPlus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  RefreshCw, 
-  Mail, 
-  MessageSquare, 
-  Calendar 
-} from "lucide-react";
+import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
 import { Member } from "@/types";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -145,31 +128,6 @@ const MembersListPage = () => {
     member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Handle quick actions for members
-  const handleQuickAction = (memberId: string, action: string) => {
-    const member = members.find(m => m.id === memberId);
-    if (!member) return;
-    
-    switch (action) {
-      case "message":
-        toast.success(`Sending message to ${member.name}`);
-        // In a real app, this would open a messaging interface
-        break;
-      case "checkin":
-        toast.success(`Manual check-in recorded for ${member.name}`);
-        // In a real app, this would record attendance
-        break;
-      case "renew":
-        navigate(`/membership?memberId=${memberId}`);
-        break;
-      case "workout":
-        navigate(`/fitness/workout-plans?memberId=${memberId}`);
-        break;
-      default:
-        toast.error("Action not implemented");
-    }
-  };
-
   return (
     <Container>
       <div className="py-6">
@@ -245,36 +203,13 @@ const MembersListPage = () => {
                       View Profile
                     </Button>
                     <div className="border-r"></div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                        >
-                          Quick Actions
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel>Member Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "message")}>
-                          <Mail className="h-4 w-4 mr-2" /> 
-                          Send Message
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "checkin")}>
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Manual Check-in
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "renew")}>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Renew Membership
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleQuickAction(member.id, "workout")}>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Assign Workout
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
+                      onClick={() => toast.info("Quick actions coming soon")}
+                    >
+                      Quick Actions
+                    </Button>
                     <div className="border-r"></div>
                     <Button
                       variant="ghost"

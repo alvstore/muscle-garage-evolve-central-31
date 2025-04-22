@@ -1,57 +1,91 @@
-import React from 'react';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Dumbbell, ChevronRight, Bell as BellIcon, BarChart2, Trophy } from 'lucide-react';
-import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
+
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CalendarCheck, MessageSquare, TrendingUp, Utensils, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+import UpcomingClasses from '@/components/dashboard/sections/UpcomingClasses';
+import FitnessGoals from '@/components/dashboard/sections/FitnessGoals';
+import DietRecommendations from '@/components/dashboard/sections/DietRecommendations';
 import Announcements from '@/components/dashboard/Announcements';
+import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
-import { GymClass } from '@/types/class';
-import { useNavigate } from 'react-router-dom';
-import MemberDashboardHeader from '@/components/dashboard/sections/MemberDashboardHeader';
-import QuickStatsSection from '@/components/dashboard/sections/QuickStatsSection';
-import FitnessPlansSection from '@/components/dashboard/sections/FitnessPlansSection';
-import { Announcement as NotificationAnnouncement } from '@/types/notification';
-import { UserRole } from '@/types';
 
-interface MemberDashboardProps {
-  classes?: GymClass[];
-}
+const MemberDashboard = () => {
+  const [searchTerm, setSearchTerm] = useState('');
 
-const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(false);
-  
-  const progressData = [
-    { date: '2025-01-01', metrics: { weight: 80, bodyFatPercentage: 22, bmi: 26.4, muscleGain: 0 } },
-    { date: '2025-02-01', metrics: { weight: 78, bodyFatPercentage: 21, bmi: 25.8, muscleGain: 1.5 } },
-    { date: '2025-03-01', metrics: { weight: 77, bodyFatPercentage: 20, bmi: 25.4, muscleGain: 2.2 } },
-    { date: '2025-04-01', metrics: { weight: 76, bodyFatPercentage: 19, bmi: 25.1, muscleGain: 2.8 } },
-    { date: '2025-05-01', metrics: { weight: 75, bodyFatPercentage: 18, bmi: 24.8, muscleGain: 3.5 } },
-    { date: '2025-06-01', metrics: { weight: 74, bodyFatPercentage: 17, bmi: 24.4, muscleGain: 4.2 } }
+  // Mock data for upcoming classes
+  const upcomingClasses = [
+    {
+      id: "class1",
+      name: "Yoga for Beginners",
+      time: "Mon, 6:00 PM",
+      trainer: "Sarah Johnson"
+    },
+    {
+      id: "class2",
+      name: "HIIT Workout",
+      time: "Tue, 7:00 AM",
+      trainer: "David Miller"
+    },
+    {
+      id: "class3",
+      name: "Pilates",
+      time: "Wed, 5:30 PM",
+      trainer: "Emily White"
+    }
   ];
-  
-  const today = format(new Date(), 'EEEE, MMMM d, yyyy');
-  
-  const formatClassTime = (startTime: string) => {
-    return format(new Date(startTime), 'h:mm a');
-  };
-  
-  const upcomingClasses = classes
-    .filter(c => new Date(c.startTime) > new Date())
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-    .slice(0, 3);
 
-  const handleViewClasses = () => {
-    navigate('/classes');
-    toast.success("Redirecting to classes page");
-  };
-  
-  const recentAnnouncements: NotificationAnnouncement[] = [
+  // Mock data for fitness goals
+  const fitnessGoals = [
+    {
+      id: "goal1",
+      name: "Weight Loss",
+      target: "Lose 10 lbs",
+      progress: 60
+    },
+    {
+      id: "goal2",
+      name: "Increase Strength",
+      target: "Bench press 150 lbs",
+      progress: 40
+    },
+    {
+      id: "goal3",
+      name: "Improve Endurance",
+      target: "Run 5k in 30 mins",
+      progress: 80
+    }
+  ];
+
+  // Mock data for diet recommendations
+  const dietRecommendations = [
+    {
+      id: "diet1",
+      name: "High Protein Meal",
+      description: "Grilled chicken with quinoa and steamed vegetables"
+    },
+    {
+      id: "diet2",
+      name: "Post-Workout Snack",
+      description: "Protein shake with banana and almond butter"
+    },
+    {
+      id: "diet3",
+      name: "Healthy Breakfast",
+      description: "Oatmeal with berries and nuts"
+    }
+  ];
+
+  // Mock data for recent announcements
+  const recentAnnouncements: Announcement[] = [
     {
       id: "announcement1",
       title: "Gym Closure for Maintenance",
@@ -59,11 +93,10 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-10T10:00:00Z",
-      targetRoles: ["member" as UserRole],
+      targetRoles: ["member"],
       channels: ["in-app"],
       sentCount: 120,
-      priority: "medium",
-      createdBy: "admin1"
+      priority: "medium"
     },
     {
       id: "announcement2",
@@ -72,152 +105,179 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
       authorId: "admin1",
       authorName: "Admin",
       createdAt: "2023-07-12T14:30:00Z",
-      targetRoles: ["member" as UserRole],
+      targetRoles: ["member"],
       channels: ["in-app"],
       sentCount: 98,
-      priority: "low",
-      createdBy: "admin1"
+      priority: "low"
     }
   ];
 
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+    toast.success(`Searching for: ${searchTerm}`);
+    // In a real app, this would perform the actual search
+  };
+
   return (
     <div className="space-y-6">
-      <MemberDashboardHeader username={user?.name || ""} date={today} />
-      
-      <QuickStatsSection />
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Progress Tracker</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MemberProgressChart 
-              data={progressData}
-              memberId={user?.id || "member1"}
-              memberName={user?.name || "Member"}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome to your Muscle Garage dashboard</p>
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-auto">
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 w-full"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch();
+                }
+              }}
             />
-            <Button variant="outline" className="w-full mt-4" asChild>
-              <a href="/fitness/progress">View Full Progress</a>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-0 top-0 h-full"
+              onClick={handleSearch}
+            >
+              <Search className="h-4 w-4" />
             </Button>
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Upcoming Classes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {upcomingClasses.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingClasses.map(classItem => (
-                  <div key={classItem.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Dumbbell className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{classItem.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(classItem.startTime), 'EEE, MMM d')} at {formatClassTime(classItem.startTime)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button className="w-full" onClick={handleViewClasses}>
-                  View All Classes
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Upcoming Classes</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  You haven't booked any classes yet.
-                </p>
-                <Button onClick={handleViewClasses}>
-                  View All Classes
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+          <Button variant="outline" className="h-10">
+            Today
+          </Button>
+        </div>
       </div>
-      
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <FitnessPlansSection />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b pb-3">
-                <div>
-                  <p className="font-medium">Membership Renewal</p>
-                  <p className="text-sm text-muted-foreground">Apr 1, 2025</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold">₹3,999</p>
-                  <Badge className="bg-green-500">Paid</Badge>
-                </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <CalendarCheck className="h-10 w-10 text-blue-500" />
               </div>
-              
-              <div className="flex items-center justify-between border-b pb-3">
-                <div>
-                  <p className="font-medium">Personal Training</p>
-                  <p className="text-sm text-muted-foreground">Mar 15, 2025</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold">₹1,500</p>
-                  <Badge className="bg-green-500">Paid</Badge>
-                </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Upcoming Classes</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Stay active and book your next class</p>
+                <Button variant="ghost" className="mt-3 px-0 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-transparent" asChild>
+                  <a href="/classes">View Schedule</a>
+                </Button>
               </div>
-              
-              <div className="flex items-center justify-between pb-2">
-                <div>
-                  <p className="font-medium">Supplement Purchase</p>
-                  <p className="text-sm text-muted-foreground">Mar 5, 2025</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold">₹899</p>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500">Pending</Badge>
-                    <Button size="sm" variant="outline" onClick={() => navigate('/invoices')}>
-                      Pay
-                    </Button>
-                  </div>
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <TrendingUp className="h-10 w-10 text-green-500" />
               </div>
-              
-              <Button variant="outline" className="w-full" asChild>
-                <a href="/invoices">View All Invoices</a>
-              </Button>
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Fitness Goals</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Track your progress and stay motivated</p>
+                <Button variant="ghost" className="mt-3 px-0 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-transparent" asChild>
+                  <a href="/fitness/progress">See Progress</a>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+                <Utensils className="h-10 w-10 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Diet Recommendations</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Fuel your body with the right nutrition</p>
+                <Button variant="ghost" className="mt-3 px-0 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-transparent" asChild>
+                  <a href="/fitness/diet">Explore Plans</a>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Recent Announcements</CardTitle>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/communication/announcements">View All</a>
-            </Button>
-          </div>
-          <CardDescription>Stay updated with gym news</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Announcements announcements={recentAnnouncements} />
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Upcoming Classes</CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <a href="/classes">View All</a>
+              </Button>
+            </div>
+            <CardDescription>Your scheduled classes for the week</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UpcomingClasses classes={upcomingClasses} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Fitness Goals</CardTitle>
+            </div>
+            <CardDescription>Track your fitness journey</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FitnessGoals goals={fitnessGoals} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Diet Recommendations</CardTitle>
+            </div>
+            <CardDescription>Personalized diet tips for you</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DietRecommendations recommendations={dietRecommendations} />
+            <div className="flex justify-end mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  toast.success("Diet plan PDF generated");
+                  // In a real implementation, this would generate and download a PDF
+                }}
+              >
+                Print Plan
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent Announcements</CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <a href="/communication/announcements">View All</a>
+              </Button>
+            </div>
+            <CardDescription>Stay updated with gym news</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Announcements announcements={recentAnnouncements} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

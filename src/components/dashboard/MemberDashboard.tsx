@@ -1,17 +1,17 @@
 
-import React from 'react';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Dumbbell, ChevronRight, Bell, BarChart2, Trophy } from 'lucide-react';
-import MemberProgressChart from './MemberProgressChart';
-import Announcements from './Announcements';
-import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, Dumbbell, CreditCard, Bell, Trophy, BarChart, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
 import { GymClass } from '@/types/class';
+import { Badge } from '@/components/ui/badge';
+import MemberProgressChart from './MemberProgressChart';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface MemberDashboardProps {
   classes?: GymClass[];
@@ -19,7 +19,7 @@ interface MemberDashboardProps {
 
 const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
   // Example progress data
@@ -52,34 +52,6 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
     toast.success("Redirecting to classes page");
   };
   
-  // Mock data for recent announcements
-  const recentAnnouncements = [
-    {
-      id: "announcement1",
-      title: "Gym Closure for Maintenance",
-      content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
-      authorId: "admin1",
-      authorName: "Admin",
-      createdAt: "2023-07-10T10:00:00Z",
-      targetRoles: ["member"],
-      channels: ["in-app"],
-      sentCount: 120,
-      priority: "medium"
-    },
-    {
-      id: "announcement2",
-      title: "New Fitness Classes Added",
-      content: "We're excited to announce new Zumba and Pilates classes starting next week!",
-      authorId: "admin1",
-      authorName: "Admin",
-      createdAt: "2023-07-12T14:30:00Z",
-      targetRoles: ["member"],
-      channels: ["in-app"],
-      sentCount: 98,
-      priority: "low"
-    }
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -118,7 +90,7 @@ const MemberDashboard = ({ classes = [] }: MemberDashboardProps) => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <BarChart2 className="h-6 w-6 text-primary" />
+              <BarChart className="h-6 w-6 text-primary" />
             </div>
             <h3 className="text-2xl font-bold">-6kg</h3>
             <p className="text-sm text-muted-foreground">Weight Loss</p>
