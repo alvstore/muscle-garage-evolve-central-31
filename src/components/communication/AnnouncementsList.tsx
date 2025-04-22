@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -25,10 +24,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO } from "date-fns";
 import { Announcement } from "@/types/notification";
-import { Megaphone, MoreVertical, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Megaphone, MoreVertical, Eye, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
 
-// Mock data for announcements
 const mockAnnouncements: Announcement[] = [
   {
     id: "1",
@@ -82,9 +81,9 @@ interface AnnouncementsListProps {
 const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userRole } = usePermissions();
 
   useEffect(() => {
-    // Simulate API call
     setTimeout(() => {
       setAnnouncements(mockAnnouncements);
       setLoading(false);
@@ -92,15 +91,16 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
   }, []);
 
   const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
     setAnnouncements(announcements.filter(a => a.id !== id));
     toast.success("Announcement deleted successfully");
   };
 
   const handleResend = (id: string) => {
-    // Simulate resending announcement
     toast.success("Announcement resent successfully");
   };
+
+  const canEdit = userRole !== 'member';
+  const canResend = userRole === 'admin' || userRole === 'staff';
 
   return (
     <Card>
@@ -193,21 +193,34 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(announcement)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
+                          <DropdownMenuItem onClick={() => toast.info(`Viewing announcement: ${announcement.title}`)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleResend(announcement.id)}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Resend
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(announcement.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
+                          
+                          {canEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(announcement)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {canResend && (
+                            <DropdownMenuItem onClick={() => handleResend(announcement.id)}>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Resend
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {canEdit && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(announcement.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
