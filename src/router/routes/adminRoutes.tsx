@@ -1,31 +1,32 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import AdminDashboard from '@/pages/dashboard/AdminDashboard';
-import MembersPage from '@/pages/members/MembersPage';
-import MembershipsPage from '@/pages/memberships/MembershipsPage';
-import ClassesPage from '@/pages/classes/ClassesPage';
+import MembersListPage from '@/pages/members/MembersListPage';
+import MembershipPage from '@/pages/membership/MembershipPage';
+import ClassPage from '@/pages/classes/ClassPage';
 import StaffListPage from '@/pages/staff/StaffListPage';
-import TrainersPage from '@/pages/trainers/TrainerPage';
-import CRMLeadsPage from '@/pages/crm/CRMLeadsPage';
-import CRMFunnelPage from '@/pages/crm/CRMFunnelPage';
-import CRMFollowUpPage from '@/pages/crm/CRMFollowUpPage';
-import MarketingPromoPage from '@/pages/marketing/MarketingPromoPage';
-import MarketingReferralPage from '@/pages/marketing/MarketingReferralPage';
+import TrainerPage from '@/pages/trainers/TrainerPage';
+import LeadsPage from '@/pages/crm/LeadsPage';
+import FunnelPage from '@/pages/crm/FunnelPage';
+import FollowUpPage from '@/pages/crm/FollowUpPage';
+import PromoPage from '@/pages/marketing/PromoPage';
+import ReferralPage from '@/pages/marketing/ReferralPage';
 import InventoryPage from '@/pages/inventory/InventoryPage';
 import StorePage from '@/pages/store/StorePage';
-import FitnessPlansPage from '@/pages/fitness/FitnessPlanPage';
-import MemberProgressPage from '@/pages/fitness/MemberProgressPage';
+import FitnessPlanPage from '@/pages/fitness/FitnessPlanPage';
+import MemberProgressPage from '@/pages/members/MemberProgressPage';
 import WorkoutPlansPage from '@/pages/fitness/WorkoutPlansPage';
-import CommunicationAnnouncementsPage from '@/pages/communication/CommunicationAnnouncementsPage';
-import CommunicationFeedbackPage from '@/pages/communication/CommunicationFeedbackPage';
-import CommunicationNotificationsPage from '@/pages/communication/CommunicationNotificationsPage';
+import AnnouncementPage from '@/pages/communication/AnnouncementPage';
+import FeedbackPage from '@/pages/communication/FeedbackPage';
+import CommunicationNotificationsPage from '@/pages/communication/ReminderPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
 import FinanceDashboardPage from '@/pages/finance/FinanceDashboardPage';
-import FinanceInvoicesPage from '@/pages/finance/FinanceInvoicesPage';
-import FinanceTransactionsPage from '@/pages/finance/FinanceTransactionsPage';
-import FinanceIncomePage from '@/pages/finance/FinanceIncomePage';
-import FinanceExpensesPage from '@/pages/finance/FinanceExpensesPage';
+import InvoicePage from '@/pages/finance/InvoicePage';
+import TransactionPage from '@/pages/finance/TransactionPage';
+import IncomeRecordsPage from '@/pages/finance/IncomeRecordsPage';
+import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
 import ClassTypesPage from '@/pages/classes/ClassTypesPage';
 import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 import AdminDietPlansPage from '@/pages/admin/AdminDietPlansPage';
@@ -43,7 +44,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/members',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MembersPage />
+        <MembersListPage />
       </PrivateRoute>
     )
   },
@@ -51,7 +52,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/memberships',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MembershipsPage />
+        <MembershipPage />
       </PrivateRoute>
     )
   },
@@ -59,7 +60,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/classes',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <ClassesPage />
+        <ClassPage />
       </PrivateRoute>
     )
   },
@@ -75,7 +76,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/trainers',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <TrainersPage />
+        <TrainerPage />
       </PrivateRoute>
     )
   },
@@ -83,7 +84,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/crm/leads',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CRMLeadsPage />
+        <LeadsPage />
       </PrivateRoute>
     )
   },
@@ -91,7 +92,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/crm/funnel',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CRMFunnelPage />
+        <FunnelPage />
       </PrivateRoute>
     )
   },
@@ -99,7 +100,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/crm/follow-up',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CRMFollowUpPage />
+        <FollowUpPage />
       </PrivateRoute>
     )
   },
@@ -107,7 +108,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/marketing/promo',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MarketingPromoPage />
+        <PromoPage />
       </PrivateRoute>
     )
   },
@@ -115,7 +116,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/marketing/referral',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MarketingReferralPage />
+        <ReferralPage />
       </PrivateRoute>
     )
   },
@@ -139,7 +140,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/fitness-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FitnessPlansPage />
+        <FitnessPlanPage />
       </PrivateRoute>
     )
   },
@@ -163,7 +164,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/communication/announcements',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CommunicationAnnouncementsPage />
+        <AnnouncementPage />
       </PrivateRoute>
     )
   },
@@ -171,7 +172,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/communication/feedback',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CommunicationFeedbackPage />
+        <FeedbackPage />
       </PrivateRoute>
     )
   },
@@ -203,7 +204,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/finance/invoices',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FinanceInvoicesPage />
+        <InvoicePage />
       </PrivateRoute>
     )
   },
@@ -211,7 +212,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/finance/transactions',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FinanceTransactionsPage />
+        <TransactionPage />
       </PrivateRoute>
     )
   },
@@ -219,7 +220,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/finance/income',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FinanceIncomePage />
+        <IncomeRecordsPage />
       </PrivateRoute>
     )
   },
@@ -227,7 +228,7 @@ export const adminRoutes: RouteObject[] = [
     path: '/finance/expenses',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <FinanceExpensesPage />
+        <ExpenseRecordsPage />
       </PrivateRoute>
     )
   },
