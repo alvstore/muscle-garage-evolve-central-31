@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import api from './api';
 import { supabase } from '@/services/supabaseClient';
@@ -310,7 +311,7 @@ export const backupService = {
             }
             
             for (const batch of batches) {
-              // Fix: Remove 'returning' option which is causing the error
+              // Removed the 'returning' option which could cause errors
               const { data, error } = await supabase.from(tableName).upsert(batch, {
                 onConflict: 'id'
               });
