@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -38,7 +37,8 @@ import {
   Repeat,
   LayoutTemplate,
   Zap,
-  Smartphone
+  Smartphone,
+  Database
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -337,6 +337,11 @@ export const adminNavSections: NavSection[] = [
             href: "/settings/automation",
             label: "Automation Rules",
             permission: "manage_settings" as Permission,
+          },
+          {
+            href: "/settings/system-backup",
+            label: "System Backup",
+            permission: "full_system_access" as Permission,
           }
         ]
       },
@@ -413,12 +418,17 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_devices" as Permission,
           }
         ]
+      },
+      {
+        href: "/settings/system-backup",
+        label: "System Backup",
+        icon: <Database className="h-5 w-5" />,
+        permission: "full_system_access" as Permission,
       }
     ],
   },
 ];
 
-// Filter out Settings section for non-admin staff
 export const staffNavSections: NavSection[] = adminNavSections
   .filter(section => section.name !== "Settings" && section.name !== "Website")
   .map(section => {
