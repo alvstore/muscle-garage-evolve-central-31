@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -6,114 +7,99 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Filter, MoreVertical, Eye, CreditCard, CalendarDays, TrashIcon } from "lucide-react";
+import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
 import { Member } from "@/types";
 import { toast } from "sonner";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { supabase } from "@/services/supabaseClient";
-import { useBranch } from "@/hooks/use-branch";
-
-interface Member {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  date_of_birth: string;
-  avatar_url: string;
-  role: string;
-  member_memberships: {
-    id: string;
-    membership_id: string;
-    status: string;
-    start_date: string;
-    end_date: string;
-    memberships: {
-      name: string;
-    }[];
-  }[];
-}
 
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    fetchMembers();
-  }, [currentBranch?.id]);
-
-  const fetchMembers = async () => {
+    // Simulate API call to fetch members
     setLoading(true);
     
-    try {
-      const branchFilter = currentBranch?.id ? { branch_id: currentBranch.id } : {};
+    setTimeout(() => {
+      // Mock data
+      const mockMembers: Member[] = [
+        {
+          id: "member-1",
+          email: "john.doe@example.com",
+          name: "John Doe",
+          role: "member",
+          phone: "+1 (555) 123-4567",
+          dateOfBirth: "1990-05-15",
+          goal: "Build muscle and improve overall fitness",
+          trainerId: "trainer-123",
+          membershipId: "platinum-12m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-01-15",
+          membershipEndDate: "2024-01-15",
+        },
+        {
+          id: "member-2",
+          email: "jane.smith@example.com",
+          name: "Jane Smith",
+          role: "member",
+          phone: "+1 (555) 987-6543",
+          dateOfBirth: "1988-09-22",
+          goal: "Lose weight and increase endurance",
+          trainerId: "trainer-456",
+          membershipId: "gold-6m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-06-01",
+          membershipEndDate: "2023-12-01",
+        },
+        {
+          id: "member-3",
+          email: "mike.johnson@example.com",
+          name: "Mike Johnson",
+          role: "member",
+          phone: "+1 (555) 456-7890",
+          dateOfBirth: "1992-03-10",
+          goal: "Build strength and improve athletic performance",
+          trainerId: "trainer-789",
+          membershipId: "silver-3m",
+          membershipStatus: "expired",
+          membershipStartDate: "2023-01-01",
+          membershipEndDate: "2023-04-01",
+        },
+        {
+          id: "member-4",
+          email: "sarah.wilson@example.com",
+          name: "Sarah Wilson",
+          role: "member",
+          phone: "+1 (555) 789-0123",
+          dateOfBirth: "1995-11-18",
+          goal: "Tone body and improve flexibility",
+          trainerId: "trainer-123",
+          membershipId: "gold-6m",
+          membershipStatus: "inactive",
+          membershipStartDate: "2023-02-15",
+          membershipEndDate: "2023-08-15",
+        },
+        {
+          id: "member-5",
+          email: "alex.brown@example.com",
+          name: "Alex Brown",
+          role: "member",
+          phone: "+1 (555) 321-6547",
+          dateOfBirth: "1985-07-30",
+          goal: "Maintain fitness and improve cardio",
+          trainerId: "trainer-456",
+          membershipId: "platinum-12m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-05-01",
+          membershipEndDate: "2024-05-01",
+        }
+      ];
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          date_of_birth,
-          avatar_url,
-          role,
-          member_memberships (
-            id,
-            membership_id,
-            status,
-            start_date,
-            end_date,
-            memberships (
-              name
-            )
-          )
-        `)
-        .eq('role', 'member')
-        .eq(currentBranch?.id ? 'branch_id' : '', currentBranch?.id || '')
-        .order('full_name');
-      
-      if (error) throw error;
-      
-      const formattedMembers = data.map(member => {
-        const latestMembership = member.member_memberships && member.member_memberships.length > 0 
-          ? member.member_memberships.sort((a, b) => 
-              new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
-            )[0] 
-          : null;
-        
-        return {
-          id: member.id,
-          name: member.full_name,
-          email: member.email,
-          phone: member.phone,
-          role: member.role,
-          avatar: member.avatar_url,
-          dateOfBirth: member.date_of_birth,
-          membershipId: latestMembership?.memberships?.name || 'No Membership',
-          membershipStatus: latestMembership?.status || 'inactive',
-          membershipStartDate: latestMembership?.start_date || null,
-          membershipEndDate: latestMembership?.end_date || null,
-        };
-      });
-      
-      setMembers(formattedMembers);
-    } catch (error) {
-      console.error('Error fetching members:', error);
-      toast.error('Failed to load members. Please try again.');
-    } finally {
+      setMembers(mockMembers);
       setLoading(false);
-    }
-  };
+    }, 1000);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -137,33 +123,10 @@ const MembersListPage = () => {
   };
 
   const filteredMembers = members.filter(member => 
-    member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const sortedMembers = members.sort((a: Member, b: Member) => 
-    a.name.localeCompare(b.name)
-  );
-
-  const handleViewProfile = (memberId: string) => {
-    navigate(`/members/${memberId}`);
-  };
-
-  const handleRenewMembership = (memberId: string) => {
-    navigate(`/finance/invoices/new?memberId=${memberId}`);
-    toast.info('Creating new invoice for membership renewal');
-  };
-
-  const handleAddToClass = (memberId: string) => {
-    navigate(`/classes?memberId=${memberId}`);
-    toast.info('Add member to class');
-  };
-
-  const handleDeleteMember = (memberId: string) => {
-    toast.info('This action would delete the member account');
-    // Implementation for deleting member would go here
-  };
 
   return (
     <Container>
@@ -197,7 +160,7 @@ const MembersListPage = () => {
           </div>
         ) : filteredMembers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedMembers.map(member => (
+            {filteredMembers.map(member => (
               <Card key={member.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   <div className="p-4">
@@ -235,44 +198,27 @@ const MembersListPage = () => {
                     <Button 
                       variant="ghost" 
                       className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                      onClick={() => handleViewProfile(member.id)}
+                      onClick={() => navigate(`/members/${member.id}`)}
                     >
-                      <Eye className="h-3.5 w-3.5 mr-1" />
                       View Profile
                     </Button>
                     <div className="border-r"></div>
                     <Button
                       variant="ghost"
                       className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                      onClick={() => handleRenewMembership(member.id)}
+                      onClick={() => toast.info("Quick actions coming soon")}
                     >
-                      <CreditCard className="h-3.5 w-3.5 mr-1" />
-                      Renew
+                      Quick Actions
                     </Button>
                     <div className="border-r"></div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="rounded-none h-auto py-2"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleAddToClass(member.id)}>
-                          <CalendarDays className="h-4 w-4 mr-2" />
-                          Add to Class
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteMember(member.id)} className="text-destructive">
-                          <TrashIcon className="h-4 w-4 mr-2" />
-                          Delete Member
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-none h-auto py-2"
+                      onClick={() => toast.info("More options coming soon")}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

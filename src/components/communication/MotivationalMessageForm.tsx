@@ -1,208 +1,253 @@
-import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { format } from 'date-fns';
-import { cn } from "@/lib/utils"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { MotivationalMessage } from '@/types/notification';
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { MotivationalMessage } from "@/types/notification";
+
+const formSchema = z.object({
+  content: z.string().min(5, "Content must be at least 5 characters").max(200, "Content must be less than 200 characters"),
+  author: z.string().optional(),
+  category: z.enum(["motivation", "fitness", "nutrition", "wellness"]),
+  tags: z.string().optional(),
+  active: z.boolean().default(true),
+});
 
 interface MotivationalMessageFormProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  onSubmit: (message: MotivationalMessage) => void;
-  selectedMessage?: MotivationalMessage | null;
+  editMessage?: MotivationalMessage | null;
+  onComplete: () => void;
 }
 
-const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({ open, setOpen, onSubmit, selectedMessage }) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(selectedMessage ? new Date(selectedMessage.scheduledDate) : undefined);
-
-  const [formData, setFormData] = useState<MotivationalMessage>({
-    id: selectedMessage?.id || uuidv4(),
-    content: selectedMessage?.content || '',
-    scheduledDate: selectedMessage?.scheduledDate || new Date().toISOString(),
-    targetAudience: selectedMessage?.targetAudience || ['member'],
-    isActive: selectedMessage?.isActive ?? true,
-    createdBy: 'admin',
-    title: selectedMessage?.title || '',
-    author: selectedMessage?.author || '',
-    category: selectedMessage?.category || '',
-    tags: selectedMessage?.tags || [],
+const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessageFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      content: "",
+      author: "",
+      category: "motivation",
+      tags: "",
+      active: true,
+    },
   });
 
   useEffect(() => {
-    if (selectedMessage) {
-      setFormData({
-        id: selectedMessage.id,
-        content: selectedMessage.content,
-        scheduledDate: selectedMessage.scheduledDate,
-        targetAudience: selectedMessage.targetAudience,
-        isActive: selectedMessage.isActive,
-        createdBy: selectedMessage.createdBy,
-        title: selectedMessage.title || '',
-        author: selectedMessage.author || '',
-        category: selectedMessage.category || '',
-        tags: selectedMessage.tags || [],
+    if (editMessage) {
+      form.reset({
+        content: editMessage.content,
+        author: editMessage.author || "",
+        category: (editMessage.category as "motivation" | "fitness" | "nutrition" | "wellness") || "motivation",
+        tags: editMessage.tags ? editMessage.tags.join(", ") : "",
+        active: editMessage.active !== undefined ? editMessage.active : true,
       });
-      setDate(new Date(selectedMessage.scheduledDate));
-    } else {
-      setFormData({
-        id: uuidv4(),
-        content: '',
-        scheduledDate: new Date().toISOString(),
-        targetAudience: ['member'],
-        isActive: true,
-        createdBy: 'admin',
-        title: '',
-        author: '',
-        category: '',
-        tags: [],
-      });
-      setDate(undefined);
     }
-  }, [selectedMessage]);
+  }, [editMessage, form]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    
     try {
-      onSubmit(formData);
-      setOpen(false);
+      // Process tags
+      const processTags = values.tags 
+        ? values.tags
+            .split(",")
+            .map(tag => tag.trim())
+            .filter(tag => tag)
+        : [];
+      
+      // Create the message object
+      const messageData = {
+        ...values,
+        tags: processTags,
+      };
+      
+      // Simulate API call
+      console.log("Submitting message:", messageData);
+      
+      // In a real app, this would be an API call to save the message
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success(
+        editMessage 
+          ? "Message updated successfully" 
+          : "Message created successfully"
+      );
+      
+      form.reset();
+      onComplete();
     } catch (error) {
-      console.error("Failed to save motivational message:", error);
+      console.error("Error submitting message:", error);
+      toast.error("There was a problem saving the message");
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[625px]">
-        <DialogHeader>
-          <DialogTitle>{selectedMessage ? "Edit Motivational Message" : "Create Motivational Message"}</DialogTitle>
-          <DialogDescription>
-            {selectedMessage
-              ? "Update the message details."
-              : "Craft a new message to inspire and motivate your members."}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="messageTitle">Title</Label>
-              <Input
-                id="messageTitle"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="messageAuthor">Author</Label>
-              <Input
-                id="messageAuthor"
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="messageContent">Message Content</Label>
-            <Textarea
-              id="messageContent"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="Enter your motivational message here..."
-              rows={3}
+    <Card>
+      <CardHeader>
+        <CardTitle>{editMessage ? "Edit Motivational Message" : "Create New Motivational Message"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message Content</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter the motivational message content" 
+                      className="min-h-24 resize-none"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value.length}/200 characters
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="messageCategory">Category</Label>
-              <Input
-                id="messageCategory"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            
+            <div className="grid gap-6 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="author"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Author (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter author name" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Who is the original author of this quote?
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="motivation">Motivation</SelectItem>
+                        <SelectItem value="fitness">Fitness</SelectItem>
+                        <SelectItem value="nutrition">Nutrition</SelectItem>
+                        <SelectItem value="wellness">Wellness</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Categorize your message for better organization
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="messageTags">Tags (comma-separated)</Label>
-              <Input
-                id="messageTags"
-                value={formData.tags?.join(', ') || ''}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(',').map(tag => tag.trim()) })}
-              />
+            
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter tags separated by commas (e.g., workout, motivation, success)" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Add relevant tags to help categorize and find this message
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <FormDescription>
+                      Enable to make this message available for sending to members
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={onComplete}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>
+                    Saving...
+                  </span>
+                ) : editMessage ? "Update Message" : "Create Message"}
+              </Button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Schedule Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(date) => {
-                      setDate(date);
-                      setFormData({ ...formData, scheduledDate: date?.toISOString() || new Date().toISOString() })
-                    }}
-                    disabled={(date) =>
-                      date < new Date()
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="messageActive">Active</Label>
-              <Switch
-                id="messageActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-              />
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Message"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

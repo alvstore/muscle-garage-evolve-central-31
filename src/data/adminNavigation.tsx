@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BarChart3,
@@ -7,6 +6,7 @@ import {
   CreditCard,
   Settings,
   Dumbbell,
+  UserCircle,
   Briefcase,
   Clock,
   PieChart,
@@ -15,6 +15,7 @@ import {
   Mail,
   MessageCircle,
   Share2,
+  HelpCircle,
   Radio,
   Globe,
   Bell,
@@ -33,9 +34,7 @@ import {
   Archive,
   Utensils,
   CheckSquare,
-  Target,
-  BanknoteIcon,
-  WalletIcon
+  Target
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -55,41 +54,6 @@ export const adminNavSections: NavSection[] = [
         label: "Real-Time Dashboard",
         icon: <Activity className="h-5 w-5" />,
         permission: "view_all_attendance" as Permission,
-      }
-    ],
-  },
-  {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance/dashboard",
-        label: "Finance Dashboard",
-        icon: <BarChart3 className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-      },
-      {
-        href: "/finance/invoices",
-        label: "Invoices",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "manage_invoices" as Permission,
-      },
-      {
-        href: "/finance/transactions",
-        label: "Transactions",
-        icon: <CreditCard className="h-5 w-5" />,
-        permission: "manage_transactions" as Permission,
-      },
-      {
-        href: "/finance/income-records",
-        label: "Income Records",
-        icon: <BanknoteIcon className="h-5 w-5" />,
-        permission: "manage_income" as Permission,
-      },
-      {
-        href: "/finance/expense-records",
-        label: "Expense Records",
-        icon: <WalletIcon className="h-5 w-5" />,
-        permission: "manage_expenses" as Permission,
       }
     ],
   },
@@ -302,6 +266,17 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Reports",
+    items: [
+      {
+        href: "/reports",
+        label: "Reports & Analytics",
+        icon: <FileText className="h-5 w-5" />,
+        permission: "access_reports" as Permission,
+      },
+    ],
+  },
+  {
     name: "Settings",
     items: [
       {
@@ -336,7 +311,13 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_integrations" as Permission,
           },
         ],
-      }
+      },
+      {
+        href: "/help",
+        label: "Help Center",
+        icon: <HelpCircle className="h-5 w-5" />,
+        permission: "access_own_resources" as Permission,
+      },
     ],
   },
 ];

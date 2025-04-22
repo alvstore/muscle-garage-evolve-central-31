@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -14,10 +15,7 @@ import {
   Utensils,
   Target,
   CheckSquare,
-  MessageCircle,
-  CreditCard,
-  BanknoteIcon,
-  WalletIcon
+  FolderHeart
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 import { Permission } from '@/hooks/use-permissions';
@@ -32,36 +30,6 @@ export const staffNavSections: NavSection[] = [
         label: "Dashboard", 
         icon: <BarChart3 className="h-4 w-4" />,
         permission: "feature_staff_dashboard" as Permission
-      }
-    ]
-  },
-  {
-    name: "Finance",
-    icon: <WalletIcon className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/finance/invoices", 
-        label: "Invoices", 
-        icon: <FileText className="h-4 w-4" />,
-        permission: "view_invoices" as Permission
-      },
-      { 
-        href: "/finance/transactions", 
-        label: "Transactions", 
-        icon: <CreditCard className="h-4 w-4" />,
-        permission: "manage_transactions" as Permission
-      },
-      { 
-        href: "/finance/income-records", 
-        label: "Income Records", 
-        icon: <BanknoteIcon className="h-4 w-4" />,
-        permission: "manage_income" as Permission
-      },
-      { 
-        href: "/finance/expense-records", 
-        label: "Expense Records", 
-        icon: <WalletIcon className="h-4 w-4" />,
-        permission: "manage_expenses" as Permission
       }
     ]
   },
@@ -106,10 +74,16 @@ export const staffNavSections: NavSection[] = [
         permission: "manage_fitness_data" as Permission
       },
       { 
+        href: "/fitness/workout-assignments", 
+        label: "Workout Assignments", 
+        icon: <CheckSquare className="h-4 w-4" />,
+        permission: "assign_workout_plan" as Permission
+      },
+      { 
         href: "/fitness/diet-plans", 
         label: "Diet Plans", 
         icon: <Utensils className="h-4 w-4" />,
-        permission: "manage_fitness_data" as Permission
+        permission: "assign_diet_plan" as Permission
       },
       { 
         href: "/fitness/member-progress", 
@@ -120,32 +94,38 @@ export const staffNavSections: NavSection[] = [
     ]
   },
   {
-    name: "Communication",
-    icon: <Bell className="h-4 w-4" />,
+    name: "Management",
+    icon: <ListChecks className="h-4 w-4" />,
     items: [
       { 
-        href: "/communication/announcements", 
-        label: "Announcements", 
-        icon: <Megaphone className="h-4 w-4" />,
-        permission: "access_communication" as Permission
+        href: "/tasks", 
+        label: "Tasks", 
+        icon: <ListChecks className="h-4 w-4" />,
+        permission: "manage_staff" as Permission
       },
       { 
-        href: "/communication/feedback", 
-        label: "Feedback Management", 
-        icon: <MessageCircle className="h-4 w-4" />,
-        permission: "access_communication" as Permission
+        href: "/announcements", 
+        label: "Announcements", 
+        icon: <Megaphone className="h-4 w-4" />,
+        permission: "feature_email_campaigns" as Permission
       },
       { 
         href: "/communication/notifications", 
         label: "Notifications", 
         icon: <Bell className="h-4 w-4" />,
         permission: "access_communication" as Permission
-      },
+      }
+    ]
+  },
+  {
+    name: "Profile",
+    icon: <UserCog2 className="h-4 w-4" />,
+    items: [
       { 
-        href: "/communication/tasks", 
-        label: "Task Manager", 
-        icon: <ListChecks className="h-4 w-4" />,
-        permission: "access_communication" as Permission
+        href: "/profile", 
+        label: "My Profile", 
+        icon: <UserCog2 className="h-4 w-4" />,
+        permission: "view_staff" as Permission
       }
     ]
   }

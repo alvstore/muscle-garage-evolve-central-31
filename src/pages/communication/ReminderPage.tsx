@@ -8,11 +8,6 @@ import ReminderRulesList from "@/components/communication/ReminderRulesList";
 import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
 import { ReminderRule } from "@/types/notification";
 
-// Update interface for ReminderRulesList to match component
-interface ReminderRulesListProps {
-  onEdit: (rule: ReminderRule) => void;
-}
-
 const ReminderPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [currentTab, setCurrentTab] = useState("all");
@@ -28,14 +23,11 @@ const ReminderPage = () => {
     setShowForm(true);
   };
   
-  const handleSaveRule = (rule: ReminderRule) => {
-    toast.success("New reminder rule created successfully");
-    setShowForm(false);
-    setEditingRule(undefined);
-  };
-  
-  const handleUpdateRule = (rule: ReminderRule) => {
-    toast.success("Reminder rule updated successfully");
+  const handleCompleteForm = () => {
+    toast.success(editingRule 
+      ? "Reminder rule updated successfully" 
+      : "New reminder rule created successfully"
+    );
     setShowForm(false);
     setEditingRule(undefined);
   };
@@ -59,11 +51,8 @@ const ReminderPage = () => {
       
       {showForm ? (
         <ReminderRuleForm
-          open={showForm}
-          setOpen={setShowForm}
-          onSave={handleSaveRule}
-          onUpdate={handleUpdateRule}
-          selectedRule={editingRule}
+          onComplete={handleCompleteForm}
+          editRule={editingRule}
         />
       ) : (
         <Tabs 

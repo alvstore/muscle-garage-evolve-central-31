@@ -1,14 +1,10 @@
+
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MotivationalMessagesList from "@/components/communication/MotivationalMessagesList";
 import MotivationalMessageForm from "@/components/communication/MotivationalMessageForm";
 import { MotivationalMessage } from "@/types/notification";
-
-interface MotivationalMessageFormProps {
-  message?: MotivationalMessage;
-  onComplete: () => void;
-}
 
 const MotivationalPage = () => {
   const [activeTab, setActiveTab] = useState("list");
@@ -36,13 +32,11 @@ const MotivationalPage = () => {
           
           <TabsContent value="create" className="space-y-4">
             <MotivationalMessageForm 
-              open={activeTab === "create"}
-              setOpen={(open) => setActiveTab(open ? "create" : "list")}
-              selectedMessage={editMessage}
-              onSubmit={() => {
+              editMessage={editMessage} 
+              onComplete={() => {
                 setActiveTab("list");
                 setEditMessage(null);
-              }}
+              }} 
             />
           </TabsContent>
         </Tabs>

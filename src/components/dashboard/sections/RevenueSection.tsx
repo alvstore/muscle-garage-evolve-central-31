@@ -10,10 +10,9 @@ interface RevenueSectionProps {
     expenses: number;
     profit: number;
   }[];
-  isLoading?: boolean;
 }
 
-const RevenueSection = ({ data, isLoading = false }: RevenueSectionProps) => {
+const RevenueSection = ({ data }: RevenueSectionProps) => {
   return (
     <Card className="col-span-4">
       <CardHeader>
@@ -23,11 +22,7 @@ const RevenueSection = ({ data, isLoading = false }: RevenueSectionProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="pl-2">
-        {isLoading ? (
-          <div className="h-80 w-full animate-pulse bg-muted rounded-md"></div>
-        ) : (
-          <RevenueChart data={data} />
-        )}
+        <RevenueChart data={data} />
       </CardContent>
     </Card>
   );

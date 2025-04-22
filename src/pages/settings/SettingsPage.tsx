@@ -1,10 +1,11 @@
+
 import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
-import { Settings, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Building2, CreditCard } from "lucide-react";
+import { Settings, Shield, MessageSquare, Mail, MessageCircle, Bell, Brain, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions, Permission } from "@/hooks/use-permissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
@@ -17,13 +18,13 @@ import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
 import BranchSection from "@/components/settings/BranchSection";
-import PaymentGatewayTab from "@/components/settings/PaymentGatewayTab";
 
 const SettingsPage = () => {
   const { user } = useAuth();
   const { can } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
 
+  // Redirect if user doesn't have permission
   if (!user || !can('manage_settings')) {
     toast.error("You don't have permission to access this page");
     return <Navigate to="/unauthorized" replace />;
@@ -42,7 +43,7 @@ const SettingsPage = () => {
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-2">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-2">
                 <PermissionGuard permission="manage_settings">
                   <TabsTrigger value="general" className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
@@ -88,12 +89,6 @@ const SettingsPage = () => {
                   <Brain className="h-4 w-4" />
                   <span className="hidden md:inline">Automation</span>
                 </TabsTrigger>
-                <PermissionGuard permission="manage_settings">
-                  <TabsTrigger value="payment-gateways" className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="hidden md:inline">Payment</span>
-                  </TabsTrigger>
-                </PermissionGuard>
               </TabsList>
             </CardContent>
           </Card>
@@ -134,10 +129,6 @@ const SettingsPage = () => {
             <PermissionGuard permission="manage_roles" fallback={<Navigate to="/unauthorized" replace />}>
               <PermissionsSettings />
             </PermissionGuard>
-          </TabsContent>
-          
-          <TabsContent value="payment-gateways">
-            <PaymentGatewayTab />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -37,10 +36,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "motivation",
     tags: ["workout", "consistency"],
-    isActive: true,
-    scheduledDate: "2023-01-15T10:00:00Z",
-    targetAudience: ["all"],
-    createdBy: "admin",
+    active: true,
+    createdAt: "2023-01-15T10:00:00Z",
+    updatedAt: "2023-01-15T10:00:00Z",
   },
   {
     id: "2",
@@ -49,10 +47,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Andrew Murphy",
     category: "motivation",
     tags: ["mindset", "strength"],
-    isActive: true,
-    scheduledDate: "2023-02-10T15:30:00Z",
-    targetAudience: ["all"],
-    createdBy: "admin",
+    active: true,
+    createdAt: "2023-02-10T15:30:00Z",
+    updatedAt: "2023-02-10T15:30:00Z",
   },
   {
     id: "3",
@@ -61,10 +58,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Unknown",
     category: "nutrition",
     tags: ["food", "health"],
-    isActive: true,
-    scheduledDate: "2023-03-05T09:45:00Z",
-    targetAudience: ["all"],
-    createdBy: "admin",
+    active: true,
+    createdAt: "2023-03-05T09:45:00Z",
+    updatedAt: "2023-03-05T09:45:00Z",
   },
   {
     id: "4",
@@ -73,10 +69,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Dwayne Johnson",
     category: "motivation",
     tags: ["consistency", "success"],
-    isActive: false,
-    scheduledDate: "2023-04-20T14:20:00Z",
-    targetAudience: ["all"],
-    createdBy: "admin",
+    active: false,
+    createdAt: "2023-04-20T14:20:00Z",
+    updatedAt: "2023-04-20T14:20:00Z",
   },
   {
     id: "5",
@@ -85,10 +80,9 @@ const mockMessages: MotivationalMessage[] = [
     author: "Gene Tunney",
     category: "wellness",
     tags: ["health", "exercise"],
-    isActive: true,
-    scheduledDate: "2023-05-12T11:15:00Z",
-    targetAudience: ["all"],
-    createdBy: "admin",
+    active: true,
+    createdAt: "2023-05-12T11:15:00Z",
+    updatedAt: "2023-05-12T11:15:00Z",
   }
 ];
 
@@ -112,7 +106,7 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
   const handleToggleActive = (id: string, currentStatus: boolean) => {
     // In a real app, this would be an API call
     const updatedMessages = messages.map(message => 
-      message.id === id ? { ...message, isActive: !currentStatus } : message
+      message.id === id ? { ...message, active: !currentStatus } : message
     );
     setMessages(updatedMessages);
     
@@ -237,8 +231,8 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
                     </TableCell>
                     <TableCell>
                       <Switch 
-                        checked={message.isActive} 
-                        onCheckedChange={(checked) => handleToggleActive(message.id, checked)}
+                        checked={message.active} 
+                        onCheckedChange={() => handleToggleActive(message.id, message.active)} 
                       />
                     </TableCell>
                     <TableCell className="text-right">
