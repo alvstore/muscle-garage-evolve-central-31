@@ -1,108 +1,14 @@
+import React from 'react';
 
-import React, { useState } from "react";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, UserCircle, Calendar, FileText, CreditCard, Clock, Dumbbell, Utensils } from "lucide-react";
-import Logo from "@/components/Logo";
-import { useAuth } from "@/hooks/use-auth";
-import { useNavigate } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { NavSection } from "@/types/navigation";
-import NavigationSections from "@/components/navigation/NavigationSections";
-
-interface MemberSidebarContentProps {
+export interface MemberSidebarContentProps {
   closeSidebar?: () => void;
+  onLinkClick?: () => void;
 }
 
-// Define member navigation
-const memberNavSections: NavSection[] = [
-  {
-    name: "Dashboard",
-    icon: <LayoutDashboard className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/dashboard", 
-        label: "Dashboard", 
-        icon: <LayoutDashboard className="h-4 w-4" />,
-        permission: "feature_member_dashboard"
-      }
-    ]
-  },
-  {
-    name: "My Profile",
-    icon: <UserCircle className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/profile", 
-        label: "Profile", 
-        icon: <UserCircle className="h-4 w-4" />,
-        permission: "member_view_profile"
-      }
-    ]
-  },
-  {
-    name: "Fitness",
-    icon: <Dumbbell className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/my-plans", 
-        label: "My Plans", 
-        icon: <FileText className="h-4 w-4" />,
-        permission: "member_view_plans"
-      },
-      { 
-        href: "/my-workouts", 
-        label: "Workout Plans", 
-        icon: <Dumbbell className="h-4 w-4" />,
-        permission: "member_view_plans"
-      },
-      { 
-        href: "/my-diet", 
-        label: "Diet Plans", 
-        icon: <Utensils className="h-4 w-4" />,
-        permission: "member_view_plans"
-      }
-    ]
-  },
-  {
-    name: "Classes",
-    icon: <Calendar className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/bookings", 
-        label: "My Bookings", 
-        icon: <Calendar className="h-4 w-4" />,
-        permission: "member_book_classes"
-      }
-    ]
-  },
-  {
-    name: "Payments",
-    icon: <CreditCard className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/payments", 
-        label: "Payment History", 
-        icon: <CreditCard className="h-4 w-4" />,
-        permission: "member_view_invoices"
-      }
-    ]
-  },
-  {
-    name: "Attendance",
-    icon: <Clock className="h-4 w-4" />,
-    items: [
-      { 
-        href: "/attendance", 
-        label: "My Attendance", 
-        icon: <Clock className="h-4 w-4" />,
-        permission: "member_view_attendance"
-      }
-    ]
-  }
-];
-
-const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({ closeSidebar }) => {
+const MemberSidebarContent: React.FC<MemberSidebarContentProps> = ({
+  closeSidebar,
+  onLinkClick
+}) => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();

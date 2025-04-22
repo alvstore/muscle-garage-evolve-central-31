@@ -311,13 +311,7 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_integrations" as Permission,
           },
         ],
-      },
-      {
-        href: "/help",
-        label: "Help Center",
-        icon: <HelpCircle className="h-5 w-5" />,
-        permission: "access_own_resources" as Permission,
-      },
+      }
     ],
   },
 ];

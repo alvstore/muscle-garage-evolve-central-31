@@ -15,7 +15,7 @@ import {
   Utensils,
   Target,
   CheckSquare,
-  FolderHeart
+  MessageCircle
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
 import { Permission } from '@/hooks/use-permissions';
@@ -74,16 +74,10 @@ export const staffNavSections: NavSection[] = [
         permission: "manage_fitness_data" as Permission
       },
       { 
-        href: "/fitness/workout-assignments", 
-        label: "Workout Assignments", 
-        icon: <CheckSquare className="h-4 w-4" />,
-        permission: "assign_workout_plan" as Permission
-      },
-      { 
         href: "/fitness/diet-plans", 
         label: "Diet Plans", 
         icon: <Utensils className="h-4 w-4" />,
-        permission: "assign_diet_plan" as Permission
+        permission: "manage_fitness_data" as Permission
       },
       { 
         href: "/fitness/member-progress", 
@@ -94,25 +88,31 @@ export const staffNavSections: NavSection[] = [
     ]
   },
   {
-    name: "Management",
-    icon: <ListChecks className="h-4 w-4" />,
+    name: "Communication",
+    icon: <Bell className="h-4 w-4" />,
     items: [
       { 
-        href: "/tasks", 
-        label: "Tasks", 
-        icon: <ListChecks className="h-4 w-4" />,
-        permission: "manage_staff" as Permission
-      },
-      { 
-        href: "/announcements", 
+        href: "/communication/announcements", 
         label: "Announcements", 
         icon: <Megaphone className="h-4 w-4" />,
-        permission: "feature_email_campaigns" as Permission
+        permission: "access_communication" as Permission
+      },
+      { 
+        href: "/communication/feedback", 
+        label: "Feedback Management", 
+        icon: <MessageCircle className="h-4 w-4" />,
+        permission: "access_communication" as Permission
       },
       { 
         href: "/communication/notifications", 
         label: "Notifications", 
         icon: <Bell className="h-4 w-4" />,
+        permission: "access_communication" as Permission
+      },
+      { 
+        href: "/communication/tasks", 
+        label: "Task Manager", 
+        icon: <ListChecks className="h-4 w-4" />,
         permission: "access_communication" as Permission
       }
     ]
