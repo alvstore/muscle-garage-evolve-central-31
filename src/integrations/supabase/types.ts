@@ -785,6 +785,33 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          config: Json
+          created_at: string | null
+          gateway_name: string
+          id: string
+          is_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          config: Json
+          created_at?: string | null
+          gateway_name: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          gateway_name?: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
