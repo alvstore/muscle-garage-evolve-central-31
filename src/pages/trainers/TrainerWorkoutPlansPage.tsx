@@ -130,6 +130,8 @@ const TrainerWorkoutPlansPage = () => {
     return (
       <div className="container mx-auto py-6">
         <WorkoutPlanForm 
+          member={{ id: 'default', name: 'New Member', role: 'member', membershipStatus: 'active' }}
+          trainerId={user?.id || 'unknown'}
           onSave={handleCreatePlan}
           onCancel={() => setIsCreatingPlan(false)}
         />
@@ -144,6 +146,8 @@ const TrainerWorkoutPlansPage = () => {
     return (
       <div className="container mx-auto py-6">
         <WorkoutPlanForm
+          member={{ id: planToEdit.memberId || 'default', name: 'Member', role: 'member', membershipStatus: 'active' }}
+          trainerId={user?.id || 'unknown'}
           existingPlan={planToEdit}
           onSave={handleUpdatePlan}
           onCancel={() => setIsEditingPlan(null)}

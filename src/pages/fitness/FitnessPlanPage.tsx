@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FitnessPlanManager from '@/components/fitness/FitnessPlanManager';
 import ProgressTracker from '@/components/fitness/ProgressTracker';
-import WorkoutPlanForm from '@/components/fitness/WorkoutPlanForm';
+import { WorkoutPlanForm } from '@/components/fitness/WorkoutPlanForm';
 import DietPlanForm from '@/components/fitness/DietPlanForm';
 import { useAuth } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';

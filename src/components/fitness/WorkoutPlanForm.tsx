@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Member, WorkoutPlan, WorkoutDay, Exercise } from "@/types";
+import { Member } from "@/types";
+import { WorkoutPlan, WorkoutDay, Exercise } from "@/types/workout";
 import { v4 as uuidv4 } from 'uuid';
 
 interface WorkoutPlanFormProps {

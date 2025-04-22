@@ -6,30 +6,36 @@ export interface Exercise {
   reps: number;
   weight?: string;
   notes?: string;
-  restTime?: string;
+  restTime?: string;  // Added this property
   videoUrl?: string;
   imageUrl?: string;
+  muscleGroupTag?: string;
+  mediaUrl?: string;
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
-  description?: string;
+  description?: string;  // Added this property
+  dayLabel?: string;
   exercises: Exercise[];
 }
 
 export interface WorkoutPlan {
   id: string;
-  name: string;
-  description?: string;
+  name: string;  // Ensure this property exists
+  description?: string;  // Ensure this property exists
   trainerId: string;
   workoutDays: WorkoutDay[];
-  targetGoals?: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  isGlobal: boolean;
+  targetGoals?: string[];  // Ensure this property exists
+  difficulty: 'beginner' | 'intermediate' | 'advanced';  // Ensure this property exists
+  isGlobal: boolean;  // Ensure this property exists
   createdAt: string;
   updatedAt: string;
   memberId?: string;
+  createdBy?: string;
+  days?: WorkoutDay[];
+  isCommon?: boolean;
 }
 
 export interface WorkoutAssignment {

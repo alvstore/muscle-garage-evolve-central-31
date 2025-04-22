@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Member, WorkoutPlan, DietPlan } from "@/types";
 import { Plus, Save, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import WorkoutPlanForm from "./WorkoutPlanForm";
+import { WorkoutPlanForm } from "./WorkoutPlanForm";
 import DietPlanForm from "./DietPlanForm";
 
 interface FitnessPlanManagerProps {
