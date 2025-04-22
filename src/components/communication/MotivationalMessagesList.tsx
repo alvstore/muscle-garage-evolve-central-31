@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -37,8 +38,9 @@ const mockMessages: MotivationalMessage[] = [
     category: "motivation",
     tags: ["workout", "consistency"],
     isActive: true,
-    createdAt: "2023-01-15T10:00:00Z",
-    updatedAt: "2023-01-15T10:00:00Z",
+    scheduledDate: "2023-01-15T10:00:00Z",
+    targetAudience: ["all"],
+    createdBy: "admin",
   },
   {
     id: "2",
@@ -48,8 +50,9 @@ const mockMessages: MotivationalMessage[] = [
     category: "motivation",
     tags: ["mindset", "strength"],
     isActive: true,
-    createdAt: "2023-02-10T15:30:00Z",
-    updatedAt: "2023-02-10T15:30:00Z",
+    scheduledDate: "2023-02-10T15:30:00Z",
+    targetAudience: ["all"],
+    createdBy: "admin",
   },
   {
     id: "3",
@@ -59,8 +62,9 @@ const mockMessages: MotivationalMessage[] = [
     category: "nutrition",
     tags: ["food", "health"],
     isActive: true,
-    createdAt: "2023-03-05T09:45:00Z",
-    updatedAt: "2023-03-05T09:45:00Z",
+    scheduledDate: "2023-03-05T09:45:00Z",
+    targetAudience: ["all"],
+    createdBy: "admin",
   },
   {
     id: "4",
@@ -70,8 +74,9 @@ const mockMessages: MotivationalMessage[] = [
     category: "motivation",
     tags: ["consistency", "success"],
     isActive: false,
-    createdAt: "2023-04-20T14:20:00Z",
-    updatedAt: "2023-04-20T14:20:00Z",
+    scheduledDate: "2023-04-20T14:20:00Z",
+    targetAudience: ["all"],
+    createdBy: "admin",
   },
   {
     id: "5",
@@ -81,8 +86,9 @@ const mockMessages: MotivationalMessage[] = [
     category: "wellness",
     tags: ["health", "exercise"],
     isActive: true,
-    createdAt: "2023-05-12T11:15:00Z",
-    updatedAt: "2023-05-12T11:15:00Z",
+    scheduledDate: "2023-05-12T11:15:00Z",
+    targetAudience: ["all"],
+    createdBy: "admin",
   }
 ];
 

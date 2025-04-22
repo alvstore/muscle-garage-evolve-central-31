@@ -6,6 +6,11 @@ import MotivationalMessagesList from "@/components/communication/MotivationalMes
 import MotivationalMessageForm from "@/components/communication/MotivationalMessageForm";
 import { MotivationalMessage } from "@/types/notification";
 
+interface MotivationalMessageFormProps {
+  message?: MotivationalMessage;
+  onComplete: () => void;
+}
+
 const MotivationalPage = () => {
   const [activeTab, setActiveTab] = useState("list");
   const [editMessage, setEditMessage] = useState<MotivationalMessage | null>(null);
@@ -32,7 +37,7 @@ const MotivationalPage = () => {
           
           <TabsContent value="create" className="space-y-4">
             <MotivationalMessageForm 
-              editMessage={editMessage} 
+              message={editMessage || undefined} 
               onComplete={() => {
                 setActiveTab("list");
                 setEditMessage(null);

@@ -17,6 +17,7 @@ import NotificationSettings from "@/components/settings/NotificationSettings";
 import AutomationSettings from "@/components/settings/AutomationSettings";
 import PermissionsSettings from "@/components/settings/PermissionsSettings";
 import BranchSection from "@/components/settings/BranchSection";
+import PaymentGatewayTab from "@/components/settings/PaymentGatewayTab";
 
 const SettingsPage = () => {
   const { user } = useAuth();

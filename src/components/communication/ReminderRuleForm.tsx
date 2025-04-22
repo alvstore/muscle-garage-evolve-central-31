@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -114,6 +115,13 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ open, setOpen, onSa
     }
   };
 
+  // Helper function to handle multi-select channels
+  const handleChannelsChange = (value: string) => {
+    // Parse the string value to NotificationChannel array
+    const channels = value.split(',') as NotificationChannel[];
+    setFormData({ ...formData, channels });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[600px]">
@@ -169,10 +177,9 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ open, setOpen, onSa
 
             <div className="space-y-2">
               <Label htmlFor="ruleChannels">Channels</Label>
-              <Select
-                value={formData.channels}
-                onValueChange={(value) => setFormData({ ...formData, channels: value as NotificationChannel[] })}
-                multiple
+              <Select 
+                value={formData.channels.join(',')} 
+                onValueChange={handleChannelsChange}
               >
                 <SelectTrigger id="ruleChannels">
                   <SelectValue placeholder="Select channels" />

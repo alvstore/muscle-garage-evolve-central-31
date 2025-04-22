@@ -25,12 +25,22 @@ const PaymentGatewayTab = () => {
     }
   });
 
-  const getGatewaySetting = (name: PaymentGatewaySetting['gateway_name']) => 
-    settings.find(s => s.gateway_name === name) || {
+  const getGatewaySetting = (name: PaymentGatewaySetting['gateway_name']) => {
+    const setting = settings.find(s => s.gateway_name === name);
+    if (setting) {
+      return setting;
+    }
+    
+    // Return a default setting with empty values but matching the required type
+    return {
+      id: '',
       gateway_name: name,
       is_enabled: false,
-      config: {}
-    };
+      config: {},
+      created_at: '',
+      updated_at: ''
+    } as PaymentGatewaySetting;
+  };
 
   const handleUpdate = async (gateway: PaymentGatewaySetting['gateway_name'], updates: Partial<PaymentGatewaySetting>) => {
     const setting = getGatewaySetting(gateway);
