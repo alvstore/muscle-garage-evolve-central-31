@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { UserRole } from '@/types';
 
 export type Permission = 
   | 'view_all_branches'
@@ -31,18 +32,40 @@ export type Permission =
   | 'manage_templates'
   | 'manage_devices'
   | 'view_branch_data'
-  | 'manage_website';
+  | 'manage_website'
+  | 'assign_workout_plan'
+  | 'assign_diet_plan'
+  | 'log_attendance'
+  | 'assign_plan'
+  | 'manage_roles'
+  | 'manage_staff'
+  | 'trainer_view_members'
+  | 'trainer_edit_fitness'
+  | 'trainer_view_attendance'
+  | 'feature_trainer_dashboard'
+  | 'feature_email_campaigns'
+  | 'full_system_access';
 
 interface PermissionsContextType {
   can: (permission: Permission) => boolean;
   isSystemAdmin: () => boolean;
   isBranchAdmin: () => boolean;
+  userRole: UserRole | null;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
 
 export const PermissionsProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  
+  useEffect(() => {
+    if (user) {
+      setUserRole(user.role as UserRole);
+    } else {
+      setUserRole(null);
+    }
+  }, [user]);
   
   // Check if the user has a specific permission
   const can = (permission: Permission): boolean => {
@@ -82,7 +105,19 @@ export const PermissionsProvider = ({ children }: { children: React.ReactNode })
         'manage_templates',
         'manage_devices',
         'view_branch_data',
-        'manage_website'
+        'manage_website',
+        'assign_workout_plan',
+        'assign_diet_plan',
+        'log_attendance',
+        'assign_plan',
+        'manage_roles',
+        'manage_staff',
+        'trainer_view_members',
+        'trainer_edit_fitness',
+        'trainer_view_attendance',
+        'feature_trainer_dashboard',
+        'feature_email_campaigns',
+        'full_system_access'
       ],
       staff: [
         'access_dashboards',
@@ -102,14 +137,22 @@ export const PermissionsProvider = ({ children }: { children: React.ReactNode })
         'manage_transactions',
         'manage_income',
         'manage_expenses',
-        'view_branch_data'
+        'view_branch_data',
+        'log_attendance',
+        'assign_plan'
       ],
       trainer: [
         'access_dashboards',
         'view_classes',
         'trainer_view_classes',
         'manage_fitness_data',
-        'access_communication'
+        'access_communication',
+        'trainer_view_members',
+        'trainer_edit_fitness',
+        'trainer_view_attendance',
+        'feature_trainer_dashboard',
+        'assign_workout_plan',
+        'assign_diet_plan'
       ],
       member: [
         'member_view_plans'
@@ -131,7 +174,7 @@ export const PermissionsProvider = ({ children }: { children: React.ReactNode })
   };
   
   return (
-    <PermissionsContext.Provider value={{ can, isSystemAdmin, isBranchAdmin }}>
+    <PermissionsContext.Provider value={{ can, isSystemAdmin, isBranchAdmin, userRole }}>
       {children}
     </PermissionsContext.Provider>
   );

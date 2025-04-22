@@ -1,58 +1,74 @@
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { Building2, Phone, AtSign, MapPin, Clock } from "lucide-react";
+
+// Define a sample content type
+interface ContactContent {
+  address: string;
+  googleMapEmbed: string;
+  phone: string;
+  email: string;
+  showSocialLinks: boolean;
+  socialLinks: {
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    youtube: string;
+  };
+  hours: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  };
+  contactFormHeader: string;
+  contactFormSubheader: string;
+}
 
 const ContactPageEditor = () => {
-  const [formData, setFormData] = useState({
-    pageTitle: "Contact Us",
-    introText: "We're here to help! Reach out to us with any questions about our gym, classes, or membership options.",
-    address: "123 Fitness Street, Workout City, 12345",
-    email: "info@evolvefit.com",
-    phone: "+91 9876543210",
-    googleMapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d317715.7119496962!2d-0.3817765050863085!3d51.52873519756199!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47d8a00baf21de75%3A0x52963a5addd52a99!2sLondon%2C%20UK!5e0!3m2!1sen!2sin!4v1698869582833!5m2!1sen!2sin",
-    openingHours: {
+  const [isSaving, setIsSaving] = useState(false);
+  const [contactImage, setContactImage] = useState("");
+  const [showContactForm, setShowContactForm] = useState(true);
+  const [showMap, setShowMap] = useState(true);
+  const [showHours, setShowHours] = useState(true);
+  
+  // Sample data
+  const [content, setContent] = useState<ContactContent>({
+    address: "123 Fitness Blvd, New York, NY 10001",
+    googleMapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d387193.305935303!2d-74.25986548248684!3d40.69714941932609!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xc80b8f06e177fe62!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2sin!4v1612600968661!5m2!1sen!2sin",
+    phone: "+1 (555) 123-4567",
+    email: "info@fitnessgym.com",
+    showSocialLinks: true,
+    socialLinks: {
+      facebook: "https://facebook.com/fitnessgym",
+      instagram: "https://instagram.com/fitnessgym",
+      twitter: "https://twitter.com/fitnessgym",
+      youtube: "https://youtube.com/fitnessgym"
+    },
+    hours: {
       monday: "6:00 AM - 10:00 PM",
       tuesday: "6:00 AM - 10:00 PM",
       wednesday: "6:00 AM - 10:00 PM",
       thursday: "6:00 AM - 10:00 PM",
       friday: "6:00 AM - 10:00 PM",
       saturday: "8:00 AM - 8:00 PM",
-      sunday: "8:00 AM - 6:00 PM"
+      sunday: "8:00 AM - 4:00 PM"
     },
-    socialLinks: {
-      facebook: "https://facebook.com/evolvefit",
-      instagram: "https://instagram.com/evolvefit",
-      twitter: "https://twitter.com/evolvefit"
-    }
+    contactFormHeader: "Get In Touch",
+    contactFormSubheader: "Have a question or need more information? Drop us a message and we'll get back to you."
   });
-  
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    if (name.includes('.')) {
-      const [section, field] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section as keyof typeof prev],
-          [field]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
   
   const handleSave = () => {
     setIsSaving(true);
@@ -62,208 +78,237 @@ const ContactPageEditor = () => {
     }, 1000);
   };
   
+  const handleContentChange = (key: keyof ContactContent, value: any) => {
+    setContent({
+      ...content,
+      [key]: value
+    });
+  };
+  
+  const handleSocialLinkChange = (network: keyof typeof content.socialLinks, value: string) => {
+    setContent({
+      ...content,
+      socialLinks: {
+        ...content.socialLinks,
+        [network]: value
+      }
+    });
+  };
+  
+  const handleHoursChange = (day: keyof typeof content.hours, value: string) => {
+    setContent({
+      ...content,
+      hours: {
+        ...content.hours,
+        [day]: value
+      }
+    });
+  };
+  
   return (
     <div className="space-y-6 py-4">
       <Card>
         <CardHeader>
           <CardTitle>Contact Page Content</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="pageTitle">Page Title</Label>
-            <Input
-              id="pageTitle"
-              name="pageTitle"
-              value={formData.pageTitle}
-              onChange={handleInputChange}
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="introText">Introduction Text</Label>
-            <Textarea
-              id="introText"
-              name="introText"
-              value={formData.introText}
-              onChange={handleInputChange}
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Contact Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              rows={2}
-            />
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="googleMapEmbed">Google Maps Embed Code</Label>
-            <Textarea
-              id="googleMapEmbed"
-              name="googleMapEmbed"
-              value={formData.googleMapEmbed}
-              onChange={handleInputChange}
-              rows={3}
-              placeholder="Paste Google Maps embed code here"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Go to Google Maps, search for your location, click "Share", select "Embed a map" and copy the iframe src URL.
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure the contact information, hours, and map that will be displayed on your website's contact page.
             </p>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Opening Hours</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="monday">Monday</Label>
-              <Input
-                id="monday"
-                name="openingHours.monday"
-                value={formData.openingHours.monday}
-                onChange={handleInputChange}
-              />
+            
+            <Separator className="my-4" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contactImage">Contact Page Image</Label>
+                <div className="mt-2">
+                  <ImageUpload
+                    value={contactImage}
+                    onChange={setContactImage}
+                    onRemove={() => setContactImage("")}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="address" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Address
+                  </Label>
+                  <Textarea
+                    id="address"
+                    value={content.address}
+                    onChange={(e) => handleContentChange('address', e.target.value)}
+                    rows={2}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Phone
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={content.phone}
+                    onChange={(e) => handleContentChange('phone', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    value={content.email}
+                    onChange={(e) => handleContentChange('email', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             </div>
             
-            <div>
-              <Label htmlFor="tuesday">Tuesday</Label>
-              <Input
-                id="tuesday"
-                name="openingHours.tuesday"
-                value={formData.openingHours.tuesday}
-                onChange={handleInputChange}
-              />
+            <Separator className="my-4" />
+            
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showMap" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Show Google Map
+                </Label>
+                <Switch
+                  id="showMap"
+                  checked={showMap}
+                  onCheckedChange={setShowMap}
+                />
+              </div>
+              
+              {showMap && (
+                <div>
+                  <Label htmlFor="googleMapEmbed">Google Map Embed URL</Label>
+                  <Textarea
+                    id="googleMapEmbed"
+                    value={content.googleMapEmbed}
+                    onChange={(e) => handleContentChange('googleMapEmbed', e.target.value)}
+                    rows={2}
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Enter the embed URL from Google Maps. Go to Google Maps, search your location, click "Share," then "Embed a map," and copy the provided URL.
+                  </p>
+                </div>
+              )}
             </div>
             
-            <div>
-              <Label htmlFor="wednesday">Wednesday</Label>
-              <Input
-                id="wednesday"
-                name="openingHours.wednesday"
-                value={formData.openingHours.wednesday}
-                onChange={handleInputChange}
-              />
+            <Separator className="my-4" />
+            
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showHours" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Show Business Hours
+                </Label>
+                <Switch
+                  id="showHours"
+                  checked={showHours}
+                  onCheckedChange={setShowHours}
+                />
+              </div>
+              
+              {showHours && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.keys(content.hours).map((day) => (
+                    <div key={day}>
+                      <Label htmlFor={`hours-${day}`} className="capitalize">
+                        {day}
+                      </Label>
+                      <Input
+                        id={`hours-${day}`}
+                        value={content.hours[day as keyof typeof content.hours]}
+                        onChange={(e) => handleHoursChange(day as keyof typeof content.hours, e.target.value)}
+                        className="mt-1"
+                        placeholder="e.g. 9:00 AM - 5:00 PM"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
-            <div>
-              <Label htmlFor="thursday">Thursday</Label>
-              <Input
-                id="thursday"
-                name="openingHours.thursday"
-                value={formData.openingHours.thursday}
-                onChange={handleInputChange}
-              />
+            <Separator className="my-4" />
+            
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showContactForm">Show Contact Form</Label>
+                <Switch
+                  id="showContactForm"
+                  checked={showContactForm}
+                  onCheckedChange={setShowContactForm}
+                />
+              </div>
+              
+              {showContactForm && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="contactFormHeader">Contact Form Header</Label>
+                    <Input
+                      id="contactFormHeader"
+                      value={content.contactFormHeader}
+                      onChange={(e) => handleContentChange('contactFormHeader', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="contactFormSubheader">Contact Form Subheader</Label>
+                    <Textarea
+                      id="contactFormSubheader"
+                      value={content.contactFormSubheader}
+                      onChange={(e) => handleContentChange('contactFormSubheader', e.target.value)}
+                      rows={2}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             
-            <div>
-              <Label htmlFor="friday">Friday</Label>
-              <Input
-                id="friday"
-                name="openingHours.friday"
-                value={formData.openingHours.friday}
-                onChange={handleInputChange}
-              />
-            </div>
+            <Separator className="my-4" />
             
-            <div>
-              <Label htmlFor="saturday">Saturday</Label>
-              <Input
-                id="saturday"
-                name="openingHours.saturday"
-                value={formData.openingHours.saturday}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="sunday">Sunday</Label>
-              <Input
-                id="sunday"
-                name="openingHours.sunday"
-                value={formData.openingHours.sunday}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Social Media Links</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="facebook">Facebook</Label>
-              <Input
-                id="facebook"
-                name="socialLinks.facebook"
-                value={formData.socialLinks.facebook}
-                onChange={handleInputChange}
-                placeholder="https://facebook.com/yourgym"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="instagram">Instagram</Label>
-              <Input
-                id="instagram"
-                name="socialLinks.instagram"
-                value={formData.socialLinks.instagram}
-                onChange={handleInputChange}
-                placeholder="https://instagram.com/yourgym"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="twitter">Twitter</Label>
-              <Input
-                id="twitter"
-                name="socialLinks.twitter"
-                value={formData.socialLinks.twitter}
-                onChange={handleInputChange}
-                placeholder="https://twitter.com/yourgym"
-              />
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showSocialLinks">Show Social Media Links</Label>
+                <Switch
+                  id="showSocialLinks"
+                  checked={content.showSocialLinks}
+                  onCheckedChange={(value) => handleContentChange('showSocialLinks', value)}
+                />
+              </div>
+              
+              {content.showSocialLinks && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.keys(content.socialLinks).map((network) => (
+                    <div key={network}>
+                      <Label htmlFor={`social-${network}`} className="capitalize">
+                        {network}
+                      </Label>
+                      <Input
+                        id={`social-${network}`}
+                        value={content.socialLinks[network as keyof typeof content.socialLinks]}
+                        onChange={(e) => handleSocialLinkChange(network as keyof typeof content.socialLinks, e.target.value)}
+                        className="mt-1"
+                        placeholder={`https://${network}.com/youraccount`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

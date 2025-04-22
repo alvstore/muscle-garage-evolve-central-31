@@ -1,83 +1,37 @@
 
-import React, { useState } from 'react';
-import { Container } from "@/components/ui/container";
-import { toast } from "sonner";
-import { useIntegrations } from '@/hooks/use-integrations';
-import { IntegrationConfig } from '@/services/integrationService';
-import { SmsSettingsHeader } from '@/components/settings/sms/SmsSettingsHeader';
-import { SmsProviderSettings } from '@/components/settings/sms/SmsProviderSettings';
-import NotificationSettings from '@/components/settings/sms/NotificationSettings'; // Fixed import
+import React from 'react';
+import { Container } from '@/components/ui/container';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Heading } from '@/components/ui/heading';
+import NotificationSettings from '@/components/settings/sms/NotificationSettings';
+import SmsProviderSettings from '@/components/settings/sms/SmsProviderSettings';
+import SmsSettingsHeader from '@/components/settings/sms/SmsSettingsHeader';
 
 const SmsIntegrationPage = () => {
-  const { config, updateConfig, test, enable, disable } = useIntegrations('sms');
-  const [pendingChanges, setPendingChanges] = useState<Partial<IntegrationConfig>>({});
-
-  const handleUpdateConfig = (changes: Partial<IntegrationConfig>) => {
-    setPendingChanges(prev => ({
-      ...prev,
-      ...changes
-    }));
-  };
-
-  const handleSave = () => {
-    const success = updateConfig(pendingChanges);
-    if (success) {
-      toast.success("SMS settings saved successfully");
-      setPendingChanges({});
-    } else {
-      toast.error("Failed to save SMS settings");
-    }
-  };
-
-  const handleTest = async () => {
-    const result = await test();
-    if (result.success) {
-      toast.success("SMS test sent successfully");
-    } else {
-      toast.error(`SMS test failed: ${result.message}`);
-    }
-  };
-
-  // Merge pending changes with current config for UI display
-  const displayConfig = {
-    ...config,
-    ...pendingChanges
-  };
-
   return (
     <Container>
-      <div className="py-6 space-y-6">
-        <SmsSettingsHeader 
-          enabled={config.enabled}
-          onEnableChange={(checked) => {
-            if (checked) {
-              enable();
-              toast.success("SMS integration enabled");
-            } else {
-              disable();
-              toast.success("SMS integration disabled");
-            }
-          }}
+      <div className="py-10 space-y-8">
+        <Heading 
+          title="SMS Integration Settings" 
+          description="Configure SMS providers, templates, and notification settings"
         />
-
-        <div className="space-y-6">
-          <SmsProviderSettings 
-            config={displayConfig}
-            onUpdateConfig={handleUpdateConfig}
-            onTest={handleTest}
-            onSave={handleSave}
-          />
+        
+        <SmsSettingsHeader />
+        
+        <Tabs defaultValue="providers" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="providers">SMS Providers</TabsTrigger>
+            <TabsTrigger value="notifications">Notification Settings</TabsTrigger>
+          </TabsList>
           
-          <NotificationSettings 
-            templates={displayConfig.templates || {
-              membershipAlert: false,
-              renewalReminder: false,
-              otpVerification: false,
-              attendanceConfirmation: false
-            }}
-            onChange={(templates) => handleUpdateConfig({ templates })}
-          />
-        </div>
+          <TabsContent value="providers" className="space-y-4">
+            <SmsProviderSettings />
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="space-y-4">
+            <NotificationSettings />
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );

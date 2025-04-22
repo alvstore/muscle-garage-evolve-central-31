@@ -25,7 +25,7 @@ const CreateBranchDialog = ({
   onComplete 
 }: CreateBranchDialogProps) => {
   const [internalOpen, setInternalOpen] = React.useState(false);
-  const { userRole } = usePermissions();
+  const { can, userRole } = usePermissions();
   
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
