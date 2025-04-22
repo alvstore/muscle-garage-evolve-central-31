@@ -110,7 +110,7 @@ const DashboardHeader = ({
             </Button>
           </SheetTrigger>
           <SheetContent>
-            <NotificationsPanel onClose={() => setNotificationsOpen(false)} />
+            <NotificationsPanel />
           </SheetContent>
         </Sheet>
         
