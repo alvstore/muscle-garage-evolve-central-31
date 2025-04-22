@@ -20,7 +20,7 @@ export const subscribeToTable = (
   return supabase
     .channel(`public:${tableName}`)
     .on('postgres_changes', 
-        { event, schema: 'public', table: tableName }, 
+        { event, schema: 'public', table: tableName } as any, 
         callback)
     .subscribe();
 };
@@ -40,7 +40,7 @@ export const subscribeToTableWithFilter = (
         schema: 'public',
         table: tableName,
         filter: `${filterColumn}=eq.${filterValue}`,
-      },
+      } as any,
       callback
     )
     .subscribe();

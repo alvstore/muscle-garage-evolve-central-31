@@ -1,13 +1,26 @@
 
-import { Container } from "@/components/ui/container";
-import MembershipPlans from "@/components/membership/MembershipPlans";
+import React from 'react';
+import { Container } from '@/components/ui/container';
+import MembershipPlans from '@/components/membership/MembershipPlans';
+import MembershipPlansDisplay from '@/components/membership/MembershipPlansDisplay';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const MembershipPage = () => {
+  const { userRole } = usePermissions();
+  const isMember = userRole === 'member';
+
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Membership Plans</h1>
-        <MembershipPlans />
+        <h1 className="text-2xl font-bold mb-6">
+          {isMember ? 'My Membership' : 'Membership Plans'}
+        </h1>
+        
+        {isMember ? (
+          <MembershipPlansDisplay />
+        ) : (
+          <MembershipPlans />
+        )}
       </div>
     </Container>
   );

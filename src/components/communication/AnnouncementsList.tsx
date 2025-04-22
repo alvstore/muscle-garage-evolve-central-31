@@ -27,6 +27,7 @@ import { Announcement } from "@/types/notification";
 import { Megaphone, MoreVertical, Eye, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/use-permissions";
+import AnnouncementDetailDialog from "./AnnouncementDetailDialog";
 
 const mockAnnouncements: Announcement[] = [
   {
@@ -40,8 +41,8 @@ const mockAnnouncements: Announcement[] = [
     channels: ["in-app", "email"],
     sentCount: 120,
     priority: "medium",
-    forRoles: ["member", "trainer"], // For compatibility
-    createdBy: "admin1" // For compatibility
+    forRoles: ["member", "trainer"],
+    createdBy: "admin1"
   },
   {
     id: "2",
@@ -55,8 +56,8 @@ const mockAnnouncements: Announcement[] = [
     expiresAt: "2023-07-26T23:59:59Z",
     sentCount: 98,
     priority: "high",
-    forRoles: ["member"], // For compatibility
-    createdBy: "admin1" // For compatibility
+    forRoles: ["member"],
+    createdBy: "admin1"
   },
   {
     id: "3", 
@@ -69,8 +70,8 @@ const mockAnnouncements: Announcement[] = [
     channels: ["in-app", "whatsapp"],
     sentCount: 215,
     priority: "low",
-    forRoles: ["member", "trainer", "staff"], // For compatibility
-    createdBy: "staff1" // For compatibility
+    forRoles: ["member", "trainer", "staff"],
+    createdBy: "staff1"
   }
 ];
 
@@ -81,6 +82,8 @@ interface AnnouncementsListProps {
 const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const { userRole } = usePermissions();
 
   useEffect(() => {
@@ -99,139 +102,152 @@ const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
     toast.success("Announcement resent successfully");
   };
 
+  const handleView = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement);
+    setDetailDialogOpen(true);
+  };
+
   const canEdit = userRole !== 'member';
   const canResend = userRole === 'admin' || userRole === 'staff';
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Announcements</CardTitle>
-            <CardDescription>Manage and track all gym announcements</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={loading}
-            onClick={() => {
-              setLoading(true);
-              setTimeout(() => {
-                setAnnouncements(mockAnnouncements);
-                setLoading(false);
-              }, 1000);
-            }}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="h-80 flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading announcements...</p>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Announcements</CardTitle>
+              <CardDescription>Manage and track all gym announcements</CardDescription>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={loading}
+              onClick={() => {
+                setLoading(true);
+                setTimeout(() => {
+                  setAnnouncements(mockAnnouncements);
+                  setLoading(false);
+                }, 1000);
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
-        ) : announcements.length === 0 ? (
-          <div className="text-center py-10">
-            <Megaphone className="h-10 w-10 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No announcements</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create your first announcement to notify members and staff
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Channels</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {announcements.map((announcement) => (
-                  <TableRow key={announcement.id}>
-                    <TableCell className="font-medium">{announcement.title}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {announcement.targetRoles.map((role) => (
-                          <Badge key={role} variant="outline" className="capitalize">
-                            {role}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {announcement.channels.map((channel) => (
-                          <Badge key={channel} variant="secondary" className="capitalize">
-                            {channel}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>{format(parseISO(announcement.createdAt), "MMM dd, yyyy")}</TableCell>
-                    <TableCell>
-                      {announcement.expiresAt 
-                        ? format(parseISO(announcement.expiresAt), "MMM dd, yyyy")
-                        : "Never"
-                      }
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toast.info(`Viewing announcement: ${announcement.title}`)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </DropdownMenuItem>
-                          
-                          {canEdit && (
-                            <DropdownMenuItem onClick={() => onEdit(announcement)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {canResend && (
-                            <DropdownMenuItem onClick={() => handleResend(announcement.id)}>
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Resend
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {canEdit && (
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(announcement.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="h-80 flex items-center justify-center">
+              <div className="text-center">
+                <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading announcements...</p>
+              </div>
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="text-center py-10">
+              <Megaphone className="h-10 w-10 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No announcements</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create your first announcement to notify members and staff
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Channels</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </TableHeader>
+                <TableBody>
+                  {announcements.map((announcement) => (
+                    <TableRow key={announcement.id}>
+                      <TableCell className="font-medium">{announcement.title}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {announcement.targetRoles.map((role) => (
+                            <Badge key={role} variant="outline" className="capitalize">
+                              {role}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {announcement.channels.map((channel) => (
+                            <Badge key={channel} variant="secondary" className="capitalize">
+                              {channel}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>{format(parseISO(announcement.createdAt), "MMM dd, yyyy")}</TableCell>
+                      <TableCell>
+                        {announcement.expiresAt 
+                          ? format(parseISO(announcement.expiresAt), "MMM dd, yyyy")
+                          : "Never"
+                        }
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleView(announcement)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            
+                            {canEdit && (
+                              <DropdownMenuItem onClick={() => onEdit(announcement)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                            )}
+                            
+                            {canResend && (
+                              <DropdownMenuItem onClick={() => handleResend(announcement.id)}>
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Resend
+                              </DropdownMenuItem>
+                            )}
+                            
+                            {canEdit && (
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(announcement.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <AnnouncementDetailDialog
+        announcement={selectedAnnouncement}
+        isOpen={detailDialogOpen}
+        onClose={() => setDetailDialogOpen(false)}
+      />
+    </>
   );
 };
 
