@@ -1,0 +1,814 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles enum
+enum UserRole {
+  ADMIN
+  STAFF
+  TRAINER
+  MEMBER
+}
+
+// Main User model
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  name             String
+  role             UserRole
+  avatar           String?
+  phone            String?
+  dateOfBirth      DateTime?
+  address          String?
+  city             String?
+  state            String?
+  zipCode          String?
+  country          String?   @default("India")
+  gender           String?
+  isActive         Boolean   @default(true)
+  isBranchManager  Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+
+  // Branch relationships
+  branch           Branch?   @relation("UserBranch", fields: [branchId], references: [id])
+  branchId         String?
+  accessibleBranches BranchAccess[] @relation("UserAccessibleBranches")
+  
+  // Role-specific relationships
+  trainerProfile   TrainerProfile? @relation("UserTrainerProfile")
+  memberProfile    MemberProfile?  @relation("UserMemberProfile")
+  staffProfile     StaffProfile?   @relation("UserStaffProfile")
+  
+  // Activity relationships
+  memberAttendance MemberAttendance[] @relation("MemberAttendance")
+  staffAttendance  StaffAttendance[]  @relation("StaffAttendance")
+  
+  // Fitness & training relationships
+  assignedTrainer  TrainerAssignment[] @relation("MemberTrainerAssignment")
+  trainerFor       TrainerAssignment[] @relation("TrainerAssignment")
+  workoutPlansCreated WorkoutPlan[] @relation("WorkoutPlanCreator")
+  dietPlansCreated DietPlan[] @relation("DietPlanCreator")
+  workoutPlansAssigned WorkoutPlan[] @relation("WorkoutPlanAssignee")
+  dietPlansAssigned DietPlan[] @relation("DietPlanAssignee")
+  bodyMeasurements BodyMeasurement[] @relation("MemberMeasurements")
+  
+  // Class relationships
+  classesInstructed GymClass[] @relation("ClassInstructor")
+  classBookings    ClassBooking[] @relation("MemberBookings")
+  
+  // Financial relationships
+  payments         Payment[] @relation("MemberPayments")
+  memberships      MemberMembership[] @relation("MembershipAssignment")
+  invoices         Invoice[] @relation("MemberInvoice")
+  
+  // CRM relationships
+  leadsCreated     Lead[] @relation("LeadCreator")
+  leadsAssigned    Lead[] @relation("LeadAssignee")
+  referralsMade    Referral[] @relation("ReferralCreator")
+  
+  // Other relationships
+  notifications    Notification[] @relation("UserNotifications")
+}
+
+// Branch model
+model Branch {
+  id               String    @id @default(uuid())
+  name             String
+  address          String?
+  city             String?
+  state            String?
+  country          String?   @default("India")
+  email            String?
+  phone            String?
+  isActive         Boolean   @default(true)
+  managerId        String?
+  maxCapacity      Int?
+  openingHours     String?
+  closingHours     String?
+  region           String?
+  branchCode       String?
+  taxRate          Float?
+  timezone         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  users            User[] @relation("UserBranch")
+  userAccess       BranchAccess[] @relation("BranchAccessControl")
+  classes          GymClass[] @relation("BranchClasses")
+  memberAttendance MemberAttendance[] @relation("BranchMemberAttendance")
+  staffAttendance  StaffAttendance[] @relation("BranchStaffAttendance")
+  payments         Payment[] @relation("BranchPayments")
+  memberships      MemberMembership[] @relation("BranchMemberships")
+  transactions     Transaction[] @relation("BranchTransactions")
+  inventory        InventoryItem[] @relation("BranchInventory")
+  leads            Lead[] @relation("BranchLeads")
+  accessDevices    AccessDevice[] @relation("BranchAccessDevices")
+}
+
+// User-Branch access mapping
+model BranchAccess {
+  id               String    @id @default(uuid())
+  user             User      @relation("UserAccessibleBranches", fields: [userId], references: [id])
+  userId           String
+  branch           Branch    @relation("BranchAccessControl", fields: [branchId], references: [id])
+  branchId         String
+  hasFullAccess    Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  @@unique([userId, branchId])
+}
+
+// Role-specific profiles
+model TrainerProfile {
+  id               String    @id @default(uuid())
+  user             User      @relation("UserTrainerProfile", fields: [userId], references: [id])
+  userId           String    @unique
+  specialty        String?
+  bio              String?
+  rating           Float?
+  experience       Int?      // in years
+  certifications   String[]
+  hourlyRate       Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  assignedMembers  TrainerAssignment[] @relation("TrainerMembers")
+}
+
+model MemberProfile {
+  id               String    @id @default(uuid())
+  user             User      @relation("UserMemberProfile", fields: [userId], references: [id])
+  userId           String    @unique
+  goal             String?
+  medicalNotes     String?
+  emergencyContact String?
+  emergencyPhone   String?
+  membershipStatus String    @default("inactive") // active, inactive, expired
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  progressRecords  ProgressRecord[] @relation("MemberProgress")
+}
+
+model StaffProfile {
+  id               String    @id @default(uuid())
+  user             User      @relation("UserStaffProfile", fields: [userId], references: [id])
+  userId           String    @unique
+  position         String?
+  department       String?
+  joinDate         DateTime?
+  salary           Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Trainer-Member Assignments
+model TrainerAssignment {
+  id               String    @id @default(uuid())
+  trainer          User      @relation("TrainerAssignment", fields: [trainerId], references: [id])
+  trainerId        String
+  member           User      @relation("MemberTrainerAssignment", fields: [memberId], references: [id])
+  memberId         String
+  trainerProfile   TrainerProfile @relation("TrainerMembers", fields: [trainerId], references: [userId])
+  branch           Branch?   @relation(fields: [branchId], references: [id])
+  branchId         String?
+  startDate        DateTime
+  endDate          DateTime?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  @@unique([trainerId, memberId])
+}
+
+// Attendance models
+model MemberAttendance {
+  id               String    @id @default(uuid())
+  member           User      @relation("MemberAttendance", fields: [memberId], references: [id])
+  memberId         String
+  branch           Branch    @relation("BranchMemberAttendance", fields: [branchId], references: [id])
+  branchId         String
+  checkIn          DateTime  @default(now())
+  checkOut         DateTime?
+  accessMethod     String    @default("manual") // manual, rfid, fingerprint
+  deviceId         String?
+  recordedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model StaffAttendance {
+  id               String    @id @default(uuid())
+  staff            User      @relation("StaffAttendance", fields: [staffId], references: [id])
+  staffId          String
+  branch           Branch    @relation("BranchStaffAttendance", fields: [branchId], references: [id])
+  branchId         String
+  checkIn          DateTime?
+  checkOut         DateTime?
+  status           String    @default("present") // present, absent, late, half-day
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Fitness Plans
+model WorkoutPlan {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  trainer          User      @relation("WorkoutPlanCreator", fields: [trainerId], references: [id])
+  trainerId        String
+  member           User?     @relation("WorkoutPlanAssignee", fields: [memberId], references: [id])
+  memberId         String?
+  difficulty       String?   // beginner, intermediate, advanced
+  isCustom         Boolean   @default(true)
+  isGlobal         Boolean   @default(false)
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  workoutDays      WorkoutDay[] @relation("PlanWorkoutDays")
+}
+
+model WorkoutDay {
+  id               String    @id @default(uuid())
+  name             String
+  dayLabel         String?
+  description      String?
+  notes            String?
+  workoutPlan      WorkoutPlan @relation("PlanWorkoutDays", fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  workoutPlanId    String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  exercises        Exercise[] @relation("DayExercises")
+}
+
+model Exercise {
+  id               String    @id @default(uuid())
+  name             String
+  sets             Int
+  reps             Int
+  weight           Float?
+  rest             Int?      // Rest time in seconds
+  restTime         String?   // Rest time as formatted string
+  notes            String?
+  mediaUrl         String?
+  muscleGroupTag   String?
+  workoutDay       WorkoutDay @relation("DayExercises", fields: [workoutDayId], references: [id], onDelete: Cascade)
+  workoutDayId     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model DietPlan {
+  id               String    @id @default(uuid())
+  name             String
+  dietType         String?
+  description      String?
+  trainer          User      @relation("DietPlanCreator", fields: [trainerId], references: [id])
+  trainerId        String
+  member           User?     @relation("DietPlanAssignee", fields: [memberId], references: [id])
+  memberId         String?
+  dailyCalories    Int?
+  proteinRatio     Float?
+  carbsRatio       Float?
+  fatRatio         Float?
+  isCustom         Boolean   @default(true)
+  isGlobal         Boolean   @default(false)
+  notes            String?
+  branchId         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  mealPlans        MealPlan[] @relation("DietMealPlans")
+}
+
+model MealPlan {
+  id               String    @id @default(uuid())
+  name             String
+  time             String?
+  dietPlan         DietPlan  @relation("DietMealPlans", fields: [dietPlanId], references: [id], onDelete: Cascade)
+  dietPlanId       String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  mealItems        MealItem[] @relation("MealItems")
+}
+
+model MealItem {
+  id               String    @id @default(uuid())
+  name             String
+  quantity         String?
+  calories         Int?
+  protein          Float?
+  carbs            Float?
+  fats             Float?
+  notes            String?
+  mealPlan         MealPlan  @relation("MealItems", fields: [mealPlanId], references: [id], onDelete: Cascade)
+  mealPlanId       String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Body Measurements
+model BodyMeasurement {
+  id               String    @id @default(uuid())
+  member           User      @relation("MemberMeasurements", fields: [memberId], references: [id])
+  memberId         String
+  measurementDate  DateTime  @default(now())
+  height           Float?    // in cm
+  weight           Float?    // in kg
+  bmi              Float?
+  bodyFatPercentage Float?
+  chest            Float?    // in cm
+  waist            Float?    // in cm
+  hips             Float?    // in cm
+  arms             Float?    // in cm
+  thighs           Float?    // in cm
+  notes            String?
+  recordedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model ProgressRecord {
+  id               String    @id @default(uuid())
+  member           MemberProfile @relation("MemberProgress", fields: [memberId], references: [userId])
+  memberId         String
+  date             DateTime  @default(now())
+  weight           Float?
+  fatPercent       Float?
+  bmi              Float?
+  muscleMass       Float?
+  workoutCompletionPercent Int?
+  dietAdherencePercent Int?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Classes & Bookings
+model GymClass {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  trainer          User      @relation("ClassInstructor", fields: [trainerId], references: [id])
+  trainerId        String
+  capacity         Int
+  enrolled         Int       @default(0)
+  startTime        DateTime
+  endTime          DateTime
+  type             String
+  difficulty       String?   // beginner, intermediate, advanced, all
+  location         String?
+  status           String    @default("scheduled") // scheduled, completed, cancelled
+  recurring        Boolean   @default(false)
+  recurringPattern String?
+  branch           Branch    @relation("BranchClasses", fields: [branchId], references: [id])
+  branchId         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  bookings         ClassBooking[] @relation("ClassBookings")
+}
+
+model ClassBooking {
+  id               String    @id @default(uuid())
+  class            GymClass  @relation("ClassBookings", fields: [classId], references: [id])
+  classId          String
+  member           User      @relation("MemberBookings", fields: [memberId], references: [id])
+  memberId         String
+  status           String    @default("confirmed") // pending, confirmed, cancelled, attended, no-show
+  attended         Boolean   @default(false)
+  attendanceTime   DateTime?
+  notes            String?
+  paidAmount       Float?
+  paymentStatus    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  @@unique([classId, memberId])
+}
+
+// Financial models
+model MembershipPlan {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  price            Float
+  durationDays     Int
+  durationLabel    String?   // 1-month, 3-month, 6-month, 12-month
+  benefits         String[]
+  allowedClasses   String?   // all, group-only, basic-only
+  status           String    @default("active") // active, inactive
+  features         Json?     // gym access, pool access, etc.
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  
+  // Relationships
+  memberMemberships MemberMembership[] @relation("PlanMemberships")
+}
+
+model MemberMembership {
+  id               String    @id @default(uuid())
+  member           User      @relation("MembershipAssignment", fields: [memberId], references: [id])
+  memberId         String
+  plan             MembershipPlan @relation("PlanMemberships", fields: [membershipId], references: [id])
+  membershipId     String
+  branch           Branch    @relation("BranchMemberships", fields: [branchId], references: [id])
+  branchId         String
+  startDate        DateTime
+  endDate          DateTime
+  status           String    @default("active") // active, expired, cancelled
+  totalAmount      Float
+  amountPaid       Float     @default(0)
+  paymentStatus    String    @default("pending") // pending, paid, partial, failed
+  trainerId        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Payment {
+  id               String    @id @default(uuid())
+  member           User      @relation("MemberPayments", fields: [memberId], references: [id])
+  memberId         String
+  amount           Float
+  currency         String    @default("INR")
+  status           String    @default("completed") // pending, completed, failed, refunded
+  mode             String    // cash, card, upi, bank_transfer, razorpay, other
+  membershipId     String?
+  invoiceId        String?
+  transactionId    String?
+  paymentMethod    String
+  razorpayOrderId  String?
+  razorpayPaymentId String?
+  notes            String?
+  paymentDate      DateTime  @default(now())
+  branch           Branch    @relation("BranchPayments", fields: [branchId], references: [id])
+  branchId         String
+  staffId          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Invoice {
+  id               String    @id @default(uuid())
+  member           User      @relation("MemberInvoice", fields: [memberId], references: [id])
+  memberId         String
+  memberName       String
+  amount           Float
+  status           String    // pending, paid, partial, cancelled, overdue
+  issuedDate       DateTime
+  dueDate          DateTime
+  paidDate         DateTime?
+  items            Json      // Array of invoice items
+  branchId         String?
+  membershipPlanId String?
+  description      String?
+  paymentMethod    String?
+  notes            String?
+  razorpayOrderId  String?
+  razorpayPaymentId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Transaction {
+  id               String    @id @default(uuid())
+  type             String    // income, expense
+  amount           Float
+  date             DateTime
+  category         String
+  description      String?
+  branch           Branch    @relation("BranchTransactions", fields: [branchId], references: [id])
+  branchId         String
+  reference        String?
+  paymentMethod    String?
+  transactionId    String?
+  categoryId       String?
+  recordedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model ExpenseCategory {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  isActive         Boolean   @default(true)
+  branchId         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model IncomeCategory {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  isActive         Boolean   @default(true)
+  branchId         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Inventory & Store
+model InventoryItem {
+  id               String    @id @default(uuid())
+  name             String
+  sku              String
+  category         String    // supplement, equipment, merchandise
+  description      String?
+  quantity         Int
+  price            Float
+  costPrice        Float
+  supplier         String?
+  supplierContact  String?
+  manufactureDate  DateTime?
+  expiryDate       DateTime?
+  reorderLevel     Int
+  location         String?
+  image            String?
+  barcode          String?
+  status           String    // in-stock, low-stock, out-of-stock, expired
+  lastStockUpdate  DateTime
+  branch           Branch    @relation("BranchInventory", fields: [branchId], references: [id])
+  branchId         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model InventoryTransaction {
+  id               String    @id @default(uuid())
+  itemId           String
+  itemName         String
+  type             String    // stock-in, stock-out, adjustment, return, damaged
+  quantity         Int
+  previousQuantity Int
+  newQuantity      Int
+  notes            String?
+  conductedBy      String
+  conductedAt      DateTime
+  relatedInvoiceId String?
+  batchNumber      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Product {
+  id               String    @id @default(uuid())
+  name             String
+  description      String
+  price            Float
+  salePrice        Float?
+  category         String    // supplement, equipment, apparel, accessory, membership, other
+  status           String    // in-stock, low-stock, out-of-stock, discontinued
+  stock            Int
+  inventoryId      String?
+  sku              String
+  barcode          String?
+  images           String[]
+  features         String[]
+  brand            String?
+  featured         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Order {
+  id               String    @id @default(uuid())
+  memberId         String?
+  customerName     String
+  customerEmail    String?
+  customerPhone    String?
+  items            Json      // Array of order items
+  subtotal         Float
+  discount         Float?
+  promoCodeId      String?
+  promoCode        String?
+  tax              Float
+  total            Float
+  status           String    // pending, processing, completed, cancelled, refunded
+  paymentMethod    String    // cash, card, bank-transfer, wallet, other
+  paymentStatus    String    // pending, paid, failed, refunded
+  notes            String?
+  staffId          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  completedAt      DateTime?
+}
+
+// CRM models
+model Lead {
+  id               String    @id @default(uuid())
+  name             String
+  email            String?
+  phone            String?
+  source           String    // website, referral, walk-in, phone, social-media, event, other
+  status           String    // new, contacted, qualified, lost, converted
+  funnelStage      String    // cold, warm, hot
+  assignedTo       String?
+  notes            String?
+  followUpDate     DateTime?
+  lastContactDate  DateTime?
+  conversionDate   DateTime?
+  conversionValue  Float?
+  interests        String[]
+  tags             String[]
+  createdBy        User      @relation("LeadCreator", fields: [createdById], references: [id])
+  createdById      String
+  assignedToUser   User?     @relation("LeadAssignee", fields: [assignedTo], references: [id])
+  branch           Branch    @relation("BranchLeads", fields: [branchId], references: [id])
+  branchId         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model FollowUpHistory {
+  id               String    @id @default(uuid())
+  leadId           String
+  templateId       String?
+  type             String    // email, sms, whatsapp, call, meeting
+  content          String
+  sentBy           String
+  sentAt           DateTime
+  status           String    // sent, delivered, read, failed
+  response         String?
+  responseAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model FollowUpTemplate {
+  id               String    @id @default(uuid())
+  title            String
+  type             String    // email, sms, whatsapp, call, meeting
+  content          String
+  variables        String[]
+  createdBy        String
+  isDefault        Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Referral {
+  id               String    @id @default(uuid())
+  referrer         User      @relation("ReferralCreator", fields: [referrerId], references: [id])
+  referrerId       String
+  referrerName     String
+  referredEmail    String
+  referredName     String?
+  referredId       String?
+  status           String    // pending, approved, rejected, rewarded
+  promoCodeId      String?
+  promoCode        String?
+  convertedAt      DateTime?
+  rewardAmount     Float?
+  rewardDescription String?
+  rewardStatus     String?   // pending, processed, cancelled
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model PromoCode {
+  id               String    @id @default(uuid())
+  code             String    @unique
+  description      String
+  type             String    // percentage, fixed, free-product
+  value            Float
+  minPurchaseAmount Float?
+  maxDiscountAmount Float?
+  startDate        DateTime
+  endDate          DateTime
+  status           String    // active, inactive, expired, scheduled
+  usageLimit       Int?
+  currentUsage     Int       @default(0)
+  applicableProducts String[] // product IDs or "all"
+  applicableMemberships String[] // membership IDs or "all"
+  createdBy        String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Notification models
+model Notification {
+  id               String    @id @default(uuid())
+  user             User      @relation("UserNotifications", fields: [userId], references: [id])
+  userId           String
+  title            String
+  message          String
+  type             String    // info, warning, error, success
+  read             Boolean   @default(false)
+  link             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Announcement {
+  id               String    @id @default(uuid())
+  title            String
+  content          String
+  authorId         String
+  authorName       String
+  expiresAt        DateTime?
+  priority         String    // low, medium, high
+  targetRoles      String[]
+  channels         String[]  // in-app, email, sms, whatsapp
+  sentCount        Int?
+  forBranchIds     String[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model Feedback {
+  id               String    @id @default(uuid())
+  memberId         String?
+  memberName       String?
+  type             String    // general, trainer, class, fitness-plan
+  relatedId        String?
+  rating           Int
+  comments         String
+  anonymous        Boolean   @default(false)
+  title            String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model ReminderRule {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  triggerType      String    // membership_expiry, missed_attendance, birthday, inactive_member, special_event
+  triggerValue     Int
+  message          String
+  sendVia          String[]  // in-app, email, sms, whatsapp
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Settings models
+model GlobalSettings {
+  id               String    @id @default(uuid())
+  currency         String    @default("INR")
+  currencySymbol   String    @default("₹")
+  dateFormat       String    @default("DD/MM/YYYY")
+  timeFormat       String    @default("24h")
+  razorpayKeyId    String?
+  razorpayKeySecret String?
+  emailProvider    String?
+  emailApiKey      String?
+  smsProvider      String?
+  smsApiKey        String?
+  whatsappProvider String?
+  whatsappApiKey   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+model AccessDevice {
+  id               String    @id @default(uuid())
+  serialNumber     String
+  name             String
+  type             String    // door, turnstile, biometric
+  location         String?
+  status           String    @default("active") // active, inactive, maintenance
+  ipAddress        String?
+  branch           Branch    @relation("BranchAccessDevices", fields: [branchId], references: [id])
+  branchId         String
+  lastSyncTime     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
+
+// Backup logs
+model BackupLog {
+  id               String    @id @default(uuid())
+  userId           String
+  action           String    // export, import
+  type             String    // members, staff, trainers, etc.
+  timestamp        DateTime
+  details          Json
+  status           String    // success, failure, partial
+  error            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+}
