@@ -311,9 +311,9 @@ export const backupService = {
             }
             
             for (const batch of batches) {
+              // Fix: Remove 'returning' option which is causing the error
               const { data, error } = await supabase.from(tableName).upsert(batch, {
-                onConflict: 'id',
-                returning: 'minimal'
+                onConflict: 'id'
               });
               
               if (error) {
