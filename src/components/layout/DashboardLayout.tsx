@@ -10,6 +10,7 @@ import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
+import { Toaster } from "sonner";
 
 const DashboardLayout = () => {
   const { user, isLoading, logout } = useAuth();
@@ -110,7 +111,7 @@ const DashboardLayout = () => {
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
         {/* Sidebar - always render but control visibility with classes */}
-        <div className={`transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0'}`}>
+        <div className={`fixed md:relative transition-all duration-300 h-full z-40 ${sidebarOpen ? 'translate-x-0 shadow-xl md:shadow-none' : '-translate-x-full'} md:translate-x-0`}>
           <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
         </div>
         
@@ -128,6 +129,7 @@ const DashboardLayout = () => {
           </main>
         </div>
       </div>
+      <Toaster position="top-right" richColors closeButton />
     </SidebarProvider>
   );
 };
