@@ -1,105 +1,142 @@
 
-import api from './api';
-import { MembershipPlan, MembershipSubscription } from '@/types/membership';
+import { supabase } from '@/services/supabaseClient';
+import { MembershipPlan } from '@/types/membership';
 import { toast } from 'sonner';
+import { useBranch } from '@/hooks/use-branch';
 
 export const membershipService = {
-  // Fetch all membership plans
+  // Fetch membership plans with branch filtering
   async getMembershipPlans(): Promise<MembershipPlan[]> {
     try {
-      const response = await api.get<MembershipPlan[]>('/membership-plans');
-      return response.data;
+      const { currentBranch } = useBranch();
+      
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('branch_id', currentBranch?.id || null)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      return (data || []).map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description || '',
+        price: plan.price,
+        durationDays: plan.duration_days,
+        durationLabel: getDurationLabel(plan.duration_days),
+        benefits: plan.features ? JSON.parse(plan.features) : [],
+        allowedClasses: 'all', // Default, update based on your actual data
+        status: plan.is_active ? 'active' : 'inactive',
+        createdAt: plan.created_at,
+        updatedAt: plan.updated_at,
+      }));
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to fetch membership plans';
-      toast.error(errorMessage);
+      toast.error(error.message || 'Failed to fetch membership plans');
       return [];
     }
   },
-  
-  // Fetch a specific membership plan by ID
-  async getMembershipPlanById(planId: string): Promise<MembershipPlan | null> {
+
+  // Create a new membership plan
+  async createMembershipPlan(plan: Partial<MembershipPlan>): Promise<MembershipPlan | null> {
     try {
-      const response = await api.get<MembershipPlan>(`/membership-plans/${planId}`);
-      return response.data;
+      const { currentBranch } = useBranch();
+      
+      const { data, error } = await supabase
+        .from('memberships')
+        .insert({
+          name: plan.name,
+          description: plan.description || '',
+          price: plan.price,
+          duration_days: plan.durationDays,
+          features: JSON.stringify(plan.benefits || []),
+          is_active: plan.status === 'active',
+          branch_id: currentBranch?.id || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Membership plan created successfully');
+      
+      return {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        price: data.price,
+        durationDays: data.duration_days,
+        durationLabel: getDurationLabel(data.duration_days),
+        benefits: data.features ? JSON.parse(data.features) : [],
+        allowedClasses: 'all', // Default, update based on your actual data
+        status: data.is_active ? 'active' : 'inactive',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to fetch membership plan details';
-      toast.error(errorMessage);
+      toast.error(error.message || 'Failed to create membership plan');
       return null;
     }
   },
-  
-  // Create a new membership subscription
-  async createSubscription(memberId: string, planId: string): Promise<MembershipSubscription | null> {
+
+  // Update existing membership plan
+  async updateMembershipPlan(plan: MembershipPlan): Promise<MembershipPlan | null> {
     try {
-      const response = await api.post<MembershipSubscription>('/subscriptions', { memberId, planId });
-      toast.success('Membership subscription created successfully');
-      return response.data;
+      const { data, error } = await supabase
+        .from('memberships')
+        .update({
+          name: plan.name,
+          description: plan.description || '',
+          price: plan.price,
+          duration_days: plan.durationDays,
+          features: JSON.stringify(plan.benefits || []),
+          is_active: plan.status === 'active',
+        })
+        .eq('id', plan.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Membership plan updated successfully');
+      
+      return {
+        ...plan,
+        updatedAt: data.updated_at,
+      };
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to create subscription';
-      toast.error(errorMessage);
+      toast.error(error.message || 'Failed to update membership plan');
       return null;
     }
   },
-  
-  // Get member's active subscription
-  async getMemberSubscription(memberId: string): Promise<MembershipSubscription | null> {
+
+  // Delete membership plan
+  async deleteMembershipPlan(planId: string): Promise<boolean> {
     try {
-      const response = await api.get<MembershipSubscription>(`/members/${memberId}/subscription`);
-      return response.data;
-    } catch (error: any) {
-      // Don't show error for no subscription
-      if (error.response?.status !== 404) {
-        const errorMessage = error.response?.data?.message || 'Failed to fetch subscription details';
-        toast.error(errorMessage);
-      }
-      return null;
-    }
-  },
-  
-  // Cancel a subscription
-  async cancelSubscription(subscriptionId: string, reason?: string): Promise<boolean> {
-    try {
-      await api.post(`/subscriptions/${subscriptionId}/cancel`, { reason });
-      toast.success('Subscription cancelled successfully');
+      const { error } = await supabase
+        .from('memberships')
+        .delete()
+        .eq('id', planId);
+
+      if (error) throw error;
+
+      toast.success('Membership plan deleted successfully');
       return true;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to cancel subscription';
-      toast.error(errorMessage);
+      toast.error(error.message || 'Failed to delete membership plan');
       return false;
     }
   },
-  
-  // Generate payment link for membership purchase
-  async getPaymentLink(planId: string, memberId: string, promoCode?: string): Promise<string | null> {
-    try {
-      const response = await api.post<{ paymentLink: string }>('/payments/generate-link', { 
-        planId, 
-        memberId,
-        promoCode 
-      });
-      return response.data.paymentLink;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Failed to generate payment link';
-      toast.error(errorMessage);
-      return null;
-    }
-  },
-  
-  // Verify Razorpay payment
-  async verifyPayment(paymentId: string, orderId: string, signature: string, subscriptionData: any): Promise<boolean> {
-    try {
-      await api.post('/payments/verify', {
-        razorpay_payment_id: paymentId,
-        razorpay_order_id: orderId,
-        razorpay_signature: signature,
-        subscription: subscriptionData
-      });
-      toast.success('Payment verified successfully');
-      return true;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Payment verification failed';
-      toast.error(errorMessage);
-      return false;
-    }
-  }
 };
+
+// Helper function to convert duration to label
+function getDurationLabel(days: number): MembershipDuration {
+  switch (days) {
+    case 30: return '1-month';
+    case 90: return '3-month';
+    case 180: return '6-month';
+    case 365: return '12-month';
+    default: return '1-month';
+  }
+}
+

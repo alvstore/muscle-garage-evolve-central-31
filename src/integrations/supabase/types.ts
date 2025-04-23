@@ -893,6 +893,7 @@ export type Database = {
       }
       memberships: {
         Row: {
+          branch_id: string | null
           created_at: string | null
           description: string | null
           duration_days: number
@@ -904,6 +905,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          branch_id?: string | null
           created_at?: string | null
           description?: string | null
           duration_days: number
@@ -915,6 +917,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          branch_id?: string | null
           created_at?: string | null
           description?: string | null
           duration_days?: number
@@ -925,7 +928,15 @@ export type Database = {
           price?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "memberships_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_settings: {
         Row: {
