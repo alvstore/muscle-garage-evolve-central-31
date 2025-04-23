@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
 import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 const GENDERS = ["Male", "Female", "Other"] as const;
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
@@ -50,7 +50,7 @@ const NewMemberPage = () => {
     setDob(date);
     setFormData(prev => ({
       ...prev,
-      dateOfBirth: date ? date.toISOString().split("T")[0] : "",
+      dateOfBirth: date ? format(date, "dd/MM/yyyy") : "",
     }));
   };
 
@@ -71,12 +71,10 @@ const NewMemberPage = () => {
         name: formData.name,
         role: "member",
         phone: formData.phone,
-        date_of_birth: formData.dateOfBirth,
+        dateOfBirth: formData.dateOfBirth,
         gender: formData.gender || undefined,
         bloodGroup: formData.bloodGroup || undefined,
         occupation: formData.occupation,
-        goal: formData.goal,
-        trainerId: "trainer-123", // Default trainer
         membershipId: formData.membershipId,
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
         membershipStartDate: new Date().toISOString(),
@@ -292,4 +290,3 @@ const NewMemberPage = () => {
 };
 
 export default NewMemberPage;
-

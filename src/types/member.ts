@@ -1,3 +1,4 @@
+
 export type MemberStatus = "active" | "expired" | "none" | "inactive";
 
 export interface Member {
@@ -9,6 +10,7 @@ export interface Member {
   status: MemberStatus;
   avatar_url?: string;
   avatar?: string;
+  dateOfBirth?: string;
   date_of_birth?: string;
   gender?: "Male" | "Female" | "Other";
   bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
