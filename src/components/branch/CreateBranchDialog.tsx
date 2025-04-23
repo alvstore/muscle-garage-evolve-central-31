@@ -17,17 +17,15 @@ interface CreateBranchDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onComplete: () => void;
-  hideButton?: boolean;
 }
 
 const CreateBranchDialog = ({ 
   open: controlledOpen, 
   onOpenChange: setControlledOpen, 
-  onComplete,
-  hideButton = true // Set default to true to hide the button
+  onComplete 
 }: CreateBranchDialogProps) => {
   const [internalOpen, setInternalOpen] = React.useState(false);
-  const { can, userRole } = usePermissions();
+  const { userRole } = usePermissions();
   
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -39,7 +37,7 @@ const CreateBranchDialog = ({
   return (
     <PermissionGuard permission="manage_branches">
       <Dialog open={open} onOpenChange={setOpen}>
-        {!isControlled && !hideButton && (
+        {!isControlled && (
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <Plus className="w-4 h-4 mr-1" />

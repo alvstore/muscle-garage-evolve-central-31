@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -6,11 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Filter, MoreVertical, Eye, Edit, UserMinus } from "lucide-react";
+import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
 import { Member } from "@/types";
 import { toast } from "sonner";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/services/supabaseClient";
 
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -19,34 +18,87 @@ const MembersListPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("role", "member");
-      if (!error && data) {
-        setMembers(
-          data.map((m: any) => ({
-            id: m.id,
-            email: m.email,
-            name: m.full_name,
-            role: m.role,
-            phone: m.phone,
-            dateOfBirth: m.date_of_birth,
-            goal: m.goal || "",
-            trainerId: m.trainer_id,
-            membershipId: m.membership_id,
-            membershipStatus: m.membership_status || "active",
-            membershipStartDate: m.membership_start_date,
-            membershipEndDate: m.membership_end_date,
-            avatar: m.avatar_url,
-          }))
-        );
-      }
+    // Simulate API call to fetch members
+    setLoading(true);
+    
+    setTimeout(() => {
+      // Mock data
+      const mockMembers: Member[] = [
+        {
+          id: "member-1",
+          email: "john.doe@example.com",
+          name: "John Doe",
+          role: "member",
+          phone: "+1 (555) 123-4567",
+          dateOfBirth: "1990-05-15",
+          goal: "Build muscle and improve overall fitness",
+          trainerId: "trainer-123",
+          membershipId: "platinum-12m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-01-15",
+          membershipEndDate: "2024-01-15",
+        },
+        {
+          id: "member-2",
+          email: "jane.smith@example.com",
+          name: "Jane Smith",
+          role: "member",
+          phone: "+1 (555) 987-6543",
+          dateOfBirth: "1988-09-22",
+          goal: "Lose weight and increase endurance",
+          trainerId: "trainer-456",
+          membershipId: "gold-6m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-06-01",
+          membershipEndDate: "2023-12-01",
+        },
+        {
+          id: "member-3",
+          email: "mike.johnson@example.com",
+          name: "Mike Johnson",
+          role: "member",
+          phone: "+1 (555) 456-7890",
+          dateOfBirth: "1992-03-10",
+          goal: "Build strength and improve athletic performance",
+          trainerId: "trainer-789",
+          membershipId: "silver-3m",
+          membershipStatus: "expired",
+          membershipStartDate: "2023-01-01",
+          membershipEndDate: "2023-04-01",
+        },
+        {
+          id: "member-4",
+          email: "sarah.wilson@example.com",
+          name: "Sarah Wilson",
+          role: "member",
+          phone: "+1 (555) 789-0123",
+          dateOfBirth: "1995-11-18",
+          goal: "Tone body and improve flexibility",
+          trainerId: "trainer-123",
+          membershipId: "gold-6m",
+          membershipStatus: "inactive",
+          membershipStartDate: "2023-02-15",
+          membershipEndDate: "2023-08-15",
+        },
+        {
+          id: "member-5",
+          email: "alex.brown@example.com",
+          name: "Alex Brown",
+          role: "member",
+          phone: "+1 (555) 321-6547",
+          dateOfBirth: "1985-07-30",
+          goal: "Maintain fitness and improve cardio",
+          trainerId: "trainer-456",
+          membershipId: "platinum-12m",
+          membershipStatus: "active",
+          membershipStartDate: "2023-05-01",
+          membershipEndDate: "2024-05-01",
+        }
+      ];
+      
+      setMembers(mockMembers);
       setLoading(false);
-    };
-    fetchMembers();
+    }, 1000);
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -64,35 +116,17 @@ const MembersListPage = () => {
 
   const getInitials = (name: string) => {
     return name
-      ? name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-      : "";
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
-  const filteredMembers = members.filter(member =>
-    (member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.phone?.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredMembers = members.filter(member => 
+    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleEdit = (id: string) => {
-    navigate(`/members/${id}`);
-  };
-
-  const handleAttendance = (id: string) => {
-    navigate(`/attendance?memberId=${id}`);
-  };
-
-  const handleRenew = (id: string) => {
-    toast.info("Renewal flow coming soon.");
-  };
-
-  const handleSuspend = (id: string) => {
-    toast.info("Suspend/Deactivate feature coming soon.");
-  };
 
   return (
     <Container>
@@ -154,46 +188,37 @@ const MembersListPage = () => {
                       {member.membershipEndDate && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Expires:</span>
-                          <span>
-                            {typeof member.membershipEndDate === "string"
-                              ? new Date(member.membershipEndDate).toLocaleDateString()
-                              : ""}
-                          </span>
+                          <span>{new Date(member.membershipEndDate).toLocaleDateString()}</span>
                         </div>
                       )}
                     </div>
                   </div>
                   
                   <div className="flex border-t">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-                        >
-                          Quick Actions
-                          <MoreVertical className="ml-1 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleEdit(member.id)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAttendance(member.id)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Attendance
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleRenew(member.id)}>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Renew Membership
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSuspend(member.id)}>
-                          <UserMinus className="h-4 w-4 mr-2" />
-                          Suspend/Deactivate
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button 
+                      variant="ghost" 
+                      className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
+                      onClick={() => navigate(`/members/${member.id}`)}
+                    >
+                      View Profile
+                    </Button>
+                    <div className="border-r"></div>
+                    <Button
+                      variant="ghost"
+                      className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
+                      onClick={() => toast.info("Quick actions coming soon")}
+                    >
+                      Quick Actions
+                    </Button>
+                    <div className="border-r"></div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-none h-auto py-2"
+                      onClick={() => toast.info("More options coming soon")}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

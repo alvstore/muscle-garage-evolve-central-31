@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
-import { PermissionsProvider } from './hooks/use-permissions';
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
 
@@ -24,9 +22,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BranchProvider>
-            <PermissionsProvider>
-              <AppRouter />
-            </PermissionsProvider>
+            <AppRouter />
           </BranchProvider>
         </AuthProvider>
       </QueryClientProvider>

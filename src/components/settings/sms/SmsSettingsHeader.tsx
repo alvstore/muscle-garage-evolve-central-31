@@ -8,10 +8,10 @@ interface SmsSettingsHeaderProps {
   onEnableChange: (checked: boolean) => void;
 }
 
-export const SmsSettingsHeader: React.FC<SmsSettingsHeaderProps> = ({ 
+export const SmsSettingsHeader = ({ 
   enabled, 
   onEnableChange 
-}) => {
+}: SmsSettingsHeaderProps) => {
   return (
     <div className="flex justify-between items-center mb-6">
       <div>
@@ -28,5 +28,3 @@ export const SmsSettingsHeader: React.FC<SmsSettingsHeaderProps> = ({
     </div>
   );
 };
-
-export default SmsSettingsHeader;

@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Eye, Edit, UserMinus, Mail, Phone, MoreVertical, UserPlus } from "lucide-react";
+import { Plus, Edit, Trash, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/services/supabaseClient";
 
 interface Staff {
   id: string;
@@ -19,43 +17,72 @@ interface Staff {
   phone: string;
   role: string;
   department: string;
-  avatar?: string;
+  avatar: string;
   status: 'active' | 'inactive';
-  branchId?: string;
+  branchId: string;
 }
 
 const StaffListPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch staff/admin from Supabase (profiles table)
-    const fetchStaff = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("role", ["staff", "admin"]);
-      if (!error && data) {
-        setStaffMembers(
-          data.map((s: any) => ({
-            id: s.id,
-            name: s.full_name,
-            email: s.email,
-            phone: s.phone,
-            role: s.role,
-            department: s.department || "",
-            avatar: s.avatar_url,
-            status: s.status || "active",
-            branchId: s.branch_id
-          }))
-        );
-      }
-      setLoading(false);
-    };
-    fetchStaff();
-  }, []);
+  
+  // Mock data for staff - will be replaced with Supabase data
+  const [staffMembers, setStaffMembers] = useState<Staff[]>([
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john.smith@example.com',
+      phone: '(555) 123-4567',
+      role: 'Manager',
+      department: 'Operations',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch1'
+    },
+    {
+      id: '2',
+      name: 'Emily Davis',
+      email: 'emily.davis@example.com',
+      phone: '(555) 987-6543',
+      role: 'Sales Representative',
+      department: 'Sales',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch1'
+    },
+    {
+      id: '3',
+      name: 'Michael Johnson',
+      email: 'michael.j@example.com',
+      phone: '(555) 456-7890',
+      role: 'Front Desk',
+      department: 'Member Services',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch2'
+    },
+    {
+      id: '4',
+      name: 'Sarah Williams',
+      email: 'sarah.w@example.com',
+      phone: '(555) 234-5678',
+      role: 'Cleaner',
+      department: 'Maintenance',
+      avatar: '',
+      status: 'inactive',
+      branchId: 'branch1'
+    },
+    {
+      id: '5',
+      name: 'Robert Brown',
+      email: 'robert.b@example.com',
+      phone: '(555) 345-6789',
+      role: 'Assistant Manager',
+      department: 'Operations',
+      avatar: '',
+      status: 'active',
+      branchId: 'branch3'
+    },
+  ]);
 
   const handleCreateStaff = () => {
     setShowCreateDialog(true);
@@ -65,16 +92,11 @@ const StaffListPage = () => {
     toast.info(`Edit staff member with ID: ${id}`);
   };
 
-  const handleDeactivateStaff = (id: string) => {
-    toast("Staff member deactivated", { description: "Deactivation to be implemented." });
-  };
-
-  const handleSendLoginInfo = (id: string) => {
-    toast("Login info sent", { description: "Login info sending to be implemented." });
-  };
-
-  const handleAttendance = (id: string) => {
-    toast.info("Attendance view not yet implemented.");
+  const handleDeleteStaff = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this staff member?')) {
+      setStaffMembers(staffMembers.filter(staff => staff.id !== id));
+      toast.success('Staff member deleted successfully');
+    }
   };
 
   const getInitials = (name: string) => {
@@ -107,11 +129,6 @@ const StaffListPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-20">
-                <div className="h-10 w-10 rounded-full border-4 border-t-accent animate-spin"></div>
-              </div>
-            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -164,40 +181,27 @@ const StaffListPage = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleEditStaff(staff.id)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleAttendance(staff.id)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Attendance
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeactivateStaff(staff.id)}>
-                            <UserMinus className="h-4 w-4 mr-2" />
-                            Deactivate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleSendLoginInfo(staff.id)}>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Send Login Info
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditStaff(staff.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteStaff(staff.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            )}
           </CardContent>
         </Card>
       </div>

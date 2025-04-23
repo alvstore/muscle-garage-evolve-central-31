@@ -1,161 +1,85 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import PrivateRoute from '@/components/auth/PrivateRoute';
 import SettingsPage from '@/pages/settings/SettingsPage';
-import BranchManagementPage from '@/pages/settings/BranchManagementPage';
-import AutomationRulesPage from '@/pages/settings/AutomationRulesPage';
+import IntegrationsPage from '@/pages/settings/IntegrationsPage';
 import AccessControlIntegrationPage from '@/pages/settings/AccessControlIntegrationPage';
-import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
-import AccessRulesPage from '@/pages/settings/AccessRulesPage';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
-import EmailIntegrationPage from '@/pages/settings/EmailIntegrationPage';
-import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import MessagingSettingsPage from '@/pages/settings/MessagingSettingsPage';
 import PushNotificationSettingsPage from '@/pages/settings/PushNotificationSettingsPage';
+import BranchManagementPage from '@/pages/settings/BranchManagementPage';
+import DeviceMappingPage from '@/pages/settings/DeviceMappingPage';
+import AccessRulesPage from '@/pages/settings/AccessRulesPage';
 import TemplatesPage from '@/pages/settings/TemplatesPage';
 import EmailTemplatesPage from '@/pages/settings/EmailTemplatesPage';
 import SmsTemplatesPage from '@/pages/settings/SmsTemplatesPage';
 import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
-import HikvisionIntegrationPage from '@/pages/settings/HikvisionIntegrationPage';
-import SystemBackupPage from '@/pages/settings/SystemBackupPage';
+import AutomationRulesPage from '@/pages/settings/AutomationRulesPage';
+import ClassTypesPage from '@/pages/classes/ClassTypesPage';
+import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <SettingsPage />
-      </PrivateRoute>
-    )
+    element: <SettingsPage />
   },
   {
-    path: '/settings/branches',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <BranchManagementPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/settings/automation',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <AutomationRulesPage />
-      </PrivateRoute>
-    )
+    path: '/settings/integrations',
+    element: <IntegrationsPage />
   },
   {
     path: '/settings/integrations/access-control',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <AccessControlIntegrationPage />
-      </PrivateRoute>
-    )
+    element: <AccessControlIntegrationPage />
   },
   {
     path: '/settings/integrations/payment',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <PaymentGatewaySettingsPage />
-      </PrivateRoute>
-    )
+    element: <PaymentGatewaySettingsPage />
   },
   {
     path: '/settings/integrations/messaging',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <MessagingSettingsPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/settings/integrations/sms',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <SmsIntegrationPage />
-      </PrivateRoute>
-    )
+    element: <MessagingSettingsPage />
   },
   {
     path: '/settings/integrations/push',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <PushNotificationSettingsPage />
-      </PrivateRoute>
-    )
+    element: <PushNotificationSettingsPage />
   },
   {
     path: '/settings/templates',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <TemplatesPage />
-      </PrivateRoute>
-    )
+    element: <TemplatesPage />
   },
   {
     path: '/settings/templates/email',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <EmailTemplatesPage />
-      </PrivateRoute>
-    )
+    element: <EmailTemplatesPage />
   },
   {
     path: '/settings/templates/sms',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <SmsTemplatesPage />
-      </PrivateRoute>
-    )
+    element: <SmsTemplatesPage />
   },
   {
     path: '/settings/templates/whatsapp',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <WhatsAppTemplatesPage />
-      </PrivateRoute>
-    )
+    element: <WhatsAppTemplatesPage />
   },
-  // Fix for /settings/attendance route - redirect to devices page
   {
-    path: '/settings/attendance',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <DeviceMappingPage />
-      </PrivateRoute>
-    )
+    path: '/settings/automation',
+    element: <AutomationRulesPage />
+  },
+  {
+    path: '/settings/branches',
+    element: <BranchManagementPage />
   },
   {
     path: '/settings/attendance/devices',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <DeviceMappingPage />
-      </PrivateRoute>
-    )
+    element: <DeviceMappingPage />
   },
   {
     path: '/settings/attendance/access-rules',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <AccessRulesPage />
-      </PrivateRoute>
-    )
+    element: <AccessRulesPage />
   },
   {
-    path: '/settings/integrations/hikvision',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <HikvisionIntegrationPage />
-      </PrivateRoute>
-    )
+    path: '/classes/types',
+    element: <ClassTypesPage />
   },
   {
-    path: '/settings/system-backup',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <SystemBackupPage />
-      </PrivateRoute>
-    )
+    path: '/communication/tasks',
+    element: <TaskManagerPage />
   }
 ];

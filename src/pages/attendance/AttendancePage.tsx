@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import AttendanceTracker from "@/components/attendance/AttendanceTracker";

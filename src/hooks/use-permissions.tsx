@@ -1,191 +1,148 @@
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from './use-auth';
+import { hasPermission, hasRouteAccess } from '@/services/permissionService';
 import { UserRole } from '@/types';
-import { User } from '@/types/user';
+import { useBranch } from './use-branch';
+import { User } from '@/types/user'; // Import the extended User type
 
+// Define a union type for all possible permissions to provide proper type checking
 export type Permission = 
-  | 'view_all_branches'
-  | 'manage_branches'
-  | 'access_dashboards'
-  | 'view_all_attendance'
-  | 'manage_members'
-  | 'member_view_plans'
-  | 'view_classes'
-  | 'trainer_view_classes'
-  | 'view_staff'
-  | 'view_all_trainers'
-  | 'access_crm'
-  | 'access_marketing'
-  | 'access_inventory'
-  | 'access_store'
-  | 'manage_fitness_data'
-  | 'access_communication'
-  | 'access_reports'
-  | 'access_finance'
-  | 'manage_invoices'
-  | 'manage_transactions'
-  | 'manage_income'
-  | 'manage_expenses'
-  | 'access_settings'
-  | 'manage_settings'
-  | 'manage_integrations'
-  | 'manage_templates'
-  | 'manage_devices'
-  | 'view_branch_data'
-  | 'manage_website'
-  | 'assign_workout_plan'
-  | 'assign_diet_plan'
-  | 'log_attendance'
-  | 'assign_plan'
-  | 'manage_roles'
-  | 'manage_staff'
-  | 'trainer_view_members'
-  | 'trainer_edit_fitness'
-  | 'trainer_view_attendance'
-  | 'feature_trainer_dashboard'
-  | 'feature_email_campaigns'
-  | 'full_system_access';
+  | "full_system_access"
+  | "register_member"
+  | "view_member_profiles"
+  | "edit_member_fitness_data"
+  | "assign_diet_plan"
+  | "assign_workout_plan"
+  | "create_class"
+  | "book_class"
+  | "cancel_class"
+  | "assign_plan"
+  | "purchase_plan"
+  | "create_invoice"
+  | "log_attendance"
+  | "check_in"
+  | "send_email_notification"
+  | "access_dashboards"
+  | "manage_branches"
+  | "view_branch_data"
+  | "switch_branches"
+  | "access_own_resources"
+  | "manage_staff"
+  | "view_staff"
+  | "manage_trainers"
+  | "view_trainers"
+  | "assign_trainers"
+  | "manage_classes"
+  | "view_classes"
+  | "book_classes"
+  | "manage_finances"
+  | "view_finances"
+  | "process_payments"
+  | "manage_settings"
+  | "manage_roles"
+  | "access_reports"
+  | "access_inventory"
+  | "access_communication"
+  | "access_marketing"
+  // Menu access permissions
+  | "view_all_users"
+  | "view_all_trainers"
+  | "view_all_classes"
+  | "view_all_attendance"
+  | "create_edit_plans"
+  | "view_invoices"
+  | "manage_integrations"
+  | "access_analytics"
+  | "manage_members"
+  | "manage_fitness_data"
+  | "manage_payments"
+  | "access_store"
+  | "access_crm"
+  | "trainer_view_members"
+  | "trainer_edit_fitness"
+  | "trainer_view_attendance"
+  | "trainer_view_classes"
+  | "member_view_profile"
+  | "member_view_invoices"
+  | "member_make_payments"
+  | "member_view_plans"
+  | "member_book_classes"
+  | "member_view_attendance"
+  // Enhanced role-specific feature permissions
+  | "feature_trainer_dashboard"
+  | "feature_staff_dashboard"
+  | "feature_member_dashboard"
+  | "feature_admin_dashboard"
+  | "feature_pos_system"
+  | "feature_reporting"
+  | "feature_inventory_management"
+  | "feature_class_scheduling"
+  | "feature_attendance_tracking"
+  | "feature_membership_management"
+  | "feature_payment_processing"
+  | "feature_email_campaigns"
+  | "feature_sms_campaigns"
+  | "feature_whatsapp_campaigns"
+  | "feature_social_media_integration";
 
-interface PermissionsContextType {
-  can: (permission: Permission) => boolean;
-  isSystemAdmin: () => boolean;
-  isBranchAdmin: () => boolean;
-  userRole: UserRole | null;
-}
-
-const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
-
-export const PermissionsProvider = ({ children }: { children: React.ReactNode }) => {
+export const usePermissions = () => {
   const { user } = useAuth();
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const { currentBranch } = useBranch();
+  const userRole = user?.role as UserRole | undefined;
   
-  useEffect(() => {
-    if (user) {
-      setUserRole(user.role as UserRole);
-    } else {
-      setUserRole(null);
-    }
-  }, [user]);
-  
-  // Check if the user has a specific permission
-  const can = (permission: Permission): boolean => {
-    if (!user) return false;
-    
-    // Admin has all permissions
-    if (user.role === 'admin') return true;
-    
-    // Define permissions for each role
-    const rolePermissions: Record<string, Permission[]> = {
-      admin: [
-        'view_all_branches', 
-        'manage_branches',
-        'access_dashboards',
-        'view_all_attendance',
-        'manage_members',
-        'member_view_plans',
-        'view_classes',
-        'trainer_view_classes',
-        'view_staff',
-        'view_all_trainers',
-        'access_crm', 
-        'access_marketing',
-        'access_inventory',
-        'access_store',
-        'manage_fitness_data',
-        'access_communication',
-        'access_reports',
-        'access_finance',
-        'manage_invoices',
-        'manage_transactions',
-        'manage_income',
-        'manage_expenses',
-        'access_settings',
-        'manage_settings',
-        'manage_integrations',
-        'manage_templates',
-        'manage_devices',
-        'view_branch_data',
-        'manage_website',
-        'assign_workout_plan',
-        'assign_diet_plan',
-        'log_attendance',
-        'assign_plan',
-        'manage_roles',
-        'manage_staff',
-        'trainer_view_members',
-        'trainer_edit_fitness',
-        'trainer_view_attendance',
-        'feature_trainer_dashboard',
-        'feature_email_campaigns',
-        'full_system_access'
-      ],
-      staff: [
-        'access_dashboards',
-        'manage_members',
-        'member_view_plans',
-        'view_classes',
-        'view_staff',
-        'access_crm',
-        'access_marketing',
-        'access_inventory',
-        'access_store',
-        'manage_fitness_data',
-        'access_communication',
-        'access_reports',
-        'access_finance',
-        'manage_invoices',
-        'manage_transactions',
-        'manage_income',
-        'manage_expenses',
-        'view_branch_data',
-        'log_attendance',
-        'assign_plan'
-      ],
-      trainer: [
-        'access_dashboards',
-        'view_classes',
-        'trainer_view_classes',
-        'manage_fitness_data',
-        'access_communication',
-        'trainer_view_members',
-        'trainer_edit_fitness',
-        'trainer_view_attendance',
-        'feature_trainer_dashboard',
-        'assign_workout_plan',
-        'assign_diet_plan'
-      ],
-      member: [
-        'member_view_plans'
-      ]
-    };
-    
-    // Check if the user's role has the requested permission
-    return (rolePermissions[user.role] || []).includes(permission);
+  /**
+   * Check if current user has a specific permission
+   * @param permission Permission to check
+   * @param isOwner Whether the user owns the resource (for member-specific permissions)
+   * @returns Boolean indicating if user has permission
+   */
+  const can = (permission: Permission, isOwner = false): boolean => {
+    return hasPermission(userRole, permission, isOwner);
   };
   
-  // Check if user is a system admin (full access)
-  const isSystemAdmin = (): boolean => {
-    return user?.role === 'admin';
+  /**
+   * Check if current user has access to a specific route
+   * @param route Route to check
+   * @returns Boolean indicating if user has access
+   */
+  const canAccess = (route: string): boolean => {
+    return hasRouteAccess(userRole, route);
   };
   
-  // Check if user is a branch admin
+  /**
+   * Check if current user has one of the specified roles
+   * @param roles Roles to check against
+   * @returns Boolean indicating if user has one of the roles
+   */
+  const hasRole = (roles: UserRole[]): boolean => {
+    if (!userRole) return false;
+    return roles.includes(userRole);
+  };
+  
+  /**
+   * Check if current user is branch admin
+   * @returns Boolean indicating if user is branch admin
+   */
   const isBranchAdmin = (): boolean => {
-    // Use optional chaining to safely check for isBranchManager property
-    return user?.role === 'staff' && (user as any)?.isBranchManager === true;
+    // Cast user to the extended User type from user.ts which includes isBranchManager
+    const extendedUser = user as User | null;
+    return userRole === 'admin' || (userRole === 'staff' && extendedUser?.isBranchManager === true);
   };
   
-  return (
-    <PermissionsContext.Provider value={{ can, isSystemAdmin, isBranchAdmin, userRole }}>
-      {children}
-    </PermissionsContext.Provider>
-  );
-};
-
-export const usePermissions = (): PermissionsContextType => {
-  const context = useContext(PermissionsContext);
-  if (context === undefined) {
-    throw new Error('usePermissions must be used within a PermissionsProvider');
-  }
-  return context;
+  /**
+   * Check if current user is system admin
+   * @returns Boolean indicating if user is system admin
+   */
+  const isSystemAdmin = (): boolean => {
+    return userRole === 'admin';
+  };
+  
+  return {
+    can,
+    canAccess,
+    hasRole,
+    isBranchAdmin,
+    isSystemAdmin,
+    userRole,
+  };
 };

@@ -13,7 +13,7 @@ import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { toast } from "sonner";
-import { useSidebar } from "@/components/ui/sidebar";
+import CreateBranchDialog from './CreateBranchDialog';
 import { 
   Tooltip,
   TooltipContent,
@@ -38,6 +38,10 @@ const BranchSelector = () => {
     }
   };
 
+  const handleCreateComplete = () => {
+    fetchBranches();
+  };
+  
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
@@ -53,7 +57,7 @@ const BranchSelector = () => {
     <PermissionGuard permission="view_branch_data" fallback={
       <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
         <Building2 className="h-4 w-4 text-indigo-200" />
-        <span className="text-indigo-100 truncate max-w-[160px]">{currentBranch?.name || 'No branch selected'}</span>
+        <span className="text-indigo-100">{currentBranch?.name || 'No branch selected'}</span>
       </div>
     }>
       <div className="flex items-center gap-2">
@@ -61,23 +65,20 @@ const BranchSelector = () => {
           value={currentBranch?.id}
           onValueChange={handleChangeBranch}
         >
-          <SelectTrigger className="w-[200px] bg-indigo-900/50 border-indigo-700 text-indigo-100 hover:bg-indigo-800/70 focus:ring-indigo-500 truncate">
+          <SelectTrigger className="w-[200px] bg-indigo-900/50 border-indigo-700 text-indigo-100 hover:bg-indigo-800/70 focus:ring-indigo-500">
             <Building2 className="mr-2 h-4 w-4 text-indigo-300" />
-            <SelectValue
-              placeholder="Select branch"
-              className="truncate max-w-[120px]"
-            />
+            <SelectValue placeholder="Select branch" />
           </SelectTrigger>
           <SelectContent className="bg-indigo-950 border-indigo-800 text-indigo-100">
             {branches.map((branch) => (
               <SelectItem
                 key={branch.id}
                 value={branch.id}
-                className="flex items-center justify-between hover:bg-indigo-900 focus:bg-indigo-900 truncate"
+                className="flex items-center justify-between hover:bg-indigo-900 focus:bg-indigo-900"
               >
-                <div className="flex items-center gap-2 w-[160px] truncate">
+                <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-indigo-300" />
-                  <span className="truncate max-w-[110px]">{branch.name}</span>
+                  <span>{branch.name}</span>
                 </div>
                 {currentBranch?.id === branch.id && (
                   <Check className="ml-2 h-4 w-4 text-green-400" />
@@ -86,6 +87,21 @@ const BranchSelector = () => {
             ))}
           </SelectContent>
         </Select>
+        
+        <PermissionGuard permission="manage_branches">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <CreateBranchDialog onComplete={handleCreateComplete} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-indigo-950 text-indigo-100 border-indigo-800">
+                <p>Create a new branch</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </PermissionGuard>
       </div>
     </PermissionGuard>
   );

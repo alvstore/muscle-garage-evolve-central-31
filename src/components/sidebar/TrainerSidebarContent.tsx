@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationSections from "@/components/navigation/NavigationSections";
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface TrainerSidebarContentProps {
   closeSidebar?: () => void;
@@ -18,8 +19,16 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
+  const { userRole } = usePermissions();
   
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard', 'Fitness Plans']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard', 'Training']);
+
+  useEffect(() => {
+    // Log warning if Training section is not available for debugging
+    if (userRole !== 'trainer') {
+      console.warn('Training section is only available for trainers');
+    }
+  }, [userRole]);
 
   const toggleSection = (sectionName: string) => {
     if (expandedSections.includes(sectionName)) {
@@ -41,6 +50,11 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
     }
   };
 
+  // Filter sections based on trainer role
+  const availableSections = userRole === 'trainer' 
+    ? trainerNavSections 
+    : trainerNavSections.filter(section => section.name !== 'Training');
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 flex items-center gap-3">
@@ -52,7 +66,7 @@ const TrainerSidebarContent: React.FC<TrainerSidebarContentProps> = ({ closeSide
       
       <ScrollArea className="flex-1 h-[calc(100vh-130px)]">
         <NavigationSections
-          sections={trainerNavSections}
+          sections={availableSections}
           expandedSections={expandedSections}
           toggleSection={toggleSection}
           onLinkClick={closeSidebar}

@@ -1,97 +1,79 @@
 
 import React, { useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heading } from '@/components/ui/heading';
-import NotificationSettings from '@/components/settings/sms/NotificationSettings';
-import { SmsProviderSettings } from '@/components/settings/sms/SmsProviderSettings';
-import { SmsSettingsHeader } from '@/components/settings/sms/SmsSettingsHeader';
+import { Container } from "@/components/ui/container";
+import { toast } from "sonner";
 import { useIntegrations } from '@/hooks/use-integrations';
 import { IntegrationConfig } from '@/services/integrationService';
-import { toast } from 'sonner';
+import { SmsSettingsHeader } from '@/components/settings/sms/SmsSettingsHeader';
+import { SmsProviderSettings } from '@/components/settings/sms/SmsProviderSettings';
+import { NotificationSettings } from '@/components/settings/sms/NotificationSettings';
 
 const SmsIntegrationPage = () => {
   const { config, updateConfig, test, enable, disable } = useIntegrations('sms');
-  const [isEnabled, setIsEnabled] = useState(config?.enabled || false);
-  const [isTesting, setIsTesting] = useState(false);
-  
-  const handleEnableChange = (checked: boolean) => {
-    setIsEnabled(checked);
-    const success = checked ? enable() : disable();
-    
+  const [pendingChanges, setPendingChanges] = useState<Partial<IntegrationConfig>>({});
+
+  const handleUpdateConfig = (changes: Partial<IntegrationConfig>) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      ...changes
+    }));
+  };
+
+  const handleSave = () => {
+    const success = updateConfig(pendingChanges);
     if (success) {
-      toast.success(`SMS integration ${checked ? 'enabled' : 'disabled'}`);
+      toast.success("SMS settings saved successfully");
+      setPendingChanges({});
     } else {
-      toast.error(`Failed to ${checked ? 'enable' : 'disable'} SMS integration`);
-      setIsEnabled(!checked); // Revert the UI state
+      toast.error("Failed to save SMS settings");
     }
   };
-  
-  const handleUpdateConfig = (newConfig: Partial<IntegrationConfig>) => {
-    updateConfig(newConfig);
-  };
-  
-  const handleSaveConfig = () => {
-    toast.success("SMS settings saved successfully");
-  };
-  
-  const handleTestConnection = async () => {
-    setIsTesting(true);
-    try {
-      const result = await test();
-      if (result.success) {
-        toast.success(result.message || "Test successful");
-      } else {
-        toast.error(result.message || "Test failed");
-      }
-    } catch (error) {
-      toast.error("An error occurred during testing");
-      console.error(error);
-    } finally {
-      setIsTesting(false);
+
+  const handleTest = async () => {
+    const result = await test();
+    if (result.success) {
+      toast.success("SMS test sent successfully");
+    } else {
+      toast.error(`SMS test failed: ${result.message}`);
     }
   };
-  
+
+  // Merge pending changes with current config for UI display
+  const displayConfig = {
+    ...config,
+    ...pendingChanges
+  };
+
   return (
     <Container>
-      <div className="py-10 space-y-8">
-        <Heading 
-          title="SMS Integration Settings" 
-          description="Configure SMS providers, templates, and notification settings"
-        />
-        
+      <div className="py-6 space-y-6">
         <SmsSettingsHeader 
-          enabled={isEnabled} 
-          onEnableChange={handleEnableChange}
+          enabled={config.enabled}
+          onEnableChange={(checked) => {
+            if (checked) {
+              enable();
+              toast.success("SMS integration enabled");
+            } else {
+              disable();
+              toast.success("SMS integration disabled");
+            }
+          }}
         />
-        
-        <Tabs defaultValue="providers" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="providers">SMS Providers</TabsTrigger>
-            <TabsTrigger value="notifications">Notification Settings</TabsTrigger>
-          </TabsList>
+
+        <div className="space-y-6">
+          <SmsProviderSettings 
+            config={displayConfig}
+            onUpdateConfig={handleUpdateConfig}
+            onTest={handleTest}
+            onSave={handleSave}
+          />
           
-          <TabsContent value="providers" className="space-y-4">
-            <SmsProviderSettings 
-              config={config || {}}
-              onUpdateConfig={handleUpdateConfig}
-              onTest={handleTestConnection}
-              onSave={handleSaveConfig}
-            />
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="space-y-4">
-            <NotificationSettings 
-              templates={{
-                membershipAlert: config?.templates?.membershipAlert || false,
-                renewalReminder: config?.templates?.renewalReminder || false,
-                otpVerification: config?.templates?.otpVerification || false,
-                attendanceConfirmation: config?.templates?.attendanceConfirmation || false
-              }}
-              onChange={(templates) => handleUpdateConfig({ templates })}
-            />
-          </TabsContent>
-        </Tabs>
+          <NotificationSettings 
+            config={displayConfig}
+            onUpdateConfig={handleUpdateConfig}
+            onSave={handleSave}
+          />
+        </div>
       </div>
     </Container>
   );

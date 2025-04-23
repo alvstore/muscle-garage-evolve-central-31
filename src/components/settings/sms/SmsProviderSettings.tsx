@@ -15,12 +15,12 @@ interface SmsProviderSettingsProps {
   onSave: () => void;
 }
 
-export const SmsProviderSettings: React.FC<SmsProviderSettingsProps> = ({
+export const SmsProviderSettings = ({
   config,
   onUpdateConfig,
   onTest,
   onSave
-}) => {
+}: SmsProviderSettingsProps) => {
   const [showSecrets, setShowSecrets] = useState(false);
   const [testPhone, setTestPhone] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -156,5 +156,3 @@ export const SmsProviderSettings: React.FC<SmsProviderSettingsProps> = ({
     </Card>
   );
 };
-
-export default SmsProviderSettings;
