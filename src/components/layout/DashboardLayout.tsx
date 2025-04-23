@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
@@ -21,7 +21,11 @@ const DashboardLayout = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleSidebar, open } = useSidebar();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -72,36 +76,28 @@ const DashboardLayout = () => {
     );
   }
 
-  // Sidebar logic: Pass correct props depending on sidebar component
-  let SidebarContent = null;
-  if (user.role === "member") {
-    SidebarContent = <MemberSidebar />;
-  } else if (user.role === "trainer") {
-    SidebarContent = <TrainerSidebar />;
-  } else {
-    // Default to DashboardSidebar for admin/staff (with required props)
-    SidebarContent = (
-      <DashboardSidebar
-        isSidebarOpen={open}
-        closeSidebar={() => {}}
-      />
-    );
-  }
-
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        {/* Sidebar */}
-        <div className="fixed md:relative transition-all duration-300 h-full z-40">
-          {SidebarContent}
-        </div>
+        {/* Sidebar based on user role */}
+        {user.role === "member" ? (
+          <MemberSidebar />
+        ) : user.role === "trainer" ? (
+          <TrainerSidebar />
+        ) : (
+          <DashboardSidebar 
+            isSidebarOpen={sidebarOpen}
+            closeSidebar={() => setSidebarOpen(false)}
+          />
+        )}
+        
         {/* Main Content */}
         <div className="flex-1">
           <DashboardHeader 
             toggleSidebar={toggleSidebar}
             toggleTheme={toggleTheme} 
             isDarkMode={darkMode}
-            sidebarOpen={true} // prop no longer needed, legacy
+            sidebarOpen={sidebarOpen}
           />
           <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
             <Outlet />

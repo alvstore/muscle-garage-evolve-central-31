@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Member } from "@/types";
+import { Member } from "@/types/member";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
@@ -72,15 +72,15 @@ const NewMemberPage = () => {
         role: "member",
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
-        goal: formData.goal,
         gender: formData.gender as 'male' | 'female' | 'other',
         bloodGroup: formData.bloodGroup as 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-',
         occupation: formData.occupation,
         membershipId: formData.membershipId,
-        membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
-        membershipStartDate: new Date(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
-        status: formData.membershipStatus as "active" | "inactive" | "pending",
+        membershipStatus: formData.membershipStatus as "active" | "expired" | "inactive",
+        membershipStartDate: new Date().toISOString(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+        status: 'active',
+        branchId: undefined // Adding this to match the Member type
       };
       
       // If there are initial measurements, save them too
