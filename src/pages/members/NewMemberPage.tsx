@@ -13,6 +13,9 @@ import MemberBasicDetailsForm from "@/components/members/MemberBasicDetailsForm"
 import MemberMembershipForm from "@/components/members/MemberMembershipForm";
 import { format } from "date-fns";
 import { supabase } from "@/services/supabaseClient";
+import { useBranch } from "@/hooks/use-branch";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const GENDERS = ["Male", "Female", "Other"] as const;
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
@@ -20,6 +23,7 @@ const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const
 const NewMemberPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -63,17 +67,15 @@ const NewMemberPage = () => {
     setLoading(true);
 
     try {
-      // Find default branch for now
-      const { data: branches } = await supabase
-        .from("branches")
-        .select("id")
-        .order("created_at", { ascending: true })
-        .limit(1);
+      // Verify we have a branch selected
+      const branchId = currentBranch?.id;
+      if (!branchId) {
+        toast.error("Please select a branch before creating a member");
+        setLoading(false);
+        return;
+      }
 
-      const branchId = branches?.[0]?.id;
-      if (!branchId) throw new Error("No branch found.");
-
-      // Insert member
+      // Insert member with branch_id from selected branch
       const { data: inserted, error } = await supabase
         .from("members")
         .insert([
@@ -125,6 +127,17 @@ const NewMemberPage = () => {
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Add New Member</h1>
+        
+        {!currentBranch && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No branch selected</AlertTitle>
+            <AlertDescription>
+              Please select a branch from the sidebar dropdown before creating a member.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -144,6 +157,13 @@ const NewMemberPage = () => {
                   formData={formData}
                   onSelectChange={handleSelectChange}
                 />
+                {currentBranch && (
+                  <div className="bg-muted/50 p-3 rounded-md mb-3">
+                    <p className="text-sm font-medium">
+                      Branch: <span className="font-normal">{currentBranch.name}</span>
+                    </p>
+                  </div>
+                )}
                 <div className="flex justify-end gap-3">
                   <Button
                     type="button"
@@ -152,7 +172,7 @@ const NewMemberPage = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={loading}>
+                  <Button type="submit" disabled={loading || !currentBranch}>
                     {loading ? "Creating..." : "Create Member"}
                   </Button>
                 </div>
