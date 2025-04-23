@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -76,9 +75,9 @@ const NewMemberPage = () => {
         bloodGroup: formData.bloodGroup as 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-',
         occupation: formData.occupation,
         membershipId: formData.membershipId,
-        membershipStatus: formData.membershipStatus as "active" | "expired" | "none",
-        membershipStartDate: new Date(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+        membershipStatus: formData.membershipStatus as "active" | "expired" | "inactive",
+        membershipStartDate: new Date().toISOString(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
         status: 'active',
       };
       
