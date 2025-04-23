@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -242,7 +243,7 @@ const ReportsPage = () => {
             </TabsContent>
             
             <TabsContent value="plans" className="space-y-4">
-              <FitnessPlanManager members={mockMembers} trainerId={trainerId} />
+              {user && <FitnessPlanManager members={assignedMembers} trainerId={user.id} />}
             </TabsContent>
           </Tabs>
         </div>
