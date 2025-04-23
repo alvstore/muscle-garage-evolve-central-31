@@ -15,7 +15,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <FinanceDashboardPage />
       </PrivateRoute>
     )
@@ -23,7 +23,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/dashboard',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <FinanceDashboardPage />
       </PrivateRoute>
     )
@@ -31,7 +31,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/invoices',
     element: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
         <InvoicePage />
       </PrivateRoute>
     )
@@ -39,7 +39,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/transactions',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <TransactionPage />
       </PrivateRoute>
     )
@@ -47,7 +47,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/income',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <IncomeRecordsPage />
       </PrivateRoute>
     )
@@ -55,7 +55,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/expenses',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <ExpenseRecordsPage />
       </PrivateRoute>
     )
@@ -63,7 +63,7 @@ export const financeRoutes: RouteObject[] = [
   {
     path: '/finance/expenses/categories',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
+      <PrivateRoute allowedRoles={['admin']}>
         <ExpenseCategoryPage />
       </PrivateRoute>
     )
