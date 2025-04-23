@@ -158,7 +158,7 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/inventory",
         label: "Inventory",
-        icon: <Package className="h-5 w-5" />,
+        icon: <Package className="h-5 w-4" />,
         permission: "access_inventory" as Permission,
       },
       {
@@ -341,6 +341,7 @@ export const adminNavSections: NavSection[] = [
           {
             href: "/system-backup",
             label: "System Backup",
+            icon: <Archive className="h-5 w-5" />,
             permission: "manage_settings" as Permission,
           }
         ]

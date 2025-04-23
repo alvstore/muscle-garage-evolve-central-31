@@ -225,7 +225,6 @@ const ImportDataSection = () => {
   };
 
   const logBackupActivity = async (action: string, moduleId: string, totalRecords: number, successCount: number) => {
-    // This would normally call the backend API to log the activity
     console.log('Backup activity:', { 
       action, 
       moduleId, 
@@ -467,7 +466,6 @@ const ImportDataSection = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
