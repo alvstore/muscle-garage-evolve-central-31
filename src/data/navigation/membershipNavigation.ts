@@ -1,5 +1,4 @@
 
-import { Users, Briefcase } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
 
@@ -9,13 +8,13 @@ export const membershipNavigation: NavSection = {
     {
       href: "/members",
       label: "Member List",
-      icon: <Users className="h-5 w-5" />,
+      icon: "Users",
       permission: "manage_members" as Permission,
     },
     {
       href: "/memberships",
       label: "Membership Plans",
-      icon: <Briefcase className="h-5 w-5" />,
+      icon: "Briefcase",
       permission: "member_view_plans" as Permission,
     },
   ],

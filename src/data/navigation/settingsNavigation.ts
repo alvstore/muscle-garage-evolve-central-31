@@ -1,5 +1,4 @@
 
-import { Settings, Layers, LayoutTemplate, Smartphone } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
 
@@ -9,7 +8,7 @@ export const settingsNavigation: NavSection = {
     {
       href: "/settings",
       label: "System Settings",
-      icon: <Settings className="h-5 w-5" />,
+      icon: "Settings",
       permission: "access_settings" as Permission,
       children: [
         {
@@ -32,7 +31,7 @@ export const settingsNavigation: NavSection = {
     {
       href: "/settings/integrations",
       label: "Integration Settings",
-      icon: <Layers className="h-5 w-5" />,
+      icon: "Layers",
       permission: "access_settings" as Permission,
       children: [
         {
@@ -55,7 +54,7 @@ export const settingsNavigation: NavSection = {
     {
       href: "/settings/templates",
       label: "Message Templates",
-      icon: <LayoutTemplate className="h-5 w-5" />,
+      icon: "LayoutTemplate",
       permission: "access_settings" as Permission,
       children: [
         {
@@ -78,7 +77,7 @@ export const settingsNavigation: NavSection = {
     {
       href: "/settings/attendance",
       label: "Attendance Settings",
-      icon: <Smartphone className="h-5 w-5" />,
+      icon: "Smartphone",
       permission: "access_settings" as Permission,
       children: [
         {
