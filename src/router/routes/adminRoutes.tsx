@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import { adminDashboardRoutes } from './admin/dashboardRoutes';
@@ -20,6 +19,7 @@ import InvoicePage from '@/pages/finance/InvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';
 import IncomeRecordsPage from '@/pages/finance/IncomeRecordsPage';
 import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
+import WebsiteManagementPage from '@/pages/website/WebsiteManagementPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 
 export const adminRoutes: RouteObject[] = [
@@ -30,6 +30,22 @@ export const adminRoutes: RouteObject[] = [
   ...adminCommunicationRoutes,
   ...adminCrmRoutes,
   ...adminWebsiteRoutes,
+  {
+    path: '/website',
+    element: (
+      <PrivateRoute allowedRoles={['admin']}>
+        <WebsiteManagementPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/website/:section',
+    element: (
+      <PrivateRoute allowedRoles={['admin']}>
+        <WebsiteManagementPage />
+      </PrivateRoute>
+    )
+  },
   {
     path: '/staff',
     element: (
