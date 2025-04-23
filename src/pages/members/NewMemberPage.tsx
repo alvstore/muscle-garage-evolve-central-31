@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
 import { DatePicker } from "@/components/ui/date-picker";
-import { MaleFemale, Briefcase, Droplet } from "lucide-react";
+import { Users, Briefcase, Droplet } from "lucide-react";
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
@@ -78,8 +78,9 @@ const NewMemberPage = () => {
         occupation: formData.occupation,
         membershipId: formData.membershipId,
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
-        membershipStartDate: new Date().toISOString(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+        membershipStartDate: new Date(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+        status: formData.membershipStatus as "active" | "inactive" | "pending",
       };
       
       // If there are initial measurements, save them too
@@ -165,7 +166,7 @@ const NewMemberPage = () => {
                       >
                         <SelectTrigger id="gender" className="w-full">
                           <div className="flex items-center gap-2">
-                            <MaleFemale className="h-4 w-4 text-muted-foreground" />
+                            <Users className="h-4 w-4 text-muted-foreground" />
                             <SelectValue placeholder="Select gender" />
                           </div>
                         </SelectTrigger>

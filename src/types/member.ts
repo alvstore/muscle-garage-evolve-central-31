@@ -15,4 +15,5 @@ export interface Member {
   bloodGroup?: 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
   occupation?: string;
   dateOfBirth?: string;
+  goal?: string;
 }
