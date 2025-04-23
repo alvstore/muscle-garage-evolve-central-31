@@ -1,7 +1,10 @@
+
 import { Home, Users, Building2, Calendar, Settings, UserPlus, BadgeCheck, BarChart, ListChecks, ClipboardList, FileText, ShieldAlert, HelpCircle, Contact2, MessageSquare, File, LayoutDashboard, UserCog, Activity, GraduationCap, Presentation, ShoppingCart, Package, LucideIcon } from "lucide-react";
+import { Permission } from '@/hooks/use-permissions';
 
 interface NavSection {
   title?: string;
+  name?: string; // Added name property to match type in navigation.ts
   items: NavItem[];
 }
 
@@ -16,6 +19,7 @@ interface NavItem {
 
 export const adminNavSections: NavSection[] = [
   {
+    name: 'Dashboard', // Add name property to match expected type
     items: [
       {
         href: "/dashboard",
@@ -26,6 +30,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'Management', // Add name property
     title: "Management",
     items: [
       {
@@ -61,6 +66,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'BookingScheduling', // Add name property
     title: "Booking & Scheduling",
     items: [
       {
@@ -78,6 +84,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'SalesMarketing', // Add name property
     title: "Sales & Marketing",
     items: [
       {
@@ -101,6 +108,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'Operations', // Add name property
     title: "Operations",
     items: [
       {
@@ -136,6 +144,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'Communications', // Add name property
     title: "Communications",
     items: [
       {
@@ -159,6 +168,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: 'Settings', // Add name property
     title: "Settings",
     items: [
       {

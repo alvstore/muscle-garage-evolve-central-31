@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -29,7 +30,6 @@ const MembersListPage = () => {
           name: "John Doe",
           role: "member",
           phone: "+1 (555) 123-4567",
-          status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
           membershipStartDate: "2023-01-15",
@@ -41,7 +41,6 @@ const MembersListPage = () => {
           name: "Jane Smith",
           role: "member",
           phone: "+1 (555) 987-6543",
-          status: "active",
           membershipStatus: "active",
           membershipId: "gold-6m",
           membershipStartDate: "2023-06-01",
@@ -53,7 +52,6 @@ const MembersListPage = () => {
           name: "Mike Johnson",
           role: "member",
           phone: "+1 (555) 456-7890",
-          status: "active",
           membershipStatus: "expired",
           membershipId: "silver-3m",
           membershipStartDate: "2023-01-01",
@@ -65,7 +63,6 @@ const MembersListPage = () => {
           name: "Sarah Wilson",
           role: "member",
           phone: "+1 (555) 789-0123",
-          status: "active",
           membershipStatus: "inactive",
           membershipId: "gold-6m",
           membershipStartDate: "2023-02-15",
@@ -77,7 +74,6 @@ const MembersListPage = () => {
           name: "Alex Brown",
           role: "member",
           phone: "+1 (555) 321-6547",
-          status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
           membershipStartDate: "2023-05-01",
@@ -113,7 +109,7 @@ const MembersListPage = () => {
 
   const filteredMembers = members.filter(member => 
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
