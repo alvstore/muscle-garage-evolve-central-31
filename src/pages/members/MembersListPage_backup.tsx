@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -22,7 +21,7 @@ const MembersListPage = () => {
     setLoading(true);
     
     setTimeout(() => {
-      // Mock data, FIXED to use string dates not Date object
+      // Mock data
       const mockMembers: Member[] = [
         {
           id: "member-1",
@@ -30,10 +29,11 @@ const MembersListPage = () => {
           name: "John Doe",
           role: "member",
           phone: "+1 (555) 123-4567",
+          status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: "2023-01-15",
-          membershipEndDate: "2024-01-15",
+          membershipStartDate: new Date("2023-01-15"),
+          membershipEndDate: new Date("2024-01-15"),
         },
         {
           id: "member-2",
@@ -41,10 +41,11 @@ const MembersListPage = () => {
           name: "Jane Smith",
           role: "member",
           phone: "+1 (555) 987-6543",
+          status: "active",
           membershipStatus: "active",
           membershipId: "gold-6m",
-          membershipStartDate: "2023-06-01",
-          membershipEndDate: "2023-12-01",
+          membershipStartDate: new Date("2023-06-01"),
+          membershipEndDate: new Date("2023-12-01"),
         },
         {
           id: "member-3",
@@ -52,10 +53,11 @@ const MembersListPage = () => {
           name: "Mike Johnson",
           role: "member",
           phone: "+1 (555) 456-7890",
+          status: "active",
           membershipStatus: "expired",
           membershipId: "silver-3m",
-          membershipStartDate: "2023-01-01",
-          membershipEndDate: "2023-04-01",
+          membershipStartDate: new Date("2023-01-01"),
+          membershipEndDate: new Date("2023-04-01"),
         },
         {
           id: "member-4",
@@ -63,10 +65,11 @@ const MembersListPage = () => {
           name: "Sarah Wilson",
           role: "member",
           phone: "+1 (555) 789-0123",
+          status: "active",
           membershipStatus: "inactive",
           membershipId: "gold-6m",
-          membershipStartDate: "2023-02-15",
-          membershipEndDate: "2023-08-15",
+          membershipStartDate: new Date("2023-02-15"),
+          membershipEndDate: new Date("2023-08-15"),
         },
         {
           id: "member-5",
@@ -74,10 +77,11 @@ const MembersListPage = () => {
           name: "Alex Brown",
           role: "member",
           phone: "+1 (555) 321-6547",
+          status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: "2023-05-01",
-          membershipEndDate: "2024-05-01",
+          membershipStartDate: new Date("2023-05-01"),
+          membershipEndDate: new Date("2024-05-01"),
         }
       ];
       
@@ -109,7 +113,7 @@ const MembersListPage = () => {
 
   const filteredMembers = members.filter(member => 
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.phone?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

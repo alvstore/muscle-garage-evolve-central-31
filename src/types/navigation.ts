@@ -1,7 +1,6 @@
 
 import { ReactNode } from 'react';
 import { Permission } from '@/hooks/use-permissions';
-import { LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   href: string;
@@ -20,7 +19,6 @@ export interface NavSection {
   name: string;
   icon?: ReactNode;
   items: NavItem[];
-  title?: string;
 }
 
 export interface WebsiteContent {

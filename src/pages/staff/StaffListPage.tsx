@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Edit, Trash, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 interface Staff {
   id: string;
@@ -24,9 +24,8 @@ interface Staff {
 
 const StaffListPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showLoginInfoModal, setShowLoginInfoModal] = useState(false);
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-
+  
+  // Mock data for staff - will be replaced with Supabase data
   const [staffMembers, setStaffMembers] = useState<Staff[]>([
     {
       id: '1',
@@ -182,44 +181,22 @@ const StaffListPage = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Quick actions"
-                          >
-                            <span className="sr-only">Quick actions</span>
-                            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/></svg>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => handleEditStaff(staff.id)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedStaff(staff);
-                              setShowLoginInfoModal(true);
-                            }}
-                          >
-                            Send Login Info
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (staff.status === "inactive") {
-                                toast.info("Staff is already deactivated");
-                              } else {
-                                handleDeleteStaff(staff.id);
-                              }
-                            }}
-                          >
-                            {staff.status === "inactive" ? "Deactivated" : "Deactivate"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditStaff(staff.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDeleteStaff(staff.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -246,43 +223,6 @@ const StaffListPage = () => {
             >
               Close
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Send Login Info Modal */}
-      <Dialog open={showLoginInfoModal} onOpenChange={setShowLoginInfoModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send Login Info</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p>
-              {selectedStaff
-                ? `Send login information to ${selectedStaff.name} (${selectedStaff.email})?`
-                : ""}
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setShowLoginInfoModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="default"
-                onClick={() => {
-                  toast.success(
-                    selectedStaff
-                      ? `Login info sent to ${selectedStaff.email}`
-                      : "Login info sent"
-                  );
-                  setShowLoginInfoModal(false);
-                }}
-              >
-                Send
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

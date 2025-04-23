@@ -4,11 +4,11 @@ export interface Member {
   name: string;
   email?: string;
   phone?: string;
-  membershipStatus: 'active' | 'expired' | 'inactive' | 'none';
+  status: 'active' | 'inactive' | 'pending';
+  membershipStatus: 'active' | 'expired' | 'none';
   membershipId: string | null;
-  membershipStartDate: string | null;
-  membershipEndDate: string | null;
+  membershipStartDate: Date | null;
+  membershipEndDate: Date | null;
   role: 'member' | 'trainer' | 'staff' | 'admin';
   branchId?: string;
-  avatar?: string;
 }
