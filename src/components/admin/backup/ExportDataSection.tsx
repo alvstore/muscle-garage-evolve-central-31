@@ -1,15 +1,31 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Archive, Check, Database, Download } from 'lucide-react';
+import { 
+  Archive, 
+  Check, 
+  Database, 
+  Download, 
+  Users, 
+  Building2, 
+  Dumbbell, 
+  FileText, 
+  Clock, 
+  CreditCard, 
+  Wallet, 
+  UserPlus, 
+  Package, 
+  Globe, 
+  Settings 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { exportData } from '@/services/backupService';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 
 interface DataModule {
   id: string;
@@ -117,7 +133,6 @@ const ExportDataSection = () => {
       module.id === id ? { ...module, selected: !module.selected } : module
     ));
     
-    // Update "Select All" checkbox state
     const updatedModules = dataModules.map(module => 
       module.id === id ? { ...module, selected: !module.selected } : module
     );
@@ -145,7 +160,6 @@ const ExportDataSection = () => {
       const result = await exportData(selectedModules, startDate, endDate);
       
       if (selectedModules.length === 1) {
-        // Single module export
         const moduleId = selectedModules[0];
         const moduleData = result[moduleId];
         const fileName = `${moduleId}_export_${new Date().toISOString().split('T')[0]}`;
@@ -158,15 +172,12 @@ const ExportDataSection = () => {
           const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           saveAs(data, `${fileName}.xlsx`);
         } else {
-          // CSV export
           const csvContent = convertToCSV(moduleData);
           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
           saveAs(blob, `${fileName}.csv`);
         }
         
       } else if (selectedModules.length > 1) {
-        // Create a zip file with multiple exports
-        const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
         
         for (const moduleId of selectedModules) {
@@ -180,7 +191,6 @@ const ExportDataSection = () => {
             const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
             zip.file(`${fileName}.xlsx`, excelBuffer);
           } else {
-            // CSV export
             const csvContent = convertToCSV(moduleData);
             zip.file(`${fileName}.csv`, csvContent);
           }
@@ -191,7 +201,6 @@ const ExportDataSection = () => {
         saveAs(content, `muscle_garage_export_${date}.zip`);
       }
       
-      // Log the export activity
       await logBackupActivity('export', selectedModules);
       
       toast.success('Data exported successfully');
@@ -209,14 +218,11 @@ const ExportDataSection = () => {
     const headers = Object.keys(data[0]);
     const csvRows = [];
     
-    // Add the headers
     csvRows.push(headers.join(','));
     
-    // Add the data
     for (const row of data) {
       const values = headers.map(header => {
         const value = row[header];
-        // Properly handle values with commas, quotes, etc.
         return `"${String(value).replace(/"/g, '""')}"`;
       });
       csvRows.push(values.join(','));
@@ -227,7 +233,6 @@ const ExportDataSection = () => {
 
   const logBackupActivity = async (action: string, modules: string[]) => {
     try {
-      // This would normally call the backend API to log the activity
       console.log('Backup activity:', { action, modules, timestamp: new Date() });
     } catch (error) {
       console.error('Failed to log backup activity:', error);
@@ -324,7 +329,7 @@ const ExportDataSection = () => {
             <label htmlFor="startDate" className="text-sm">Start Date</label>
             <DatePicker
               id="startDate"
-              selected={startDate}
+              date={startDate}
               onSelect={setStartDate}
               className="w-full"
             />
@@ -333,7 +338,7 @@ const ExportDataSection = () => {
             <label htmlFor="endDate" className="text-sm">End Date</label>
             <DatePicker
               id="endDate"
-              selected={endDate}
+              date={endDate}
               onSelect={setEndDate}
               className="w-full"
             />

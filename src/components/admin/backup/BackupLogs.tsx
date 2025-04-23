@@ -38,7 +38,7 @@ const BackupLogs = () => {
     try {
       // In a real implementation, this would fetch from your backend
       const data = await getBackupLogs();
-      setLogs(data);
+      setLogs(data as BackupLogEntry[]);
     } catch (error) {
       console.error('Failed to fetch backup logs:', error);
     } finally {
