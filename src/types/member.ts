@@ -5,7 +5,7 @@ export interface Member {
   email?: string;
   phone?: string;
   role: 'member' | 'trainer' | 'staff' | 'admin';
-  status?: 'active' | 'inactive' | 'pending';
+  status?: 'active' | 'inactive' | 'expired' | 'pending';
   avatar_url?: string;
   date_of_birth?: string;
   membershipStatus?: 'active' | 'expired' | 'none';
