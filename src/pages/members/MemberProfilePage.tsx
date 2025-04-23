@@ -9,10 +9,12 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/services/supabaseClient";
 import { Member as MemberType } from "@/types/member";
+import { Member } from "@/types/index";
 
 // Using type assertion to create a compatible interface
 type MemberWithStatus = MemberType & {
   status: string; // Required by src/types/member.ts
+  goal?: string; // Adding goal property that appears in both interfaces
 };
 
 const MemberProfilePage = () => {
@@ -121,8 +123,8 @@ const MemberProfilePage = () => {
             </TabsList>
             <TabsContent value="profile">
               <MemberProfile 
-                member={member} 
-                onUpdate={(updatedMember) => handleUpdateMember(updatedMember as MemberWithStatus)} 
+                member={member as unknown as Member} 
+                onUpdate={(updatedMember) => handleUpdateMember(updatedMember as unknown as MemberWithStatus)} 
               />
             </TabsContent>
             <TabsContent value="transactions">
