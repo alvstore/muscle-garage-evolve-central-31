@@ -46,9 +46,6 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
   
   return (
     <div className="space-y-1">
-      <div className="px-2 py-1 text-sm font-semibold text-indigo-100 uppercase tracking-wider">
-        {section.name}
-      </div>
       {section.items.map((item, itemIndex) => {
         const hasChildren = item.children && item.children.length > 0;
         const filteredChildren = hasChildren 

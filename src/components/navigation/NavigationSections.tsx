@@ -1,6 +1,6 @@
 
 import React from "react";
-import NavigationSection from "@/components/navigation/NavigationSection";
+import SidebarNavSection from "@/components/sidebar/SidebarNavSection";
 import { NavSection } from "@/types/navigation";
 
 interface NavigationSectionsProps {
@@ -19,7 +19,7 @@ const NavigationSections: React.FC<NavigationSectionsProps> = ({
   return (
     <div className="px-2 py-1">
       {sections.map((section) => (
-        <NavigationSection
+        <SidebarNavSection
           key={section.name}
           section={section}
           isExpanded={expandedSections.includes(section.name)}

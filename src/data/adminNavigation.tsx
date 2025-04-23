@@ -1,21 +1,26 @@
 
 import React from 'react';
 import {
-  LayoutDashboard,
+  BarChart3,
   Users,
   CalendarDays,
   CreditCard,
   Dumbbell,
+  UserCircle,
   Briefcase,
+  Clock,
   PieChart,
   Building2,
+  Contact,
   Mail,
   MessageCircle,
   Share2,
   HelpCircle,
+  Radio,
   Globe,
   Bell,
   Activity,
+  Cpu,
   Package,
   Store,
   FileText,
@@ -26,14 +31,14 @@ import {
   FolderHeart,
   Gift,
   Wallet,
+  Archive,
   Settings,
   Layers,
+  KeyRound,
+  Repeat,
   LayoutTemplate,
-  Smartphone,
-  Database,
   Zap,
-  ChefHat,
-  FileBarChart
+  Smartphone
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -43,9 +48,9 @@ export const adminNavSections: NavSection[] = [
     name: "Dashboard",
     items: [
       {
-        href: "/dashboard",
+        href: "/",
         label: "Analytics Dashboard",
-        icon: <LayoutDashboard className="h-5 w-5" />,
+        icon: <BarChart3 className="h-5 w-5" />,
         permission: "access_dashboards" as Permission,
       },
       {
@@ -74,7 +79,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Classes & Schedules",
+    name: "Classes",
     items: [
       {
         href: "/classes",
@@ -91,7 +96,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Team Management",
+    name: "Staff",
     items: [
       {
         href: "/staff",
@@ -108,40 +113,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance/dashboard",
-        label: "Finance Dashboard",
-        icon: <PieChart className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-        children: [
-          {
-            href: "/finance/invoices",
-            label: "Invoices",
-            permission: "manage_invoices" as Permission,
-          },
-          {
-            href: "/finance/transactions",
-            label: "Transactions",
-            permission: "manage_transactions" as Permission,
-          },
-          {
-            href: "/finance/income",
-            label: "Income Records",
-            permission: "manage_income" as Permission,
-          },
-          {
-            href: "/finance/expenses",
-            label: "Expense Management",
-            permission: "manage_expenses" as Permission,
-          }
-        ]
-      },
-    ],
-  },
-  {
-    name: "CRM",
+    name: "CRM & Leads",
     items: [
       {
         href: "/crm/leads",
@@ -157,44 +129,26 @@ export const adminNavSections: NavSection[] = [
       },
       {
         href: "/crm/follow-up",
-        label: "Follow-Up Management",
+        label: "Follow-Up",
         icon: <RefreshCcw className="h-5 w-5" />,
         permission: "access_crm" as Permission,
-      },
-      {
-        href: "/marketing/referral",
-        label: "Referral Program",
-        icon: <Share2 className="h-5 w-5" />,
-        permission: "access_marketing" as Permission,
       },
     ],
   },
   {
-    name: "Communication",
+    name: "Marketing",
     items: [
       {
-        href: "/communication/announcements",
-        label: "Announcements",
-        icon: <Megaphone className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
+        href: "/marketing/promo",
+        label: "Promotions",
+        icon: <Gift className="h-5 w-5" />,
+        permission: "access_marketing" as Permission,
       },
       {
-        href: "/communication/feedback",
-        label: "Feedback Management",
-        icon: <MessageCircle className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/notifications",
-        label: "Notifications",
-        icon: <Bell className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/tasks",
-        label: "Task Manager",
-        icon: <Briefcase className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
+        href: "/marketing/referral",
+        label: "Referral Programs",
+        icon: <Share2 className="h-5 w-5" />,
+        permission: "access_marketing" as Permission,
       },
     ],
   },
@@ -239,8 +193,80 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/fitness/diet-plans",
         label: "Diet Plans",
-        icon: <ChefHat className="h-5 w-5" />,
+        icon: <FileText className="h-5 w-5" />,
         permission: "manage_fitness_data" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Communication",
+    items: [
+      {
+        href: "/communication/announcements",
+        label: "Announcements",
+        icon: <Megaphone className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/feedback",
+        label: "Feedback Management",
+        icon: <MessageCircle className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/notifications",
+        label: "Notifications",
+        icon: <Bell className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+      {
+        href: "/communication/tasks",
+        label: "Task Manager",
+        icon: <Briefcase className="h-5 w-5" />,
+        permission: "access_communication" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Website",
+    items: [
+      {
+        href: "/website",
+        label: "Website Management",
+        icon: <Globe className="h-5 w-5" />,
+        permission: "manage_website" as Permission,
+        children: [
+          {
+            href: "/website/home",
+            label: "Home Page",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/about",
+            label: "About Us",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/services",
+            label: "Services & Pricing",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/classes",
+            label: "Classes & Trainers",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/testimonials",
+            label: "Testimonials",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/website/contact",
+            label: "Contact Page",
+            permission: "manage_website" as Permission,
+          }
+        ]
       },
     ],
   },
@@ -250,8 +276,41 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/reports",
         label: "Reports & Analytics",
-        icon: <FileBarChart className="h-5 w-5" />,
+        icon: <FileText className="h-5 w-5" />,
         permission: "access_reports" as Permission,
+      },
+    ],
+  },
+  {
+    name: "Finance",
+    items: [
+      {
+        href: "/finance/dashboard",
+        label: "Finance Dashboard",
+        icon: <PieChart className="h-5 w-5" />,
+        permission: "access_finance" as Permission,
+        children: [
+          {
+            href: "/finance/invoices",
+            label: "Invoices",
+            permission: "manage_invoices" as Permission,
+          },
+          {
+            href: "/finance/transactions",
+            label: "Transactions",
+            permission: "manage_transactions" as Permission,
+          },
+          {
+            href: "/finance/income",
+            label: "Income Records",
+            permission: "manage_income" as Permission,
+          },
+          {
+            href: "/finance/expenses",
+            label: "Expense Management",
+            permission: "manage_expenses" as Permission,
+          }
+        ]
       },
     ],
   },
@@ -277,11 +336,6 @@ export const adminNavSections: NavSection[] = [
           {
             href: "/settings/automation",
             label: "Automation Rules",
-            permission: "manage_settings" as Permission,
-          },
-          {
-            href: "/settings/global",
-            label: "Global Settings",
             permission: "manage_settings" as Permission,
           }
         ]
@@ -359,73 +413,14 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_devices" as Permission,
           }
         ]
-      },
-      {
-        href: "/settings/automation",
-        label: "Automation Rules",
-        icon: <Zap className="h-5 w-5" />,
-        permission: "manage_settings" as Permission,
-      }
-    ],
-  },
-  {
-    name: "Website Management",
-    items: [
-      {
-        href: "/frontpages",
-        label: "Website Pages & Content",
-        icon: <Globe className="h-5 w-5" />,
-        permission: "manage_website" as Permission,
-        children: [
-          {
-            href: "/frontpages?tab=home",
-            label: "Home Page",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/frontpages?tab=about",
-            label: "About Us",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/frontpages?tab=services",
-            label: "Services",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/frontpages?tab=classes",
-            label: "Classes",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/frontpages?tab=trainers",
-            label: "Trainers",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/frontpages?tab=contact",
-            label: "Contact",
-            permission: "manage_website" as Permission,
-          }
-        ]
-      },
-    ],
-  },
-  {
-    name: "System Backup",
-    items: [
-      {
-        href: "/settings/system-backup",
-        label: "Export / Import Data",
-        icon: <Database className="h-5 w-5" />,
-        permission: "full_system_access" as Permission,
       }
     ],
   },
 ];
 
+// Filter out Settings section for non-admin staff
 export const staffNavSections: NavSection[] = adminNavSections
-  .filter(section => section.name !== "Settings" && section.name !== "Website Management" && section.name !== "System Backup")
+  .filter(section => section.name !== "Settings" && section.name !== "Website")
   .map(section => {
     if (section.name === "Communication") {
       return {

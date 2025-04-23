@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,25 +10,9 @@ import {
   CreditCard, MessageSquare, Info, Phone, ExternalLink, Eye
 } from 'lucide-react';
 import WebsitePreview from '@/components/frontpages/WebsitePreview';
-import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const FrontPagesManager = () => {
   const [showPreview, setShowPreview] = useState(false);
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam || 'home');
-
-  useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam]);
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    navigate(`/frontpages?tab=${tab}`);
-  };
 
   return (
     <div className="container mx-auto py-6">
@@ -52,7 +35,7 @@ const FrontPagesManager = () => {
           <WebsitePreview url="https://muscle-garage-evolve.lovable.app" />
         )}
 
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Tabs defaultValue="home">
           <div className="flex flex-col md:flex-row gap-6">
             <Card className="w-full md:w-64">
               <CardHeader>

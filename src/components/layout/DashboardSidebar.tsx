@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
-import { adminNavSections, staffNavSections } from "@/data/adminNavigation";
+import { adminNavSections } from "@/data/adminNavigation";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
@@ -29,7 +29,6 @@ export default function DashboardSidebar({
     logout,
     user
   } = useAuth();
-  const { open } = useSidebar();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleSection = (sectionName: string) => {
@@ -52,11 +51,8 @@ export default function DashboardSidebar({
     }
   };
 
-  // Use the appropriate navigation sections based on user role
-  const navSections = user?.role === 'admin' ? adminNavSections : staffNavSections;
-
   return (
-    <Sidebar className={cn("transition-all duration-300", open ? "w-64" : "w-0")}>
+    <Sidebar className={cn("transition-all duration-300", isSidebarOpen ? "w-64" : "w-0")}>
       <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <SidebarHeader className="p-4">
@@ -76,7 +72,7 @@ export default function DashboardSidebar({
           </SidebarHeader>
           <ScrollArea className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
             <NavigationSections 
-              sections={navSections} 
+              sections={adminNavSections} 
               expandedSections={expandedSections} 
               toggleSection={toggleSection} 
               onLinkClick={closeSidebar} 
@@ -99,3 +95,4 @@ export default function DashboardSidebar({
     </Sidebar>
   );
 }
+
