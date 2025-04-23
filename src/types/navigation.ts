@@ -7,6 +7,7 @@ export interface NavItem {
   icon?: string;
   permission?: Permission;
   children?: NavItem[];
+  badge?: string;
 }
 
 export interface NavSection {

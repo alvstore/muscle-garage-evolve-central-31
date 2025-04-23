@@ -22,8 +22,8 @@ interface IconProps {
 
 // Icon component that dynamically loads an icon from lucide-react
 const DynamicIcon = ({ name, className }: IconProps) => {
-  const IconComponent = (LucideIcons as Record<string, React.ElementType>)[name] || LucideIcons.Circle;
-  return <IconComponent className={className} />;
+  const LucideIcon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType || LucideIcons.Circle;
+  return <LucideIcon className={className} />;
 };
 
 export const NavItem = ({ item, expanded, toggleSection, onClick }: NavItemProps) => {
@@ -57,7 +57,7 @@ export const NavItem = ({ item, expanded, toggleSection, onClick }: NavItemProps
             {expanded && (
               <ul className="ml-6 space-y-1">
                 {item.children.map((child, j) => (
-                  <RoutePermissionGuard key={j} permission={child.permission || "view"}>
+                  <RoutePermissionGuard key={j} permission={child.permission || item.permission}>
                     <li>
                       <Button
                         asChild

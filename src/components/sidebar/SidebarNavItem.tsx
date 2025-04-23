@@ -2,11 +2,19 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { NavItem } from "@/types/navigation";
+import * as LucideIcons from "lucide-react";
 
 interface SidebarNavItemProps {
   item: NavItem;
   onLinkClick?: () => void;
 }
+
+// Icon component that dynamically loads an icon from lucide-react
+const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
+  if (!name) return null;
+  const LucideIcon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType || LucideIcons.Circle;
+  return <LucideIcon className={className} />;
+};
 
 const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) => {
   const navigate = useNavigate();
@@ -30,7 +38,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) =>
       `}
       onClick={handleClick}
     >
-      {item.icon && item.icon}
+      {item.icon && <DynamicIcon name={item.icon} className="h-4 w-4" />}
       <span>{item.label}</span>
       {item.badge && (
         <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">

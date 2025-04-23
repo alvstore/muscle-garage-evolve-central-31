@@ -1,23 +1,5 @@
 
-import React from 'react';
 import { NavSection } from '@/types/navigation';
-import {
-  BarChart,
-  CalendarCheck,
-  Users,
-  Settings,
-  Dumbbell,
-  Bell,
-  PanelTop,
-  Scale,
-  BadgeCheck,
-  Clipboard,
-  Mail,
-  Heart,
-  UserCog,
-  CreditCard,
-  Gauge
-} from 'lucide-react';
 import { Permission } from '@/hooks/use-permissions';
 
 export const trainerNavSections: NavSection[] = [
@@ -27,7 +9,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/dashboard",
         label: "Overview",
-        icon: <BarChart className="w-5 h-5" />,
+        icon: "BarChart",
         permission: 'access_dashboards' as Permission,
       }
     ]
@@ -38,7 +20,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/attendance",
         label: "Attendance",
-        icon: <CalendarCheck className="w-5 h-5" />,
+        icon: "CalendarCheck",
         permission: 'view_all_attendance' as Permission,
       }
     ]
@@ -49,7 +31,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/members",
         label: "My Members",
-        icon: <Users className="w-5 h-5" />,
+        icon: "Users",
         permission: 'view_all_trainers' as Permission,
       }
     ]
@@ -60,31 +42,31 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/fitness-plans",
         label: "Fitness Plans",
-        icon: <Dumbbell className="w-5 h-5" />,
+        icon: "Dumbbell",
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/workout-plans",
         label: "Workout Plans",
-        icon: <Gauge className="w-5 h-5" />,
+        icon: "Gauge",
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/diet-plans",
         label: "Diet Plans",
-        icon: <BadgeCheck className="w-5 h-5" />,
+        icon: "BadgeCheck",
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/progress",
         label: "Progress Tracking",
-        icon: <Scale className="w-5 h-5" />,
+        icon: "Scale",
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/members/progress",
         label: "Member Progress",
-        icon: <Clipboard className="w-5 h-5" />,
+        icon: "Clipboard",
         permission: 'view_all_trainers' as Permission,
       }
     ]
@@ -95,19 +77,19 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/communication/tasks",
         label: "Tasks",
-        icon: <PanelTop className="w-5 h-5" />,
+        icon: "PanelTop",
         permission: 'view_staff' as Permission,
       },
       {
         href: "/communication/announcements",
         label: "Announcements",
-        icon: <Bell className="w-5 h-5" />,
+        icon: "Bell",
         permission: 'access_communication' as Permission,
       },
       {
         href: "/communication/email",
         label: "Email",
-        icon: <Mail className="w-5 h-5" />,
+        icon: "Mail",
         permission: 'access_communication' as Permission,
       }
     ]
@@ -118,7 +100,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/profile",
         label: "Profile",
-        icon: <UserCog className="w-5 h-5" />,
+        icon: "UserCog",
         permission: 'member_view_plans' as Permission,
       }
     ]
