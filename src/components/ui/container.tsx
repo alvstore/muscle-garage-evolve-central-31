@@ -18,7 +18,6 @@ export const Container = React.forwardRef<HTMLDivElement, ContainerProps>(
             "max-w-7xl px-4 sm:px-6 lg:px-8": size === "default",
             "max-w-5xl px-4 sm:px-6 lg:px-8": size === "sm",
             "max-w-6xl px-4 sm:px-6 lg:px-8": size === "md",
-            "max-w-7xl px-4 sm:px-6 lg:px-8": size === "lg",
             "max-w-[90rem] px-4 sm:px-6 lg:px-8": size === "xl",
             "w-full": size === "full",
           },
