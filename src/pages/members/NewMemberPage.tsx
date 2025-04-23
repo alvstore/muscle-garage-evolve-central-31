@@ -1,10 +1,7 @@
+
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +9,8 @@ import { Member } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
-import { DatePicker } from "@/components/ui/date-picker";
+import MemberBasicDetailsForm from "@/components/members/MemberBasicDetailsForm";
+import MemberMembershipForm from "@/components/members/MemberMembershipForm";
 import { format } from "date-fns";
 
 const GENDERS = ["Male", "Female", "Other"] as const;
@@ -98,7 +96,6 @@ const NewMemberPage = () => {
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Add New Member</h1>
-
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -108,159 +105,19 @@ const NewMemberPage = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Basic Details</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="john.doe@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        placeholder="+1 (555) 123-4567"
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Gender</Label>
-                      <Select
-                        value={formData.gender}
-                        onValueChange={(value) => handleSelectChange("gender", value)}
-                      >
-                        <SelectTrigger id="gender">
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENDERS.map((gender) => (
-                            <SelectItem key={gender} value={gender}>
-                              {gender}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="bloodGroup">Blood Group</Label>
-                      <Select
-                        value={formData.bloodGroup}
-                        onValueChange={(value) => handleSelectChange("bloodGroup", value)}
-                      >
-                        <SelectTrigger id="bloodGroup">
-                          <SelectValue placeholder="Select blood group" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {BLOOD_GROUPS.map((bg) => (
-                            <SelectItem key={bg} value={bg}>
-                              {bg}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="occupation">Occupation</Label>
-                      <Input
-                        id="occupation"
-                        name="occupation"
-                        placeholder="Software Engineer"
-                        value={formData.occupation}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <DatePicker
-                        id="dateOfBirth"
-                        date={dob}
-                        onSelect={handleDobChange}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="goal">Fitness Goal</Label>
-                    <Textarea
-                      id="goal"
-                      name="goal"
-                      placeholder="Build muscle and improve overall fitness"
-                      value={formData.goal}
-                      onChange={handleChange}
-                      rows={3}
-                    />
-                  </div>
-                </div>
+                <MemberBasicDetailsForm
+                  formData={formData}
+                  dob={dob}
+                  onChange={handleChange}
+                  onSelectChange={handleSelectChange}
+                  onDobChange={handleDobChange}
+                />
 
                 {/* Membership Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Membership Information</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="membershipId">Membership Type *</Label>
-                      <Select
-                        value={formData.membershipId}
-                        onValueChange={(value) => handleSelectChange("membershipId", value)}
-                      >
-                        <SelectTrigger id="membershipId">
-                          <SelectValue placeholder="Select membership type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="platinum-12m">Platinum (12 Months)</SelectItem>
-                          <SelectItem value="gold-6m">Gold (6 Months)</SelectItem>
-                          <SelectItem value="silver-3m">Silver (3 Months)</SelectItem>
-                          <SelectItem value="basic-1m">Basic (1 Month)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="membershipStatus">Membership Status *</Label>
-                      <Select
-                        value={formData.membershipStatus}
-                        onValueChange={(value) => handleSelectChange("membershipStatus", value)}
-                      >
-                        <SelectTrigger id="membershipStatus">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="expired">Expired</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
+                <MemberMembershipForm
+                  formData={formData}
+                  onSelectChange={handleSelectChange}
+                />
 
                 <div className="flex justify-end gap-3">
                   <Button
