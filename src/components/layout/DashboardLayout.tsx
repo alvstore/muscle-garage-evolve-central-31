@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,15 +19,10 @@ const DashboardLayout = () => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
-  // Removed sidebarOpen and local sidebar handlers
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Use Shadcn sidebar context
   const { toggleSidebar } = useSidebar();
-
-  // Keep closeSidebar, but trigger on Shadcn sidebar (if mobile)
-  const closeSidebar = () => {};
+  const closeSidebar = () => {}; // kept for compatibility
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -49,9 +45,6 @@ const DashboardLayout = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
-
-  // Sidebar mobile auto-close: handled by shadcn sidebar
-  // If you need to close on route, can be added here via useSidebar
 
   if (isLoading) {
     return (
@@ -101,15 +94,15 @@ const DashboardLayout = () => {
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
         <div className="fixed md:relative transition-all duration-300 h-full z-40">
-          <SidebarComponent /* isSidebarOpen and closeSidebar props remain for legacy, but shadcn manages state */ />
+          <SidebarComponent />
         </div>
         {/* Main Content */}
         <div className="flex-1">
           <DashboardHeader 
-            toggleSidebar={toggleSidebar} // now uses shadcn context, mobile/desktop supported
+            toggleSidebar={toggleSidebar}
             toggleTheme={toggleTheme} 
             isDarkMode={darkMode}
-            sidebarOpen={true} // not used anymore
+            sidebarOpen={true} // prop no longer needed, legacy
           />
           <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
             <Outlet />

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Check, ChevronDown, Building2 } from 'lucide-react';
 import {
@@ -52,7 +53,7 @@ const BranchSelector = () => {
     <PermissionGuard permission="view_branch_data" fallback={
       <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
         <Building2 className="h-4 w-4 text-indigo-200" />
-        <span className="text-indigo-100">{currentBranch?.name || 'No branch selected'}</span>
+        <span className="text-indigo-100 truncate max-w-[160px]">{currentBranch?.name || 'No branch selected'}</span>
       </div>
     }>
       <div className="flex items-center gap-2">
@@ -64,7 +65,7 @@ const BranchSelector = () => {
             <Building2 className="mr-2 h-4 w-4 text-indigo-300" />
             <SelectValue
               placeholder="Select branch"
-              className="truncate"
+              className="truncate max-w-[120px]"
             />
           </SelectTrigger>
           <SelectContent className="bg-indigo-950 border-indigo-800 text-indigo-100">
@@ -76,7 +77,7 @@ const BranchSelector = () => {
               >
                 <div className="flex items-center gap-2 w-[160px] truncate">
                   <Building2 className="h-4 w-4 text-indigo-300" />
-                  <span className="truncate">{branch.name}</span>
+                  <span className="truncate max-w-[110px]">{branch.name}</span>
                 </div>
                 {currentBranch?.id === branch.id && (
                   <Check className="ml-2 h-4 w-4 text-green-400" />
