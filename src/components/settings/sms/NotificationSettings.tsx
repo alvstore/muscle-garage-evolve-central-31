@@ -1,95 +1,86 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { IntegrationConfig } from '@/services/integrationService';
 
-interface NotificationSettingsProps {
-  config: Partial<IntegrationConfig>;
-  onUpdateConfig: (config: Partial<IntegrationConfig>) => void;
-  onSave: () => void;
+export interface NotificationTemplatesProps {
+  membershipAlert: boolean;
+  renewalReminder: boolean;
+  otpVerification: boolean;
+  attendanceConfirmation: boolean;
 }
 
-export const NotificationSettings = ({
-  config,
-  onUpdateConfig,
-  onSave
-}: NotificationSettingsProps) => {
-  const templates = config.templates || {
-    membershipAlert: false,
-    renewalReminder: false,
-    otpVerification: false,
-    attendanceConfirmation: false
-  };
+export interface NotificationSettingsProps {
+  templates: NotificationTemplatesProps;
+  onChange: (templates: NotificationTemplatesProps) => void;
+}
 
-  const handleTemplateChange = (key: string, value: boolean) => {
-    onUpdateConfig({
-      templates: {
-        ...templates,
-        [key]: value
-      }
+const NotificationSettings: React.FC<NotificationSettingsProps> = ({ 
+  templates, 
+  onChange 
+}) => {
+  const handleToggle = (key: keyof NotificationTemplatesProps, value: boolean) => {
+    onChange({
+      ...templates,
+      [key]: value
     });
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Notification Settings</CardTitle>
-        <CardDescription>Configure which events trigger SMS notifications</CardDescription>
+        <CardTitle>Template Configuration</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-0.5">
               <Label className="text-base">Membership Alerts</Label>
-              <p className="text-sm text-muted-foreground">Send SMS for membership expiry or renewal</p>
+              <p className="text-sm text-muted-foreground">Notifications for membership status changes</p>
             </div>
-            <Switch
-              checked={templates.membershipAlert || false}
-              onCheckedChange={(checked) => handleTemplateChange('membershipAlert', checked)}
+            <Switch 
+              checked={templates.membershipAlert}
+              onCheckedChange={(value) => handleToggle('membershipAlert', value)}
             />
           </div>
-
+          
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-0.5">
               <Label className="text-base">Renewal Reminders</Label>
-              <p className="text-sm text-muted-foreground">Send reminder before membership expiry</p>
+              <p className="text-sm text-muted-foreground">Scheduled reminders before membership expires</p>
             </div>
-            <Switch
-              checked={templates.renewalReminder || false}
-              onCheckedChange={(checked) => handleTemplateChange('renewalReminder', checked)}
+            <Switch 
+              checked={templates.renewalReminder}
+              onCheckedChange={(value) => handleToggle('renewalReminder', value)}
             />
           </div>
-
+          
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-0.5">
               <Label className="text-base">OTP Verification</Label>
-              <p className="text-sm text-muted-foreground">Send OTP for login verification</p>
+              <p className="text-sm text-muted-foreground">One-time password for account verification</p>
             </div>
-            <Switch
-              checked={templates.otpVerification || false}
-              onCheckedChange={(checked) => handleTemplateChange('otpVerification', checked)}
+            <Switch 
+              checked={templates.otpVerification}
+              onCheckedChange={(value) => handleToggle('otpVerification', value)}
             />
           </div>
-
+          
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-0.5">
               <Label className="text-base">Attendance Confirmation</Label>
-              <p className="text-sm text-muted-foreground">Send SMS when member checks in</p>
+              <p className="text-sm text-muted-foreground">Confirmation messages for class attendance</p>
             </div>
-            <Switch
-              checked={templates.attendanceConfirmation || false}
-              onCheckedChange={(checked) => handleTemplateChange('attendanceConfirmation', checked)}
+            <Switch 
+              checked={templates.attendanceConfirmation}
+              onCheckedChange={(value) => handleToggle('attendanceConfirmation', value)}
             />
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={onSave}>Save Changes</Button>
         </div>
       </CardContent>
     </Card>
   );
 };
+
+export default NotificationSettings;

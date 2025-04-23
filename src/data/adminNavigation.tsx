@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BarChart3,
@@ -37,7 +38,8 @@ import {
   Repeat,
   LayoutTemplate,
   Zap,
-  Smartphone
+  Smartphone,
+  Database
 } from "lucide-react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -227,6 +229,49 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
+    name: "Website",
+    items: [
+      {
+        href: "/frontpages",
+        label: "Website Management",
+        icon: <Globe className="h-5 w-5" />,
+        permission: "manage_website" as Permission,
+        children: [
+          {
+            href: "/frontpages?tab=home",
+            label: "Home Page",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/frontpages?tab=about",
+            label: "About Us",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/frontpages?tab=services",
+            label: "Services & Pricing",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/frontpages?tab=classes",
+            label: "Classes & Trainers",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/frontpages?tab=testimonials",
+            label: "Testimonials",
+            permission: "manage_website" as Permission,
+          },
+          {
+            href: "/frontpages?tab=contact",
+            label: "Contact Page",
+            permission: "manage_website" as Permission,
+          }
+        ]
+      },
+    ],
+  },
+  {
     name: "Reports",
     items: [
       {
@@ -275,9 +320,31 @@ export const adminNavSections: NavSection[] = [
     items: [
       {
         href: "/settings",
-        label: "Global Settings",
+        label: "System Settings",
         icon: <Settings className="h-5 w-5" />,
         permission: "access_settings" as Permission,
+        children: [
+          {
+            href: "/settings",
+            label: "General Settings",
+            permission: "manage_settings" as Permission,
+          },
+          {
+            href: "/settings/branches",
+            label: "Branch Management",
+            permission: "manage_branches" as Permission,
+          },
+          {
+            href: "/settings/automation",
+            label: "Automation Rules",
+            permission: "manage_settings" as Permission,
+          },
+          {
+            href: "/settings/system-backup",
+            label: "System Backup",
+            permission: "full_system_access" as Permission,
+          }
+        ]
       },
       {
         href: "/settings/integrations",
@@ -301,6 +368,11 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_integrations" as Permission,
           },
           {
+            href: "/settings/integrations/sms",
+            label: "SMS Services",
+            permission: "manage_integrations" as Permission,
+          },
+          {
             href: "/settings/integrations/push",
             label: "Push Notifications",
             permission: "manage_integrations" as Permission,
@@ -309,7 +381,7 @@ export const adminNavSections: NavSection[] = [
       },
       {
         href: "/settings/templates",
-        label: "Email & SMS Templates",
+        label: "Message Templates",
         icon: <LayoutTemplate className="h-5 w-5" />,
         permission: "access_settings" as Permission,
         children: [
@@ -331,18 +403,6 @@ export const adminNavSections: NavSection[] = [
         ]
       },
       {
-        href: "/settings/automation",
-        label: "Automation Rules",
-        icon: <Zap className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-      },
-      {
-        href: "/settings/branches",
-        label: "Branch Management",
-        icon: <Building2 className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-      },
-      {
         href: "/settings/attendance",
         label: "Attendance Settings",
         icon: <Smartphone className="h-5 w-5" />,
@@ -359,14 +419,19 @@ export const adminNavSections: NavSection[] = [
             permission: "manage_devices" as Permission,
           }
         ]
+      },
+      {
+        href: "/settings/system-backup",
+        label: "System Backup",
+        icon: <Database className="h-5 w-5" />,
+        permission: "full_system_access" as Permission,
       }
     ],
   },
 ];
 
-// Filter out Settings section for non-admin staff
 export const staffNavSections: NavSection[] = adminNavSections
-  .filter(section => section.name !== "Settings")
+  .filter(section => section.name !== "Settings" && section.name !== "Website")
   .map(section => {
     if (section.name === "Communication") {
       return {

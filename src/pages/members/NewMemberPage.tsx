@@ -13,6 +13,8 @@ import { Member } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
+import { DatePicker } from "@/components/ui/date-picker";
+import { MaleFemale, Briefcase, Droplet } from "lucide-react";
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
@@ -26,7 +28,11 @@ const NewMemberPage = () => {
     goal: "",
     membershipId: "gold-6m",
     membershipStatus: "active",
+    gender: "",
+    bloodGroup: "",
+    occupation: "",
   });
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
   const [initialMeasurements, setInitialMeasurements] = useState<Partial<BodyMeasurement> | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -36,6 +42,16 @@ const NewMemberPage = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setBirthDate(date);
+    if (date) {
+      const dateString = date.toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, dateOfBirth: dateString }));
+    } else {
+      setFormData(prev => ({ ...prev, dateOfBirth: "" }));
+    }
   };
 
   const handleSaveMeasurements = (measurements: Partial<BodyMeasurement>) => {
@@ -57,7 +73,9 @@ const NewMemberPage = () => {
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
         goal: formData.goal,
-        trainerId: "trainer-123", // Default trainer
+        gender: formData.gender as 'male' | 'female' | 'other',
+        bloodGroup: formData.bloodGroup as 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-',
+        occupation: formData.occupation,
         membershipId: formData.membershipId,
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
         membershipStartDate: new Date().toISOString(),
@@ -132,13 +150,71 @@ const NewMemberPage = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <Input 
-                        id="dateOfBirth" 
-                        name="dateOfBirth" 
-                        type="date" 
-                        value={formData.dateOfBirth} 
-                        onChange={handleChange} 
+                      <DatePicker
+                        id="dateOfBirth"
+                        date={birthDate}
+                        onSelect={handleDateChange}
                       />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select 
+                        value={formData.gender} 
+                        onValueChange={(value) => handleSelectChange("gender", value)}
+                      >
+                        <SelectTrigger id="gender" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <MaleFemale className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Select gender" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="bloodGroup">Blood Group</Label>
+                      <Select 
+                        value={formData.bloodGroup} 
+                        onValueChange={(value) => handleSelectChange("bloodGroup", value)}
+                      >
+                        <SelectTrigger id="bloodGroup" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <Droplet className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Select blood group" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A+">A+</SelectItem>
+                          <SelectItem value="A-">A-</SelectItem>
+                          <SelectItem value="B+">B+</SelectItem>
+                          <SelectItem value="B-">B-</SelectItem>
+                          <SelectItem value="O+">O+</SelectItem>
+                          <SelectItem value="O-">O-</SelectItem>
+                          <SelectItem value="AB+">AB+</SelectItem>
+                          <SelectItem value="AB-">AB-</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="occupation">Occupation</Label>
+                      <div className="flex items-center space-x-2 border rounded-md">
+                        <Briefcase className="h-4 w-4 text-muted-foreground ml-3" />
+                        <Input 
+                          id="occupation" 
+                          name="occupation" 
+                          placeholder="Software Developer" 
+                          value={formData.occupation} 
+                          onChange={handleChange}
+                          className="border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                      </div>
                     </div>
                   </div>
                   

@@ -4,13 +4,13 @@ import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/lib/utils"
 
 const Breadcrumb = React.forwardRef<
-  HTMLElement,
-  React.HTMLAttributes<HTMLElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <nav
+  <div
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center text-sm text-muted-foreground",
+      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
       className
     )}
     {...props}
@@ -24,7 +24,10 @@ const BreadcrumbList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ol
     ref={ref}
-    className={cn("flex flex-wrap items-center gap-1.5", className)}
+    className={cn(
+      "flex flex-wrap items-center gap-1.5 break-words sm:gap-2.5",
+      className
+    )}
     {...props}
   />
 ))
@@ -42,42 +45,39 @@ const BreadcrumbItem = React.forwardRef<
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
+// Fix to avoid using React.AnchorElement which doesn't exist
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
-  React.AnchorElement & {
-    asChild?: boolean
+  React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     isCurrentPage?: boolean
   }
->(({ asChild, className, isCurrentPage, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+>(({ className, href, isCurrentPage = false, ...props }, ref) => {
+  if (isCurrentPage) {
+    return (
+      <span
+        className={cn(
+          "flex items-center font-medium text-foreground",
+          className
+        )}
+        aria-current="page"
+        {...props}
+      />
+    )
+  }
 
   return (
-    <Comp
+    <a
       ref={ref}
+      href={href}
       className={cn(
-        "inline-flex items-center hover:text-foreground transition-colors",
-        isCurrentPage && "text-foreground font-medium pointer-events-none",
+        "flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
         className
       )}
-      aria-current={isCurrentPage ? "page" : undefined}
       {...props}
     />
   )
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
-
-const BreadcrumbPage = React.forwardRef<
-  HTMLSpanElement,
-  React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    className={cn("font-medium text-foreground", className)}
-    aria-current="page"
-    {...props}
-  />
-))
-BreadcrumbPage.displayName = "BreadcrumbPage"
 
 const BreadcrumbSeparator = React.forwardRef<
   HTMLSpanElement,
@@ -85,6 +85,7 @@ const BreadcrumbSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <span
     ref={ref}
+    role="presentation"
     className={cn("text-muted-foreground", className)}
     {...props}
   />
@@ -97,6 +98,7 @@ const BreadcrumbEllipsis = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <span
     ref={ref}
+    role="presentation"
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
@@ -113,7 +115,6 @@ export {
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
 }

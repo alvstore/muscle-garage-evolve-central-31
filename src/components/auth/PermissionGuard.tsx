@@ -17,7 +17,7 @@ export const PermissionGuard = ({
 }: PermissionGuardProps) => {
   const { can } = usePermissions();
   
-  if (can(permission, isOwner)) {
+  if (can(permission)) {
     return <>{children}</>;
   }
   
@@ -40,7 +40,7 @@ export const PermissionButton = ({
   ...props
 }: PermissionButtonProps) => {
   const { can } = usePermissions();
-  const hasPermission = can(permission, isOwner);
+  const hasPermission = can(permission);
   
   if (!hasPermission && !disableOnly) {
     return null;
