@@ -7,6 +7,7 @@ import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { MembershipPlan } from '@/types/membership';
 import { membershipService } from '@/services/membershipService';
 import { toast } from 'sonner';
+import { usePaymentLink, useVerifyPayment } from '@/hooks/use-membership';
 
 interface RazorpayCheckoutProps {
   plan: MembershipPlan;
@@ -28,6 +29,9 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
   const [promoApplied, setPromoApplied] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [finalAmount, setFinalAmount] = useState(plan.price);
+  
+  const paymentLinkMutation = usePaymentLink();
+  const verifyPaymentMutation = useVerifyPayment();
   
   useEffect(() => {
     const script = document.createElement('script');

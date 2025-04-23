@@ -1,20 +1,26 @@
 
 import { supabase } from '@/services/supabaseClient';
-import { MembershipPlan, MembershipSubscription, MembershipDuration } from '@/types/membership';
+import { MembershipPlan, MembershipSubscription } from '@/types/membership';
 import { toast } from 'sonner';
-import { useBranch } from '@/hooks/use-branch';
+
+// Define the membership duration type if it doesn't exist
+export type MembershipDuration = '1-month' | '3-month' | '6-month' | '12-month';
 
 export const membershipService = {
   // Fetch membership plans with branch filtering
-  async getMembershipPlans(): Promise<MembershipPlan[]> {
+  async getMembershipPlans(branchId?: string): Promise<MembershipPlan[]> {
     try {
-      const { currentBranch } = useBranch();
-      
-      const { data, error } = await supabase
+      let query = supabase
         .from('memberships')
         .select('*')
-        .eq('branch_id', currentBranch?.id || null)
         .eq('is_active', true);
+      
+      // Apply branch filter if provided
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -69,10 +75,8 @@ export const membershipService = {
   },
 
   // Create a new membership plan
-  async createMembershipPlan(plan: Partial<MembershipPlan>): Promise<MembershipPlan | null> {
+  async createMembershipPlan(plan: Partial<MembershipPlan>, branchId?: string): Promise<MembershipPlan | null> {
     try {
-      const { currentBranch } = useBranch();
-      
       const { data, error } = await supabase
         .from('memberships')
         .insert({
@@ -82,7 +86,7 @@ export const membershipService = {
           duration_days: plan.durationDays,
           features: JSON.stringify(plan.benefits || []),
           is_active: plan.status === 'active',
-          branch_id: currentBranch?.id || null,
+          branch_id: branchId,
         })
         .select()
         .single();
@@ -201,7 +205,7 @@ export const membershipService = {
   },
 
   // Create a new subscription
-  async createSubscription(memberId: string, planId: string): Promise<MembershipSubscription | null> {
+  async createSubscription(memberId: string, planId: string, branchId?: string): Promise<MembershipSubscription | null> {
     try {
       // Get the membership plan to calculate end date
       const plan = await this.getMembershipPlanById(planId);
@@ -210,8 +214,6 @@ export const membershipService = {
       const startDate = new Date();
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.durationDays);
-
-      const { currentBranch } = useBranch();
       
       const { data, error } = await supabase
         .from('member_memberships')
@@ -223,7 +225,7 @@ export const membershipService = {
           status: 'active',
           payment_status: 'pending',
           total_amount: plan.price,
-          branch_id: currentBranch?.id,
+          branch_id: branchId,
         })
         .select()
         .single();

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,9 @@ const MembershipPlans = () => {
 
   useEffect(() => {
     const fetchPlans = async () => {
-      const fetchedPlans = await membershipService.getMembershipPlans();
+      const fetchedPlans = await membershipService.getMembershipPlans(
+        currentBranch?.id
+      );
       setPlans(fetchedPlans);
     };
 
@@ -51,7 +52,10 @@ const MembershipPlans = () => {
       }
     } else {
       // Create new plan
-      const newPlan = await membershipService.createMembershipPlan(plan);
+      const newPlan = await membershipService.createMembershipPlan(
+        plan, 
+        currentBranch?.id
+      );
       if (newPlan) {
         setPlans([...plans, newPlan]);
       }
@@ -59,16 +63,16 @@ const MembershipPlans = () => {
     setIsFormOpen(false);
   };
 
-  const formatPrice = (price: number) => {
+  function formatPrice(price: number) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(price);
-  };
+  }
 
-  const getStatusColor = (status: string) => {
+  function getStatusColor(status: string) {
     return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-  };
+  }
 
   return (
     <>
