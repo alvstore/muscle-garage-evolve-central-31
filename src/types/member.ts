@@ -13,4 +13,6 @@ export interface Member {
   membershipStartDate?: Date | string | null;
   membershipEndDate?: Date | string | null;
   branch_id?: string;
+  // Adding a name property for backward compatibility
+  name?: string;
 }

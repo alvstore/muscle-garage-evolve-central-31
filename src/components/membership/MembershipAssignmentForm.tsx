@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,7 +79,7 @@ const MembershipAssignmentForm = () => {
     const mockMembers: Member[] = [
       {
         id: '1',
-        name: 'John Doe',
+        full_name: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
         status: 'active',
@@ -174,7 +175,7 @@ const MembershipAssignmentForm = () => {
       if (data.createInvoice) {
         invoiceService.createInvoice({
           memberId: data.memberId,
-          memberName: selectedMember?.name || '',
+          memberName: selectedMember?.full_name || selectedMember?.name || '',
           amount: data.totalAmount,
           description: `Membership: ${selectedPlan?.name || 'Unknown Plan'}`,
           dueDate: new Date(new Date().setDate(new Date().getDate() + 7)),
@@ -192,7 +193,7 @@ const MembershipAssignmentForm = () => {
       
       toast({
         title: "Membership Assigned",
-        description: `Successfully assigned ${selectedPlan?.name} plan to ${selectedMember?.name}`,
+        description: `Successfully assigned ${selectedPlan?.name} plan to ${selectedMember?.full_name || selectedMember?.name}`,
       });
       
       setLoading(false);
@@ -230,7 +231,7 @@ const MembershipAssignmentForm = () => {
                       <SelectContent>
                         {members.map((member) => (
                           <SelectItem key={member.id} value={member.id}>
-                            {member.name}
+                            {member.full_name || member.name || member.email || member.id}
                           </SelectItem>
                         ))}
                       </SelectContent>

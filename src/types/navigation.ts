@@ -12,6 +12,7 @@ export interface NavItem {
     href: string;
     label: string;
     permission: Permission;
+    icon?: ReactNode; // Added icon property to allow icons in child items
   }>;
 }
 
