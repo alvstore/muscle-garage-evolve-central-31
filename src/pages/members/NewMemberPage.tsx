@@ -13,6 +13,10 @@ import { Member } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
+import { DatePicker } from "@/components/ui/date-picker";
+
+const GENDERS = ["Male", "Female", "Other"] as const;
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
@@ -22,11 +26,15 @@ const NewMemberPage = () => {
     name: "",
     email: "",
     phone: "",
-    dateOfBirth: "",
+    gender: "" as "" | typeof GENDERS[number],
+    bloodGroup: "" as "" | typeof BLOOD_GROUPS[number],
+    occupation: "",
+    dateOfBirth: "" as string,
     goal: "",
     membershipId: "gold-6m",
     membershipStatus: "active",
   });
+  const [dob, setDob] = useState<Date | undefined>(undefined);
   const [initialMeasurements, setInitialMeasurements] = useState<Partial<BodyMeasurement> | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -38,6 +46,14 @@ const NewMemberPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleDobChange = (date?: Date) => {
+    setDob(date);
+    setFormData(prev => ({
+      ...prev,
+      dateOfBirth: date ? date.toISOString().split("T")[0] : "",
+    }));
+  };
+
   const handleSaveMeasurements = (measurements: Partial<BodyMeasurement>) => {
     setInitialMeasurements(measurements);
     toast.success("Initial measurements saved. They will be recorded when the member is created.");
@@ -46,7 +62,7 @@ const NewMemberPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Simulate API call to create a new member
     setTimeout(() => {
       const newMember: Member = {
@@ -55,21 +71,25 @@ const NewMemberPage = () => {
         name: formData.name,
         role: "member",
         phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
+        date_of_birth: formData.dateOfBirth,
+        gender: formData.gender || undefined,
+        bloodGroup: formData.bloodGroup || undefined,
+        occupation: formData.occupation,
         goal: formData.goal,
         trainerId: "trainer-123", // Default trainer
         membershipId: formData.membershipId,
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
         membershipStartDate: new Date().toISOString(),
         membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+        status: "active",
       };
-      
+
       // If there are initial measurements, save them too
       if (initialMeasurements) {
         console.log("Saving initial measurements:", initialMeasurements);
         // In a real app, this would be an API call to save the measurements
       }
-      
+
       setLoading(false);
       toast.success("Member created successfully");
       navigate(`/members/${newMember.id}`);
@@ -80,7 +100,7 @@ const NewMemberPage = () => {
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Add New Member</h1>
-        
+
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -91,79 +111,126 @@ const NewMemberPage = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Personal Information</h3>
-                  
+                  <h3 className="text-lg font-medium">Basic Details</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name *</Label>
-                      <Input 
-                        id="name" 
-                        name="name" 
-                        placeholder="John Doe" 
-                        value={formData.name} 
-                        onChange={handleChange} 
-                        required 
+                      <Input
+                        id="name"
+                        name="name"
+                        placeholder="John Doe"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address *</Label>
-                      <Input 
-                        id="email" 
-                        name="email" 
-                        type="email" 
-                        placeholder="john.doe@example.com" 
-                        value={formData.email} 
-                        onChange={handleChange} 
-                        required 
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="john.doe@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input 
-                        id="phone" 
-                        name="phone" 
-                        placeholder="+1 (555) 123-4567" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
+                      <Input
+                        id="phone"
+                        name="phone"
+                        placeholder="+1 (555) 123-4567"
+                        value={formData.phone}
+                        onChange={handleChange}
                       />
                     </div>
-                    
+
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select
+                        value={formData.gender}
+                        onValueChange={(value) => handleSelectChange("gender", value)}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENDERS.map((gender) => (
+                            <SelectItem key={gender} value={gender}>
+                              {gender}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bloodGroup">Blood Group</Label>
+                      <Select
+                        value={formData.bloodGroup}
+                        onValueChange={(value) => handleSelectChange("bloodGroup", value)}
+                      >
+                        <SelectTrigger id="bloodGroup">
+                          <SelectValue placeholder="Select blood group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BLOOD_GROUPS.map((bg) => (
+                            <SelectItem key={bg} value={bg}>
+                              {bg}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="occupation">Occupation</Label>
+                      <Input
+                        id="occupation"
+                        name="occupation"
+                        placeholder="Software Engineer"
+                        value={formData.occupation}
+                        onChange={handleChange}
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <Input 
-                        id="dateOfBirth" 
-                        name="dateOfBirth" 
-                        type="date" 
-                        value={formData.dateOfBirth} 
-                        onChange={handleChange} 
+                      <DatePicker
+                        id="dateOfBirth"
+                        date={dob}
+                        onSelect={handleDobChange}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="goal">Fitness Goal</Label>
-                    <Textarea 
-                      id="goal" 
-                      name="goal" 
-                      placeholder="Build muscle and improve overall fitness" 
-                      value={formData.goal} 
-                      onChange={handleChange} 
-                      rows={3} 
+                    <Textarea
+                      id="goal"
+                      name="goal"
+                      placeholder="Build muscle and improve overall fitness"
+                      value={formData.goal}
+                      onChange={handleChange}
+                      rows={3}
                     />
                   </div>
                 </div>
-                
+
                 {/* Membership Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Membership Information</h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="membershipId">Membership Type *</Label>
-                      <Select 
-                        value={formData.membershipId} 
+                      <Select
+                        value={formData.membershipId}
                         onValueChange={(value) => handleSelectChange("membershipId", value)}
                       >
                         <SelectTrigger id="membershipId">
@@ -177,11 +244,11 @@ const NewMemberPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="membershipStatus">Membership Status *</Label>
-                      <Select 
-                        value={formData.membershipStatus} 
+                      <Select
+                        value={formData.membershipStatus}
                         onValueChange={(value) => handleSelectChange("membershipStatus", value)}
                       >
                         <SelectTrigger id="membershipStatus">
@@ -196,11 +263,11 @@ const NewMemberPage = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-3">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => navigate("/members")}
                   >
                     Cancel
@@ -212,10 +279,10 @@ const NewMemberPage = () => {
               </form>
             </CardContent>
           </Card>
-          
+
           {/* Body Measurements Section */}
-          <MemberBodyMeasurements 
-            currentUser={user!} 
+          <MemberBodyMeasurements
+            currentUser={user!}
             onSaveMeasurements={handleSaveMeasurements}
           />
         </div>
@@ -225,3 +292,4 @@ const NewMemberPage = () => {
 };
 
 export default NewMemberPage;
+
