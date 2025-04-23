@@ -76,29 +76,21 @@ const DashboardLayout = () => {
     );
   }
 
-  // Sidebar logic: Pass correct props depending on sidebar component
-  let SidebarContent = null;
-  if (user.role === "member") {
-    SidebarContent = <MemberSidebar />;
-  } else if (user.role === "trainer") {
-    SidebarContent = <TrainerSidebar />;
-  } else {
-    // Default to DashboardSidebar for admin/staff
-    SidebarContent = (
-      <DashboardSidebar
-        isSidebarOpen={sidebarOpen}
-        closeSidebar={() => setSidebarOpen(false)}
-      />
-    );
-  }
-
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        {/* Sidebar */}
-        <div className="fixed md:relative transition-all duration-300 h-full z-40">
-          {SidebarContent}
-        </div>
+        {/* Sidebar based on user role */}
+        {user.role === "member" ? (
+          <MemberSidebar />
+        ) : user.role === "trainer" ? (
+          <TrainerSidebar />
+        ) : (
+          <DashboardSidebar 
+            isSidebarOpen={sidebarOpen}
+            closeSidebar={() => setSidebarOpen(false)}
+          />
+        )}
+        
         {/* Main Content */}
         <div className="flex-1">
           <DashboardHeader 
