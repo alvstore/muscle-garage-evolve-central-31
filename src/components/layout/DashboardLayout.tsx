@@ -21,7 +21,7 @@ const DashboardLayout = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleSidebar, open, closeSidebar } = useSidebar();
+  const { toggleSidebar, open } = useSidebar();
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -83,7 +83,7 @@ const DashboardLayout = () => {
     SidebarContent = (
       <DashboardSidebar
         isSidebarOpen={open}
-        closeSidebar={closeSidebar}
+        closeSidebar={() => {}}
       />
     );
   }
