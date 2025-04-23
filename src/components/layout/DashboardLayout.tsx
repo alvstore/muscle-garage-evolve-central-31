@@ -14,31 +14,24 @@ import { Toaster } from "sonner";
 
 const DashboardLayout = () => {
   const { user, isLoading, logout } = useAuth();
-  
+  const isMobile = useIsMobile();
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
   };
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
     localStorage.setItem('theme', !darkMode ? 'dark' : 'light');
   };
-  
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -56,13 +49,6 @@ const DashboardLayout = () => {
     }
   }, [darkMode]);
 
-  // Close mobile sidebar when navigating
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile]);
-  
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -73,7 +59,6 @@ const DashboardLayout = () => {
       </div>
     );
   }
-
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -91,39 +76,37 @@ const DashboardLayout = () => {
     );
   }
 
-  // Determine which sidebar to show based on the user role
-  const getSidebarComponent = () => {
-    switch (user.role) {
-      case 'member':
-        return MemberSidebar;
-      case 'trainer':
-        return TrainerSidebar;
-      case 'admin':
-      case 'staff':
-      default:
-        return DashboardSidebar;
-    }
-  };
-
-  const SidebarComponent = getSidebarComponent();
+  // Sidebar logic: Pass correct props depending on sidebar component
+  let SidebarContent = null;
+  if (user.role === "member") {
+    SidebarContent = <MemberSidebar />;
+  } else if (user.role === "trainer") {
+    SidebarContent = <TrainerSidebar />;
+  } else {
+    // Default to DashboardSidebar for admin/staff
+    SidebarContent = (
+      <DashboardSidebar
+        isSidebarOpen={sidebarOpen}
+        closeSidebar={() => setSidebarOpen(false)}
+      />
+    );
+  }
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        {/* Sidebar - always render but control visibility with classes */}
-        <div className={`fixed md:relative transition-all duration-300 h-full z-40 ${sidebarOpen ? 'translate-x-0 shadow-xl md:shadow-none' : '-translate-x-full'} md:translate-x-0`}>
-          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+        {/* Sidebar */}
+        <div className="fixed md:relative transition-all duration-300 h-full z-40">
+          {SidebarContent}
         </div>
-        
         {/* Main Content */}
         <div className="flex-1">
           <DashboardHeader 
-            toggleSidebar={toggleSidebar} 
+            toggleSidebar={toggleSidebar}
             toggleTheme={toggleTheme} 
             isDarkMode={darkMode}
             sidebarOpen={sidebarOpen}
           />
-          
           <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
             <Outlet />
           </main>

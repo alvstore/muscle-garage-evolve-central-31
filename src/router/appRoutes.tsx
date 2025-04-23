@@ -11,7 +11,6 @@ import Login from '@/pages/auth/Login';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
-import FrontPagesManager from '@/pages/frontpages/FrontPagesManager';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -56,14 +55,6 @@ export const appRoutes: RouteObject[] = [
           {
             path: '/dashboard/realtime',
             element: <RealTimeDashboardPage />
-          },
-          {
-            path: '/frontpages',
-            element: (
-              <PrivateRoute allowedRoles={['admin']}>
-                <FrontPagesManager />
-              </PrivateRoute>
-            )
           },
           
           // Include route groups

@@ -21,7 +21,6 @@ import TransactionPage from '@/pages/finance/TransactionPage';
 import IncomeRecordsPage from '@/pages/finance/IncomeRecordsPage';
 import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import FrontPagesManager from '@/pages/frontpages/FrontPagesManager';
 
 export const adminRoutes: RouteObject[] = [
   ...adminDashboardRoutes,
@@ -124,14 +123,6 @@ export const adminRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ExpenseRecordsPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/frontpages',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <FrontPagesManager />
       </PrivateRoute>
     )
   }
