@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -88,7 +87,7 @@ const MembershipAssignmentForm = () => {
         membershipStartDate: new Date(),
         membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
         role: 'member',
-        branchId: currentBranch?.id
+        branch_id: currentBranch?.id
       },
     ];
 
