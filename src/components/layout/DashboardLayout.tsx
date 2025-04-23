@@ -22,7 +22,6 @@ const DashboardLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
-  const closeSidebar = () => {}; // kept for compatibility
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
