@@ -11,4 +11,8 @@ export interface Member {
   membershipEndDate: Date | null;
   role: 'member' | 'trainer' | 'staff' | 'admin';
   branchId?: string;
+  gender?: 'male' | 'female' | 'other';
+  bloodGroup?: 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+  occupation?: string;
+  dateOfBirth?: string;
 }
