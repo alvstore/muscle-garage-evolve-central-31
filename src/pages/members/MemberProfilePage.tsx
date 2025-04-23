@@ -15,6 +15,7 @@ import { Member } from "@/types/index";
 type MemberWithStatus = MemberType & {
   status: string; // Required by src/types/member.ts
   goal?: string; // Adding goal property that appears in both interfaces
+  trainerId?: string; // Adding trainerId property to match the field we're setting
 };
 
 const MemberProfilePage = () => {
