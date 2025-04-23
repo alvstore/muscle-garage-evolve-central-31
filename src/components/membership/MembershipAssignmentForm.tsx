@@ -155,8 +155,8 @@ const MembershipAssignmentForm = () => {
     const assignment: MembershipAssignment = {
       memberId: data.memberId,
       membershipId: data.planId,
-      startDate: data.startDate,
-      endDate: data.endDate,
+      startDate: data.startDate.toISOString(),
+      endDate: data.endDate.toISOString(),
       amount: selectedPlan?.price || 0,
       paymentStatus: data.paymentMethod === 'pending' ? 'pending' : 'paid',
       notes: data.notes,
