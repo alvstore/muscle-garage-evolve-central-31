@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Member } from "@/types";
+import { Member } from "@/types/member"; // Ensure correct import
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
@@ -70,7 +70,7 @@ const NewMemberPage = () => {
         role: "member",
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender || undefined,
+        gender: formData.gender || undefined, // Use optional chaining or undefined
         bloodGroup: formData.bloodGroup || undefined,
         occupation: formData.occupation,
         membershipId: formData.membershipId,
