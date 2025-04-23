@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -64,13 +65,7 @@ export default function DashboardSidebar({
               {user?.role === "admin" && (
                 <PermissionGuard permission="view_branch_data">
                   <div className="max-w-full">
-                    <BranchSelector 
-                      className="w-full min-w-0"
-                      selectProps={{
-                        className: "max-w-[220px] truncate",
-                        style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-                      }}
-                    />
+                    <BranchSelector />
                   </div>
                 </PermissionGuard>
               )}
