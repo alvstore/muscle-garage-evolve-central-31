@@ -1,14 +1,17 @@
 
+export type MemberStatus = "active" | "expired" | "none" | "inactive";
+
 export interface Member {
   id: string;
   full_name?: string;
   email?: string;
   phone?: string;
   role: 'member' | 'trainer' | 'staff' | 'admin';
-  status?: 'active' | 'inactive' | 'expired' | 'pending';
+  status: MemberStatus; // changed from optional to required
   avatar_url?: string;
+  avatar?: string; // ✅ Added as an optional string URL for avatar
   date_of_birth?: string;
-  membershipStatus?: 'active' | 'expired' | 'none';
+  membershipStatus?: 'active' | 'expired' | 'none' | 'inactive';
   membershipId?: string | null;
   membershipStartDate?: Date | string | null;
   membershipEndDate?: Date | string | null;
