@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Member } from "@/types/member"; // Ensure correct import
+import { Member } from "@/types/member";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
 import MemberBasicDetailsForm from "@/components/members/MemberBasicDetailsForm";
 import MemberMembershipForm from "@/components/members/MemberMembershipForm";
 import { format } from "date-fns";
+import { supabase } from "@/services/supabaseClient";
 
 const GENDERS = ["Male", "Female", "Other"] as const;
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
@@ -48,7 +49,7 @@ const NewMemberPage = () => {
     setDob(date);
     setFormData(prev => ({
       ...prev,
-      dateOfBirth: date ? format(date, "dd/MM/yyyy") : "",
+      dateOfBirth: date ? format(date, "yyyy-MM-dd") : "",
     }));
   };
 
@@ -57,39 +58,67 @@ const NewMemberPage = () => {
     toast.success("Initial measurements saved. They will be recorded when the member is created.");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API call to create a new member
-    setTimeout(() => {
-      const newMember: Member = {
-        id: `member-${Date.now()}`,
-        email: formData.email,
-        name: formData.name,
-        role: "member",
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender || undefined, // Use optional chaining or undefined
-        bloodGroup: formData.bloodGroup || undefined,
-        occupation: formData.occupation,
-        membershipId: formData.membershipId,
-        membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
-        membershipStartDate: new Date().toISOString(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
-        status: "active",
-      };
+    try {
+      // Find default branch for now
+      const { data: branches } = await supabase
+        .from("branches")
+        .select("id")
+        .order("created_at", { ascending: true })
+        .limit(1);
 
-      // If there are initial measurements, save them too
+      const branchId = branches?.[0]?.id;
+      if (!branchId) throw new Error("No branch found.");
+
+      // Insert member
+      const { data: inserted, error } = await supabase
+        .from("members")
+        .insert([
+          {
+            user_id: user?.id,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            gender: formData.gender,
+            blood_group: formData.bloodGroup,
+            occupation: formData.occupation,
+            date_of_birth: formData.dateOfBirth ? formData.dateOfBirth : null,
+            goal: formData.goal,
+            membership_id: formData.membershipId,
+            membership_status: formData.membershipStatus,
+            branch_id: branchId,
+            status: "active",
+          },
+        ])
+        .select()
+        .single();
+
+      if (error || !inserted) throw new Error(error?.message || "Failed to add member");
+
+      const memberId = inserted.id;
+
+      // Save measurements if exists
       if (initialMeasurements) {
-        console.log("Saving initial measurements:", initialMeasurements);
-        // In a real app, this would be an API call to save the measurements
+        await supabase.from("body_measurements").insert([
+          {
+            member_id: memberId,
+            ...initialMeasurements,
+            branch_id: branchId,
+            recorded_by: user?.id,
+          },
+        ]);
       }
 
       setLoading(false);
-      toast.success("Member created successfully");
-      navigate(`/members/${newMember.id}`);
-    }, 1500);
+      toast.success("✅ Member profile created successfully!");
+      navigate(`/members/${memberId}`);
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err?.message || "Could not create member.");
+    }
   };
 
   return (
@@ -104,7 +133,6 @@ const NewMemberPage = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
                 <MemberBasicDetailsForm
                   formData={formData}
                   dob={dob}
@@ -112,13 +140,10 @@ const NewMemberPage = () => {
                   onSelectChange={handleSelectChange}
                   onDobChange={handleDobChange}
                 />
-
-                {/* Membership Information */}
                 <MemberMembershipForm
                   formData={formData}
                   onSelectChange={handleSelectChange}
                 />
-
                 <div className="flex justify-end gap-3">
                   <Button
                     type="button"
@@ -134,8 +159,6 @@ const NewMemberPage = () => {
               </form>
             </CardContent>
           </Card>
-
-          {/* Body Measurements Section */}
           <MemberBodyMeasurements
             currentUser={user!}
             onSaveMeasurements={handleSaveMeasurements}

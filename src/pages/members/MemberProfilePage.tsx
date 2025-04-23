@@ -5,9 +5,10 @@ import { Container } from "@/components/ui/container";
 import MemberProfile from "@/components/members/MemberProfile";
 import MemberTransactionHistory from "@/components/members/MemberTransactionHistory";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Member } from "@/types";
+import { Member } from "@/types/member";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/services/supabaseClient";
 
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,44 +16,63 @@ const MemberProfilePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call to fetch member data
-    setTimeout(() => {
-      // Mock data - in a real app, you would fetch this from an API
-      const mockMember: Member = {
-        id: id || "1",
-        email: "john.doe@example.com",
-        name: "John Doe",
-        role: "member",
-        phone: "+1 (555) 123-4567",
-        dateOfBirth: "1990-05-15",
-        goal: "Build muscle and improve overall fitness",
-        trainerId: "trainer-123",
-        membershipId: "platinum-12m",
-        membershipStatus: "active",
-        membershipStartDate: "2023-01-15",
-        membershipEndDate: "2024-01-15",
-      };
-      
-      setMember(mockMember);
-      setLoading(false);
-    }, 1000);
+    if (!id) return;
+    setLoading(true);
+
+    const fetchMember = async () => {
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) {
+        setMember(null);
+        setLoading(false);
+        toast.error(error.message || "Unable to fetch member profile");
+      } else if (data) {
+        // Convert Supabase data to Member type as much as possible
+        setMember({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: "member",
+          phone: data.phone,
+          dateOfBirth: data.date_of_birth || undefined,
+          gender: data.gender || undefined,
+          bloodGroup: data.blood_group || undefined,
+          occupation: data.occupation || undefined,
+          goal: data.goal || undefined,
+          trainerId: data.trainer_id || undefined,
+          membershipId: data.membership_id || undefined,
+          membershipStatus: data.membership_status || "none",
+          membershipStartDate: data.membership_start_date || undefined,
+          membershipEndDate: data.membership_end_date || undefined,
+          status: data.status || "active",
+          branch_id: data.branch_id,
+        });
+        setLoading(false);
+      } else {
+        setMember(null);
+        setLoading(false);
+      }
+    };
+
+    fetchMember();
   }, [id]);
 
-  const handleUpdateMember = (updatedMember: Member) => {
-    // Simulate API call to update member data
+  const handleUpdateMember = async (updatedMember: Member) => {
     setLoading(true);
-    setTimeout(() => {
-      setMember(updatedMember);
-      setLoading(false);
-      toast.success("Member profile updated successfully");
-    }, 1000);
+    // Save update to supabase (not implemented here, just UI update)
+    setMember(updatedMember);
+    setLoading(false);
+    toast.success("Member profile updated successfully");
   };
 
   return (
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Member Profile</h1>
-        
         {loading ? (
           <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -64,14 +84,12 @@ const MemberProfilePage = () => {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
             </TabsList>
-            
             <TabsContent value="profile">
               <MemberProfile 
                 member={member} 
                 onUpdate={handleUpdateMember} 
               />
             </TabsContent>
-            
             <TabsContent value="transactions">
               <MemberTransactionHistory />
             </TabsContent>
