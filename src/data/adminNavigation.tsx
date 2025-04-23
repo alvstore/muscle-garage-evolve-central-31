@@ -1,20 +1,23 @@
+
 import { Home, Users, Building2, Calendar, Settings, UserPlus, BadgeCheck, BarChart, ListChecks, ClipboardList, FileText, ShieldAlert, HelpCircle, Contact2, MessageSquare, File, LayoutDashboard, UserCog, Activity, GraduationCap, Presentation, ShoppingCart, Package, LucideIcon } from "lucide-react";
 import { Permission } from '@/hooks/use-permissions';
+import { NavItem, NavSection } from '@/types/navigation';
 
-interface NavSection {
-  title?: string;
-  name: string; // Changed from optional to required
-  items: NavItem[];
-}
+// Interface for local use, can be removed since we're importing from navigation.ts
+// interface NavSection {
+//   title?: string;
+//   name: string;
+//   items: NavItem[];
+// }
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon?: LucideIcon;
-  external?: boolean;
-  description?: string;
-  permission?: string;
-}
+// interface NavItem {
+//   href: string;
+//   label: string;
+//   icon?: LucideIcon;
+//   external?: boolean;
+//   description?: string;
+//   permission?: string;
+// }
 
 export const adminNavSections: NavSection[] = [
   {
@@ -23,7 +26,7 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/dashboard",
         label: "Dashboard",
-        icon: LayoutDashboard,
+        icon: <LayoutDashboard className="h-4 w-4" />,
         permission: "view_dashboard",
       },
     ],
@@ -35,31 +38,31 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/branches",
         label: "Branches",
-        icon: Building2,
+        icon: <Building2 className="h-4 w-4" />,
         permission: "view_branch_data",
       },
       {
         href: "/members",
         label: "Members",
-        icon: Users,
+        icon: <Users className="h-4 w-4" />,
         permission: "view_member_data",
       },
       {
         href: "/trainers",
         label: "Trainers",
-        icon: UserPlus,
+        icon: <UserPlus className="h-4 w-4" />,
         permission: "view_trainer_data",
       },
       {
         href: "/staff",
         label: "Staff",
-        icon: UserCog,
+        icon: <UserCog className="h-4 w-4" />,
         permission: "view_staff_data",
       },
       {
         href: "/roles",
         label: "Roles",
-        icon: ShieldAlert,
+        icon: <ShieldAlert className="h-4 w-4" />,
         permission: "manage_roles",
       },
     ],
@@ -71,13 +74,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/classes",
         label: "Classes",
-        icon: Calendar,
+        icon: <Calendar className="h-4 w-4" />,
         permission: "view_classes",
       },
       {
         href: "/appointments",
         label: "Appointments",
-        icon: ListChecks,
+        icon: <ListChecks className="h-4 w-4" />,
         permission: "view_appointments",
       },
     ],
@@ -89,19 +92,19 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/membership-plans",
         label: "Membership Plans",
-        icon: BadgeCheck,
+        icon: <BadgeCheck className="h-4 w-4" />,
         permission: "view_membership_plans",
       },
       {
         href: "/marketing",
         label: "Marketing Campaigns",
-        icon: Presentation,
+        icon: <Presentation className="h-4 w-4" />,
         permission: "create_marketing_campaigns",
       },
       {
         href: "/sales-reports",
         label: "Sales Reports",
-        icon: BarChart,
+        icon: <BarChart className="h-4 w-4" />,
         permission: "view_sales_reports",
       },
     ],
@@ -113,31 +116,31 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/inventory",
         label: "Inventory",
-        icon: Package,
+        icon: <Package className="h-4 w-4" />,
         permission: "manage_inventory",
       },
       {
         href: "/pos",
         label: "Point of Sale",
-        icon: ShoppingCart,
+        icon: <ShoppingCart className="h-4 w-4" />,
         permission: "access_pos",
       },
       {
         href: "/attendance",
         label: "Attendance Tracking",
-        icon: Activity,
+        icon: <Activity className="h-4 w-4" />,
         permission: "track_attendance",
       },
       {
         href: "/forms",
         label: "Forms",
-        icon: FileText,
+        icon: <FileText className="h-4 w-4" />,
         permission: "manage_forms",
       },
       {
         href: "/resources",
         label: "Resources",
-        icon: File,
+        icon: <File className="h-4 w-4" />,
         permission: "manage_resources",
       },
     ],
@@ -149,20 +152,20 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/messaging",
         label: "Messaging",
-        icon: MessageSquare,
+        icon: <MessageSquare className="h-4 w-4" />,
         permission: "send_messages",
       },
       {
         href: "/support",
         label: "Support Tickets",
-        icon: HelpCircle,
+        icon: <HelpCircle className="h-4 w-4" />,
         permission: "handle_support_tickets",
       },
       {
         href: "/contact",
         label: "Contact Center",
-        icon: Contact2,
-        permission: "manage_contacts",
+        icon: <Contact2 className="h-4 w-4" />,
+        permission: "handle_support_tickets",
       },
     ],
   },
@@ -173,13 +176,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/settings",
         label: "General Settings",
-        icon: Settings,
+        icon: <Settings className="h-4 w-4" />,
         permission: "manage_settings",
       },
       {
         href: "/profile",
         label: "Profile",
-        icon: UserCog,
+        icon: <UserCog className="h-4 w-4" />,
         permission: "view_profile",
       },
     ],

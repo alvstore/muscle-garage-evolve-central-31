@@ -81,11 +81,10 @@ const MembershipAssignmentForm = () => {
         name: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
-        status: 'active',
         membershipStatus: 'active',
         membershipId: '1',
-        membershipStartDate: new Date(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
+        membershipStartDate: new Date().toISOString(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
         role: 'member',
         branchId: currentBranch?.id
       },
