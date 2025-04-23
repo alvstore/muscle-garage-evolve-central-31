@@ -78,7 +78,7 @@ const MembershipAssignmentForm = () => {
     const mockMembers: Member[] = [
       {
         id: '1',
-        full_name: 'John Doe',
+        name: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
         status: 'active',
@@ -87,7 +87,7 @@ const MembershipAssignmentForm = () => {
         membershipStartDate: new Date(),
         membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)),
         role: 'member',
-        branch_id: currentBranch?.id
+        branchId: currentBranch?.id
       },
     ];
 
@@ -174,7 +174,7 @@ const MembershipAssignmentForm = () => {
       if (data.createInvoice) {
         invoiceService.createInvoice({
           memberId: data.memberId,
-          memberName: selectedMember?.full_name || selectedMember?.name || '',
+          memberName: selectedMember?.name || '',
           amount: data.totalAmount,
           description: `Membership: ${selectedPlan?.name || 'Unknown Plan'}`,
           dueDate: new Date(new Date().setDate(new Date().getDate() + 7)),
@@ -192,7 +192,7 @@ const MembershipAssignmentForm = () => {
       
       toast({
         title: "Membership Assigned",
-        description: `Successfully assigned ${selectedPlan?.name} plan to ${selectedMember?.full_name || selectedMember?.name}`,
+        description: `Successfully assigned ${selectedPlan?.name} plan to ${selectedMember?.name}`,
       });
       
       setLoading(false);
@@ -230,7 +230,7 @@ const MembershipAssignmentForm = () => {
                       <SelectContent>
                         {members.map((member) => (
                           <SelectItem key={member.id} value={member.id}>
-                            {member.full_name || member.name || member.email || member.id}
+                            {member.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

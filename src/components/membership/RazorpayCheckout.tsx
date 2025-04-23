@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,6 @@ import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { MembershipPlan } from '@/types/membership';
 import { membershipService } from '@/services/membershipService';
 import { toast } from 'sonner';
-import { usePaymentLink, useVerifyPayment } from '@/hooks/use-membership';
 
 interface RazorpayCheckoutProps {
   plan: MembershipPlan;
@@ -30,9 +30,7 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
   const [discountAmount, setDiscountAmount] = useState(0);
   const [finalAmount, setFinalAmount] = useState(plan.price);
   
-  const paymentLinkMutation = usePaymentLink();
-  const verifyPaymentMutation = useVerifyPayment();
-  
+  // Load Razorpay script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -56,8 +54,10 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
     setLoading(true);
     
     try {
+      // In a real app, this would call an API to validate the promo code
+      // For demo purposes, we'll simulate a valid promo code "WELCOME10" that gives 10% off
       if (promoCode.toUpperCase() === 'WELCOME10') {
-        const discount = plan.price * 0.1;
+        const discount = plan.price * 0.1; // 10% discount
         setDiscountAmount(discount);
         setFinalAmount(plan.price - discount);
         setPromoApplied(true);
@@ -76,6 +76,7 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
     setLoading(true);
     
     try {
+      // Get payment link from server
       const paymentLink = await membershipService.getPaymentLink(
         plan.id, 
         memberId,
@@ -86,6 +87,8 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
         throw new Error('Failed to generate payment link');
       }
       
+      // For demo purposes, we'll simulate Razorpay instead of using actual payment link
+      // In production, you'd redirect to paymentLink or use Razorpay checkout
       openRazorpayCheckout();
     } catch (error) {
       toast.error('Failed to initiate payment');
@@ -101,13 +104,14 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
     }
     
     const options = {
-      key: 'rzp_test_YourKeyHere',
-      amount: finalAmount * 100,
+      key: 'rzp_test_YourKeyHere', // Replace with your Razorpay key
+      amount: finalAmount * 100, // Razorpay expects amount in paise
       currency: 'INR',
       name: 'Muscle Garage Evolve',
       description: `${plan.name} Membership`,
-      image: '/placeholder.svg',
+      image: '/placeholder.svg', // Replace with your logo
       handler: function(response: any) {
+        // Handle successful payment
         const subscriptionData = {
           planId: plan.id,
           memberId: memberId,
@@ -116,6 +120,7 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
           appliedPromo: promoApplied ? promoCode : null
         };
         
+        // In a real app, you'd verify the payment on server
         membershipService.verifyPayment(
           response.razorpay_payment_id,
           response.razorpay_order_id,
@@ -126,9 +131,9 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onS
         });
       },
       prefill: {
-        name: 'Member Name',
-        email: 'member@example.com',
-        contact: '9999999999'
+        name: 'Member Name', // In a real app, get from user context
+        email: 'member@example.com', // In a real app, get from user context
+        contact: '9999999999' // In a real app, get from user context
       },
       theme: {
         color: '#3B82F6'

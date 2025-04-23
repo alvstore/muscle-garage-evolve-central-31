@@ -1,133 +1,127 @@
 
 import React from "react";
-import { ChevronDown } from "lucide-react";
-import { NavItem as NavItemType } from "@/types/navigation";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronRight, Circle } from "lucide-react";
+import { useLocation, NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { NavSection } from "@/types/navigation";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
-import * as LucideIcons from "lucide-react";
-
-interface NavItemProps {
-  item: NavItemType;
-  expanded: boolean;
-  toggleSection?: (name: string) => void;
-  onClick?: () => void;
-}
-
-interface IconProps {
-  name: string;
-  className?: string;
-}
-
-// Icon component that dynamically loads an icon from lucide-react
-const DynamicIcon = ({ name, className }: IconProps) => {
-  if (!name) return null;
-  
-  // Type assertion to fix the TypeScript error
-  const IconComponent = (LucideIcons as any)[name] || LucideIcons.Circle;
-  return <IconComponent className={className} />;
-};
-
-export const NavItem = ({ item, expanded, toggleSection, onClick }: NavItemProps) => {
-  const location = useLocation();
-  const isActive = location.pathname === item.href;
-  const isChildActive = item.children?.some(child => location.pathname === child.href);
-  
-  if (!item.permission) return null;
-
-  return (
-    <RoutePermissionGuard permission={item.permission}>
-      <li>
-        {item.children ? (
-          <div className="space-y-1">
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-between py-2 text-indigo-200 hover:text-white hover:bg-indigo-800/50",
-                (isActive || isChildActive) && "bg-indigo-800/50 text-white"
-              )}
-              onClick={() => toggleSection?.(item.label)}
-            >
-              <div className="flex items-center">
-                {item.icon && <DynamicIcon name={item.icon} className="mr-2 h-5 w-5" />}
-                <span>{item.label}</span>
-              </div>
-              <ChevronDown
-                className={cn("h-4 w-4 transition-transform", expanded && "transform rotate-180")}
-              />
-            </Button>
-            {expanded && (
-              <ul className="ml-6 space-y-1">
-                {item.children.map((child, j) => (
-                  <RoutePermissionGuard key={j} permission={child.permission || item.permission}>
-                    <li>
-                      <Button
-                        asChild
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start hover:bg-indigo-800/50 py-1.5 text-sm text-indigo-200 hover:text-white",
-                          location.pathname === child.href && "bg-indigo-800/50 text-white"
-                        )}
-                        onClick={onClick}
-                      >
-                        <Link to={child.href}>{child.label}</Link>
-                      </Button>
-                    </li>
-                  </RoutePermissionGuard>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : (
-          <Button
-            asChild
-            variant="ghost"
-            className={cn(
-              "w-full justify-start py-2 text-indigo-200 hover:text-white hover:bg-indigo-800/50",
-              isActive && "bg-indigo-800/50 text-white"
-            )}
-            onClick={onClick}
-          >
-            <Link to={item.href}>
-              {item.icon && <DynamicIcon name={item.icon} className="mr-2 h-5 w-5" />}
-              <span>{item.label}</span>
-              {item.badge && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          </Button>
-        )}
-      </li>
-    </RoutePermissionGuard>
-  );
-};
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface NavigationSectionProps {
-  name: string;
-  items: NavItemType[];
+  section: NavSection;
   isExpanded: boolean;
-  toggleSection: (name: string) => void;
+  onToggle: () => void;
   onLinkClick?: () => void;
 }
 
-const NavigationSection = ({ name, items, isExpanded, toggleSection, onLinkClick }: NavigationSectionProps) => {
+const NavigationSection: React.FC<NavigationSectionProps> = ({
+  section,
+  isExpanded,
+  onToggle,
+  onLinkClick
+}) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { can } = usePermissions();
+  
+  // Check if a route is active (including child routes)
+  const isRouteActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+  
+  // Handle navigation with React Router
+  const handleNavigation = (href: string, hasChildren: boolean, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default browser navigation
+    
+    if (hasChildren) {
+      onToggle();
+    } else {
+      if (onLinkClick) {
+        onLinkClick();
+      }
+      navigate(href);
+    }
+  };
+  
   return (
-    <div className="px-3 py-2">
-      <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-indigo-100">{name}</h2>
-      <ul className="space-y-1">
-        {items.map((item, i) => (
-          <NavItem
-            key={i}
-            item={item}
-            expanded={isExpanded}
-            toggleSection={toggleSection}
-            onClick={onLinkClick}
-          />
-        ))}
-      </ul>
+    <div className="space-y-1">
+      {section.items.map((item, itemIndex) => {
+        const hasChildren = item.children && item.children.length > 0;
+        const filteredChildren = hasChildren 
+          ? item.children!.filter(child => can(child.permission))
+          : [];
+        const showChildren = hasChildren && filteredChildren.length > 0;
+        const isActive = isRouteActive(item.href);
+        
+        return (
+          <RoutePermissionGuard 
+            key={itemIndex} 
+            permission={item.permission}
+          >
+            <div className="mb-1">
+              <button
+                onClick={(e) => handleNavigation(item.href, showChildren, e)}
+                className={cn(
+                  "w-full flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors",
+                  isActive 
+                    ? "bg-indigo-800/70 text-white before:absolute before:left-0 before:h-full before:w-1 before:bg-white" 
+                    : "text-indigo-100 hover:bg-indigo-800/50 hover:text-white",
+                  "relative"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {item.icon}
+                  <span>{item.label}</span>
+                </div>
+                <div className="flex items-center">
+                  {item.badge && (
+                    <Badge variant="default" className="mr-2 bg-red-500 hover:bg-red-600">
+                      {item.badge}
+                    </Badge>
+                  )}
+                  {showChildren && (
+                    isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )
+                  )}
+                </div>
+              </button>
+              
+              {showChildren && isExpanded && (
+                <div className="mt-1 py-1 bg-indigo-900/50">
+                  {filteredChildren.map((child, childIndex) => (
+                    <RoutePermissionGuard 
+                      key={childIndex} 
+                      permission={child.permission}
+                    >
+                      <NavLink
+                        to={child.href}
+                        className={({ isActive }) => cn(
+                          "flex items-center gap-2 py-2 px-10 text-sm my-1 transition-colors",
+                          isActive 
+                            ? "text-white font-medium bg-indigo-800/30" 
+                            : "text-indigo-200 hover:text-white hover:bg-indigo-800/20"
+                        )}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (onLinkClick) onLinkClick();
+                          navigate(child.href);
+                        }}
+                      >
+                        <Circle className="h-2 w-2" />
+                        <span>{child.label}</span>
+                      </NavLink>
+                    </RoutePermissionGuard>
+                  ))}
+                </div>
+              )}
+            </div>
+          </RoutePermissionGuard>
+        );
+      })}
     </div>
   );
 };

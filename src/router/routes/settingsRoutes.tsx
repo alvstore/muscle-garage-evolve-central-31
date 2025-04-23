@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import SettingsPage from '@/pages/settings/SettingsPage';
@@ -70,16 +71,6 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings/branches',
     element: <BranchManagementPage />
-  },
-  {
-    path: '/settings/attendance',
-    element: <DeviceMappingPage />,
-    children: [
-      {
-        path: 'devices',
-        element: <DeviceMappingPage />
-      }
-    ]
   },
   {
     path: '/settings/attendance/devices',

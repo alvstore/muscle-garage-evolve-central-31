@@ -1,34 +1,33 @@
 
 import React from "react";
-import { NavSection as NavSectionType } from "@/types/navigation";
-import NavigationSection from "./NavigationSection";
+import SidebarNavSection from "@/components/sidebar/SidebarNavSection";
+import { NavSection } from "@/types/navigation";
 
 interface NavigationSectionsProps {
-  sections: NavSectionType[];
+  sections: NavSection[];
   expandedSections: string[];
-  toggleSection: (name: string) => void;
+  toggleSection: (sectionName: string) => void;
   onLinkClick?: () => void;
 }
 
-const NavigationSections = ({
+const NavigationSections: React.FC<NavigationSectionsProps> = ({
   sections,
   expandedSections,
   toggleSection,
-  onLinkClick
-}: NavigationSectionsProps) => {
+  onLinkClick,
+}) => {
   return (
-    <>
-      {sections.map((section, i) => (
-        <NavigationSection
-          key={i}
-          name={section.name}
-          items={section.items}
+    <div className="px-2 py-1">
+      {sections.map((section) => (
+        <SidebarNavSection
+          key={section.name}
+          section={section}
           isExpanded={expandedSections.includes(section.name)}
-          toggleSection={toggleSection}
+          onToggle={() => toggleSection(section.name)}
           onLinkClick={onLinkClick}
         />
       ))}
-    </>
+    </div>
   );
 };
 

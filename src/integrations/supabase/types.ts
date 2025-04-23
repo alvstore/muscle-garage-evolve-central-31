@@ -9,74 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      body_measurements: {
-        Row: {
-          arms: number | null
-          bmi: number | null
-          body_fat_percentage: number | null
-          branch_id: string | null
-          chest: number | null
-          created_at: string | null
-          height: number | null
-          hips: number | null
-          id: string
-          measurement_date: string | null
-          member_id: string | null
-          notes: string | null
-          recorded_by: string | null
-          thighs: number | null
-          updated_at: string | null
-          waist: number | null
-          weight: number | null
-        }
-        Insert: {
-          arms?: number | null
-          bmi?: number | null
-          body_fat_percentage?: number | null
-          branch_id?: string | null
-          chest?: number | null
-          created_at?: string | null
-          height?: number | null
-          hips?: number | null
-          id?: string
-          measurement_date?: string | null
-          member_id?: string | null
-          notes?: string | null
-          recorded_by?: string | null
-          thighs?: number | null
-          updated_at?: string | null
-          waist?: number | null
-          weight?: number | null
-        }
-        Update: {
-          arms?: number | null
-          bmi?: number | null
-          body_fat_percentage?: number | null
-          branch_id?: string | null
-          chest?: number | null
-          created_at?: string | null
-          height?: number | null
-          hips?: number | null
-          id?: string
-          measurement_date?: string | null
-          member_id?: string | null
-          notes?: string | null
-          recorded_by?: string | null
-          thighs?: number | null
-          updated_at?: string | null
-          waist?: number | null
-          weight?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "body_measurements_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       branches: {
         Row: {
           address: string | null
@@ -817,83 +749,8 @@ export type Database = {
         }
         Relationships: []
       }
-      members: {
-        Row: {
-          blood_group: string | null
-          branch_id: string | null
-          created_at: string | null
-          date_of_birth: string | null
-          email: string | null
-          gender: string | null
-          goal: string | null
-          id: string
-          membership_end_date: string | null
-          membership_id: string | null
-          membership_start_date: string | null
-          membership_status: string | null
-          name: string
-          occupation: string | null
-          phone: string | null
-          status: string | null
-          trainer_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          blood_group?: string | null
-          branch_id?: string | null
-          created_at?: string | null
-          date_of_birth?: string | null
-          email?: string | null
-          gender?: string | null
-          goal?: string | null
-          id?: string
-          membership_end_date?: string | null
-          membership_id?: string | null
-          membership_start_date?: string | null
-          membership_status?: string | null
-          name: string
-          occupation?: string | null
-          phone?: string | null
-          status?: string | null
-          trainer_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          blood_group?: string | null
-          branch_id?: string | null
-          created_at?: string | null
-          date_of_birth?: string | null
-          email?: string | null
-          gender?: string | null
-          goal?: string | null
-          id?: string
-          membership_end_date?: string | null
-          membership_id?: string | null
-          membership_start_date?: string | null
-          membership_status?: string | null
-          name?: string
-          occupation?: string | null
-          phone?: string | null
-          status?: string | null
-          trainer_id?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "members_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       memberships: {
         Row: {
-          branch_id: string | null
           created_at: string | null
           description: string | null
           duration_days: number
@@ -905,7 +762,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          branch_id?: string | null
           created_at?: string | null
           description?: string | null
           duration_days: number
@@ -917,7 +773,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          branch_id?: string | null
           created_at?: string | null
           description?: string | null
           duration_days?: number
@@ -928,15 +783,7 @@ export type Database = {
           price?: number
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "memberships_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payment_settings: {
         Row: {
@@ -1334,10 +1181,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

@@ -5,112 +5,54 @@ import { Container } from "@/components/ui/container";
 import MemberProfile from "@/components/members/MemberProfile";
 import MemberTransactionHistory from "@/components/members/MemberTransactionHistory";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Member } from "@/types";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/services/supabaseClient";
-import { Member as MemberType } from "@/types/member";
-import { Member } from "@/types/index";
-
-// Using type assertion to create a compatible interface
-type MemberWithStatus = MemberType & {
-  status: string; // Required by src/types/member.ts
-  goal?: string; // Adding goal property that appears in both interfaces
-  trainerId?: string; // Adding trainerId property to match the field we're setting
-};
 
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
-  const [member, setMember] = useState<MemberWithStatus | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-
-    const fetchMember = async () => {
-      const { data, error } = await supabase
-        .from("members")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (error) {
-        setMember(null);
-        setLoading(false);
-        toast.error(error.message || "Unable to fetch member profile");
-      } else if (data) {
-        // Convert Supabase data to Member type with status
-        const memberData: MemberWithStatus = {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: "member", // Setting fixed role as 'member'
-          phone: data.phone,
-          dateOfBirth: data.date_of_birth || undefined,
-          gender: data.gender as "Male" | "Female" | "Other" | undefined,
-          bloodGroup: data.blood_group || undefined,
-          occupation: data.occupation || undefined,
-          goal: data.goal || undefined,
-          trainerId: data.trainer_id || undefined,
-          membershipId: data.membership_id || undefined,
-          membershipStatus: data.membership_status as "active" | "expired" | "none" | "inactive" || "none",
-          membershipStartDate: data.membership_start_date || undefined,
-          membershipEndDate: data.membership_end_date || undefined,
-          status: data.status || "active", // Adding required status field
-          branch_id: data.branch_id,
-        };
-        
-        setMember(memberData);
-        setLoading(false);
-      } else {
-        setMember(null);
-        setLoading(false);
-      }
-    };
-
-    fetchMember();
+    // Simulate API call to fetch member data
+    setTimeout(() => {
+      // Mock data - in a real app, you would fetch this from an API
+      const mockMember: Member = {
+        id: id || "1",
+        email: "john.doe@example.com",
+        name: "John Doe",
+        role: "member",
+        phone: "+1 (555) 123-4567",
+        dateOfBirth: "1990-05-15",
+        goal: "Build muscle and improve overall fitness",
+        trainerId: "trainer-123",
+        membershipId: "platinum-12m",
+        membershipStatus: "active",
+        membershipStartDate: "2023-01-15",
+        membershipEndDate: "2024-01-15",
+      };
+      
+      setMember(mockMember);
+      setLoading(false);
+    }, 1000);
   }, [id]);
 
-  const handleUpdateMember = async (updatedMember: MemberWithStatus) => {
+  const handleUpdateMember = (updatedMember: Member) => {
+    // Simulate API call to update member data
     setLoading(true);
-    
-    try {
-      // Update the member in Supabase
-      const { error } = await supabase
-        .from("members")
-        .update({
-          name: updatedMember.name,
-          email: updatedMember.email,
-          phone: updatedMember.phone,
-          gender: updatedMember.gender,
-          blood_group: updatedMember.bloodGroup,
-          occupation: updatedMember.occupation,
-          date_of_birth: updatedMember.dateOfBirth,
-          goal: updatedMember.goal,
-          membership_id: updatedMember.membershipId,
-          membership_status: updatedMember.membershipStatus,
-          membership_start_date: updatedMember.membershipStartDate,
-          membership_end_date: updatedMember.membershipEndDate,
-          status: updatedMember.status,
-        })
-        .eq("id", updatedMember.id);
-
-      if (error) throw error;
-      
-      // Update local state
+    setTimeout(() => {
       setMember(updatedMember);
       setLoading(false);
       toast.success("Member profile updated successfully");
-    } catch (err: any) {
-      setLoading(false);
-      toast.error(err?.message || "Could not update member profile");
-    }
+    }, 1000);
   };
 
   return (
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Member Profile</h1>
+        
         {loading ? (
           <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -122,12 +64,14 @@ const MemberProfilePage = () => {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="transactions">Transactions</TabsTrigger>
             </TabsList>
+            
             <TabsContent value="profile">
               <MemberProfile 
-                member={member as unknown as Member} 
-                onUpdate={(updatedMember) => handleUpdateMember(updatedMember as unknown as MemberWithStatus)} 
+                member={member} 
+                onUpdate={handleUpdateMember} 
               />
             </TabsContent>
+            
             <TabsContent value="transactions">
               <MemberTransactionHistory />
             </TabsContent>

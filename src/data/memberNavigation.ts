@@ -1,5 +1,7 @@
 
-import { NavSection } from "@/types/navigation";
+import { ReactNode } from "react";
+import { createNavIcon } from "@/utils/createNavIcon";
+import { NavItem, NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
 
 export const memberNavSections: NavSection[] = [
@@ -9,7 +11,7 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/dashboard", 
         label: "Overview", 
-        icon: "Home",
+        icon: createNavIcon("Home"),
         permission: "feature_member_dashboard" as Permission
       },
     ],
@@ -20,7 +22,7 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/members/profile", 
         label: "Profile", 
-        icon: "User",
+        icon: createNavIcon("User"),
         permission: "member_view_profile" as Permission
       },
     ],
@@ -31,31 +33,31 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/classes", 
         label: "Book Classes", 
-        icon: "Calendar",
+        icon: createNavIcon("Calendar"),
         permission: "member_book_classes" as Permission
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
-        icon: "Activity",
+        icon: createNavIcon("Activity"),
         permission: "member_view_attendance" as Permission
       },
       { 
         href: "/fitness/progress", 
         label: "Progress Tracker", 
-        icon: "TrendingUp",
+        icon: createNavIcon("TrendingUp"),
         permission: "member_view_profile" as Permission
       },
       { 
         href: "/fitness/workout-plans", 
         label: "Workout Plans", 
-        icon: "Activity",
+        icon: createNavIcon("Activity"),
         permission: "member_view_plans" as Permission
       },
       { 
         href: "/fitness/diet", 
         label: "Diet Plan", 
-        icon: "Utensils",
+        icon: createNavIcon("Utensils"),
         permission: "member_view_plans" as Permission
       },
     ],
@@ -66,13 +68,13 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/finance/invoices", 
         label: "Invoices", 
-        icon: "FileText",
+        icon: createNavIcon("FileText"),
         permission: "member_view_invoices" as Permission
       },
       { 
         href: "/membership", 
         label: "Membership", 
-        icon: "CreditCard",
+        icon: createNavIcon("CreditCard"),
         permission: "member_view_plans" as Permission
       },
     ],
@@ -83,7 +85,7 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/store", 
         label: "Shop", 
-        icon: "ShoppingBag",
+        icon: createNavIcon("ShoppingBag"),
         permission: "access_store" as Permission
       },
     ],
@@ -94,13 +96,13 @@ export const memberNavSections: NavSection[] = [
       { 
         href: "/communication/feedback", 
         label: "Feedback", 
-        icon: "MessageCircle",
+        icon: createNavIcon("MessageCircle"),
         permission: "access_communication" as Permission
       },
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
-        icon: "Bell",
+        icon: createNavIcon("Bell"),
         permission: "access_communication" as Permission
       },
     ],

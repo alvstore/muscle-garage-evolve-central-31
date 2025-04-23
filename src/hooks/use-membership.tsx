@@ -1,14 +1,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { membershipService } from '@/services/membershipService';
-import { useBranch } from './use-branch';
 
 export const useMembershipPlans = () => {
-  const { currentBranch } = useBranch();
-  
   return useQuery({
-    queryKey: ['membership-plans', currentBranch?.id],
-    queryFn: () => membershipService.getMembershipPlans(currentBranch?.id),
+    queryKey: ['membership-plans'],
+    queryFn: membershipService.getMembershipPlans,
   });
 };
 
@@ -30,11 +27,10 @@ export const useMemberSubscription = (memberId: string) => {
 
 export const useCreateSubscription = () => {
   const queryClient = useQueryClient();
-  const { currentBranch } = useBranch();
   
   return useMutation({
     mutationFn: ({ memberId, planId }: { memberId: string; planId: string }) => 
-      membershipService.createSubscription(memberId, planId, currentBranch?.id),
+      membershipService.createSubscription(memberId, planId),
     onSuccess: (data, variables) => {
       if (data) {
         queryClient.invalidateQueries({ queryKey: ['members', variables.memberId, 'subscription'] });

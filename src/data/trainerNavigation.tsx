@@ -1,5 +1,23 @@
 
+import React from 'react';
 import { NavSection } from '@/types/navigation';
+import {
+  BarChart,
+  CalendarCheck,
+  Users,
+  Settings,
+  Dumbbell,
+  Bell,
+  PanelTop,
+  Scale,
+  BadgeCheck,
+  Clipboard,
+  Mail,
+  Heart,
+  UserCog,
+  CreditCard,
+  Gauge
+} from 'lucide-react';
 import { Permission } from '@/hooks/use-permissions';
 
 export const trainerNavSections: NavSection[] = [
@@ -9,7 +27,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/dashboard",
         label: "Overview",
-        icon: "BarChart",
+        icon: <BarChart className="w-5 h-5" />,
         permission: 'access_dashboards' as Permission,
       }
     ]
@@ -20,7 +38,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/attendance",
         label: "Attendance",
-        icon: "CalendarCheck",
+        icon: <CalendarCheck className="w-5 h-5" />,
         permission: 'view_all_attendance' as Permission,
       }
     ]
@@ -31,7 +49,7 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/members",
         label: "My Members",
-        icon: "Users",
+        icon: <Users className="w-5 h-5" />,
         permission: 'view_all_trainers' as Permission,
       }
     ]
@@ -42,32 +60,31 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/fitness-plans",
         label: "Fitness Plans",
-        icon: "Dumbbell",
+        icon: <Dumbbell className="w-5 h-5" />,
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/workout-plans",
         label: "Workout Plans",
-        icon: "Gauge",
+        icon: <Gauge className="w-5 h-5" />,
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/diet-plans",
         label: "Diet Plans",
-        icon: "BadgeCheck",
+        icon: <BadgeCheck className="w-5 h-5" />,
         permission: 'manage_fitness_data' as Permission,
       },
       {
         href: "/fitness/progress",
         label: "Progress Tracking",
-        icon: "Scale",
+        icon: <Scale className="w-5 h-5" />,
         permission: 'manage_fitness_data' as Permission,
       },
-      // Changed from /members/progress to /trainers/member-progress which exists in routes
       {
-        href: "/trainers/member-progress",
+        href: "/members/progress",
         label: "Member Progress",
-        icon: "Clipboard",
+        icon: <Clipboard className="w-5 h-5" />,
         permission: 'view_all_trainers' as Permission,
       }
     ]
@@ -78,21 +95,19 @@ export const trainerNavSections: NavSection[] = [
       {
         href: "/communication/tasks",
         label: "Tasks",
-        icon: "PanelTop",
+        icon: <PanelTop className="w-5 h-5" />,
         permission: 'view_staff' as Permission,
       },
       {
         href: "/communication/announcements",
         label: "Announcements",
-        icon: "Bell",
+        icon: <Bell className="w-5 h-5" />,
         permission: 'access_communication' as Permission,
       },
-      // Removing email link as it's not in the routes
-      // or replace with a route that exists
       {
-        href: "/trainers/announcements",
+        href: "/communication/email",
         label: "Email",
-        icon: "Mail",
+        icon: <Mail className="w-5 h-5" />,
         permission: 'access_communication' as Permission,
       }
     ]
@@ -100,11 +115,10 @@ export const trainerNavSections: NavSection[] = [
   {
     name: "My Account",
     items: [
-      // Changed from /profile to /trainers/profile which exists in routes
       {
-        href: "/trainers/profile",
+        href: "/profile",
         label: "Profile",
-        icon: "UserCog",
+        icon: <UserCog className="w-5 h-5" />,
         permission: 'member_view_plans' as Permission,
       }
     ]

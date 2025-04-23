@@ -2,42 +2,31 @@
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Member } from "@/types/member";
+import { Member } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
-import MemberBasicDetailsForm from "@/components/members/MemberBasicDetailsForm";
-import MemberMembershipForm from "@/components/members/MemberMembershipForm";
-import { format } from "date-fns";
-import { supabase } from "@/services/supabaseClient";
-import { useBranch } from "@/hooks/use-branch";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-const GENDERS = ["Male", "Female", "Other"] as const;
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentBranch } = useBranch();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    gender: "" as "" | typeof GENDERS[number],
-    bloodGroup: "" as "" | typeof BLOOD_GROUPS[number],
-    occupation: "",
-    dateOfBirth: "" as string,
+    dateOfBirth: "",
     goal: "",
     membershipId: "gold-6m",
     membershipStatus: "active",
   });
-  const [dob, setDob] = useState<Date | undefined>(undefined);
   const [initialMeasurements, setInitialMeasurements] = useState<Partial<BodyMeasurement> | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -49,94 +38,48 @@ const NewMemberPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDobChange = (date?: Date) => {
-    setDob(date);
-    setFormData(prev => ({
-      ...prev,
-      dateOfBirth: date ? format(date, "yyyy-MM-dd") : "",
-    }));
-  };
-
   const handleSaveMeasurements = (measurements: Partial<BodyMeasurement>) => {
     setInitialMeasurements(measurements);
     toast.success("Initial measurements saved. They will be recorded when the member is created.");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    try {
-      // Verify we have a branch selected
-      const branchId = currentBranch?.id;
-      if (!branchId) {
-        toast.error("Please select a branch before creating a member");
-        setLoading(false);
-        return;
-      }
-
-      // Insert member with branch_id from selected branch
-      const { data: inserted, error } = await supabase
-        .from("members")
-        .insert([
-          {
-            user_id: user?.id,
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            gender: formData.gender,
-            blood_group: formData.bloodGroup,
-            occupation: formData.occupation,
-            date_of_birth: formData.dateOfBirth ? formData.dateOfBirth : null,
-            goal: formData.goal,
-            membership_id: formData.membershipId,
-            membership_status: formData.membershipStatus,
-            branch_id: branchId,
-            status: "active",
-          },
-        ])
-        .select()
-        .single();
-
-      if (error || !inserted) throw new Error(error?.message || "Failed to add member");
-
-      const memberId = inserted.id;
-
-      // Save measurements if exists
+    
+    // Simulate API call to create a new member
+    setTimeout(() => {
+      const newMember: Member = {
+        id: `member-${Date.now()}`,
+        email: formData.email,
+        name: formData.name,
+        role: "member",
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        goal: formData.goal,
+        trainerId: "trainer-123", // Default trainer
+        membershipId: formData.membershipId,
+        membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
+        membershipStartDate: new Date().toISOString(),
+        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+      };
+      
+      // If there are initial measurements, save them too
       if (initialMeasurements) {
-        await supabase.from("body_measurements").insert([
-          {
-            member_id: memberId,
-            ...initialMeasurements,
-            branch_id: branchId,
-            recorded_by: user?.id,
-          },
-        ]);
+        console.log("Saving initial measurements:", initialMeasurements);
+        // In a real app, this would be an API call to save the measurements
       }
-
+      
       setLoading(false);
-      toast.success("✅ Member profile created successfully!");
-      navigate(`/members/${memberId}`);
-    } catch (err: any) {
-      setLoading(false);
-      toast.error(err?.message || "Could not create member.");
-    }
+      toast.success("Member created successfully");
+      navigate(`/members/${newMember.id}`);
+    }, 1500);
   };
 
   return (
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Add New Member</h1>
-        
-        {!currentBranch && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No branch selected</AlertTitle>
-            <AlertDescription>
-              Please select a branch from the sidebar dropdown before creating a member.
-            </AlertDescription>
-          </Alert>
-        )}
         
         <div className="space-y-6">
           <Card>
@@ -146,41 +89,133 @@ const NewMemberPage = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <MemberBasicDetailsForm
-                  formData={formData}
-                  dob={dob}
-                  onChange={handleChange}
-                  onSelectChange={handleSelectChange}
-                  onDobChange={handleDobChange}
-                />
-                <MemberMembershipForm
-                  formData={formData}
-                  onSelectChange={handleSelectChange}
-                />
-                {currentBranch && (
-                  <div className="bg-muted/50 p-3 rounded-md mb-3">
-                    <p className="text-sm font-medium">
-                      Branch: <span className="font-normal">{currentBranch.name}</span>
-                    </p>
+                {/* Personal Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Personal Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input 
+                        id="name" 
+                        name="name" 
+                        placeholder="John Doe" 
+                        value={formData.name} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input 
+                        id="email" 
+                        name="email" 
+                        type="email" 
+                        placeholder="john.doe@example.com" 
+                        value={formData.email} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input 
+                        id="phone" 
+                        name="phone" 
+                        placeholder="+1 (555) 123-4567" 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                      <Input 
+                        id="dateOfBirth" 
+                        name="dateOfBirth" 
+                        type="date" 
+                        value={formData.dateOfBirth} 
+                        onChange={handleChange} 
+                      />
+                    </div>
                   </div>
-                )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="goal">Fitness Goal</Label>
+                    <Textarea 
+                      id="goal" 
+                      name="goal" 
+                      placeholder="Build muscle and improve overall fitness" 
+                      value={formData.goal} 
+                      onChange={handleChange} 
+                      rows={3} 
+                    />
+                  </div>
+                </div>
+                
+                {/* Membership Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Membership Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="membershipId">Membership Type *</Label>
+                      <Select 
+                        value={formData.membershipId} 
+                        onValueChange={(value) => handleSelectChange("membershipId", value)}
+                      >
+                        <SelectTrigger id="membershipId">
+                          <SelectValue placeholder="Select membership type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="platinum-12m">Platinum (12 Months)</SelectItem>
+                          <SelectItem value="gold-6m">Gold (6 Months)</SelectItem>
+                          <SelectItem value="silver-3m">Silver (3 Months)</SelectItem>
+                          <SelectItem value="basic-1m">Basic (1 Month)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="membershipStatus">Membership Status *</Label>
+                      <Select 
+                        value={formData.membershipStatus} 
+                        onValueChange={(value) => handleSelectChange("membershipStatus", value)}
+                      >
+                        <SelectTrigger id="membershipStatus">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="expired">Expired</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="flex justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
+                  <Button 
+                    type="button" 
+                    variant="outline" 
                     onClick={() => navigate("/members")}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={loading || !currentBranch}>
+                  <Button type="submit" disabled={loading}>
                     {loading ? "Creating..." : "Create Member"}
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
-          <MemberBodyMeasurements
-            currentUser={user!}
+          
+          {/* Body Measurements Section */}
+          <MemberBodyMeasurements 
+            currentUser={user!} 
             onSaveMeasurements={handleSaveMeasurements}
           />
         </div>

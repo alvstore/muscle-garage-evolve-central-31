@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
-import { Member, MemberStatus } from "@/types/member";
+import { Member } from "@/types";
 import { toast } from "sonner";
 
 const MembersListPage = () => {
@@ -21,7 +21,7 @@ const MembersListPage = () => {
     setLoading(true);
     
     setTimeout(() => {
-      // Mock data - Updated to match new MemberStatus type and added avatar field
+      // Mock data
       const mockMembers: Member[] = [
         {
           id: "member-1",
@@ -32,9 +32,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: new Date().toISOString(),
-          membershipEndDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-          avatar: "",
+          membershipStartDate: new Date("2023-01-15"),
+          membershipEndDate: new Date("2024-01-15"),
         },
         {
           id: "member-2",
@@ -45,9 +44,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "gold-6m",
-          membershipStartDate: new Date().toISOString(),
-          membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
-          avatar: "",
+          membershipStartDate: new Date("2023-06-01"),
+          membershipEndDate: new Date("2023-12-01"),
         },
         {
           id: "member-3",
@@ -55,12 +53,11 @@ const MembersListPage = () => {
           name: "Mike Johnson",
           role: "member",
           phone: "+1 (555) 456-7890",
-          status: "expired",
+          status: "active",
           membershipStatus: "expired",
           membershipId: "silver-3m",
-          membershipStartDate: new Date().toISOString(),
-          membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
-          avatar: "",
+          membershipStartDate: new Date("2023-01-01"),
+          membershipEndDate: new Date("2023-04-01"),
         },
         {
           id: "member-4",
@@ -68,12 +65,11 @@ const MembersListPage = () => {
           name: "Sarah Wilson",
           role: "member",
           phone: "+1 (555) 789-0123",
-          status: "inactive",
+          status: "active",
           membershipStatus: "inactive",
           membershipId: "gold-6m",
-          membershipStartDate: new Date().toISOString(),
-          membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
-          avatar: "",
+          membershipStartDate: new Date("2023-02-15"),
+          membershipEndDate: new Date("2023-08-15"),
         },
         {
           id: "member-5",
@@ -84,9 +80,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: new Date().toISOString(),
-          membershipEndDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
-          avatar: "",
+          membershipStartDate: new Date("2023-05-01"),
+          membershipEndDate: new Date("2024-05-01"),
         }
       ];
       
