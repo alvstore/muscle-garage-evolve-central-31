@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import NotificationsPanel from "@/components/notifications/NotificationsPanel";
-import { useSidebar } from "@/components/ui/sidebar";
 
 interface DashboardHeaderProps {
   toggleSidebar: () => void;
@@ -60,6 +60,7 @@ const DashboardHeader = ({
     }
   };
 
+  // Check if user is a member or staff
   const isMember = user?.role === 'member';
   const isStaff = user?.role === 'staff';
 
@@ -82,6 +83,7 @@ const DashboardHeader = ({
       </div>
       
       <div className="flex items-center gap-4">
+        {/* Only show search for non-member users */}
         {!isMember && (
           <>
             <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
@@ -148,6 +150,7 @@ const DashboardHeader = ({
             <DropdownMenuItem onClick={() => navigate("/profile")}>
               Profile
             </DropdownMenuItem>
+            {/* Only show settings for admin users, not staff or members */}
             {user?.role === 'admin' && (
               <DropdownMenuItem onClick={() => navigate("/settings")}>
                 Settings
