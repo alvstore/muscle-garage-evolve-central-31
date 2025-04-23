@@ -117,15 +117,6 @@ export const settingsRoutes: RouteObject[] = [
       </PrivateRoute>
     )
   },
-  // Fix for /settings/attendance route - redirect to devices page
-  {
-    path: '/settings/attendance',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <DeviceMappingPage />
-      </PrivateRoute>
-    )
-  },
   {
     path: '/settings/attendance/devices',
     element: (

@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,6 @@ export default function DashboardSidebar({
     logout,
     user
   } = useAuth();
-  const { open } = useSidebar();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleSection = (sectionName: string) => {
@@ -53,7 +52,7 @@ export default function DashboardSidebar({
   };
 
   return (
-    <Sidebar className={cn("transition-all duration-300", open ? "w-64" : "w-0")}>
+    <Sidebar className={cn("transition-all duration-300", isSidebarOpen ? "w-64" : "w-0")}>
       <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <SidebarHeader className="p-4">

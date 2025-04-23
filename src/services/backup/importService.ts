@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';  // Updated import syntax
+import { saveAs } from 'file-saver';
 import { supabase } from '@/services/supabaseClient';
 import { ImportType } from './types';
 import { exportTypeToTable, importTemplates } from './constants';
