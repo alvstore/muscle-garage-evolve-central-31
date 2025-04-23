@@ -2,17 +2,17 @@
 import React from 'react';
 import { Container } from '@/components/ui/container';
 
-const FitnessPlanPage = () => {
+const MemberProgressPage = () => {
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Fitness Plans Management</h1>
+        <h1 className="text-2xl font-bold mb-6">Member Progress</h1>
         <div className="bg-card rounded-lg shadow p-6">
-          <p>Manage fitness plans for your members</p>
+          <p>Track and manage member fitness progress</p>
         </div>
       </div>
     </Container>
   );
 };
 
-export default FitnessPlanPage;
+export default MemberProgressPage;

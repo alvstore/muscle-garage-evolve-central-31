@@ -3,6 +3,7 @@ import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import AdminDashboard from '@/pages/dashboard/AdminDashboard';
+import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
 
 export const adminDashboardRoutes: RouteObject[] = [
   {
@@ -10,6 +11,22 @@ export const adminDashboardRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <AdminDashboard />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/dashboard',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <AdminDashboard />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/dashboard/realtime',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <RealTimeDashboardPage />
       </PrivateRoute>
     )
   }
