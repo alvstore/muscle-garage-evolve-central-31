@@ -26,6 +26,12 @@ export const settingsNavigation: NavSection = {
           label: "Automation Rules",
           permission: "manage_settings" as Permission,
         },
+        // Add system backup link that exists in routes
+        {
+          href: "/admin/system-backup",
+          label: "System Backup",
+          permission: "manage_settings" as Permission,
+        }
       ]
     },
     {
@@ -74,8 +80,9 @@ export const settingsNavigation: NavSection = {
         }
       ]
     },
+    // Change the parent route to a route that exists
     {
-      href: "/settings/attendance",
+      href: "/settings/attendance/devices", // Changed from /settings/attendance
       label: "Attendance Settings",
       icon: "Smartphone",
       permission: "access_settings" as Permission,

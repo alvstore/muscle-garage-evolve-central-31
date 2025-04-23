@@ -63,8 +63,9 @@ export const trainerNavSections: NavSection[] = [
         icon: "Scale",
         permission: 'manage_fitness_data' as Permission,
       },
+      // Changed from /members/progress to /trainers/member-progress which exists in routes
       {
-        href: "/members/progress",
+        href: "/trainers/member-progress",
         label: "Member Progress",
         icon: "Clipboard",
         permission: 'view_all_trainers' as Permission,
@@ -86,8 +87,10 @@ export const trainerNavSections: NavSection[] = [
         icon: "Bell",
         permission: 'access_communication' as Permission,
       },
+      // Removing email link as it's not in the routes
+      // or replace with a route that exists
       {
-        href: "/communication/email",
+        href: "/trainers/announcements",
         label: "Email",
         icon: "Mail",
         permission: 'access_communication' as Permission,
@@ -97,8 +100,9 @@ export const trainerNavSections: NavSection[] = [
   {
     name: "My Account",
     items: [
+      // Changed from /profile to /trainers/profile which exists in routes
       {
-        href: "/profile",
+        href: "/trainers/profile",
         label: "Profile",
         icon: "UserCog",
         permission: 'member_view_plans' as Permission,

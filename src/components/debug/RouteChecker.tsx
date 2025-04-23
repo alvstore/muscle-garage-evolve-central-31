@@ -32,8 +32,7 @@ const RouteChecker = () => {
       checkNavSections(memberNavSections, 'Member');
     }
     
-    // Check trainer navigation - this is likely the issue
-    // Make sure trainerNavSections exists and is properly formatted
+    // Check trainer navigation
     if (trainerNavSections && Array.isArray(trainerNavSections)) {
       checkNavSections(trainerNavSections, 'Trainer');
     }
@@ -56,6 +55,11 @@ const RouteChecker = () => {
       }
       
       section.items.forEach((item: any) => {
+        // Skip special route cases like external links or anchor tags
+        if (item.href.startsWith('http') || item.href === '#') {
+          return;
+        }
+        
         if (!isValidRoute(item.href)) {
           invalidLinks.push({
             section: section.name || 'Unknown Section',
@@ -67,6 +71,11 @@ const RouteChecker = () => {
         // Check children if any
         if (item.children && Array.isArray(item.children)) {
           item.children.forEach((child: any) => {
+            // Skip special route cases for children too
+            if (child.href.startsWith('http') || child.href === '#') {
+              return;
+            }
+            
             if (!isValidRoute(child.href)) {
               invalidLinks.push({
                 section: section.name || 'Unknown Section',

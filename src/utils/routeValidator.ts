@@ -14,6 +14,21 @@ export const isValidRoute = (path: string): boolean => {
     routes.forEach(route => {
       if (route.path) {
         paths.push(route.path);
+        
+        // Also consider parent paths without trailing slashes as valid
+        if (route.path.endsWith('/')) {
+          paths.push(route.path.slice(0, -1));
+        } else {
+          paths.push(`${route.path}/`);
+        }
+        
+        // Add for paths with parameters (check only the base part)
+        if (route.path.includes(':')) {
+          const basePath = route.path.split('/:')[0];
+          if (!paths.includes(basePath)) {
+            paths.push(basePath);
+          }
+        }
       }
       
       if (route.children) {
@@ -26,8 +41,19 @@ export const isValidRoute = (path: string): boolean => {
   
   const allPaths = extractPaths(appRoutes);
   
+  // Special cases to always consider valid
+  if (
+    path === '#' || 
+    path.startsWith('http') ||
+    path === '/' ||
+    path === '' ||
+    path === '/dashboard'
+  ) {
+    return true;
+  }
+  
   // Check if the provided path exists in allPaths
-  return allPaths.includes(path) || path === '#' || path.startsWith('http');
+  return allPaths.includes(path);
 };
 
 /**

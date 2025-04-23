@@ -22,8 +22,11 @@ interface IconProps {
 
 // Icon component that dynamically loads an icon from lucide-react
 const DynamicIcon = ({ name, className }: IconProps) => {
-  const LucideIcon = LucideIcons[name as keyof typeof LucideIcons] as React.ElementType || LucideIcons.Circle;
-  return <LucideIcon className={className} />;
+  if (!name) return null;
+  
+  // Type assertion to fix the TypeScript error
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.Circle;
+  return <IconComponent className={className} />;
 };
 
 export const NavItem = ({ item, expanded, toggleSection, onClick }: NavItemProps) => {
@@ -89,6 +92,11 @@ export const NavItem = ({ item, expanded, toggleSection, onClick }: NavItemProps
             <Link to={item.href}>
               {item.icon && <DynamicIcon name={item.icon} className="mr-2 h-5 w-5" />}
               <span>{item.label}</span>
+              {item.badge && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           </Button>
         )}
