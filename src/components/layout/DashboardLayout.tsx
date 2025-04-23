@@ -21,7 +21,7 @@ const DashboardLayout = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, open, closeSidebar } = useSidebar();
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -72,28 +72,28 @@ const DashboardLayout = () => {
     );
   }
 
-  // Determine which sidebar to show based on the user role
-  const getSidebarComponent = () => {
-    switch (user.role) {
-      case 'member':
-        return MemberSidebar;
-      case 'trainer':
-        return TrainerSidebar;
-      case 'admin':
-      case 'staff':
-      default:
-        return DashboardSidebar;
-    }
-  };
-
-  const SidebarComponent = getSidebarComponent();
+  // Sidebar logic: Pass correct props depending on sidebar component
+  let SidebarContent = null;
+  if (user.role === "member") {
+    SidebarContent = <MemberSidebar />;
+  } else if (user.role === "trainer") {
+    SidebarContent = <TrainerSidebar />;
+  } else {
+    // Default to DashboardSidebar for admin/staff (with required props)
+    SidebarContent = (
+      <DashboardSidebar
+        isSidebarOpen={open}
+        closeSidebar={closeSidebar}
+      />
+    );
+  }
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
         <div className="fixed md:relative transition-all duration-300 h-full z-40">
-          <SidebarComponent />
+          {SidebarContent}
         </div>
         {/* Main Content */}
         <div className="flex-1">
