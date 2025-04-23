@@ -3,8 +3,8 @@ export interface MembershipAssignment {
   id?: string;
   memberId: string;
   membershipId: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | string;
+  endDate: Date | string;
   amount: number;
   paymentStatus: 'pending' | 'paid' | 'failed';
   autoRenew?: boolean;

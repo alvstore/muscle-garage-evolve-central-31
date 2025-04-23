@@ -1,10 +1,9 @@
-
 import { Home, Users, Building2, Calendar, Settings, UserPlus, BadgeCheck, BarChart, ListChecks, ClipboardList, FileText, ShieldAlert, HelpCircle, Contact2, MessageSquare, File, LayoutDashboard, UserCog, Activity, GraduationCap, Presentation, ShoppingCart, Package, LucideIcon } from "lucide-react";
 import { Permission } from '@/hooks/use-permissions';
 
 interface NavSection {
   title?: string;
-  name?: string; // Added name property to match type in navigation.ts
+  name: string; // Changed from optional to required
   items: NavItem[];
 }
 
@@ -19,7 +18,7 @@ interface NavItem {
 
 export const adminNavSections: NavSection[] = [
   {
-    name: 'Dashboard', // Add name property to match expected type
+    name: 'Dashboard',
     items: [
       {
         href: "/dashboard",
@@ -30,7 +29,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'Management', // Add name property
+    name: 'Management',
     title: "Management",
     items: [
       {
@@ -66,7 +65,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'BookingScheduling', // Add name property
+    name: 'BookingScheduling',
     title: "Booking & Scheduling",
     items: [
       {
@@ -84,7 +83,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'SalesMarketing', // Add name property
+    name: 'SalesMarketing',
     title: "Sales & Marketing",
     items: [
       {
@@ -108,7 +107,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'Operations', // Add name property
+    name: 'Operations',
     title: "Operations",
     items: [
       {
@@ -144,7 +143,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'Communications', // Add name property
+    name: 'Communications',
     title: "Communications",
     items: [
       {
@@ -168,7 +167,7 @@ export const adminNavSections: NavSection[] = [
     ],
   },
   {
-    name: 'Settings', // Add name property
+    name: 'Settings',
     title: "Settings",
     items: [
       {
