@@ -5,14 +5,19 @@ import { Container } from "@/components/ui/container";
 import MemberProfile from "@/components/members/MemberProfile";
 import MemberTransactionHistory from "@/components/members/MemberTransactionHistory";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Member } from "@/types/member";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/services/supabaseClient";
+import { Member as MemberType } from "@/types/member";
+
+// Using type assertion to create a compatible interface
+type MemberWithStatus = MemberType & {
+  status: string; // Required by src/types/member.ts
+};
 
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
-  const [member, setMember] = useState<Member | null>(null);
+  const [member, setMember] = useState<MemberWithStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,26 +36,28 @@ const MemberProfilePage = () => {
         setLoading(false);
         toast.error(error.message || "Unable to fetch member profile");
       } else if (data) {
-        // Convert Supabase data to Member type as much as possible
-        setMember({
+        // Convert Supabase data to Member type with status
+        const memberData: MemberWithStatus = {
           id: data.id,
           name: data.name,
           email: data.email,
-          role: "member",
+          role: "member", // Setting fixed role as 'member'
           phone: data.phone,
           dateOfBirth: data.date_of_birth || undefined,
-          gender: data.gender || undefined,
+          gender: data.gender as "Male" | "Female" | "Other" | undefined,
           bloodGroup: data.blood_group || undefined,
           occupation: data.occupation || undefined,
           goal: data.goal || undefined,
           trainerId: data.trainer_id || undefined,
           membershipId: data.membership_id || undefined,
-          membershipStatus: data.membership_status || "none",
+          membershipStatus: data.membership_status as "active" | "expired" | "none" | "inactive" || "none",
           membershipStartDate: data.membership_start_date || undefined,
           membershipEndDate: data.membership_end_date || undefined,
-          status: data.status || "active",
+          status: data.status || "active", // Adding required status field
           branch_id: data.branch_id,
-        });
+        };
+        
+        setMember(memberData);
         setLoading(false);
       } else {
         setMember(null);
@@ -61,12 +68,40 @@ const MemberProfilePage = () => {
     fetchMember();
   }, [id]);
 
-  const handleUpdateMember = async (updatedMember: Member) => {
+  const handleUpdateMember = async (updatedMember: MemberWithStatus) => {
     setLoading(true);
-    // Save update to supabase (not implemented here, just UI update)
-    setMember(updatedMember);
-    setLoading(false);
-    toast.success("Member profile updated successfully");
+    
+    try {
+      // Update the member in Supabase
+      const { error } = await supabase
+        .from("members")
+        .update({
+          name: updatedMember.name,
+          email: updatedMember.email,
+          phone: updatedMember.phone,
+          gender: updatedMember.gender,
+          blood_group: updatedMember.bloodGroup,
+          occupation: updatedMember.occupation,
+          date_of_birth: updatedMember.dateOfBirth,
+          goal: updatedMember.goal,
+          membership_id: updatedMember.membershipId,
+          membership_status: updatedMember.membershipStatus,
+          membership_start_date: updatedMember.membershipStartDate,
+          membership_end_date: updatedMember.membershipEndDate,
+          status: updatedMember.status,
+        })
+        .eq("id", updatedMember.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setMember(updatedMember);
+      setLoading(false);
+      toast.success("Member profile updated successfully");
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err?.message || "Could not update member profile");
+    }
   };
 
   return (
@@ -87,7 +122,7 @@ const MemberProfilePage = () => {
             <TabsContent value="profile">
               <MemberProfile 
                 member={member} 
-                onUpdate={handleUpdateMember} 
+                onUpdate={(updatedMember) => handleUpdateMember(updatedMember as MemberWithStatus)} 
               />
             </TabsContent>
             <TabsContent value="transactions">
