@@ -1,14 +1,16 @@
 
 export interface Member {
   id: string;
-  name: string;
+  full_name?: string;
   email?: string;
   phone?: string;
-  status: 'active' | 'inactive' | 'pending';
-  membershipStatus: 'active' | 'expired' | 'none';
-  membershipId: string | null;
-  membershipStartDate: Date | null;
-  membershipEndDate: Date | null;
   role: 'member' | 'trainer' | 'staff' | 'admin';
-  branchId?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  avatar_url?: string;
+  date_of_birth?: string;
+  membershipStatus?: 'active' | 'expired' | 'none';
+  membershipId?: string | null;
+  membershipStartDate?: Date | string | null;
+  membershipEndDate?: Date | string | null;
+  branch_id?: string;
 }

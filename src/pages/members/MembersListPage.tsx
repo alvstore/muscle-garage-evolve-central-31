@@ -10,23 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/services/supabaseClient";
+import { Member } from "@/types/member";
 import { toast } from "sonner";
-
-type Member = {
-  id: string;
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  role: string;
-  avatar_url?: string;
-  branch_id?: string;
-  // Membership-related (optionally)
-  membershipStatus?: string;
-  membershipId?: string;
-  membershipStartDate?: string;
-  membershipEndDate?: string;
-};
+import { usePermissions } from "@/hooks/use-permissions";
+import { useBranch } from "@/hooks/use-branch";
 
 const MembersListPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -34,25 +21,37 @@ const MembersListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { userRole } = usePermissions();
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch from Supabase 'profiles' table, filter 'member' role
-        const { data, error } = await supabase
+        // Start with a query for members from the profiles table
+        let query = supabase
           .from("profiles")
           .select("*")
           .eq("role", "member");
+        
+        // Apply branch filtering for non-admin users
+        if (userRole !== 'admin' && currentBranch?.id) {
+          query = query.eq("branch_id", currentBranch.id);
+        }
+        
+        const { data, error } = await query;
 
         if (error) {
+          console.error("Error fetching members:", error);
           setError(error.message);
           setMembers([]);
         } else {
-          setMembers(data || []);
+          console.log("Fetched members:", data);
+          setMembers(data as Member[] || []);
         }
       } catch (err: any) {
+        console.error("Exception fetching members:", err);
         setError("Error loading members.");
         setMembers([]);
       }
@@ -60,9 +59,9 @@ const MembersListPage = () => {
     };
 
     fetchMembers();
-  }, []);
+  }, [currentBranch?.id, userRole]);
 
-  // Map profile/member status for badge color (placeholders for now)
+  // Map profile/member status for badge color
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "active":
@@ -83,6 +82,55 @@ const MembersListPage = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  const handleSuspendMember = async (memberId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ status: "inactive" })
+        .eq("id", memberId);
+      
+      if (error) throw error;
+      
+      // Update local state to reflect the change
+      setMembers(members.map(member => 
+        member.id === memberId ? {...member, status: "inactive"} : member
+      ));
+      
+      toast.success("Member suspended successfully");
+    } catch (error: any) {
+      console.error("Error suspending member:", error);
+      toast.error(`Failed to suspend member: ${error.message}`);
+    }
+  };
+
+  const handleRenewMember = (memberId: string) => {
+    // Navigate to renewal page or show renewal dialog
+    navigate(`/members/${memberId}/renew`);
+    toast.info("Navigating to membership renewal page");
+  };
+
+  const handleDeleteMember = async (memberId: string) => {
+    // Confirm before deletion
+    if (window.confirm("Are you sure you want to delete this member? This action cannot be undone.")) {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .delete()
+          .eq("id", memberId);
+        
+        if (error) throw error;
+        
+        // Remove from local state
+        setMembers(members.filter(member => member.id !== memberId));
+        
+        toast.success("Member deleted successfully");
+      } catch (error: any) {
+        console.error("Error deleting member:", error);
+        toast.error(`Failed to delete member: ${error.message}`);
+      }
+    }
   };
 
   const filteredMembers = members.filter(
@@ -133,9 +181,9 @@ const MembersListPage = () => {
                         <AvatarImage src={member.avatar_url} alt={member.full_name || "Member"} />
                         <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
                       </Avatar>
-                      <Badge className={getStatusColor(member.membershipStatus)}>
-                        {member.membershipStatus
-                          ? member.membershipStatus.charAt(0).toUpperCase() + member.membershipStatus.slice(1)
+                      <Badge className={getStatusColor(member.status)}>
+                        {member.status
+                          ? member.status.charAt(0).toUpperCase() + member.status.slice(1)
                           : "Active"}
                       </Badge>
                     </div>
@@ -170,14 +218,23 @@ const MembersListPage = () => {
                     <div className="border-r"></div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="flex-1 rounded-none py-2 h-auto font-normal text-xs">
+                        <Button 
+                          variant="ghost" 
+                          className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
+                        >
                           Quick Actions
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="z-40">
-                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}/edit`)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toast.info("Suspend member – logic coming soon!")}>Suspend</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toast.info("Renew member – logic coming soon!")}>Renew</DropdownMenuItem>
+                      <DropdownMenuContent align="end" className="w-[200px] z-50">
+                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}/edit`)}>
+                          Edit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSuspendMember(member.id)}>
+                          {member.status === 'inactive' ? 'Reactivate Member' : 'Suspend Member'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRenewMember(member.id)}>
+                          Renew Membership
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                     <div className="border-r"></div>
@@ -192,11 +249,24 @@ const MembersListPage = () => {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="z-40">
-                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}/edit`)}>Edit</DropdownMenuItem>
+                      <DropdownMenuContent align="end" className="w-[200px] z-50">
+                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}/edit`)}>
+                          Edit Details
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => toast.info("Member history coming soon")}>View History</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toast.info("Delete member coming soon")}>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/members/progress/${member.id}`)}>
+                          View Progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}/attendance`)}>
+                          Attendance History
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteMember(member.id)}
+                          className="text-red-500 focus:text-red-500"
+                        >
+                          Delete Member
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
