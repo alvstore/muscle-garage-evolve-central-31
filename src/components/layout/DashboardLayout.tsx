@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
@@ -21,7 +21,11 @@ const DashboardLayout = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleSidebar, open } = useSidebar();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -79,11 +83,11 @@ const DashboardLayout = () => {
   } else if (user.role === "trainer") {
     SidebarContent = <TrainerSidebar />;
   } else {
-    // Default to DashboardSidebar for admin/staff (with required props)
+    // Default to DashboardSidebar for admin/staff
     SidebarContent = (
       <DashboardSidebar
-        isSidebarOpen={open}
-        closeSidebar={() => {}}
+        isSidebarOpen={sidebarOpen}
+        closeSidebar={() => setSidebarOpen(false)}
       />
     );
   }
@@ -101,7 +105,7 @@ const DashboardLayout = () => {
             toggleSidebar={toggleSidebar}
             toggleTheme={toggleTheme} 
             isDarkMode={darkMode}
-            sidebarOpen={true} // prop no longer needed, legacy
+            sidebarOpen={sidebarOpen}
           />
           <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
             <Outlet />
