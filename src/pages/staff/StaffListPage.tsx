@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,80 +8,31 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Edit, Trash, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-interface Staff {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  department: string;
-  avatar: string;
-  status: 'active' | 'inactive';
-  branchId: string;
-}
+import { Staff, staffService } from '@/services/staffService';
+import { useBranch } from '@/hooks/use-branch';
 
 const StaffListPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { currentBranch } = useBranch();
   
-  // Mock data for staff - will be replaced with Supabase data
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john.smith@example.com',
-      phone: '(555) 123-4567',
-      role: 'Manager',
-      department: 'Operations',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch1'
-    },
-    {
-      id: '2',
-      name: 'Emily Davis',
-      email: 'emily.davis@example.com',
-      phone: '(555) 987-6543',
-      role: 'Sales Representative',
-      department: 'Sales',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch1'
-    },
-    {
-      id: '3',
-      name: 'Michael Johnson',
-      email: 'michael.j@example.com',
-      phone: '(555) 456-7890',
-      role: 'Front Desk',
-      department: 'Member Services',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch2'
-    },
-    {
-      id: '4',
-      name: 'Sarah Williams',
-      email: 'sarah.w@example.com',
-      phone: '(555) 234-5678',
-      role: 'Cleaner',
-      department: 'Maintenance',
-      avatar: '',
-      status: 'inactive',
-      branchId: 'branch1'
-    },
-    {
-      id: '5',
-      name: 'Robert Brown',
-      email: 'robert.b@example.com',
-      phone: '(555) 345-6789',
-      role: 'Assistant Manager',
-      department: 'Operations',
-      avatar: '',
-      status: 'active',
-      branchId: 'branch3'
-    },
-  ]);
+  useEffect(() => {
+    fetchStaff();
+  }, [currentBranch]);
+  
+  const fetchStaff = async () => {
+    setIsLoading(true);
+    try {
+      const staff = await staffService.getStaff(currentBranch?.id);
+      setStaffMembers(staff);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+      toast.error("Failed to load staff members");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateStaff = () => {
     setShowCreateDialog(true);
@@ -90,12 +40,23 @@ const StaffListPage = () => {
 
   const handleEditStaff = (id: string) => {
     toast.info(`Edit staff member with ID: ${id}`);
+    // Implement edit functionality
   };
 
-  const handleDeleteStaff = (id: string) => {
+  const handleDeleteStaff = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
-      setStaffMembers(staffMembers.filter(staff => staff.id !== id));
-      toast.success('Staff member deleted successfully');
+      try {
+        const success = await staffService.deleteStaff(id);
+        if (success) {
+          setStaffMembers(staffMembers.filter(staff => staff.id !== id));
+          toast.success('Staff member deleted successfully');
+        } else {
+          toast.error('Failed to delete staff member');
+        }
+      } catch (error) {
+        console.error("Error deleting staff:", error);
+        toast.error('An error occurred while deleting staff member');
+      }
     }
   };
 

@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,43 +7,97 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { BarChart, Calendar, Users, FileText, Activity, Dumbbell, TrendingUp } from "lucide-react";
-import { mockMembers, mockClasses } from "@/data/mockData";
+import { BarChart, Calendar, Users, FileText, Activity, Dumbbell, TrendingUp, Loader2 } from "lucide-react";
 import FitnessPlanManager from "@/components/fitness/FitnessPlanManager";
+import { reportService } from "@/services/reportService";
+import { useBranch } from "@/hooks/use-branch";
+import { toast } from "sonner";
 
 const ReportsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { currentBranch } = useBranch();
+  const [isLoading, setIsLoading] = useState(true);
+  const [assignedMembers, setAssignedMembers] = useState([]);
+  const [trainerClasses, setTrainerClasses] = useState([]);
+  const [stats, setStats] = useState({
+    membersCount: 0,
+    classesCount: 0,
+    sessionsTaken: 0,
+    memberProgress: 0,
+    attendanceRate: 0,
+    totalMembers: 0,
+    activeMembers: 0,
+    newMembers: 0,
+    totalTrainers: 0,
+    totalClasses: 0,
+    pendingInvoices: 0,
+    pendingAmount: 0
+  });
 
   // If the user is a member, they shouldn't access this page
   if (user?.role === "member") {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // For trainers, we want to show assigned members and trainer-specific content
-  if (user?.role === "trainer") {
-    // Mock data - in a real app, these would come from API calls
-    const trainerId = user.id;
-    const assignedMembers = mockMembers.filter(m => m.trainerId === trainerId);
-    const trainerClasses = mockClasses.filter(c => c.trainerId === trainerId);
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        if (user?.role === "trainer") {
+          // Load trainer-specific data
+          const members = await reportService.getMembersByTrainer(user.id);
+          const classes = await reportService.getTrainerClasses(user.id);
+          
+          setAssignedMembers(members);
+          setTrainerClasses(classes);
+          
+          setStats({
+            ...stats,
+            membersCount: members.length,
+            classesCount: classes.length,
+            sessionsTaken: 48, // This could be calculated from attendance records
+            memberProgress: 78, // This could be calculated from progress records
+            attendanceRate: 92 // This could be calculated from attendance records
+          });
+        } else {
+          // Load admin/staff data
+          const memberStats = await reportService.getMemberStats(currentBranch?.id);
+          const trainerStats = await reportService.getTrainerStats(currentBranch?.id);
+          const classStats = await reportService.getClassStats(currentBranch?.id);
+          const financeStats = await reportService.getFinanceStats(currentBranch?.id);
+          
+          setStats({
+            ...stats,
+            totalMembers: memberStats.totalMembers,
+            activeMembers: memberStats.activeMembers,
+            newMembers: memberStats.newMembers,
+            totalTrainers: trainerStats.totalTrainers,
+            totalClasses: classStats.totalClasses,
+            pendingInvoices: financeStats.pendingCount,
+            pendingAmount: financeStats.pendingAmount
+          });
+        }
+      } catch (error) {
+        console.error("Error loading report data:", error);
+        toast.error("Failed to load report data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Performance stats (mock data)
-    const stats = {
-      membersCount: assignedMembers.length,
-      classesCount: trainerClasses.length,
-      sessionsTaken: 48,
-      memberProgress: 78, // percentage as an example
-      attendanceRate: 92, // percentage as an example
-    };
+    loadData();
+  }, [user, currentBranch]);
 
-    const getInitials = (name: string) => {
-      return name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase();
-    };
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
 
+  if (user?.role === "trainer") {
     return (
       <Container>
         <div className="py-6">
@@ -197,7 +250,6 @@ const ReportsPage = () => {
     );
   }
 
-  // For admin/staff, show the comprehensive admin dashboard
   return (
     <Container>
       <div className="py-6">

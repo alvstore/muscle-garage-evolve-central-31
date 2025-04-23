@@ -13,6 +13,7 @@ import ChurnPredictionSection from '@/components/dashboard/sections/ChurnPredict
 import RenewalsSection from '@/components/dashboard/sections/RenewalsSection';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useBranch } from '@/hooks/use-branch';
+import { dashboardService } from '@/services/dashboardService';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,15 +26,27 @@ const AdminDashboard = () => {
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    fetchDashboardData();
+  }, [currentBranch]);
+
+  const fetchDashboardData = async () => {
     setIsLoading(true);
     toast.info(`Loading data for ${currentBranch?.name || 'all branches'}`);
     
-    setTimeout(() => {
-      const scopedData = getScopedDashboardData(currentBranch?.id);
-      setDashboardData(scopedData);
+    try {
+      const data = await dashboardService.getDashboardData(currentBranch?.id);
+      if (data) {
+        setDashboardData(data);
+      } else {
+        toast.error("Failed to fetch dashboard data");
+      }
+    } catch (error) {
+      console.error("Dashboard data fetch error:", error);
+      toast.error("Error loading dashboard data");
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  }, [currentBranch]);
+    }
+  };
 
   function getDashboardDataDefaults() {
     return {
@@ -71,90 +84,24 @@ const AdminDashboard = () => {
     };
   }
 
-  function getScopedDashboardData(branchId?: string) {
-    const mockData = {
-      totalMembers: 328,
-      newMembersToday: 5,
-      activeMembers: 287,
-      attendanceToday: 152,
-      revenue: {
-        today: 2450,
-        thisWeek: 12780,
-        thisMonth: 45600,
-        lastMonth: 39800
-      },
-      pendingPayments: {
-        count: 23,
-        total: 8750
-      },
-      upcomingRenewals: {
-        today: 3,
-        thisWeek: 18,
-        thisMonth: 42
-      },
-      classAttendance: {
-        today: 152,
-        yesterday: 143,
-        lastWeek: 982
-      },
-      membersByStatus: {
-        active: 287,
-        inactive: 24,
-        expired: 17
-      },
-      attendanceTrend: [
-        { date: '2022-06-01', count: 120 },
-        { date: '2022-06-02', count: 132 },
-        { date: '2022-06-03', count: 125 },
-        { date: '2022-06-04', count: 140 },
-        { date: '2022-06-05', count: 147 },
-        { date: '2022-06-06', count: 138 },
-        { date: '2022-06-07', count: 152 }
-      ],
-      revenueData: [
-        { month: 'Jan', revenue: 15000, expenses: 4000, profit: 11000 },
-        { month: 'Feb', revenue: 18000, expenses: 4200, profit: 13800 },
-        { month: 'Mar', revenue: 16500, expenses: 4800, profit: 11700 },
-        { month: 'Apr', revenue: 17800, expenses: 5100, profit: 12700 },
-        { month: 'May', revenue: 19200, expenses: 5400, profit: 13800 },
-        { month: 'Jun', revenue: 21000, expenses: 5600, profit: 15400 }
-      ]
-    };
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    toast.info(`Searching for: ${query}`);
+  };
 
-    if (branchId) {
-      const branchMultiplier = Math.random() * 0.5 + 0.2;
-      return {
-        ...mockData,
-        totalMembers: Math.floor(mockData.totalMembers * branchMultiplier),
-        newMembersToday: Math.floor(mockData.newMembersToday * branchMultiplier),
-        activeMembers: Math.floor(mockData.activeMembers * branchMultiplier),
-        attendanceToday: Math.floor(mockData.attendanceToday * branchMultiplier),
-        revenue: {
-          today: Math.floor(mockData.revenue.today * branchMultiplier),
-          thisWeek: Math.floor(mockData.revenue.thisWeek * branchMultiplier),
-          thisMonth: Math.floor(mockData.revenue.thisMonth * branchMultiplier),
-          lastMonth: Math.floor(mockData.revenue.lastMonth * branchMultiplier)
-        },
-        pendingPayments: {
-          count: Math.floor(mockData.pendingPayments.count * branchMultiplier),
-          total: Math.floor(mockData.pendingPayments.total * branchMultiplier)
-        },
-        membersByStatus: {
-          active: Math.floor(mockData.membersByStatus.active * branchMultiplier),
-          inactive: Math.floor(mockData.membersByStatus.inactive * branchMultiplier),
-          expired: Math.floor(mockData.membersByStatus.expired * branchMultiplier)
-        },
-        revenueData: mockData.revenueData.map(item => ({
-          ...item,
-          revenue: Math.floor(item.revenue * branchMultiplier),
-          expenses: Math.floor(item.expenses * branchMultiplier),
-          profit: Math.floor(item.profit * branchMultiplier)
-        }))
-      };
-    }
+  const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
+    setStartDate(startDate);
+    setEndDate(endDate);
+    toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
+  };
 
-    return mockData;
-  }
+  const handleExport = () => {
+    toast.success('Dashboard data exported successfully');
+  };
+
+  const handleRefresh = () => {
+    fetchDashboardData();
+  };
 
   const featuredActions = [
     {
@@ -194,33 +141,6 @@ const AdminDashboard = () => {
       url: "/reports"
     }
   ];
-
-  const handleSearch = (query: string) => {
-    toast.info(`Searching for: ${query}`);
-  };
-
-  const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
-    toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
-  };
-
-  const handleExport = () => {
-    toast.success('Dashboard data exported successfully');
-  };
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    toast("Refreshing dashboard data", {
-      description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
-    });
-    setTimeout(() => {
-      const scopedData = getScopedDashboardData(currentBranch?.id);
-      setDashboardData(scopedData);
-      setIsLoading(false);
-      toast.success("Dashboard updated", {
-        description: "All data has been refreshed with the latest information."
-      });
-    }, 1000);
-  };
 
   const dashboardTitle = currentBranch ? `${currentBranch.name} Dashboard` : "All Branches Dashboard";
   const scopeDescription = currentBranch 
