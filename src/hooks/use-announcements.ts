@@ -55,13 +55,15 @@ export function useAnnouncements() {
         title: item.title,
         content: item.content,
         authorId: item.author_id,
-        authorName: item.profiles?.full_name || 'Unknown',
+        // Access the nested profile data correctly
+        authorName: item.profiles ? item.profiles.full_name || 'Unknown' : 'Unknown',
         createdAt: item.created_at,
         expiresAt: item.expires_at,
         priority: item.priority || 'medium',
         targetRoles: item.target_roles || [],
         forBranchIds: item.for_branch_ids || [],
-        createdBy: item.profiles?.full_name || 'Unknown',
+        // Access the nested profile data correctly
+        createdBy: item.profiles ? item.profiles.full_name || 'Unknown' : 'Unknown',
         channels: []
       }));
 
