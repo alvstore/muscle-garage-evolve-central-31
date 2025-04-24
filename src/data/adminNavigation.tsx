@@ -1,4 +1,3 @@
-
 import React from "react";
 import { NavSection } from "@/types/navigation";
 import { 
@@ -14,7 +13,12 @@ import {
   FileText,
   Settings,
   CircleDollarSign,
-  Megaphone 
+  Megaphone,
+  Receipt,
+  DollarSign,
+  ArrowDownUp,
+  Wallet,
+  Calculator 
 } from "lucide-react";
 
 export const adminNavSections: NavSection[] = [
@@ -22,16 +26,16 @@ export const adminNavSections: NavSection[] = [
     name: "Dashboard",
     items: [
       {
-        href: "/dashboard",
+        href: "/dashboard/overview",
         label: "Analytics Dashboard",
         permission: "view_dashboard",
-        icon: <BarChart className="h-5 w-5" />
+        icon: <LayoutDashboard className="h-5 w-5" />
       },
       {
         href: "/dashboard/realtime",
         label: "Real-Time Dashboard",
         permission: "view_dashboard",
-        icon: <LayoutDashboard className="h-5 w-5" />
+        icon: <BarChart className="h-5 w-5" />
       }
     ]
   },
@@ -187,10 +191,16 @@ export const adminNavSections: NavSection[] = [
     name: "Reports",
     items: [
       {
-        href: "/reports",
-        label: "Reports & Analytics",
-        permission: "view_dashboard",
+        href: "/analytics",
+        label: "Analytics",
+        permission: "view_analytics",
         icon: <BarChart className="h-5 w-5" />
+      },
+      {
+        href: "/reports",
+        label: "Reports",
+        permission: "view_reports",
+        icon: <FileText className="h-5 w-5" />
       }
     ]
   },
@@ -200,14 +210,32 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/finance/dashboard",
         label: "Finance Dashboard",
-        permission: "manage_finances",
-        icon: <CircleDollarSign className="h-5 w-5" />
+        permission: "view_finance_dashboard",
+        icon: <DollarSign className="h-5 w-5" />
+      },
+      {
+        href: "/finance/invoices",
+        label: "Invoices",
+        permission: "manage_invoices",
+        icon: <Receipt className="h-5 w-5" />
       },
       {
         href: "/finance/transactions",
         label: "Transactions",
-        permission: "manage_finances",
-        icon: <FileText className="h-5 w-5" />
+        permission: "manage_transactions",
+        icon: <ArrowDownUp className="h-5 w-5" />
+      },
+      {
+        href: "/finance/income",
+        label: "Income Records",
+        permission: "manage_income",
+        icon: <Wallet className="h-5 w-5" />
+      },
+      {
+        href: "/finance/expenses",
+        label: "Expense Management",
+        permission: "manage_expenses",
+        icon: <Calculator className="h-5 w-5" />
       }
     ]
   },

@@ -30,7 +30,14 @@ export type Permission =
   | 'member_view_invoices'
   | 'member_view_plans'
   | 'access_store'
-  | 'view_all_branches';
+  | 'view_all_branches'
+  | 'view_analytics'
+  | 'view_reports'
+  | 'view_finance_dashboard'
+  | 'manage_invoices'
+  | 'manage_transactions'
+  | 'manage_income'
+  | 'manage_expenses';
 
 export interface NavItem {
   href: string;
