@@ -1,23 +1,23 @@
-
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Invoice, InvoiceItem, InvoiceStatus } from "@/types/finance";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Switch } from "@/components/ui/switch";
+import { Plus, X } from "lucide-react";
+import { 
+  Invoice, 
+  InvoiceItem, 
+  InvoiceStatus
+} from "@/types/finance";
 import { useBranch } from "@/hooks/use-branch";
-import { InvoiceFormHeader } from "./InvoiceFormHeader";
-import { InvoiceMemberSelect } from "./InvoiceMemberSelect";
-import { InvoiceItemList } from "./InvoiceItemList";
-import { InvoiceTotal } from "./InvoiceTotal";
-
-// Mock data for member selection - should be moved to API call in the future
-const mockMembers = [
-  { id: "member-1", name: "John Doe" },
-  { id: "member-2", name: "Jane Smith" },
-  { id: "member-3", name: "Alex Johnson" },
-];
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -111,75 +111,152 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
     onSave(formData);
   };
 
+  // Mock data for member selection - should be moved to API call in the future
+  const mockMembers = [
+    { id: "member-1", name: "John Doe" },
+    { id: "member-2", name: "Jane Smith" },
+    { id: "member-3", name: "Alex Johnson" },
+  ];
+
   return (
-    <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[700px]">
-        <form onSubmit={handleSubmit}>
-          <InvoiceFormHeader isEditing={!!invoice} />
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <InvoiceMemberSelect 
-                memberId={formData.memberId}
-                onMemberSelect={(value) => handleSelectChange("memberId", value)}
+    <div className="space-y-8 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Invoice #</Label>
+          <Input disabled value={invoice?.id || 'Auto-generated'} />
+        </div>
+        <div className="space-y-2">
+          <Label>Member</Label>
+          <Select value={formData.memberId} onValueChange={(value) => handleSelectChange("memberId", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select member" />
+            </SelectTrigger>
+            <SelectContent>
+              {mockMembers.map(member => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Issue Date</Label>
+          <DatePicker
+            date={formData.issuedDate ? new Date(formData.issuedDate) : undefined}
+            onSelect={(date) => handleDateChange("issuedDate", date)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Due Date</Label>
+          <DatePicker
+            date={formData.dueDate ? new Date(formData.dueDate) : undefined}
+            onSelect={(date) => handleDateChange("dueDate", date)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <Label>Items</Label>
+          <Button variant="outline" size="sm" onClick={addItem}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
+
+        {formData.items.map((item, index) => (
+          <div key={item.id} className="grid grid-cols-12 gap-4 items-start">
+            <div className="col-span-5">
+              <Input
+                placeholder="Item name"
+                value={item.name}
+                onChange={(e) => handleItemChange(item.id, "name", e.target.value)}
               />
-              
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleSelectChange("status", value as InvoiceStatus)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="issuedDate">Issue Date</Label>
-                <DatePicker
-                  date={formData.issuedDate ? new Date(formData.issuedDate) : undefined}
-                  onSelect={(date) => handleDateChange("issuedDate", date)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Due Date</Label>
-                <DatePicker
-                  date={formData.dueDate ? new Date(formData.dueDate) : undefined}
-                  onSelect={(date) => handleDateChange("dueDate", date)}
-                />
-              </div>
+            <div className="col-span-2">
+              <Input
+                type="number"
+                placeholder="Quantity"
+                value={item.quantity}
+                onChange={(e) => handleItemChange(item.id, "quantity", Number(e.target.value))}
+              />
             </div>
-            
-            <InvoiceItemList 
-              items={formData.items}
-              onAddItem={addItem}
-              onUpdateItem={handleItemChange}
-              onRemoveItem={removeItem}
-            />
-            
-            <InvoiceTotal amount={formData.amount} />
+            <div className="col-span-3">
+              <Input
+                type="number"
+                placeholder="Unit Price"
+                value={item.unitPrice}
+                onChange={(e) => handleItemChange(item.id, "unitPrice", Number(e.target.value))}
+              />
+            </div>
+            <div className="col-span-2 flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => removeItem(item.id)}
+                disabled={formData.items.length <= 1}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <div className="w-1/3 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Subtotal:</span>
+              <span>${formData.amount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Tax (0%):</span>
+              <span>$0</span>
+            </div>
+            <div className="flex justify-between font-medium">
+              <span>Total:</span>
+              <span>${formData.amount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 border-t pt-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Payment Terms</Label>
+            <Switch />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Client Notes</Label>
+            <Switch />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Payment Stub</Label>
+            <Switch />
+          </div>
+        </div>
+        
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <div className="space-x-2">
+            <Button onClick={() => onSave(formData)}>
+              Save
             </Button>
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              Send Invoice
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

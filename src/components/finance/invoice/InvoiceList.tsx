@@ -1,31 +1,34 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Invoice } from "@/types/finance";
-import { toast } from "sonner";
 import InvoiceForm from "./InvoiceForm";
-import { InvoiceListHeader } from "./InvoiceListHeader";
-import { InvoiceActions } from "./InvoiceActions";
+import { toast } from "sonner";
 import { useBranch } from "@/hooks/use-branch";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoreHorizontal, Plus, Eye, Download, Trash2 } from "lucide-react";
+import { InvoiceStatsOverview } from "./InvoiceStatsOverview";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import PaymentRecordDialog from "./PaymentRecordDialog";
 import { supabase } from "@/services/supabaseClient";
-
-interface InvoiceListProps {
-  readonly?: boolean;
-  allowPayment?: boolean;
-  allowDownload?: boolean;
-  filter?: 'all' | 'pending' | 'paid' | 'overdue';
-}
+import { InvoiceActions } from "./InvoiceActions";
+import { InvoiceListHeader } from "./InvoiceListHeader";
 
 const InvoiceList = ({ 
   readonly = false, 
   allowPayment = true, 
   allowDownload = true,
   filter = 'all'
-}: InvoiceListProps) => {
+}: { 
+  readonly?: boolean;
+  allowPayment?: boolean;
+  allowDownload?: boolean;
+  filter?: 'all' | 'pending' | 'paid' | 'overdue';
+}) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -247,75 +250,151 @@ const InvoiceList = ({
   };
 
   return (
-    <>
-      <Card>
-        <InvoiceListHeader 
-          readonly={readonly}
-          onAdd={handleAddInvoice}
-        />
-        <CardContent>
-          {isLoading ? (
-            <div className="h-52 flex items-center justify-center">
-              <p className="text-muted-foreground">Loading invoices...</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Issue Date</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <p className="text-muted-foreground">No invoices found</p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.id}</TableCell>
-                      <TableCell>{invoice.memberName}</TableCell>
-                      <TableCell>{formatPrice(invoice.amount)}</TableCell>
-                      <TableCell>{format(new Date(invoice.issuedDate), "MMM d, yyyy")}</TableCell>
-                      <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
-                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell>
-                        <InvoiceActions 
-                          invoice={invoice}
-                          readonly={readonly}
-                          allowPayment={allowPayment}
-                          allowDownload={allowDownload}
-                          onEdit={handleEditInvoice}
-                          onMarkAsPaid={handleMarkAsPaid}
-                          onSendPaymentLink={handleSendPaymentLink}
-                          onDownload={handleDownload}
-                          onRecordPayment={handleRecordPayment}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-8">
+      <InvoiceStatsOverview />
+      
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <Select defaultValue="10">
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Show" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
 
-      {isFormOpen && !readonly && (
-        <InvoiceForm
-          invoice={editingInvoice}
-          onSave={handleSaveInvoice}
-          onCancel={() => setIsFormOpen(false)}
-        />
-      )}
+            {!readonly && (
+              <Button 
+                onClick={() => setIsFormOpen(true)} 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Invoice
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <Input 
+              placeholder="Search Invoice" 
+              className="w-full sm:w-[300px]" 
+            />
+            <Select defaultValue="all">
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Invoice Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                <input type="checkbox" className="rounded border-gray-300" />
+              </TableHead>
+              <TableHead>Invoice #</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Issued Date</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invoices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
+                  <p className="text-muted-foreground">No invoices found</p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              invoices.map((invoice) => (
+                <TableRow key={invoice.id} className="group">
+                  <TableCell>
+                    <input type="checkbox" className="rounded border-gray-300" />
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-indigo-600 font-medium">#{invoice.id}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={
+                        invoice.status === 'paid' 
+                          ? 'bg-green-50 text-green-700' 
+                          : invoice.status === 'pending'
+                          ? 'bg-yellow-50 text-yellow-700'
+                          : 'bg-red-50 text-red-700'
+                      }
+                    >
+                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
+                        {invoice.memberName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium">{invoice.memberName}</p>
+                        <p className="text-sm text-gray-500">{invoice.memberId}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>${invoice.amount}</TableCell>
+                  <TableCell>{format(new Date(invoice.issuedDate), "yyyy-MM-dd")}</TableCell>
+                  <TableCell>
+                    <span className={invoice.status === 'paid' ? 'text-green-600' : 'text-red-600'}>
+                      ${invoice.amount}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <SheetContent side="right" className="w-[800px] sm:max-w-[800px]">
+          <SheetHeader>
+            <SheetTitle>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</SheetTitle>
+          </SheetHeader>
+          <InvoiceForm
+            invoice={editingInvoice}
+            onSave={handleSaveInvoice}
+            onCancel={() => setIsFormOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
       
       {paymentDialogOpen && selectedInvoice && (
         <PaymentRecordDialog
@@ -325,7 +404,7 @@ const InvoiceList = ({
           onPaymentRecorded={handlePaymentRecorded}
         />
       )}
-    </>
+    </div>
   );
 };
 
