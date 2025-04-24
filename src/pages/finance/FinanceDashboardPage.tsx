@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -179,7 +178,7 @@ const FinanceDashboardPage = () => {
       
       // Calculate percentages
       incomeByCategoryMap.forEach((category) => {
-        category.value = totalIncome > 0 
+        category.value = typeof totalIncome === 'number' && totalIncome > 0 
           ? Math.round((category.value / totalIncome) * 100) 
           : 0;
       });
@@ -227,7 +226,7 @@ const FinanceDashboardPage = () => {
       
       // Calculate percentages
       expenseByCategoryMap.forEach((category) => {
-        category.value = totalExpense > 0 
+        category.value = typeof totalExpense === 'number' && totalExpense > 0 
           ? Math.round((category.value / totalExpense) * 100) 
           : 0;
       });
