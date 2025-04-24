@@ -25,6 +25,7 @@ import { miscRoutes } from './routes/miscRoutes';
 import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
+import { analyticsRoutes } from './routes/analyticsRoutes';
 
 // Load the public website
 import PublicWebsite from '@/pages/website/PublicWebsite';
@@ -74,6 +75,7 @@ export const appRoutes: RouteObject[] = [
           ...staffRoutes,
           ...adminRoutes,
           ...branchRoutes,
+          ...analyticsRoutes,
         ]
       }
     ]

@@ -28,15 +28,59 @@ interface RevenueChartProps {
 const RevenueChart = ({ data }: RevenueChartProps) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   
+  // Process data based on selected timeframe
+  const processedData = () => {
+    if (selectedTimeframe === 'monthly') {
+      return [...data]; // Return original monthly data
+    } else if (selectedTimeframe === 'quarterly') {
+      // Group by quarters
+      const quarterMap: Record<string, any> = {
+        'Q1': { month: 'Q1', revenue: 0, expenses: 0, profit: 0 },
+        'Q2': { month: 'Q2', revenue: 0, expenses: 0, profit: 0 },
+        'Q3': { month: 'Q3', revenue: 0, expenses: 0, profit: 0 },
+        'Q4': { month: 'Q4', revenue: 0, expenses: 0, profit: 0 }
+      };
+      
+      const monthToQuarter: Record<string, string> = {
+        'Jan': 'Q1', 'Feb': 'Q1', 'Mar': 'Q1',
+        'Apr': 'Q2', 'May': 'Q2', 'Jun': 'Q2',
+        'Jul': 'Q3', 'Aug': 'Q3', 'Sep': 'Q3',
+        'Oct': 'Q4', 'Nov': 'Q4', 'Dec': 'Q4'
+      };
+      
+      data.forEach(item => {
+        const quarter = monthToQuarter[item.month];
+        if (quarter) {
+          quarterMap[quarter].revenue += item.revenue;
+          quarterMap[quarter].expenses += item.expenses;
+          quarterMap[quarter].profit += item.profit;
+        }
+      });
+      
+      return Object.values(quarterMap);
+    } else {
+      // Yearly - aggregate all months
+      const yearlyData = {
+        month: 'Year',
+        revenue: data.reduce((sum, item) => sum + item.revenue, 0),
+        expenses: data.reduce((sum, item) => sum + item.expenses, 0),
+        profit: data.reduce((sum, item) => sum + item.profit, 0)
+      };
+      return [yearlyData];
+    }
+  };
+  
+  const chartData = processedData();
+
   // Calculate totals
-  const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
-  const totalExpenses = data.reduce((sum, item) => sum + item.expenses, 0);
-  const totalProfit = data.reduce((sum, item) => sum + item.profit, 0);
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
+  const totalExpenses = chartData.reduce((sum, item) => sum + item.expenses, 0);
+  const totalProfit = chartData.reduce((sum, item) => sum + item.profit, 0);
 
   const exportData = () => {
     // Create CSV content
-    const headers = "Month,Revenue,Expenses,Profit\n";
-    const csvContent = data.reduce((content, row) => {
+    const headers = "Period,Revenue,Expenses,Profit\n";
+    const csvContent = chartData.reduce((content, row) => {
       return content + `${row.month},${row.revenue},${row.expenses},${row.profit}\n`;
     }, headers);
     
@@ -96,21 +140,21 @@ const RevenueChart = ({ data }: RevenueChartProps) => {
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
             <p className="text-sm text-muted-foreground">Total Revenue</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">${totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{totalRevenue.toLocaleString()}</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
             <p className="text-sm text-muted-foreground">Total Expenses</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">${totalExpenses.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">₹{totalExpenses.toLocaleString()}</p>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
             <p className="text-sm text-muted-foreground">Net Profit</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">${totalProfit.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">₹{totalProfit.toLocaleString()}</p>
           </div>
         </div>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={data}
+              data={chartData}
               margin={{
                 top: 10,
                 right: 10,
@@ -122,11 +166,11 @@ const RevenueChart = ({ data }: RevenueChartProps) => {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis
                 tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `₹${value}`}
                 width={40}
               />
               <Tooltip
-                formatter={(value) => [`$${Number(value).toLocaleString()}`, ""]}
+                formatter={(value) => [`₹${Number(value).toLocaleString()}`, ""]}
                 labelFormatter={(label) => `${label}`}
               />
               <Legend />

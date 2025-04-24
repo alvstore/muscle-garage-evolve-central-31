@@ -13,73 +13,249 @@ import RevenueChart from "@/components/dashboard/RevenueChart";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
+import { useSupabaseData } from '@/hooks/use-supabase-data';
+import { useBranch } from '@/hooks/use-branch';
+import { toast } from 'sonner';
 import { format } from "date-fns";
 
 const FinanceDashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("month");
+  const [financialSummary, setFinancialSummary] = useState<any>({
+    today: { income: 0, expense: 0, profit: 0 },
+    week: { income: 0, expense: 0, profit: 0 },
+    month: { income: 0, expense: 0, profit: 0 },
+    year: { income: 0, expense: 0, profit: 0 }
+  });
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [incomeBreakdown, setIncomeBreakdown] = useState<any[]>([]);
+  const [expenseBreakdown, setExpenseBreakdown] = useState<any[]>([]);
   
-  useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const { currentBranch } = useBranch();
+  
+  // Fetch transactions from Supabase
+  const { data: transactions, loading: loadingTransactions, refresh } = useSupabaseData('transactions', {
+    columns: '*, category_id',
+    branchId: currentBranch?.id
+  });
 
-  // Mock financial data
-  const financialSummary = {
-    today: {
-      income: 1250,
-      expense: 350,
-      profit: 900
-    },
-    week: {
-      income: 8750,
-      expense: 3200,
-      profit: 5550
-    },
-    month: {
-      income: 38500,
-      expense: 15200,
-      profit: 23300
-    },
-    year: {
-      income: 462000,
-      expense: 182500,
-      profit: 279500
+  const { data: incomeCategories } = useSupabaseData('income_categories', {
+    columns: '*',
+    branchId: currentBranch?.id
+  });
+
+  const { data: expenseCategories } = useSupabaseData('expense_categories', {
+    columns: '*',
+    branchId: currentBranch?.id
+  });
+
+  useEffect(() => {
+    if (loadingTransactions) {
+      setIsLoading(true);
+    } else {
+      processTransactionData();
+      setIsLoading(false);
+    }
+  }, [transactions, timeRange, loadingTransactions, currentBranch]);
+
+  const processTransactionData = () => {
+    if (!transactions) return;
+
+    // Get today's date and calculate date ranges
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start of week (Sunday)
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+    // Filter transactions by date range
+    const todayTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfToday);
+    const weekTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfWeek);
+    const monthTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfMonth);
+    const yearTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfYear);
+
+    // Calculate financial summary
+    const calculateSummary = (transactionList: any[]) => {
+      const income = transactionList
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      
+      const expense = transactionList
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      
+      return {
+        income,
+        expense,
+        profit: income - expense
+      };
+    };
+
+    // Set financial summary
+    setFinancialSummary({
+      today: calculateSummary(todayTransactions),
+      week: calculateSummary(weekTransactions),
+      month: calculateSummary(monthTransactions),
+      year: calculateSummary(yearTransactions)
+    });
+
+    // Process revenue data for chart
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const revenueByMonth: any = {};
+    
+    // Initialize the months
+    monthNames.forEach((month, index) => {
+      revenueByMonth[month] = {
+        month,
+        revenue: 0,
+        expenses: 0,
+        profit: 0
+      };
+    });
+    
+    // Group transactions by month
+    yearTransactions.forEach((transaction: any) => {
+      const transactionDate = new Date(transaction.transaction_date);
+      const monthName = monthNames[transactionDate.getMonth()];
+      
+      if (transaction.type === 'income') {
+        revenueByMonth[monthName].revenue += Number(transaction.amount);
+      } else if (transaction.type === 'expense') {
+        revenueByMonth[monthName].expenses += Number(transaction.amount);
+      }
+    });
+    
+    // Calculate profit for each month
+    Object.keys(revenueByMonth).forEach(month => {
+      revenueByMonth[month].profit = revenueByMonth[month].revenue - revenueByMonth[month].expenses;
+    });
+    
+    // Convert to array and filter for current and past months
+    const currentMonth = today.getMonth();
+    const chartData = monthNames
+      .filter((_, index) => index <= currentMonth)
+      .map(month => revenueByMonth[month]);
+    
+    setRevenueData(chartData);
+
+    // Process income and expense breakdowns
+    if (incomeCategories && expenseCategories) {
+      // Income breakdown
+      const incomeByCategoryMap = new Map();
+      const totalIncome = monthTransactions
+        .filter((t: any) => t.type === 'income')
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      
+      // Initialize with categories
+      incomeCategories.forEach((cat: any) => {
+        incomeByCategoryMap.set(cat.id, { 
+          name: cat.name, 
+          value: 0, 
+          color: getRandomColor(cat.name)
+        });
+      });
+      
+      // Add "Other" category
+      incomeByCategoryMap.set('other', {
+        name: 'Other',
+        value: 0,
+        color: '#9c27b0'
+      });
+      
+      // Aggregate income by category
+      monthTransactions
+        .filter((t: any) => t.type === 'income')
+        .forEach((transaction: any) => {
+          if (transaction.category_id && incomeByCategoryMap.has(transaction.category_id)) {
+            const category = incomeByCategoryMap.get(transaction.category_id);
+            category.value += Number(transaction.amount);
+          } else {
+            const other = incomeByCategoryMap.get('other');
+            other.value += Number(transaction.amount);
+          }
+        });
+      
+      // Calculate percentages
+      incomeByCategoryMap.forEach((category) => {
+        category.value = totalIncome > 0 
+          ? Math.round((category.value / totalIncome) * 100) 
+          : 0;
+      });
+      
+      // Convert to array and filter out zero values
+      const incomeData = Array.from(incomeByCategoryMap.values())
+        .filter(cat => cat.value > 0);
+      
+      setIncomeBreakdown(incomeData);
+      
+      // Expense breakdown
+      const expenseByCategoryMap = new Map();
+      const totalExpense = monthTransactions
+        .filter((t: any) => t.type === 'expense')
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      
+      // Initialize with categories
+      expenseCategories.forEach((cat: any) => {
+        expenseByCategoryMap.set(cat.id, { 
+          name: cat.name, 
+          value: 0, 
+          color: getRandomColor(cat.name) 
+        });
+      });
+      
+      // Add "Other" category
+      expenseByCategoryMap.set('other', {
+        name: 'Other',
+        value: 0,
+        color: '#9c27b0'
+      });
+      
+      // Aggregate expenses by category
+      monthTransactions
+        .filter((t: any) => t.type === 'expense')
+        .forEach((transaction: any) => {
+          if (transaction.category_id && expenseByCategoryMap.has(transaction.category_id)) {
+            const category = expenseByCategoryMap.get(transaction.category_id);
+            category.value += Number(transaction.amount);
+          } else {
+            const other = expenseByCategoryMap.get('other');
+            other.value += Number(transaction.amount);
+          }
+        });
+      
+      // Calculate percentages
+      expenseByCategoryMap.forEach((category) => {
+        category.value = totalExpense > 0 
+          ? Math.round((category.value / totalExpense) * 100) 
+          : 0;
+      });
+      
+      // Convert to array and filter out zero values
+      const expenseData = Array.from(expenseByCategoryMap.values())
+        .filter(cat => cat.value > 0);
+      
+      setExpenseBreakdown(expenseData);
     }
   };
 
-  // Mock data for revenue chart
-  const revenueData = [
-    { month: "Jan", revenue: 35000, expenses: 12000, profit: 23000 },
-    { month: "Feb", revenue: 38000, expenses: 14000, profit: 24000 },
-    { month: "Mar", revenue: 32000, expenses: 13500, profit: 18500 },
-    { month: "Apr", revenue: 40000, expenses: 15000, profit: 25000 },
-    { month: "May", revenue: 38500, expenses: 15200, profit: 23300 },
-    { month: "Jun", revenue: 42000, expenses: 16500, profit: 25500 },
-  ];
+  // Helper function to generate consistent colors for categories
+  const getRandomColor = (str: string) => {
+    // Simple hash function to generate consistent colors
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      '#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0',
+      '#3f51b5', '#e91e63', '#009688', '#673ab7', '#ffc107'
+    ];
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
 
   const currentPeriodData = financialSummary[timeRange as keyof typeof financialSummary];
-  
-  // Mock data for income sources breakdown
-  const incomeBreakdown = [
-    { name: "Memberships", value: 65, color: "#4caf50" },
-    { name: "Personal Training", value: 20, color: "#2196f3" },
-    { name: "Classes", value: 10, color: "#ff9800" },
-    { name: "Store Sales", value: 5, color: "#9c27b0" },
-  ];
-  
-  // Mock data for expense categories breakdown
-  const expenseBreakdown = [
-    { name: "Salaries", value: 45, color: "#f44336" },
-    { name: "Rent", value: 25, color: "#ff9800" },
-    { name: "Equipment", value: 15, color: "#2196f3" },
-    { name: "Utilities", value: 10, color: "#9c27b0" },
-    { name: "Marketing", value: 5, color: "#4caf50" },
-  ];
 
   return (
     <Container>
@@ -109,11 +285,11 @@ const FinanceDashboardPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.income.toLocaleString()}`}
+                {isLoading ? "Loading..." : `₹${currentPeriodData.income.toLocaleString()}`}
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>+12% from last period</span>
+                <span>Updated in real-time</span>
               </div>
             </CardContent>
           </Card>
@@ -125,11 +301,11 @@ const FinanceDashboardPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.expense.toLocaleString()}`}
+                {isLoading ? "Loading..." : `₹${currentPeriodData.expense.toLocaleString()}`}
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                <span>+5% from last period</span>
+                <span>Updated in real-time</span>
               </div>
             </CardContent>
           </Card>
@@ -141,11 +317,11 @@ const FinanceDashboardPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {isLoading ? "Loading..." : `$${currentPeriodData.profit.toLocaleString()}`}
+                {isLoading ? "Loading..." : `₹${currentPeriodData.profit.toLocaleString()}`}
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>+8% from last period</span>
+                <span>Updated in real-time</span>
               </div>
             </CardContent>
           </Card>
@@ -183,24 +359,26 @@ const FinanceDashboardPage = () => {
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Current Cash Flow</h4>
                       <div className="text-2xl font-bold">
-                        ${financialSummary.month.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">+8.2%</span>
+                        ₹{financialSummary.month.profit.toLocaleString()}
+                        <span className="ml-2 text-xs font-normal text-green-600">Monthly</span>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-muted-foreground">YTD Profit</h4>
                       <div className="text-2xl font-bold">
-                        ${financialSummary.year.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">+12.5%</span>
+                        ₹{financialSummary.year.profit.toLocaleString()}
+                        <span className="ml-2 text-xs font-normal text-green-600">Year to date</span>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Profit Margin</h4>
                       <div className="text-2xl font-bold">
-                        {Math.round((financialSummary.month.profit / financialSummary.month.income) * 100)}%
-                        <span className="ml-2 text-xs font-normal text-green-600">+2.1%</span>
+                        {financialSummary.month.income > 0 
+                          ? Math.round((financialSummary.month.profit / financialSummary.month.income) * 100)
+                          : 0}%
+                        <span className="ml-2 text-xs font-normal text-green-600">This month</span>
                       </div>
                     </div>
                   </div>
@@ -217,7 +395,7 @@ const FinanceDashboardPage = () => {
                 <CardContent>
                   {isLoading ? (
                     <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : (
+                  ) : incomeBreakdown.length > 0 ? (
                     <div className="flex justify-center">
                       <div className="w-full max-w-md">
                         {incomeBreakdown.map((item, index) => (
@@ -239,6 +417,10 @@ const FinanceDashboardPage = () => {
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-60">
+                      <p className="text-muted-foreground">No income data available for this period</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -251,7 +433,7 @@ const FinanceDashboardPage = () => {
                 <CardContent>
                   {isLoading ? (
                     <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : (
+                  ) : expenseBreakdown.length > 0 ? (
                     <div className="flex justify-center">
                       <div className="w-full max-w-md">
                         {expenseBreakdown.map((item, index) => (
@@ -273,6 +455,10 @@ const FinanceDashboardPage = () => {
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-60">
+                      <p className="text-muted-foreground">No expense data available for this period</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -285,9 +471,41 @@ const FinanceDashboardPage = () => {
                 <CardTitle>Income Sources</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-96 flex items-center justify-center">
-                  <p className="text-muted-foreground">Income breakdown by category (Coming Soon)</p>
-                </div>
+                {isLoading ? (
+                  <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+                ) : incomeBreakdown.length > 0 ? (
+                  <div className="space-y-8">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {incomeBreakdown.map((item, index) => (
+                        <Card key={index}>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold" style={{ color: item.color }}>{item.value}%</div>
+                            <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full" 
+                                style={{ 
+                                  width: `${item.value}%`,
+                                  backgroundColor: item.color
+                                }}
+                              ></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <Button variant="outline" onClick={() => toast.info('Detailed income report will be available soon')}>
+                      View Detailed Report
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-60">
+                    <p className="text-muted-foreground">No income data available for this period</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -298,9 +516,41 @@ const FinanceDashboardPage = () => {
                 <CardTitle>Expense Categories</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-96 flex items-center justify-center">
-                  <p className="text-muted-foreground">Expense breakdown by category (Coming Soon)</p>
-                </div>
+                {isLoading ? (
+                  <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+                ) : expenseBreakdown.length > 0 ? (
+                  <div className="space-y-8">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {expenseBreakdown.map((item, index) => (
+                        <Card key={index}>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold" style={{ color: item.color }}>{item.value}%</div>
+                            <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full" 
+                                style={{ 
+                                  width: `${item.value}%`,
+                                  backgroundColor: item.color
+                                }}
+                              ></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <Button variant="outline" onClick={() => toast.info('Detailed expense report will be available soon')}>
+                      View Detailed Report
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-60">
+                    <p className="text-muted-foreground">No expense data available for this period</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
