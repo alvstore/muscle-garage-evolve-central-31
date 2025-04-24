@@ -33,4 +33,3 @@ export interface InvoiceDateSelectorProps {
 export interface InvoiceTotalProps {
   amount: number;
 }
-

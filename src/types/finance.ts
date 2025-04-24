@@ -29,6 +29,8 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
+  // Adding unitPrice as an alias for price to maintain compatibility
+  unitPrice?: number; 
 }
 
 export interface Invoice {
@@ -49,11 +51,21 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   branch_id?: string;
+  
+  // Aliases for camelCase access (for legacy code compatibility)
+  memberId?: string;
+  dueDate?: string;
+  issuedDate?: string;
+  paidDate?: string;
+  branchId?: string;
+  membershipPlanId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Adapter functions to help with mapping between API and UI formats
 export function adaptInvoiceFromDB(dbInvoice: any): Invoice {
-  return {
+  const invoice: Invoice = {
     id: dbInvoice.id,
     member_id: dbInvoice.member_id,
     memberName: dbInvoice.memberName || '',
@@ -72,23 +84,37 @@ export function adaptInvoiceFromDB(dbInvoice: any): Invoice {
     updated_at: dbInvoice.updated_at,
     branch_id: dbInvoice.branch_id
   };
+  
+  // Add camelCase aliases
+  invoice.memberId = invoice.member_id;
+  invoice.dueDate = invoice.due_date;
+  invoice.issuedDate = invoice.issued_date;
+  invoice.paidDate = invoice.paid_date;
+  invoice.branchId = invoice.branch_id;
+  invoice.createdAt = invoice.created_at;
+  invoice.updatedAt = invoice.updated_at;
+  
+  return invoice;
 }
 
 export function adaptInvoiceToDB(invoice: Partial<Invoice>): any {
   return {
     id: invoice.id,
-    member_id: invoice.member_id,
+    member_id: invoice.member_id || invoice.memberId,
     amount: invoice.amount,
     status: invoice.status,
-    due_date: invoice.due_date,
-    issued_date: invoice.issued_date,
-    paid_date: invoice.paid_date,
+    due_date: invoice.due_date || invoice.dueDate,
+    issued_date: invoice.issued_date || invoice.issuedDate,
+    paid_date: invoice.paid_date || invoice.paidDate,
     payment_method: invoice.payment_method,
-    items: invoice.items,
+    items: invoice.items?.map(item => ({
+      ...item,
+      price: item.price || item.unitPrice
+    })),
     razorpay_order_id: invoice.razorpay_order_id,
     razorpay_payment_id: invoice.razorpay_payment_id,
     notes: invoice.notes,
     description: invoice.description,
-    branch_id: invoice.branch_id
+    branch_id: invoice.branch_id || invoice.branchId
   };
 }

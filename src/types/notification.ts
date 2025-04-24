@@ -27,6 +27,22 @@ export interface ReminderRule {
   targetRoles: string[];
 }
 
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service' | 'equipment';
+
+export interface Feedback {
+  id: string;
+  title: string;
+  type: FeedbackType;
+  rating: number;
+  comments?: string;
+  memberId?: string;
+  memberName?: string;
+  branchId?: string;
+  createdAt: string;
+  relatedId?: string;
+  anonymous: boolean;
+}
+
 export interface Announcement {
   id: string;
   title: string;
@@ -53,22 +69,6 @@ export interface MotivationalMessage {
   active: boolean;
   created_at?: string;
   updated_at?: string;
-}
-
-export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service' | 'equipment';
-
-export interface Feedback {
-  id: string;
-  title: string;
-  type: FeedbackType;
-  rating: number;
-  comments?: string;
-  memberId?: string;
-  memberName?: string;
-  branchId?: string;
-  createdAt: string;
-  relatedId?: string;
-  anonymous: boolean;
 }
 
 export interface BackupLogEntry {

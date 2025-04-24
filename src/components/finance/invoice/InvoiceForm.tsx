@@ -31,27 +31,21 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
   const [formData, setFormData] = useState<Invoice>({
     id: "",
     member_id: "",
-    memberId: "",
     memberName: "",
     amount: 0,
     status: "pending",
     due_date: new Date().toISOString(),
-    dueDate: new Date().toISOString(),
     issued_date: new Date().toISOString(),
-    issuedDate: new Date().toISOString(),
     paid_date: null,
-    paidDate: null,
     items: [
       {
         id: `item-${Date.now()}`,
         name: "",
         quantity: 1,
         price: 0,
-        unitPrice: 0,
       },
     ],
     branch_id: currentBranch?.id || "branch-1",
-    branchId: currentBranch?.id || "branch-1",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
@@ -60,24 +54,22 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
     if (invoice) {
       setFormData({
         ...invoice,
-        // Ensure both snake_case and camelCase versions are set
+        // Ensure snake_case properties are set
         member_id: invoice.member_id || invoice.memberId,
-        memberId: invoice.member_id || invoice.memberId,
         due_date: invoice.due_date || invoice.dueDate,
-        dueDate: invoice.due_date || invoice.dueDate,
         issued_date: invoice.issued_date || invoice.issuedDate,
-        issuedDate: invoice.issued_date || invoice.issuedDate
+        paid_date: invoice.paid_date || invoice.paidDate,
+        branch_id: invoice.branch_id || invoice.branchId
       });
     }
   }, [invoice]);
 
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "memberId" || name === "member_id") {
+    if (name === "member_id") {
       const selectedMember = mockMembers.find(member => member.id === value);
       setFormData({
         ...formData,
         member_id: value,
-        memberId: value,
         memberName: selectedMember?.name || "",
       });
     } else {
@@ -88,17 +80,15 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
   const handleDateChange = (name: string, date: Date | undefined) => {
     if (date) {
       const dateString = date.toISOString();
-      if (name === "issuedDate" || name === "issued_date") {
+      if (name === "issued_date") {
         setFormData({ 
           ...formData, 
-          issued_date: dateString,
-          issuedDate: dateString 
+          issued_date: dateString
         });
-      } else if (name === "dueDate" || name === "due_date") {
+      } else if (name === "due_date") {
         setFormData({ 
           ...formData, 
-          due_date: dateString,
-          dueDate: dateString 
+          due_date: dateString
         });
       }
     }
@@ -108,10 +98,8 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
     const updatedItems = formData.items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
-        // Make sure price and unitPrice are always in sync
+        // Make sure price is always set
         if (field === 'price') {
-          updatedItem.unitPrice = value as number;
-        } else if (field === 'unitPrice') {
           updatedItem.price = value as number;
         }
         return updatedItem;
@@ -128,7 +116,6 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
       name: "",
       quantity: 1,
       price: 0,
-      unitPrice: 0,
     };
     const updatedItems = [...formData.items, newItem];
     setFormData({ ...formData, items: updatedItems });
@@ -142,7 +129,7 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
   };
 
   const updateTotalAmount = (items: InvoiceItem[]) => {
-    const total = items.reduce((sum, item) => sum + (item.quantity * (item.price || item.unitPrice || 0)), 0);
+    const total = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
     setFormData(prev => ({ ...prev, amount: total }));
   };
 
@@ -167,7 +154,7 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
         </div>
         <div className="space-y-2">
           <Label>Member</Label>
-          <Select value={formData.member_id || formData.memberId || ""} onValueChange={(value) => handleSelectChange("memberId", value)}>
+          <Select value={formData.member_id || ""} onValueChange={(value) => handleSelectChange("member_id", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select member" />
             </SelectTrigger>
@@ -186,15 +173,15 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
         <div className="space-y-2">
           <Label>Issue Date</Label>
           <DatePicker
-            date={formData.issued_date || formData.issuedDate ? new Date(formData.issued_date || formData.issuedDate) : undefined}
-            onSelect={(date) => handleDateChange("issuedDate", date)}
+            date={formData.issued_date ? new Date(formData.issued_date) : undefined}
+            onSelect={(date) => handleDateChange("issued_date", date)}
           />
         </div>
         <div className="space-y-2">
           <Label>Due Date</Label>
           <DatePicker
-            date={formData.due_date || formData.dueDate ? new Date(formData.due_date || formData.dueDate) : undefined}
-            onSelect={(date) => handleDateChange("dueDate", date)}
+            date={formData.due_date ? new Date(formData.due_date) : undefined}
+            onSelect={(date) => handleDateChange("due_date", date)}
           />
         </div>
       </div>
@@ -229,7 +216,7 @@ const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
               <Input
                 type="number"
                 placeholder="Unit Price"
-                value={item.price || item.unitPrice}
+                value={item.price}
                 onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
               />
             </div>

@@ -21,7 +21,7 @@ interface FeedbackFormProps {
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title is required' }),
-  type: z.enum(['general', 'trainer', 'class', 'facility', 'service'] as const),
+  type: z.enum(['general', 'trainer', 'class', 'facility', 'service', 'equipment'] as const),
   rating: z.number().min(1).max(5),
   comments: z.string().optional(),
   anonymous: z.boolean().default(false),
@@ -91,6 +91,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, on
                       <SelectItem value="class">Class</SelectItem>
                       <SelectItem value="facility">Facility</SelectItem>
                       <SelectItem value="service">Service</SelectItem>
+                      <SelectItem value="equipment">Equipment</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
