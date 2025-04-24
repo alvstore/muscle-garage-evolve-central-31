@@ -1,128 +1,154 @@
 
-import { useState, useEffect } from 'react';
-import { Announcement } from '@/types/notification';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabaseClient';
+import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
 
-// Define a valid NotificationChannel type that includes 'in-app'
-export type NotificationChannel = 'in-app' | 'email' | 'sms' | 'whatsapp';
-
-export const useAnnouncements = (options: {
-  branchId?: string | null;
-  limit?: number;
+interface UseAnnouncementsOptions {
   onlyActive?: boolean;
-} = {}) => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  targetRole?: string;
+  limit?: number;
+  branchId?: string;
+}
 
-  const fetchAnnouncements = async () => {
-    try {
-      setLoading(true);
-      
+export const useAnnouncements = (options: UseAnnouncementsOptions = {}) => {
+  const queryClient = useQueryClient();
+  const { onlyActive = true, targetRole, limit, branchId } = options;
+
+  const { data: announcements = [], isLoading, error } = useQuery({
+    queryKey: ['announcements', onlyActive, targetRole, limit, branchId],
+    queryFn: async () => {
       let query = supabase
-        .from('announcements' as any)
-        .select('*')
-        .order('created_at', { ascending: false }) as any;
-      
-      // Apply branch filter if provided
-      if (options.branchId) {
-        query = query.eq('branch_id', options.branchId);
+        .from('announcements')
+        .select('*');
+
+      if (onlyActive) {
+        const now = new Date().toISOString();
+        query = query.or(`expires_at.gt.${now},expires_at.is.null`);
       }
-      
-      // Only fetch active announcements if specified
-      if (options.onlyActive) {
-        query = query.eq('is_active', true);
+
+      if (targetRole) {
+        query = query.contains('target_roles', [targetRole]);
       }
-      
-      // Apply limit if specified
-      if (options.limit) {
-        query = query.limit(options.limit);
+
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
       }
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      query = query.order('created_at', { ascending: false });
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      if (!data) {
-        setAnnouncements([]);
-        return;
-      }
-
-      const formattedAnnouncements: Announcement[] = data.map((item: any) => ({
+      return (data || []).map((item: any): Announcement => ({
         id: item.id,
-        title: item.title || 'Untitled Announcement',
-        content: item.content || '',
+        title: item.title,
+        content: item.content,
+        authorId: item.author_id,
+        authorName: item.author_name,
         createdAt: item.created_at,
         expiresAt: item.expires_at,
-        priority: item.priority || 'normal',
-        channel: (item.channel as NotificationChannel) || 'in-app',
+        priority: item.priority,
+        targetRoles: item.target_roles,
+        channels: item.channels,
         branchId: item.branch_id,
-        createdBy: item.created_by,
-        isGlobal: item.is_global || false,
-        isActive: item.is_active || true,
-        category: item.category || 'general',
-        // Add these required fields with default values since they might be missing
-        authorId: item.created_by || '',
-        authorName: item.author_name || 'Unknown',
+        sentCount: item.sent_count
       }));
+    },
+  });
 
-      setAnnouncements(formattedAnnouncements);
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-      setError(error as Error);
-      toast.error('Failed to load announcements');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAnnouncements();
-  }, [options.branchId, options.limit, options.onlyActive]);
-
-  // Add the createAnnouncement function
-  const createAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
-    try {
-      const newAnnouncement = {
-        title: announcement.title,
-        content: announcement.content,
-        priority: announcement.priority,
-        created_by: announcement.authorId,
-        author_name: announcement.authorName,
-        expires_at: announcement.expiresAt,
-        is_global: announcement.forBranchIds ? announcement.forBranchIds.length === 0 : false,
-        is_active: true,
-        branch_id: announcement.forBranchIds && announcement.forBranchIds.length > 0 
-          ? announcement.forBranchIds[0] 
-          : null,
-        channel: announcement.channels ? announcement.channels : ['in-app'],
-        target_roles: announcement.targetRoles || ['member'],
-        category: announcement.category || 'general',
-      };
-
+  const createAnnouncement = useMutation({
+    mutationFn: async (announcement: Omit<Announcement, "id" | "createdAt">) => {
       const { data, error } = await supabase
-        .from('announcements' as any)
-        .insert(newAnnouncement)
-        .select('*')
+        .from('announcements')
+        .insert([{
+          title: announcement.title,
+          content: announcement.content,
+          priority: announcement.priority,
+          target_roles: announcement.targetRoles,
+          channels: announcement.channels,
+          expires_at: announcement.expiresAt,
+          author_id: announcement.authorId,
+          author_name: announcement.authorName,
+          branch_id: announcement.branchId, // Corrected to use branchId
+        }])
+        .select()
         .single();
 
       if (error) throw error;
-
-      toast.success('Announcement created successfully');
-      fetchAnnouncements();
       return data;
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      toast.success('Announcement created successfully');
+    },
+    onError: (error: any) => {
       console.error('Error creating announcement:', error);
-      toast.error('Failed to create announcement');
-      return null;
-    }
-  };
+      toast.error(`Failed to create announcement: ${error.message}`);
+    },
+  });
 
-  const refresh = () => {
-    fetchAnnouncements();
-  };
+  const updateAnnouncement = useMutation({
+    mutationFn: async (announcement: Announcement) => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .update({
+          title: announcement.title,
+          content: announcement.content,
+          priority: announcement.priority,
+          target_roles: announcement.targetRoles,
+          channels: announcement.channels,
+          expires_at: announcement.expiresAt,
+          branch_id: announcement.branchId, // Corrected to use branchId
+        })
+        .eq('id', announcement.id)
+        .select()
+        .single();
 
-  return { announcements, loading, error, refresh, createAnnouncement };
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      toast.success('Announcement updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating announcement:', error);
+      toast.error(`Failed to update announcement: ${error.message}`);
+    },
+  });
+
+  const deleteAnnouncement = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      toast.success('Announcement deleted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting announcement:', error);
+      toast.error(`Failed to delete announcement: ${error.message}`);
+    },
+  });
+
+  return {
+    announcements,
+    loading: isLoading,
+    error,
+    createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+  };
 };

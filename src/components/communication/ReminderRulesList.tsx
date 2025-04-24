@@ -14,14 +14,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ReminderRule } from '@/types/notification';
+import { ReminderRule, NotificationChannel, ReminderTriggerType } from '@/types/notification';
 import { supabase } from '@/services/supabaseClient';
 
 interface ReminderRulesListProps {
-  onAddRule: () => void;
-  onEditRule: (rule: ReminderRule) => void;
+  onAddRule?: () => void;
+  onEditRule?: (rule: ReminderRule) => void;
 }
 
 const ReminderRulesList = ({ onAddRule, onEditRule }: ReminderRulesListProps) => {
@@ -46,16 +44,16 @@ const ReminderRulesList = ({ onAddRule, onEditRule }: ReminderRulesListProps) =>
       const mappedRules: ReminderRule[] = data.map(rule => ({
         id: rule.id,
         title: rule.title,
-        description: rule.description,
-        triggerType: rule.trigger_type as any,
-        notificationChannel: rule.notification_channel,
+        description: rule.description || '',
+        triggerType: rule.trigger_type as ReminderTriggerType,
+        notificationChannel: (rule.notification_channel || 'email') as NotificationChannel,
         conditions: rule.conditions,
         isActive: rule.is_active,
         createdAt: rule.created_at,
         updatedAt: rule.updated_at,
         name: rule.title,
         triggerValue: rule.trigger_value,
-        message: rule.message,
+        message: rule.message || '',
         sendVia: rule.send_via,
         targetRoles: rule.target_roles,
         active: rule.is_active,
@@ -143,10 +141,12 @@ const ReminderRulesList = ({ onAddRule, onEditRule }: ReminderRulesListProps) =>
               </SelectGroup>
             </SelectContent>
           </Select>
-          <Button onClick={onAddRule}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Rule
-          </Button>
+          {onAddRule && (
+            <Button onClick={onAddRule}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Rule
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -221,9 +221,11 @@ const ReminderRulesList = ({ onAddRule, onEditRule }: ReminderRulesListProps) =>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => onEditRule(rule)}>
-                      Edit
-                    </Button>
+                    {onEditRule && (
+                      <Button size="sm" variant="outline" onClick={() => onEditRule(rule)}>
+                        Edit
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

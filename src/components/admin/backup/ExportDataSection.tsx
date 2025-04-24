@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,12 +12,22 @@ interface ExportDataSectionProps {
   onExportComplete: () => void;
 }
 
+// Define the module types as literal string union to match Supabase types
+type ModuleType = 
+  | "members" 
+  | "classes" 
+  | "trainers" 
+  | "announcements" 
+  | "reminder_rules" 
+  | "motivational_messages" 
+  | "feedback";
+
 const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [selectedModules, setSelectedModules] = useState<ModuleType[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const modules = [
+  const modules: { name: string; value: ModuleType }[] = [
     { name: 'Members', value: 'members' },
     { name: 'Classes', value: 'classes' },
     { name: 'Trainers', value: 'trainers' },
@@ -26,7 +37,7 @@ const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
     { name: 'Feedback', value: 'feedback' },
   ];
 
-  const toggleModule = (moduleValue: string) => {
+  const toggleModule = (moduleValue: ModuleType) => {
     setSelectedModules(prev =>
       prev.includes(moduleValue)
         ? prev.filter(item => item !== moduleValue)

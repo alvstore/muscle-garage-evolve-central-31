@@ -43,7 +43,11 @@ const channelOptions = [
   { id: "in-app", label: "In-App Notification" },
 ];
 
-export default function CreateAnnouncementForm() {
+interface CreateAnnouncementFormProps {
+  onSuccess?: () => void;
+}
+
+export const CreateAnnouncementForm = ({ onSuccess }: CreateAnnouncementFormProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,14 +83,18 @@ export default function CreateAnnouncementForm() {
         expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
         authorId: user.id,
         authorName: user.name || user.email || "Admin",
-        branchId: user.branch_id || undefined,
+        branchId: user.branchId || undefined, // Using branchId instead of branch_id
       };
       
       const result = await announcementService.createAnnouncement(announcementData);
       
       if (result) {
         toast.success("Announcement created successfully");
-        navigate("/communication/announcements");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          navigate("/communication/announcements");
+        }
       } else {
         toast.error("Failed to create announcement");
       }
@@ -307,4 +315,6 @@ export default function CreateAnnouncementForm() {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default CreateAnnouncementForm;

@@ -76,8 +76,7 @@ export const getStaffActivityData = () => {
       targetRoles: ["member", "trainer", "staff"],
       channels: ["in-app", "email"],
       sentCount: 120,
-      forRoles: ["member", "trainer", "staff"],
-      createdBy: "admin1"
+      // Removed forRoles field which was causing the type error
     },
     {
       id: "announcement2",
@@ -90,8 +89,7 @@ export const getStaffActivityData = () => {
       targetRoles: ["member", "trainer"],
       channels: ["in-app", "email"],
       sentCount: 98,
-      forRoles: ["member", "trainer"],
-      createdBy: "admin1"
+      // Removed forRoles field which was causing the type error
     }
   ];
 
