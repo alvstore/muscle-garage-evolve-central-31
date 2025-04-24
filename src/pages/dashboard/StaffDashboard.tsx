@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { toast } from 'sonner';
 import { Card } from "@/components/ui/card";
-import { mockDashboardSummary } from "@/data/mockData";
 import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import PendingPayments from "@/components/dashboard/PendingPayments";
@@ -11,44 +10,231 @@ import RenewalsSection from "@/components/dashboard/sections/RenewalsSection";
 import RevenueSection from "@/components/dashboard/sections/RevenueSection";
 import StaffDashboardHeader from "@/components/dashboard/staff/StaffDashboardHeader";
 import StaffStatsOverview from "@/components/dashboard/staff/StaffStatsOverview";
-import { getStaffActivityData } from "@/components/dashboard/staff/StaffActivityData";
 import { useBranch } from "@/hooks/use-branch";
+import { supabase } from "@/services/supabaseClient";
+import { DashboardSummary, getDashboardSummary } from "@/services/dashboardService";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(mockDashboardSummary);
-  const { currentBranch } = useBranch();
-  const { recentActivities, pendingPayments, announcements } = getStaffActivityData();
+  const [dashboardData, setDashboardData] = useState<DashboardSummary>({
+    totalMembers: 0,
+    activeMembers: 0,
+    totalTrainers: 0,
+    totalStaff: 0,
+    activeClasses: 0,
+    totalClasses: 0,
+    revenueToday: 0,
+    revenueThisMonth: 0,
+    unpaidInvoices: 0,
+    pendingPayments: 0,
+    attendanceTrend: [],
+    expiringMemberships: 0
+  });
   
-  // Mock revenue data for the RevenueSection component
-  const revenueData = [
-    { month: "Jan", revenue: 12500, expenses: 8500, profit: 4000 },
-    { month: "Feb", revenue: 13200, expenses: 8700, profit: 4500 },
-    { month: "Mar", revenue: 14800, expenses: 9200, profit: 5600 },
-    { month: "Apr", revenue: 15700, expenses: 9800, profit: 5900 },
-    { month: "May", revenue: 16500, expenses: 10500, profit: 6000 },
-    { month: "Jun", revenue: 18200, expenses: 11200, profit: 7000 }
-  ];
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
+  
+  const { currentBranch } = useBranch();
   
   useEffect(() => {
-    setTimeout(() => {
-      console.log(`Loading branch-specific data for branch: ${currentBranch?.id}`);
-      setDashboardData(mockDashboardSummary);
-      setIsLoading(false);
-    }, 1000);
+    fetchDashboardData();
+    fetchRecentActivities();
+    fetchPendingPayments();
+    fetchAnnouncements();
+    fetchRevenueData();
   }, [currentBranch]);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getDashboardSummary(currentBranch?.id);
+      setDashboardData(data);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRecentActivities = async () => {
+    try {
+      // Fetch recent member check-ins
+      const { data: checkIns } = await supabase
+        .from('member_attendance')
+        .select(`
+          id, check_in, member_id,
+          members:member_id (name)
+        `)
+        .match(currentBranch?.id ? { branch_id: currentBranch.id } : {})
+        .order('check_in', { ascending: false })
+        .limit(5);
+      
+      // Fetch recent payments
+      const { data: payments } = await supabase
+        .from('payments')
+        .select(`
+          id, payment_date, amount, payment_method, member_id,
+          members:member_id (name)
+        `)
+        .match(currentBranch?.id ? { branch_id: currentBranch.id } : {})
+        .order('payment_date', { ascending: false })
+        .limit(5);
+      
+      // Combine and format activities
+      const activities = [
+        ...(checkIns || []).map(item => ({
+          id: item.id,
+          type: 'check-in',
+          date: item.check_in,
+          name: item.members?.name || 'Unknown Member',
+          memberId: item.member_id,
+          details: 'Checked in at the gym'
+        })),
+        ...(payments || []).map(item => ({
+          id: item.id,
+          type: 'payment',
+          date: item.payment_date,
+          name: item.members?.name || 'Unknown Member',
+          memberId: item.member_id,
+          amount: item.amount,
+          method: item.payment_method,
+          details: `Paid ${item.amount} via ${item.payment_method}`
+        }))
+      ];
+      
+      // Sort by date, newest first
+      activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setRecentActivities(activities.slice(0, 10));
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
+    }
+  };
+
+  const fetchPendingPayments = async () => {
+    try {
+      const { data } = await supabase
+        .from('invoices')
+        .select(`
+          id, amount, due_date, status, member_id,
+          members:member_id (name)
+        `)
+        .match(currentBranch?.id ? { branch_id: currentBranch.id } : {})
+        .in('status', ['pending', 'overdue'])
+        .order('due_date', { ascending: true })
+        .limit(10);
+      
+      setPendingPayments(data ? data.map(item => ({
+        id: item.id,
+        memberId: item.member_id,
+        memberName: item.members?.name || 'Unknown',
+        amount: item.amount,
+        dueDate: item.due_date,
+        status: item.status,
+        overdue: new Date(item.due_date) < new Date()
+      })) : []);
+    } catch (error) {
+      console.error("Error fetching pending payments:", error);
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const { data } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      setAnnouncements(data ? data.map(item => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        authorName: item.author_name,
+        createdAt: item.created_at,
+        priority: item.priority
+      })) : []);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    }
+  };
+
+  const fetchRevenueData = async () => {
+    try {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      
+      // Get revenue for the last 6 months
+      const data = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const month = (currentMonth - i + 12) % 12; // Ensure we wrap around properly
+        const year = currentDate.getFullYear() - (currentMonth < i ? 1 : 0);
+        
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month + 1, 0);
+        
+        // Query for income
+        const { data: income } = await supabase
+          .from('transactions')
+          .select('amount')
+          .match({ 
+            type: 'income',
+            ...(currentBranch?.id ? { branch_id: currentBranch.id } : {})
+          })
+          .gte('transaction_date', startDate.toISOString())
+          .lte('transaction_date', endDate.toISOString());
+          
+        // Query for expenses
+        const { data: expenses } = await supabase
+          .from('transactions')
+          .select('amount')
+          .match({ 
+            type: 'expense',
+            ...(currentBranch?.id ? { branch_id: currentBranch.id } : {})
+          })
+          .gte('transaction_date', startDate.toISOString())
+          .lte('transaction_date', endDate.toISOString());
+        
+        const totalIncome = income?.reduce((sum, item) => sum + item.amount, 0) || 0;
+        const totalExpenses = expenses?.reduce((sum, item) => sum + item.amount, 0) || 0;
+        
+        data.push({
+          month: months[month],
+          revenue: totalIncome,
+          expenses: totalExpenses,
+          profit: totalIncome - totalExpenses
+        });
+      }
+      
+      setRevenueData(data);
+    } catch (error) {
+      console.error("Error fetching revenue data:", error);
+    }
+  };
 
   const handleRefresh = () => {
     setIsLoading(true);
     toast("Refreshing dashboard data", {
       description: "Please wait while we fetch the latest information."
     });
-    setTimeout(() => {
+    
+    Promise.all([
+      fetchDashboardData(),
+      fetchRecentActivities(),
+      fetchPendingPayments(),
+      fetchAnnouncements(),
+      fetchRevenueData()
+    ]).finally(() => {
       setIsLoading(false);
       toast("Dashboard updated", {
         description: "All data has been refreshed with the latest information."
       });
-    }, 1000);
+    });
   };
 
   return (

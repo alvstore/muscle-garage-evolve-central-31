@@ -1,285 +1,356 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { ReminderRule, ReminderTriggerType, NotificationChannel } from '@/types/notification';
 
-export interface ReminderRuleFormProps {
-  onComplete: () => void;
-  editRule?: ReminderRule;
+interface ReminderRuleFormProps {
+  initialData?: Partial<ReminderRule>;
+  onSave: (data: ReminderRule) => void;
+  onCancel: () => void;
 }
 
-const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ onComplete, editRule }) => {
-  const [formData, setFormData] = useState<Partial<ReminderRule>>(
-    editRule || {
+const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ initialData, onSave, onCancel }) => {
+  const form = useForm<Partial<ReminderRule>>({
+    defaultValues: initialData || {
       id: '',
       title: '',
       description: '',
-      triggerType: 'membership-expiry',
-      triggerValue: 3,
+      triggerType: 'membership-expiry' as ReminderTriggerType,
+      triggerValue: 7,
       message: '',
-      sendVia: [] as NotificationChannel[],
+      sendVia: ['email'],
       active: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      name: '',
-      notificationChannel: 'email',
-      conditions: {},
       isActive: true,
-      // Compatibility fields
-      targetRoles: [] as string[],
-      enabled: true
+      enabled: true,
+      targetRoles: ['member'],
+      conditions: {},
+      notificationChannel: 'email'
     }
-  );
+  });
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    console.log('Form submitted with data:', formData);
-    // Here you would typically send the data to your backend
-    onComplete();
+  const triggerTypeLabels: Record<ReminderTriggerType, string> = {
+    'membership-expiry': 'Membership Expiry',
+    'class-reminder': 'Class Reminder',
+    'birthday': 'Birthday',
+    'custom': 'Custom'
   };
 
-  const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleTriggerTypeChange = (value: ReminderTriggerType) => {
-    setFormData((prev) => ({ ...prev, triggerType: value }));
-  };
-
-  const mapTriggerTypeToType = (triggerType: ReminderTriggerType): string => {
-    const typeMap: Record<string, string> = {
-      'membership-expiry': 'membership-renewal',
-      'class-reminder': 'missed-attendance',
-      'birthday': 'birthday',
-      'custom': 'inactive-member'
-    };
-    return typeMap[triggerType] || 'special-event';
+  const handleSubmit = (data: Partial<ReminderRule>) => {
+    onSave(data as ReminderRule);
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card>
       <CardHeader>
-        <CardTitle>{editRule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</CardTitle>
+        <CardTitle>{initialData?.id ? 'Edit' : 'Create'} Reminder Rule</CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Rule Name</Label>
-              <Input
-                id="title"
-                value={formData.title || formData.name || ''}
-                onChange={(e) => {
-                  handleChange('title', e.target.value);
-                  handleChange('name', e.target.value);
-                }}
-                placeholder="Enter a name for this reminder rule"
-                required
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rule Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. Membership Renewal Reminder" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Describe the purpose of this reminder rule" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="triggerType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trigger Type</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a trigger" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(Object.keys(triggerTypeLabels) as ReminderTriggerType[]).map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {triggerTypeLabels[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="triggerValue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Days Before</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="number" min={1} max={90} />
+                  </FormControl>
+                  <FormDescription>
+                    How many days before the event should the notification be sent
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message Template</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Enter the message template" />
+                  </FormControl>
+                  <FormDescription>
+                    You can use {"{name}"}, {"{date}"}, and {"{days}"} as placeholders
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Notification Channels</h3>
+              
+              <FormField
+                control={form.control}
+                name="sendVia"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('email')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'email'] 
+                            : currentValues.filter(v => v !== 'email');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">Email</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="sendVia"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('sms')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'sms'] 
+                            : currentValues.filter(v => v !== 'sms');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">SMS</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="sendVia"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('whatsapp')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'whatsapp'] 
+                            : currentValues.filter(v => v !== 'whatsapp');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">WhatsApp</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="sendVia"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('in-app')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'in-app'] 
+                            : currentValues.filter(v => v !== 'in-app');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">In-App Notification</FormLabel>
+                  </FormItem>
+                )}
               />
             </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Brief description of this reminder's purpose"
-                required
+            
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Target Recipients</h3>
+              
+              <FormField
+                control={form.control}
+                name="targetRoles"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('member')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'member'] 
+                            : currentValues.filter(v => v !== 'member');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">Members</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="targetRoles"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('trainer')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'trainer'] 
+                            : currentValues.filter(v => v !== 'trainer');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">Trainers</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="targetRoles"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('staff')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'staff'] 
+                            : currentValues.filter(v => v !== 'staff');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">Staff</FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="targetRoles"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2">
+                    <FormControl>
+                      <Checkbox 
+                        checked={field.value?.includes('admin')}
+                        onCheckedChange={(checked) => {
+                          const currentValues = field.value || [];
+                          const newValues = checked 
+                            ? [...currentValues, 'admin'] 
+                            : currentValues.filter(v => v !== 'admin');
+                          field.onChange(newValues);
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">Administrators</FormLabel>
+                  </FormItem>
+                )}
               />
             </div>
-
-            <div>
-              <Label htmlFor="triggerType">Trigger Type</Label>
-              <Select 
-                value={formData.triggerType} 
-                onValueChange={handleTriggerTypeChange}
-              >
-                <SelectTrigger id="triggerType">
-                  <SelectValue placeholder="Select when to trigger" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="membership-expiry">Membership Expiry</SelectItem>
-                  <SelectItem value="class-reminder">Attendance Reminder</SelectItem>
-                  <SelectItem value="birthday">Birthday Wishes</SelectItem>
-                  <SelectItem value="custom">Inactive Member</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <FormField
+              control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <FormDescription>
+                      When enabled, this reminder will be sent automatically
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+              <Button type="submit">Save Rule</Button>
             </div>
-
-            <div>
-              <Label htmlFor="triggerValue">Days In Advance</Label>
-              <Input
-                id="triggerValue"
-                type="number"
-                min="0"
-                value={formData.triggerValue}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  handleChange('triggerValue', value);
-                }}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="message">Message Template</Label>
-              <Textarea
-                id="message"
-                value={formData.message || ''}
-                onChange={(e) => handleChange('message', e.target.value)}
-                placeholder="Enter the message to be sent. Use {name} for the member's name."
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Notification Channels</Label>
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendEmail" 
-                    checked={(formData.sendVia || []).includes('email')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...(formData.sendVia || []), 'email' as NotificationChannel] 
-                        : (formData.sendVia || []).filter(channel => channel !== 'email');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('notificationChannel', 'email');
-                    }}
-                  />
-                  <Label htmlFor="sendEmail" className="cursor-pointer">Email</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendSMS" 
-                    checked={(formData.sendVia || []).includes('sms')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...(formData.sendVia || []), 'sms' as NotificationChannel] 
-                        : (formData.sendVia || []).filter(channel => channel !== 'sms');
-                      handleChange('sendVia', newSendVia);
-                      handleChange('notificationChannel', 'sms');
-                    }}
-                  />
-                  <Label htmlFor="sendSMS" className="cursor-pointer">SMS</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendInApp" 
-                    checked={(formData.sendVia || []).includes('in-app')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...(formData.sendVia || []), 'in-app' as NotificationChannel] 
-                        : (formData.sendVia || []).filter(channel => channel !== 'in-app');
-                      handleChange('sendVia', newSendVia);
-                    }}
-                  />
-                  <Label htmlFor="sendInApp" className="cursor-pointer">In-App Notification</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sendWhatsapp" 
-                    checked={(formData.sendVia || []).includes('whatsapp')}
-                    onCheckedChange={(checked) => {
-                      const newSendVia = checked 
-                        ? [...(formData.sendVia || []), 'whatsapp' as NotificationChannel] 
-                        : (formData.sendVia || []).filter(channel => channel !== 'whatsapp');
-                      handleChange('sendVia', newSendVia);
-                    }}
-                  />
-                  <Label htmlFor="sendWhatsapp" className="cursor-pointer">WhatsApp</Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Target Audience</Label>
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetAdmins" 
-                    checked={(formData.targetRoles || []).includes('admin')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'admin'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'admin');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetAdmins" className="cursor-pointer">Admins</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetStaff" 
-                    checked={(formData.targetRoles || []).includes('staff')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'staff'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'staff');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetStaff" className="cursor-pointer">Staff</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetTrainers" 
-                    checked={(formData.targetRoles || []).includes('trainer')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'trainer'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'trainer');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetTrainers" className="cursor-pointer">Trainers</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="targetMembers" 
-                    checked={(formData.targetRoles || []).includes('member')}
-                    onCheckedChange={(checked) => {
-                      const newTargetRoles = checked 
-                        ? [...(formData.targetRoles || []), 'member'] 
-                        : (formData.targetRoles || []).filter(role => role !== 'member');
-                      handleChange('targetRoles', newTargetRoles);
-                    }}
-                  />
-                  <Label htmlFor="targetMembers" className="cursor-pointer">Members</Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="active" 
-                checked={formData.active}
-                onCheckedChange={(checked) => {
-                  handleChange('active', checked);
-                  handleChange('isActive', checked);
-                  handleChange('enabled', checked);
-                }}
-              />
-              <Label htmlFor="active">Active</Label>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={onComplete}>Cancel</Button>
-          <Button type="submit">
-            {editRule ? 'Update Rule' : 'Create Rule'}
-          </Button>
-        </CardFooter>
-      </form>
+          </form>
+        </Form>
+      </CardContent>
     </Card>
   );
 };

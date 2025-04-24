@@ -1,341 +1,167 @@
 
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format, parseISO } from "date-fns";
-import { Feedback } from "@/types/notification";
-import { Star, MessageSquare, Download, MessageSquareOff, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from '@/hooks/use-auth';
-
-const mockFeedbackData: Feedback[] = [
-  {
-    id: "feedback1",
-    member_id: "member1",
-    member_name: "David Miller",
-    type: "class",
-    related_id: "class1",
-    rating: 4,
-    comments: "Great class, but the room was a bit crowded.",
-    created_at: "2023-06-15T10:30:00Z",
-    anonymous: false,
-    title: "HIIT Class Review"
-  },
-  {
-    id: "feedback2",
-    member_id: "member2",
-    member_name: "Sarah Parker",
-    type: "trainer",
-    related_id: "trainer1",
-    rating: 5,
-    comments: "Excellent trainer, very motivating!",
-    created_at: "2023-06-16T14:20:00Z",
-    anonymous: false,
-    title: "Trainer Review"
-  },
-  {
-    id: "feedback3",
-    member_id: "member3",
-    type: "fitness-plan",
-    related_id: "plan1",
-    rating: 3,
-    comments: "Plan is good but too challenging for beginners.",
-    created_at: "2023-06-17T09:15:00Z",
-    anonymous: true,
-    title: "Fitness Plan Feedback"
-  },
-  {
-    id: "feedback4",
-    member_id: "member4",
-    member_name: "Emily Davidson",
-    type: "general",
-    rating: 2,
-    comments: "The gym needs better ventilation.",
-    created_at: "2023-06-18T16:45:00Z",
-    anonymous: false,
-    title: "Facility Feedback"
-  },
-  {
-    id: "feedback5",
-    member_id: "member5",
-    member_name: "Michael Wong",
-    type: "class",
-    related_id: "class2",
-    rating: 5,
-    comments: "Best HIIT class I've ever taken!",
-    created_at: "2023-06-19T11:30:00Z",
-    anonymous: false,
-    title: "Yoga Class Review"
-  }
-];
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { format, parseISO } from 'date-fns';
+import { Feedback, FeedbackType } from '@/types/notification';
+import { feedbackService } from '@/services/communicationService';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageSquare, ThumbsUp, ThumbsDown, AlertCircle, HelpCircle } from 'lucide-react';
 
 interface FeedbackListProps {
-  feedbacks?: Feedback[];
-  isLoading?: boolean;
+  hideHeader?: boolean;
 }
 
-const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: FeedbackListProps) => {
-  const [feedback, setFeedback] = useState<Feedback[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filter, setFilter] = useState<string>("all");
-  const { user } = useAuth();
+const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
+  const [feedbackItems, setFeedbackItems] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   useEffect(() => {
-    setTimeout(() => {
-      const filteredFeedbacks = user?.role === 'member'
-        ? feedbacks.filter(f => f.member_id === user.id)
-        : feedbacks;
-      setFeedback(filteredFeedbacks);
-      setLoading(isLoading);
-    }, 1000);
-  }, [feedbacks, isLoading, user]);
+    fetchFeedback();
+  }, []);
 
-  const handleViewDetails = (feedback: Feedback) => {
-    setSelectedFeedback(feedback);
-    setIsDialogOpen(true);
+  const fetchFeedback = async () => {
+    setLoading(true);
+    try {
+      const data = await feedbackService.getFeedback();
+      setFeedbackItems(data);
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleExportCSV = () => {
-    toast.success("Feedback data exported to CSV");
-  };
+  const filteredFeedback = feedbackItems.filter(feedback => {
+    if (activeTab === 'all') return true;
+    return feedback.type === activeTab;
+  });
 
-  const filteredFeedback = filter === "all" 
-    ? feedback 
-    : feedback.filter(item => item.type === filter);
-
-  const renderStars = (rating: number) => {
-    return Array(5)
-      .fill(0)
-      .map((_, i) => (
-        <Star 
-          key={i} 
-          className={`h-4 w-4 ${i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} 
-        />
-      ));
-  };
-
-  const getInitials = (name: string) => {
-    if (name === "Anonymous") return "A";
+  const getInitials = (name: string = '') => {
     return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
+      .split(' ')
+      .map(n => n[0])
+      .join('')
       .toUpperCase();
   };
 
+  const getFeedbackIcon = (type: FeedbackType) => {
+    switch (type) {
+      case 'general':
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      case 'trainer':
+        return <ThumbsUp className="h-4 w-4 text-green-500" />;
+      case 'class':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'fitness-plan':
+        return <ThumbsDown className="h-4 w-4 text-red-500" />;
+      default:
+        return <HelpCircle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
   return (
-    <>
-      <Card>
+    <Card>
+      {!hideHeader && (
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Feedback Responses</CardTitle>
-              <CardDescription>Review feedback from members and trainers</CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={filter === "all" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setFilter("all")}
-              >
-                All
-              </Button>
-              <Button 
-                variant={filter === "class" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setFilter("class")}
-              >
-                Classes
-              </Button>
-              <Button 
-                variant={filter === "trainer" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setFilter("trainer")}
-              >
-                Trainers
-              </Button>
-              <Button 
-                variant={filter === "fitness-plan" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setFilter("fitness-plan")}
-              >
-                Fitness Plans
-              </Button>
-              <Button 
-                variant={filter === "general" ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setFilter("general")}
-              >
-                General
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportCSV}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Member Feedback</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[calc(100vh-300px)]">
-            {loading ? (
-              <div className="h-80 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading feedback...</p>
-                </div>
-              </div>
-            ) : filteredFeedback.length === 0 ? (
-              <div className="text-center py-10">
-                <MessageSquareOff className="h-10 w-10 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No feedback found</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {filter === "all" 
-                    ? "No feedback has been submitted yet." 
-                    : `No feedback found for the "${filter}" category.`}
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Comment Preview</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredFeedback.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src="/placeholder.svg" alt={item.member_name} />
-                              <AvatarFallback>{getInitials(item.member_name || "Anonymous")}</AvatarFallback>
-                            </Avatar>
-                            <span>{item.anonymous ? "Anonymous" : item.member_name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {item.type === "fitness-plan" ? "Fitness Plan" : item.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex">
-                            {renderStars(item.rating)}
-                          </div>
-                        </TableCell>
-                        <TableCell>{format(parseISO(item.created_at), "MMM dd, yyyy")}</TableCell>
-                        <TableCell>
-                          {item.comments 
-                            ? item.comments.length > 30 
-                              ? `${item.comments.substring(0, 30)}...` 
-                              : item.comments
-                            : "No comment provided"
-                          }
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        {selectedFeedback && (
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Feedback Details</DialogTitle>
-              <DialogDescription>
-                Submitted on {format(parseISO(selectedFeedback.created_at), "PPP")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder.svg" alt={selectedFeedback.member_name} />
-                    <AvatarFallback>
-                      {getInitials(selectedFeedback.member_name || "Anonymous")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.member_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {selectedFeedback.type === "fitness-plan" ? "Fitness Plan Feedback" : `${selectedFeedback.type} Feedback`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex">
-                  {renderStars(selectedFeedback.rating)}
-                </div>
-              </div>
-              
-              <div className="rounded-md bg-muted p-3">
-                <p className="text-sm">
-                  {selectedFeedback.comments || "No comments provided."}
-                </p>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Close
-                </Button>
-              </div>
+      )}
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="trainer">Trainers</TabsTrigger>
+            <TabsTrigger value="class">Classes</TabsTrigger>
+            <TabsTrigger value="fitness-plan">Fitness</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredFeedback.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Member</TableHead>
+                <TableHead>Feedback</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredFeedback.map((feedback) => (
+                <TableRow key={feedback.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src="" />
+                        <AvatarFallback>
+                          {feedback.anonymous 
+                            ? '?' 
+                            : getInitials(feedback.member_name || '')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>
+                        {feedback.anonymous
+                          ? 'Anonymous User'
+                          : feedback.member_name || 'Unknown'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <div className="flex items-center space-x-1">
+                        {getFeedbackIcon(feedback.type as FeedbackType)}
+                        <span className="font-medium">{feedback.title}</span>
+                      </div>
+                      {feedback.comments && (
+                        <span className="text-sm text-muted-foreground line-clamp-1">
+                          {feedback.comments}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <span
+                          key={i}
+                          className={`text-lg ${
+                            i < feedback.rating ? 'text-yellow-400' : 'text-gray-300'
+                          }`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {format(parseISO(feedback.created_at), 'MMM dd, yyyy')}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <MessageSquare className="h-10 w-10 text-muted-foreground" />
             </div>
-          </DialogContent>
+            <h3 className="text-lg font-medium">No feedback yet</h3>
+            <p className="text-muted-foreground mt-1">
+              Feedback from members will appear here
+            </p>
+          </div>
         )}
-      </Dialog>
-    </>
+      </CardContent>
+    </Card>
   );
 };
 

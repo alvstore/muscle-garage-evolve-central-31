@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Archive, Download, Search, Upload } from 'lucide-react';
-import { getBackupLogs } from '@/services/backupService';
 import { BackupLogEntry } from '@/types/notification';
+import { supabase } from '@/services/supabaseClient';
 
 const BackupLogs = () => {
   const [logs, setLogs] = useState<BackupLogEntry[]>([]);
@@ -23,10 +24,35 @@ const BackupLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const data = await getBackupLogs();
-      setLogs(data as BackupLogEntry[]);
+      // Fetch backup logs from Supabase
+      const { data, error } = await supabase
+        .from('backup_logs')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Convert to BackupLogEntry format
+      const formattedLogs: BackupLogEntry[] = data.map(log => ({
+        id: log.id,
+        action: log.action as 'export' | 'import',
+        userId: log.user_id,
+        userName: log.user_name,
+        timestamp: log.timestamp,
+        modules: log.modules || [],
+        success: log.success,
+        totalRecords: log.total_records,
+        successCount: log.success_count,
+        failedCount: log.failed_count
+      }));
+
+      setLogs(formattedLogs);
     } catch (error) {
       console.error('Failed to fetch backup logs:', error);
+      // Fallback to empty array in case of error
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -51,51 +77,6 @@ const BackupLogs = () => {
         log.modules.some(m => m.toLowerCase().includes(term))
       );
     });
-
-  const mockLogs: BackupLogEntry[] = [
-    {
-      id: '1',
-      action: 'export',
-      userId: '123',
-      userName: 'Admin User',
-      timestamp: '2023-07-15T10:30:45',
-      modules: ['members', 'staff', 'branches'],
-      success: true
-    },
-    {
-      id: '2',
-      action: 'import',
-      userId: '123',
-      userName: 'Admin User',
-      timestamp: '2023-07-14T14:22:10',
-      modules: ['members'],
-      success: true,
-      totalRecords: 150,
-      successCount: 148,
-      failedCount: 2
-    },
-    {
-      id: '3',
-      action: 'export',
-      userId: '456',
-      userName: 'Manager User',
-      timestamp: '2023-07-12T09:15:32',
-      modules: ['workoutPlans', 'dietPlans'],
-      success: true
-    },
-    {
-      id: '4',
-      action: 'import',
-      userId: '123',
-      userName: 'Admin User',
-      timestamp: '2023-07-10T16:45:21',
-      modules: ['inventory'],
-      success: false,
-      totalRecords: 75,
-      successCount: 0,
-      failedCount: 75
-    }
-  ];
 
   return (
     <div className="space-y-6">
@@ -164,14 +145,14 @@ const BackupLogs = () => {
                     Loading logs...
                   </TableCell>
                 </TableRow>
-              ) : mockLogs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
                     No logs found
                   </TableCell>
                 </TableRow>
               ) : (
-                mockLogs.map((log) => (
+                filteredLogs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs">
                       {new Date(log.timestamp).toLocaleDateString()}
@@ -214,7 +195,7 @@ const BackupLogs = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {log.action === 'import' && (
+                      {log.action === 'import' && log.totalRecords && (
                         <span className="text-sm">
                           {log.successCount}/{log.totalRecords} records
                         </span>

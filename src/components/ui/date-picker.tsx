@@ -14,7 +14,8 @@ import {
 
 export interface DatePickerProps {
   date: Date | undefined;
-  setDate: (date: Date | undefined) => void;
+  setDate?: (date: Date | undefined) => void;
+  onSelect?: (date: Date | undefined) => void;
   className?: string;
   components?: {
     IconLeft?: () => React.ReactNode;
@@ -24,11 +25,21 @@ export interface DatePickerProps {
 
 export function DatePicker({ 
   date, 
-  setDate, 
+  setDate,
+  onSelect,
   className,
   components,
   placeholder = "Select date" 
 }: DatePickerProps) {
+  const handleSelect = (selectedDate: Date | undefined) => {
+    if (setDate) {
+      setDate(selectedDate);
+    }
+    if (onSelect) {
+      onSelect(selectedDate);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -48,7 +59,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={handleSelect}
           initialFocus
           className="p-3 pointer-events-auto"
         />

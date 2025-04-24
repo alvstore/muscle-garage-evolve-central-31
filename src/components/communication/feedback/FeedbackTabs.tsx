@@ -1,56 +1,32 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Feedback, FeedbackType } from '@/types/notification';
-import FeedbackList from '@/components/communication/FeedbackList';
+import FeedbackList from '../FeedbackList';
+import { FeedbackType } from '@/types/notification';
 
 interface FeedbackTabsProps {
-  activeTab: string;
-  onTabChange: (value: string) => void;
-  feedbacks: Feedback[];
-  isLoading: boolean;
-  isMember: boolean;
-  memberFeedbackTypes: string[];
+  showTabs?: boolean;
 }
 
-const FeedbackTabs = ({ 
-  activeTab, 
-  onTabChange, 
-  feedbacks, 
-  isLoading, 
-  isMember,
-  memberFeedbackTypes 
-}: FeedbackTabsProps) => {
+const FeedbackTabs = ({ showTabs = true }: FeedbackTabsProps) => {
+  const [activeTab, setActiveTab] = useState<FeedbackType | 'all'>('all');
+
   return (
-    <Tabs defaultValue={activeTab} onValueChange={onTabChange}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="all">All Feedback</TabsTrigger>
-        <TabsTrigger value="general">Gym</TabsTrigger>
-        <TabsTrigger value="trainer">Trainer</TabsTrigger>
-        {!isMember && (
-          <>
-            <TabsTrigger value="class">Class</TabsTrigger>
-            <TabsTrigger value="fitness-plan">Fitness Plan</TabsTrigger>
-          </>
-        )}
-      </TabsList>
+    <div className="space-y-4">
+      {showTabs && (
+        <Tabs defaultValue="all" value={activeTab} onValueChange={(value) => setActiveTab(value as FeedbackType | 'all')}>
+          <TabsList>
+            <TabsTrigger value="all">All Feedback</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="trainer">Trainers</TabsTrigger>
+            <TabsTrigger value="class">Classes</TabsTrigger>
+            <TabsTrigger value="fitness-plan">Fitness Plans</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
-      <TabsContent value="all">
-        <FeedbackList
-          feedbacks={feedbacks}
-          isLoading={isLoading}
-        />
-      </TabsContent>
-
-      {(isMember ? memberFeedbackTypes : ['general', 'trainer', 'class', 'fitness-plan']).map((type) => (
-        <TabsContent key={type} value={type}>
-          <FeedbackList
-            feedbacks={feedbacks.filter(f => f.type === type as FeedbackType)}
-            isLoading={isLoading}
-          />
-        </TabsContent>
-      ))}
-    </Tabs>
+      <FeedbackList hideHeader={showTabs} />
+    </div>
   );
 };
 

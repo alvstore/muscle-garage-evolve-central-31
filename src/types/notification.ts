@@ -7,13 +7,15 @@ export interface Announcement {
   authorName: string;
   createdAt: string;
   expiresAt?: string;
-  channel?: 'email' | 'sms' | 'whatsapp' | 'push';
+  channel?: 'email' | 'sms' | 'whatsapp' | 'push' | 'in-app';
   branchId?: string;
-  // Add these missing properties that components are using
+  // Adding properties that components are using
   targetRoles: string[];
   channels?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
   // For backward compatibility
   authorId?: string;
+  // For StaffActivityData
+  sentCount?: number;
 }
 
 export interface ReminderRule {
@@ -21,12 +23,12 @@ export interface ReminderRule {
   title: string;
   description?: string;
   triggerType: 'membership-expiry' | 'class-reminder' | 'birthday' | 'custom';
-  notificationChannel: 'email' | 'sms' | 'whatsapp' | 'push';
+  notificationChannel: 'email' | 'sms' | 'whatsapp' | 'push' | 'in-app';
   conditions: Record<string, any>;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  // Add these missing properties that components are using
+  // Additional properties used by components
   name: string;
   triggerValue?: number;
   message?: string;
@@ -34,6 +36,10 @@ export interface ReminderRule {
   targetRoles?: string[];
   active: boolean;
   enabled?: boolean;
+  // For ReminderRulesList compatibility
+  type?: string;
+  triggerDays?: number;
+  channels?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
 }
 
 export interface MotivationalMessage {
@@ -60,7 +66,14 @@ export interface Feedback {
   title: string;
   created_at: string;
   branch_id?: string;
+  // For backward compatibility with existing code
+  memberId?: string;
+  memberName?: string;
+  createdAt?: string;
 }
+
+// Add FeedbackType for FeedbackForm.tsx and FeedbackTabs.tsx
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'fitness-plan';
 
 // Add additional notification types
 export type ReminderTriggerType = 'membership-expiry' | 'class-reminder' | 'birthday' | 'custom';

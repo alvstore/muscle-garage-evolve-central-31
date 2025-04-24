@@ -1,163 +1,78 @@
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "sonner";
-import { Feedback, FeedbackType } from "@/types/notification";
-import { useMutation } from "@tanstack/react-query";
-
-const formSchema = z.object({
-  type: z.enum(["class", "trainer", "fitness-plan", "general", "diet-plan"]),
-  relatedId: z.string().optional(),
-  rating: z.string().min(1, "Please select a rating"),
-  comments: z.string().min(10, "Please provide comments (min 10 characters)").max(500, "Comments must be less than 500 characters"),
-  anonymous: z.boolean().default(false),
-  title: z.string().min(3, "Please provide a title for your feedback")
-});
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Rating } from '@/components/ui/rating';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Feedback, FeedbackType } from '@/types/notification';
 
 interface FeedbackFormProps {
-  onComplete: () => void;
-  allowedFeedbackTypes?: FeedbackType[];
+  initialValues?: Partial<Feedback>;
+  onSubmit: (data: Partial<Feedback>) => void;
+  onCancel: () => void;
 }
 
-// Mock data
-const mockClasses = [
-  { id: "class1", name: "HIIT Extreme" },
-  { id: "class2", name: "Yoga Flow" },
-  { id: "class3", name: "Spin Class" },
-];
+const formSchema = z.object({
+  title: z.string().min(2, { message: 'Title is required' }),
+  type: z.enum(['general', 'trainer', 'class', 'fitness-plan'] as const),
+  rating: z.number().min(1).max(5),
+  comments: z.string().optional(),
+  anonymous: z.boolean().default(false),
+});
 
-const mockTrainers = [
-  { id: "trainer1", name: "Alex Johnson" },
-  { id: "trainer2", name: "Maria Garcia" },
-  { id: "trainer3", name: "David Williams" },
-];
-
-const mockPlans = [
-  { id: "plan1", name: "Weight Loss Plan" },
-  { id: "plan2", name: "Muscle Building Plan" },
-  { id: "plan3", name: "Endurance Training Plan" },
-];
-
-const FeedbackForm = ({ onComplete, allowedFeedbackTypes }: FeedbackFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, onCancel }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: "general",
-      rating: "",
-      comments: "",
-      anonymous: false,
-      title: ""
+      title: initialValues?.title || '',
+      type: (initialValues?.type as FeedbackType) || 'general',
+      rating: initialValues?.rating || 3,
+      comments: initialValues?.comments || '',
+      anonymous: initialValues?.anonymous || false,
     },
   });
 
-  const watchType = form.watch("type");
-
-  const submitMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      // Simulate API call
-      console.log("Submitting feedback:", values);
-      
-      // In a real app, this would be an API call to save the feedback
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      return { ...values, id: `feedback${Date.now()}`, memberId: "current-user", createdAt: new Date().toISOString() };
-    },
-    onSuccess: () => {
-      toast.success("Feedback submitted successfully");
-      form.reset({
-        type: "general",
-        rating: "",
-        comments: "",
-        anonymous: false,
-        title: ""
-      });
-      onComplete();
-    },
-    onError: () => {
-      toast.error("There was a problem submitting your feedback");
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
-  });
-
-  const getRelatedOptions = () => {
-    switch (watchType) {
-      case "class":
-        return mockClasses;
-      case "trainer":
-        return mockTrainers;
-      case "fitness-plan":
-        return mockPlans;
-      default:
-        return [];
-    }
+  const handleSubmit = (data: z.infer<typeof formSchema>) => {
+    onSubmit({
+      ...data,
+      // Convert to Feedback type
+      member_id: initialValues?.member_id || '',
+      created_at: new Date().toISOString(),
+    });
   };
-
-  const relatedOptions = getRelatedOptions();
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
-    submitMutation.mutate(values);
-  };
-
-  // Filter feedback types based on allowedFeedbackTypes prop
-  const availableFeedbackTypes = allowedFeedbackTypes || ["general", "class", "trainer", "fitness-plan", "diet-plan"];
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Submit Feedback</CardTitle>
         <CardDescription>
-          Share your experience to help us improve
+          Help us improve by sharing your thoughts and experience
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Feedback Title</FormLabel>
+                  <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <input
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Enter a title for your feedback"
-                      {...field}
-                    />
+                    <Input placeholder="Enter a title for your feedback" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="type"
@@ -167,174 +82,86 @@ const FeedbackForm = ({ onComplete, allowedFeedbackTypes }: FeedbackFormProps) =
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select feedback type" />
+                        <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableFeedbackTypes.includes("general") && (
-                        <SelectItem value="general">General Feedback</SelectItem>
-                      )}
-                      {availableFeedbackTypes.includes("class") && (
-                        <SelectItem value="class">Class Feedback</SelectItem>
-                      )}
-                      {availableFeedbackTypes.includes("trainer") && (
-                        <SelectItem value="trainer">Trainer Feedback</SelectItem>
-                      )}
-                      {availableFeedbackTypes.includes("fitness-plan") && (
-                        <SelectItem value="fitness-plan">Fitness Plan Feedback</SelectItem>
-                      )}
-                      {availableFeedbackTypes.includes("diet-plan") && (
-                        <SelectItem value="diet-plan">Diet Plan Feedback</SelectItem>
-                      )}
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="trainer">Trainer</SelectItem>
+                      <SelectItem value="class">Class</SelectItem>
+                      <SelectItem value="fitness-plan">Fitness Plan</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Select what you want to provide feedback on
-                  </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
-            {watchType !== "general" && relatedOptions.length > 0 && (
-              <FormField
-                control={form.control}
-                name="relatedId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {watchType === "class" 
-                        ? "Select Class" 
-                        : watchType === "trainer" 
-                        ? "Select Trainer" 
-                        : "Select Fitness Plan"}
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Select ${watchType}`} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {relatedOptions.map(option => (
-                          <SelectItem key={option.id} value={option.id}>
-                            {option.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            
+
             <FormField
               control={form.control}
               name="rating"
               render={({ field }) => (
-                <FormItem className="space-y-3">
+                <FormItem>
                   <FormLabel>Rating</FormLabel>
                   <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex space-x-1"
-                    >
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <FormItem key={rating} className="flex items-center space-x-0 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem 
-                              value={rating.toString()} 
-                              className="sr-only" 
-                              id={`rating-${rating}`}
-                            />
-                          </FormControl>
-                          <FormLabel
-                            htmlFor={`rating-${rating}`}
-                            className={`
-                              flex h-10 w-10 items-center justify-center rounded-full 
-                              cursor-pointer hover:bg-secondary
-                              ${field.value === rating.toString() ? 'text-primary-foreground bg-primary' : 'bg-muted'}
-                            `}
-                          >
-                            {rating}
-                          </FormLabel>
-                        </FormItem>
-                      ))}
-                    </RadioGroup>
+                    <Rating
+                      value={field.value}
+                      onChange={field.onChange}
+                      count={5}
+                      size="lg"
+                    />
                   </FormControl>
-                  <FormDescription>
-                    Rate your experience from 1 (poor) to 5 (excellent)
-                  </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="comments"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comments</FormLabel>
+                  <FormLabel>Comments (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Please share your thoughts and suggestions..."
-                      className="min-h-32 resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Share your thoughts..." {...field} />
                   </FormControl>
-                  <FormDescription>
-                    {field.value.length}/500 characters
-                  </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="anonymous"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Submit Anonymously</FormLabel>
-                    <FormDescription>
-                      Your feedback will be kept anonymous and won't be linked to your account
-                    </FormDescription>
-                  </div>
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
-                    <Switch
+                    <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Submit anonymously</FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
-            
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={onComplete}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>
-                    Submitting...
-                  </span>
-                ) : "Submit Feedback"}
-              </Button>
-            </div>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          onClick={form.handleSubmit(handleSubmit)}
+        >
+          Submit Feedback
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
