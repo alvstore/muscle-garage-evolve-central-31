@@ -5,19 +5,7 @@ import { MessageSquare, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/services/supabaseClient';
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: 'low' | 'medium' | 'high';
-  created_at: string;
-  expires_at?: string;
-  author: {
-    name: string;
-    avatar_url?: string;
-  };
-}
+import { Announcement } from '@/types/notification';
 
 export function AnnouncementsList() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -44,7 +32,23 @@ export function AnnouncementsList() {
 
         if (error) throw error;
 
-        setAnnouncements(data || []);
+        // Transform the data to match the Announcement type
+        const formattedAnnouncements: Announcement[] = (data || []).map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          priority: item.priority,
+          createdAt: item.created_at,
+          expiresAt: item.expires_at,
+          authorId: item.profiles?.[0]?.id || '',
+          authorName: item.profiles?.[0]?.full_name || 'Unknown',
+          // Add other required fields with default values if needed
+          createdBy: item.profiles?.[0]?.full_name || 'Unknown',
+          targetRoles: [],
+          channels: []
+        }));
+
+        setAnnouncements(formattedAnnouncements);
       } catch (error) {
         console.error('Error fetching announcements:', error);
       } finally {
@@ -101,14 +105,14 @@ export function AnnouncementsList() {
           </div>
           <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <span>Posted by {announcement.author?.name}</span>
+              <span>Posted by {announcement.authorName}</span>
               <span>•</span>
-              <span>{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
+              <span>{format(new Date(announcement.createdAt), 'MMM d, yyyy')}</span>
             </div>
-            {announcement.expires_at && (
+            {announcement.expiresAt && (
               <div className="flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                <span>Expires {format(new Date(announcement.expires_at), 'MMM d, yyyy')}</span>
+                <span>Expires {format(new Date(announcement.expiresAt), 'MMM d, yyyy')}</span>
               </div>
             )}
           </div>

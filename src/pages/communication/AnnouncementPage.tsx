@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AnnouncementsList from "@/components/communication/AnnouncementsList";
-import CreateAnnouncementForm from "@/components/communication/CreateAnnouncementForm";
+import { AnnouncementsList } from "@/components/communication/AnnouncementsList";
+import { CreateAnnouncementForm } from "@/components/communication/CreateAnnouncementForm";
 import { Announcement } from "@/types/notification";
 import { usePermissions } from "@/hooks/use-permissions";
 
