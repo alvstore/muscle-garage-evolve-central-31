@@ -13,7 +13,8 @@ import {
   Globe,
   FileText,
   Settings,
-  CircleDollarSign
+  CircleDollarSign,
+  Megaphone 
 } from "lucide-react";
 
 export const adminNavSections: NavSection[] = [
@@ -80,36 +81,13 @@ export const adminNavSections: NavSection[] = [
     ]
   },
   {
-    name: "CRM & Leads",
-    items: [
-      {
-        href: "/crm",
-        label: "Lead Management",
-        permission: "manage_members",
-        icon: <Users className="h-5 w-5" />
-      },
-      {
-        href: "/crm/funnel",
-        label: "Sales Funnel",
-        permission: "manage_members",
-        icon: <BarChart className="h-5 w-5" />
-      },
-      {
-        href: "/crm/follow-up",
-        label: "Follow-Up",
-        permission: "manage_members",
-        icon: <MessageSquare className="h-5 w-5" />
-      }
-    ]
-  },
-  {
     name: "Marketing",
     items: [
       {
         href: "/marketing/promo",
         label: "Promotions",
         permission: "manage_members",
-        icon: <FileText className="h-5 w-5" />
+        icon: <Megaphone className="h-5 w-5" />
       },
       {
         href: "/marketing/referral",
@@ -150,6 +128,18 @@ export const adminNavSections: NavSection[] = [
         label: "Member Progress",
         permission: "trainer_view_members",
         icon: <BarChart className="h-5 w-5" />
+      },
+      {
+        href: "/fitness/workout-plans",
+        label: "Workout Plans",
+        permission: "trainer_edit_fitness",
+        icon: <Dumbbell className="h-5 w-5" />
+      },
+      {
+        href: "/fitness/diet",
+        label: "Diet Plans",
+        permission: "trainer_edit_fitness",
+        icon: <FileText className="h-5 w-5" />
       }
     ]
   },
@@ -157,14 +147,26 @@ export const adminNavSections: NavSection[] = [
     name: "Communication",
     items: [
       {
-        href: "/announcements",
+        href: "/communication/announcements",
         label: "Announcements",
         permission: "access_communication",
         icon: <MessageSquare className="h-5 w-5" />
       },
       {
-        href: "/feedback",
+        href: "/communication/feedback",
         label: "Feedback Management",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        href: "/communication/notifications",
+        label: "Notifications",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        href: "/communication/tasks",
+        label: "Task Manager",
         permission: "access_communication",
         icon: <MessageSquare className="h-5 w-5" />
       }

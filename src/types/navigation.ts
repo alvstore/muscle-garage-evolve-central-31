@@ -1,4 +1,7 @@
 
+import { UserRole } from './index';
+import { ReactNode } from 'react';
+
 export type Permission = 
   | 'view_dashboard' 
   | 'manage_members' 
@@ -19,13 +22,21 @@ export type Permission =
   | 'manage_staff'
   | 'feature_email_campaigns'
   | 'access_communication'
-  | 'view_staff';
+  | 'view_staff'
+  | 'feature_member_dashboard'
+  | 'member_view_profile'
+  | 'member_book_classes'
+  | 'member_view_attendance'
+  | 'member_view_invoices'
+  | 'member_view_plans'
+  | 'access_store'
+  | 'view_all_branches';
 
 export interface NavItem {
   href: string;
   label: string;
   permission: Permission;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   badge?: string;
   children?: NavItem[];
 }
@@ -33,5 +44,5 @@ export interface NavItem {
 export interface NavSection {
   name: string;
   items: NavItem[];
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }

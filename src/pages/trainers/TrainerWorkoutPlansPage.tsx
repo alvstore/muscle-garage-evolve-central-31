@@ -83,20 +83,20 @@ const mockWorkoutPlans: WorkoutPlan[] = [
 
 const mockMember1 = {
   id: "member1",
-  name: "John Smith",
+  name: "Jordan Lee",
   role: "member",
   membershipStatus: "active",
-  email: "john@example.com",
-  status: "active"
+  email: "jordan@example.com",
+  status: "active" // Add this line
 };
 
 const mockMember2 = {
   id: "member2",
-  name: "Jane Doe",
+  name: "Sarah Parker",
   role: "member",
   membershipStatus: "active",
-  email: "jane@example.com",
-  status: "active"
+  email: "sarah@example.com",
+  status: "active" // Add this line
 };
 
 const TrainerWorkoutPlansPage = () => {

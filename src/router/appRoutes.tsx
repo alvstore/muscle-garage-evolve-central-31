@@ -24,7 +24,10 @@ import { settingsRoutes } from './routes/settingsRoutes';
 import { miscRoutes } from './routes/miscRoutes';
 import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
+import { branchRoutes } from './routes/branchRoutes';
 
+// Load the public website
+import PublicWebsite from '@/pages/website/PublicWebsite';
 
 export const appRoutes: RouteObject[] = [
   {
@@ -33,7 +36,11 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: '/',
-    element: <Index />
+    element: <PublicWebsite />
+  },
+  {
+    path: '/dashboard',
+    element: <Navigate to="/dashboard/overview" replace />
   },
   {
     path: '/unauthorized',
@@ -45,10 +52,6 @@ export const appRoutes: RouteObject[] = [
       {
         element: <DashboardLayout />,
         children: [
-          {
-            path: '/dashboard',
-            element: <Dashboard />
-          },
           {
             path: '/dashboard/overview',
             element: <Dashboard />
@@ -70,7 +73,7 @@ export const appRoutes: RouteObject[] = [
           ...miscRoutes,
           ...staffRoutes,
           ...adminRoutes,
-
+          ...branchRoutes,
         ]
       }
     ]

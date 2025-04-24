@@ -1,3 +1,4 @@
+
 import { UserRole } from './index';
 
 // Extended user type with branch and address information
@@ -39,6 +40,7 @@ export interface MemberWithBranch {
   membershipEndDate?: string;
   primaryBranchId: string;
   accessibleBranchIds: string[];
+  status: string;
   
   // Address fields
   address?: string;
