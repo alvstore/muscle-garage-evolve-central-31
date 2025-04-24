@@ -152,3 +152,19 @@ export const seedDatabase = async () => {
     console.error('Database seeding failed', error);
   }
 };
+
+export const getBackupLogs = async () => {
+  return [];
+};
+
+export const exportData = async () => {
+  return {};
+};
+
+export const validateImportData = (data: any) => {
+  return true;
+};
+
+export const importData = async (data: any) => {
+  return {};
+};
