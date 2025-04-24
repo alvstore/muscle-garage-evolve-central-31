@@ -11,4 +11,8 @@ export interface MembershipAssignment {
   paymentMethod?: string;
   trainerId?: string;
   branchId?: string;
+  notes?: string;  // Add this line to include notes
+  planId?: string;
+  planName?: string;
+  totalAmount?: number;
 }
