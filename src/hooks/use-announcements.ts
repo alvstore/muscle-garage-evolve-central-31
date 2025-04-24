@@ -50,22 +50,27 @@ export function useAnnouncements() {
       if (error) throw error;
 
       // Transform the data to match the Announcement type
-      const formattedAnnouncements: Announcement[] = (data || []).map((item) => ({
-        id: item.id,
-        title: item.title,
-        content: item.content,
-        authorId: item.author_id,
-        // Access the nested profile data correctly
-        authorName: item.profiles ? item.profiles.full_name || 'Unknown' : 'Unknown',
-        createdAt: item.created_at,
-        expiresAt: item.expires_at,
-        priority: item.priority || 'medium',
-        targetRoles: item.target_roles || [],
-        forBranchIds: item.for_branch_ids || [],
-        // Access the nested profile data correctly
-        createdBy: item.profiles ? item.profiles.full_name || 'Unknown' : 'Unknown',
-        channels: []
-      }));
+      const formattedAnnouncements: Announcement[] = (data || []).map((item) => {
+        // Fix the profiles property by explicitly checking its structure
+        const authorProfile = item.profiles;
+        const authorName = authorProfile && typeof authorProfile === 'object' && 'full_name' in authorProfile ? 
+                           authorProfile.full_name || 'Unknown' : 'Unknown';
+        
+        return {
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          authorId: item.author_id,
+          authorName: authorName,
+          createdAt: item.created_at,
+          expiresAt: item.expires_at,
+          priority: item.priority || 'medium',
+          targetRoles: item.target_roles || [],
+          forBranchIds: item.for_branch_ids || [],
+          createdBy: authorName,
+          channels: []
+        };
+      });
 
       setAnnouncements(formattedAnnouncements);
     } catch (error) {
