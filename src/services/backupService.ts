@@ -2,15 +2,30 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 import { supabase } from '@/services/supabaseClient';
+import { format } from 'date-fns';
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 // Create a zip file with all backend files
 export const createBackupZip = async () => {
   const zip = new JSZip();
 
   try {
+    // Create main folders
+    const schemaFolder = zip.folder('schema');
+    const servicesFolder = zip.folder('services');
+    const typesFolder = zip.folder('types');
+    const migrationsFolder = zip.folder('migrations');
+
     // Add database schema
     const dbSchema = await generateDatabaseSchema();
-    zip.file('database/schema.sql', dbSchema);
+    schemaFolder.file('schema.sql', dbSchema);
 
     // Add edge functions
     const edgeFunctions = await collectEdgeFunctions();
@@ -21,36 +36,42 @@ export const createBackupZip = async () => {
 
     // Add RLS policies
     const rlsPolicies = await generateRLSPolicies();
-    zip.file('database/policies.sql', rlsPolicies);
+    schemaFolder.file('policies.sql', rlsPolicies);
 
     // Add configuration
-    const configFolder = zip.folder('config');
-    configFolder.file('supabase.json', JSON.stringify({
+    zip.file('supabase/config.toml', JSON.stringify({
       project: 'muscle-garage-evolve',
       reference: 'rnqgpucxlvubwqpkgstc'
     }, null, 2));
 
     // Add services
-    const servicesFolder = zip.folder('services');
     await collectServices(servicesFolder);
 
     // Add types
-    const typesFolder = zip.folder('types');
     await collectTypes(typesFolder);
 
-    // Create README
+    // Add README
     zip.file('README.md', generateReadme());
 
-    // Generate the zip file
+    // Add env example
+    zip.file('.env.example', generateEnvExample());
+
+    // Generate timestamped filename
+    const timestamp = format(new Date(), 'yyyy-MM-dd-HHmm');
+    const filename = `backup-backend-${timestamp}.zip`;
+
+    // Create and download the zip file
     const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, 'muscle-garage-backend.zip');
+    saveAs(content, filename);
     
-    toast.success('Backend files exported successfully');
-    return true;
+    return { 
+      success: true, 
+      size: formatBytes(content.size),
+      timestamp: new Date().toISOString()
+    };
   } catch (error) {
     console.error('Failed to create backup:', error);
-    toast.error('Failed to create backup');
-    return false;
+    return { success: false };
   }
 };
 
@@ -512,3 +533,30 @@ const mockBackupLogs = [
     failedCount: 75
   }
 ];
+
+// Generate env example
+const generateEnvExample = () => {
+  return `# Database Configuration
+DATABASE_URL="postgresql://postgres:password@localhost:5432/your-database"
+
+# Supabase Configuration
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_KEY="your-anon-key"
+
+# Server Configuration
+PORT=3000
+NODE_ENV="development"
+
+# Authentication
+JWT_SECRET="your-jwt-secret"
+
+# External Services (if used)
+RAZORPAY_KEY_ID="your-razorpay-key"
+RAZORPAY_SECRET="your-razorpay-secret"
+
+# Email Configuration (if used)
+SMTP_HOST="smtp.your-provider.com"
+SMTP_PORT=587
+SMTP_USER="your-email"
+SMTP_PASS="your-password"
+`;
