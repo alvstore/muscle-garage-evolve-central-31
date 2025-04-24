@@ -40,6 +40,7 @@ export interface Invoice {
   updated_at: string;
   created_by?: string;
   membership_plan_id?: string;
+  membershipPlanId?: string; // Camel case version for frontend compatibility
   razorpay_order_id?: string;
   razorpayOrderId?: string; // Camel case version for frontend compatibility
   razorpay_payment_id?: string;

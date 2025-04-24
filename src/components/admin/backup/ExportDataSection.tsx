@@ -1,387 +1,336 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
-import { 
-  Archive, 
-  Check, 
-  Database, 
-  Download, 
-  Users, 
-  Building2, 
-  Dumbbell, 
-  FileText, 
-  Clock, 
-  CreditCard, 
-  Wallet, 
-  UserPlus, 
-  Package, 
-  Globe, 
-  Settings 
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { exportData } from '@/services/backupService';
-import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
-import JSZip from 'jszip';
 
-interface DataModule {
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { toast } from 'sonner';
+import { exportData, logBackupActivity } from '@/services/backupService';
+import { FileDown, FileCheck, CalendarIcon, Info, RefreshCcw, FileText } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface ExportModule {
   id: string;
   label: string;
-  description: string;
-  icon: React.ReactNode;
-  selected: boolean;
+  description?: string;
+  table?: string;
 }
 
-const ExportDataSection = () => {
+const modules: ExportModule[] = [
+  {
+    id: 'members',
+    label: 'Members Data',
+    description: 'Export all member records including personal information and status',
+    table: 'members'
+  },
+  {
+    id: 'staffTrainers',
+    label: 'Staff & Trainers',
+    description: 'Export all staff and trainer profiles',
+    table: 'profiles'
+  },
+  {
+    id: 'branches',
+    label: 'Branches',
+    description: 'Export branch information including contact details',
+    table: 'branches'
+  },
+  {
+    id: 'workoutPlans',
+    label: 'Workout Plans',
+    description: 'Export workout plans and their exercises',
+    table: 'workout_plans'
+  },
+  {
+    id: 'dietPlans',
+    label: 'Diet Plans',
+    description: 'Export diet plans and their meal details',
+    table: 'diet_plans'
+  },
+  {
+    id: 'attendance',
+    label: 'Attendance Records',
+    description: 'Export check-in/check-out records',
+    table: 'member_attendance'
+  },
+  {
+    id: 'invoices',
+    label: 'Invoices',
+    description: 'Export invoice records including payment status',
+    table: 'invoices'
+  },
+  {
+    id: 'transactions',
+    label: 'Financial Transactions',
+    description: 'Export income and expense transactions',
+    table: 'transactions'
+  }
+];
+
+const ExportDataSection: React.FC = () => {
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [exportFormat, setExportFormat] = useState('xlsx');
   const [isExporting, setIsExporting] = useState(false);
-  const [selectAll, setSelectAll] = useState(false);
-  const [dataModules, setDataModules] = useState<DataModule[]>([
-    { 
-      id: 'members', 
-      label: 'Member List', 
-      description: 'Export all member data including contact details and membership status',
-      icon: <Users className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'staffTrainers', 
-      label: 'Staff & Trainers', 
-      description: 'Export staff and trainer profiles, roles and assignments',
-      icon: <Users className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'branches', 
-      label: 'Branches', 
-      description: 'Export all branch locations and details',
-      icon: <Building2 className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'workoutPlans', 
-      label: 'Workout Plans', 
-      description: 'Export all workout plans and their details',
-      icon: <Dumbbell className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'dietPlans', 
-      label: 'Diet Plans', 
-      description: 'Export all diet plans and their details',
-      icon: <FileText className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'attendance', 
-      label: 'Attendance Logs', 
-      description: 'Export member and staff attendance records',
-      icon: <Clock className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'invoices', 
-      label: 'Invoices', 
-      description: 'Export all invoice records',
-      icon: <CreditCard className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'transactions', 
-      label: 'Transactions', 
-      description: 'Export all financial transactions (income & expenses)',
-      icon: <Wallet className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'crm', 
-      label: 'CRM Data', 
-      description: 'Export leads, referrals, and follow-up tasks',
-      icon: <UserPlus className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'inventory', 
-      label: 'Inventory & Orders', 
-      description: 'Export inventory items and store orders',
-      icon: <Package className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'website', 
-      label: 'Website Content', 
-      description: 'Export website pages, content, and settings',
-      icon: <Globe className="h-4 w-4" />,
-      selected: false 
-    },
-    { 
-      id: 'settings', 
-      label: 'System Settings', 
-      description: 'Export all system configurations as JSON',
-      icon: <Settings className="h-4 w-4" />,
-      selected: false 
-    }
-  ]);
-  
-  const handleToggleModule = (id: string) => {
-    setDataModules(dataModules.map(module => 
-      module.id === id ? { ...module, selected: !module.selected } : module
-    ));
-    
-    const updatedModules = dataModules.map(module => 
-      module.id === id ? { ...module, selected: !module.selected } : module
+
+  const handleModuleToggle = (moduleId: string) => {
+    setSelectedModules(prev =>
+      prev.includes(moduleId)
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
     );
-    const allSelected = updatedModules.every(module => module.selected);
-    setSelectAll(allSelected);
   };
 
   const handleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    setDataModules(dataModules.map(module => ({ ...module, selected: newSelectAll })));
+    const allModuleIds = modules.map(module => module.id);
+    setSelectedModules(allModuleIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedModules([]);
   };
 
   const handleExport = async () => {
-    const selectedModules = dataModules.filter(module => module.selected).map(module => module.id);
-    
     if (selectedModules.length === 0) {
-      toast.error('Please select at least one data module to export');
+      toast.error('Please select at least one module to export');
       return;
     }
-    
+
     setIsExporting(true);
-    
+    toast.info('Preparing export data...');
+
     try {
-      const result = await exportData(selectedModules, startDate, endDate);
+      // Map selected module IDs to their corresponding table names
+      const tablesToExport = selectedModules.map(moduleId => {
+        const module = modules.find(m => m.id === moduleId);
+        return module?.table || moduleId;
+      });
       
-      if (selectedModules.length === 1) {
-        const moduleId = selectedModules[0];
-        const moduleData = result[moduleId];
-        const fileName = `${moduleId}_export_${new Date().toISOString().split('T')[0]}`;
-        
-        if (exportFormat === 'xlsx') {
-          const wb = XLSX.utils.book_new();
-          const ws = XLSX.utils.json_to_sheet(moduleData);
-          XLSX.utils.book_append_sheet(wb, ws, moduleId);
-          const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-          const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          saveAs(data, `${fileName}.xlsx`);
-        } else {
-          const csvContent = convertToCSV(moduleData);
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-          saveAs(blob, `${fileName}.csv`);
-        }
-        
-      } else if (selectedModules.length > 1) {
-        const zip = new JSZip();
-        
-        for (const moduleId of selectedModules) {
-          const moduleData = result[moduleId];
-          const fileName = `${moduleId}_export`;
-          
-          if (exportFormat === 'xlsx') {
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(moduleData);
-            XLSX.utils.book_append_sheet(wb, ws, moduleId);
-            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            zip.file(`${fileName}.xlsx`, excelBuffer);
-          } else {
-            const csvContent = convertToCSV(moduleData);
-            zip.file(`${fileName}.csv`, csvContent);
-          }
-        }
-        
-        const content = await zip.generateAsync({ type: 'blob' });
-        const date = new Date().toISOString().split('T')[0];
-        saveAs(content, `muscle_garage_export_${date}.zip`);
-      }
+      const data = await exportData(tablesToExport, startDate, endDate);
+      const totalRecords = Object.values(data).reduce((sum, records) => sum + records.length, 0);
       
-      // Use the correct signature for logBackupActivity
-      await logBackupActivity('export', selectedModules[0], selectedModules.length, selectedModules.length);
+      // Convert to JSON and create a downloadable file
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
       
-      toast.success('Data exported successfully');
+      // Create a link and trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gym-export-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Log the backup activity
+      await logBackupActivity('export', selectedModules.join(','), totalRecords, totalRecords);
+      
+      toast.success(`Successfully exported ${totalRecords} records`);
     } catch (error) {
-      console.error('Export failed:', error);
-      toast.error('Failed to export data. Please try again.');
+      console.error('Export error:', error);
+      toast.error('Failed to export data');
     } finally {
       setIsExporting(false);
     }
   };
 
-  const convertToCSV = (data: any[]) => {
-    if (!data || !data.length) return '';
-    
-    const headers = Object.keys(data[0]);
-    const csvRows = [];
-    
-    csvRows.push(headers.join(','));
-    
-    for (const row of data) {
-      const values = headers.map(header => {
-        const value = row[header];
-        return `"${String(value).replace(/"/g, '""')}"`;
-      });
-      csvRows.push(values.join(','));
-    }
-    
-    return csvRows.join('\n');
-  };
-
-  const logBackupActivity = async (action: string, modules: string[], totalRecords: number, successCount: number) => {
-    try {
-      console.log('Backup activity:', { action, modules, timestamp: new Date() });
-    } catch (error) {
-      console.error('Failed to log backup activity:', error);
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-xl font-medium">Export Data</h3>
-          <p className="text-sm text-muted-foreground">
-            Select which data modules you want to export for backup
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
           <div>
-            <Select value={exportFormat} onValueChange={setExportFormat}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Export Format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
-                <SelectItem value="csv">CSV (.csv)</SelectItem>
-              </SelectContent>
-            </Select>
+            <CardTitle className="flex items-center gap-2">
+              <FileDown className="h-5 w-5" />
+              Export Data
+            </CardTitle>
+            <CardDescription>
+              Export your data in JSON format for backup or analysis
+            </CardDescription>
           </div>
-          
-          <Button 
-            variant="default" 
-            onClick={handleExport} 
-            disabled={isExporting}
-            className="flex items-center gap-2"
-          >
-            {isExporting ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
-                <span>Exporting...</span>
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                <span>Download Export</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2 mb-4">
-        <Checkbox 
-          id="selectAll" 
-          checked={selectAll}
-          onCheckedChange={handleSelectAll}
-        />
-        <label
-          htmlFor="selectAll"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Select All Modules
-        </label>
-      </div>
-      
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dataModules.map((module) => (
-          <Card key={module.id} className={`overflow-hidden ${module.selected ? 'ring-2 ring-primary' : ''}`}>
-            <CardContent className="p-4 flex items-start space-x-4">
-              <Checkbox 
-                id={`module-${module.id}`} 
-                checked={module.selected}
-                onCheckedChange={() => handleToggleModule(module.id)}
-                className="mt-1"
-              />
-              <div className="space-y-1">
-                <label 
-                  htmlFor={`module-${module.id}`}
-                  className="block text-sm font-medium cursor-pointer flex items-center gap-2"
-                >
-                  <span className="text-muted-foreground">{module.icon}</span>
-                  {module.label}
-                </label>
-                <p className="text-xs text-muted-foreground">{module.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      <div className="bg-muted/50 rounded-lg p-4">
-        <h4 className="text-sm font-medium mb-2">Optional: Filter by Date Range</h4>
-        <div className="flex flex-wrap gap-4">
-          <div className="space-y-1">
-            <label htmlFor="startDate" className="text-sm">Start Date</label>
-            <DatePicker
-              id="startDate"
-              date={startDate}
-              onSelect={setStartDate}
-              className="w-full"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="endDate" className="text-sm">End Date</label>
-            <DatePicker
-              id="endDate"
-              date={endDate}
-              onSelect={setEndDate}
-              className="w-full"
-            />
-          </div>
-          <div className="flex items-end">
+          <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => {
-                setStartDate(undefined);
-                setEndDate(undefined);
-              }}
+              onClick={handleSelectAll}
             >
-              Clear Dates
+              Select All
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearSelection}
+            >
+              Clear
             </Button>
           </div>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          If no date range is selected, all available data will be exported
-        </p>
-      </div>
-      
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleExport} 
-          disabled={isExporting}
-          className="flex items-center gap-2"
-        >
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 space-y-2">
+            <Label>Start Date (Optional)</Label>
+            <DatePicker
+              date={startDate}
+              setDate={setStartDate}
+              className="w-full"
+              components={{
+                IconLeft: () => <CalendarIcon className="h-4 w-4" />,
+              }}
+            />
+          </div>
+          <div className="flex-1 space-y-2">
+            <Label>End Date (Optional)</Label>
+            <DatePicker
+              date={endDate}
+              setDate={setEndDate}
+              className="w-full"
+              components={{
+                IconLeft: () => <CalendarIcon className="h-4 w-4" />,
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="border rounded-md p-1">
+          <Accordion type="multiple" className="w-full">
+            {/* Member Management Section */}
+            <AccordionItem value="member-data">
+              <AccordionTrigger className="px-3">Member Management Data</AccordionTrigger>
+              <AccordionContent className="space-y-3 px-3">
+                {modules.slice(0, 3).map(module => (
+                  <div key={module.id} className="flex items-start space-x-3 py-2">
+                    <Checkbox
+                      id={`module-${module.id}`}
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleModuleToggle(module.id)}
+                    />
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor={`module-${module.id}`}
+                        className="text-sm font-medium leading-none"
+                      >
+                        {module.label}
+                      </Label>
+                      <p className="text-sm text-gray-500">{module.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+            
+            {/* Fitness Programs Section */}
+            <AccordionItem value="fitness-data">
+              <AccordionTrigger className="px-3">Fitness Programs Data</AccordionTrigger>
+              <AccordionContent className="space-y-3 px-3">
+                {modules.slice(3, 5).map(module => (
+                  <div key={module.id} className="flex items-start space-x-3 py-2">
+                    <Checkbox
+                      id={`module-${module.id}`}
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleModuleToggle(module.id)}
+                    />
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor={`module-${module.id}`}
+                        className="text-sm font-medium leading-none"
+                      >
+                        {module.label}
+                      </Label>
+                      <p className="text-sm text-gray-500">{module.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+            
+            {/* Operations Section */}
+            <AccordionItem value="operations-data">
+              <AccordionTrigger className="px-3">Operations Data</AccordionTrigger>
+              <AccordionContent className="space-y-3 px-3">
+                {modules.slice(5, 6).map(module => (
+                  <div key={module.id} className="flex items-start space-x-3 py-2">
+                    <Checkbox
+                      id={`module-${module.id}`}
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleModuleToggle(module.id)}
+                    />
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor={`module-${module.id}`}
+                        className="text-sm font-medium leading-none"
+                      >
+                        {module.label}
+                      </Label>
+                      <p className="text-sm text-gray-500">{module.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+            
+            {/* Financial Data Section */}
+            <AccordionItem value="financial-data">
+              <AccordionTrigger className="px-3">Financial Data</AccordionTrigger>
+              <AccordionContent className="space-y-3 px-3">
+                {modules.slice(6, 8).map(module => (
+                  <div key={module.id} className="flex items-start space-x-3 py-2">
+                    <Checkbox
+                      id={`module-${module.id}`}
+                      checked={selectedModules.includes(module.id)}
+                      onCheckedChange={() => handleModuleToggle(module.id)}
+                    />
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor={`module-${module.id}`}
+                        className="text-sm font-medium leading-none"
+                      >
+                        {module.label}
+                      </Label>
+                      <p className="text-sm text-gray-500">{module.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+        
+        <div className="bg-muted rounded-md p-4 flex items-start gap-3">
+          <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium mb-1">About Data Export</p>
+            <p>
+              Exported data will be in JSON format which can be imported back into the system.
+              Date filters will be applied to all modules except branches and settings.
+            </p>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline" onClick={() => {
+          setStartDate(undefined);
+          setEndDate(undefined);
+        }}>
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Reset Dates
+        </Button>
+        <Button onClick={handleExport} disabled={isExporting || selectedModules.length === 0}>
           {isExporting ? (
             <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-r-transparent" />
-              <span>Exporting...</span>
+              <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
+              Exporting...
             </>
           ) : (
             <>
-              <Download className="h-4 w-4" />
-              <span>Export Selected Data</span>
+              <FileText className="h-4 w-4 mr-2" />
+              Export Selected Data
             </>
           )}
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

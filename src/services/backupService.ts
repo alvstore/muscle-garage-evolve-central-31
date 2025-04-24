@@ -156,31 +156,51 @@ export const seedDatabase = async () => {
 };
 
 export const getBackupLogs = async () => {
-  return [];
+  try {
+    const { data, error } = await supabase
+      .from('backup_logs')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching backup logs:', error);
+    return [];
+  }
 };
 
 export const exportData = async (selectedModules: string[], startDate?: Date, endDate?: Date) => {
-  // Mock implementation
-  const mockData: Record<string, any[]> = {
-    members: [],
-    staffTrainers: [],
-    branches: [],
-    workoutPlans: [],
-    dietPlans: [],
-    attendance: [],
-    invoices: [],
-    transactions: [],
-    crm: [],
-    inventory: [],
-    website: [],
-    settings: []
-  };
-  
-  // Return mock data for each requested module
-  return selectedModules.reduce((acc, moduleId) => {
-    acc[moduleId] = mockData[moduleId] || [];
-    return acc;
-  }, {} as Record<string, any[]>);
+  try {
+    const result: Record<string, any[]> = {};
+    
+    for (const module of selectedModules) {
+      let query = supabase.from(module).select('*');
+      
+      // Apply date filtering if provided
+      if (startDate && module !== 'branches' && module !== 'settings') {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+      
+      if (endDate && module !== 'branches' && module !== 'settings') {
+        query = query.lte('created_at', endDate.toISOString());
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error(`Error exporting ${module}:`, error);
+        result[module] = [];
+      } else {
+        result[module] = data || [];
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Export error:', error);
+    return {};
+  }
 };
 
 export const validateImportData = (data: any[], requiredColumns: string[]): ValidationResult => {
@@ -208,11 +228,12 @@ export const validateImportData = (data: any[], requiredColumns: string[]): Vali
 
 export const importData = async (moduleId: string, data: any[]): Promise<ImportResult> => {
   try {
-    // Mock implementation - in a real app this would insert data into the database
+    // Real implementation would insert data into the database
     console.log(`Importing ${data.length} records for module: ${moduleId}`);
     
-    // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const { error } = await supabase.from(moduleId).upsert(data);
+    
+    if (error) throw error;
     
     return {
       success: true,
@@ -230,14 +251,19 @@ export const importData = async (moduleId: string, data: any[]): Promise<ImportR
 };
 
 export const logBackupActivity = async (action: string, moduleId: string, totalRecords: number, successCount: number) => {
-  // Mock implementation to log backup activities
-  console.log('Backup activity:', {
-    action,
-    moduleId,
-    totalRecords,
-    successCount,
-    timestamp: new Date()
-  });
-  
-  return true;
+  try {
+    const { error } = await supabase.from('backup_logs').insert({
+      action,
+      module: moduleId,
+      total_records: totalRecords,
+      success_count: successCount,
+      created_at: new Date().toISOString()
+    });
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error logging backup activity:', error);
+    return false;
+  }
 };

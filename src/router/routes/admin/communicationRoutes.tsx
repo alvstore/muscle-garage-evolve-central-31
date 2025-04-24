@@ -4,7 +4,8 @@ import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import AnnouncementPage from '@/pages/communication/AnnouncementPage';
 import FeedbackPage from '@/pages/communication/FeedbackPage';
-import CommunicationNotificationsPage from '@/pages/communication/ReminderPage';
+import ReminderPage from '@/pages/communication/ReminderPage';
+import MotivationalPage from '@/pages/communication/MotivationalPage';
 import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const adminCommunicationRoutes: RouteObject[] = [
@@ -25,10 +26,18 @@ export const adminCommunicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/notifications',
+    path: '/communication/reminders',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <CommunicationNotificationsPage />
+        <ReminderPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/communication/motivational',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <MotivationalPage />
       </PrivateRoute>
     )
   },

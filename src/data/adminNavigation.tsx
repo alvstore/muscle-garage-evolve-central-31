@@ -1,3 +1,4 @@
+
 import React from "react";
 import { NavSection } from "@/types/navigation";
 import { 
@@ -64,6 +65,12 @@ export const adminNavSections: NavSection[] = [
         label: "Class Schedule",
         permission: "manage_classes",
         icon: <CalendarDays className="h-5 w-5" />
+      },
+      {
+        href: "/classes/types",
+        label: "Class Types",
+        permission: "manage_classes",
+        icon: <FileText className="h-5 w-5" />
       }
     ]
   },
@@ -159,6 +166,18 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/communication/feedback",
         label: "Feedback Management",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        href: "/communication/reminders",
+        label: "Reminder Rules",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        href: "/communication/motivational",
+        label: "Motivational Messages",
         permission: "access_communication",
         icon: <MessageSquare className="h-5 w-5" />
       },

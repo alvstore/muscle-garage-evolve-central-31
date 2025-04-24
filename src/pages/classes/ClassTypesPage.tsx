@@ -1,493 +1,364 @@
 
-import React, { useState } from 'react';
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash, Copy } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Plus, Pencil, Trash } from 'lucide-react';
+import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { supabase } from '@/services/supabaseClient';
+import { useBranch } from '@/hooks/use-branch';
 
-// Define the class type interface (would normally be imported from types)
 interface ClassType {
   id: string;
   name: string;
   description: string;
-  duration: number; // in minutes
-  capacity: number;
-  category: string;
-  color: string;
-  active: boolean;
+  is_active: boolean;
+  branch_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
+const formSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  description: z.string().optional(),
+  is_active: z.boolean().default(true),
+});
+
 const ClassTypesPage = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<ClassType | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState<Omit<ClassType, 'id'>>({
-    name: '',
-    description: '',
-    duration: 60,
-    capacity: 10,
-    category: 'fitness',
-    color: '#4f46e5',
-    active: true
-  });
+  const [classTypes, setClassTypes] = useState<ClassType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingClassType, setEditingClassType] = useState<ClassType | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteClassTypeId, setDeleteClassTypeId] = useState<string | null>(null);
+  const { currentBranch } = useBranch();
 
-  // Mock data for class types - will be replaced with Supabase data
-  const [classTypes, setClassTypes] = useState<ClassType[]>([
-    {
-      id: '1',
-      name: 'Yoga',
-      description: 'A relaxing session focused on flexibility and mindfulness',
-      duration: 60,
-      capacity: 15,
-      category: 'wellness',
-      color: '#8b5cf6',
-      active: true
-    },
-    {
-      id: '2',
-      name: 'HIIT',
-      description: 'High-intensity interval training for maximum calorie burn',
-      duration: 45,
-      capacity: 12,
-      category: 'fitness',
-      color: '#ef4444',
-      active: true
-    },
-    {
-      id: '3',
-      name: 'Pilates',
-      description: 'Core-strengthening exercises that improve posture and balance',
-      duration: 60,
-      capacity: 10,
-      category: 'wellness',
-      color: '#10b981',
-      active: true
-    },
-    {
-      id: '4',
-      name: 'Spin',
-      description: 'High-energy indoor cycling class with motivating music',
-      duration: 50,
-      capacity: 20,
-      category: 'cardio',
-      color: '#f97316',
-      active: true
-    },
-    {
-      id: '5',
-      name: 'Boxing',
-      description: 'Learn boxing techniques with cardio and strength elements',
-      duration: 75,
-      capacity: 8,
-      category: 'combat',
-      color: '#64748b',
-      active: false
-    }
-  ]);
-
-  const handleCreateClass = () => {
-    setFormData({
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
       name: '',
       description: '',
-      duration: 60,
-      capacity: 10,
-      category: 'fitness',
-      color: '#4f46e5',
-      active: true
-    });
-    setShowCreateDialog(true);
-  };
+      is_active: true,
+    },
+  });
 
-  const handleEditClass = (classType: ClassType) => {
-    setSelectedClass(classType);
-    setFormData({
-      name: classType.name,
-      description: classType.description,
-      duration: classType.duration,
-      capacity: classType.capacity,
-      category: classType.category,
-      color: classType.color,
-      active: classType.active
-    });
-    setShowEditDialog(true);
-  };
+  useEffect(() => {
+    loadClassTypes();
+  }, [currentBranch]);
 
-  const handleDuplicateClass = (classType: ClassType) => {
-    const newClassType = {
-      ...classType,
-      id: Date.now().toString(),
-      name: `${classType.name} (Copy)`,
-    };
-    setClassTypes([...classTypes, newClassType]);
-    toast.success(`Duplicated ${classType.name}`);
-  };
+  useEffect(() => {
+    if (editingClassType) {
+      form.reset({
+        name: editingClassType.name,
+        description: editingClassType.description || '',
+        is_active: editingClassType.is_active,
+      });
+    }
+  }, [editingClassType, form]);
 
-  const handleDeleteClass = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this class type?')) {
-      setClassTypes(classTypes.filter(classType => classType.id !== id));
-      toast.success('Class type deleted successfully');
+  async function loadClassTypes() {
+    setLoading(true);
+    try {
+      let query = supabase.from('class_types').select('*');
+      
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setClassTypes(data || []);
+    } catch (error) {
+      console.error('Error loading class types:', error);
+      toast.error('Failed to load class types');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const classTypeData = {
+        ...values,
+        branch_id: currentBranch?.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingClassType) {
+        const { error } = await supabase
+          .from('class_types')
+          .update(classTypeData)
+          .eq('id', editingClassType.id);
+
+        if (error) throw error;
+        toast.success('Class type updated successfully');
+      } else {
+        const { error } = await supabase
+          .from('class_types')
+          .insert([{
+            ...classTypeData,
+            created_at: new Date().toISOString(),
+          }]);
+
+        if (error) throw error;
+        toast.success('Class type created successfully');
+      }
+
+      form.reset();
+      setOpenDialog(false);
+      setEditingClassType(null);
+      loadClassTypes();
+    } catch (error) {
+      console.error('Error saving class type:', error);
+      toast.error('Failed to save class type');
     }
   };
 
-  const handleSaveNewClass = () => {
-    const newClassType = {
-      ...formData,
-      id: Date.now().toString()
-    };
-    setClassTypes([...classTypes, newClassType]);
-    setShowCreateDialog(false);
-    toast.success('Class type created successfully');
+  const handleEdit = (classType: ClassType) => {
+    setEditingClassType(classType);
+    setOpenDialog(true);
   };
 
-  const handleUpdateClass = () => {
-    if (!selectedClass) return;
+  const handleDelete = async () => {
+    if (!deleteClassTypeId) return;
     
-    setClassTypes(classTypes.map(classType => 
-      classType.id === selectedClass.id ? { ...selectedClass, ...formData } : classType
-    ));
-    setShowEditDialog(false);
-    toast.success('Class type updated successfully');
+    try {
+      const { error } = await supabase
+        .from('class_types')
+        .delete()
+        .eq('id', deleteClassTypeId);
+        
+      if (error) throw error;
+      
+      toast.success('Class type deleted successfully');
+      loadClassTypes();
+      setDeleteDialogOpen(false);
+      setDeleteClassTypeId(null);
+    } catch (error) {
+      console.error('Error deleting class type:', error);
+      toast.error('Failed to delete class type');
+    }
   };
 
-  const handleToggleActiveStatus = (id: string) => {
-    setClassTypes(classTypes.map(classType => 
-      classType.id === id ? { ...classType, active: !classType.active } : classType
-    ));
-    toast.success('Class status updated');
+  const confirmDelete = (id: string) => {
+    setDeleteClassTypeId(id);
+    setDeleteDialogOpen(true);
   };
 
   return (
     <Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Class Types</h1>
-            <p className="text-muted-foreground">Manage class categories and configurations</p>
-          </div>
-          <Button onClick={handleCreateClass}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Class Type
-          </Button>
-        </div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Class Types</h1>
+        <Button onClick={() => {
+          form.reset({ name: '', description: '', is_active: true });
+          setEditingClassType(null);
+          setOpenDialog(true);
+        }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Class Type
+        </Button>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Class Types</CardTitle>
-            <CardDescription>
-              Configure class types that can be used when scheduling classes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Category</TableHead>
-                  <TableHead className="hidden md:table-cell">Duration</TableHead>
-                  <TableHead className="hidden md:table-cell">Capacity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {classTypes.map((classType) => (
-                  <TableRow key={classType.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: classType.color }}
-                        />
-                        <span className="font-medium">{classType.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell capitalize">
-                      {classType.category}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {classType.duration} mins
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {classType.capacity} people
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={classType.active ? "default" : "outline"}>
-                        {classType.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
+      <Card>
+        <CardHeader>
+          <CardTitle>All Class Types</CardTitle>
+          <CardDescription>
+            Manage types of classes offered in your gym
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : classTypes.length === 0 ? (
+            <div className="text-center py-10">
+              <p>No class types found</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  form.reset({ name: '', description: '', is_active: true });
+                  setEditingClassType(null);
+                  setOpenDialog(true);
+                }}
+              >
+                Create your first class type
+              </Button>
+            </div>
+          ) : (
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {classTypes.map((classType) => (
+                    <TableRow key={classType.id}>
+                      <TableCell className="font-medium">{classType.name}</TableCell>
+                      <TableCell>
+                        {classType.description || "No description"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={classType.is_active ? "success" : "destructive"}>
+                          {classType.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
                           size="icon"
-                          onClick={() => handleEditClass(classType)}
+                          onClick={() => handleEdit(classType)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
-                          onClick={() => handleDuplicateClass(classType)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteClass(classType.id)}
+                          onClick={() => confirmDelete(classType.id)}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Create Class Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+      {/* Create/Edit Dialog */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Class Type</DialogTitle>
+            <DialogTitle>
+              {editingClassType ? 'Edit Class Type' : 'Create Class Type'}
+            </DialogTitle>
             <DialogDescription>
-              Add a new class type to your scheduling system
+              {editingClassType 
+                ? 'Update the details of this class type' 
+                : 'Enter the details for the new class type'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="className">Class Name</Label>
-                <Input 
-                  id="className" 
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g., Yoga, HIIT, etc."
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="classCategory">Category</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={value => setFormData({...formData, category: value})}
-                >
-                  <SelectTrigger id="classCategory">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fitness">Fitness</SelectItem>
-                    <SelectItem value="cardio">Cardio</SelectItem>
-                    <SelectItem value="strength">Strength</SelectItem>
-                    <SelectItem value="wellness">Wellness</SelectItem>
-                    <SelectItem value="combat">Combat</SelectItem>
-                    <SelectItem value="aquatic">Aquatic</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="classDescription">Description</Label>
-              <Textarea 
-                id="classDescription" 
-                value={formData.description} 
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                placeholder="Describe what this class offers..."
-                rows={3}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Class Type Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="classDuration">Duration (minutes)</Label>
-                <Input 
-                  id="classDuration" 
-                  type="number" 
-                  value={formData.duration} 
-                  onChange={e => setFormData({...formData, duration: parseInt(e.target.value) || 30})}
-                  min={15}
-                  step={5}
-                />
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="classCapacity">Max Capacity</Label>
-                <Input 
-                  id="classCapacity" 
-                  type="number" 
-                  value={formData.capacity} 
-                  onChange={e => setFormData({...formData, capacity: parseInt(e.target.value) || 1})}
-                  min={1}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe this class type" 
+                        {...field} 
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="classColor">Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input 
-                    id="classColor" 
-                    type="color" 
-                    value={formData.color} 
-                    onChange={e => setFormData({...formData, color: e.target.value})}
-                    className="w-12 h-12 p-1"
-                  />
-                  <div 
-                    className="w-10 h-10 rounded border" 
-                    style={{ backgroundColor: formData.color }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <Label htmlFor="classStatus" className="flex items-center cursor-pointer">
-                <input
-                  id="classStatus"
-                  type="checkbox"
-                  checked={formData.active}
-                  onChange={() => setFormData({...formData, active: !formData.active})}
-                  className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2"
-                />
-                Active
-              </Label>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-            <Button type="submit" onClick={handleSaveNewClass}>Create Class Type</Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    form.reset();
+                    setOpenDialog(false);
+                    setEditingClassType(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingClassType ? 'Update' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Class Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Class Type</DialogTitle>
+            <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Modify the details of this class type
+              Are you sure you want to delete this class type? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editClassName">Class Name</Label>
-                <Input 
-                  id="editClassName" 
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editClassCategory">Category</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={value => setFormData({...formData, category: value})}
-                >
-                  <SelectTrigger id="editClassCategory">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fitness">Fitness</SelectItem>
-                    <SelectItem value="cardio">Cardio</SelectItem>
-                    <SelectItem value="strength">Strength</SelectItem>
-                    <SelectItem value="wellness">Wellness</SelectItem>
-                    <SelectItem value="combat">Combat</SelectItem>
-                    <SelectItem value="aquatic">Aquatic</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editClassDescription">Description</Label>
-              <Textarea 
-                id="editClassDescription" 
-                value={formData.description} 
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editClassDuration">Duration (minutes)</Label>
-                <Input 
-                  id="editClassDuration" 
-                  type="number" 
-                  value={formData.duration} 
-                  onChange={e => setFormData({...formData, duration: parseInt(e.target.value) || 30})}
-                  min={15}
-                  step={5}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editClassCapacity">Max Capacity</Label>
-                <Input 
-                  id="editClassCapacity" 
-                  type="number" 
-                  value={formData.capacity} 
-                  onChange={e => setFormData({...formData, capacity: parseInt(e.target.value) || 1})}
-                  min={1}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="editClassColor">Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input 
-                    id="editClassColor" 
-                    type="color" 
-                    value={formData.color} 
-                    onChange={e => setFormData({...formData, color: e.target.value})}
-                    className="w-12 h-12 p-1"
-                  />
-                  <div 
-                    className="w-10 h-10 rounded border" 
-                    style={{ backgroundColor: formData.color }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <Label htmlFor="editClassStatus" className="flex items-center cursor-pointer">
-                <input
-                  id="editClassStatus"
-                  type="checkbox"
-                  checked={formData.active}
-                  onChange={() => setFormData({...formData, active: !formData.active})}
-                  className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 mr-2"
-                />
-                Active
-              </Label>
-            </div>
-          </div>
-          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-            <Button type="submit" onClick={handleUpdateClass}>Update Class Type</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeleteClassTypeId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
