@@ -1,128 +1,192 @@
 
-import { useState, useEffect } from 'react';
-import { Invoice, InvoiceItem } from '@/types/finance';
-import { supabase } from '@/services/supabaseClient';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Invoice, InvoiceItem, InvoiceStatus } from '@/types/finance';
 import { toast } from 'sonner';
-import { useBranch } from './use-branch';
-import { normalizeInvoiceData, normalizeInvoiceItemData } from '@/utils/invoiceUtils';
 
-export const useInvoices = (options: { memberId?: string; filter?: string } = {}) => {
+export const useInvoices = (memberId?: string) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { currentBranch } = useBranch();
-  
-  const fetchInvoices = async () => {
+
+  const fetchInvoices = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setLoading(true);
+      let query = supabase.from('invoices').select('*, members(name)');
       
-      let query = supabase
-        .from('invoices')
-        .select(`
-          *,
-          members(name)
-        `);
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
+      if (memberId) {
+        query = query.eq('member_id', memberId);
       }
       
-      if (options.memberId) {
-        query = query.eq('member_id', options.memberId);
+      const { data, error } = await query.order('issued_date', { ascending: false });
+      
+      if (error) {
+        throw error;
       }
-      
-      if (options.filter && options.filter !== 'all') {
-        query = query.eq('status', options.filter);
-      }
-      
-      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
-      
-      if (fetchError) throw fetchError;
       
       if (data) {
-        const formattedInvoices: Invoice[] = data.map(item => {
-          // Parse items from JSON if needed
-          const invoiceItems: InvoiceItem[] = Array.isArray(item.items) ? 
-            item.items.map((dbItem: any) => normalizeInvoiceItemData({
-              id: dbItem.id || `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-              name: dbItem.name || '',
-              quantity: dbItem.quantity || 0,
-              price: dbItem.price || dbItem.unitPrice || 0,
-              description: dbItem.description || '',
-              unitPrice: dbItem.unitPrice || dbItem.price || 0
-            })) : [];
-          
-          // Create normalized invoice with both snake_case and camelCase properties
-          const invoice: Invoice = normalizeInvoiceData({
-            id: item.id,
-            member_id: item.member_id,
-            amount: item.amount,
-            status: item.status,
-            issued_date: item.issued_date,
-            due_date: item.due_date,
-            paid_date: item.paid_date,
-            payment_method: item.payment_method,
-            notes: item.notes || '',
-            items: invoiceItems,
-            description: item.description || '',
-            branch_id: item.branch_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            created_by: item.created_by,
-            membership_plan_id: item.membership_plan_id,
-            razorpay_order_id: item.razorpay_order_id || '',
-            razorpay_payment_id: item.razorpay_payment_id || '',
-            // Additional properties for compatibility
-            memberId: item.member_id,
-            dueDate: item.due_date,
-            issuedDate: item.issued_date,
-            memberName: item.members?.name || 'Unknown',
-            branchId: item.branch_id
-          });
-          
-          return invoice;
-        });
+        // Transform the data to match the Invoice type
+        const transformedInvoices: Invoice[] = data.map((invoice) => ({
+          id: invoice.id,
+          member_id: invoice.member_id,
+          memberName: invoice.members?.name || 'Unknown',
+          amount: invoice.amount,
+          status: invoice.status as InvoiceStatus,
+          due_date: invoice.due_date,
+          issued_date: invoice.issued_date,
+          paid_date: invoice.paid_date,
+          payment_method: invoice.payment_method,
+          created_at: invoice.created_at,
+          updated_at: invoice.updated_at,
+          items: invoice.items as InvoiceItem[],
+          razorpay_order_id: invoice.razorpay_order_id,
+          razorpay_payment_id: invoice.razorpay_payment_id,
+          notes: invoice.notes,
+          description: invoice.description
+        }));
         
-        setInvoices(formattedInvoices);
+        setInvoices(transformedInvoices);
       }
-      
-      setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching invoices:', err);
-      setError(err as Error);
+      setError(err);
       toast.error('Failed to fetch invoices');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  }, [memberId]);
+
+  const createInvoice = async (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert({
+          member_id: invoice.member_id,
+          amount: invoice.amount,
+          status: invoice.status,
+          due_date: invoice.due_date,
+          issued_date: invoice.issued_date || new Date().toISOString(),
+          paid_date: invoice.paid_date,
+          payment_method: invoice.payment_method,
+          items: invoice.items,
+          razorpay_order_id: invoice.razorpay_order_id,
+          razorpay_payment_id: invoice.razorpay_payment_id,
+          notes: invoice.notes,
+          description: invoice.description
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        // Fetch member name
+        const { data: memberData } = await supabase
+          .from('members')
+          .select('name')
+          .eq('id', data.member_id)
+          .single();
+        
+        const newInvoice: Invoice = {
+          ...data,
+          memberName: memberData?.name || 'Unknown',
+          items: data.items as InvoiceItem[]
+        };
+        
+        setInvoices([newInvoice, ...invoices]);
+        toast.success('Invoice created successfully');
+        return newInvoice;
+      }
+    } catch (err: any) {
+      console.error('Error creating invoice:', err);
+      toast.error('Failed to create invoice');
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
+  const updateInvoice = async (id: string, updates: Partial<Invoice>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setInvoices(invoices.map(invoice => 
+          invoice.id === id ? { ...invoice, ...updates } : invoice
+        ));
+        toast.success('Invoice updated successfully');
+        return data;
+      }
+    } catch (err: any) {
+      console.error('Error updating invoice:', err);
+      toast.error('Failed to update invoice');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteInvoice = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setInvoices(invoices.filter(invoice => invoice.id !== id));
+      toast.success('Invoice deleted successfully');
+    } catch (err: any) {
+      console.error('Error deleting invoice:', err);
+      toast.error('Failed to delete invoice');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const markAsPaid = async (id: string, paymentMethod: string, paymentId?: string) => {
+    return updateInvoice(id, {
+      status: 'paid',
+      paid_date: new Date().toISOString(),
+      payment_method: paymentMethod,
+      razorpay_payment_id: paymentId
+    });
+  };
+
   useEffect(() => {
     fetchInvoices();
-    
-    // Optional: Set up real-time subscription
-    const channel = supabase
-      .channel('invoice-changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'invoices',
-          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
-        }, 
-        () => {
-          fetchInvoices();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch?.id, options.memberId, options.filter]);
-  
-  const refresh = () => {
-    fetchInvoices();
+  }, [fetchInvoices]);
+
+  return {
+    invoices,
+    isLoading,
+    error,
+    fetchInvoices,
+    createInvoice,
+    updateInvoice,
+    deleteInvoice,
+    markAsPaid
   };
-  
-  return { invoices, loading, error, refresh };
 };

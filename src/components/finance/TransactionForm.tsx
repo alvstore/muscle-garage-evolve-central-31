@@ -1,300 +1,473 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Switch } from "@/components/ui/switch";
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { 
   FinancialTransaction, 
   TransactionType,
   PaymentMethod,
   RecurringPeriod
-} from "@/types/finance";
+} from '@/types/finance';
+import { useCategories } from '@/hooks/use-categories';
+import { useTransactions } from '@/hooks/use-transactions';
+
+const formSchema = z.object({
+  type: z.enum(['income', 'expense'], {
+    required_error: "Transaction type is required",
+  }),
+  amount: z.coerce.number().positive({
+    message: "Amount must be a positive number",
+  }),
+  description: z.string().min(1, {
+    message: "Description is required",
+  }),
+  transaction_date: z.date({
+    required_error: "Date is required",
+  }),
+  payment_method: z.string().min(1, {
+    message: "Payment method is required",
+  }),
+  category_id: z.string().min(1, {
+    message: "Category is required",
+  }),
+  recurring: z.boolean().default(false),
+  recurring_period: z.enum(['none', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly']).nullable(),
+  reference_id: z.string().optional(),
+  transaction_id: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
-  transaction: FinancialTransaction | null;
-  onSave: (transaction: FinancialTransaction) => void;
-  onCancel: () => void;
+  onSuccess?: () => void;
+  initialData?: Partial<FinancialTransaction>;
+  isEdit?: boolean;
 }
 
-// Define these as string arrays since they'll be displayed as string options in the UI
-const expenseCategories: string[] = [
-  "rent", "salary", "utilities", "equipment", "maintenance", "marketing", "other"
-];
-
-const incomeCategories: string[] = [
-  "membership", "personal-training", "product-sales", "class-fees", "other"
-];
-
-const recurringPeriods: RecurringPeriod[] = [
-  "daily", "weekly", "monthly", "quarterly", "yearly"
-];
-
-const paymentMethods: PaymentMethod[] = [
-  "cash", "card", "bank_transfer", "razorpay", "other"
-];
-
-const TransactionForm = ({ transaction, onSave, onCancel }: TransactionFormProps) => {
-  const [formData, setFormData] = useState<FinancialTransaction>({
-    id: "",
-    type: "expense",
-    amount: 0,
-    transaction_date: new Date().toISOString(),
-    category: "rent",
-    description: "",
-    is_recurring: false,
-    recurring_period: "monthly",
-    recorded_by: "user-1", // This would come from auth in a real app
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    // Additional frontend properties
-    date: new Date().toISOString(),
-    recurring: false,
-    recurringPeriod: "monthly",
+const TransactionForm = ({ onSuccess, initialData, isEdit = false }: TransactionFormProps) => {
+  const { toast } = useToast();
+  const { addTransaction, updateTransaction } = useTransactions();
+  const { incomeCategories, expenseCategories } = useCategories();
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      type: (initialData?.type as TransactionType) || 'income',
+      amount: initialData?.amount || 0,
+      description: initialData?.description || '',
+      transaction_date: initialData?.transaction_date ? new Date(initialData.transaction_date) : new Date(),
+      payment_method: (initialData?.payment_method as string) || 'cash',
+      category_id: initialData?.category_id || '',
+      recurring: initialData?.recurring || false,
+      recurring_period: initialData?.recurring_period || null,
+      reference_id: initialData?.reference_id || undefined,
+      transaction_id: initialData?.transaction_id || undefined,
+    }
   });
 
+  const watchType = form.watch('type');
+  const watchRecurring = form.watch('recurring');
+  
   useEffect(() => {
-    if (transaction) {
-      setFormData({
-        ...transaction,
-        date: transaction.transaction_date || transaction.date,
-        recurring: transaction.is_recurring || transaction.recurring || false,
-        recurringPeriod: transaction.recurring_period || transaction.recurringPeriod || "monthly",
-        paymentMethod: transaction.payment_method || transaction.paymentMethod
-      });
-    }
-  }, [transaction]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: Number(value) });
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    if (name === "type") {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value as TransactionType,
-        category: value === "income" ? "membership" : "rent"
-      }));
-    } else if (name === "recurring") {
-      const isRecurring = value === "true";
-      setFormData(prev => ({
-        ...prev,
-        is_recurring: isRecurring,
-        recurring: isRecurring,
-        recurring_period: !isRecurring ? undefined : prev.recurring_period || "monthly",
-        recurringPeriod: !isRecurring ? undefined : prev.recurringPeriod || "monthly"
-      }));
-    } else if (name === "recurringPeriod") {
-      setFormData(prev => ({ 
-        ...prev,
-        [name]: value,
-        recurring_period: value as RecurringPeriod
-      }));
-    } else if (name === "paymentMethod") {
-      setFormData(prev => ({ 
-        ...prev,
-        [name]: value as PaymentMethod,
-        payment_method: value as PaymentMethod
-      }));
-    } else if (name === "category") {
-      setFormData(prev => ({
-        ...prev,
-        category: value
-      }));
+    // Set the appropriate categories based on the transaction type
+    if (watchType === 'income') {
+      setCategories(incomeCategories);
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setCategories(expenseCategories);
     }
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      const dateString = date.toISOString();
-      setFormData({
-        ...formData,
-        date: dateString,
-        transaction_date: dateString
+    
+    // Reset category when type changes
+    form.setValue('category_id', '');
+    
+    // Set the amount sign based on the transaction type
+    if (initialData?.amount) {
+      const absAmount = Math.abs(initialData.amount);
+      form.setValue('amount', watchType === 'expense' ? absAmount : absAmount);
+    }
+  }, [watchType, incomeCategories, expenseCategories, form, initialData?.amount]);
+  
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      // Adjust amount sign based on transaction type
+      const amount = data.type === 'expense' ? -Math.abs(data.amount) : Math.abs(data.amount);
+      
+      // Create transaction object
+      const transaction: Partial<FinancialTransaction> = {
+        id: initialData?.id,
+        type: data.type,
+        amount,
+        description: data.description,
+        transaction_date: data.transaction_date.toISOString(),
+        payment_method: data.payment_method as PaymentMethod,
+        category_id: data.category_id,
+        recurring: data.recurring,
+        recurring_period: data.recurring ? data.recurring_period : null,
+        reference_id: data.reference_id || null,
+        transaction_id: data.transaction_id || null
+      };
+      
+      if (isEdit && initialData?.id) {
+        await updateTransaction(initialData.id, transaction);
+        toast({
+          title: "Transaction updated",
+          description: "Transaction has been updated successfully",
+        });
+      } else {
+        await addTransaction(transaction);
+        toast({
+          title: "Transaction added",
+          description: "Transaction has been added successfully",
+        });
+      }
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      if (!isEdit) {
+        form.reset();
+      }
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "There was an error processing your request",
+        variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      updated_at: new Date().toISOString(),
-    });
   };
 
   return (
-    <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[550px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>
-              {transaction?.id ? 'Edit' : 'Add'} {formData.type === 'income' ? 'Income' : 'Expense'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Transaction Type</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) => handleSelectChange("type", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{isEdit ? "Edit Transaction" : "Add Transaction"}</CardTitle>
+        <CardDescription>
+          {isEdit 
+            ? "Update the details of this financial transaction" 
+            : "Record a new financial transaction for your business"
+          }
+        </CardDescription>
+      </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transaction Type</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isEdit} // Don't allow changing the type in edit mode
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select transaction type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter amount" 
+                        type="number"
+                        min={0} 
+                        step="0.01" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Amount in your default currency
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="transaction_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => field.onChange(date || new Date())}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="payment_method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="credit_card">Credit Card</SelectItem>
+                        <SelectItem value="debit_card">Debit Card</SelectItem>
+                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="check">Check</SelectItem>
+                        <SelectItem value="online">Online Payment</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.length === 0 ? (
+                          <SelectItem value="" disabled>No categories available</SelectItem>
+                        ) : (
+                          categories.map(category => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter transaction description" 
+                      className="resize-none" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="recurring"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        id="recurring"
+                        className="h-4 w-4"
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="recurring" className="cursor-pointer">
+                      Is this a recurring transaction?
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={handleNumberChange}
-                  required
+              {watchRecurring && (
+                <FormField
+                  control={form.control}
+                  name="recurring_period"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recurrence Period</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value as RecurringPeriod)} 
+                        value={field.value || "none"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select how often" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="yearly">Yearly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
+              )}
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <DatePicker
-                date={formData.date ? new Date(formData.date) : undefined}
-                onSelect={handleDateChange}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="transaction_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Transaction ID (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="External transaction reference" 
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Reference number from payment processor
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reference_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reference ID (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Internal reference number" 
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Invoice or receipt number
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.type === 'income' ? 
-                    incomeCategories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </SelectItem>
-                    )) : 
-                    expenseCategories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </SelectItem>
-                    ))
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={2}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="recurring"
-                checked={formData.recurring || formData.is_recurring}
-                onCheckedChange={(checked) => handleSelectChange("recurring", checked.toString())}
-              />
-              <Label htmlFor="recurring">Recurring Transaction</Label>
-            </div>
-            
-            {(formData.recurring || formData.is_recurring) && (
-              <div className="space-y-2">
-                <Label htmlFor="recurringPeriod">Recurring Period</Label>
-                <Select
-                  value={formData.recurringPeriod || formData.recurring_period}
-                  onValueChange={(value) => handleSelectChange("recurringPeriod", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recurringPeriods.map(period => (
-                      <SelectItem key={period} value={period}>
-                        {period.charAt(0).toUpperCase() + period.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select
-                value={formData.paymentMethod || formData.payment_method || "cash"}
-                onValueChange={(value) => handleSelectChange("paymentMethod", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map(method => (
-                    <SelectItem key={method} value={method}>
-                      {method.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          </CardContent>
           
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <CardFooter className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (onSuccess) onSuccess();
+              }}
+            >
               Cancel
             </Button>
-            <Button type="submit">Save</Button>
-          </DialogFooter>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEdit ? "Updating..." : "Saving..."}
+                </>
+              ) : (
+                isEdit ? "Update Transaction" : "Save Transaction"
+              )}
+            </Button>
+          </CardFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Form>
+    </Card>
   );
 };
 

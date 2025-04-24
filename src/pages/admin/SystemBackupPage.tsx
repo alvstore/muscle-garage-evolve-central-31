@@ -12,9 +12,15 @@ import { Archive, Download, Upload } from 'lucide-react';
 const SystemBackupPage = () => {
   const [activeTab, setActiveTab] = useState('export');
   const { can } = usePermissions();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // No longer redirecting, we're letting the PrivateRoute component handle this
-  // This way the user will see a proper unauthorized page if needed
+  const handleExportComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleImportComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return (
     <Container>
@@ -53,15 +59,15 @@ const SystemBackupPage = () => {
             </TabsList>
             
             <TabsContent value="export">
-              <ExportDataSection />
+              <ExportDataSection onExportComplete={handleExportComplete} />
             </TabsContent>
             
             <TabsContent value="import">
-              <ImportDataSection />
+              <ImportDataSection onImportComplete={handleImportComplete} />
             </TabsContent>
             
             <TabsContent value="logs">
-              <BackupLogs />
+              <BackupLogs key={refreshTrigger} />
             </TabsContent>
           </Tabs>
         </CardContent>

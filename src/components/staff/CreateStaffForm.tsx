@@ -1,211 +1,204 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from "sonner";
-import { supabase } from '@/services/supabaseClient';
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, CheckCircle } from 'lucide-react';
 
-// Define form validation schema
-const staffFormSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters long'),
-  email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 characters long'),
-  role: z.enum(['admin', 'staff', 'trainer']),
-  branch_id: z.string().uuid('Please select a branch').optional(),
-  position: z.string().min(2, 'Position must be at least 2 characters long'),
-  sendWelcomeEmail: z.boolean().default(true),
-  sendWelcomeSms: z.boolean().default(false)
+const formSchema = z.object({
+  fullName: z.string().min(2, { message: 'Full name is required' }),
+  email: z.string().email({ message: 'Invalid email address' }),
+  phone: z.string().min(6, { message: 'Phone number is required' }),
+  role: z.enum(['staff', 'trainer', 'admin']),
+  branchId: z.string().optional(),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  confirmPassword: z.string().min(6, { message: 'Please confirm the password' }),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
-type StaffFormValues = z.infer<typeof staffFormSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
-// Password generator function
-const generateRandomPassword = () => {
-  const length = 12;
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
-};
-
-interface CreateStaffFormProps {
-  onSuccess: () => void;
-}
-
-const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
+const CreateStaffForm = () => {
+  const { toast } = useToast();
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
-  
-  // Fetch branches on component mount
-  useEffect(() => {
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  React.useEffect(() => {
     const fetchBranches = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('branches')
-          .select('id, name');
-        
-        if (error) throw error;
-        setBranches(data || []);
-      } catch (error) {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name')
+        .order('name');
+      
+      if (!error && data) {
+        setBranches(data);
+      } else {
         console.error('Error fetching branches:', error);
-        toast.error('Failed to load branches');
       }
     };
-    
+
     fetchBranches();
   }, []);
 
-  const form = useForm<StaffFormValues>({
-    resolver: zodResolver(staffFormSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '',
       email: '',
       phone: '',
       role: 'staff',
-      branch_id: '',
-      position: '',
-      sendWelcomeEmail: true,
-      sendWelcomeSms: false
-    }
+      branchId: '',
+      password: '',
+      confirmPassword: '',
+    },
   });
-
-  const onSubmit = async (values: StaffFormValues) => {
+  
+  const onSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
-      const generatedPassword = generateRandomPassword();
-
-      // 1. Create the user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      
+      // First, create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
-        password: generatedPassword,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          full_name: values.fullName,
-          role: values.role,
-          phone: values.phone
+        password: values.password,
+        options: {
+          data: {
+            full_name: values.fullName,
+            role: values.role,
+          }
         }
       });
-
-      if (authError) throw new Error(authError.message);
-
-      if (!authData.user) throw new Error('Failed to create user');
-
-      // 2. Create the staff profile
-      const { error: profileError } = await supabase.from('staff').insert({
-        id: authData.user.id,
-        full_name: values.fullName,
-        email: values.email,
-        phone: values.phone,
-        role: values.role,
-        branch_id: values.branch_id,
-        position: values.position,
-        status: 'active'
-      });
-
-      if (profileError) throw new Error(profileError.message);
-
-      // 3. Send welcome email if enabled
-      if (values.sendWelcomeEmail) {
-        // Note: This is just a placeholder for the email sending functionality
-        console.log('Sending welcome email to:', values.email, 'with password:', generatedPassword);
-        // In a real implementation, you would use your email service here
-      }
-
-      // 4. Send welcome SMS if enabled
-      if (values.sendWelcomeSms && values.phone) {
-        // Note: This is just a placeholder for the SMS sending functionality
-        console.log('Sending welcome SMS to:', values.phone, 'with password info');
-        // In a real implementation, you would use your SMS service here
-      }
-
-      toast.success(`${values.fullName} has been added to the system`);
       
+      if (authError) throw authError;
+      
+      // If auth user was created, update the profile
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: values.fullName,
+            email: values.email,
+            phone: values.phone,
+            role: values.role,
+            branch_id: values.branchId || null,
+            is_branch_manager: values.role === 'staff',
+          })
+          .eq('id', authData.user.id);
+          
+        if (profileError) throw profileError;
+      }
+      
+      toast({
+        title: "Staff created successfully",
+        description: `${values.fullName} has been added as ${values.role}`,
+      });
+      
+      setShowSuccess(true);
       form.reset();
-      onSuccess();
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => setShowSuccess(false), 3000);
+      
     } catch (error: any) {
-      console.error('Error creating staff:', error);
-      toast.error(error.message || 'Failed to create staff member');
+      toast({
+        title: "Error creating staff",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Add New Staff Member</CardTitle>
-        <CardDescription>Create a new staff account with welcome messages</CardDescription>
+        <CardTitle>Create New Staff</CardTitle>
+        <CardDescription>Add a new staff member, trainer, or admin to the system</CardDescription>
       </CardHeader>
       <CardContent>
+        {showSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6 flex items-center">
+            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+            <p className="text-green-700">Staff created successfully!</p>
+          </div>
+        )}
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="staff@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="john@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+1 (555) 123-4567" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={form.control}
                 name="role"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
+                    <Select 
+                      onValueChange={field.onChange} 
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Role" />
+                          <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -218,23 +211,24 @@ const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
                   </FormItem>
                 )}
               />
-
+              
               <FormField
                 control={form.control}
-                name="branch_id"
+                name="branchId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Branch</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
+                    <Select 
+                      onValueChange={field.onChange} 
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Branch" />
+                          <SelectValue placeholder="Select a branch" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="">Not Assigned</SelectItem>
                         {branches.map((branch) => (
                           <SelectItem key={branch.id} value={branch.id}>
                             {branch.name}
@@ -246,87 +240,49 @@ const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
                   </FormItem>
                 )}
               />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Fitness Trainer" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="sendWelcomeEmail" className="flex flex-col gap-1">
-                  <span>Send Welcome Email</span>
-                  <span className="font-normal text-sm text-muted-foreground">User will receive login credentials by email</span>
-                </Label>
-                <FormField
-                  control={form.control}
-                  name="sendWelcomeEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="sendWelcomeSms" className="flex flex-col gap-1">
-                  <span>Send Welcome SMS</span>
-                  <span className="font-normal text-sm text-muted-foreground">User will receive login credentials by SMS</span>
-                </Label>
-                <FormField
-                  control={form.control}
-                  name="sendWelcomeSms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Staff Member
-                  </>
-                ) : (
-                  'Create Staff Member'
+              
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
+              />
+              
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+            
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Staff'
+              )}
+            </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-2 items-start">
-        <div className="text-xs text-muted-foreground">
-          <p>A secure random password will be generated and sent to the staff member.</p>
-          <p>They will be asked to change it on first login.</p>
-        </div>
-      </CardFooter>
     </Card>
   );
 };

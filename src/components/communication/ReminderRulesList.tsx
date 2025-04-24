@@ -1,237 +1,186 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, BellRing, Calendar, Gift, Clock, CheckCircle, XCircle } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ReminderRule, NotificationChannel, ReminderTriggerType } from '@/types/notification';
-import { supabase } from '@/services/supabaseClient';
+import React, { useEffect, useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2, Plus } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { useReminderRules } from '@/hooks/use-reminder-rules';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ReminderRule } from '@/types/notification';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ReminderRulesListProps {
-  onAddRule?: () => void;
-  onEditRule?: (rule: ReminderRule) => void;
+  onEdit?: (rule: ReminderRule) => void;
+  onAdd?: () => void;
 }
 
-const ReminderRulesList = ({ onAddRule, onEditRule }: ReminderRulesListProps) => {
-  const [rules, setRules] = useState<ReminderRule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-
+const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
+  const { rules, isLoading, toggleRuleStatus, deleteRule } = useReminderRules();
+  const [reminderRules, setReminderRules] = useState<ReminderRule[]>([]);
+  const { toast } = useToast();
+  
   useEffect(() => {
-    fetchReminderRules();
-  }, []);
-
-  const fetchReminderRules = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reminder_rules')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      const mappedRules: ReminderRule[] = data.map(rule => ({
+    if (rules) {
+      const convertedRules: ReminderRule[] = rules.map(rule => ({
         id: rule.id,
         title: rule.title,
         description: rule.description || '',
-        triggerType: rule.trigger_type as ReminderTriggerType,
-        notificationChannel: (rule.notification_channel || 'email') as NotificationChannel,
-        conditions: rule.conditions,
-        isActive: rule.is_active,
-        createdAt: rule.created_at,
-        updatedAt: rule.updated_at,
-        name: rule.title,
-        triggerValue: rule.trigger_value,
+        triggerType: rule.triggerType,
+        triggerValue: rule.triggerValue || 0,
+        notificationChannel: rule.notificationChannel || 'email',
+        conditions: rule.conditions as Record<string, any>,
+        isActive: rule.isActive,
+        createdAt: rule.createdAt,
+        updatedAt: rule.updatedAt,
         message: rule.message || '',
-        sendVia: rule.send_via,
-        targetRoles: rule.target_roles,
-        active: rule.is_active,
-        enabled: rule.is_active,
-        channels: rule.send_via
+        sendVia: rule.sendVia || [],
+        targetRoles: rule.targetRoles || []
       }));
-      
-      setRules(mappedRules);
-    } catch (error) {
-      console.error('Error fetching reminder rules:', error);
-    } finally {
-      setLoading(false);
+      setReminderRules(convertedRules);
     }
-  };
+  }, [rules]);
 
-  const handleToggleActive = async (id: string, newState: boolean) => {
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('reminder_rules')
-        .update({ is_active: newState })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setRules(prevRules =>
-        prevRules.map(rule =>
-          rule.id === id ? { ...rule, active: newState, isActive: newState, enabled: newState } : rule
-        )
-      );
+      await toggleRuleStatus(id, !currentStatus);
+      toast({
+        title: "Status updated",
+        description: `Rule ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
     } catch (error) {
-      console.error('Error updating reminder rule:', error);
+      toast({
+        title: "Error updating status",
+        description: "Failed to update rule status",
+        variant: "destructive",
+      });
     }
   };
 
-  const filteredRules = rules.filter(rule => {
-    if (filter === 'all') return true;
-    if (filter === 'active') return rule.active;
-    if (filter === 'inactive') return !rule.active;
-    return true;
-  });
-  
-  const getTriggerIcon = (triggerType: string) => {
-    switch (triggerType) {
-      case 'membership-expiry':
-        return <Calendar className="h-4 w-4 text-yellow-500" />;
-      case 'class-reminder':
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'birthday':
-        return <Gift className="h-4 w-4 text-pink-500" />;
-      default:
-        return <BellRing className="h-4 w-4 text-purple-500" />;
-    }
-  };
-  
-  const getTriggerDescription = (rule: ReminderRule) => {
-    const triggerType = rule.triggerType;
-    const triggerValue = rule.triggerValue;
-    
-    switch (triggerType) {
-      case 'membership-expiry':
-        return `${triggerValue} days before expiry`;
-      case 'class-reminder':
-        return `${triggerValue} hours before class`;
-      case 'birthday':
-        return `${triggerValue} days before birthday`;
-      default:
-        return `${triggerValue} days before ${triggerType}`;
+  const handleDeleteRule = async (id: string) => {
+    try {
+      await deleteRule(id);
+      toast({
+        title: "Rule deleted",
+        description: "Reminder rule deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting rule",
+        description: "Failed to delete reminder rule",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Reminder Rules</CardTitle>
-        <div className="space-x-2">
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="all">All Rules</SelectItem>
-                <SelectItem value="active">Active Only</SelectItem>
-                <SelectItem value="inactive">Inactive Only</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          {onAddRule && (
-            <Button onClick={onAddRule}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Rule
-            </Button>
-          )}
+        <div>
+          <CardTitle>Reminder Rules</CardTitle>
+          <CardDescription>Configure automated reminders for various events</CardDescription>
         </div>
+        <Button onClick={onAdd} size="sm" className="mt-0">
+          <Plus className="mr-1 h-4 w-4" />
+          Add Rule
+        </Button>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center h-56">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : filteredRules.length === 0 ? (
-          <div className="text-center py-8 flex flex-col items-center space-y-2">
-            <BellRing className="h-10 w-10 text-muted-foreground" />
-            <h3 className="font-medium text-lg">No reminder rules found</h3>
-            <p className="text-muted-foreground">Create your first reminder rule to start sending notifications</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Trigger</TableHead>
+              <TableHead>Channels</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <TableHead>Rule Name</TableHead>
-                <TableHead>Trigger</TableHead>
-                <TableHead>Recipients</TableHead>
-                <TableHead>Channels</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  Loading reminder rules...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRules.map((rule) => (
+            ) : reminderRules.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  No reminder rules found. Click the button above to create one.
+                </TableCell>
+              </TableRow>
+            ) : (
+              reminderRules.map((rule) => (
                 <TableRow key={rule.id}>
                   <TableCell>
-                    <div className="font-medium">{rule.title}</div>
-                    {rule.description && (
-                      <div className="text-sm text-muted-foreground line-clamp-1">
-                        {rule.description}
-                      </div>
-                    )}
+                    <div>
+                      <p className="font-medium">{rule.title}</p>
+                      <p className="text-sm text-gray-500">{rule.description}</p>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getTriggerIcon(rule.triggerType)}
-                      <span>{getTriggerDescription(rule)}</span>
+                    <div className="flex flex-col">
+                      <span className="capitalize font-medium">{rule.triggerType.replace(/_/g, ' ')}</span>
+                      {rule.triggerValue && (
+                        <span className="text-sm text-gray-500">
+                          Value: {rule.triggerValue}
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {rule.targetRoles?.map((role) => (
-                        <Badge key={role} variant="outline" className="capitalize">
-                          {role}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {rule.sendVia?.map((channel) => (
-                        <Badge key={channel} variant="secondary" className="capitalize">
+                      {rule.sendVia.map((channel, idx) => (
+                        <Badge key={idx} variant="outline">
                           {channel}
                         </Badge>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {rule.active ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-gray-500" />
-                      )}
-                      <Switch
-                        checked={rule.active}
-                        onCheckedChange={(checked) => handleToggleActive(rule.id, checked)}
-                      />
-                    </div>
+                    <Switch 
+                      checked={rule.isActive} 
+                      onCheckedChange={() => handleToggleStatus(rule.id, rule.isActive)}
+                    />
                   </TableCell>
                   <TableCell className="text-right">
-                    {onEditRule && (
-                      <Button size="sm" variant="outline" onClick={() => onEditRule(rule)}>
-                        Edit
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit && onEdit(rule)}
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete reminder rule</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this reminder rule? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteRule(rule.id)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              ))
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

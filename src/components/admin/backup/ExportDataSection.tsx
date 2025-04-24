@@ -5,22 +5,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { BackupLogEntry } from '@/types/notification';
 
 interface ExportDataSectionProps {
-  onExportComplete: () => void;
+  onExportComplete?: () => void;
 }
 
-// Define the module types as literal string union to match Supabase types
-type ModuleType = 
-  | "members" 
-  | "classes" 
-  | "trainers" 
-  | "announcements" 
-  | "reminder_rules" 
-  | "motivational_messages" 
-  | "feedback";
+// Define the module types to match the actual table names in Supabase
+const validTables = [
+  "members",
+  "classes",
+  "trainers_view", // Using a view for trainers
+  "announcements",
+  "reminder_rules",
+  "motivational_messages",
+  "feedback",
+] as const;
+
+type ModuleType = typeof validTables[number];
 
 const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
   const [selectedModules, setSelectedModules] = useState<ModuleType[]>([]);
@@ -30,7 +33,7 @@ const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
   const modules: { name: string; value: ModuleType }[] = [
     { name: 'Members', value: 'members' },
     { name: 'Classes', value: 'classes' },
-    { name: 'Trainers', value: 'trainers' },
+    { name: 'Trainers', value: 'trainers_view' },
     { name: 'Announcements', value: 'announcements' },
     { name: 'Reminder Rules', value: 'reminder_rules' },
     { name: 'Motivational Messages', value: 'motivational_messages' },
@@ -107,7 +110,9 @@ const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
         description: `Data exported to ${filename}`,
       });
 
-      onExportComplete();
+      if (onExportComplete) {
+        onExportComplete();
+      }
     } catch (error: any) {
       console.error('Export failed:', error);
       toast({

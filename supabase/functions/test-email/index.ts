@@ -1,6 +1,27 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { EmailSettings } from '../../../src/hooks/use-email-settings.ts';
+
+// Define the EmailSettings interface directly within the edge function
+export interface EmailSettings {
+  id?: string;
+  provider: 'sendgrid' | 'mailgun' | 'smtp';
+  from_email: string;
+  sendgrid_api_key?: string;
+  mailgun_api_key?: string;
+  mailgun_domain?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  smtp_secure?: boolean;
+  is_active: boolean;
+  notifications: {
+    sendOnRegistration: boolean;
+    sendOnInvoice: boolean;
+    sendClassUpdates: boolean;
+  };
+  branch_id?: string;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
