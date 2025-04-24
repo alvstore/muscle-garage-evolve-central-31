@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,9 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { supabase } from "@/services/supabaseClient";
 import { MotivationalMessage } from "@/types/notification";
+import { useMotivationalMessages } from "@/hooks/use-motivational-messages";
 
 const formSchema = z.object({
   title: z.string().min(5, {
@@ -34,6 +32,7 @@ interface MotivationalMessageFormProps {
 
 const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessageFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createMessage, updateMessage } = useMotivationalMessages();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,36 +57,19 @@ const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessag
         category: values.category,
         active: values.active,
         tags: values.tags ? values.tags.split(",").map(tag => tag.trim()) : [],
-        updated_at: new Date().toISOString(),
       };
       
       if (editMessage) {
-        // Update existing message
-        const { error } = await supabase
-          .from('motivational_messages')
-          .update(messageData)
-          .eq('id', editMessage.id);
-          
-        if (error) throw error;
-        toast.success('Message updated successfully');
+        await updateMessage.mutateAsync({
+          id: editMessage.id,
+          ...messageData
+        });
       } else {
-        // Create new message
-        const { error } = await supabase
-          .from('motivational_messages')
-          .insert([{
-            ...messageData,
-            created_at: new Date().toISOString(),
-          }]);
-          
-        if (error) throw error;
-        toast.success('Message created successfully');
+        await createMessage.mutateAsync(messageData);
       }
       
       form.reset();
       onComplete();
-    } catch (error) {
-      console.error('Error saving message:', error);
-      toast.error('Failed to save message');
     } finally {
       setIsSubmitting(false);
     }

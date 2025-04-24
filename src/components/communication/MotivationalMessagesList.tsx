@@ -1,122 +1,44 @@
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MoreVertical, Pencil, Trash2, RefreshCcw, Quote, PlayCircle } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { MoreVertical, Pencil, Trash2, Quote, PlayCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { MotivationalMessage } from "@/types/notification";
+import { useMotivationalMessages } from "@/hooks/use-motivational-messages";
+import { useState } from "react";
 import { toast } from "sonner";
-import { MotivationalMessage } from "@/types/notification";
-
-// Mock data for motivational messages
-const mockMessages: MotivationalMessage[] = [
-  {
-    id: "1",
-    title: "Workout Motivation",
-    content: "The only bad workout is the one that didn't happen.",
-    author: "Unknown",
-    category: "motivation",
-    tags: ["workout", "consistency"],
-    active: true,
-    createdAt: "2023-01-15T10:00:00Z",
-    updatedAt: "2023-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Mind Over Matter",
-    content: "Your body can stand almost anything. It's your mind that you have to convince.",
-    author: "Andrew Murphy",
-    category: "motivation",
-    tags: ["mindset", "strength"],
-    active: true,
-    createdAt: "2023-02-10T15:30:00Z",
-    updatedAt: "2023-02-10T15:30:00Z",
-  },
-  {
-    id: "3",
-    title: "Nutrition Basics",
-    content: "Proper nutrition is the foundation of a healthy lifestyle.",
-    author: "Unknown",
-    category: "nutrition",
-    tags: ["food", "health"],
-    active: true,
-    createdAt: "2023-03-05T09:45:00Z",
-    updatedAt: "2023-03-05T09:45:00Z",
-  },
-  {
-    id: "4",
-    title: "Consistency is Key",
-    content: "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success.",
-    author: "Dwayne Johnson",
-    category: "motivation",
-    tags: ["consistency", "success"],
-    active: false,
-    createdAt: "2023-04-20T14:20:00Z",
-    updatedAt: "2023-04-20T14:20:00Z",
-  },
-  {
-    id: "5",
-    title: "Health Benefits",
-    content: "To enjoy the glow of good health, you must exercise.",
-    author: "Gene Tunney",
-    category: "wellness",
-    tags: ["health", "exercise"],
-    active: true,
-    createdAt: "2023-05-12T11:15:00Z",
-    updatedAt: "2023-05-12T11:15:00Z",
-  }
-];
 
 interface MotivationalMessagesListProps {
   onEdit: (message: MotivationalMessage) => void;
 }
 
 const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => {
-  const [messages, setMessages] = useState<MotivationalMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { messages, isLoading, updateMessage, deleteMessage } = useMotivationalMessages();
   const [filter, setFilter] = useState<string>("all");
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setMessages(mockMessages);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleToggleActive = (id: string, currentStatus: boolean) => {
-    // In a real app, this would be an API call
-    const updatedMessages = messages.map(message => 
-      message.id === id ? { ...message, active: !currentStatus } : message
-    );
-    setMessages(updatedMessages);
-    
-    toast.success(`Message ${currentStatus ? 'disabled' : 'enabled'} successfully`);
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateMessage.mutateAsync({
+        id,
+        active: !currentStatus
+      });
+      toast.success(`Message ${currentStatus ? 'disabled' : 'enabled'} successfully`);
+    } catch (error) {
+      console.error("Error toggling active status:", error);
+      toast.error("Failed to toggle active status");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
-    setMessages(messages.filter(message => message.id !== id));
-    toast.success("Message deleted successfully");
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMessage.mutateAsync(id);
+      toast.success("Message deleted successfully");
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast.error("Failed to delete message");
+    }
   };
 
   const handleSendNow = (message: MotivationalMessage) => {
@@ -124,9 +46,9 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
     toast.success(`Message "${message.content.substring(0, 30)}..." sent to all active members`);
   };
 
-  const filteredMessages = filter === "all" 
-    ? messages 
-    : messages.filter(message => message.category === filter);
+  const filteredMessages = filter === "all"
+    ? messages
+    : messages?.filter(message => message.category === filter);
 
   return (
     <Card>
@@ -137,37 +59,37 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
             <CardDescription>Schedule and manage motivational messages for members</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={filter === "all" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "all" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("all")}
             >
               All
             </Button>
-            <Button 
-              variant={filter === "motivation" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "motivation" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("motivation")}
             >
               Motivation
             </Button>
-            <Button 
-              variant={filter === "fitness" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "fitness" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("fitness")}
             >
               Fitness
             </Button>
-            <Button 
-              variant={filter === "nutrition" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "nutrition" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("nutrition")}
             >
               Nutrition
             </Button>
-            <Button 
-              variant={filter === "wellness" ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={filter === "wellness" ? "default" : "outline"}
+              size="sm"
               onClick={() => setFilter("wellness")}
             >
               Wellness
@@ -176,20 +98,20 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {isLoading ? (
           <div className="h-80 flex items-center justify-center">
             <div className="text-center">
               <div className="h-8 w-8 rounded-full border-4 border-t-primary mx-auto animate-spin"></div>
               <p className="mt-2 text-sm text-muted-foreground">Loading messages...</p>
             </div>
           </div>
-        ) : filteredMessages.length === 0 ? (
+        ) : filteredMessages?.length === 0 ? (
           <div className="text-center py-10">
             <Quote className="h-10 w-10 mx-auto text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">No messages found</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {filter === "all" 
-                ? "No motivational messages have been created yet." 
+              {filter === "all"
+                ? "No motivational messages have been created yet."
                 : `No messages found in the "${filter}" category.`}
             </p>
           </div>
@@ -207,11 +129,11 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMessages.map((message) => (
+                {filteredMessages?.map((message) => (
                   <TableRow key={message.id}>
                     <TableCell className="font-medium">
-                      {message.content.length > 50 
-                        ? `${message.content.substring(0, 50)}...` 
+                      {message.content.length > 50
+                        ? `${message.content.substring(0, 50)}...`
                         : message.content}
                     </TableCell>
                     <TableCell>{message.author || "Unknown"}</TableCell>
@@ -230,9 +152,9 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Switch 
-                        checked={message.active} 
-                        onCheckedChange={() => handleToggleActive(message.id, message.active)} 
+                      <Switch
+                        checked={message.active}
+                        onCheckedChange={() => handleToggleActive(message.id, message.active)}
                       />
                     </TableCell>
                     <TableCell className="text-right">
@@ -251,7 +173,7 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
                             <PlayCircle className="h-4 w-4 mr-2" />
                             Send Now
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDelete(message.id)}
                             className="text-destructive focus:text-destructive"
                           >

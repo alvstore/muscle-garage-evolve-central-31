@@ -423,6 +423,63 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          anonymous: boolean | null
+          branch_id: string | null
+          comments: string | null
+          created_at: string | null
+          id: string
+          member_id: string | null
+          member_name: string | null
+          rating: number
+          related_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          anonymous?: boolean | null
+          branch_id?: string | null
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          rating: number
+          related_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          anonymous?: boolean | null
+          branch_id?: string | null
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          rating?: number
+          related_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_settings: {
         Row: {
           created_at: string | null
@@ -508,6 +565,86 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "income_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          barcode: string | null
+          branch_id: string | null
+          category: string | null
+          cost_price: number
+          created_at: string | null
+          description: string | null
+          expiry_date: string | null
+          id: string
+          image: string | null
+          last_stock_update: string | null
+          location: string | null
+          manufacture_date: string | null
+          name: string
+          price: number
+          quantity: number
+          reorder_level: number
+          sku: string
+          status: string
+          supplier: string | null
+          supplier_contact: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          branch_id?: string | null
+          category?: string | null
+          cost_price: number
+          created_at?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          image?: string | null
+          last_stock_update?: string | null
+          location?: string | null
+          manufacture_date?: string | null
+          name: string
+          price: number
+          quantity?: number
+          reorder_level?: number
+          sku: string
+          status: string
+          supplier?: string | null
+          supplier_contact?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          branch_id?: string | null
+          category?: string | null
+          cost_price?: number
+          created_at?: string | null
+          description?: string | null
+          expiry_date?: string | null
+          id?: string
+          image?: string | null
+          last_stock_update?: string | null
+          location?: string | null
+          manufacture_date?: string | null
+          name?: string
+          price?: number
+          quantity?: number
+          reorder_level?: number
+          sku?: string
+          status?: string
+          supplier?: string | null
+          supplier_contact?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
@@ -1023,6 +1160,143 @@ export type Database = {
           },
         ]
       }
+      motivational_messages: {
+        Row: {
+          active: boolean | null
+          author: string | null
+          category: string
+          content: string
+          created_at: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          author?: string | null
+          category: string
+          content: string
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          author?: string | null
+          category?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          branch_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          discount: number | null
+          id: string
+          items: Json
+          member_id: string | null
+          notes: string | null
+          payment_method: string
+          payment_status: string
+          promo_code: string | null
+          promo_code_id: string | null
+          staff_id: string | null
+          status: string
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          discount?: number | null
+          id?: string
+          items?: Json
+          member_id?: string | null
+          notes?: string | null
+          payment_method: string
+          payment_status: string
+          promo_code?: string | null
+          promo_code_id?: string | null
+          staff_id?: string | null
+          status: string
+          subtotal: number
+          tax?: number
+          total: number
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          discount?: number | null
+          id?: string
+          items?: Json
+          member_id?: string | null
+          notes?: string | null
+          payment_method?: string
+          payment_status?: string
+          promo_code?: string | null
+          promo_code_id?: string | null
+          staff_id?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_gateway_settings: {
         Row: {
           allowed_ips: string[] | null
@@ -1226,6 +1500,157 @@ export type Database = {
           },
         ]
       }
+      promo_codes: {
+        Row: {
+          applicable_memberships: string[] | null
+          applicable_products: string[] | null
+          branch_id: string | null
+          code: string
+          created_at: string | null
+          created_by: string | null
+          current_usage: number | null
+          description: string | null
+          end_date: string
+          id: string
+          max_discount_amount: number | null
+          min_purchase_amount: number | null
+          start_date: string
+          status: string
+          type: string
+          updated_at: string | null
+          usage_limit: number | null
+          value: number
+        }
+        Insert: {
+          applicable_memberships?: string[] | null
+          applicable_products?: string[] | null
+          branch_id?: string | null
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          current_usage?: number | null
+          description?: string | null
+          end_date: string
+          id?: string
+          max_discount_amount?: number | null
+          min_purchase_amount?: number | null
+          start_date: string
+          status: string
+          type: string
+          updated_at?: string | null
+          usage_limit?: number | null
+          value: number
+        }
+        Update: {
+          applicable_memberships?: string[] | null
+          applicable_products?: string[] | null
+          branch_id?: string | null
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          current_usage?: number | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          max_discount_amount?: number | null
+          min_purchase_amount?: number | null
+          start_date?: string
+          status?: string
+          type?: string
+          updated_at?: string | null
+          usage_limit?: number | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string | null
+          id: string
+          promo_code: string | null
+          promo_code_id: string | null
+          referred_email: string
+          referred_id: string | null
+          referred_name: string | null
+          referrer_id: string | null
+          referrer_name: string
+          reward_amount: number | null
+          reward_description: string | null
+          reward_status: string | null
+          status: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          promo_code?: string | null
+          promo_code_id?: string | null
+          referred_email: string
+          referred_id?: string | null
+          referred_name?: string | null
+          referrer_id?: string | null
+          referrer_name: string
+          reward_amount?: number | null
+          reward_description?: string | null
+          reward_status?: string | null
+          status: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          promo_code?: string | null
+          promo_code_id?: string | null
+          referred_email?: string
+          referred_id?: string | null
+          referred_name?: string | null
+          referrer_id?: string | null
+          referrer_name?: string
+          reward_amount?: number | null
+          reward_description?: string | null
+          reward_status?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_attendance: {
         Row: {
           branch_id: string | null
@@ -1266,6 +1691,84 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_products: {
+        Row: {
+          barcode: string | null
+          branch_id: string | null
+          brand: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          features: string[] | null
+          id: string
+          images: string[] | null
+          inventory_id: string | null
+          name: string
+          price: number
+          sale_price: number | null
+          sku: string
+          status: string
+          stock: number
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          branch_id?: string | null
+          brand?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          features?: string[] | null
+          id?: string
+          images?: string[] | null
+          inventory_id?: string | null
+          name: string
+          price: number
+          sale_price?: number | null
+          sku: string
+          status: string
+          stock?: number
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          branch_id?: string | null
+          brand?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          features?: string[] | null
+          id?: string
+          images?: string[] | null
+          inventory_id?: string | null
+          name?: string
+          price?: number
+          sale_price?: number | null
+          sku?: string
+          status?: string
+          stock?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_products_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
             referencedColumns: ["id"]
           },
         ]
