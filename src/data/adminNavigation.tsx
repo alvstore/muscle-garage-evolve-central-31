@@ -19,7 +19,8 @@ import {
   DollarSign,
   ArrowDownUp,
   Wallet,
-  Calculator 
+  Calculator,
+  Archive
 } from "lucide-react";
 
 export const adminNavSections: NavSection[] = [
@@ -129,7 +130,7 @@ export const adminNavSections: NavSection[] = [
     name: "Fitness",
     items: [
       {
-        href: "/fitness/plans",
+        href: "/fitness-plans",
         label: "Fitness Plans Management",
         permission: "trainer_edit_fitness",
         icon: <Dumbbell className="h-5 w-5" />
@@ -272,6 +273,12 @@ export const adminNavSections: NavSection[] = [
         label: "Integration Settings",
         permission: "manage_settings",
         icon: <Settings className="h-5 w-5" />
+      },
+      {
+        href: "/system-backup",
+        label: "System Backup & Restore",
+        permission: "manage_settings",
+        icon: <Archive className="h-5 w-5" />
       }
     ]
   }

@@ -20,6 +20,7 @@ import InvoicePage from '@/pages/finance/InvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';
 import IncomeRecordsPage from '@/pages/finance/IncomeRecordsPage';
 import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
+import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 
 export const adminRoutes: RouteObject[] = [
@@ -83,6 +84,14 @@ export const adminRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ReportsPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/system-backup',
+    element: (
+      <PrivateRoute allowedRoles={['admin']}>
+        <SystemBackupPage />
       </PrivateRoute>
     )
   },

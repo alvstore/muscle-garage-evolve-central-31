@@ -23,6 +23,18 @@ export interface ReminderRule {
   updatedAt: string;
 }
 
+export interface MotivationalMessage {
+  id: string;
+  title?: string;
+  content: string;
+  author?: string;
+  category: 'motivation' | 'fitness' | 'nutrition' | 'wellness';
+  tags?: string[];
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Feedback {
   id: string;
   member_id: string;
@@ -38,3 +50,7 @@ export interface Feedback {
 }
 
 export type FeedbackType = Feedback['type'];
+
+// Add additional notification types
+export type ReminderTriggerType = 'membership-expiry' | 'class-reminder' | 'birthday' | 'custom';
+export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'push';

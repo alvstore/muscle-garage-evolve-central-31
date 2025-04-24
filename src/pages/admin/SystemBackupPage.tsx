@@ -7,16 +7,14 @@ import ExportDataSection from '@/components/admin/backup/ExportDataSection';
 import ImportDataSection from '@/components/admin/backup/ImportDataSection';
 import BackupLogs from '@/components/admin/backup/BackupLogs';
 import { usePermissions } from '@/hooks/use-permissions';
-import { Navigate } from 'react-router-dom';
 import { Archive, Download, Upload } from 'lucide-react';
 
 const SystemBackupPage = () => {
   const [activeTab, setActiveTab] = useState('export');
-  const { isSystemAdmin } = usePermissions();
+  const { can } = usePermissions();
 
-  if (!isSystemAdmin()) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // No longer redirecting, we're letting the PrivateRoute component handle this
+  // This way the user will see a proper unauthorized page if needed
 
   return (
     <Container>
