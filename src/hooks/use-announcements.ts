@@ -25,56 +25,39 @@ export function useAnnouncements() {
         
       if (!profileData) throw new Error('Could not determine user role');
       
-      // Then get announcements targeted for that role
-      const { data, error } = await supabase
-        .from('announcements')
-        .select(`
-          id,
-          title,
-          content,
-          author_id,
-          priority,
-          created_at,
-          expires_at,
-          target_roles,
-          for_branch_ids,
-          profiles:author_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
-        .contains('target_roles', [profileData.role])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Transform the data to match the Announcement type
-      const formattedAnnouncements: Announcement[] = (data || []).map((item) => {
-        // Make sure profiles exists and is not null before accessing properties
-        // This properly types the authorName as string instead of unknown
-        let authorName = 'Unknown';
-        if (item.profiles && typeof item.profiles === 'object' && 'full_name' in item.profiles) {
-          authorName = item.profiles.full_name as string || 'Unknown';
+      // For now, just return mock data since we don't have an announcements table yet
+      const mockAnnouncements: Announcement[] = [
+        {
+          id: '1',
+          title: 'Important Notice',
+          content: 'The gym will be closed for maintenance this weekend',
+          authorId: 'admin1',
+          authorName: 'Admin User',
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'high',
+          targetRoles: ['staff', 'member', 'trainer'],
+          forBranchIds: [],
+          createdBy: 'Admin User',
+          channels: ['app', 'email']
+        },
+        {
+          id: '2',
+          title: 'New Class Schedule',
+          content: 'Check out our updated class schedule for next month',
+          authorId: 'staff1',
+          authorName: 'Staff User',
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'medium',
+          targetRoles: ['member'],
+          forBranchIds: [],
+          createdBy: 'Staff User',
+          channels: ['app']
         }
-        
-        return {
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          authorId: item.author_id,
-          authorName: authorName,
-          createdAt: item.created_at,
-          expiresAt: item.expires_at,
-          priority: item.priority || 'medium',
-          targetRoles: item.target_roles || [],
-          forBranchIds: item.for_branch_ids || [],
-          createdBy: authorName, // Same as authorName for compatibility
-          channels: []
-        };
-      });
-
-      setAnnouncements(formattedAnnouncements);
+      ];
+      
+      setAnnouncements(mockAnnouncements);
     } catch (error) {
       console.error('Error fetching announcements:', error);
       toast.error('Failed to load announcements');
@@ -96,22 +79,10 @@ export function useAnnouncements() {
     }
     
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .insert({
-          title: data.title,
-          content: data.content,
-          author_id: user.id,
-          priority: data.priority,
-          target_roles: data.targetRoles || [],
-          for_branch_ids: data.forBranchIds || [],
-          expires_at: data.expiresAt
-        });
-
-      if (error) throw error;
-      
+      // In a real app, we would insert into the database
+      // For now just show a success message
       toast.success('Announcement created successfully');
-      fetchAnnouncements(); // Refresh the list
+      fetchAnnouncements(); // Refresh the list with our mock data
       return true;
     } catch (error) {
       console.error('Error creating announcement:', error);

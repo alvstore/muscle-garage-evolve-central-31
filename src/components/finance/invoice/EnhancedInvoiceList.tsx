@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { PlusIcon, FileTextIcon, CreditCardIcon, DownloadIcon, Printer } from "lucide-react";
 import { format } from "date-fns";
-import { Invoice, InvoiceStatus } from "@/types/finance";
+import { Invoice, InvoiceStatus, InvoiceItem } from "@/types/finance";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import InvoiceForm from "../InvoiceForm";
 import { InvoiceStatsOverview } from "./InvoiceStatsOverview";
 import { jsPDF } from "jspdf";
 import { formatCurrency } from "@/utils/stringUtils";
+import { DatabaseInvoiceItem } from "@/types/database";
 
 interface EnhancedInvoiceListProps {
   readonly?: boolean;
@@ -50,7 +52,7 @@ const EnhancedInvoiceList = ({
           .from('invoices')
           .select(`
             *,
-            members (full_name)
+            members(name)
           `);
 
         // Filter by branch
@@ -76,24 +78,36 @@ const EnhancedInvoiceList = ({
         if (error) throw error;
 
         if (data) {
-          const formattedInvoices: Invoice[] = data.map(item => ({
-            id: item.id,
-            status: item.status as InvoiceStatus,
-            issuedDate: item.issued_date,
-            dueDate: item.due_date,
-            paidDate: item.paid_date,
-            razorpayOrderId: item.razorpay_order_id,
-            razorpayPaymentId: item.razorpay_payment_id,
-            memberId: item.member_id,
-            memberName: item.members?.full_name || 'Unknown Member',
-            amount: item.amount,
-            items: item.items || [],
-            branchId: item.branch_id,
-            membershipPlanId: item.membership_plan_id,
-            description: item.description,
-            paymentMethod: item.payment_method,
-            notes: item.notes
-          }));
+          const formattedInvoices: Invoice[] = data.map(item => {
+            // Parse items from the database JSON format to InvoiceItem[]
+            const invoiceItems: InvoiceItem[] = Array.isArray(item.items) ? 
+              item.items.map((dbItem: any) => ({
+                id: dbItem.id || Math.random().toString(36).substring(2, 11),
+                name: dbItem.name || '',
+                quantity: dbItem.quantity || 0,
+                unitPrice: dbItem.unitPrice || 0,
+                description: dbItem.description || ''
+              })) : [];
+              
+            return {
+              id: item.id,
+              status: item.status as InvoiceStatus,
+              issuedDate: item.issued_date,
+              dueDate: item.due_date,
+              paidDate: item.paid_date,
+              razorpayOrderId: item.razorpay_order_id || '',
+              razorpayPaymentId: item.razorpay_payment_id || '',
+              memberId: item.member_id,
+              memberName: item.members?.name || 'Unknown Member',
+              amount: item.amount,
+              items: invoiceItems,
+              branchId: item.branch_id,
+              membershipPlanId: item.membership_plan_id,
+              description: item.description || '',
+              paymentMethod: item.payment_method || '',
+              notes: item.notes || ''
+            };
+          });
           
           setInvoices(formattedInvoices);
         }
@@ -145,6 +159,15 @@ const EnhancedInvoiceList = ({
 
   const handleFormSave = async (invoiceData: any) => {
     try {
+      // Convert invoice items to a format suitable for the database
+      const dbItems = invoiceData.items.map((item: InvoiceItem) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        description: item.description
+      }));
+      
       if (selectedInvoice) {
         // Update existing invoice
         const { error } = await supabase
@@ -153,7 +176,7 @@ const EnhancedInvoiceList = ({
             amount: invoiceData.amount,
             status: invoiceData.status,
             due_date: invoiceData.dueDate,
-            items: invoiceData.items,
+            items: dbItems,
             description: invoiceData.description,
             notes: invoiceData.notes,
             updated_at: new Date().toISOString()
@@ -170,7 +193,7 @@ const EnhancedInvoiceList = ({
           status: invoiceData.status as InvoiceStatus,
           issued_date: invoiceData.issuedDate,
           due_date: invoiceData.dueDate,
-          items: invoiceData.items,
+          items: dbItems,
           branch_id: currentBranch?.id,
           description: invoiceData.description,
           notes: invoiceData.notes,

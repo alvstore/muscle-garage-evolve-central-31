@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Invoice } from "@/types/finance";
+import { Invoice, InvoiceStatus, InvoiceItem } from "@/types/finance";
 import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
 import { useBranch } from "@/hooks/use-branch";
@@ -44,7 +45,7 @@ const InvoiceList = ({
       try {
         let query = supabase
           .from('invoices')
-          .select('*');
+          .select('*, members(name)');
         
         // Apply branch filter if branch is selected
         if (currentBranch?.id) {
@@ -64,23 +65,36 @@ const InvoiceList = ({
         
         if (data) {
           // Convert database format to our Invoice type
-          const formattedInvoices: Invoice[] = data.map(invoice => ({
-            id: invoice.id,
-            memberId: invoice.member_id,
-            memberName: invoice.member_name,
-            amount: invoice.amount,
-            status: invoice.status,
-            dueDate: invoice.due_date,
-            issuedDate: invoice.issued_date,
-            paidDate: invoice.paid_date,
-            paymentMethod: invoice.payment_method,
-            items: invoice.items || [],
-            notes: invoice.notes,
-            membershipPlanId: invoice.membership_plan_id,
-            branchId: invoice.branch_id,
-            razorpayOrderId: invoice.razorpay_order_id,
-            razorpayPaymentId: invoice.razorpay_payment_id,
-          }));
+          const formattedInvoices: Invoice[] = data.map(invoice => {
+            // Parse items from the database JSON format to InvoiceItem[]
+            const invoiceItems: InvoiceItem[] = Array.isArray(invoice.items) ? 
+              invoice.items.map((dbItem: any) => ({
+                id: dbItem.id || Math.random().toString(36).substring(2, 11),
+                name: dbItem.name || '',
+                quantity: dbItem.quantity || 0,
+                unitPrice: dbItem.unitPrice || 0,
+                description: dbItem.description || ''
+              })) : [];
+              
+            return {
+              id: invoice.id,
+              memberId: invoice.member_id,
+              memberName: invoice.members?.name || 'Unknown',
+              amount: invoice.amount,
+              status: invoice.status as InvoiceStatus,
+              dueDate: invoice.due_date,
+              issuedDate: invoice.issued_date,
+              paidDate: invoice.paid_date,
+              paymentMethod: invoice.payment_method || '',
+              items: invoiceItems,
+              notes: invoice.notes || '',
+              membershipPlanId: invoice.membership_plan_id,
+              branchId: invoice.branch_id,
+              razorpayOrderId: invoice.razorpay_order_id || '',
+              razorpayPaymentId: invoice.razorpay_payment_id || '',
+              description: invoice.description || ''
+            };
+          });
           
           setInvoices(formattedInvoices);
         }
@@ -173,18 +187,26 @@ const InvoiceList = ({
 
   const handleSaveInvoice = async (invoice: Invoice) => {
     try {
+      // Convert invoice items to a format suitable for the database
+      const dbItems = invoice.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        description: item.description || ''
+      }));
+      
       if (editingInvoice) {
         // Update existing invoice
         const { error } = await supabase
           .from('invoices')
           .update({
             member_id: invoice.memberId,
-            member_name: invoice.memberName,
             amount: invoice.amount,
             status: invoice.status,
             due_date: invoice.dueDate,
             issued_date: invoice.issuedDate,
-            items: invoice.items,
+            items: dbItems,
             notes: invoice.notes,
             membership_plan_id: invoice.membershipPlanId,
           })
@@ -201,12 +223,11 @@ const InvoiceList = ({
           .from('invoices')
           .insert({
             member_id: invoice.memberId,
-            member_name: invoice.memberName,
             amount: invoice.amount,
             status: invoice.status,
             due_date: invoice.dueDate,
             issued_date: invoice.issuedDate,
-            items: invoice.items,
+            items: dbItems,
             notes: invoice.notes,
             membership_plan_id: invoice.membershipPlanId,
             branch_id: currentBranch?.id,
