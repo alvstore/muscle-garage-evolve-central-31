@@ -12,9 +12,11 @@ import { formatCurrency } from "@/utils/stringUtils";
 interface TransactionListProps {
   filterStartDate?: Date;
   filterEndDate?: Date;
+  transactionType?: 'income' | 'expense';
+  webhookOnly?: boolean;
 }
 
-const TransactionList = ({ filterStartDate, filterEndDate }: TransactionListProps) => {
+const TransactionList = ({ filterStartDate, filterEndDate, transactionType, webhookOnly }: TransactionListProps) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { currentBranch } = useBranch();
@@ -41,7 +43,7 @@ const TransactionList = ({ filterStartDate, filterEndDate }: TransactionListProp
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentBranch, filterStartDate, filterEndDate]);
+  }, [currentBranch, filterStartDate, filterEndDate, transactionType, webhookOnly]);
 
   const fetchTransactions = async () => {
     try {
@@ -56,6 +58,16 @@ const TransactionList = ({ filterStartDate, filterEndDate }: TransactionListProp
           recorder:profiles(full_name)
         `)
         .eq('branch_id', currentBranch?.id || '');
+      
+      // Filter by transaction type if specified
+      if (transactionType) {
+        query = query.eq('type', transactionType);
+      }
+      
+      // Filter by webhook only if specified
+      if (webhookOnly) {
+        query = query.not('payment_method', 'is', null);
+      }
       
       // Apply date filters if provided
       if (filterStartDate) {
@@ -93,7 +105,15 @@ const TransactionList = ({ filterStartDate, filterEndDate }: TransactionListProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Transactions</CardTitle>
+        <CardTitle>
+          {transactionType === 'income' 
+            ? 'Income Transactions' 
+            : transactionType === 'expense' 
+              ? 'Expense Transactions' 
+              : webhookOnly 
+                ? 'Webhook Transactions'
+                : 'Recent Transactions'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

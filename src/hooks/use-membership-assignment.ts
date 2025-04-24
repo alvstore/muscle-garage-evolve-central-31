@@ -45,7 +45,7 @@ export const useMembershipAssignment = () => {
           amount_paid: data.amountPaid || 0,
           payment_status: data.paymentStatus,
           branch_id: currentBranch?.id,
-          trainer_id: data.trainerId
+          trainer_id: data.trainerId || null
         })
         .select()
         .single();
@@ -60,7 +60,7 @@ export const useMembershipAssignment = () => {
           membership_status: 'active',
           membership_start_date: data.startDate.toISOString(),
           membership_end_date: data.endDate.toISOString(),
-          trainer_id: data.trainerId
+          trainer_id: data.trainerId || null
         })
         .eq('id', data.memberId);
 

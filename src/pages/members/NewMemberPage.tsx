@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,21 +13,53 @@ import { Member } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import MemberBodyMeasurements from "@/components/fitness/MemberBodyMeasurements";
 import { BodyMeasurement } from "@/types/measurements";
+import { supabase } from "@/services/supabaseClient";
+import { useBranch } from "@/hooks/use-branch";
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const [loading, setLoading] = useState(false);
+  const [memberships, setMemberships] = useState<any[]>([]);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     dateOfBirth: "",
     goal: "",
-    membershipId: "gold-6m",
+    membershipId: "",
     membershipStatus: "active",
   });
   const [initialMeasurements, setInitialMeasurements] = useState<Partial<BodyMeasurement> | null>(null);
+
+  useEffect(() => {
+    const fetchMemberships = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('memberships')
+          .select('*')
+          .eq('is_active', true)
+          .eq('branch_id', currentBranch?.id || '');
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setMemberships(data);
+          setFormData(prev => ({
+            ...prev,
+            membershipId: data[0].id
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching memberships:", err);
+        toast.error("Failed to load membership plans");
+      }
+    };
+    
+    fetchMemberships();
+  }, [currentBranch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -42,38 +75,85 @@ const NewMemberPage = () => {
     toast.success("Initial measurements saved. They will be recorded when the member is created.");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call to create a new member
-    setTimeout(() => {
-      const newMember: Member = {
-        id: `member-${Date.now()}`,
-        email: formData.email,
-        name: formData.name,
-        role: "member",
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        goal: formData.goal,
-        trainerId: "trainer-123", // Default trainer
-        membershipId: formData.membershipId,
-        membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
-        membershipStartDate: new Date().toISOString(),
-        membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
-        status: "active"
-      };
+    try {
+      // 1. Create member record in the database
+      const { data: memberData, error: memberError } = await supabase
+        .from('members')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          date_of_birth: formData.dateOfBirth || null,
+          goal: formData.goal,
+          membership_id: formData.membershipId,
+          membership_status: formData.membershipStatus,
+          status: 'active',
+          branch_id: currentBranch?.id
+        })
+        .select()
+        .single();
+        
+      if (memberError) throw memberError;
       
-      // If there are initial measurements, save them too
-      if (initialMeasurements) {
-        console.log("Saving initial measurements:", initialMeasurements);
-        // In a real app, this would be an API call to save the measurements
+      console.log("Member created:", memberData);
+      
+      // 2. If there are initial measurements, save them too
+      if (initialMeasurements && memberData.id) {
+        const { error: measurementError } = await supabase
+          .from('body_measurements')
+          .insert({
+            ...initialMeasurements,
+            member_id: memberData.id,
+            recorded_by: user?.id,
+            branch_id: currentBranch?.id
+          });
+          
+        if (measurementError) {
+          console.error("Error saving measurements:", measurementError);
+          toast.error("Member created but failed to save measurements");
+        }
       }
       
-      setLoading(false);
+      // 3. Create membership assignment
+      if (formData.membershipId) {
+        const selectedMembership = memberships.find(m => m.id === formData.membershipId);
+        if (selectedMembership) {
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + selectedMembership.duration_days);
+          
+          const { error: assignmentError } = await supabase
+            .from('member_memberships')
+            .insert({
+              member_id: memberData.id,
+              membership_id: formData.membershipId,
+              start_date: startDate.toISOString().split('T')[0],
+              end_date: endDate.toISOString().split('T')[0],
+              total_amount: selectedMembership.price,
+              amount_paid: 0,
+              payment_status: 'pending',
+              branch_id: currentBranch?.id
+            });
+            
+          if (assignmentError) {
+            console.error("Error assigning membership:", assignmentError);
+            toast.error("Member created but failed to assign membership");
+          }
+        }
+      }
+      
       toast.success("Member created successfully");
-      navigate(`/members/${newMember.id}`);
-    }, 1500);
+      navigate(`/members/${memberData.id}`);
+    } catch (error: any) {
+      console.error("Error creating member:", error);
+      toast.error(`Failed to create member: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -170,10 +250,15 @@ const NewMemberPage = () => {
                           <SelectValue placeholder="Select membership type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="platinum-12m">Platinum (12 Months)</SelectItem>
-                          <SelectItem value="gold-6m">Gold (6 Months)</SelectItem>
-                          <SelectItem value="silver-3m">Silver (3 Months)</SelectItem>
-                          <SelectItem value="basic-1m">Basic (1 Month)</SelectItem>
+                          {memberships.length > 0 ? (
+                            memberships.map(membership => (
+                              <SelectItem key={membership.id} value={membership.id}>
+                                {membership.name} ({formatCurrency(membership.price)})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-memberships" disabled>No membership plans available</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -222,6 +307,14 @@ const NewMemberPage = () => {
       </div>
     </Container>
   );
+};
+
+// Helper function to format currency
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR'
+  }).format(amount);
 };
 
 export default NewMemberPage;
