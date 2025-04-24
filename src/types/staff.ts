@@ -1,12 +1,17 @@
 
 export interface StaffMember {
   id: string;
-  email: string;
   name: string;
+  email: string;
+  phone: string;
   role: 'staff';
-  phone?: string;
-  position?: string;
-  department?: string;
+  position: string;
+  department: string;
+  gender?: 'male' | 'female' | 'other';
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   branchId?: string;
   status: 'active' | 'inactive';
   avatar?: string;
@@ -17,8 +22,13 @@ export interface StaffMember {
 export interface StaffFormData {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
   position: string;
   department: string;
+  gender: 'male' | 'female' | 'other';
+  address: string;
+  city: string;
+  state: string;
+  country: string;
   branchId?: string;
 }
