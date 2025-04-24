@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +9,7 @@ import { MoreVertical, Pencil, Trash2, Quote, PlayCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { MotivationalMessage } from "@/types/notification";
 import { useMotivationalMessages } from "@/hooks/use-motivational-messages";
-import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 interface MotivationalMessagesListProps {
   onEdit: (message: MotivationalMessage) => void;
