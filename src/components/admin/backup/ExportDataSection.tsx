@@ -16,7 +16,7 @@ interface ExportDataSectionProps {
 const validTables = [
   "members",
   "classes",
-  "profiles", // Using profiles instead of trainers_view
+  "profiles",
   "announcements",
   "reminder_rules",
   "motivational_messages",
@@ -93,8 +93,8 @@ const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
         timestamp: new Date().toISOString(),
         modules: selectedModules,
         success: true,
-        total_records: Object.values(allData).flat().length,
-        success_count: Object.values(allData).flat().length
+        total_records: Object.values(allData).reduce((sum, arr) => sum + arr.length, 0),
+        success_count: Object.values(allData).reduce((sum, arr) => sum + arr.length, 0)
       };
 
       const { error: logError } = await supabase

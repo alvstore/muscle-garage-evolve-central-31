@@ -1,27 +1,25 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { MotivationalMessage } from '@/types/motivation';
+import { supabase } from '@/services/supabaseClient';
+import { MotivationalMessage } from '@/types/notification';
 import { toast } from 'sonner';
 
 export const useMotivationalMessages = () => {
   const [messages, setMessages] = useState<MotivationalMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('motivational_messages')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setMessages(data || []);
-    } catch (error: any) {
+      
+      if (error) throw error;
+      
+      setMessages(data as MotivationalMessage[]);
+    } catch (error) {
       console.error('Error fetching motivational messages:', error);
       toast.error('Failed to load motivational messages');
     } finally {
@@ -31,90 +29,62 @@ export const useMotivationalMessages = () => {
 
   const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      setIsLoading(true);
-      // Ensure all required fields are present
-      const newMessage = {
-        content: message.content,
-        title: message.title,
-        category: message.category,
-        author: message.author || 'Unknown',
-        tags: message.tags || [],
-        active: message.active !== undefined ? message.active : true
-      };
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('motivational_messages')
-        .insert([newMessage])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      setMessages(prev => [data[0], ...prev]);
-      toast.success('Message added successfully');
+        .insert([message]);
+      
+      if (error) throw error;
+      
+      toast.success('Message created successfully');
+      await fetchMessages();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding motivational message:', error);
-      toast.error('Failed to add message');
+      toast.error('Failed to create message');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const updateMessage = async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>>) => {
     try {
-      setIsLoading(true);
-      
       const { error } = await supabase
         .from('motivational_messages')
         .update(updates)
         .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setMessages(prev => prev.map(msg => msg.id === id ? { ...msg, ...updates } : msg));
+      
+      if (error) throw error;
+      
       toast.success('Message updated successfully');
+      await fetchMessages();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating motivational message:', error);
       toast.error('Failed to update message');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const deleteMessage = async (id: string) => {
     try {
-      setIsLoading(true);
-      
       const { error } = await supabase
         .from('motivational_messages')
         .delete()
         .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setMessages(prev => prev.filter(msg => msg.id !== id));
+      
+      if (error) throw error;
+      
       toast.success('Message deleted successfully');
+      await fetchMessages();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting motivational message:', error);
       toast.error('Failed to delete message');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const toggleActive = async (id: string, active: boolean) => {
-    return updateMessage(id, { active });
+  const toggleActive = async (id: string, currentStatus: boolean) => {
+    return await updateMessage(id, { active: !currentStatus });
   };
 
   useEffect(() => {

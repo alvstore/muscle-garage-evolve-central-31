@@ -21,7 +21,7 @@ interface FeedbackFormProps {
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title is required' }),
-  type: z.enum(['general', 'trainer', 'class', 'fitness-plan'] as const),
+  type: z.enum(['general', 'trainer', 'class', 'facility', 'service'] as const),
   rating: z.number().min(1).max(5),
   comments: z.string().optional(),
   anonymous: z.boolean().default(false),
@@ -43,8 +43,8 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, on
     onSubmit({
       ...data,
       // Convert to Feedback type
-      member_id: initialValues?.member_id || '',
-      created_at: new Date().toISOString(),
+      memberId: initialValues?.memberId || '',
+      createdAt: new Date().toISOString(),
     });
   };
 
@@ -89,7 +89,8 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, on
                       <SelectItem value="general">General</SelectItem>
                       <SelectItem value="trainer">Trainer</SelectItem>
                       <SelectItem value="class">Class</SelectItem>
-                      <SelectItem value="fitness-plan">Fitness Plan</SelectItem>
+                      <SelectItem value="facility">Facility</SelectItem>
+                      <SelectItem value="service">Service</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>

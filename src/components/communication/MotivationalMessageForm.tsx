@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -32,7 +33,7 @@ interface MotivationalMessageFormProps {
 
 const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessageFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createMessage, updateMessage } = useMotivationalMessages();
+  const { addMessage, updateMessage } = useMotivationalMessages();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,12 +61,9 @@ const MotivationalMessageForm = ({ editMessage, onComplete }: MotivationalMessag
       };
       
       if (editMessage) {
-        await updateMessage.mutateAsync({
-          id: editMessage.id,
-          ...messageData
-        });
+        await updateMessage(editMessage.id, messageData);
       } else {
-        await createMessage.mutateAsync(messageData);
+        await addMessage(messageData);
       }
       
       form.reset();

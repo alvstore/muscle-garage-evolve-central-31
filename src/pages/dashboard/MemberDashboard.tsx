@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Card,
@@ -71,26 +72,22 @@ const MemberDashboard = () => {
       title: 'Gym Holiday Hours',
       content: 'The gym will be closed on Christmas Day.',
       createdAt: new Date().toISOString(),
-      createdBy: 'Admin',
       authorId: 'admin1',
       authorName: 'Admin',
       targetRoles: ['member'],
       channels: ['in-app'],
-      priority: 'medium',
-      forRoles: ['member']
+      priority: 'medium'
     },
     {
       id: '2',
       title: 'New Equipment',
       content: 'We have added new treadmills to the cardio section.',
       createdAt: new Date().toISOString(),
-      createdBy: 'Admin',
       authorId: 'admin1',
       authorName: 'Admin',
       targetRoles: ['member'],
       channels: ['in-app'],
-      priority: 'low',
-      forRoles: ['member']
+      priority: 'low'
     }
   ];
 

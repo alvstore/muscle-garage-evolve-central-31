@@ -37,7 +37,7 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
 
   const filteredFeedback = feedbackItems.filter(feedback => {
     if (activeTab === 'all') return true;
-    return feedback.type === activeTab;
+    return feedback.type === activeTab as FeedbackType;
   });
 
   const getInitials = (name: string = '') => {
@@ -56,8 +56,10 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
         return <ThumbsUp className="h-4 w-4 text-green-500" />;
       case 'class':
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'fitness-plan':
+      case 'facility':
         return <ThumbsDown className="h-4 w-4 text-red-500" />;
+      case 'service':
+        return <HelpCircle className="h-4 w-4 text-purple-500" />;
       default:
         return <HelpCircle className="h-4 w-4 text-gray-500" />;
     }
@@ -77,7 +79,8 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="trainer">Trainers</TabsTrigger>
             <TabsTrigger value="class">Classes</TabsTrigger>
-            <TabsTrigger value="fitness-plan">Fitness</TabsTrigger>
+            <TabsTrigger value="facility">Facility</TabsTrigger>
+            <TabsTrigger value="service">Service</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -105,20 +108,20 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
                         <AvatarFallback>
                           {feedback.anonymous 
                             ? '?' 
-                            : getInitials(feedback.member_name || '')}
+                            : getInitials(feedback.memberName || '')}
                         </AvatarFallback>
                       </Avatar>
                       <span>
                         {feedback.anonymous
                           ? 'Anonymous User'
-                          : feedback.member_name || 'Unknown'}
+                          : feedback.memberName || 'Unknown'}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <div className="flex items-center space-x-1">
-                        {getFeedbackIcon(feedback.type as FeedbackType)}
+                        {getFeedbackIcon(feedback.type)}
                         <span className="font-medium">{feedback.title}</span>
                       </div>
                       {feedback.comments && (
@@ -143,7 +146,7 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false }) => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {format(parseISO(feedback.created_at), 'MMM dd, yyyy')}
+                    {format(parseISO(feedback.createdAt), 'MMM dd, yyyy')}
                   </TableCell>
                 </TableRow>
               ))}

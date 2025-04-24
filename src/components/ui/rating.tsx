@@ -1,79 +1,53 @@
 
-import React from 'react';
-import { Star } from 'lucide-react';
+import React from "react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RatingProps {
-  count?: number;
   value: number;
   onChange?: (value: number) => void;
+  count?: number;
   size?: "sm" | "md" | "lg";
-  disabled?: boolean;
+  readonly?: boolean;
+  className?: string;
 }
 
-export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
-  ({ count = 5, value = 0, onChange, size = "md", disabled = false }, ref) => {
-    const [hoverValue, setHoverValue] = React.useState<number | null>(null);
+export function Rating({
+  value,
+  onChange,
+  count = 5,
+  size = "md",
+  readonly = false,
+  className,
+}: RatingProps) {
+  const starSizes = {
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
+  };
 
-    const getSizeClass = () => {
-      switch (size) {
-        case "sm": return "h-4 w-4";
-        case "lg": return "h-6 w-6";
-        default: return "h-5 w-5";
-      }
-    };
+  const handleClick = (index: number) => {
+    if (!readonly && onChange) {
+      onChange(index + 1);
+    }
+  };
 
-    const handleMouseOver = (index: number) => {
-      if (!disabled) {
-        setHoverValue(index);
-      }
-    };
-
-    const handleMouseLeave = () => {
-      setHoverValue(null);
-    };
-
-    const handleClick = (index: number) => {
-      if (!disabled && onChange) {
-        onChange(index);
-      }
-    };
-
-    const sizeClass = getSizeClass();
-
-    return (
-      <div 
-        ref={ref}
-        className="flex items-center" 
-        onMouseLeave={handleMouseLeave}
-      >
-        {[...Array(count)].map((_, index) => {
-          const ratingValue = index + 1;
-          const isActive = (hoverValue || value) >= ratingValue;
-          
-          return (
-            <div
-              key={index}
-              className={cn(
-                "cursor-pointer mr-1",
-                disabled && "cursor-default opacity-70"
-              )}
-              onMouseOver={() => handleMouseOver(ratingValue)}
-              onClick={() => handleClick(ratingValue)}
-            >
-              <Star 
-                className={cn(
-                  sizeClass,
-                  "transition-colors",
-                  isActive ? "fill-yellow-400 text-yellow-400" : "fill-transparent text-gray-300"
-                )}
-              />
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-);
-
-Rating.displayName = 'Rating';
+  return (
+    <div className={cn("flex items-center", className)}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Star
+          key={index}
+          className={cn(
+            starSizes[size],
+            "cursor-pointer transition-all",
+            index < value
+              ? "text-yellow-400 fill-yellow-400"
+              : "text-gray-300",
+            !readonly && "hover:text-yellow-400"
+          )}
+          onClick={() => handleClick(index)}
+        />
+      ))}
+    </div>
+  );
+}

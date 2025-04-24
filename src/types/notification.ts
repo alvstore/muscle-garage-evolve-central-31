@@ -7,7 +7,7 @@ export type ReminderTriggerType =
   'class_reminder' | 
   'payment_due' | 
   'attendance_missed' |
-  'membership_renewal' |
+  'membership_renewal' | 
   'goal_achieved' |
   'follow_up';
 
@@ -48,14 +48,14 @@ export interface MotivationalMessage {
   title: string;
   content: string;
   author?: string;
-  category: string;
+  category: 'motivation' | 'fitness' | 'nutrition' | 'wellness';
   tags?: string[];
   active: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
-export type FeedbackType = 'general' | 'trainer' | 'class' | 'equipment' | 'facility' | 'service';
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service';
 
 export interface Feedback {
   id: string;
@@ -73,7 +73,7 @@ export interface Feedback {
 
 export interface BackupLogEntry {
   id: string;
-  action: string; // 'export' | 'import'
+  action: string;
   user_id?: string;
   user_name?: string;
   timestamp: string;

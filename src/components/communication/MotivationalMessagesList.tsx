@@ -16,15 +16,12 @@ interface MotivationalMessagesListProps {
 }
 
 const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => {
-  const { messages, isLoading, updateMessage, deleteMessage } = useMotivationalMessages();
+  const { messages, isLoading, toggleActive, deleteMessage } = useMotivationalMessages();
   const [filter, setFilter] = useState<string>("all");
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await updateMessage.mutateAsync({
-        id,
-        active: !currentStatus
-      });
+      await toggleActive(id, currentStatus);
       toast.success(`Message ${currentStatus ? 'disabled' : 'enabled'} successfully`);
     } catch (error) {
       console.error("Error toggling active status:", error);
@@ -34,7 +31,7 @@ const MotivationalMessagesList = ({ onEdit }: MotivationalMessagesListProps) => 
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteMessage.mutateAsync(id);
+      await deleteMessage(id);
       toast.success("Message deleted successfully");
     } catch (error) {
       console.error("Error deleting message:", error);
