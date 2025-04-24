@@ -22,7 +22,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
-import { invoiceService } from '@/services/invoiceService';
+import { supabase } from '@/services/supabaseClient';
+import { formatCurrency } from '@/utils/stringUtils';
 
 interface PaymentRecordDialogProps {
   isOpen: boolean;
@@ -60,34 +61,79 @@ const PaymentRecordDialog = ({
     setIsLoading(true);
     
     try {
-      const success = await invoiceService.recordPayment(
-        invoice.id,
-        amount,
-        paymentMethod,
-        user?.id || "",
-        currentBranch?.id || ""
-      );
+      // Calculate remaining amount
+      const remainingAmount = invoice.amount - amount;
+      let newStatus: 'paid' | 'partial' | 'pending' = 'pending';
       
-      if (success) {
-        toast.success(`Payment of ${formatCurrency(amount)} recorded successfully`);
-        onPaymentRecorded();
-        onClose();
-      } else {
-        throw new Error("Failed to record payment");
+      if (remainingAmount <= 0) {
+        newStatus = 'paid';
+      } else if (amount > 0) {
+        newStatus = 'partial';
       }
+      
+      // 1. Update invoice
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          status: newStatus,
+          paid_date: newStatus === 'paid' ? new Date().toISOString() : null,
+          payment_method: paymentMethod,
+        })
+        .eq('id', invoice.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+      
+      // 2. Record payment
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          member_id: invoice.memberId,
+          membership_id: invoice.membershipPlanId,
+          amount: amount,
+          payment_date: new Date().toISOString(),
+          branch_id: currentBranch?.id,
+          staff_id: user?.id,
+          status: 'completed',
+          payment_method: paymentMethod,
+          notes: `Payment for invoice ${invoice.id}`,
+          transaction_id: `pay-${Date.now()}`,
+          invoice_id: invoice.id
+        });
+
+      if (paymentError) {
+        throw paymentError;
+      }
+
+      // 3. Record transaction for finance tracking
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          type: 'income',
+          amount: amount,
+          transaction_date: new Date().toISOString(),
+          category_id: null, // Use appropriate category ID if available
+          description: `Payment received for invoice ${invoice.id}`,
+          reference_id: invoice.id,
+          branch_id: currentBranch?.id,
+          recorded_by: user?.id,
+          payment_method: paymentMethod,
+        });
+
+      if (transactionError) {
+        throw transactionError;
+      }
+
+      toast.success(`Payment of ${formatCurrency(amount)} recorded successfully`);
+      onPaymentRecorded();
+      onClose();
     } catch (error) {
       console.error("Error recording payment:", error);
       toast.error("Failed to record payment");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
   };
 
   const handlePartialPaymentToggle = (value: boolean) => {
@@ -111,7 +157,7 @@ const PaymentRecordDialog = ({
             <div className="space-y-2">
               <div className="flex justify-between mb-4">
                 <div>
-                  <p className="text-sm font-medium">Invoice #{invoice.id}</p>
+                  <p className="text-sm font-medium">Invoice #{invoice.id?.substring(0, 8)}...</p>
                   <p className="text-sm text-muted-foreground">
                     {invoice.memberName} - {format(new Date(invoice.issuedDate), "MMM d, yyyy")}
                   </p>

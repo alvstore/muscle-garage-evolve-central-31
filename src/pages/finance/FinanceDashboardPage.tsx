@@ -12,78 +12,173 @@ import RevenueChart from "@/components/dashboard/RevenueChart";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
-import { useSupabaseData } from '@/hooks/use-supabase-data';
+import { DatePicker } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
+import { supabase } from '@/services/supabaseClient';
 import { useBranch } from '@/hooks/use-branch';
 import { toast } from 'sonner';
-import { format } from "date-fns";
+import { format, subDays, startOfWeek, startOfMonth, startOfYear } from "date-fns";
 
 const FinanceDashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("month");
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' | 'custom'>('month');
+  const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(new Date()));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [financialSummary, setFinancialSummary] = useState<any>({
     today: { income: 0, expense: 0, profit: 0 },
     week: { income: 0, expense: 0, profit: 0 },
     month: { income: 0, expense: 0, profit: 0 },
-    year: { income: 0, expense: 0, profit: 0 }
+    year: { income: 0, expense: 0, profit: 0 },
+    custom: { income: 0, expense: 0, profit: 0 }
   });
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [incomeBreakdown, setIncomeBreakdown] = useState<any[]>([]);
   const [expenseBreakdown, setExpenseBreakdown] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<any[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<any[]>([]);
   
   const { currentBranch } = useBranch();
-  
-  // Fetch transactions from Supabase
-  const { data: transactions, loading: loadingTransactions, refresh } = useSupabaseData('transactions', {
-    columns: '*, category_id',
-    branchId: currentBranch?.id
-  });
-
-  const { data: incomeCategories } = useSupabaseData('income_categories', {
-    columns: '*',
-    branchId: currentBranch?.id
-  });
-
-  const { data: expenseCategories } = useSupabaseData('expense_categories', {
-    columns: '*',
-    branchId: currentBranch?.id
-  });
 
   useEffect(() => {
-    if (loadingTransactions) {
-      setIsLoading(true);
-    } else {
+    fetchCategories();
+    fetchTransactions();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('finance_dashboard_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'transactions',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentBranch]);
+
+  useEffect(() => {
+    if (transactions.length > 0) {
       processTransactionData();
       setIsLoading(false);
     }
-  }, [transactions, timeRange, loadingTransactions, currentBranch]);
+  }, [transactions, dateRange, startDate, endDate]);
+
+  const fetchCategories = async () => {
+    try {
+      // Fetch income categories
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('income_categories')
+        .select('id, name')
+        .eq('branch_id', currentBranch?.id || '');
+        
+      if (incomeError) throw incomeError;
+      
+      setIncomeCategories(incomeData || []);
+      
+      // Fetch expense categories
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_categories')
+        .select('id, name')
+        .eq('branch_id', currentBranch?.id || '');
+        
+      if (expenseError) throw expenseError;
+      
+      setExpenseCategories(expenseData || []);
+      
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Failed to fetch categories');
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('branch_id', currentBranch?.id || '');
+        
+      if (error) throw error;
+      
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    }
+  };
+
+  const handleDateRangeChange = (value: string) => {
+    const today = new Date();
+    
+    switch (value) {
+      case 'today':
+        setStartDate(new Date(today.setHours(0, 0, 0, 0)));
+        setEndDate(new Date());
+        break;
+      case 'week':
+        setStartDate(startOfWeek(today));
+        setEndDate(new Date());
+        break;
+      case 'month':
+        setStartDate(startOfMonth(today));
+        setEndDate(new Date());
+        break;
+      case 'year':
+        setStartDate(startOfYear(today));
+        setEndDate(new Date());
+        break;
+      case 'custom':
+        // Keep current dates when switching to custom
+        break;
+    }
+    
+    setDateRange(value as any);
+  };
 
   const processTransactionData = () => {
-    if (!transactions) return;
+    if (!transactions || transactions.length === 0) return;
 
     // Get today's date and calculate date ranges
     const today = new Date();
     const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start of week (Sunday)
-    startOfWeek.setHours(0, 0, 0, 0);
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-
+    const weekStart = startOfWeek(new Date());
+    const monthStart = startOfMonth(new Date());
+    const yearStart = startOfYear(new Date());
+    
     // Filter transactions by date range
-    const todayTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfToday);
-    const weekTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfWeek);
-    const monthTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfMonth);
-    const yearTransactions = transactions.filter((t: any) => new Date(t.transaction_date) >= startOfYear);
+    const todayTransactions = transactions.filter((t) => new Date(t.transaction_date) >= startOfToday);
+    const weekTransactions = transactions.filter((t) => new Date(t.transaction_date) >= weekStart);
+    const monthTransactions = transactions.filter((t) => new Date(t.transaction_date) >= monthStart);
+    const yearTransactions = transactions.filter((t) => new Date(t.transaction_date) >= yearStart);
+    
+    // Filter by custom date range
+    const customTransactions = startDate && endDate 
+      ? transactions.filter((t) => {
+          const date = new Date(t.transaction_date);
+          return date >= startDate && date <= endDate;
+        })
+      : [];
 
     // Calculate financial summary
     const calculateSummary = (transactionList: any[]) => {
       const income = transactionList
-        .filter((t: any) => t.type === 'income')
-        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       const expense = transactionList
-        .filter((t: any) => t.type === 'expense')
-        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       return {
         income,
@@ -97,7 +192,8 @@ const FinanceDashboardPage = () => {
       today: calculateSummary(todayTransactions),
       week: calculateSummary(weekTransactions),
       month: calculateSummary(monthTransactions),
-      year: calculateSummary(yearTransactions)
+      year: calculateSummary(yearTransactions),
+      custom: calculateSummary(customTransactions)
     });
 
     // Process revenue data for chart
@@ -114,8 +210,14 @@ const FinanceDashboardPage = () => {
       };
     });
     
+    // Use the appropriate transactions based on date range
+    const transactionsToProcess = dateRange === 'custom' ? customTransactions :
+                                 dateRange === 'today' ? todayTransactions :
+                                 dateRange === 'week' ? weekTransactions :
+                                 dateRange === 'year' ? yearTransactions : monthTransactions;
+    
     // Group transactions by month
-    yearTransactions.forEach((transaction: any) => {
+    transactionsToProcess.forEach((transaction) => {
       const transactionDate = new Date(transaction.transaction_date);
       const monthName = monthNames[transactionDate.getMonth()];
       
@@ -140,15 +242,15 @@ const FinanceDashboardPage = () => {
     setRevenueData(chartData);
 
     // Process income and expense breakdowns
-    if (incomeCategories && expenseCategories) {
+    if (incomeCategories.length > 0 && expenseCategories.length > 0) {
       // Income breakdown
       const incomeByCategoryMap = new Map();
-      const totalIncome = monthTransactions
-        .filter((t: any) => t.type === 'income')
-        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      const totalIncome = transactionsToProcess
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       // Initialize with categories
-      incomeCategories.forEach((cat: any) => {
+      incomeCategories.forEach((cat) => {
         incomeByCategoryMap.set(cat.id, { 
           name: cat.name, 
           value: 0, 
@@ -164,9 +266,9 @@ const FinanceDashboardPage = () => {
       });
       
       // Aggregate income by category
-      monthTransactions
-        .filter((t: any) => t.type === 'income')
-        .forEach((transaction: any) => {
+      transactionsToProcess
+        .filter((t) => t.type === 'income')
+        .forEach((transaction) => {
           if (transaction.category_id && incomeByCategoryMap.has(transaction.category_id)) {
             const category = incomeByCategoryMap.get(transaction.category_id);
             category.value += Number(transaction.amount);
@@ -178,7 +280,7 @@ const FinanceDashboardPage = () => {
       
       // Calculate percentages
       incomeByCategoryMap.forEach((category) => {
-        category.value = typeof totalIncome === 'number' && totalIncome > 0 
+        category.value = totalIncome > 0 
           ? Math.round((category.value / totalIncome) * 100) 
           : 0;
       });
@@ -191,12 +293,12 @@ const FinanceDashboardPage = () => {
       
       // Expense breakdown
       const expenseByCategoryMap = new Map();
-      const totalExpense = monthTransactions
-        .filter((t: any) => t.type === 'expense')
-        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      const totalExpense = transactionsToProcess
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       // Initialize with categories
-      expenseCategories.forEach((cat: any) => {
+      expenseCategories.forEach((cat) => {
         expenseByCategoryMap.set(cat.id, { 
           name: cat.name, 
           value: 0, 
@@ -212,9 +314,9 @@ const FinanceDashboardPage = () => {
       });
       
       // Aggregate expenses by category
-      monthTransactions
-        .filter((t: any) => t.type === 'expense')
-        .forEach((transaction: any) => {
+      transactionsToProcess
+        .filter((t) => t.type === 'expense')
+        .forEach((transaction) => {
           if (transaction.category_id && expenseByCategoryMap.has(transaction.category_id)) {
             const category = expenseByCategoryMap.get(transaction.category_id);
             category.value += Number(transaction.amount);
@@ -226,7 +328,7 @@ const FinanceDashboardPage = () => {
       
       // Calculate percentages
       expenseByCategoryMap.forEach((category) => {
-        category.value = typeof totalExpense === 'number' && totalExpense > 0 
+        category.value = totalExpense > 0 
           ? Math.round((category.value / totalExpense) * 100) 
           : 0;
       });
@@ -254,26 +356,59 @@ const FinanceDashboardPage = () => {
     return colors[index];
   };
 
-  const currentPeriodData = financialSummary[timeRange as keyof typeof financialSummary];
+  const currentPeriodData = financialSummary[dateRange];
 
   return (
     <Container>
       <div className="py-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
           <h1 className="text-2xl font-bold">Financial Dashboard</h1>
-          <div className="mt-3 sm:mt-0">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
-              </SelectContent>
-            </Select>
+        </div>
+        
+        <div className="mb-6 bg-white p-4 rounded-lg border shadow-sm">
+          <h3 className="text-lg font-medium mb-3">Date Range</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label className="mb-2 block">Select Period</Label>
+              <Select value={dateRange} onValueChange={handleDateRangeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateRange === 'custom' && (
+              <>
+                <div>
+                  <Label className="mb-2 block">Start Date</Label>
+                  <DatePicker
+                    date={startDate}
+                    onSelect={setStartDate}
+                  />
+                </div>
+                <div>
+                  <Label className="mb-2 block">End Date</Label>
+                  <DatePicker
+                    date={endDate}
+                    onSelect={setEndDate}
+                  />
+                </div>
+              </>
+            )}
           </div>
+          
+          {dateRange !== 'custom' ? (
+            <p className="text-sm text-muted-foreground mt-2">
+              Showing data from {startDate ? format(startDate, 'PPP') : ''} to {endDate ? format(endDate, 'PPP') : ''}
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -555,7 +690,7 @@ const FinanceDashboardPage = () => {
           </TabsContent>
           
           <TabsContent value="transactions" className="space-y-4">
-            <TransactionList />
+            <TransactionList filterStartDate={startDate} filterEndDate={endDate} />
           </TabsContent>
         </Tabs>
       </div>

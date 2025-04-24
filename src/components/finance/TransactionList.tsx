@@ -1,164 +1,156 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  FinancialTransaction, 
-  TransactionType, 
-  PaymentMethod 
-} from '@/types/finance';
-import { formatCurrency } from '@/utils/formatters';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { useBranch } from "@/hooks/use-branch";
+import { supabase } from "@/services/supabaseClient";
+import { toast } from "sonner";
+import { formatCurrency } from "@/utils/stringUtils";
 
 interface TransactionListProps {
-  webhookOnly?: boolean;
-  transactionType?: string;
+  filterStartDate?: Date;
+  filterEndDate?: Date;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ 
-  webhookOnly = false,
-  transactionType 
-}) => {
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+const TransactionList = ({ filterStartDate, filterEndDate }: TransactionListProps) => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    // In a real app, this would fetch data from an API
-    // For now, we'll use mock data
-    setTimeout(() => {
-      const mockTransactions: FinancialTransaction[] = [
-        {
-          id: 'txn-1',
-          type: 'income',
-          amount: 15000,
-          date: '2024-01-15',
-          category: 'membership',
-          description: 'Monthly membership - John Doe',
-          recurring: true,
-          recurringPeriod: 'monthly',
-          paymentMethod: 'razorpay',
-          createdBy: 'admin',
-          createdAt: '2024-01-15T10:30:00',
-          updatedAt: '2024-01-15T10:30:00'
-        },
-        {
-          id: 'txn-2',
-          type: 'expense',
-          amount: 5000,
-          date: '2024-01-18',
-          category: 'utilities',
-          description: 'Electricity bill - January',
-          recurring: true,
-          recurringPeriod: 'monthly',
-          paymentMethod: 'bank-transfer',
-          createdBy: 'admin',
-          createdAt: '2024-01-18T14:20:00',
-          updatedAt: '2024-01-18T14:20:00'
-        },
-        {
-          id: 'txn-3',
-          type: 'income',
-          amount: 2500,
-          date: '2024-01-20',
-          category: 'personal-training',
-          description: 'PT Session - Jane Smith',
-          recurring: false,
-          recurringPeriod: 'none',
-          paymentMethod: 'cash',
-          createdBy: 'staff-1',
-          createdAt: '2024-01-20T16:45:00',
-          updatedAt: '2024-01-20T16:45:00'
+    fetchTransactions();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('transaction_list_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'transactions',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          fetchTransactions();
         }
-      ];
+      )
+      .subscribe();
       
-      // Apply filters based on props
-      let filteredTransactions = mockTransactions;
-      
-      // Filter by transaction type if specified
-      if (transactionType) {
-        filteredTransactions = filteredTransactions.filter(t => t.type === transactionType);
-      }
-      
-      // Filter by webhook only if requested
-      if (webhookOnly) {
-        filteredTransactions = filteredTransactions.filter(t => t.paymentMethod === 'razorpay');
-      }
-        
-      setTransactions(filteredTransactions);
-      setLoading(false);
-    }, 1000);
-  }, [webhookOnly, transactionType]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentBranch, filterStartDate, filterEndDate]);
 
-  const getPaymentMethodLabel = (method?: PaymentMethod) => {
-    switch (method) {
-      case 'razorpay': return 'Razorpay';
-      case 'card': return 'Card';
-      case 'cash': return 'Cash';
-      case 'bank-transfer': return 'Bank Transfer';
-      default: return 'Other';
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      
+      let query = supabase
+        .from('transactions')
+        .select(`
+          *,
+          income_category:income_categories(name),
+          expense_category:expense_categories(name),
+          recorder:profiles(full_name)
+        `)
+        .eq('branch_id', currentBranch?.id || '');
+      
+      // Apply date filters if provided
+      if (filterStartDate) {
+        query = query.gte('transaction_date', filterStartDate.toISOString());
+      }
+      
+      if (filterEndDate) {
+        query = query.lte('transaction_date', filterEndDate.toISOString());
+      }
+      
+      // Sort by date, newest first
+      query = query.order('transaction_date', { ascending: false });
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setTransactions(data || []);
+    } catch (error: any) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getTransactionTypeColor = (type: TransactionType) => {
-    return type === 'income' ? 'bg-green-500' : 'bg-red-500';
+  const getCategoryName = (transaction: any) => {
+    if (transaction.type === 'income') {
+      return transaction.income_category?.name || 'Uncategorized';
+    } else {
+      return transaction.expense_category?.name || 'Uncategorized';
+    }
   };
 
-  if (loading) {
-    return <div className="text-center py-10">Loading transactions...</div>;
-  }
-
-  if (transactions.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-muted-foreground mb-4">No transactions found</p>
-        <Button>Add Transaction</Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Payment Method</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((transaction) => (
-            <TableRow key={transaction.id}>
-              <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-              <TableCell>{transaction.description}</TableCell>
-              <TableCell className="capitalize">{transaction.category.replace('-', ' ')}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <div className={`w-2 h-2 rounded-full mr-2 ${getTransactionTypeColor(transaction.type)}`} />
-                  <span>{formatCurrency(transaction.amount)}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{getPaymentMethodLabel(transaction.paymentMethod)}</Badge>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" size="sm">View</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Transactions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <p>Loading transactions...</p>
+          </div>
+        ) : transactions.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Payment Method</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell>{format(new Date(transaction.transaction_date), "MMM d, yyyy")}</TableCell>
+                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>{getCategoryName(transaction)}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className={transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                      >
+                        {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(transaction.amount)}
+                    </TableCell>
+                    <TableCell>
+                      {transaction.payment_method ? (
+                        <Badge variant="outline">
+                          {transaction.payment_method.charAt(0).toUpperCase() + transaction.payment_method.slice(1)}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">No transactions found</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,41 +1,22 @@
 
-import React, { useState, useEffect } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { getInitials } from "@/utils/stringUtils";
+import { PlusIcon, FileTextIcon, CreditCardIcon, DownloadIcon, Printer } from "lucide-react";
 import { format } from "date-fns";
-import { Plus, Eye, Download, Edit, Trash2, MoreHorizontal, Copy, ArrowUpDown } from "lucide-react";
-import { Invoice } from "@/types/finance";
-import InvoiceForm from "./InvoiceForm";
-import { supabase } from "@/services/supabaseClient";
-import { useBranch } from "@/hooks/use-branch";
-import { toast } from "sonner";
-import { InvoiceStatsOverview } from "./InvoiceStatsOverview";
-import PaymentRecordDialog from "./PaymentRecordDialog";
+import { Invoice, InvoiceStatus } from "@/types/finance";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/services/supabaseClient";
+import { toast } from "sonner";
+import { useBranch } from "@/hooks/use-branch";
+import PaymentRecordDialog from "./PaymentRecordDialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import InvoiceForm from "../InvoiceForm";
+import { InvoiceStatsOverview } from "./InvoiceStatsOverview";
+import { jsPDF } from "jspdf";
+import { formatCurrency } from "@/utils/stringUtils";
 
 interface EnhancedInvoiceListProps {
   readonly?: boolean;
@@ -44,112 +25,27 @@ interface EnhancedInvoiceListProps {
   filter?: string;
 }
 
-const EnhancedInvoiceList: React.FC<EnhancedInvoiceListProps> = ({
-  readonly = false,
-  allowPayment = true,
-  allowDownload = true,
-  filter = 'all'
-}) => {
+const EnhancedInvoiceList = ({ 
+  readonly = false, 
+  allowPayment = true, 
+  allowDownload = true, 
+  filter = "all" 
+}: EnhancedInvoiceListProps) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [rowsPerPage, setRowsPerPage] = useState("10");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshData, setRefreshData] = useState<boolean>(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState<boolean>(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
-  const { currentBranch } = useBranch();
+  const [formSheetOpen, setFormSheetOpen] = useState<boolean>(false);
+  
   const { user } = useAuth();
-  
-  const statusColors: Record<string, string> = {
-    paid: "bg-green-100 text-green-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    overdue: "bg-red-100 text-red-800",
-    cancelled: "bg-gray-100 text-gray-800",
-    draft: "bg-blue-100 text-blue-800",
-    sent: "bg-purple-100 text-purple-800",
-    "partial payment": "bg-indigo-100 text-indigo-800",
-    "past due": "bg-rose-100 text-rose-800",
-  };
-  
-  const fetchInvoices = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase
-        .from('invoices')
-        .select('*');
-      
-      // Apply branch filter
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      // Apply status filter
-      if (statusFilter && statusFilter !== 'all') {
-        query = query.eq('status', statusFilter.toLowerCase());
-      }
-      
-      // Apply search filter
-      if (searchQuery) {
-        query = query.or(`member_name.ilike.%${searchQuery}%,id.ilike.%${searchQuery}%`);
-      }
-      
-      // Calculate pagination
-      const from = (currentPage - 1) * parseInt(rowsPerPage);
-      const to = currentPage * parseInt(rowsPerPage) - 1;
-      
-      // Get total count for pagination
-      const { count } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true });
-      
-      setTotalPages(Math.ceil((count || 0) / parseInt(rowsPerPage)));
-      
-      // Add pagination to query
-      const { data, error } = await query
-        .order('issued_date', { ascending: false })
-        .range(from, to);
-      
-      if (error) throw error;
-      
-      if (data) {
-        const formattedInvoices: Invoice[] = data.map(invoice => ({
-          id: invoice.id,
-          memberId: invoice.member_id,
-          memberName: invoice.member_name,
-          amount: invoice.amount,
-          status: invoice.status,
-          dueDate: invoice.due_date,
-          issuedDate: invoice.issued_date,
-          paidDate: invoice.paid_date,
-          paymentMethod: invoice.payment_method,
-          items: invoice.items || [],
-          notes: invoice.notes,
-          membershipPlanId: invoice.membership_plan_id,
-          branchId: invoice.branch_id,
-          razorpayOrderId: invoice.razorpay_order_id,
-          razorpayPaymentId: invoice.razorpay_payment_id,
-        }));
-        
-        setInvoices(formattedInvoices);
-      }
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-      toast.error('Failed to load invoices');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+  const { currentBranch } = useBranch();
+  const isMember = user?.role === "member";
+
   useEffect(() => {
     fetchInvoices();
     
-    // Set up real-time subscription
+    // Set up real-time listener
     const channel = supabase
       .channel('invoice_changes')
       .on('postgres_changes', 
@@ -168,407 +64,345 @@ const EnhancedInvoiceList: React.FC<EnhancedInvoiceListProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentBranch, statusFilter, searchQuery, rowsPerPage, currentPage]);
+  }, [currentBranch, refreshData, filter, user]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, searchQuery, rowsPerPage]);
+  const fetchInvoices = async () => {
+    setLoading(true);
 
-  useEffect(() => {
-    if (selectAll) {
-      setSelectedRows(invoices.map(invoice => invoice.id));
-    } else {
-      setSelectedRows([]);
-    }
-  }, [selectAll, invoices]);
+    try {
+      let query = supabase
+        .from('invoices')
+        .select(`
+          *,
+          profiles:member_id(full_name)
+        `);
 
-  const handleRowCheckboxChange = (invoiceId: string) => {
-    setSelectedRows(prev => {
-      if (prev.includes(invoiceId)) {
-        return prev.filter(id => id !== invoiceId);
-      } else {
-        return [...prev, invoiceId];
+      // Filter by branch
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
       }
-    });
+
+      // Filter by member if user is a member
+      if (isMember) {
+        query = query.eq('member_id', user?.id);
+      }
+
+      // Apply status filter if not "all"
+      if (filter && filter !== "all") {
+        query = query.eq('status', filter);
+      }
+
+      // Sort by issued date, newest first
+      query = query.order('issued_date', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const formattedInvoices: Invoice[] = data.map(item => ({
+          id: item.id,
+          status: item.status as InvoiceStatus,
+          issuedDate: item.issued_date,
+          dueDate: item.due_date,
+          paidDate: item.paid_date,
+          razorpayOrderId: item.razorpay_order_id,
+          razorpayPaymentId: item.razorpay_payment_id,
+          memberId: item.member_id,
+          memberName: item.profiles?.full_name || 'Unknown Member',
+          amount: item.amount,
+          items: item.items || [],
+          branchId: item.branch_id,
+          membershipPlanId: item.membership_plan_id,
+          description: item.description,
+          paymentMethod: item.payment_method,
+          notes: item.notes
+        }));
+        
+        setInvoices(formattedInvoices);
+      }
+    } catch (error: any) {
+      console.error('Error fetching invoices:', error);
+      toast.error('Failed to fetch invoices');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddInvoice = () => {
-    setEditingInvoice(null);
-    setIsFormOpen(true);
+    setSelectedInvoice(null);
+    setFormSheetOpen(true);
   };
 
   const handleEditInvoice = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    setIsFormOpen(true);
-  };
-  
-  const handleDeleteInvoice = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('invoices')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      toast.success("Invoice deleted successfully");
-      fetchInvoices();
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-      toast.error('Failed to delete invoice');
-    }
+    setSelectedInvoice(invoice);
+    setFormSheetOpen(true);
   };
 
-  const handleDuplicateInvoice = (invoice: Invoice) => {
-    const duplicatedInvoice = {
-      ...invoice,
-      id: "",
-      status: "draft",
-      issuedDate: new Date().toISOString(),
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      paidDate: null,
-      razorpayOrderId: null,
-      razorpayPaymentId: null,
-    };
-    
-    setEditingInvoice(duplicatedInvoice);
-    setIsFormOpen(true);
-  };
-
-  const handleDownloadInvoice = (id: string) => {
-    // In a real app, this would generate and download a PDF
-    toast.success("Invoice download started");
-  };
-  
-  const handleRecordPayment = (invoice: Invoice) => {
+  const handleOpenPaymentDialog = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setPaymentDialogOpen(true);
   };
 
-  const handleSaveInvoice = async (invoice: Invoice) => {
+  const handleFormSave = async (invoiceData: any) => {
     try {
-      if (invoice.id) {
+      if (selectedInvoice) {
         // Update existing invoice
         const { error } = await supabase
           .from('invoices')
           .update({
-            member_id: invoice.memberId,
-            member_name: invoice.memberName,
-            amount: invoice.amount,
-            status: invoice.status,
-            due_date: invoice.dueDate,
-            issued_date: invoice.issuedDate,
-            items: invoice.items,
-            notes: invoice.notes,
-            membership_plan_id: invoice.membershipPlanId,
+            amount: invoiceData.amount,
+            status: invoiceData.status,
+            due_date: invoiceData.dueDate,
+            items: invoiceData.items,
+            description: invoiceData.description,
+            notes: invoiceData.notes,
+            updated_at: new Date().toISOString()
           })
-          .eq('id', invoice.id);
+          .eq('id', selectedInvoice.id);
           
         if (error) throw error;
-        
-        toast.success("Invoice updated successfully");
+        toast.success('Invoice updated successfully');
       } else {
         // Create new invoice
+        const newInvoice = {
+          member_id: invoiceData.memberId,
+          amount: invoiceData.amount,
+          status: invoiceData.status as InvoiceStatus,
+          issued_date: invoiceData.issuedDate,
+          due_date: invoiceData.dueDate,
+          items: invoiceData.items,
+          branch_id: currentBranch?.id,
+          description: invoiceData.description,
+          notes: invoiceData.notes,
+          created_by: user?.id
+        };
+        
         const { error } = await supabase
           .from('invoices')
-          .insert({
-            member_id: invoice.memberId,
-            member_name: invoice.memberName,
-            amount: invoice.amount,
-            status: invoice.status,
-            due_date: invoice.dueDate,
-            issued_date: invoice.issuedDate,
-            items: invoice.items,
-            notes: invoice.notes,
-            membership_plan_id: invoice.membershipPlanId,
-            branch_id: currentBranch?.id,
-          });
+          .insert(newInvoice);
           
         if (error) throw error;
-        
-        toast.success("Invoice created successfully");
+        toast.success('Invoice created successfully');
       }
       
-      setIsFormOpen(false);
-    } catch (error) {
+      setRefreshData(prev => !prev);
+      setFormSheetOpen(false);
+      
+    } catch (error: any) {
       console.error('Error saving invoice:', error);
       toast.error('Failed to save invoice');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  const handleSendPaymentLink = async (invoice: Invoice) => {
+    try {
+      // In a real application, this would call an API to send a payment link
+      toast.success(`Payment link sent to ${invoice.memberName}`);
+    } catch (error) {
+      console.error('Error sending payment link:', error);
+      toast.error('Failed to send payment link');
+    }
   };
-  
-  const renderPaginationControls = () => {
+
+  const handleDownloadInvoice = (invoice: Invoice) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add logo and header
+      doc.setFontSize(22);
+      doc.text('INVOICE', 105, 20, { align: 'center' });
+      
+      // Invoice details
+      doc.setFontSize(10);
+      doc.text(`Invoice #: ${invoice.id}`, 20, 40);
+      doc.text(`Date: ${format(new Date(invoice.issuedDate), 'MMM dd, yyyy')}`, 20, 45);
+      doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'MMM dd, yyyy')}`, 20, 50);
+      
+      // Member details
+      doc.text(`Bill To:`, 20, 60);
+      doc.text(`${invoice.memberName}`, 20, 65);
+      
+      // Table header
+      doc.setFontSize(9);
+      doc.text('Item', 20, 80);
+      doc.text('Qty', 120, 80);
+      doc.text('Rate', 140, 80);
+      doc.text('Amount', 170, 80);
+      
+      // Draw a line
+      doc.line(20, 82, 190, 82);
+      
+      // Table content
+      let yPos = 87;
+      let total = 0;
+      
+      invoice.items.forEach((item, index) => {
+        doc.text(item.name, 20, yPos);
+        doc.text(item.quantity.toString(), 120, yPos);
+        doc.text(formatCurrency(item.unitPrice), 140, yPos);
+        const amount = item.quantity * item.unitPrice;
+        doc.text(formatCurrency(amount), 170, yPos);
+        yPos += 7;
+        total += amount;
+      });
+      
+      // Draw a line
+      doc.line(20, yPos + 3, 190, yPos + 3);
+      
+      // Total
+      doc.text('Total:', 140, yPos + 10);
+      doc.text(formatCurrency(invoice.amount), 170, yPos + 10);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.text('Thank you for your business!', 105, 270, { align: 'center' });
+      
+      // Save the PDF
+      doc.save(`Invoice-${invoice.id}.pdf`);
+      
+      toast.success('Invoice downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to download invoice');
+    }
+  };
+
+  const getStatusBadge = (status: InvoiceStatus) => {
+    const statusMap = {
+      paid: "bg-green-100 text-green-800",
+      partial: "bg-blue-100 text-blue-800",
+      pending: "bg-yellow-100 text-yellow-800",
+      overdue: "bg-red-100 text-red-800",
+      cancelled: "bg-gray-100 text-gray-800"
+    };
+    
     return (
-      <div className="flex items-center justify-between border-t pt-4 mt-2">
-        <div className="text-sm text-gray-500">
-          Showing {Math.min((currentPage - 1) * parseInt(rowsPerPage) + 1, invoices.length + ((currentPage - 1) * parseInt(rowsPerPage)))} to {Math.min(currentPage * parseInt(rowsPerPage), invoices.length + ((currentPage - 1) * parseInt(rowsPerPage)))} of {totalPages * parseInt(rowsPerPage)} entries
-        </div>
-        <div className="flex gap-1">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-          >
-            «
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </Button>
-          
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const pageNum = currentPage <= 3
-              ? i + 1
-              : currentPage >= totalPages - 2
-                ? totalPages - 4 + i
-                : currentPage - 2 + i;
-                
-            if (pageNum <= totalPages) {
-              return (
-                <Button
-                  key={i}
-                  variant={currentPage === pageNum ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </Button>
-              );
-            }
-            return null;
-          })}
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            »
-          </Button>
-        </div>
-      </div>
+      <Badge variant="outline" className={statusMap[status]}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
     );
   };
 
   return (
-    <div className="space-y-8">
-      <InvoiceStatsOverview />
-      
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <Select 
-              value={rowsPerPage} 
-              onValueChange={setRowsPerPage}
-            >
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Show" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-
+    <>
+      <div className="space-y-5">
+        <InvoiceStatsOverview />
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Invoices</CardTitle>
             {!readonly && (
-              <Button 
-                onClick={handleAddInvoice} 
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Create Invoice
+              <Button onClick={handleAddInvoice} className="flex items-center gap-1">
+                <PlusIcon className="h-4 w-4" /> Create Invoice
               </Button>
             )}
-          </div>
-
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <Input 
-              placeholder="Search Invoice" 
-              className="w-full sm:w-[300px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)} 
-            />
-            <Select 
-              value={statusFilter} 
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Invoice Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="partial payment">Partial Payment</SelectItem>
-                <SelectItem value="past due">Past Due</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300"
-                  checked={selectAll}
-                  onChange={() => setSelectAll(!selectAll)} 
-                />
-              </TableHead>
-              <TableHead className="text-indigo-600 cursor-pointer" onClick={() => toast.info("Sorting not implemented in this demo")}>
-                # <ArrowUpDown className="h-4 w-4 inline-block ml-1" />
-              </TableHead>
-              <TableHead>STATUS</TableHead>
-              <TableHead>CLIENT</TableHead>
-              <TableHead className="text-right">TOTAL</TableHead>
-              <TableHead>ISSUED DATE</TableHead>
-              <TableHead className="text-right">BALANCE</TableHead>
-              <TableHead className="text-right">ACTIONS</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  <p className="text-muted-foreground">Loading invoices...</p>
-                </TableCell>
-              </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  <p className="text-muted-foreground">No invoices found</p>
-                </TableCell>
-              </TableRow>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <p>Loading invoices...</p>
+              </div>
+            ) : invoices.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Issue Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">{invoice.id.substring(0, 8)}...</TableCell>
+                        <TableCell>{invoice.memberName}</TableCell>
+                        <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                        <TableCell>{format(new Date(invoice.issuedDate), "MMM d, yyyy")}</TableCell>
+                        <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
+                        <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {!readonly && (
+                              <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                                <FileTextIcon className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {allowPayment && (invoice.status === "pending" || invoice.status === "overdue" || invoice.status === "partial") && (
+                              <Button variant="ghost" size="sm" onClick={() => handleOpenPaymentDialog(invoice)}>
+                                <CreditCardIcon className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {allowPayment && (invoice.status === "pending" || invoice.status === "overdue") && (
+                              <Button variant="ghost" size="sm" onClick={() => handleSendPaymentLink(invoice)}>
+                                <PlusIcon className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {allowDownload && (
+                              <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
-              invoices.map((invoice) => (
-                <TableRow key={invoice.id} className="group">
-                  <TableCell>
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-gray-300"
-                      checked={selectedRows.includes(invoice.id)}
-                      onChange={() => handleRowCheckboxChange(invoice.id)} 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-indigo-600 font-medium">#{invoice.id}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant="outline" 
-                      className={statusColors[invoice.status] || "bg-gray-100 text-gray-800"}
-                    >
-                      {invoice.status === 'paid' ? 'Paid' : 
-                       invoice.status === 'pending' ? 'Pending' :
-                       invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-                        {invoice.memberName ? getInitials(invoice.memberName) : 'U'}
-                      </div>
-                      <div>
-                        <p className="font-medium">{invoice.memberName}</p>
-                        <p className="text-xs text-gray-500">{invoice.memberId}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(invoice.amount)}</TableCell>
-                  <TableCell>{format(new Date(invoice.issuedDate), "yyyy-MM-dd")}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={invoice.status === 'paid' ? 'text-green-600' : 'text-red-600'}>
-                      {formatCurrency(invoice.amount)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end items-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicateInvoice(invoice)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            <span>Duplicate</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownloadInvoice(invoice.id)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>Download</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteInvoice(invoice.id)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <p className="text-muted-foreground mb-4">No invoices found</p>
+                {!readonly && (
+                  <Button onClick={handleAddInvoice} variant="outline">
+                    <PlusIcon className="h-4 w-4 mr-2" /> Create Your First Invoice
+                  </Button>
+                )}
+              </div>
             )}
-          </TableBody>
-        </Table>
-        
-        {renderPaginationControls()}
+          </CardContent>
+        </Card>
       </div>
 
-      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent side="right" className="w-[800px] sm:max-w-[800px]">
-          <SheetHeader>
-            <SheetTitle>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</SheetTitle>
-          </SheetHeader>
-          <InvoiceForm
-            invoice={editingInvoice}
-            onSave={handleSaveInvoice}
-            onCancel={() => setIsFormOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
-      
-      {paymentDialogOpen && selectedInvoice && (
+      {selectedInvoice && (
         <PaymentRecordDialog
           isOpen={paymentDialogOpen}
           onClose={() => setPaymentDialogOpen(false)}
           invoice={selectedInvoice}
-          onPaymentRecorded={() => fetchInvoices()}
+          onPaymentRecorded={() => {
+            setPaymentDialogOpen(false);
+            setRefreshData(prev => !prev);
+          }}
         />
       )}
-    </div>
+      
+      <Sheet open={formSheetOpen} onOpenChange={setFormSheetOpen}>
+        <SheetContent className="w-full sm:w-[600px] md:w-[900px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{selectedInvoice ? 'Edit Invoice' : 'Create Invoice'}</SheetTitle>
+            <SheetDescription>
+              {selectedInvoice 
+                ? 'Edit the details of the existing invoice.' 
+                : 'Fill in the details to create a new invoice.'}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            <InvoiceForm
+              invoice={selectedInvoice}
+              onSave={handleFormSave}
+              onCancel={() => setFormSheetOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 
