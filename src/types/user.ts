@@ -13,6 +13,7 @@ export interface User {
   branchIds?: string[]; // All branches the user has access to
   isBranchManager?: boolean; // Whether the user is a branch manager
   primaryBranchId?: string; // Added for compatibility
+  dateOfBirth?: string; // Add dateOfBirth to support its use in mockData.ts
   
   // Address fields
   address?: string;

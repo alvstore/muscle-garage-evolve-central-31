@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, Circle } from "lucide-react";
 import { useLocation, NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { NavSection } from "@/types/navigation";
+import { NavSection, Permission } from "@/types/navigation";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 import { usePermissions } from "@/hooks/use-permissions";
 
@@ -49,7 +49,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
       {section.items.map((item, itemIndex) => {
         const hasChildren = item.children && item.children.length > 0;
         const filteredChildren = hasChildren 
-          ? item.children!.filter(child => can(child.permission))
+          ? item.children!.filter(child => can(child.permission as Permission))
           : [];
         const showChildren = hasChildren && filteredChildren.length > 0;
         const isActive = isRouteActive(item.href);
@@ -57,7 +57,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
         return (
           <RoutePermissionGuard 
             key={itemIndex} 
-            permission={item.permission}
+            permission={item.permission as Permission}
           >
             <div className="mb-1">
               <button
@@ -95,7 +95,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
                   {filteredChildren.map((child, childIndex) => (
                     <RoutePermissionGuard 
                       key={childIndex} 
-                      permission={child.permission}
+                      permission={child.permission as Permission}
                     >
                       <NavLink
                         to={child.href}

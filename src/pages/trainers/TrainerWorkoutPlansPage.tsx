@@ -150,7 +150,8 @@ const TrainerWorkoutPlansPage = () => {
             name: 'New Member', 
             role: 'member', 
             membershipStatus: 'active',
-            email: 'default@example.com' 
+            email: 'default@example.com',
+            status: 'active'  // Add the missing status property
           }}
           trainerId={user?.id || 'unknown'}
           onSave={handleCreatePlan}
@@ -172,7 +173,8 @@ const TrainerWorkoutPlansPage = () => {
             name: 'Member', 
             role: 'member', 
             membershipStatus: 'active',
-            email: 'member@example.com' 
+            email: 'member@example.com',
+            status: 'active'  // Add the missing status property
           }}
           trainerId={user?.id || 'unknown'}
           existingPlan={planToEdit}

@@ -11,6 +11,15 @@ export type Permission =
   | 'view_branch_data'
   | 'manage_website'
   | 'manage_inventory'
+  | 'feature_trainer_dashboard'
+  | 'trainer_view_classes'
+  | 'trainer_view_attendance'
+  | 'trainer_view_members'
+  | 'trainer_edit_fitness'
+  | 'manage_staff'
+  | 'feature_email_campaigns'
+  | 'access_communication'
+  | 'view_staff'
   | string; // Allow string for flexibility with other permissions
 
 export interface NavItem {
@@ -25,4 +34,5 @@ export interface NavItem {
 export interface NavSection {
   name: string;
   items: NavItem[];
+  icon?: React.ReactNode; // Add icon property to support trainerNavigation
 }
