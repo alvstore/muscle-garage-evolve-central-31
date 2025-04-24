@@ -20,7 +20,6 @@ interface ProfileData {
   avatar_url?: string;
   created_at?: string;
   updated_at?: string;
-  // Add missing fields from error messages
   position?: string;
   is_active?: boolean;
 }
@@ -40,7 +39,12 @@ const StaffListPage = () => {
 
       if (error) throw error;
 
-      const formattedStaff: StaffMember[] = data.map((item: ProfileData) => ({
+      if (!data) {
+        setStaffMembers([]);
+        return;
+      }
+
+      const formattedStaff: StaffMember[] = data.map((item: any) => ({
         id: item.id,
         name: item.full_name || '',
         email: item.email || '',
@@ -75,9 +79,10 @@ const StaffListPage = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
+        // Use any type for the update operation since the is_active field might not be in the strict type
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ is_active: false })
+          .update({ is_active: false } as any)
           .eq('id', id);
           
         if (updateError) throw updateError;

@@ -22,7 +22,7 @@ export function useSupabaseData<T>(
     try {
       setLoading(true);
       
-      // Use 'any' type to avoid TypeScript errors with dynamic table names
+      // Use type assertion to handle dynamic table names
       let query = supabase
         .from(tableName as any)
         .select(options.columns || '*', { count: 'exact' });
@@ -103,7 +103,7 @@ export function useSingleSupabaseRecord<T>(
       try {
         setLoading(true);
         
-        // Use 'any' type to avoid TypeScript errors with dynamic table names
+        // Use type assertion to handle dynamic table names
         const { data, error } = await supabase
           .from(tableName as any)
           .select(options.columns || '*')
@@ -132,7 +132,7 @@ export function useSingleSupabaseRecord<T>(
     try {
       setLoading(true);
       
-      // Use 'any' type to avoid TypeScript errors with dynamic table names
+      // Use type assertion to handle dynamic table names
       const { data, error } = await supabase
         .from(tableName as any)
         .select(options.columns || '*')

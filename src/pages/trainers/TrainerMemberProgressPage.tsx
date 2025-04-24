@@ -8,13 +8,25 @@ import { ProgressChart } from "@/components/fitness/ProgressChart";
 import { MemberProgressTable } from "@/components/fitness/MemberProgressTable";
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/services/supabaseClient';
-import { Member } from '@/types/member';
 import { toast } from 'sonner';
+
+// Define a more compatible Member type for the page
+interface MemberData {
+  id: string;
+  full_name: string;
+  name?: string; // To handle data from database
+  gender?: string;
+  email?: string;
+  phone?: string;
+  goal?: string;
+  branch_id?: string;
+  branchId?: string;
+}
 
 const TrainerMemberProgressPage = () => {
   const { user } = useAuth();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberData[]>([]);
+  const [filteredMembers, setFilteredMembers] = useState<MemberData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -56,14 +68,15 @@ const TrainerMemberProgressPage = () => {
 
         // Convert to Member type and handle the case where memberData is null
         if (memberData) {
-          const formattedMembers: Member[] = memberData.map(m => ({
+          const formattedMembers: MemberData[] = memberData.map(m => ({
             id: m.id,
-            full_name: m.name,
+            full_name: m.name || '', // Map name from db to full_name for compatibility
+            name: m.name,
             gender: m.gender || '',
             email: m.email || '',
             phone: m.phone || '',
             goal: m.goal || '',
-            branchId: m.branch_id,
+            branchId: m.branch_id
           }));
 
           setMembers(formattedMembers);

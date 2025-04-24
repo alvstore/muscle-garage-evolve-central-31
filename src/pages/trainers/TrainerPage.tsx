@@ -17,7 +17,6 @@ interface TrainerProfile {
   avatar_url?: string;
   branch_id?: string;
   department?: string;
-  // Add the missing fields from errors
   specialty?: string;
   bio?: string;
   rating?: number;
@@ -44,7 +43,28 @@ const TrainerPage = () => {
 
       if (error) throw error;
 
-      setTrainers(data || []);
+      // Make sure data is not null before proceeding
+      if (data) {
+        // Handle the case where profile fields might be missing
+        const processedData = data.map(profile => ({
+          id: profile.id,
+          full_name: profile.full_name || 'No Name',
+          email: profile.email || '',
+          phone: profile.phone || '',
+          avatar_url: profile.avatar_url || '',
+          branch_id: profile.branch_id || '',
+          department: profile.department || '',
+          // Add specific trainer fields with fallbacks
+          specialty: profile.specialty || '', // Might be undefined in the database
+          bio: profile.bio || '',
+          rating: profile.rating || 0,
+          is_active: profile.is_active !== false // Default to true if not specified
+        }));
+
+        setTrainers(processedData);
+      } else {
+        setTrainers([]);
+      }
     } catch (error) {
       console.error('Error fetching trainers:', error);
       toast.error('Failed to load trainers');

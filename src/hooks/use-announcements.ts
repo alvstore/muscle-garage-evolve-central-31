@@ -23,7 +23,7 @@ export const useAnnouncements = (options: {
       let query = supabase
         .from('announcements')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any;
       
       // Apply branch filter if provided
       if (options.branchId) {
@@ -44,19 +44,27 @@ export const useAnnouncements = (options: {
 
       if (error) throw error;
 
-      const formattedAnnouncements: Announcement[] = data.map(item => ({
+      if (!data) {
+        setAnnouncements([]);
+        return;
+      }
+
+      const formattedAnnouncements: Announcement[] = data.map((item: any) => ({
         id: item.id,
         title: item.title || 'Untitled Announcement',
         content: item.content || '',
         createdAt: item.created_at,
         expiresAt: item.expires_at,
         priority: item.priority || 'normal',
-        channel: item.channel as NotificationChannel || 'app',
+        channel: (item.channel as NotificationChannel) || 'app',
         branchId: item.branch_id,
         createdBy: item.created_by,
         isGlobal: item.is_global || false,
         isActive: item.is_active || true,
         category: item.category || 'general',
+        // Add these required fields with default values since they might be missing
+        authorId: item.created_by || '',
+        authorName: item.author_name || 'Unknown',
       }));
 
       setAnnouncements(formattedAnnouncements);
