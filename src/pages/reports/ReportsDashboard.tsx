@@ -2,9 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileSpreadsheet, FilePdf, Download } from 'lucide-react';
+import { FileSpreadsheet, FileText, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { toast } from 'sonner';
 
 const ReportsDashboard = () => {
@@ -22,7 +22,7 @@ const ReportsDashboard = () => {
             Export XLSX
           </Button>
           <Button variant="outline" onClick={() => handleExport('pdf')}>
-            <FilePdf className="w-4 h-4 mr-2" />
+            <FileText className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
         </div>
@@ -34,7 +34,7 @@ const ReportsDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <DatePickerWithRange />
+            <DateRangePicker />
           </div>
         </CardContent>
       </Card>

@@ -42,15 +42,7 @@ export const mockUsers: User[] = [
     name: "Jordan Lee",
     role: "member",
     avatar: "/placeholder.svg",
-    phone: "+1234567893",
-    dateOfBirth: "1990-05-15",
-    goal: "Weight loss and muscle toning",
-    trainerId: "trainer1",
-    membershipId: "membership1",
-    membershipStatus: "active",
-    membershipStartDate: "2023-01-01",
-    membershipEndDate: "2024-01-01",
-    status: "active"
+    phone: "+1234567893"
   }
 ];
 
