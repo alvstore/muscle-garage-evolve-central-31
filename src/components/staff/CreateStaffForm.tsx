@@ -8,6 +8,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from '@/hooks/use-branch';
 
@@ -15,9 +17,9 @@ const staffFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
-  position: z.string().min(1, 'Position is required'),
-  department: z.string().min(1, 'Department is required'),
   gender: z.enum(['male', 'female', 'other']),
+  department: z.string().min(1, 'Department is required'),
+  position: z.string().min(1, 'Position is required'),
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
@@ -29,6 +31,7 @@ type StaffFormData = z.infer<typeof staffFormSchema>;
 
 export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>();
   const { currentBranch } = useBranch();
 
   const form = useForm<StaffFormData>({
@@ -37,9 +40,9 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
       name: '',
       email: '',
       phone: '',
-      position: '',
-      department: '',
       gender: 'male',
+      department: '',
+      position: '',
       address: '',
       city: '',
       state: '',
@@ -52,10 +55,8 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
     try {
       setLoading(true);
       
-      // Generate a random password for the new user
       const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
 
-      // Create a new user in the auth system
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: tempPassword,
@@ -69,7 +70,6 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
       if (authError) throw authError;
 
-      // Create or update profile with staff-specific fields
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -77,14 +77,15 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
           email: data.email,
           role: 'staff',
           phone: data.phone,
-          position: data.position,
-          department: data.department,
           gender: data.gender,
+          department: data.department,
+          position: data.position,
           address: data.address,
           city: data.city,
           state: data.state,
           country: data.country,
           branch_id: data.branchId || currentBranch?.id,
+          avatar_url: avatarUrl,
           is_active: true
         })
         .eq('id', authData.user?.id);
@@ -104,7 +105,14 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex justify-center mb-6">
+          <AvatarUpload
+            onImageUploaded={setAvatarUrl}
+            currentImageUrl={avatarUrl}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -173,30 +181,6 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
           <FormField
             control={form.control}
-            name="position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Position *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select position" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="receptionist">Receptionist</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="sales">Sales</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="department"
             render={({ field }) => (
               <FormItem>
@@ -218,6 +202,30 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="position"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Position *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select position" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="receptionist">Receptionist</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="sales">Sales</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="space-y-4">
@@ -228,7 +236,7 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Address *</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Textarea {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

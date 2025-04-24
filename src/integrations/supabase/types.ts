@@ -1080,6 +1080,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           date_of_birth: string | null
+          department: string | null
           email: string | null
           full_name: string | null
           gender: string | null
@@ -1099,6 +1100,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          department?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
@@ -1118,6 +1120,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          department?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
