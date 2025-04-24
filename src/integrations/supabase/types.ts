@@ -938,6 +938,42 @@ export type Database = {
           },
         ]
       }
+      payment_gateway_settings: {
+        Row: {
+          allowed_ips: string[] | null
+          config: Json
+          created_at: string
+          gateway: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          allowed_ips?: string[] | null
+          config: Json
+          created_at?: string
+          gateway: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          allowed_ips?: string[] | null
+          config?: Json
+          created_at?: string
+          gateway?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       payment_settings: {
         Row: {
           config: Json
@@ -1239,6 +1275,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          error: string | null
+          event_type: string
+          gateway: string
+          id: string
+          ip_address: string | null
+          payload: Json
+          processed_at: string | null
+          signature: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          error?: string | null
+          event_type: string
+          gateway: string
+          id?: string
+          ip_address?: string | null
+          payload: Json
+          processed_at?: string | null
+          signature?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          gateway?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json
+          processed_at?: string | null
+          signature?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
