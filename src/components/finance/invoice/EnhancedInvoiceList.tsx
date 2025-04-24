@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +21,7 @@ interface EnhancedInvoiceListProps {
   readonly?: boolean;
   allowPayment?: boolean;
   allowDownload?: boolean;
-  filter?: string;
+  filter?: 'all' | 'pending' | 'paid' | 'overdue';
 }
 
 const EnhancedInvoiceList = ({ 
@@ -43,6 +42,69 @@ const EnhancedInvoiceList = ({
   const isMember = user?.role === "member";
 
   useEffect(() => {
+    const fetchInvoices = async () => {
+      setLoading(true);
+
+      try {
+        let query = supabase
+          .from('invoices')
+          .select(`
+            *,
+            members (full_name)
+          `);
+
+        // Filter by branch
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
+
+        // Filter by member if user is a member
+        if (isMember) {
+          query = query.eq('member_id', user?.id);
+        }
+
+        // Apply status filter if not "all"
+        if (filter && filter !== "all") {
+          query = query.eq('status', filter);
+        }
+
+        // Sort by issued date, newest first
+        query = query.order('issued_date', { ascending: false });
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        if (data) {
+          const formattedInvoices: Invoice[] = data.map(item => ({
+            id: item.id,
+            status: item.status as InvoiceStatus,
+            issuedDate: item.issued_date,
+            dueDate: item.due_date,
+            paidDate: item.paid_date,
+            razorpayOrderId: item.razorpay_order_id,
+            razorpayPaymentId: item.razorpay_payment_id,
+            memberId: item.member_id,
+            memberName: item.members?.full_name || 'Unknown Member',
+            amount: item.amount,
+            items: item.items || [],
+            branchId: item.branch_id,
+            membershipPlanId: item.membership_plan_id,
+            description: item.description,
+            paymentMethod: item.payment_method,
+            notes: item.notes
+          }));
+          
+          setInvoices(formattedInvoices);
+        }
+      } catch (error: any) {
+        console.error('Error fetching invoices:', error);
+        toast.error('Failed to fetch invoices');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchInvoices();
     
     // Set up real-time listener
@@ -65,71 +127,6 @@ const EnhancedInvoiceList = ({
       supabase.removeChannel(channel);
     };
   }, [currentBranch, refreshData, filter, user]);
-
-  const fetchInvoices = async () => {
-    setLoading(true);
-
-    try {
-      let query = supabase
-        .from('invoices')
-        .select(`
-          *,
-          profiles:member_id(full_name)
-        `);
-
-      // Filter by branch
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-
-      // Filter by member if user is a member
-      if (isMember) {
-        query = query.eq('member_id', user?.id);
-      }
-
-      // Apply status filter if not "all"
-      if (filter && filter !== "all") {
-        query = query.eq('status', filter);
-      }
-
-      // Sort by issued date, newest first
-      query = query.order('issued_date', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        const formattedInvoices: Invoice[] = data.map(item => ({
-          id: item.id,
-          status: item.status as InvoiceStatus,
-          issuedDate: item.issued_date,
-          dueDate: item.due_date,
-          paidDate: item.paid_date,
-          razorpayOrderId: item.razorpay_order_id,
-          razorpayPaymentId: item.razorpay_payment_id,
-          memberId: item.member_id,
-          memberName: item.profiles?.full_name || 'Unknown Member',
-          amount: item.amount,
-          items: item.items || [],
-          branchId: item.branch_id,
-          membershipPlanId: item.membership_plan_id,
-          description: item.description,
-          paymentMethod: item.payment_method,
-          notes: item.notes
-        }));
-        
-        setInvoices(formattedInvoices);
-      }
-    } catch (error: any) {
-      console.error('Error fetching invoices:', error);
-      toast.error('Failed to fetch invoices');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddInvoice = () => {
     setSelectedInvoice(null);
