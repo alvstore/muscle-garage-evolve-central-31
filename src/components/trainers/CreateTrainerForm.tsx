@@ -7,37 +7,38 @@ import { toast } from 'sonner';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/services/supabaseClient';
-import type { StaffFormData } from '@/types/staff';
 import { useBranch } from '@/hooks/use-branch';
 
-const staffFormSchema = z.object({
+const trainerFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  position: z.string().min(1, 'Position is required'),
-  department: z.string().min(1, 'Department is required'),
+  specialty: z.string().min(2, 'Specialty is required'),
+  bio: z.string().optional(),
   branchId: z.string().optional()
 });
 
-export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
+type TrainerFormData = z.infer<typeof trainerFormSchema>;
+
+export function CreateTrainerForm({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
   const { currentBranch } = useBranch();
 
-  const form = useForm<StaffFormData>({
-    resolver: zodResolver(staffFormSchema),
+  const form = useForm<TrainerFormData>({
+    resolver: zodResolver(trainerFormSchema),
     defaultValues: {
       name: '',
       email: '',
       phone: '',
-      position: '',
-      department: '',
+      specialty: '',
+      bio: '',
       branchId: currentBranch?.id
     }
   });
 
-  const onSubmit = async (data: StaffFormData) => {
+  const onSubmit = async (data: TrainerFormData) => {
     try {
       setLoading(true);
       
@@ -51,36 +52,37 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
         options: {
           data: {
             full_name: data.name,
-            role: 'staff'
+            role: 'trainer'
           }
         }
       });
 
       if (authError) throw authError;
 
-      // Create a profile if needed (this might be handled by a trigger)
+      // Create or update profile with trainer-specific fields
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: data.name,
           email: data.email,
-          role: 'staff',
+          role: 'trainer',
           phone: data.phone || null,
-          position: data.position,
-          department: data.department,
+          specialty: data.specialty,
+          bio: data.bio || null,
           branch_id: data.branchId || currentBranch?.id,
-          is_active: true
+          is_active: true,
+          rating: 5.0 // Default rating
         })
         .eq('id', authData.user?.id);
 
       if (profileError) throw profileError;
 
-      toast.success('Staff member created successfully');
+      toast.success('Trainer created successfully');
       onSuccess();
       form.reset();
     } catch (error: any) {
-      console.error('Error creating staff:', error);
-      toast.error(error.message || 'Failed to create staff member');
+      console.error('Error creating trainer:', error);
+      toast.error(error.message || 'Failed to create trainer');
     } finally {
       setLoading(false);
     }
@@ -133,23 +135,13 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
         <FormField
           control={form.control}
-          name="position"
+          name="specialty"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Position</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select position" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="receptionist">Receptionist</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Specialty</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g., Weight Loss, Strength Training" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -157,30 +149,25 @@ export function CreateStaffForm({ onSuccess }: { onSuccess: () => void }) {
 
         <FormField
           control={form.control}
-          name="department"
+          name="bio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="operations">Operations</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="member_services">Member Services</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Bio (optional)</FormLabel>
+              <FormControl>
+                <Textarea 
+                  {...field} 
+                  placeholder="Brief description about the trainer's experience and qualifications"
+                  className="resize-none"
+                  rows={4}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
         <Button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Staff Member'}
+          {loading ? 'Creating...' : 'Create Trainer'}
         </Button>
       </form>
     </Form>

@@ -15,10 +15,10 @@ export interface StaffMember {
 }
 
 export interface StaffFormData {
-  email: string;
   name: string;
+  email: string;
   phone?: string;
-  position?: string;
-  department?: string;
+  position: string;
+  department: string;
   branchId?: string;
 }

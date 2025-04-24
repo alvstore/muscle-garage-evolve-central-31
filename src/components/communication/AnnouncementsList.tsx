@@ -1,66 +1,16 @@
 
-import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { MessageSquare, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/services/supabaseClient';
 import { Announcement } from '@/types/notification';
+import { useAnnouncements } from '@/hooks/use-announcements';
 
 export function AnnouncementsList() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('announcements')
-          .select(`
-            id,
-            title,
-            content,
-            priority,
-            created_at,
-            expires_at,
-            profiles:author_id (
-              full_name,
-              avatar_url
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Transform the data to match the Announcement type
-        const formattedAnnouncements: Announcement[] = (data || []).map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          priority: item.priority,
-          createdAt: item.created_at,
-          expiresAt: item.expires_at,
-          authorId: item.profiles?.[0]?.id || '',
-          authorName: item.profiles?.[0]?.full_name || 'Unknown',
-          // Add other required fields with default values if needed
-          createdBy: item.profiles?.[0]?.full_name || 'Unknown',
-          targetRoles: [],
-          channels: []
-        }));
-
-        setAnnouncements(formattedAnnouncements);
-      } catch (error) {
-        console.error('Error fetching announcements:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnnouncements();
-  }, []);
+  const { announcements, loading } = useAnnouncements();
 
   if (loading) {
-    return <div>Loading announcements...</div>;
+    return <div className="flex justify-center py-10">Loading announcements...</div>;
   }
 
   if (announcements.length === 0) {
