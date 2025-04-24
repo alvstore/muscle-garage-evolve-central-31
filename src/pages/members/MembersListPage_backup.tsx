@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
@@ -32,8 +33,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: new Date("2023-01-15"),
-          membershipEndDate: new Date("2024-01-15"),
+          membershipStartDate: new Date("2023-01-15").toISOString(),
+          membershipEndDate: new Date("2024-01-15").toISOString(),
         },
         {
           id: "member-2",
@@ -44,8 +45,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "gold-6m",
-          membershipStartDate: new Date("2023-06-01"),
-          membershipEndDate: new Date("2023-12-01"),
+          membershipStartDate: new Date("2023-06-01").toISOString(),
+          membershipEndDate: new Date("2023-12-01").toISOString(),
         },
         {
           id: "member-3",
@@ -56,8 +57,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "expired",
           membershipId: "silver-3m",
-          membershipStartDate: new Date("2023-01-01"),
-          membershipEndDate: new Date("2023-04-01"),
+          membershipStartDate: new Date("2023-01-01").toISOString(),
+          membershipEndDate: new Date("2023-04-01").toISOString(),
         },
         {
           id: "member-4",
@@ -68,8 +69,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "inactive",
           membershipId: "gold-6m",
-          membershipStartDate: new Date("2023-02-15"),
-          membershipEndDate: new Date("2023-08-15"),
+          membershipStartDate: new Date("2023-02-15").toISOString(),
+          membershipEndDate: new Date("2023-08-15").toISOString(),
         },
         {
           id: "member-5",
@@ -80,8 +81,8 @@ const MembersListPage = () => {
           status: "active",
           membershipStatus: "active",
           membershipId: "platinum-12m",
-          membershipStartDate: new Date("2023-05-01"),
-          membershipEndDate: new Date("2024-05-01"),
+          membershipStartDate: new Date("2023-05-01").toISOString(),
+          membershipEndDate: new Date("2024-05-01").toISOString(),
         }
       ];
       

@@ -1,77 +1,10 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Waves, Lock, Cloud, Car, Heart, Dumbbell, LucideIcon } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
 
-interface Facility {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}
-
-interface AboutSectionProps {
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  goalTitle?: string;
-  goalDescription?: string;
-  facilities?: {
-    title: string;
-    description: string;
-    iconType: string;
-  }[];
-}
-
-const iconMap: Record<string, LucideIcon> = {
-  waves: Waves,
-  lock: Lock,
-  cloud: Cloud,
-  car: Car,
-  heart: Heart,
-  dumbbell: Dumbbell
-};
-
-const AboutSection = ({
-  title = "ABOUT",
-  subtitle = "MUSCLE GARAGE",
-  description = "Muscle Garage is the biggest, most advanced GYM in Ahmedabad. The Facility is fully equipped with state of the art Cardio machines, sensorised strength training machines and a variety of training equipment to workout on. The GYM features a Strength zone, Free-weight zone, Cardio zone, Group training studio, crossfit area, swimming pool, steam bath and ICE Bath.",
-  goalTitle = "OUR GOAL",
-  goalDescription = "Our Mission is to provide a Dynamic Training Facility with state of the art equipments, Pro-instructors & High-level training. All our members are trained by Pro-Trainers who have abundance of knowledge & skills in many aspects of Fitness. Our Focus is a Fitness Experience that builds a stronger You!!",
-  facilities = [
-    {
-      title: "Swimming Pool & Ice Bath",
-      description: "Olympic-sized swimming pool and therapeutic ice bath for recovery.",
-      iconType: "waves"
-    },
-    {
-      title: "Locker Facility",
-      description: "Secure, modern lockers with digital locks for all members.",
-      iconType: "lock"
-    },
-    {
-      title: "Steam Room",
-      description: "Luxury steam rooms to relax and recover after intense workouts.",
-      iconType: "cloud"
-    },
-    {
-      title: "Huge Parking Space",
-      description: "Convenient parking for all members with security surveillance.",
-      iconType: "car"
-    },
-    {
-      title: "Dedicated Cardio Section",
-      description: "State-of-the-art cardio equipment with personal entertainment screens.",
-      iconType: "heart"
-    },
-    {
-      title: "Zumba & Yoga Studio",
-      description: "Spacious studio for various fitness classes led by certified instructors.",
-      iconType: "dumbbell"
-    }
-  ]
-}: AboutSectionProps = {}) => {
+const AboutSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-
+  
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -96,52 +29,58 @@ const AboutSection = ({
     };
   }, []);
 
-  const facilityItems = facilities.map(facility => {
-    const IconComponent = iconMap[facility.iconType] || Dumbbell;
-    return {
-      icon: <IconComponent className="h-8 w-8" />,
-      title: facility.title,
-      description: facility.description
-    };
-  });
-
   return (
-    <section id="about" ref={sectionRef} className="section-padding bg-gym-black">
+    <section 
+      id="about" 
+      ref={sectionRef}
+      className="section-padding bg-gym-gray-900"
+    >
       <div className="gym-container">
-        <div className={`text-center max-w-3xl mx-auto mb-8 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
+        <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
           <h2 className="text-3xl md:text-5xl font-impact mb-4">
-            {title} <span className="text-gym-yellow">{subtitle}</span>
+            ABOUT <span className="text-gym-yellow">MUSCLE GARAGE</span>
           </h2>
-          <p className="text-gray-300 mb-6">
-            {description}
+          <p className="text-gray-300">
+            Discover the ultimate fitness experience at Muscle Garage. We are dedicated to helping you achieve your fitness goals.
           </p>
-          
-          <div className="mt-8 mb-8">
-            <h3 className="text-2xl font-impact mb-4">{goalTitle.split(' ')[0]} <span className="text-gym-yellow">{goalTitle.split(' ').slice(1).join(' ')}</span></h3>
-            <p className="text-gray-300">
-              {goalDescription}
-            </p>
-          </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {facilityItems.map((facility, index) => (
-            <div
-              key={facility.title}
-              className={`bg-gym-gray-800 rounded-lg p-6 shadow-lg transition-all duration-500 hover:shadow-xl hover:bg-gym-gray-700 transform hover:-translate-y-1 ${
-                isVisible ? 'animate-fade-in' : 'opacity-0'
-              }`}
-              style={{ 
-                animationDelay: `${index * 0.1}s` 
-              }}
-            >
-              <div className="p-3 bg-gym-yellow rounded-full inline-block text-gym-black mb-4">
-                {facility.icon}
-              </div>
-              <h3 className="text-xl font-bold mb-2">{facility.title}</h3>
-              <p className="text-gray-400">{facility.description}</p>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{ animationDelay: '0.2s' }}>
+            <div className="rounded-lg overflow-hidden">
+              <img src="/about-img.jpg" alt="Muscle Garage Gym" className="w-full h-auto" />
             </div>
-          ))}
+          </div>
+          
+          <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{ animationDelay: '0.4s' }}>
+            <h3 className="text-2xl font-bold mb-4">Welcome to Muscle Garage</h3>
+            <p className="mb-4">
+              Founded in 2015, Muscle Garage has grown to become one of the most trusted fitness centers in Ahmedabad. 
+              Our mission is to provide a comprehensive fitness experience for all, from beginners to experienced athletes.
+            </p>
+            <p className="mb-4">
+              With state-of-the-art equipment, specialized training programs, and expert trainers, 
+              we ensure that every member receives personalized attention and achieves their fitness goals.
+            </p>
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
+                <div className="text-4xl font-bold text-gym-yellow mb-2">5+</div>
+                <p>Years Experience</p>
+              </div>
+              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
+                <div className="text-4xl font-bold text-gym-yellow mb-2">1500+</div>
+                <p>Members</p>
+              </div>
+              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
+                <div className="text-4xl font-bold text-gym-yellow mb-2">25+</div>
+                <p>Professional Trainers</p>
+              </div>
+              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
+                <div className="text-4xl font-bold text-gym-yellow mb-2">10+</div>
+                <p>Fitness Programs</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
