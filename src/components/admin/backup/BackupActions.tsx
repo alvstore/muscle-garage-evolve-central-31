@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, RotateCcw } from "lucide-react";
-import { createBackupZip } from '@/services/backupService';
+import { createBackupZip } from '@/services/backup/backupService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
