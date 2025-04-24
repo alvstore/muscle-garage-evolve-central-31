@@ -19,8 +19,7 @@ export type Permission =
   | 'manage_staff'
   | 'feature_email_campaigns'
   | 'access_communication'
-  | 'view_staff'
-  | string; // Allow string for flexibility with other permissions
+  | 'view_staff';
 
 export interface NavItem {
   href: string;
@@ -34,5 +33,5 @@ export interface NavItem {
 export interface NavSection {
   name: string;
   items: NavItem[];
-  icon?: React.ReactNode; // Add icon property to support trainerNavigation
+  icon?: React.ReactNode;
 }

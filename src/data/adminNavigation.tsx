@@ -1,7 +1,20 @@
 
 import React from "react";
 import { NavSection } from "@/types/navigation";
-import { Home, Users, Calendar, CreditCard, Settings, Package, BarChart2, Bell, FileText, Globe, ShoppingCart } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Users, 
+  CalendarDays,
+  UserRound,
+  Store,
+  Dumbbell,
+  MessageSquare,
+  BarChart,
+  Globe,
+  FileText,
+  Settings,
+  CircleDollarSign
+} from "lucide-react";
 
 export const adminNavSections: NavSection[] = [
   {
@@ -9,9 +22,15 @@ export const adminNavSections: NavSection[] = [
     items: [
       {
         href: "/dashboard",
-        label: "Overview",
+        label: "Analytics Dashboard",
         permission: "view_dashboard",
-        icon: <Home className="h-5 w-5" />
+        icon: <BarChart className="h-5 w-5" />
+      },
+      {
+        href: "/dashboard/realtime",
+        label: "Real-Time Dashboard",
+        permission: "view_dashboard",
+        icon: <LayoutDashboard className="h-5 w-5" />
       }
     ]
   },
@@ -20,15 +39,15 @@ export const adminNavSections: NavSection[] = [
     items: [
       {
         href: "/members",
-        label: "Member Management",
+        label: "Member List",
         permission: "manage_members",
         icon: <Users className="h-5 w-5" />
       },
       {
-        href: "/fitness/progress",
-        label: "Progress Tracking",
-        permission: "manage_members",
-        icon: <BarChart2 className="h-5 w-5" />
+        href: "/memberships",
+        label: "Membership Plans",
+        permission: "manage_memberships",
+        icon: <FileText className="h-5 w-5" />
       }
     ]
   },
@@ -39,24 +58,115 @@ export const adminNavSections: NavSection[] = [
         href: "/classes",
         label: "Class Schedule",
         permission: "manage_classes",
-        icon: <Calendar className="h-5 w-5" />
+        icon: <CalendarDays className="h-5 w-5" />
       }
     ]
   },
   {
-    name: "Finance",
+    name: "Staff",
     items: [
       {
-        href: "/finance/transactions",
-        label: "Transactions",
-        permission: "manage_finances",
-        icon: <CreditCard className="h-5 w-5" />
+        href: "/staff",
+        label: "Staff List",
+        permission: "manage_staff",
+        icon: <Users className="h-5 w-5" />
       },
       {
-        href: "/finance/invoices",
-        label: "Invoices",
-        permission: "manage_finances",
+        href: "/trainers",
+        label: "Trainers",
+        permission: "manage_trainers",
+        icon: <UserRound className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "CRM & Leads",
+    items: [
+      {
+        href: "/crm",
+        label: "Lead Management",
+        permission: "manage_members",
+        icon: <Users className="h-5 w-5" />
+      },
+      {
+        href: "/crm/funnel",
+        label: "Sales Funnel",
+        permission: "manage_members",
+        icon: <BarChart className="h-5 w-5" />
+      },
+      {
+        href: "/crm/follow-up",
+        label: "Follow-Up",
+        permission: "manage_members",
+        icon: <MessageSquare className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Marketing",
+    items: [
+      {
+        href: "/marketing/promo",
+        label: "Promotions",
+        permission: "manage_members",
         icon: <FileText className="h-5 w-5" />
+      },
+      {
+        href: "/marketing/referral",
+        label: "Referral Programs",
+        permission: "manage_members",
+        icon: <Users className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Inventory & Shop",
+    items: [
+      {
+        href: "/inventory",
+        label: "Inventory",
+        permission: "manage_inventory",
+        icon: <Store className="h-5 w-5" />
+      },
+      {
+        href: "/store",
+        label: "Store",
+        permission: "manage_inventory",
+        icon: <Store className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Fitness",
+    items: [
+      {
+        href: "/fitness/plans",
+        label: "Fitness Plans Management",
+        permission: "trainer_edit_fitness",
+        icon: <Dumbbell className="h-5 w-5" />
+      },
+      {
+        href: "/fitness/progress",
+        label: "Member Progress",
+        permission: "trainer_view_members",
+        icon: <BarChart className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Communication",
+    items: [
+      {
+        href: "/announcements",
+        label: "Announcements",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
+      },
+      {
+        href: "/feedback",
+        label: "Feedback Management",
+        permission: "access_communication",
+        icon: <MessageSquare className="h-5 w-5" />
       }
     ]
   },
@@ -72,30 +182,30 @@ export const adminNavSections: NavSection[] = [
     ]
   },
   {
-    name: "Store",
+    name: "Reports",
     items: [
       {
-        href: "/store",
-        label: "Store Management",
-        permission: "manage_inventory",
-        icon: <ShoppingCart className="h-5 w-5" />
-      },
-      {
-        href: "/inventory",
-        label: "Inventory",
-        permission: "manage_inventory",
-        icon: <Package className="h-5 w-5" />
+        href: "/reports",
+        label: "Reports & Analytics",
+        permission: "view_dashboard",
+        icon: <BarChart className="h-5 w-5" />
       }
     ]
   },
   {
-    name: "Communication",
+    name: "Finance",
     items: [
       {
-        href: "/announcements",
-        label: "Announcements",
-        permission: "manage_branch",
-        icon: <Bell className="h-5 w-5" />
+        href: "/finance/dashboard",
+        label: "Finance Dashboard",
+        permission: "manage_finances",
+        icon: <CircleDollarSign className="h-5 w-5" />
+      },
+      {
+        href: "/finance/transactions",
+        label: "Transactions",
+        permission: "manage_finances",
+        icon: <FileText className="h-5 w-5" />
       }
     ]
   },
@@ -105,6 +215,12 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/settings",
         label: "System Settings",
+        permission: "manage_settings",
+        icon: <Settings className="h-5 w-5" />
+      },
+      {
+        href: "/settings/integrations",
+        label: "Integration Settings",
         permission: "manage_settings",
         icon: <Settings className="h-5 w-5" />
       }

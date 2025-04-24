@@ -1,4 +1,3 @@
-
 import { UserRole } from './index';
 
 // Extended user type with branch and address information
@@ -9,11 +8,11 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
-  branchId?: string; // Primary branch ID
-  branchIds?: string[]; // All branches the user has access to
-  isBranchManager?: boolean; // Whether the user is a branch manager
-  primaryBranchId?: string; // Added for compatibility
-  dateOfBirth?: string; // Add dateOfBirth to support its use in mockData.ts
+  branchId?: string;
+  branchIds?: string[];
+  isBranchManager?: boolean;
+  primaryBranchId?: string;
+  dateOfBirth?: string;
   
   // Address fields
   address?: string;
