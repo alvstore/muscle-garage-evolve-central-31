@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import InvoiceList from "@/components/finance/InvoiceList";
 import MemberInvoiceList from "@/components/finance/MemberInvoiceList";
 import WebhookLogs from "@/components/finance/WebhookLogs";
 import { useAuth } from "@/hooks/use-auth";
+import EnhancedInvoiceList from "@/components/finance/invoice/EnhancedInvoiceList";
 
 const InvoicePage = () => {
   const { user } = useAuth();
@@ -31,55 +31,51 @@ const InvoicePage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
-            <TabsTrigger value="invoices">Pending Invoices</TabsTrigger>
-            <TabsTrigger value="paid">Paid Invoices</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue Invoices</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="overdue">Overdue</TabsTrigger>
             <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>
           </TabsList>
           
-          {!isMember && (
-            <TabsContent value="all-invoices">
-              <InvoiceList 
-                readonly={false} 
-                allowPayment={true}
-                allowDownload={true}
-              />
-            </TabsContent>
-          )}
-          
-          <TabsContent value="invoices">
-            <InvoiceList 
-              readonly={isMember} 
-              allowPayment={isMember}
+          <TabsContent value="all-invoices">
+            <EnhancedInvoiceList 
+              readonly={false} 
+              allowPayment={true}
               allowDownload={true}
+              filter="all"
             />
           </TabsContent>
           
-          {!isMember && (
-            <TabsContent value="paid">
-              <InvoiceList 
-                readonly={false}
-                allowPayment={false}
-                allowDownload={true}
-              />
-            </TabsContent>
-          )}
+          <TabsContent value="pending">
+            <EnhancedInvoiceList 
+              readonly={false} 
+              allowPayment={true}
+              allowDownload={true}
+              filter="pending"
+            />
+          </TabsContent>
           
-          {!isMember && (
-            <TabsContent value="overdue">
-              <InvoiceList 
-                readonly={false}
-                allowPayment={true}
-                allowDownload={true}
-              />
-            </TabsContent>
-          )}
+          <TabsContent value="paid">
+            <EnhancedInvoiceList 
+              readonly={false}
+              allowPayment={false}
+              allowDownload={true}
+              filter="paid"
+            />
+          </TabsContent>
           
-          {!isMember && (
-            <TabsContent value="webhooks">
-              <WebhookLogs />
-            </TabsContent>
-          )}
+          <TabsContent value="overdue">
+            <EnhancedInvoiceList 
+              readonly={false}
+              allowPayment={true}
+              allowDownload={true}
+              filter="overdue"
+            />
+          </TabsContent>
+          
+          <TabsContent value="webhooks">
+            <WebhookLogs />
+          </TabsContent>
         </Tabs>
       </div>
     </Container>
