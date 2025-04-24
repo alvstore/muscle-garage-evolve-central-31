@@ -1,441 +1,194 @@
-import React from 'react';
-import {
-  BarChart3,
-  Users,
-  CalendarDays,
-  CreditCard,
-  Dumbbell,
-  UserCircle,
-  Briefcase,
-  Clock,
-  PieChart,
-  Building2,
-  Contact,
-  Mail,
-  MessageCircle,
-  Share2,
-  HelpCircle,
-  Radio,
-  Globe,
-  Bell,
-  Activity,
-  Cpu,
-  Package,
-  Store,
-  FileText,
-  Megaphone,
-  RefreshCcw,
-  TrendingUp,
-  UserPlus,
-  FolderHeart,
-  Gift,
-  Wallet,
-  Archive,
-  Settings,
-  Layers,
-  KeyRound,
-  Repeat,
-  LayoutTemplate,
-  Zap,
-  Smartphone,
-  Database
-} from "lucide-react";
-import { NavSection } from "@/types/navigation";
-import { Permission } from "@/hooks/use-permissions";
+import { Permission } from '@/hooks/use-permissions';
 
-export const adminNavSections: NavSection[] = [
+export const adminNavigation = [
   {
-    name: "Dashboard",
-    items: [
+    name: 'Dashboard',
+    href: '/dashboard',
+    children: [
       {
-        href: "/",
-        label: "Analytics Dashboard",
-        icon: <BarChart3 className="h-5 w-5" />,
-        permission: "access_dashboards" as Permission,
+        href: '/dashboard',
+        label: 'Analytics Dashboard',
+        permission: 'access_dashboards'
       },
       {
-        href: "/dashboard/realtime",
-        label: "Real-Time Dashboard",
-        icon: <Activity className="h-5 w-5" />,
-        permission: "view_all_attendance" as Permission,
+        href: '/dashboard/crm',
+        label: 'CRM Dashboard',
+        permission: 'access_crm'
+      },
+      {
+        href: '/dashboard/marketing',
+        label: 'Marketing Dashboard',
+        permission: 'access_marketing'
+      },
+      {
+        href: '/dashboard/finance',
+        label: 'Finance Dashboard',
+        permission: 'access_finance'
+      },
+      {
+        href: '/dashboard/trainer',
+        label: 'Trainer Dashboard',
+        permission: 'feature_trainer_dashboard'
       }
     ],
   },
   {
-    name: "Members",
-    items: [
+    name: 'Management',
+    href: '/management',
+    children: [
       {
-        href: "/members",
-        label: "Member List",
-        icon: <Users className="h-5 w-5" />,
-        permission: "manage_members" as Permission,
+        href: '/branches',
+        label: 'Branches',
+        permission: 'manage_branches'
       },
       {
-        href: "/memberships",
-        label: "Membership Plans",
-        icon: <Briefcase className="h-5 w-5" />,
-        permission: "member_view_plans" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Classes",
-    items: [
-      {
-        href: "/classes",
-        label: "Class Schedule",
-        icon: <CalendarDays className="h-5 w-5" />,
-        permission: "view_classes" as Permission,
+        href: '/members',
+        label: 'Members',
+        permission: 'manage_members'
       },
       {
-        href: "/classes/types",
-        label: "Class Types",
-        icon: <Dumbbell className="h-5 w-5" />,
-        permission: "trainer_view_classes" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Staff",
-    items: [
-      {
-        href: "/staff",
-        label: "Staff List",
-        icon: <Users className="h-5 w-5" />,
-        permission: "view_staff" as Permission,
+        href: '/trainers',
+        label: 'Trainers',
+        permission: 'view_all_trainers'
       },
       {
-        href: "/trainers",
-        label: "Trainers",
-        icon: <Dumbbell className="h-5 w-5" />,
-        permission: "view_all_trainers" as Permission,
-      },
-    ],
-  },
-  {
-    name: "CRM & Leads",
-    items: [
-      {
-        href: "/crm/leads",
-        label: "Lead Management",
-        icon: <UserPlus className="h-5 w-5" />,
-        permission: "access_crm" as Permission,
+        href: '/staff',
+        label: 'Staff',
+        permission: 'manage_staff'
       },
       {
-        href: "/crm/funnel",
-        label: "Sales Funnel",
-        icon: <TrendingUp className="h-5 w-5" />,
-        permission: "access_crm" as Permission,
+        href: '/roles',
+        label: 'Roles & Permissions',
+        permission: 'manage_roles'
       },
       {
-        href: "/crm/follow-up",
-        label: "Follow-Up",
-        icon: <RefreshCcw className="h-5 w-5" />,
-        permission: "access_crm" as Permission,
+        href: '/attendance',
+        label: 'Attendance',
+        permission: 'view_all_attendance'
+      },
+      {
+        href: '/classes',
+        label: 'Classes',
+        permission: 'view_classes'
+      },
+      {
+        href: '/fitness/plans',
+        label: 'Fitness Plans',
+        permission: 'assign_plan'
+      },
+      {
+        href: '/fitness/progress',
+        label: 'Fitness Progress',
+        permission: 'manage_fitness_data'
+      },
+      {
+        href: '/inventory',
+        label: 'Inventory',
+        permission: 'access_inventory'
+      },
+      {
+        href: '/store',
+        label: 'Store',
+        permission: 'access_store'
       },
     ],
   },
   {
-    name: "Marketing",
-    items: [
+    name: 'Communication',
+    href: '/communication',
+    children: [
       {
-        href: "/marketing/promo",
-        label: "Promotions",
-        icon: <Gift className="h-5 w-5" />,
-        permission: "access_marketing" as Permission,
+        href: '/communication/announcements',
+        label: 'Announcements',
+        permission: 'access_communication'
       },
       {
-        href: "/marketing/referral",
-        label: "Referral Programs",
-        icon: <Share2 className="h-5 w-5" />,
-        permission: "access_marketing" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Inventory & Shop",
-    items: [
-      {
-        href: "/inventory",
-        label: "Inventory",
-        icon: <Package className="h-5 w-4" />,
-        permission: "access_inventory" as Permission,
+        href: '/communication/email-campaigns',
+        label: 'Email Campaigns',
+        permission: 'feature_email_campaigns'
       },
       {
-        href: "/store",
-        label: "Store",
-        icon: <Store className="h-5 w-5" />,
-        permission: "access_store" as Permission,
+        href: '/communication/sms',
+        label: 'SMS Campaigns',
+        permission: 'access_communication'
       },
     ],
   },
   {
-    name: "Fitness",
-    items: [
+    name: 'Finance',
+    href: '/finance',
+    children: [
       {
-        href: "/fitness-plans",
-        label: "Fitness Plans Management",
-        icon: <FolderHeart className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
+        href: '/finance/invoices',
+        label: 'Invoices',
+        permission: 'manage_invoices'
       },
       {
-        href: "/fitness/progress",
-        label: "Member Progress",
-        icon: <Activity className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
+        href: '/finance/transactions',
+        label: 'Transactions',
+        permission: 'manage_transactions'
       },
       {
-        href: "/fitness/workout-plans",
-        label: "Workout Plans",
-        icon: <Dumbbell className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
+        href: '/finance/income',
+        label: 'Income',
+        permission: 'manage_income'
       },
       {
-        href: "/fitness/diet-plans",
-        label: "Diet Plans",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "manage_fitness_data" as Permission,
-      },
-    ],
-  },
-  {
-    name: "Communication",
-    items: [
-      {
-        href: "/communication/announcements",
-        label: "Announcements",
-        icon: <Megaphone className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
+        href: '/finance/expenses',
+        label: 'Expenses',
+        permission: 'manage_expenses'
       },
       {
-        href: "/communication/feedback",
-        label: "Feedback Management",
-        icon: <MessageCircle className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/notifications",
-        label: "Notifications",
-        icon: <Bell className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
-      },
-      {
-        href: "/communication/tasks",
-        label: "Task Manager",
-        icon: <Briefcase className="h-5 w-5" />,
-        permission: "access_communication" as Permission,
+        href: '/finance/reports',
+        label: 'Reports',
+        permission: 'access_reports'
       },
     ],
   },
   {
-    name: "Website",
-    items: [
+    name: 'Settings',
+    href: '/settings',
+    children: [
       {
-        href: "/website",
-        label: "Website Management",
-        icon: <Globe className="h-5 w-5" />,
-        permission: "manage_website" as Permission,
-        children: [
-          {
-            href: "/website/home",
-            label: "Home Page",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/website/about",
-            label: "About Us",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/website/services",
-            label: "Services & Pricing",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/website/classes",
-            label: "Classes & Trainers",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/website/testimonials",
-            label: "Testimonials",
-            permission: "manage_website" as Permission,
-          },
-          {
-            href: "/website/contact",
-            label: "Contact Page",
-            permission: "manage_website" as Permission,
-          }
-        ]
+        href: '/settings/general',
+        label: 'General Settings',
+        permission: 'manage_settings'
+      },
+      {
+        href: '/settings/email',
+        label: 'Email Settings',
+        permission: 'manage_settings'
+      },
+      {
+        href: '/settings/sms',
+        label: 'SMS Settings',
+        permission: 'manage_settings'
+      },
+      {
+        href: '/settings/integrations',
+        label: 'Integrations',
+        permission: 'manage_integrations'
+      },
+      {
+        href: '/settings/templates',
+        label: 'Templates',
+        permission: 'manage_templates'
+      },
+      {
+        href: '/settings/devices',
+        label: 'Devices',
+        permission: 'manage_devices'
       },
     ],
   },
   {
-    name: "Reports",
-    items: [
-      {
-        href: "/reports",
-        label: "Reports & Analytics",
-        icon: <FileText className="h-5 w-5" />,
-        permission: "access_reports" as Permission,
-      },
-    ],
+    name: 'Website',
+    href: '/website',
+    children: [],
   },
   {
-    name: "Finance",
-    items: [
-      {
-        href: "/finance/dashboard",
-        label: "Finance Dashboard",
-        icon: <PieChart className="h-5 w-5" />,
-        permission: "access_finance" as Permission,
-        children: [
-          {
-            href: "/finance/invoices",
-            label: "Invoices",
-            permission: "manage_invoices" as Permission,
-          },
-          {
-            href: "/finance/transactions",
-            label: "Transactions",
-            permission: "manage_transactions" as Permission,
-          },
-          {
-            href: "/finance/income",
-            label: "Income Records",
-            permission: "manage_income" as Permission,
-          },
-          {
-            href: "/finance/expenses",
-            label: "Expense Management",
-            permission: "manage_expenses" as Permission,
-          }
-        ]
-      },
-    ],
-  },
-  {
-    name: "Settings",
-    items: [
-      {
-        href: "/settings",
-        label: "System Settings",
-        icon: <Settings className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-        children: [
-          {
-            href: "/settings",
-            label: "General Settings",
-            permission: "manage_settings" as Permission,
-          },
-          {
-            href: "/settings/branches",
-            label: "Branch Management",
-            permission: "manage_branches" as Permission,
-          },
-          {
-            href: "/settings/automation",
-            label: "Automation Rules",
-            permission: "manage_settings" as Permission,
-          },
-          {
-            href: "/system-backup",
-            label: "System Backup",
-            icon: <Archive className="h-5 w-5" />,
-            permission: "manage_settings" as Permission,
-          }
-        ]
-      },
-      {
-        href: "/settings/integrations",
-        label: "Integration Settings",
-        icon: <Layers className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-        children: [
-          {
-            href: "/settings/integrations/access-control",
-            label: "Access Control",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/payment",
-            label: "Payment Gateways",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/messaging",
-            label: "Messaging Services",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/sms",
-            label: "SMS Services",
-            permission: "manage_integrations" as Permission,
-          },
-          {
-            href: "/settings/integrations/push",
-            label: "Push Notifications",
-            permission: "manage_integrations" as Permission,
-          }
-        ]
-      },
-      {
-        href: "/settings/templates",
-        label: "Message Templates",
-        icon: <LayoutTemplate className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-        children: [
-          {
-            href: "/settings/templates/email",
-            label: "Email Templates",
-            permission: "manage_templates" as Permission,
-          },
-          {
-            href: "/settings/templates/sms",
-            label: "SMS Templates",
-            permission: "manage_templates" as Permission,
-          },
-          {
-            href: "/settings/templates/whatsapp",
-            label: "WhatsApp Templates",
-            permission: "manage_templates" as Permission,
-          }
-        ]
-      },
-      {
-        href: "/settings/attendance",
-        label: "Attendance Settings",
-        icon: <Smartphone className="h-5 w-5" />,
-        permission: "access_settings" as Permission,
-        children: [
-          {
-            href: "/settings/attendance/devices",
-            label: "Device Mapping",
-            permission: "manage_devices" as Permission,
-          },
-          {
-            href: "/settings/attendance/access-rules",
-            label: "Access Rules",
-            permission: "manage_devices" as Permission,
-          }
-        ]
-      }
-    ],
-  },
+    href: "/website",
+    label: "Website Management",
+    permission: "manage_website"
+  }, 
 ];
-
-export const staffNavSections: NavSection[] = adminNavSections
-  .filter(section => section.name !== "Settings" && section.name !== "Website")
-  .map(section => {
-    if (section.name === "Communication") {
-      return {
-        ...section,
-        items: section.items.filter(item => 
-          item.href !== "/communication/reminder-rules" &&
-          item.href !== "/communication/email" &&
-          item.href !== "/communication/sms"
-        )
-      };
-    }
-    return section;
-  });

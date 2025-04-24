@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dumbbell, Barbell, ShoppingBag, Award, Droplet } from 'lucide-react';
+import { Dumbbell, ShoppingBag, Award, Droplet } from 'lucide-react';
 
 type EquipmentType = 'barbell' | 'dumbbell' | 'kettlebell' | 'proteinShake';
 
@@ -13,7 +13,7 @@ const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType, classNam
   const renderEquipment = () => {
     switch (equipmentType) {
       case 'barbell':
-        return <Barbell className="h-8 w-8 text-gym-yellow" />;
+        return <Dumbbell className="h-8 w-8 text-gym-yellow" />; // Changed from Barbell to Dumbbell
       case 'dumbbell':
         return <Dumbbell className="h-8 w-8 text-gym-yellow" />;
       case 'kettlebell':
