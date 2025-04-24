@@ -11,7 +11,7 @@ export interface InvoiceItem {
   name: string;
   description?: string;
   quantity: number;
-  price: number; // Original property from the interface
+  price: number;
   unitPrice?: number; // Adding this for compatibility with existing code
   tax?: number;
   total?: number;
@@ -20,28 +20,31 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   member_id?: string;
+  memberId?: string; // Camel case version for frontend compatibility
   amount: number;
   status: InvoiceStatus;
   issued_date: string;
+  issuedDate?: string; // Camel case version for frontend compatibility
   due_date: string;
+  dueDate?: string; // Camel case version for frontend compatibility
   paid_date?: string;
-  payment_method?: string;
+  paidDate?: string; // Camel case version for frontend compatibility
+  payment_method?: PaymentMethod | string;
+  paymentMethod?: PaymentMethod | string; // Camel case version
   notes?: string;
   items: InvoiceItem[];
   description?: string;
   branch_id?: string;
+  branchId?: string; // Camel case version for frontend compatibility
   created_at: string;
   updated_at: string;
   created_by?: string;
   membership_plan_id?: string;
   razorpay_order_id?: string;
+  razorpayOrderId?: string; // Camel case version for frontend compatibility
   razorpay_payment_id?: string;
-  // Additional properties for compatibility with existing code
-  memberId?: string; 
-  dueDate?: string;
-  issuedDate?: string;
-  memberName?: string;
-  branchId?: string;
+  razorpayPaymentId?: string; // Camel case version for frontend compatibility
+  memberName?: string; // Additional property used in the frontend
 }
 
 export interface IFinanceService {
@@ -90,4 +93,22 @@ export interface FinancialTransaction {
   is_recurring?: boolean;
   recurring_period?: RecurringPeriod;
   recurring_end_date?: string;
+  // Frontend compatibility properties
+  date?: string;
+  category?: string;
+  recurring?: boolean;
+  recurringPeriod?: RecurringPeriod;
+  paymentMethod?: PaymentMethod;
+}
+
+// Define the shapes for import/export functions in the backup service
+export interface ValidationResult {
+  valid: boolean;
+  errors: { row: number; errors: string[] }[];
+}
+
+export interface ImportResult {
+  success: boolean;
+  successCount: number;
+  message?: string;
 }

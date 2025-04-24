@@ -14,65 +14,91 @@ import { useBranch } from "@/hooks/use-branch";
 const mockInvoices: Invoice[] = [
   {
     id: "INV-001",
+    member_id: "member-1",
     memberId: "member-1",
     memberName: "John Doe",
     amount: 1999,
     status: "paid",
+    due_date: new Date(2023, 3, 15).toISOString(),
     dueDate: new Date(2023, 3, 15).toISOString(),
+    issued_date: new Date(2023, 3, 1).toISOString(),
     issuedDate: new Date(2023, 3, 1).toISOString(),
+    paid_date: new Date(2023, 3, 10).toISOString(),
     paidDate: new Date(2023, 3, 10).toISOString(),
+    payment_method: "cash",
     paymentMethod: "cash",
     items: [
       {
         id: "item-1",
         name: "Basic Monthly Membership",
         quantity: 1,
+        price: 1999,
         unitPrice: 1999,
       }
     ],
+    branch_id: "branch-1",
     branchId: "branch-1",
     notes: "",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: "INV-002",
+    member_id: "member-2",
     memberId: "member-2",
     memberName: "Jane Smith",
     amount: 5499,
     status: "pending",
+    due_date: new Date(2023, 4, 15).toISOString(),
     dueDate: new Date(2023, 4, 15).toISOString(),
+    issued_date: new Date(2023, 4, 1).toISOString(),
     issuedDate: new Date(2023, 4, 1).toISOString(),
+    paid_date: null,
     paidDate: null,
     items: [
       {
         id: "item-2",
         name: "Premium Quarterly Membership",
         quantity: 1,
+        price: 5499,
         unitPrice: 5499,
       }
     ],
+    razorpay_order_id: "order_123456",
     razorpayOrderId: "order_123456",
+    branch_id: "branch-1",
     branchId: "branch-1",
     notes: "",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: "INV-003",
+    member_id: "member-3",
     memberId: "member-3",
     memberName: "Alex Johnson",
     amount: 18999,
     status: "overdue",
+    due_date: new Date(2023, 3, 30).toISOString(),
     dueDate: new Date(2023, 3, 30).toISOString(),
+    issued_date: new Date(2023, 3, 15).toISOString(),
     issuedDate: new Date(2023, 3, 15).toISOString(),
+    paid_date: null,
     paidDate: null,
     items: [
       {
         id: "item-3",
         name: "Platinum Annual Membership",
         quantity: 1,
+        price: 18999,
         unitPrice: 18999,
       }
     ],
+    branch_id: "branch-1",
     branchId: "branch-1",
     notes: "",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
@@ -106,7 +132,9 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
           ? { 
               ...invoice, 
               status: "paid" as const, 
+              paid_date: new Date().toISOString(),
               paidDate: new Date().toISOString(),
+              payment_method: "cash",
               paymentMethod: "cash"
             }
           : invoice
@@ -129,7 +157,10 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       const newInvoice: Invoice = {
         ...invoice,
         id: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+        branch_id: currentBranch?.id || 'branch-1',
         branchId: currentBranch?.id || 'branch-1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       setInvoices([...invoices, newInvoice]);
       toast.success("Invoice created successfully");
@@ -189,8 +220,8 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
                   <TableCell className="font-medium">{invoice.id}</TableCell>
                   <TableCell>{invoice.memberName}</TableCell>
                   <TableCell>{formatPrice(invoice.amount)}</TableCell>
-                  <TableCell>{format(new Date(invoice.issuedDate), "MMM d, yyyy")}</TableCell>
-                  <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
+                  <TableCell>{format(new Date(invoice.issuedDate || invoice.issued_date), "MMM d, yyyy")}</TableCell>
+                  <TableCell>{format(new Date(invoice.dueDate || invoice.due_date), "MMM d, yyyy")}</TableCell>
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

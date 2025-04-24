@@ -201,7 +201,8 @@ const ExportDataSection = () => {
         saveAs(content, `muscle_garage_export_${date}.zip`);
       }
       
-      await logBackupActivity('export', selectedModules);
+      // Use the correct signature for logBackupActivity
+      await logBackupActivity('export', selectedModules[0], selectedModules.length, selectedModules.length);
       
       toast.success('Data exported successfully');
     } catch (error) {
@@ -231,7 +232,7 @@ const ExportDataSection = () => {
     return csvRows.join('\n');
   };
 
-  const logBackupActivity = async (action: string, modules: string[]) => {
+  const logBackupActivity = async (action: string, modules: string[], totalRecords: number, successCount: number) => {
     try {
       console.log('Backup activity:', { action, modules, timestamp: new Date() });
     } catch (error) {

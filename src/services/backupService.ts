@@ -1,6 +1,8 @@
+
 import { faker } from '@faker-js/faker';
 import { supabase } from './supabaseClient';
 import { v4 as uuidv4 } from 'uuid';
+import { ValidationResult, ImportResult } from '@/types/finance';
 
 const numberOfMembers = 50;
 const numberOfTrainers = 10;
@@ -157,14 +159,85 @@ export const getBackupLogs = async () => {
   return [];
 };
 
-export const exportData = async () => {
-  return {};
+export const exportData = async (selectedModules: string[], startDate?: Date, endDate?: Date) => {
+  // Mock implementation
+  const mockData: Record<string, any[]> = {
+    members: [],
+    staffTrainers: [],
+    branches: [],
+    workoutPlans: [],
+    dietPlans: [],
+    attendance: [],
+    invoices: [],
+    transactions: [],
+    crm: [],
+    inventory: [],
+    website: [],
+    settings: []
+  };
+  
+  // Return mock data for each requested module
+  return selectedModules.reduce((acc, moduleId) => {
+    acc[moduleId] = mockData[moduleId] || [];
+    return acc;
+  }, {} as Record<string, any[]>);
 };
 
-export const validateImportData = (data: any) => {
+export const validateImportData = (data: any[], requiredColumns: string[]): ValidationResult => {
+  const errors: { row: number; errors: string[] }[] = [];
+  
+  data.forEach((row, index) => {
+    const rowErrors: string[] = [];
+    
+    requiredColumns.forEach(column => {
+      if (!row[column] && row[column] !== 0) {
+        rowErrors.push(`Missing required field: ${column}`);
+      }
+    });
+    
+    if (rowErrors.length > 0) {
+      errors.push({ row: index, errors: rowErrors });
+    }
+  });
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
+export const importData = async (moduleId: string, data: any[]): Promise<ImportResult> => {
+  try {
+    // Mock implementation - in a real app this would insert data into the database
+    console.log(`Importing ${data.length} records for module: ${moduleId}`);
+    
+    // Simulate some processing time
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      success: true,
+      successCount: data.length,
+      message: `Successfully imported ${data.length} records`
+    };
+  } catch (error) {
+    console.error(`Import error for module ${moduleId}:`, error);
+    return {
+      success: false,
+      successCount: 0,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+export const logBackupActivity = async (action: string, moduleId: string, totalRecords: number, successCount: number) => {
+  // Mock implementation to log backup activities
+  console.log('Backup activity:', {
+    action,
+    moduleId,
+    totalRecords,
+    successCount,
+    timestamp: new Date()
+  });
+  
   return true;
-};
-
-export const importData = async (data: any) => {
-  return {};
 };
