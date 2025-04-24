@@ -51,10 +51,12 @@ export function useAnnouncements() {
 
       // Transform the data to match the Announcement type
       const formattedAnnouncements: Announcement[] = (data || []).map((item) => {
-        // Fix the profiles property by explicitly checking its structure
-        const authorProfile = item.profiles;
-        const authorName = authorProfile && typeof authorProfile === 'object' && 'full_name' in authorProfile ? 
-                           authorProfile.full_name || 'Unknown' : 'Unknown';
+        // Make sure profiles exists and is not null before accessing properties
+        // This properly types the authorName as string instead of unknown
+        let authorName = 'Unknown';
+        if (item.profiles && typeof item.profiles === 'object' && 'full_name' in item.profiles) {
+          authorName = item.profiles.full_name as string || 'Unknown';
+        }
         
         return {
           id: item.id,
@@ -67,7 +69,7 @@ export function useAnnouncements() {
           priority: item.priority || 'medium',
           targetRoles: item.target_roles || [],
           forBranchIds: item.for_branch_ids || [],
-          createdBy: authorName,
+          createdBy: authorName, // Same as authorName for compatibility
           channels: []
         };
       });
