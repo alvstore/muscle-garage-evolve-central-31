@@ -1,4 +1,3 @@
-
 export interface Announcement {
   id: string;
   title: string;
@@ -9,12 +8,9 @@ export interface Announcement {
   expiresAt?: string;
   channel?: 'email' | 'sms' | 'whatsapp' | 'push' | 'in-app';
   branchId?: string;
-  // Adding properties that components are using
   targetRoles: string[];
   channels?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
-  // For backward compatibility
   authorId?: string;
-  // For StaffActivityData
   sentCount?: number;
 }
 
@@ -28,7 +24,6 @@ export interface ReminderRule {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  // Additional properties used by components
   name: string;
   triggerValue?: number;
   message?: string;
@@ -36,7 +31,6 @@ export interface ReminderRule {
   targetRoles?: string[];
   active: boolean;
   enabled?: boolean;
-  // For ReminderRulesList compatibility
   type?: string;
   triggerDays?: number;
   channels?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
@@ -66,29 +60,27 @@ export interface Feedback {
   title: string;
   created_at: string;
   branch_id?: string;
-  // For backward compatibility with existing code
   memberId?: string;
   memberName?: string;
   createdAt?: string;
 }
 
-// Add FeedbackType for FeedbackForm.tsx and FeedbackTabs.tsx
 export type FeedbackType = 'general' | 'trainer' | 'class' | 'fitness-plan';
 
-// Add additional notification types
 export type ReminderTriggerType = 'membership-expiry' | 'class-reminder' | 'birthday' | 'custom';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'push' | 'in-app';
 
-// Add BackupLogEntry interface for BackupLogs.tsx
 export interface BackupLogEntry {
   id: string;
   action: 'export' | 'import';
-  userId: string;
-  userName: string;
+  user_id: string;
+  user_name: string;
   timestamp: string;
   modules: string[];
   success: boolean;
-  totalRecords?: number;
-  successCount?: number;
-  failedCount?: number;
+  total_records?: number;
+  success_count?: number;
+  failed_count?: number;
+  created_at: string;
+  updated_at: string;
 }

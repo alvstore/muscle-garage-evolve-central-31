@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,8 +23,7 @@ const BackupLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Fetch backup logs from Supabase
-      const { data, error } = await supabase
+      const { data: backupLogs, error } = await supabase
         .from('backup_logs')
         .select('*')
         .order('timestamp', { ascending: false });
@@ -34,24 +32,9 @@ const BackupLogs = () => {
         throw error;
       }
 
-      // Convert to BackupLogEntry format
-      const formattedLogs: BackupLogEntry[] = data.map(log => ({
-        id: log.id,
-        action: log.action as 'export' | 'import',
-        userId: log.user_id,
-        userName: log.user_name,
-        timestamp: log.timestamp,
-        modules: log.modules || [],
-        success: log.success,
-        totalRecords: log.total_records,
-        successCount: log.success_count,
-        failedCount: log.failed_count
-      }));
-
-      setLogs(formattedLogs);
+      setLogs(backupLogs as BackupLogEntry[]);
     } catch (error) {
       console.error('Failed to fetch backup logs:', error);
-      // Fallback to empty array in case of error
       setLogs([]);
     } finally {
       setLoading(false);

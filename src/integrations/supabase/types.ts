@@ -9,6 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          branch_id: string | null
+          channel: string | null
+          channels: string[]
+          content: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          priority: string
+          target_roles: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          branch_id?: string | null
+          channel?: string | null
+          channels?: string[]
+          content: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority: string
+          target_roles?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          branch_id?: string | null
+          channel?: string | null
+          channels?: string[]
+          content?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority?: string
+          target_roles?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_logs: {
+        Row: {
+          action: string
+          created_at: string
+          failed_count: number | null
+          id: string
+          modules: string[]
+          success: boolean
+          success_count: number | null
+          timestamp: string
+          total_records: number | null
+          updated_at: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          modules?: string[]
+          success?: boolean
+          success_count?: number | null
+          timestamp?: string
+          total_records?: number | null
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          modules?: string[]
+          success?: boolean
+          success_count?: number | null
+          timestamp?: string
+          total_records?: number | null
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       body_measurements: {
         Row: {
           arms: number | null
@@ -1650,6 +1751,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reminder_rules: {
+        Row: {
+          conditions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          message: string | null
+          notification_channel: string | null
+          send_via: string[]
+          target_roles: string[]
+          title: string
+          trigger_type: string
+          trigger_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          notification_channel?: string | null
+          send_via?: string[]
+          target_roles?: string[]
+          title: string
+          trigger_type: string
+          trigger_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          message?: string | null
+          notification_channel?: string | null
+          send_via?: string[]
+          target_roles?: string[]
+          title?: string
+          trigger_type?: string
+          trigger_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       staff_attendance: {
         Row: {
