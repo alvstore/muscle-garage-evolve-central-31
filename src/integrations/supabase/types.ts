@@ -430,6 +430,71 @@ export type Database = {
         }
         Relationships: []
       }
+      email_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          from_email: string
+          id: string
+          is_active: boolean
+          mailgun_api_key: string | null
+          mailgun_domain: string | null
+          notifications: Json
+          provider: string
+          sendgrid_api_key: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_secure: boolean | null
+          smtp_username: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          from_email: string
+          id?: string
+          is_active?: boolean
+          mailgun_api_key?: string | null
+          mailgun_domain?: string | null
+          notifications?: Json
+          provider: string
+          sendgrid_api_key?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          from_email?: string
+          id?: string
+          is_active?: boolean
+          mailgun_api_key?: string | null
+          mailgun_domain?: string | null
+          notifications?: Json
+          provider?: string
+          sendgrid_api_key?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           created_at: string | null

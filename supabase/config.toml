@@ -1,0 +1,3 @@
+
+[functions.test-email]
+verify_jwt = true
