@@ -1,101 +1,97 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { supabase } from '@/services/supabaseClient';
-import type { StaffMember } from '@/types/staff';
+import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
 import { PersonCard } from '@/components/shared/PersonCard';
+import { useAuth } from '@/hooks/use-auth';
 
-interface ProfileData {
+interface StaffProfile {
   id: string;
-  full_name?: string;
+  full_name: string;
   email?: string;
   phone?: string;
-  role: string;
-  department?: string;
-  branch_id?: string;
   avatar_url?: string;
-  created_at?: string;
-  updated_at?: string;
+  branch_id?: string;
+  department?: string;
   position?: string;
   is_active?: boolean;
+  accessible_branch_ids?: string[];
+  address?: string;
+  city?: string;
+  country?: string;
+  created_at?: string;
+  date_of_birth?: string;
+  gender?: string;
+  role?: string;
+  state?: string;
+  updated_at?: string;
 }
 
 const StaffListPage = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const { user } = useAuth();
+  const [staff, setStaff] = useState<StaffProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
-  const fetchStaffMembers = async () => {
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+  
+  const fetchStaff = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('role', 'staff');
-
+      
       if (error) throw error;
-
-      if (!data) {
-        setStaffMembers([]);
-        return;
+      
+      if (data) {
+        setStaff(data.map(staff => ({
+          ...staff,
+          position: staff.position || staff.department || 'Staff',
+          is_active: staff.is_active !== false
+        })));
+      } else {
+        setStaff([]);
       }
-
-      const formattedStaff: StaffMember[] = data.map((item: any) => ({
-        id: item.id,
-        name: item.full_name || '',
-        email: item.email || '',
-        phone: item.phone || '',
-        role: 'staff',
-        position: item.position || '',
-        department: item.department || '',
-        branchId: item.branch_id || '',
-        status: item.is_active !== false ? 'active' : 'inactive',
-        avatar: item.avatar_url || '',
-        createdAt: item.created_at || new Date().toISOString(),
-        updatedAt: item.updated_at || new Date().toISOString(),
-      }));
-
-      setStaffMembers(formattedStaff);
     } catch (error) {
-      console.error('Error fetching staff members:', error);
+      console.error('Error fetching staff:', error);
       toast.error('Failed to load staff members');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchStaffMembers();
-  }, []);
-
+  
   const handleEdit = (id: string) => {
-    toast.info(`Edit staff member ${id} - coming soon`);
+    toast.info(`Edit staff ${id} - coming soon`);
   };
-
+  
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
-        // Use any type for the update operation since the is_active field might not be in the strict type
-        const { error: updateError } = await supabase
+        const { error } = await supabase
           .from('profiles')
-          .update({ is_active: false } as any)
+          .update({
+            is_active: false
+          })
           .eq('id', id);
-          
-        if (updateError) throw updateError;
+        
+        if (error) throw error;
         
         toast.success('Staff member deactivated successfully');
-        fetchStaffMembers();
+        fetchStaff();
       } catch (error) {
-        console.error('Error deleting staff member:', error);
-        toast.error('Failed to delete staff member');
+        console.error('Error deactivating staff member:', error);
+        toast.error('Failed to deactivate staff member');
       }
     }
   };
-
+  
   const handleViewProfile = (id: string) => {
     toast.info(`View profile ${id} - coming soon`);
   };
@@ -118,23 +114,23 @@ const StaffListPage = () => {
           <div className="flex justify-center items-center h-40">
             <p>Loading staff members...</p>
           </div>
-        ) : staffMembers.length === 0 ? (
+        ) : staff.length === 0 ? (
           <div className="text-center py-10">
             <p>No staff members found. Click "Add Staff Member" to create one.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {staffMembers.map((staff) => (
+            {staff.map((staff) => (
               <PersonCard
                 key={staff.id}
                 id={staff.id}
-                name={staff.name}
+                name={staff.full_name}
                 email={staff.email}
                 phone={staff.phone}
-                avatar={staff.avatar}
+                avatar={staff.avatar_url}
                 role="Staff"
                 department={staff.department}
-                status={staff.status}
+                status={staff.is_active ? 'active' : 'inactive'}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onViewProfile={handleViewProfile}
@@ -147,7 +143,7 @@ const StaffListPage = () => {
       <CreateStaffDialog 
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
-        onSuccess={fetchStaffMembers}
+        onSuccess={fetchStaff}
       />
     </Container>
   );

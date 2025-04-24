@@ -5,13 +5,13 @@ import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
 // Define a valid NotificationChannel type that includes 'app'
-export type NotificationChannel = 'app' | 'email' | 'sms' | 'whatsapp';
+export type NotificationChannel = 'in-app' | 'email' | 'sms' | 'whatsapp';
 
 export const useAnnouncements = (options: {
   branchId?: string | null;
   limit?: number;
   onlyActive?: boolean;
-}) => {
+} = {}) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -21,7 +21,7 @@ export const useAnnouncements = (options: {
       setLoading(true);
       
       let query = supabase
-        .from('announcements')
+        .from('announcements' as any)
         .select('*')
         .order('created_at', { ascending: false }) as any;
       
@@ -56,7 +56,7 @@ export const useAnnouncements = (options: {
         createdAt: item.created_at,
         expiresAt: item.expires_at,
         priority: item.priority || 'normal',
-        channel: (item.channel as NotificationChannel) || 'app',
+        channel: (item.channel as NotificationChannel) || 'in-app',
         branchId: item.branch_id,
         createdBy: item.created_by,
         isGlobal: item.is_global || false,
@@ -82,9 +82,47 @@ export const useAnnouncements = (options: {
     fetchAnnouncements();
   }, [options.branchId, options.limit, options.onlyActive]);
 
+  // Add the createAnnouncement function
+  const createAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
+    try {
+      const newAnnouncement = {
+        title: announcement.title,
+        content: announcement.content,
+        priority: announcement.priority,
+        created_by: announcement.authorId,
+        author_name: announcement.authorName,
+        expires_at: announcement.expiresAt,
+        is_global: announcement.forBranchIds ? announcement.forBranchIds.length === 0 : false,
+        is_active: true,
+        branch_id: announcement.forBranchIds && announcement.forBranchIds.length > 0 
+          ? announcement.forBranchIds[0] 
+          : null,
+        channel: announcement.channels || ['in-app'],
+        target_roles: announcement.targetRoles || ['member'],
+        category: announcement.category || 'general',
+      };
+
+      const { data, error } = await supabase
+        .from('announcements' as any)
+        .insert(newAnnouncement)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Announcement created successfully');
+      fetchAnnouncements();
+      return data;
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      toast.error('Failed to create announcement');
+      return null;
+    }
+  };
+
   const refresh = () => {
     fetchAnnouncements();
   };
 
-  return { announcements, loading, error, refresh };
+  return { announcements, loading, error, refresh, createAnnouncement };
 };

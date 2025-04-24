@@ -9,6 +9,7 @@ import { supabase } from '@/services/supabaseClient';
 import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
 import { PersonCard } from '@/components/shared/PersonCard';
 
+// Extended interface for trainer profile with the missing properties
 interface TrainerProfile {
   id: string;
   full_name?: string;
@@ -21,6 +22,16 @@ interface TrainerProfile {
   bio?: string;
   rating?: number;
   is_active?: boolean;
+  accessible_branch_ids?: string[];
+  address?: string;
+  city?: string;
+  country?: string;
+  created_at?: string;
+  date_of_birth?: string;
+  gender?: string;
+  role?: string;
+  state?: string;
+  updated_at?: string;
 }
 
 const TrainerPage = () => {
@@ -58,7 +69,18 @@ const TrainerPage = () => {
           specialty: profile.specialty || '', // Might be undefined in the database
           bio: profile.bio || '',
           rating: profile.rating || 0,
-          is_active: profile.is_active !== false // Default to true if not specified
+          is_active: profile.is_active !== false, // Default to true if not specified
+          // Include all profile fields for type safety
+          accessible_branch_ids: profile.accessible_branch_ids,
+          address: profile.address,
+          city: profile.city,
+          country: profile.country,
+          created_at: profile.created_at,
+          date_of_birth: profile.date_of_birth,
+          gender: profile.gender,
+          role: profile.role,
+          state: profile.state,
+          updated_at: profile.updated_at
         }));
 
         setTrainers(processedData);

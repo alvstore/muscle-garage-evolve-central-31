@@ -7,7 +7,7 @@ import { Announcement } from '@/types/notification';
 import { useAnnouncements } from '@/hooks/use-announcements';
 
 export function AnnouncementsList() {
-  const { announcements, loading } = useAnnouncements();
+  const { announcements, loading } = useAnnouncements({});
 
   if (loading) {
     return <div className="flex justify-center py-10">Loading announcements...</div>;

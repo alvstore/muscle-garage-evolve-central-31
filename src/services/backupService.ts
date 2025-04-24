@@ -1,5 +1,6 @@
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 // Export data from the database
 export const exportData = async (
@@ -203,6 +204,14 @@ export const importData = async (
         successCount = data.length;
         break;
         
+      case 'profiles':
+        // Insert profiles data
+        const { data: profileData, error: profileError } = await importProfiles(data);
+        
+        if (profileError) throw profileError;
+        successCount = data.length;
+        break;
+        
       // Add other module import handlers here
       
       default:
@@ -352,3 +361,56 @@ const mockBackupLogs = [
     failedCount: 75
   }
 ];
+
+// Inside the importData function, fix the profiles insertion
+const importProfiles = async (profiles: any[]) => {
+  try {
+    // Create profiles with proper ids
+    if (profiles && profiles.length > 0) {
+      // Add required 'id' field to each profile
+      const profilesWithId = profiles.map(profile => ({
+        id: profile.id || uuidv4(),  // Use existing id if available or generate new one
+        full_name: profile.full_name,
+        email: profile.email,
+        phone: profile.phone,
+        role: profile.role || 'member',
+        // Include other required fields with reasonable defaults
+        branch_id: profile.branch_id || null,
+        department: profile.department || null,
+        // Any other required fields for profiles table
+      }));
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profilesWithId as any, { onConflict: 'id' });
+      
+      if (error) throw error;
+      return data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error importing profiles:', error);
+    throw error;
+  }
+};
+
+// Inside the restoreBackup function
+// Fix the profiles restore part
+if (data.profiles && data.profiles.length > 0) {
+  // Add ids to profiles for proper insertion
+  const profilesWithIds = data.profiles.map(profile => ({
+    id: profile.id || uuidv4(),
+    full_name: profile.full_name,
+    email: profile.email,
+    phone: profile.phone,
+    role: profile.role || 'member',
+    // Include other required fields with reasonable defaults
+    branch_id: profile.branch_id || null,
+    department: profile.department || null,
+    // Any other required fields for profiles table
+  }));
+  
+  await supabase
+    .from('profiles')
+    .upsert(profilesWithIds as any, { onConflict: 'id' });
+}

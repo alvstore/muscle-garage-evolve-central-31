@@ -1,62 +1,69 @@
-
-import { supabase } from '@/services/supabaseClient';
-import { Invoice, InvoiceItem, InvoiceStatus } from '@/types/finance';
+import { supabase } from './supabaseClient';
+import { Invoice, IFinanceService } from '@/types/finance';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Service for handling invoice-related operations
- */
-export const invoiceService = {
-  /**
-   * Creates a new invoice
-   */
-  createInvoice: async (invoiceData: {
-    memberId: string;
-    memberName: string;
-    amount: number;
-    description: string;
-    dueDate: Date;
-    status: InvoiceStatus;
-    items: Array<{
-      description: string;
-      quantity: number;
-      unitPrice: number;
-      amount: number;
-    }>;
-  }): Promise<Invoice | null> => {
+export class InvoiceService implements IFinanceService {
+  async getInvoices(): Promise<Invoice[]> {
     try {
-      // In a real app, this would save to a database
-      console.log('Creating invoice:', invoiceData);
-      
-      // Mock response
-      return {
-        id: uuidv4(),
-        memberId: invoiceData.memberId,
-        memberName: invoiceData.memberName,
-        amount: invoiceData.amount,
-        status: invoiceData.status,
-        issuedDate: new Date().toISOString(),
-        dueDate: invoiceData.dueDate.toISOString(),
-        paidDate: invoiceData.status === 'paid' ? new Date().toISOString() : null,
-        items: invoiceData.items.map(item => ({
-          id: uuidv4(),
-          name: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice
-        }))
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Invoice[];
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      return [];
+    }
+  }
+
+  async getInvoiceById(id: string): Promise<Invoice | null> {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data as Invoice;
+    } catch (error) {
+      console.error(`Error fetching invoice ${id}:`, error);
+      return null;
+    }
+  }
+
+  async createInvoice(invoice: Omit<Invoice, 'id'>): Promise<Invoice | null> {
+    try {
+      // Make sure all required fields are present
+      const invoiceToInsert = {
+        ...invoice,
+        // Add missing fields with defaults if needed
+        due_date: invoice.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: invoice.status || 'pending',
+        created_at: invoice.created_at || new Date().toISOString(),
+        updated_at: invoice.updated_at || new Date().toISOString(),
+        items: invoice.items || []
       };
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert(invoiceToInsert as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Invoice;
     } catch (error) {
       console.error('Error creating invoice:', error);
       toast.error('Failed to create invoice');
       return null;
     }
-  },
+  }
 
-  /**
-   * Generates an invoice automatically when a membership plan is assigned to a member
-   */
-  generateInvoiceForMembership: async (
+  async generateInvoiceForMembership(
     memberId: string,
     memberName: string,
     planId: string,
@@ -65,7 +72,7 @@ export const invoiceService = {
     startDate: string,
     createdBy: string,
     branchId: string
-  ): Promise<Invoice | null> => {
+  ): Promise<Invoice | null> {
     try {
       // Create invoice items
       const invoiceItems: InvoiceItem[] = [
@@ -128,18 +135,15 @@ export const invoiceService = {
       toast.error('Failed to generate invoice');
       return null;
     }
-  },
+  }
 
-  /**
-   * Records payment for an invoice
-   */
-  recordPayment: async (
+  async recordPayment(
     invoiceId: string,
     amount: number,
     paymentMethod: string,
     recordedBy: string,
     branchId: string
-  ): Promise<boolean> => {
+  ): Promise<boolean> {
     try {
       // Get current invoice details
       const { data: invoice, error: fetchError } = await supabase
@@ -222,12 +226,9 @@ export const invoiceService = {
       toast.error('Failed to record payment');
       return false;
     }
-  },
+  }
 
-  /**
-   * Generates a payment link for online payments
-   */
-  generatePaymentLink: async (invoiceId: string): Promise<string | null> => {
+  async generatePaymentLink(invoiceId: string): Promise<string | null> {
     try {
       // In a real application, this would integrate with Razorpay or another payment gateway
       // For now, we'll return a mock payment link
@@ -238,4 +239,6 @@ export const invoiceService = {
       return null;
     }
   }
-};
+}
+
+export default new InvoiceService();

@@ -29,7 +29,7 @@ type AnnouncementFormValues = z.infer<typeof announcementFormSchema>;
 
 export function CreateAnnouncementForm({ onSuccess }: { onSuccess?: () => void }) {
   const [selectedRoles, setSelectedRoles] = useState<string[]>(["member"]);
-  const { createAnnouncement } = useAnnouncements();
+  const { createAnnouncement } = useAnnouncements({});
   const { user } = useAuth();
   const { currentBranch } = useBranch();
 
@@ -74,10 +74,11 @@ export function CreateAnnouncementForm({ onSuccess }: { onSuccess?: () => void }
         title: data.title,
         content: data.content,
         authorId: user.id,
+        authorName: user.full_name || user.email || 'Unknown User',
         priority: data.priority,
         targetRoles: data.targetRoles,
         forBranchIds: currentBranch ? [currentBranch.id] : [],
-        expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : undefined
+        expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined
       });
       
       if (result && onSuccess) {

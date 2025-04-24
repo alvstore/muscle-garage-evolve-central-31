@@ -1,60 +1,42 @@
 
-export type InvoiceStatus = 'pending' | 'paid' | 'partial' | 'cancelled' | 'overdue';
+import { Json } from '@/integrations/supabase/types';
 
 export interface InvoiceItem {
   id: string;
   name: string;
-  quantity: number;
-  unitPrice: number;
   description?: string;
+  quantity: number;
+  price: number;
+  tax?: number;
+  total?: number;
 }
 
 export interface Invoice {
   id: string;
-  memberId: string;
-  memberName: string;
+  member_id?: string;
   amount: number;
-  status: InvoiceStatus;
-  issuedDate: string;
-  dueDate: string;
-  paidDate: string | null;
-  items: InvoiceItem[];
-  branchId?: string;
-  membershipPlanId?: string;
-  description?: string;
-  paymentMethod?: string;
+  status: string;
+  issued_date: string;
+  due_date: string;
+  paid_date?: string;
+  payment_method?: string;
   notes?: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
+  items: InvoiceItem[];
+  description?: string;
+  branch_id?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  membership_plan_id?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
 }
 
-export type PaymentMethod = 'cash' | 'card' | 'bank-transfer' | 'razorpay' | 'other';
-
-export type TransactionType = 'income' | 'expense';
-export type ExpenseCategory = 'rent' | 'salary' | 'utilities' | 'equipment' | 'maintenance' | 'marketing' | 'other';
-export type IncomeCategory = 'membership' | 'personal-training' | 'product-sales' | 'class-fees' | 'other';
-export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'none';
-
-export interface FinancialTransaction {
-  id: string;
-  type: TransactionType;
-  amount: number;
-  date: string;
-  category: string;
-  description: string;
-  recurring?: boolean;
-  recurringPeriod?: RecurringPeriod;
-  paymentMethod?: PaymentMethod;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Transaction {
-  id: string;
-  type: string;
-  amount: number;
-  date: string;
-  category: string;
-  description: string;
+export interface IFinanceService {
+  getInvoices(): Promise<Invoice[]>;
+  getInvoiceById(id: string): Promise<Invoice | null>;
+  createInvoice(invoice: Omit<Invoice, 'id'>): Promise<Invoice | null>;
+  updateInvoice(id: string, invoice: Partial<Invoice>): Promise<Invoice | null>;
+  deleteInvoice(id: string): Promise<boolean>;
+  getInvoicesByMember(memberId: string): Promise<Invoice[]>;
 }
