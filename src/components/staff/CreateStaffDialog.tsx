@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreateStaffForm } from "./CreateStaffForm";
+import CreateStaffForm from "./CreateStaffForm";
 
 interface CreateStaffDialogProps {
   open: boolean;
@@ -23,3 +23,4 @@ export function CreateStaffDialog({ open, onOpenChange, onSuccess }: CreateStaff
     </Dialog>
   );
 }
+

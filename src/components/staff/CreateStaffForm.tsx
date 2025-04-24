@@ -1,17 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 import { supabase } from '@/services/supabaseClient';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { messagingService } from '@/services/integrations/messagingService';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 
@@ -21,7 +20,7 @@ const staffFormSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 characters long'),
   role: z.enum(['admin', 'staff', 'trainer']),
-  branch_id: z.string().uuid('Please select a branch'),
+  branch_id: z.string().uuid('Please select a branch').optional(),
   position: z.string().min(2, 'Position must be at least 2 characters long'),
   sendWelcomeEmail: z.boolean().default(true),
   sendWelcomeSms: z.boolean().default(false)
@@ -40,12 +39,33 @@ const generateRandomPassword = () => {
   return password;
 };
 
-const CreateStaffForm = ({ branches, onSuccess }: { 
-  branches: { id: string; name: string }[];
+interface CreateStaffFormProps {
   onSuccess: () => void;
-}) => {
-  const { toast } = useToast();
+}
+
+const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
+  
+  // Fetch branches on component mount
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('branches')
+          .select('id, name');
+        
+        if (error) throw error;
+        setBranches(data || []);
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+        toast.error('Failed to load branches');
+      }
+    };
+    
+    fetchBranches();
+  }, []);
+
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {
@@ -97,43 +117,25 @@ const CreateStaffForm = ({ branches, onSuccess }: {
 
       // 3. Send welcome email if enabled
       if (values.sendWelcomeEmail) {
-        await messagingService.sendEmail(
-          values.email,
-          'Welcome to Gym CRM System',
-          `
-            <h1>Welcome to Gym CRM, ${values.fullName}!</h1>
-            <p>Your account has been created with the role: ${values.role}</p>
-            <p>Here are your login credentials:</p>
-            <p><strong>Email:</strong> ${values.email}</p>
-            <p><strong>Temporary Password:</strong> ${generatedPassword}</p>
-            <p>Please login and change your password immediately for security reasons.</p>
-            <p>Best Regards,<br>Gym CRM Administration Team</p>
-          `
-        );
+        // Note: This is just a placeholder for the email sending functionality
+        console.log('Sending welcome email to:', values.email, 'with password:', generatedPassword);
+        // In a real implementation, you would use your email service here
       }
 
       // 4. Send welcome SMS if enabled
       if (values.sendWelcomeSms && values.phone) {
-        await messagingService.sendSMS(
-          values.phone,
-          `Welcome to Gym CRM, ${values.fullName}! Your account has been created. Email: ${values.email}, Temp Password: ${generatedPassword}. Please login and change your password.`
-        );
+        // Note: This is just a placeholder for the SMS sending functionality
+        console.log('Sending welcome SMS to:', values.phone, 'with password info');
+        // In a real implementation, you would use your SMS service here
       }
 
-      toast({
-        title: 'Staff Created',
-        description: `${values.fullName} has been added to the system`,
-      });
+      toast.success(`${values.fullName} has been added to the system`);
       
       form.reset();
       onSuccess();
     } catch (error: any) {
       console.error('Error creating staff:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create staff member',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Failed to create staff member');
     } finally {
       setIsSubmitting(false);
     }
