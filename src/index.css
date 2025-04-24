@@ -1,9 +1,31 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  * {
+    @apply border-border;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    scroll-behavior: smooth;
+  }
+  
+  /* Scope heading styles to public website only */
+  .public-website h1, 
+  .public-website h2, 
+  .public-website h3, 
+  .public-website h4, 
+  .public-website h5, 
+  .public-website h6 {
+    @apply font-impact tracking-wide;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -89,6 +111,47 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 220 47.4% 18%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer components {
+  .gym-container {
+    @apply container max-w-7xl mx-auto px-4 md:px-6;
+  }
+  
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+  
+  .btn {
+    @apply inline-block px-6 py-3 font-bold text-center rounded-md transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-gym-yellow text-gym-black hover:bg-gym-yellow-hover;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-gym-yellow text-gym-yellow hover:bg-gym-yellow hover:text-gym-black;
+  }
+  
+  .card-hover {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
