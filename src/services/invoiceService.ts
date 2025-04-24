@@ -1,244 +1,120 @@
-import { supabase } from './supabaseClient';
-import { Invoice, IFinanceService } from '@/types/finance';
-import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
 
-export class InvoiceService implements IFinanceService {
-  async getInvoices(): Promise<Invoice[]> {
+import { Invoice } from '@/types/finance';
+import { supabase } from '@/integrations/supabase/client';
+
+export class InvoiceService {
+  static async createInvoice(invoiceData: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>): Promise<Invoice | null> {
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Invoice[];
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-      return [];
-    }
-  }
-
-  async getInvoiceById(id: string): Promise<Invoice | null> {
-    try {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data as Invoice;
-    } catch (error) {
-      console.error(`Error fetching invoice ${id}:`, error);
-      return null;
-    }
-  }
-
-  async createInvoice(invoice: Omit<Invoice, 'id'>): Promise<Invoice | null> {
-    try {
-      // Make sure all required fields are present
-      const invoiceToInsert = {
-        ...invoice,
-        // Add missing fields with defaults if needed
-        due_date: invoice.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: invoice.status || 'pending',
-        created_at: invoice.created_at || new Date().toISOString(),
-        updated_at: invoice.updated_at || new Date().toISOString(),
-        items: invoice.items || []
-      };
-      
-      const { data, error } = await supabase
-        .from('invoices')
-        .insert(invoiceToInsert as any)
+        .insert([{
+          member_id: invoiceData.member_id,
+          amount: invoiceData.amount,
+          status: invoiceData.status,
+          due_date: invoiceData.due_date,
+          issued_date: invoiceData.issued_date,
+          paid_date: invoiceData.paid_date,
+          payment_method: invoiceData.payment_method,
+          items: invoiceData.items,
+          razorpay_order_id: invoiceData.razorpay_order_id,
+          razorpay_payment_id: invoiceData.razorpay_payment_id,
+          notes: invoiceData.notes,
+          description: invoiceData.description,
+          branch_id: invoiceData.branch_id
+        }])
         .select()
         .single();
 
       if (error) throw error;
+      
       return data as Invoice;
     } catch (error) {
       console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
       return null;
     }
   }
 
-  async generateInvoiceForMembership(
-    memberId: string,
-    memberName: string,
-    planId: string,
-    planName: string,
-    planAmount: number,
-    startDate: string,
-    createdBy: string,
-    branchId: string
-  ): Promise<Invoice | null> {
+  static async getInvoiceById(id: string): Promise<Invoice | null> {
     try {
-      // Create invoice items
-      const invoiceItems: InvoiceItem[] = [
-        {
-          id: uuidv4(),
-          name: planName,
-          quantity: 1,
-          unitPrice: planAmount,
-        }
-      ];
-
-      // Set due date to 7 days from today
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 7);
-
-      // Create the invoice
-      const newInvoice: Omit<Invoice, 'id'> = {
-        memberId,
-        memberName,
-        amount: planAmount,
-        status: 'pending',
-        dueDate: dueDate.toISOString(),
-        issuedDate: new Date().toISOString(),
-        items: invoiceItems,
-        branchId,
-        membershipPlanId: planId,
-        paidDate: null,
-      };
-
-      // Save to database
       const { data, error } = await supabase
         .from('invoices')
-        .insert(newInvoice)
-        .select('*')
+        .select('*, members(name)')
+        .eq('id', id)
         .single();
 
-      if (error) {
-        throw error;
-      }
-
-      // Create transaction record for finance tracking
-      await supabase
-        .from('transactions')
-        .insert({
-          type: 'income',
-          amount: planAmount,
-          transaction_date: new Date().toISOString(),
-          category_id: null, // Use appropriate category ID if available
-          description: `Invoice generated for ${planName}`,
-          reference_id: data.id,
-          branch_id: branchId,
-          recorded_by: createdBy,
-          payment_method: null, // Will be updated when payment is recorded
-        });
-
-      console.log('Invoice generated successfully:', data);
-      return data as Invoice;
+      if (error) throw error;
+      
+      if (!data) return null;
+      
+      // Transform to Invoice type with memberName
+      const invoice: Invoice = {
+        ...data,
+        memberName: data.members?.name || 'Unknown'
+      };
+      
+      return invoice;
     } catch (error) {
-      console.error('Error generating invoice:', error);
-      toast.error('Failed to generate invoice');
+      console.error('Error fetching invoice:', error);
       return null;
     }
   }
 
-  async recordPayment(
-    invoiceId: string,
-    amount: number,
-    paymentMethod: string,
-    recordedBy: string,
-    branchId: string
-  ): Promise<boolean> {
+  static async updateInvoice(id: string, updates: Partial<Invoice>): Promise<boolean> {
     try {
-      // Get current invoice details
-      const { data: invoice, error: fetchError } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', invoiceId)
-        .single();
-
-      if (fetchError || !invoice) {
-        throw fetchError || new Error('Invoice not found');
-      }
-
-      // Calculate remaining amount
-      const remainingAmount = invoice.amount - amount;
-      let newStatus: 'paid' | 'partial' | 'pending' = 'pending';
+      // Remove any UI-specific fields that don't exist in the database
+      const { memberName, ...dbUpdates } = updates;
       
-      if (remainingAmount <= 0) {
-        newStatus = 'paid';
-      } else if (amount > 0) {
-        newStatus = 'partial';
-      }
-
-      // Update invoice
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('invoices')
-        .update({
-          status: newStatus,
-          paidDate: newStatus === 'paid' ? new Date().toISOString() : null,
-          paymentMethod: paymentMethod,
-          // Add amount_paid field if it exists in your schema
-        })
-        .eq('id', invoiceId);
+        .update(dbUpdates)
+        .eq('id', id);
 
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Record payment transaction
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          type: 'income',
-          amount: amount,
-          transaction_date: new Date().toISOString(),
-          category_id: null, // Use appropriate category ID for membership payments
-          description: `Payment received for invoice #${invoiceId}`,
-          reference_id: invoiceId,
-          branch_id: branchId,
-          recorded_by: recordedBy,
-          payment_method: paymentMethod,
-        });
-
-      if (transactionError) {
-        throw transactionError;
-      }
-
-      // Update payment records
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          member_id: invoice.memberId,
-          membership_id: invoice.membershipPlanId,
-          amount: amount,
-          payment_date: new Date().toISOString(),
-          branch_id: branchId,
-          staff_id: recordedBy,
-          status: 'completed',
-          payment_method: paymentMethod,
-          notes: `Payment for invoice #${invoiceId}`,
-        });
-
-      if (paymentError) {
-        throw paymentError;
-      }
-
-      console.log('Payment recorded successfully');
+      if (error) throw error;
+      
       return true;
     } catch (error) {
-      console.error('Error recording payment:', error);
-      toast.error('Failed to record payment');
+      console.error('Error updating invoice:', error);
       return false;
     }
   }
 
-  async generatePaymentLink(invoiceId: string): Promise<string | null> {
+  static async deleteInvoice(id: string): Promise<boolean> {
     try {
-      // In a real application, this would integrate with Razorpay or another payment gateway
-      // For now, we'll return a mock payment link
-      return `https://payment.example.com/${invoiceId}`;
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      return true;
     } catch (error) {
-      console.error('Error generating payment link:', error);
-      toast.error('Failed to generate payment link');
+      console.error('Error deleting invoice:', error);
+      return false;
+    }
+  }
+
+  static async generateInvoicePdf(invoice: Invoice): Promise<Blob | null> {
+    // This would typically connect to an API endpoint or use a PDF generation library
+    // For now, just a stub function
+    try {
+      // Mock implementation - in a real app, implement PDF generation logic
+      const pdfBlob = new Blob(['Invoice PDF content'], { type: 'application/pdf' });
+      return pdfBlob;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
       return null;
     }
   }
-}
 
-export default new InvoiceService();
+  static async sendInvoiceByEmail(invoiceId: string, email: string): Promise<boolean> {
+    try {
+      // In a real implementation, call a server function or API to send the email
+      console.log(`Sending invoice ${invoiceId} to ${email}`);
+      return true;
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      return false;
+    }
+  }
+}

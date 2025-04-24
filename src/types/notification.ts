@@ -55,7 +55,7 @@ export interface MotivationalMessage {
   updated_at?: string;
 }
 
-export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service';
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service' | 'equipment';
 
 export interface Feedback {
   id: string;

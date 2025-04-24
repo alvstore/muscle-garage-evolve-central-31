@@ -48,6 +48,7 @@ export interface Invoice {
   description?: string;
   created_at: string;
   updated_at: string;
+  branch_id?: string;
 }
 
 // Adapter functions to help with mapping between API and UI formats
@@ -68,7 +69,8 @@ export function adaptInvoiceFromDB(dbInvoice: any): Invoice {
     notes: dbInvoice.notes,
     description: dbInvoice.description,
     created_at: dbInvoice.created_at,
-    updated_at: dbInvoice.updated_at
+    updated_at: dbInvoice.updated_at,
+    branch_id: dbInvoice.branch_id
   };
 }
 
@@ -86,6 +88,7 @@ export function adaptInvoiceToDB(invoice: Partial<Invoice>): any {
     razorpay_order_id: invoice.razorpay_order_id,
     razorpay_payment_id: invoice.razorpay_payment_id,
     notes: invoice.notes,
-    description: invoice.description
+    description: invoice.description,
+    branch_id: invoice.branch_id
   };
 }

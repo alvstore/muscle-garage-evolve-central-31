@@ -43,7 +43,8 @@ export const useInvoices = (memberId?: string) => {
           razorpay_order_id: invoice.razorpay_order_id,
           razorpay_payment_id: invoice.razorpay_payment_id,
           notes: invoice.notes,
-          description: invoice.description
+          description: invoice.description,
+          branch_id: invoice.branch_id
         }));
         
         setInvoices(transformedInvoices);
@@ -74,7 +75,8 @@ export const useInvoices = (memberId?: string) => {
           razorpay_order_id: invoice.razorpay_order_id,
           razorpay_payment_id: invoice.razorpay_payment_id,
           notes: invoice.notes,
-          description: invoice.description
+          description: invoice.description,
+          branch_id: invoice.branch_id
         })
         .select()
         .single();

@@ -1,153 +1,185 @@
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Download, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/services/supabaseClient';
-import { BackupLogEntry } from '@/types/notification';
+import { useToast } from '@/components/ui/use-toast';
+import { saveAs } from 'file-saver';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExportDataSectionProps {
-  onExportComplete?: () => void;
+  onExportComplete: () => void;
 }
 
-// Define the module types to match the actual table names in Supabase
-const validTables = [
-  "members",
-  "classes",
-  "profiles",
-  "announcements",
-  "reminder_rules",
-  "motivational_messages",
-  "feedback",
-] as const;
+type ModuleType = 
+  | 'members' 
+  | 'classes' 
+  | 'profiles' 
+  | 'announcements' 
+  | 'reminder_rules' 
+  | 'motivational_messages'
+  | 'feedback';
 
-type ModuleType = typeof validTables[number];
+interface Module {
+  id: ModuleType;
+  label: string;
+  selected: boolean;
+}
 
-const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
-  const [selectedModules, setSelectedModules] = useState<ModuleType[]>([]);
-  const { toast } = useToast();
+const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  
+  const [modules, setModules] = useState<Module[]>([
+    { id: 'members', label: 'Members', selected: true },
+    { id: 'classes', label: 'Classes', selected: true },
+    { id: 'profiles', label: 'Staff & Trainers', selected: true },
+    { id: 'announcements', label: 'Announcements', selected: true },
+    { id: 'reminder_rules', label: 'Reminder Rules', selected: true },
+    { id: 'motivational_messages', label: 'Motivational Messages', selected: true },
+    { id: 'feedback', label: 'Feedback', selected: true },
+  ]);
 
-  const modules: { name: string; value: ModuleType }[] = [
-    { name: 'Members', value: 'members' },
-    { name: 'Classes', value: 'classes' },
-    { name: 'Trainers', value: 'profiles' },
-    { name: 'Announcements', value: 'announcements' },
-    { name: 'Reminder Rules', value: 'reminder_rules' },
-    { name: 'Motivational Messages', value: 'motivational_messages' },
-    { name: 'Feedback', value: 'feedback' },
-  ];
+  const toggleModule = (id: ModuleType) => {
+    setModules(modules.map(module => 
+      module.id === id ? { ...module, selected: !module.selected } : module
+    ));
+  };
 
-  const toggleModule = (moduleValue: ModuleType) => {
-    setSelectedModules(prev =>
-      prev.includes(moduleValue)
-        ? prev.filter(item => item !== moduleValue)
-        : [...prev, moduleValue]
-    );
+  const selectAll = () => {
+    setModules(modules.map(module => ({ ...module, selected: true })));
+  };
+
+  const deselectAll = () => {
+    setModules(modules.map(module => ({ ...module, selected: false })));
   };
 
   const handleExport = async () => {
+    const selectedModules = modules.filter(m => m.selected).map(m => m.id);
+    
+    if (selectedModules.length === 0) {
+      toast({
+        title: "No modules selected",
+        description: "Please select at least one module to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    const exportData: Record<string, any[]> = {};
+    
     try {
-      if (selectedModules.length === 0) {
-        toast({
-          title: "No modules selected.",
-          description: "Please select at least one module to export.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let allData: { [key: string]: any[] } = {};
-
       for (const module of selectedModules) {
+        // Use the module as a type safe string for the query
         const { data, error } = await supabase
           .from(module)
           .select('*');
-
+          
         if (error) {
-          throw new Error(`Failed to fetch ${module}: ${error.message}`);
+          console.error(`Error exporting ${module}:`, error);
+          toast({
+            title: `Error exporting ${module}`,
+            description: error.message,
+            variant: "destructive",
+          });
+        } else if (data) {
+          exportData[module] = data;
         }
-
-        allData[module] = data || [];
       }
-
-      const filename = `export-${new Date().toISOString()}.json`;
-      const json = JSON.stringify(allData, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // Log the backup activity
-      const logEntry: Omit<BackupLogEntry, "id" | "created_at" | "updated_at"> = {
-        action: 'export',
-        user_id: user?.id,
-        user_name: user?.name || 'Unknown',
-        timestamp: new Date().toISOString(),
-        modules: selectedModules,
-        success: true,
-        total_records: Object.values(allData).reduce((sum, arr) => sum + arr.length, 0),
-        success_count: Object.values(allData).reduce((sum, arr) => sum + arr.length, 0)
-      };
-
-      const { error: logError } = await supabase
-        .from('backup_logs')
-        .insert([logEntry]);
-
-      if (logError) {
-        console.error('Failed to log backup activity:', logError);
-      }
-
+      
+      // Create and download the JSON file
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `gym-backup-${timestamp}.json`;
+      const fileContent = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([fileContent], { type: 'application/json' });
+      saveAs(blob, fileName);
+      
+      // Log the export activity
+      await supabase.from('backup_logs').insert([
+        {
+          action: 'export',
+          user_id: user?.id,
+          user_name: user?.name || 'Unknown',
+          timestamp: new Date().toISOString(),
+          modules: selectedModules,
+          success: true,
+          total_records: Object.values(exportData).flat().length,
+        }
+      ]);
+      
       toast({
-        title: "Export successful!",
-        description: `Data exported to ${filename}`,
+        title: "Export completed",
+        description: `Successfully exported data to ${fileName}`,
       });
-
+      
       if (onExportComplete) {
         onExportComplete();
       }
     } catch (error: any) {
       console.error('Export failed:', error);
       toast({
-        title: "Export failed.",
-        description: error.message || "An unexpected error occurred.",
+        title: "Export failed",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsExporting(false);
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Export Data</CardTitle>
-        <CardDescription>
-          Select the modules you want to export.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        {modules.map(module => (
-          <div key={module.value} className="flex items-center space-x-2">
-            <Checkbox
-              id={module.value}
-              checked={selectedModules.includes(module.value)}
-              onCheckedChange={() => toggleModule(module.value)}
-            />
-            <label
-              htmlFor={module.value}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {module.name}
-            </label>
+      <CardContent className="pt-6">
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <Label className="text-base font-medium">Select modules to export</Label>
+            <div className="space-x-2">
+              <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
+              <Button variant="outline" size="sm" onClick={deselectAll}>Deselect All</Button>
+            </div>
           </div>
-        ))}
-        <Button onClick={handleExport}>Export</Button>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {modules.map((module) => (
+              <div key={module.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`module-${module.id}`}
+                  checked={module.selected}
+                  onCheckedChange={() => toggleModule(module.id)}
+                />
+                <Label
+                  htmlFor={`module-${module.id}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  {module.label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <Button
+          onClick={handleExport}
+          disabled={isExporting || modules.every(m => !m.selected)}
+          className="w-full"
+        >
+          {isExporting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Exporting...
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </>
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

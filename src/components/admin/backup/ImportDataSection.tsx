@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { FileUploader } from "@/components/ui/file-uploader";
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { BackupLogEntry } from '@/types/notification';
 
 interface ImportDataSectionProps {
@@ -92,8 +92,9 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
           };
         });
         
+        // Use any valid string for the module name
         const { data: insertedData, error } = await supabase
-          .from(module)
+          .from(module as any)
           .insert(preparedRecords)
           .select();
           
@@ -122,7 +123,7 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
       toast({
         title: "Import completed",
         description: `Successfully imported ${successCount} of ${totalRecords} records`,
-        variant: successCount === totalRecords ? "default" : "warning",
+        variant: successCount === totalRecords ? "default" : "destructive",
       });
       
       // Reset file input

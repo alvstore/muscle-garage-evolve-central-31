@@ -35,19 +35,19 @@ export const InvoiceActions = ({
         </Button>
       )}
       
-      {!readonly && (invoice.status === "pending" || invoice.status === "partial") && (
+      {!readonly && (invoice.status === "pending" || invoice.status === "partially_paid") && (
         <Button variant="ghost" size="sm" onClick={() => onMarkAsPaid(invoice.id)}>
           <CreditCardIcon className="h-4 w-4" />
         </Button>
       )}
 
-      {!readonly && onRecordPayment && (invoice.status === "pending" || invoice.status === "partial") && (
+      {!readonly && onRecordPayment && (invoice.status === "pending" || invoice.status === "partially_paid") && (
         <Button variant="ghost" size="sm" onClick={() => onRecordPayment(invoice)}>
           <CreditCardIcon className="h-4 w-4" />
         </Button>
       )}
       
-      {allowPayment && (invoice.status === "pending" || invoice.status === "overdue" || invoice.status === "partial") && (
+      {allowPayment && (invoice.status === "pending" || invoice.status === "overdue" || invoice.status === "partially_paid") && (
         <Button variant="ghost" size="sm" onClick={() => onSendPaymentLink(invoice.id)}>
           <CreditCardIcon className="h-4 w-4" />
         </Button>
