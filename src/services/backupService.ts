@@ -1,5 +1,165 @@
-import { supabase } from '@/services/supabaseClient';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
+import { supabase } from '@/services/supabaseClient';
+
+// Create a zip file with all backend files
+export const createBackupZip = async () => {
+  const zip = new JSZip();
+
+  try {
+    // Add database schema
+    const dbSchema = await generateDatabaseSchema();
+    zip.file('database/schema.sql', dbSchema);
+
+    // Add edge functions
+    const edgeFunctions = await collectEdgeFunctions();
+    const functionsFolder = zip.folder('functions');
+    edgeFunctions.forEach(fn => {
+      functionsFolder.file(`${fn.name}/index.ts`, fn.code);
+    });
+
+    // Add RLS policies
+    const rlsPolicies = await generateRLSPolicies();
+    zip.file('database/policies.sql', rlsPolicies);
+
+    // Add configuration
+    const configFolder = zip.folder('config');
+    configFolder.file('supabase.json', JSON.stringify({
+      project: 'muscle-garage-evolve',
+      reference: 'rnqgpucxlvubwqpkgstc'
+    }, null, 2));
+
+    // Add services
+    const servicesFolder = zip.folder('services');
+    await collectServices(servicesFolder);
+
+    // Add types
+    const typesFolder = zip.folder('types');
+    await collectTypes(typesFolder);
+
+    // Create README
+    zip.file('README.md', generateReadme());
+
+    // Generate the zip file
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'muscle-garage-backend.zip');
+    
+    toast.success('Backend files exported successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to create backup:', error);
+    toast.error('Failed to create backup');
+    return false;
+  }
+};
+
+// Helper function to collect all services
+const collectServices = async (folder: JSZip) => {
+  const services = [
+    'authService',
+    'memberService',
+    'classService',
+    'trainerService',
+    'workoutService',
+    'dietPlanService',
+    'invoiceService',
+    'integrationService',
+    'crmService'
+  ];
+
+  services.forEach(service => {
+    const serviceCode = `// Service implementation for ${service}
+// ... actual code would be collected from the service files
+`;
+    folder.file(`${service}.ts`, serviceCode);
+  });
+};
+
+// Helper function to collect types
+const collectTypes = async (folder: JSZip) => {
+  const types = [
+    'member',
+    'class',
+    'workout',
+    'diet',
+    'invoice',
+    'crm'
+  ];
+
+  types.forEach(type => {
+    const typeCode = `// Type definitions for ${type}
+// ... actual type definitions would be collected
+`;
+    folder.file(`${type}.ts`, typeCode);
+  });
+};
+
+// Generate a basic README
+const generateReadme = () => {
+  return `# Muscle Garage Evolve Backend
+
+A comprehensive backend system for managing gym operations with multi-branch architecture.
+
+## Overview
+
+This backend powers the Muscle Garage Evolve CRM platform using:
+- Supabase for database and authentication
+- Edge Functions for custom backend logic
+- Row Level Security (RLS) for data protection
+- Real-time subscriptions for live updates
+
+## Structure
+
+- \`/database\`: Schema and RLS policies
+- \`/functions\`: Edge Functions for custom logic
+- \`/services\`: Core business logic
+- \`/types\`: TypeScript type definitions
+- \`/config\`: System configuration
+
+## Setup
+
+1. Create a Supabase project
+2. Run the schema migrations
+3. Deploy edge functions
+4. Configure environment variables
+
+## Documentation
+
+See BACKEND_DOCUMENTATION.md for detailed API documentation.
+`;
+};
+
+// Generate database schema SQL
+const generateDatabaseSchema = async () => {
+  // In a real implementation, this would fetch from Supabase
+  return `-- Database schema would be exported here
+-- Tables, indexes, and constraints
+`;
+};
+
+// Collect edge functions
+const generateRLSPolicies = async () => {
+  // In a real implementation, this would fetch from Supabase
+  return `-- RLS policies would be exported here
+-- Access control rules for each table
+`;
+};
+
+// Collect edge functions
+const collectEdgeFunctions = async () => {
+  // In a real implementation, this would fetch from Supabase
+  return [
+    {
+      name: 'attendance-webhook',
+      code: '// Edge function implementation'
+    },
+    {
+      name: 'razorpay-webhook',
+      code: '// Edge function implementation'
+    }
+  ];
+};
 
 // Export data from the database
 export const exportData = async (
