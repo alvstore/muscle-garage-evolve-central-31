@@ -1,65 +1,69 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Announcement } from '@/types/notification';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
-import { Announcement } from '@/types/notification';
-import { useAuth } from '@/hooks/use-auth';
 
-export function useAnnouncements() {
+// Define a valid NotificationChannel type that includes 'app'
+export type NotificationChannel = 'app' | 'email' | 'sms' | 'whatsapp';
+
+export const useAnnouncements = (options: {
+  branchId?: string | null;
+  limit?: number;
+  onlyActive?: boolean;
+}) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchAnnouncements = async () => {
-    if (!user) return;
-    
     try {
       setLoading(true);
       
-      // First get the user's role
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-        
-      if (!profileData) throw new Error('Could not determine user role');
+      let query = supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      // For now, just return mock data since we don't have an announcements table yet
-      const mockAnnouncements: Announcement[] = [
-        {
-          id: '1',
-          title: 'Important Notice',
-          content: 'The gym will be closed for maintenance this weekend',
-          authorId: 'admin1',
-          authorName: 'Admin User',
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'high',
-          targetRoles: ['staff', 'member', 'trainer'],
-          forBranchIds: [],
-          createdBy: 'Admin User',
-          channels: ['app', 'email']
-        },
-        {
-          id: '2',
-          title: 'New Class Schedule',
-          content: 'Check out our updated class schedule for next month',
-          authorId: 'staff1',
-          authorName: 'Staff User',
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'medium',
-          targetRoles: ['member'],
-          forBranchIds: [],
-          createdBy: 'Staff User',
-          channels: ['app']
-        }
-      ];
+      // Apply branch filter if provided
+      if (options.branchId) {
+        query = query.eq('branch_id', options.branchId);
+      }
       
-      setAnnouncements(mockAnnouncements);
+      // Only fetch active announcements if specified
+      if (options.onlyActive) {
+        query = query.eq('is_active', true);
+      }
+      
+      // Apply limit if specified
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedAnnouncements: Announcement[] = data.map(item => ({
+        id: item.id,
+        title: item.title || 'Untitled Announcement',
+        content: item.content || '',
+        createdAt: item.created_at,
+        expiresAt: item.expires_at,
+        priority: item.priority || 'normal',
+        channel: item.channel as NotificationChannel || 'app',
+        branchId: item.branch_id,
+        createdBy: item.created_by,
+        isGlobal: item.is_global || false,
+        isActive: item.is_active || true,
+        category: item.category || 'general',
+      }));
+
+      setAnnouncements(formattedAnnouncements);
+      setError(null);
     } catch (error) {
       console.error('Error fetching announcements:', error);
+      setError(error as Error);
       toast.error('Failed to load announcements');
     } finally {
       setLoading(false);
@@ -67,29 +71,12 @@ export function useAnnouncements() {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchAnnouncements();
-    }
-  }, [user]);
+    fetchAnnouncements();
+  }, [options.branchId, options.limit, options.onlyActive]);
 
-  const createAnnouncement = async (data: Omit<Announcement, 'id' | 'createdAt' | 'authorName' | 'createdBy'>) => {
-    if (!user) {
-      toast.error('You must be logged in to create announcements');
-      return false;
-    }
-    
-    try {
-      // In a real app, we would insert into the database
-      // For now just show a success message
-      toast.success('Announcement created successfully');
-      fetchAnnouncements(); // Refresh the list with our mock data
-      return true;
-    } catch (error) {
-      console.error('Error creating announcement:', error);
-      toast.error('Failed to create announcement');
-      return false;
-    }
+  const refresh = () => {
+    fetchAnnouncements();
   };
 
-  return { announcements, loading, createAnnouncement, refreshAnnouncements: fetchAnnouncements };
-}
+  return { announcements, loading, error, refresh };
+};

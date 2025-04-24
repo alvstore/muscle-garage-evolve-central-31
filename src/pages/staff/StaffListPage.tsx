@@ -9,6 +9,22 @@ import { supabase } from '@/services/supabaseClient';
 import type { StaffMember } from '@/types/staff';
 import { PersonCard } from '@/components/shared/PersonCard';
 
+interface ProfileData {
+  id: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  department?: string;
+  branch_id?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Add missing fields from error messages
+  position?: string;
+  is_active?: boolean;
+}
+
 const StaffListPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -24,7 +40,7 @@ const StaffListPage = () => {
 
       if (error) throw error;
 
-      const formattedStaff: StaffMember[] = data.map(item => ({
+      const formattedStaff: StaffMember[] = data.map((item: ProfileData) => ({
         id: item.id,
         name: item.full_name || '',
         email: item.email || '',

@@ -22,8 +22,9 @@ export function useSupabaseData<T>(
     try {
       setLoading(true);
       
+      // Use 'any' type to avoid TypeScript errors with dynamic table names
       let query = supabase
-        .from(tableName)
+        .from(tableName as any)
         .select(options.columns || '*', { count: 'exact' });
       
       // Apply branch filtering if needed
@@ -102,8 +103,9 @@ export function useSingleSupabaseRecord<T>(
       try {
         setLoading(true);
         
+        // Use 'any' type to avoid TypeScript errors with dynamic table names
         const { data, error } = await supabase
-          .from(tableName)
+          .from(tableName as any)
           .select(options.columns || '*')
           .eq('id', recordId)
           .maybeSingle();
@@ -130,8 +132,9 @@ export function useSingleSupabaseRecord<T>(
     try {
       setLoading(true);
       
+      // Use 'any' type to avoid TypeScript errors with dynamic table names
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select(options.columns || '*')
         .eq('id', recordId)
         .maybeSingle();
