@@ -1,25 +1,17 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnnouncementsList from "@/components/communication/AnnouncementsList";
-import AnnouncementForm from "@/components/communication/AnnouncementForm";
+import CreateAnnouncementForm from "@/components/communication/CreateAnnouncementForm";
 import { Announcement } from "@/types/notification";
 import { usePermissions } from "@/hooks/use-permissions";
 
-const AnnouncementPage = () => {
+export default function AnnouncementPage() {
   const [activeTab, setActiveTab] = useState("list");
   const [editAnnouncement, setEditAnnouncement] = useState<Announcement | null>(null);
   const { userRole } = usePermissions();
   
   const isMember = userRole === "member";
-
-  const handleEdit = (announcement: Announcement) => {
-    if (isMember) return; // Members can't edit announcements
-    
-    setEditAnnouncement(announcement);
-    setActiveTab("create");
-  };
 
   return (
     <Container>
@@ -35,14 +27,13 @@ const AnnouncementPage = () => {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
-            <AnnouncementsList onEdit={handleEdit} />
+            <AnnouncementsList />
           </TabsContent>
           
           {!isMember && (
             <TabsContent value="create" className="space-y-4">
-              <AnnouncementForm 
-                editAnnouncement={editAnnouncement} 
-                onComplete={() => {
+              <CreateAnnouncementForm 
+                onSuccess={() => {
                   setActiveTab("list");
                   setEditAnnouncement(null);
                 }} 
@@ -53,6 +44,4 @@ const AnnouncementPage = () => {
       </div>
     </Container>
   );
-};
-
-export default AnnouncementPage;
+}

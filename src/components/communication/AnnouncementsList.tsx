@@ -1,146 +1,119 @@
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
-import { Announcement } from "@/types/notification";
-import AnnouncementsLoading from "./announcements/AnnouncementsLoading";
-import AnnouncementsEmpty from "./announcements/AnnouncementsEmpty";
-import AnnouncementsTable from "./announcements/AnnouncementsTable";
-import AnnouncementDetailDialog from "./AnnouncementDetailDialog";
 
-const mockAnnouncements: Announcement[] = [
-  {
-    id: "1",
-    title: "Gym Closure for Maintenance",
-    content: "The gym will be closed on July 15th for routine maintenance. We apologize for any inconvenience.",
-    authorId: "admin1",
-    authorName: "Admin",
-    createdAt: "2023-07-10T10:00:00Z",
-    targetRoles: ["member", "trainer"],
-    channels: ["in-app", "email"],
-    sentCount: 120,
-    priority: "medium",
-    forRoles: ["member", "trainer"],
-    createdBy: "admin1"
-  },
-  {
-    id: "2",
-    title: "New Fitness Classes Added",
-    content: "We're excited to announce new Zumba and Pilates classes starting next week!",
-    authorId: "admin1",
-    authorName: "Admin",
-    createdAt: "2023-07-12T14:30:00Z",
-    targetRoles: ["member"],
-    channels: ["in-app", "email", "sms"],
-    expiresAt: "2023-07-26T23:59:59Z",
-    sentCount: 98,
-    priority: "high",
-    forRoles: ["member"],
-    createdBy: "admin1"
-  },
-  {
-    id: "3", 
-    title: "Holiday Schedule Change",
-    content: "Please note our special hours during the upcoming holiday weekend.",
-    authorId: "staff1",
-    authorName: "Staff Member",
-    createdAt: "2023-07-18T09:15:00Z",
-    targetRoles: ["member", "trainer", "staff"],
-    channels: ["in-app", "whatsapp"],
-    sentCount: 215,
-    priority: "low",
-    forRoles: ["member", "trainer", "staff"],
-    createdBy: "staff1"
-  }
-];
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { MessageSquare, AlertCircle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/services/supabaseClient';
 
-interface AnnouncementsListProps {
-  onEdit: (announcement: Announcement) => void;
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high';
+  created_at: string;
+  expires_at?: string;
+  author: {
+    name: string;
+    avatar_url?: string;
+  };
 }
 
-const AnnouncementsList = ({ onEdit }: AnnouncementsListProps) => {
+export function AnnouncementsList() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadAnnouncements();
+    const fetchAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select(`
+            id,
+            title,
+            content,
+            priority,
+            created_at,
+            expires_at,
+            profiles:author_id (
+              full_name,
+              avatar_url
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setAnnouncements(data || []);
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnnouncements();
   }, []);
 
-  const loadAnnouncements = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setAnnouncements(mockAnnouncements);
-      setLoading(false);
-    }, 1000);
-  };
+  if (loading) {
+    return <div>Loading announcements...</div>;
+  }
 
-  const handleDelete = (id: string) => {
-    setAnnouncements(announcements.filter(a => a.id !== id));
-    toast.success("Announcement deleted successfully");
-  };
+  if (announcements.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-medium">No announcements</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          When new announcements are made, they'll appear here.
+        </p>
+      </div>
+    );
+  }
 
-  const handleResend = (id: string) => {
-    toast.success("Announcement resent successfully");
-  };
-
-  const handleView = (announcement: Announcement) => {
-    setSelectedAnnouncement(announcement);
-    setDetailDialogOpen(true);
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-500';
+      case 'medium':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-blue-500';
+    }
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {announcements.map((announcement) => (
+        <Card key={announcement.id} className="p-4">
+          <div className="flex justify-between items-start">
             <div>
-              <CardTitle>Announcements</CardTitle>
-              <CardDescription>Manage and track all gym announcements</CardDescription>
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium">{announcement.title}</h3>
+                <Badge className={getPriorityColor(announcement.priority)}>
+                  {announcement.priority}
+                </Badge>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {announcement.content}
+              </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              disabled={loading}
-              onClick={loadAnnouncements}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <AnnouncementsLoading />
-          ) : announcements.length === 0 ? (
-            <AnnouncementsEmpty />
-          ) : (
-            <AnnouncementsTable
-              announcements={announcements}
-              onEdit={onEdit}
-              onView={handleView}
-              onDelete={handleDelete}
-              onResend={handleResend}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <AnnouncementDetailDialog
-        announcement={selectedAnnouncement}
-        isOpen={detailDialogOpen}
-        onClose={() => setDetailDialogOpen(false)}
-      />
-    </>
+          <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>Posted by {announcement.author?.name}</span>
+              <span>•</span>
+              <span>{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
+            </div>
+            {announcement.expires_at && (
+              <div className="flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>Expires {format(new Date(announcement.expires_at), 'MMM d, yyyy')}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
   );
-};
-
-export default AnnouncementsList;
+}
