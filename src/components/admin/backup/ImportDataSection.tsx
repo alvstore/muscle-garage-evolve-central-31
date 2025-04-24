@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle, Upload, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { BackupLogEntry } from '@/types/notification';
 
 interface ImportDataSectionProps {
@@ -156,7 +156,8 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
         modules,
         success: result.success,
         total_records: totalRecords,
-        success_count: result.count
+        success_count: result.count,
+        failed_count: 0 // Explicitly set to 0 instead of undefined
       };
       
       try {

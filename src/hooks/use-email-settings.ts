@@ -1,6 +1,6 @@
 
 import { useCallback, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
 export interface EmailSettings {

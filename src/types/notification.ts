@@ -27,6 +27,50 @@ export interface ReminderRule {
   targetRoles: string[];
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high';
+  authorId?: string;
+  authorName?: string;
+  createdAt: string;
+  updatedAt?: string;
+  expiresAt?: string;
+  targetRoles: string[];
+  channels: string[];
+  branchId?: string;
+  status?: 'active' | 'draft' | 'expired';
+}
+
+export interface MotivationalMessage {
+  id: string;
+  title: string;
+  content: string;
+  author?: string;
+  category: string;
+  tags?: string[];
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'equipment' | 'facility' | 'service';
+
+export interface Feedback {
+  id: string;
+  title: string;
+  type: FeedbackType;
+  rating: number;
+  comments?: string;
+  memberId?: string;
+  memberName?: string;
+  branchId?: string;
+  createdAt: string;
+  relatedId?: string;
+  anonymous: boolean;
+}
+
 export interface BackupLogEntry {
   id: string;
   action: string; // 'export' | 'import'

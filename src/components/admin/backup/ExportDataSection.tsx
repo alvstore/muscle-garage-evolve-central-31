@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { BackupLogEntry } from '@/types/notification';
 
 interface ExportDataSectionProps {
@@ -16,7 +16,7 @@ interface ExportDataSectionProps {
 const validTables = [
   "members",
   "classes",
-  "trainers_view", // Using a view for trainers
+  "profiles", // Using profiles instead of trainers_view
   "announcements",
   "reminder_rules",
   "motivational_messages",
@@ -33,7 +33,7 @@ const ExportDataSection = ({ onExportComplete }: ExportDataSectionProps) => {
   const modules: { name: string; value: ModuleType }[] = [
     { name: 'Members', value: 'members' },
     { name: 'Classes', value: 'classes' },
-    { name: 'Trainers', value: 'trainers_view' },
+    { name: 'Trainers', value: 'profiles' },
     { name: 'Announcements', value: 'announcements' },
     { name: 'Reminder Rules', value: 'reminder_rules' },
     { name: 'Motivational Messages', value: 'motivational_messages' },
