@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -62,6 +61,7 @@ const NewMemberPage = () => {
         membershipStatus: formData.membershipStatus as "active" | "inactive" | "expired",
         membershipStartDate: new Date().toISOString(),
         membershipEndDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(),
+        status: "active"
       };
       
       // If there are initial measurements, save them too

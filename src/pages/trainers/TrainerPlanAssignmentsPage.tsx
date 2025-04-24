@@ -120,34 +120,43 @@ const mockWorkoutPlans: WorkoutPlan[] = [
 ];
 
 // Mock members data
+const member1 = {
+  id: "member1",
+  name: "John Smith",
+  email: "john@example.com",
+  role: "member",
+  membershipStatus: "active",
+  trainerId: "trainer1", 
+  goal: "Weight Loss",
+  status: "active"
+};
+
+const member2 = {
+  id: "member2",
+  name: "Jane Doe",
+  email: "jane@example.com",
+  role: "member",
+  membershipStatus: "active",
+  trainerId: "trainer1",
+  goal: "Muscle Building",
+  status: "active"
+};
+
+const member3 = {
+  id: "member3",
+  name: "Bob Johnson",
+  email: "bob@example.com",
+  role: "member",
+  membershipStatus: "active",
+  trainerId: "trainer1",
+  goal: "General Fitness",
+  status: "active"
+};
+
 const mockMembers: Member[] = [
-  {
-    id: 'member1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer1',
-    goal: 'Weight Loss'
-  },
-  {
-    id: 'member2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer1',
-    goal: 'Muscle Gain'
-  },
-  {
-    id: 'member3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer2',
-    goal: 'Strength'
-  }
+  member1,
+  member2,
+  member3
 ];
 
 // Mock assignments

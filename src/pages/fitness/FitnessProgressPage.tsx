@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileBarChart, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -109,10 +109,10 @@ const FitnessProgressPage = () => {
                           <span>75%</span>
                         </div>
                       </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </>
             ) : (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />

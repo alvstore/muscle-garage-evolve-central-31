@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -81,6 +80,24 @@ const mockWorkoutPlans: WorkoutPlan[] = [
     memberId: 'default'
   }
 ];
+
+const mockMember1 = {
+  id: "member1",
+  name: "John Smith",
+  role: "member",
+  membershipStatus: "active",
+  email: "john@example.com",
+  status: "active"
+};
+
+const mockMember2 = {
+  id: "member2",
+  name: "Jane Doe",
+  role: "member",
+  membershipStatus: "active",
+  email: "jane@example.com",
+  status: "active"
+};
 
 const TrainerWorkoutPlansPage = () => {
   const { user } = useAuth();

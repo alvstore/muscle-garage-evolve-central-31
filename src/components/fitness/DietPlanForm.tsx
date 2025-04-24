@@ -24,6 +24,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   onCancel
 }) => {
   const [formData, setFormData] = useState<Omit<DietPlan, 'id' | 'createdAt' | 'updatedAt'>>({
+    name: existingPlan?.name || `Diet Plan for ${member.name}`,
     memberId: member.id,
     trainerId: trainerId,
     mealPlans: existingPlan?.mealPlans || [createEmptyMeal()],
@@ -146,6 +147,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
 
     const finalPlan: DietPlan = {
       id: existingPlan?.id || uuidv4(),
+      name: formData.name,
       memberId: member.id,
       trainerId,
       mealPlans: mealPlansWithCalories,
@@ -177,6 +179,16 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="plan-name">Plan Name</Label>
+          <Input
+            id="plan-name"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            placeholder="Enter a name for this diet plan"
+          />
+        </div>
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Meal Plans</h3>

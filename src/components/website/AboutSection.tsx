@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GymWeightlifter, Shield, Clock24, Users } from 'lucide-react';
+import { Shield, Clock, Users, Dumbbell } from 'lucide-react';
 
 export interface AboutSectionProps {
   title: string;
@@ -54,13 +54,13 @@ const AboutSection: React.FC<AboutSectionProps> = ({
       case "trainers":
         return <Users className="h-10 w-10 text-gym-yellow" />;
       case "equipment":
-        return <GymWeightlifter className="h-10 w-10 text-gym-yellow" />;
+        return <Dumbbell className="h-10 w-10 text-gym-yellow" />;
       case "hours":
-        return <Clock24 className="h-10 w-10 text-gym-yellow" />;
+        return <Clock className="h-10 w-10 text-gym-yellow" />;
       case "community":
         return <Shield className="h-10 w-10 text-gym-yellow" />;
       default:
-        return <GymWeightlifter className="h-10 w-10 text-gym-yellow" />;
+        return <Dumbbell className="h-10 w-10 text-gym-yellow" />;
     }
   };
 

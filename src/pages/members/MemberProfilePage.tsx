@@ -1,86 +1,86 @@
-
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Container } from "@/components/ui/container";
-import MemberProfile from "@/components/members/MemberProfile";
-import MemberTransactionHistory from "@/components/members/MemberTransactionHistory";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Member } from "@/types";
-import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, Mail, Phone } from 'lucide-react';
 
 const MemberProfilePage = () => {
-  const { id } = useParams<{ id: string }>();
-  const [member, setMember] = useState<Member | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Simulate API call to fetch member data
-    setTimeout(() => {
-      // Mock data - in a real app, you would fetch this from an API
-      const mockMember: Member = {
-        id: id || "1",
-        email: "john.doe@example.com",
-        name: "John Doe",
-        role: "member",
-        phone: "+1 (555) 123-4567",
-        dateOfBirth: "1990-05-15",
-        goal: "Build muscle and improve overall fitness",
-        trainerId: "trainer-123",
-        membershipId: "platinum-12m",
-        membershipStatus: "active",
-        membershipStartDate: "2023-01-15",
-        membershipEndDate: "2024-01-15",
-      };
-      
-      setMember(mockMember);
-      setLoading(false);
-    }, 1000);
-  }, [id]);
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
 
-  const handleUpdateMember = (updatedMember: Member) => {
-    // Simulate API call to update member data
-    setLoading(true);
-    setTimeout(() => {
-      setMember(updatedMember);
-      setLoading(false);
-      toast.success("Member profile updated successfully");
-    }, 1000);
+  // When creating a mock member, add the status property
+  const mockMember = {
+    id: "member1",
+    email: "member@example.com",
+    name: "Jordan Lee",
+    role: "member",
+    phone: "+1234567890",
+    dateOfBirth: "1990-05-15",
+    goal: "Weight loss and muscle toning",
+    trainerId: "trainer1",
+    membershipId: "membership1",
+    membershipStatus: "active",
+    membershipStartDate: "2023-01-01",
+    membershipEndDate: "2023-12-31",
+    status: "active"
   };
 
   return (
     <Container>
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Member Profile</h1>
-        
-        {loading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        ) : member ? (
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="profile">
-              <MemberProfile 
-                member={member} 
-                onUpdate={handleUpdateMember} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="transactions">
-              <MemberTransactionHistory />
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <div className="p-4 border rounded bg-yellow-50 text-yellow-700">
-            Member not found
-          </div>
-        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>Details about the member's profile</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src="" alt={mockMember.name} />
+                <AvatarFallback>{getInitials(mockMember.name)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-lg font-medium">{mockMember.name}</h3>
+                <p className="text-sm text-muted-foreground">ID: {mockMember.id}</p>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center">
+                <Mail className="h-4 w-4 mr-2" />
+                <span>{mockMember.email}</span>
+              </div>
+              <div className="flex items-center">
+                <Phone className="h-4 w-4 mr-2" />
+                <span>{mockMember.phone}</span>
+              </div>
+              <div className="flex items-center">
+                <CalendarDays className="h-4 w-4 mr-2" />
+                <span>{mockMember.dateOfBirth}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div>
+                <h4 className="text-sm font-medium">Membership Status</h4>
+                <Badge variant="secondary">{mockMember.membershipStatus}</Badge>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Goal</h4>
+                <p>{mockMember.goal}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Container>
   );

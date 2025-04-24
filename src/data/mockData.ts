@@ -1,4 +1,3 @@
-
 import { 
   User, 
   Member, 
@@ -43,7 +42,15 @@ export const mockUsers: User[] = [
     name: "Jordan Lee",
     role: "member",
     avatar: "/placeholder.svg",
-    phone: "+1234567893"
+    phone: "+1234567893",
+    dateOfBirth: "1990-05-15",
+    goal: "Weight loss and muscle toning",
+    trainerId: "trainer1",
+    membershipId: "membership1",
+    membershipStatus: "active",
+    membershipStartDate: "2023-01-01",
+    membershipEndDate: "2024-01-01",
+    status: "active"
   }
 ];
 
@@ -62,7 +69,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership1",
     membershipStatus: "active",
     membershipStartDate: "2023-01-01",
-    membershipEndDate: "2024-01-01"
+    membershipEndDate: "2024-01-01",
+    status: "active"
   },
   {
     id: "member2",
@@ -77,7 +85,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership2",
     membershipStatus: "active",
     membershipStartDate: "2023-02-15",
-    membershipEndDate: "2023-08-15"
+    membershipEndDate: "2023-08-15",
+    status: "active"
   },
   {
     id: "member3",
@@ -92,7 +101,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership3",
     membershipStatus: "inactive",
     membershipStartDate: "2022-10-01",
-    membershipEndDate: "2023-04-01"
+    membershipEndDate: "2023-04-01",
+    status: "inactive"
   },
   {
     id: "member4",
@@ -107,7 +117,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership1",
     membershipStatus: "active",
     membershipStartDate: "2023-03-01",
-    membershipEndDate: "2024-03-01"
+    membershipEndDate: "2024-03-01",
+    status: "active"
   },
   {
     id: "member5",
@@ -121,7 +132,8 @@ export const mockMembers: Member[] = [
     membershipId: "membership2",
     membershipStatus: "expired",
     membershipStartDate: "2022-06-01",
-    membershipEndDate: "2023-06-01"
+    membershipEndDate: "2023-06-01",
+    status: "inactive"
   }
 ];
 

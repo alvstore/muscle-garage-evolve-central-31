@@ -1,219 +1,113 @@
 
-import { Permission } from '@/hooks/use-permissions';
+import React from "react";
+import { NavSection } from "@/types/navigation";
+import { Home, Users, Calendar, CreditCard, Settings, Package, BarChart2, Bell, FileText, Globe, ShoppingCart } from "lucide-react";
 
-export const adminNavigation = [
+export const adminNavSections: NavSection[] = [
   {
-    name: 'Dashboard',
-    href: '/dashboard',
-    children: [
+    name: "Dashboard",
+    items: [
       {
-        href: '/dashboard',
-        label: 'Analytics Dashboard',
-        permission: 'access_dashboards'
-      },
-      {
-        href: '/dashboard/crm',
-        label: 'CRM Dashboard',
-        permission: 'access_crm'
-      },
-      {
-        href: '/dashboard/marketing',
-        label: 'Marketing Dashboard',
-        permission: 'access_marketing'
-      },
-      {
-        href: '/dashboard/finance',
-        label: 'Finance Dashboard',
-        permission: 'access_finance'
-      },
-      {
-        href: '/dashboard/trainer',
-        label: 'Trainer Dashboard',
-        permission: 'feature_trainer_dashboard'
+        href: "/dashboard",
+        label: "Overview",
+        permission: "view_dashboard",
+        icon: <Home className="h-5 w-5" />
       }
-    ],
+    ]
   },
   {
-    name: 'Management',
-    href: '/management',
-    children: [
+    name: "Members",
+    items: [
       {
-        href: '/branches',
-        label: 'Branches',
-        permission: 'manage_branches'
+        href: "/members",
+        label: "Member Management",
+        permission: "manage_members",
+        icon: <Users className="h-5 w-5" />
       },
       {
-        href: '/members',
-        label: 'Members',
-        permission: 'manage_members'
-      },
-      {
-        href: '/trainers',
-        label: 'Trainers',
-        permission: 'view_all_trainers'
-      },
-      {
-        href: '/staff',
-        label: 'Staff',
-        permission: 'manage_staff'
-      },
-      {
-        href: '/roles',
-        label: 'Roles & Permissions',
-        permission: 'manage_roles'
-      },
-      {
-        href: '/attendance',
-        label: 'Attendance',
-        permission: 'view_all_attendance'
-      },
-      {
-        href: '/classes',
-        label: 'Classes',
-        permission: 'view_classes'
-      },
-      {
-        href: '/fitness/plans',
-        label: 'Fitness Plans',
-        permission: 'assign_plan'
-      },
-      {
-        href: '/fitness/progress',
-        label: 'Fitness Progress',
-        permission: 'manage_fitness_data'
-      },
-      {
-        href: '/inventory',
-        label: 'Inventory',
-        permission: 'access_inventory'
-      },
-      {
-        href: '/store',
-        label: 'Store',
-        permission: 'access_store'
-      },
-    ],
+        href: "/fitness/progress",
+        label: "Progress Tracking",
+        permission: "manage_members",
+        icon: <BarChart2 className="h-5 w-5" />
+      }
+    ]
   },
   {
-    name: 'Communication',
-    href: '/communication',
-    children: [
+    name: "Classes",
+    items: [
       {
-        href: '/communication/announcements',
-        label: 'Announcements',
-        permission: 'access_communication'
-      },
-      {
-        href: '/communication/email-campaigns',
-        label: 'Email Campaigns',
-        permission: 'feature_email_campaigns'
-      },
-      {
-        href: '/communication/sms',
-        label: 'SMS Campaigns',
-        permission: 'access_communication'
-      },
-    ],
+        href: "/classes",
+        label: "Class Schedule",
+        permission: "manage_classes",
+        icon: <Calendar className="h-5 w-5" />
+      }
+    ]
   },
   {
-    name: 'Finance',
-    href: '/finance',
-    children: [
+    name: "Finance",
+    items: [
       {
-        href: '/finance/invoices',
-        label: 'Invoices',
-        permission: 'manage_invoices'
+        href: "/finance/transactions",
+        label: "Transactions",
+        permission: "manage_finances",
+        icon: <CreditCard className="h-5 w-5" />
       },
       {
-        href: '/finance/transactions',
-        label: 'Transactions',
-        permission: 'manage_transactions'
-      },
-      {
-        href: '/finance/income',
-        label: 'Income',
-        permission: 'manage_income'
-      },
-      {
-        href: '/finance/expenses',
-        label: 'Expenses',
-        permission: 'manage_expenses'
-      },
-      {
-        href: '/finance/reports',
-        label: 'Reports',
-        permission: 'access_reports'
-      },
-    ],
+        href: "/finance/invoices",
+        label: "Invoices",
+        permission: "manage_finances",
+        icon: <FileText className="h-5 w-5" />
+      }
+    ]
   },
   {
-    name: 'Settings',
-    href: '/settings',
-    children: [
+    name: "Website",
+    items: [
       {
-        href: '/settings/general',
-        label: 'General Settings',
-        permission: 'manage_settings'
+        href: "/website",
+        label: "Website Management",
+        permission: "manage_website",
+        icon: <Globe className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Store",
+    items: [
+      {
+        href: "/store",
+        label: "Store Management",
+        permission: "manage_inventory",
+        icon: <ShoppingCart className="h-5 w-5" />
       },
       {
-        href: '/settings/email',
-        label: 'Email Settings',
-        permission: 'manage_settings'
-      },
+        href: "/inventory",
+        label: "Inventory",
+        permission: "manage_inventory",
+        icon: <Package className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Communication",
+    items: [
       {
-        href: '/settings/sms',
-        label: 'SMS Settings',
-        permission: 'manage_settings'
-      },
+        href: "/announcements",
+        label: "Announcements",
+        permission: "manage_branch",
+        icon: <Bell className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Settings",
+    items: [
       {
-        href: '/settings/integrations',
-        label: 'Integrations',
-        permission: 'manage_integrations'
-      },
-      {
-        href: '/settings/templates',
-        label: 'Templates',
-        permission: 'manage_templates'
-      },
-      {
-        href: '/settings/devices',
-        label: 'Devices',
-        permission: 'manage_devices'
-      },
-    ],
-  },
-  {
-    name: 'Website',
-    href: '/website',
-    children: [],
-  },
-  {
-    href: "/website",
-    label: "Website Management",
-    permission: "manage_website"
-  }, 
-];
-
-// Add missing adminNavSections export for use in sidebar components
-export const adminNavSections = [
-  {
-    name: 'Dashboard',
-    items: adminNavigation.find(nav => nav.name === 'Dashboard')?.children || []
-  },
-  {
-    name: 'Management',
-    items: adminNavigation.find(nav => nav.name === 'Management')?.children || []
-  },
-  {
-    name: 'Communication',
-    items: adminNavigation.find(nav => nav.name === 'Communication')?.children || []
-  },
-  {
-    name: 'Finance',
-    items: adminNavigation.find(nav => nav.name === 'Finance')?.children || []
-  },
-  {
-    name: 'Settings',
-    items: adminNavigation.find(nav => nav.name === 'Settings')?.children || []
-  },
+        href: "/settings",
+        label: "System Settings",
+        permission: "manage_settings",
+        icon: <Settings className="h-5 w-5" />
+      }
+    ]
+  }
 ];
