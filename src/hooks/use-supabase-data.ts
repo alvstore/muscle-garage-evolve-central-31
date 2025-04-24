@@ -1,156 +1,163 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from "@/services/supabaseClient";
-import { toast } from 'sonner';
+import { supabase } from '@/services/supabaseClient';
 
-export function useSupabaseData<T>(
-  tableName: string,
-  options: {
-    columns?: string;
-    filters?: Record<string, any>;
-    orderBy?: string;
-    limit?: number;
-    branchId?: string | null;
-  } = {}
-) {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [count, setCount] = useState(0);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Use type assertion to handle dynamic table names
-      let query = supabase
-        .from(tableName as any)
-        .select(options.columns || '*', { count: 'exact' });
-      
-      // Apply branch filtering if needed
-      if (options.branchId) {
-        query = query.eq('branch_id', options.branchId);
-      }
-
-      // Apply custom filters
-      if (options.filters) {
-        Object.entries(options.filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
-            if (Array.isArray(value)) {
-              query = query.in(key, value);
-            } else {
-              query = query.eq(key, value);
-            }
-          }
-        });
-      }
-
-      // Apply ordering
-      if (options.orderBy) {
-        query = query.order(options.orderBy);
-      }
-
-      // Apply limit
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      setData(data as T[]);
-      setCount(count || 0);
-      setError(null);
-    } catch (error) {
-      console.error(`Error fetching data from ${tableName}:`, error);
-      setError(error as Error);
-      toast.error(`Failed to load data from ${tableName}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [tableName, JSON.stringify(options)]); // Re-fetch when table or options change
-
-  const refresh = () => {
-    fetchData();
-  };
-
-  return { data, loading, error, count, refresh };
+interface SupabaseDataHookResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
 }
 
-export function useSingleSupabaseRecord<T>(
-  tableName: string,
-  recordId: string | null | undefined,
-  options: {
-    columns?: string;
-  } = {}
-) {
+/**
+ * useSupabaseData hook
+ *
+ * A generic hook for fetching data from Supabase tables with filtering.
+ *
+ * @param {string} table - The name of the Supabase table to fetch data from.
+ * @param {string} filterField - The field to filter by.
+ * @param {any} filterValue - The value to filter for.
+ * @param {string} [fields] - Optional. The fields to select. Defaults to '*'.
+ * @returns {SupabaseDataHookResult<T>} An object containing the data, loading state, and error (if any).
+ *
+ * @example
+ * // Usage:
+ * const { data: products, loading, error } = useSupabaseData<Product>('products', 'category_id', categoryId);
+ */
+export function useSupabaseData<T>(
+  table: string,
+  filterField: string,
+  filterValue: any,
+  fields?: string
+): SupabaseDataHookResult<T> {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!recordId) {
-        setData(null);
-        return;
-      }
-
+      setLoading(true);
       try {
-        setLoading(true);
-        
-        // Use type assertion to handle dynamic table names
         const { data, error } = await supabase
-          .from(tableName as any)
-          .select(options.columns || '*')
-          .eq('id', recordId)
-          .maybeSingle();
+          .from(table as any)
+          .select(fields || '*')
+          .eq(filterField, filterValue);
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         setData(data as T);
         setError(null);
-      } catch (error) {
-        console.error(`Error fetching record from ${tableName}:`, error);
-        setError(error as Error);
-        toast.error(`Failed to load record from ${tableName}`);
+      } catch (err: any) {
+        setError(err);
+        setData(null);
+        console.error(`Error fetching data from Supabase table "${table}":`, err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [tableName, recordId, options.columns]);
+  }, [table, filterField, filterValue, fields]);
 
-  const refresh = async () => {
-    if (!recordId) return;
-    
-    try {
+  return { data, loading, error };
+}
+
+/**
+ * useSupabaseQuery hook
+ *
+ * A generic hook for fetching data from Supabase using a custom query.
+ *
+ * @param {string} table - The name of the Supabase table to fetch data from.
+ * @param {string} query - The Supabase query string.
+ * @returns {SupabaseDataHookResult<T>} An object containing the data, loading state, and error (if any).
+ *
+ * @example
+ * // Usage:
+ * const { data: products, loading, error } = useSupabaseQuery<Product>('products', '*, categories(name)');
+ */
+export function useSupabaseQuery<T>(
+  table: string,
+  query: string
+): SupabaseDataHookResult<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
       setLoading(true);
-      
-      // Use type assertion to handle dynamic table names
-      const { data, error } = await supabase
-        .from(tableName as any)
-        .select(options.columns || '*')
-        .eq('id', recordId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from(table as any)
+          .select(query);
 
-      if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
-      setData(data as T);
-      setError(null);
-    } catch (error) {
-      console.error(`Error refreshing record from ${tableName}:`, error);
-      setError(error as Error);
-      toast.error(`Failed to refresh record from ${tableName}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setData(data as T);
+        setError(null);
+      } catch (err: any) {
+        setError(err);
+        setData(null);
+        console.error(`Error fetching data from Supabase table "${table}" with query "${query}":`, err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return { data, loading, error, refresh };
+    fetchData();
+  }, [table, query]);
+
+  return { data, loading, error };
+}
+
+/**
+ * useSupabaseList hook
+ *
+ * A generic hook for fetching a list of data from Supabase tables.
+ *
+ * @param {string} tableName - The name of the Supabase table to fetch data from.
+ * @param {string} [fields] - Optional. The fields to select. Defaults to '*'.
+ * @returns {SupabaseDataHookResult<T[]>} An object containing the data, loading state, and error (if any).
+ *
+ * @example
+ * // Usage:
+ * const { data: products, loading, error } = useSupabaseList<Product>('products');
+ */
+export function useSupabaseList<T>(
+  tableName: string,
+  fields?: string
+): SupabaseDataHookResult<T[]> {
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from(tableName as any)
+          .select(fields || '*');
+
+        if (error) {
+          throw error;
+        }
+
+        setData(data as T[]);
+        setError(null);
+      } catch (err: any) {
+        setError(err);
+        setData(null);
+        console.error(`Error fetching data from Supabase table "${tableName}":`, err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [tableName, fields]);
+
+  return { data, loading, error };
 }

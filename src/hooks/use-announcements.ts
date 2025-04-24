@@ -4,7 +4,7 @@ import { Announcement } from '@/types/notification';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
-// Define a valid NotificationChannel type that includes 'app'
+// Define a valid NotificationChannel type that includes 'in-app'
 export type NotificationChannel = 'in-app' | 'email' | 'sms' | 'whatsapp';
 
 export const useAnnouncements = (options: {
@@ -97,7 +97,7 @@ export const useAnnouncements = (options: {
         branch_id: announcement.forBranchIds && announcement.forBranchIds.length > 0 
           ? announcement.forBranchIds[0] 
           : null,
-        channel: announcement.channels || ['in-app'],
+        channel: announcement.channels ? announcement.channels : ['in-app'],
         target_roles: announcement.targetRoles || ['member'],
         category: announcement.category || 'general',
       };

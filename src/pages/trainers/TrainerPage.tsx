@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -8,31 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/services/supabaseClient';
 import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
 import { PersonCard } from '@/components/shared/PersonCard';
-
-// Extended interface for trainer profile with the missing properties
-interface TrainerProfile {
-  id: string;
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  avatar_url?: string;
-  branch_id?: string;
-  department?: string;
-  specialty?: string;
-  bio?: string;
-  rating?: number;
-  is_active?: boolean;
-  accessible_branch_ids?: string[];
-  address?: string;
-  city?: string;
-  country?: string;
-  created_at?: string;
-  date_of_birth?: string;
-  gender?: string;
-  role?: string;
-  state?: string;
-  updated_at?: string;
-}
+import { TrainerProfile } from '@/types/trainer';
 
 const TrainerPage = () => {
   const { user } = useAuth();
