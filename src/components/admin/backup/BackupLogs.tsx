@@ -7,19 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Archive, Download, Search, Upload } from 'lucide-react';
 import { getBackupLogs } from '@/services/backupService';
-
-interface BackupLogEntry {
-  id: string;
-  action: 'export' | 'import';
-  userId: string;
-  userName: string;
-  timestamp: string;
-  modules: string[];
-  success: boolean;
-  totalRecords?: number;
-  successCount?: number;
-  failedCount?: number;
-}
+import { BackupLogEntry } from '@/types/notification';
 
 const BackupLogs = () => {
   const [logs, setLogs] = useState<BackupLogEntry[]>([]);
@@ -35,7 +23,6 @@ const BackupLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from your backend
       const data = await getBackupLogs();
       setLogs(data as BackupLogEntry[]);
     } catch (error) {
@@ -65,7 +52,6 @@ const BackupLogs = () => {
       );
     });
 
-  // Simulate log data for display
   const mockLogs: BackupLogEntry[] = [
     {
       id: '1',
@@ -178,7 +164,7 @@ const BackupLogs = () => {
                     Loading logs...
                   </TableCell>
                 </TableRow>
-              ) : filteredLogs.length === 0 ? (
+              ) : mockLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
                     No logs found

@@ -176,7 +176,7 @@ const ExportDataSection: React.FC = () => {
               setDate={setStartDate}
               className="w-full"
               components={{
-                IconLeft: () => <CalendarIcon className="h-4 w-4" />,
+                IconLeft: () => <CalendarIcon className="h-4 w-4 mr-2" />
               }}
             />
           </div>
@@ -187,7 +187,7 @@ const ExportDataSection: React.FC = () => {
               setDate={setEndDate}
               className="w-full"
               components={{
-                IconLeft: () => <CalendarIcon className="h-4 w-4" />,
+                IconLeft: () => <CalendarIcon className="h-4 w-4 mr-2" />
               }}
             />
           </div>

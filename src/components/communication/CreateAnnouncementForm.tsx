@@ -72,12 +72,15 @@ export function CreateAnnouncementForm({ onSuccess }: { onSuccess?: () => void }
       const result = await createAnnouncement({
         title: data.title,
         content: data.content,
-        authorId: user.id,
-        authorName: user?.full_name || user?.email || 'Unknown User',
+        authorName: user?.email || 'Unknown User',
         priority: data.priority,
         targetRoles: data.targetRoles,
-        forBranchIds: currentBranch ? [currentBranch.id] : [],
-        expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined
+        branchId: currentBranch ? currentBranch.id : undefined,
+        expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
+        createdAt: new Date().toISOString(),
+        // Additional fields needed for TypeScript compatibility
+        id: '',
+        channels: ['in-app']
       });
       
       if (result && onSuccess) {

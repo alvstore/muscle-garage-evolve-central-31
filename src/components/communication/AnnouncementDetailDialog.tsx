@@ -61,7 +61,7 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
             <div>
               <p className="font-medium">Target Audience</p>
               <div className="flex flex-wrap gap-1 mt-1">
-                {announcement.targetRoles.map((role) => (
+                {announcement.targetRoles && announcement.targetRoles.map((role) => (
                   <Badge key={role} variant="secondary" className="capitalize">
                     {role}
                   </Badge>

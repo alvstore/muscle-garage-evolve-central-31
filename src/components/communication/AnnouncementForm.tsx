@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +54,7 @@ const userRoles: { value: UserRole; label: string }[] = [
   { value: "member", label: "Members" },
 ];
 
-const notificationChannels: { value: NotificationChannel; label: string }[] = [
+const notificationChannels: { value: string; label: string }[] = [
   { value: "in-app", label: "In-App Notification" },
   { value: "email", label: "Email" },
   { value: "sms", label: "SMS" },
@@ -85,7 +84,7 @@ const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProp
         title: editAnnouncement.title,
         content: editAnnouncement.content,
         targetRoles: editAnnouncement.targetRoles as string[],
-        channels: editAnnouncement.channels as string[],
+        channels: editAnnouncement.channels as string[] || ["in-app"],
         sendNow: true,
         expiresAt: editAnnouncement.expiresAt ? new Date(editAnnouncement.expiresAt) : undefined,
       });

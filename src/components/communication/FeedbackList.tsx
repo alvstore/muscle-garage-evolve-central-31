@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Card, 
@@ -34,59 +35,59 @@ import { useAuth } from '@/hooks/use-auth';
 const mockFeedbackData: Feedback[] = [
   {
     id: "feedback1",
-    memberId: "member1",
-    memberName: "David Miller",
+    member_id: "member1",
+    member_name: "David Miller",
     type: "class",
-    relatedId: "class1",
+    related_id: "class1",
     rating: 4,
     comments: "Great class, but the room was a bit crowded.",
-    createdAt: "2023-06-15T10:30:00Z",
+    created_at: "2023-06-15T10:30:00Z",
     anonymous: false,
     title: "HIIT Class Review"
   },
   {
     id: "feedback2",
-    memberId: "member2",
-    memberName: "Sarah Parker",
+    member_id: "member2",
+    member_name: "Sarah Parker",
     type: "trainer",
-    relatedId: "trainer1",
+    related_id: "trainer1",
     rating: 5,
     comments: "Excellent trainer, very motivating!",
-    createdAt: "2023-06-16T14:20:00Z",
+    created_at: "2023-06-16T14:20:00Z",
     anonymous: false,
     title: "Trainer Review"
   },
   {
     id: "feedback3",
-    memberId: "member3",
+    member_id: "member3",
     type: "fitness-plan",
-    relatedId: "plan1",
+    related_id: "plan1",
     rating: 3,
     comments: "Plan is good but too challenging for beginners.",
-    createdAt: "2023-06-17T09:15:00Z",
+    created_at: "2023-06-17T09:15:00Z",
     anonymous: true,
     title: "Fitness Plan Feedback"
   },
   {
     id: "feedback4",
-    memberId: "member4",
-    memberName: "Emily Davidson",
+    member_id: "member4",
+    member_name: "Emily Davidson",
     type: "general",
     rating: 2,
     comments: "The gym needs better ventilation.",
-    createdAt: "2023-06-18T16:45:00Z",
+    created_at: "2023-06-18T16:45:00Z",
     anonymous: false,
     title: "Facility Feedback"
   },
   {
     id: "feedback5",
-    memberId: "member5",
-    memberName: "Michael Wong",
+    member_id: "member5",
+    member_name: "Michael Wong",
     type: "class",
-    relatedId: "class2",
+    related_id: "class2",
     rating: 5,
     comments: "Best HIIT class I've ever taken!",
-    createdAt: "2023-06-19T11:30:00Z",
+    created_at: "2023-06-19T11:30:00Z",
     anonymous: false,
     title: "Yoga Class Review"
   }
@@ -108,7 +109,7 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
   useEffect(() => {
     setTimeout(() => {
       const filteredFeedbacks = user?.role === 'member'
-        ? feedbacks.filter(f => f.memberId === user.id)
+        ? feedbacks.filter(f => f.member_id === user.id)
         : feedbacks;
       setFeedback(filteredFeedbacks);
       setLoading(isLoading);
@@ -242,10 +243,10 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src="/placeholder.svg" alt={item.memberName} />
-                              <AvatarFallback>{getInitials(item.memberName || "Anonymous")}</AvatarFallback>
+                              <AvatarImage src="/placeholder.svg" alt={item.member_name} />
+                              <AvatarFallback>{getInitials(item.member_name || "Anonymous")}</AvatarFallback>
                             </Avatar>
-                            <span>{item.anonymous ? "Anonymous" : item.memberName}</span>
+                            <span>{item.anonymous ? "Anonymous" : item.member_name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -258,7 +259,7 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
                             {renderStars(item.rating)}
                           </div>
                         </TableCell>
-                        <TableCell>{format(parseISO(item.createdAt), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>{format(parseISO(item.created_at), "MMM dd, yyyy")}</TableCell>
                         <TableCell>
                           {item.comments 
                             ? item.comments.length > 30 
@@ -293,21 +294,21 @@ const FeedbackList = ({ feedbacks = mockFeedbackData, isLoading = false }: Feedb
             <DialogHeader>
               <DialogTitle>Feedback Details</DialogTitle>
               <DialogDescription>
-                Submitted on {format(parseISO(selectedFeedback.createdAt), "PPP")}
+                Submitted on {format(parseISO(selectedFeedback.created_at), "PPP")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/placeholder.svg" alt={selectedFeedback.memberName} />
+                    <AvatarImage src="/placeholder.svg" alt={selectedFeedback.member_name} />
                     <AvatarFallback>
-                      {getInitials(selectedFeedback.memberName || "Anonymous")}
+                      {getInitials(selectedFeedback.member_name || "Anonymous")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">
-                      {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.memberName}
+                      {selectedFeedback.anonymous ? "Anonymous Member" : selectedFeedback.member_name}
                     </p>
                     <p className="text-sm text-muted-foreground capitalize">
                       {selectedFeedback.type === "fitness-plan" ? "Fitness Plan Feedback" : `${selectedFeedback.type} Feedback`}

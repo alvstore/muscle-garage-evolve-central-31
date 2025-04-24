@@ -9,6 +9,11 @@ export interface Announcement {
   expiresAt?: string;
   channel?: 'email' | 'sms' | 'whatsapp' | 'push';
   branchId?: string;
+  // Add these missing properties that components are using
+  targetRoles: string[];
+  channels?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
+  // For backward compatibility
+  authorId?: string;
 }
 
 export interface ReminderRule {
@@ -21,6 +26,14 @@ export interface ReminderRule {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Add these missing properties that components are using
+  name: string;
+  triggerValue?: number;
+  message?: string;
+  sendVia?: ('email' | 'sms' | 'whatsapp' | 'in-app')[];
+  targetRoles?: string[];
+  active: boolean;
+  enabled?: boolean;
 }
 
 export interface MotivationalMessage {
@@ -49,8 +62,20 @@ export interface Feedback {
   branch_id?: string;
 }
 
-export type FeedbackType = Feedback['type'];
-
 // Add additional notification types
 export type ReminderTriggerType = 'membership-expiry' | 'class-reminder' | 'birthday' | 'custom';
-export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'push';
+export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'push' | 'in-app';
+
+// Add BackupLogEntry interface for BackupLogs.tsx
+export interface BackupLogEntry {
+  id: string;
+  action: 'export' | 'import';
+  userId: string;
+  userName: string;
+  timestamp: string;
+  modules: string[];
+  success: boolean;
+  totalRecords?: number;
+  successCount?: number;
+  failedCount?: number;
+}
