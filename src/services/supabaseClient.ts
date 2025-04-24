@@ -1,50 +1,94 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
-// Initialize Supabase client
 const supabaseUrl = 'https://rnqgpucxlvubwqpkgstc.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWdwdWN4bHZ1YndxcGtnc3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDgwNjQsImV4cCI6MjA2MDgyNDA2NH0.V5nFuGrJnTdFx60uI8hv46VKUmWoA2aAOx_jJjJFcUA';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+// Function to get the current user's branch
+export const getCurrentUserBranch = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return null;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('branch_id')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user branch:', error);
+    return null;
   }
-});
 
-// Real-time subscription helpers
-export const subscribeToTable = (
-  tableName: string, 
-  callback: (payload: any) => void, 
-  event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
-) => {
-  return supabase
-    .channel(`public:${tableName}`)
-    .on('postgres_changes', 
-        { event, schema: 'public', table: tableName } as any, 
-        callback)
-    .subscribe();
+  return profile.branch_id;
 };
 
-export const subscribeToTableWithFilter = (
-  tableName: string,
-  filterColumn: string,
-  filterValue: string,
-  callback: (payload: any) => void,
-  event: 'INSERT' | 'UPDATE' | 'DELETE' | '*' = '*'
-) => {
-  return supabase
-    .channel(`public:${tableName}:${filterColumn}:${filterValue}`)
-    .on('postgres_changes',
-      {
-        event,
-        schema: 'public',
-        table: tableName,
-        filter: `${filterColumn}=eq.${filterValue}`,
-      } as any,
-      callback
-    )
-    .subscribe();
+// Function to check if user has access to a specific branch
+export const userHasBranchAccess = async (branchId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return false;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('branch_id, accessible_branch_ids')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error checking branch access:', error);
+    return false;
+  }
+
+  return (
+    profile.branch_id === branchId || 
+    profile.accessible_branch_ids?.includes(branchId) || 
+    false
+  );
 };
 
-export default supabase;
+// Function to get user role
+export const getUserRole = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return null;
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user role:', error);
+    return null;
+  }
+
+  return profile.role;
+};
+
+// Enhanced Supabase query wrapper with branch-specific filtering
+export const branchSpecificQuery = async <T>(
+  table: keyof Database['public']['Tables'],
+  options: { 
+    select?: string, 
+    filterBranch?: boolean 
+  } = {}
+) => {
+  const { select = '*', filterBranch = true } = options;
+  
+  let query = supabase.from(table).select(select);
+  
+  if (filterBranch) {
+    const currentBranchId = await getCurrentUserBranch();
+    if (currentBranchId) {
+      query = query.eq('branch_id', currentBranchId);
+    }
+  }
+
+  return query as any;
+};
