@@ -1,3 +1,4 @@
+
 import { Permission } from '@/hooks/use-permissions';
 
 export const adminNavigation = [
@@ -191,4 +192,28 @@ export const adminNavigation = [
     label: "Website Management",
     permission: "manage_website"
   }, 
+];
+
+// Add missing adminNavSections export for use in sidebar components
+export const adminNavSections = [
+  {
+    name: 'Dashboard',
+    items: adminNavigation.find(nav => nav.name === 'Dashboard')?.children || []
+  },
+  {
+    name: 'Management',
+    items: adminNavigation.find(nav => nav.name === 'Management')?.children || []
+  },
+  {
+    name: 'Communication',
+    items: adminNavigation.find(nav => nav.name === 'Communication')?.children || []
+  },
+  {
+    name: 'Finance',
+    items: adminNavigation.find(nav => nav.name === 'Finance')?.children || []
+  },
+  {
+    name: 'Settings',
+    items: adminNavigation.find(nav => nav.name === 'Settings')?.children || []
+  },
 ];

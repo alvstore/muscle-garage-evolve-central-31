@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,6 @@ const MemberProgressSection = () => {
   
   const selectedMember = members.find(m => m.id === selectedMemberId);
   
-  // Fetch members
   useEffect(() => {
     const fetchMembers = async () => {
       setLoadingMembers(true);
@@ -61,6 +59,7 @@ const MemberProgressSection = () => {
             email: member.email || '',
             role: 'member' as const,
             membershipStatus: 'active' as const,
+            status: 'active' // Add the required status property
           }));
           
           setMembers(formattedMembers);
@@ -88,19 +87,16 @@ const MemberProgressSection = () => {
       .toUpperCase();
   };
   
-  // Get the latest measurement
   const latestMeasurement = measurements && measurements.length > 0 
     ? measurements[0] 
     : null;
   
-  // Calculate progress percentages based on goals (simplified for this example)
-  const weightLossPercentage = progress ? 75 : 0; // This would be calculated based on actual data
+  const weightLossPercentage = progress ? 75 : 0;
   const bodyFatReductionPercentage = progress ? 62 : 0;
   const bmiImprovementPercentage = progress ? 55 : 0;
   
-  // Calculate workout adherence percentages
   const workoutCompletionPercentage = progress?.workout_completion_percent || 0;
-  const classAttendancePercentage = 70; // This would come from class attendance data
+  const classAttendancePercentage = 70;
   
   return (
     <Card className="col-span-4">

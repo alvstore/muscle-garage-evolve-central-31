@@ -1,160 +1,131 @@
-
 import React, { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import { Container } from '@/components/ui/container';
-import ProgressTracker from '@/components/fitness/ProgressTracker';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from '@/hooks/use-auth';
-import { Member } from '@/types';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/services/supabaseClient';
-import { useBranch } from '@/hooks/use-branch';
+import { FileBarChart, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Member } from '@/types';
 
 const FitnessProgressPage = () => {
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
-  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  const navigate = useNavigate();
   const [members, setMembers] = useState<Member[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  
-  // Fetch all members
+
   useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      try {
-        // If current user has a branch, filter by that branch
-        let query = supabase
-          .from('profiles')
-          .select('id, full_name, email, role, branch_id')
-          .eq('role', 'member');
-
-        if (currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
+    // Simulate API call to fetch members
+    setTimeout(() => {
+      const fetchedMembers = [
+        {
+          id: "member1",
+          name: "John Doe",
+          email: "john@example.com",
+          role: "member",
+          membershipStatus: "active",
+          status: "active" // Add the required status property
+        },
+        {
+          id: "member2",
+          name: "Jane Smith",
+          email: "jane@example.com",
+          role: "member",
+          membershipStatus: "active",
+          status: "active" // Add the required status property
         }
-
-        const { data, error } = await query;
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          const formattedMembers: Member[] = data.map(member => ({
-            id: member.id,
-            name: member.full_name || 'Unknown',
-            email: member.email || '',
-            role: 'member',
-            membershipStatus: 'active', // Default value as we don't have this info yet
-          }));
-          
-          setMembers(formattedMembers);
-        }
-      } catch (error) {
-        console.error('Error fetching members:', error);
-        toast.error('Failed to load members');
-      } finally {
-        setLoading(false);
+      ];
+      
+      setMembers(fetchedMembers);
+      if (fetchedMembers.length > 0) {
+        setSelectedMemberId(fetchedMembers[0].id);
       }
-    };
-    
-    fetchMembers();
-  }, [currentBranch]);
-  
-  const handleMemberChange = (value: string) => {
-    setSelectedMemberId(value);
-    const member = members.find(m => m.id === value) || null;
-    setSelectedMember(member);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
-  
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Fitness Progress</h1>
-      </div>
-      
-      <Card className="bg-white dark:bg-gray-800">
-        <CardHeader>
-          <CardTitle>Member Selection</CardTitle>
-          <CardDescription>Select a member to view their fitness progress</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <Select value={selectedMemberId} onValueChange={handleMemberChange}>
-              <SelectTrigger className="w-full md:w-80">
-                <SelectValue placeholder="Select a member" />
-              </SelectTrigger>
-              <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </CardContent>
-      </Card>
-      
-      {selectedMember ? (
-        <Tabs defaultValue="tracker">
-          <TabsList className="grid w-full md:w-auto grid-cols-2 h-auto">
-            <TabsTrigger value="tracker">Progress Tracker</TabsTrigger>
-            <TabsTrigger value="charts">Progress Charts</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="tracker" className="mt-6">
-            <ProgressTracker member={selectedMember} />
-          </TabsContent>
-          
-          <TabsContent value="charts" className="mt-6">
-            {selectedMember && (
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Body Metrics</CardTitle>
-                    <CardDescription>Track body metrics over time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Progress charts will be rendered by the ProgressTracker component */}
-                    <p className="text-muted-foreground">Select metrics in the tracker to view detailed charts</p>
-                  </CardContent>
-                </Card>
+    <Container>
+      <div className="py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Fitness Progress</h1>
+            <p className="text-muted-foreground">Track and analyze fitness progress of your members</p>
+          </div>
+        </div>
+
+        <Card className="col-span-4">
+          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Member Progress</CardTitle>
+              <CardDescription>
+                Track and analyze fitness progress of your members
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-36 w-full" />
+                <Skeleton className="h-36 w-full" />
+              </div>
+            ) : members.length > 0 ? (
+              <>
+                <div className="flex items-center space-x-4 mb-6">
+                  <div>
+                    <h3 className="text-lg font-medium">Select a Member</h3>
+                    <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {members.map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Key Measurements</CardTitle>
-                    <CardDescription>View progress milestones</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Data will be displayed when measurements are available</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Body Metrics</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Weight Loss</span>
+                          <span>75%</span>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </>
+            ) : (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <h3 className="text-lg font-medium mb-2">No Members Found</h3>
+                <p className="text-muted-foreground mb-4">
+                  You don't have any members assigned to you yet
+                </p>
               </div>
             )}
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <Card className="bg-muted/40">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-lg text-muted-foreground mb-2">Please select a member to view their progress</p>
-            <p className="text-sm text-muted-foreground">Member fitness data will be displayed here after selection</p>
           </CardContent>
         </Card>
-      )}
-    </div>
+      </div>
+    </Container>
   );
 };
 

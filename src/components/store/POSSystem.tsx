@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -48,7 +47,6 @@ import { Member } from "@/types";
 import { PromoCode } from "@/types/marketing";
 import { toast } from "sonner";
 
-// Mock products data
 const mockProducts: Product[] = [
   {
     id: "1",
@@ -135,7 +133,6 @@ const mockProducts: Product[] = [
   },
 ];
 
-// Mock members data
 const mockMembers: Member[] = [
   {
     id: "1",
@@ -145,6 +142,7 @@ const mockMembers: Member[] = [
     membershipStatus: "active",
     membershipStartDate: "2023-01-01T00:00:00Z",
     membershipEndDate: "2023-12-31T23:59:59Z",
+    status: "active"
   },
   {
     id: "2",
@@ -154,6 +152,7 @@ const mockMembers: Member[] = [
     membershipStatus: "active",
     membershipStartDate: "2023-02-15T00:00:00Z",
     membershipEndDate: "2023-08-15T23:59:59Z",
+    status: "active"
   },
   {
     id: "3",
@@ -163,10 +162,10 @@ const mockMembers: Member[] = [
     membershipStatus: "active",
     membershipStartDate: "2023-03-10T00:00:00Z",
     membershipEndDate: "2024-03-10T23:59:59Z",
+    status: "active"
   },
 ];
 
-// Mock promo codes
 const mockPromoCodes: PromoCode[] = [
   {
     id: "1",
@@ -217,15 +216,13 @@ const POSSystem = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [loading, setLoading] = useState(true);
   
-  // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const taxRate = 0.07; // 7% tax
+  const taxRate = 0.07;
   const taxAmount = subtotal * taxRate;
   const totalWithoutDiscount = subtotal + taxAmount;
   const total = totalWithoutDiscount - discount;
 
   useEffect(() => {
-    // Simulate API call to load products
     setTimeout(() => {
       setProducts(mockProducts);
       setFilteredProducts(mockProducts);
@@ -233,7 +230,6 @@ const POSSystem = () => {
     }, 1000);
   }, []);
 
-  // Filter products based on search term
   useEffect(() => {
     if (searchTerm) {
       const filtered = products.filter(product => 
@@ -247,7 +243,6 @@ const POSSystem = () => {
     }
   }, [searchTerm, products]);
 
-  // Filter members based on search term
   useEffect(() => {
     if (customerSearchTerm) {
       const filtered = mockMembers.filter(member => 
@@ -261,18 +256,15 @@ const POSSystem = () => {
   }, [customerSearchTerm]);
 
   const addToCart = (product: Product) => {
-    // Check if product is already in cart
     const existingItem = cart.find(item => item.productId === product.id);
     
     if (existingItem) {
-      // Increase quantity if already in cart
       setCart(cart.map(item => 
         item.productId === product.id 
           ? { ...item, quantity: item.quantity + 1 } 
           : item
       ));
     } else {
-      // Add new item to cart
       const newItem: CartItem = {
         productId: product.id,
         product,
@@ -302,7 +294,6 @@ const POSSystem = () => {
   const applyPromoCode = () => {
     if (!promoCode) return;
     
-    // Find the promo code in our mock data
     const foundPromo = mockPromoCodes.find(p => 
       p.code.toLowerCase() === promoCode.toLowerCase() && 
       p.status === "active"
@@ -311,17 +302,14 @@ const POSSystem = () => {
     if (foundPromo) {
       setAppliedPromo(foundPromo);
       
-      // Calculate discount based on promo type
       if (foundPromo.type === "percentage") {
         const discountAmount = subtotal * (foundPromo.value / 100);
-        // Apply max discount limit if available
         const finalDiscount = foundPromo.maxDiscountAmount 
           ? Math.min(discountAmount, foundPromo.maxDiscountAmount)
           : discountAmount;
         
         setDiscount(parseFloat(finalDiscount.toFixed(2)));
       } else if (foundPromo.type === "fixed") {
-        // For fixed discount, ensure it doesn't exceed the subtotal
         setDiscount(Math.min(foundPromo.value, subtotal));
       }
       
@@ -351,10 +339,8 @@ const POSSystem = () => {
       return;
     }
     
-    // In a real app, this would create an order and process payment
     toast.success("Order processed successfully");
     
-    // Clear cart and related state
     setCart([]);
     setSelectedMember(null);
     setCustomerName("");
@@ -365,14 +351,12 @@ const POSSystem = () => {
     setPaymentMethod("cash");
   };
 
-  // Format currency
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2)}`;
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Product Catalog */}
       <div className="lg:col-span-2">
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3">
@@ -430,7 +414,6 @@ const POSSystem = () => {
         </Card>
       </div>
       
-      {/* Shopping Cart */}
       <div>
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3">
@@ -440,7 +423,6 @@ const POSSystem = () => {
             </div>
           </CardHeader>
           <CardContent className="flex-grow overflow-auto">
-            {/* Customer Section */}
             <div className="mb-6 space-y-3">
               <h3 className="text-sm font-medium">Customer</h3>
               {selectedMember ? (
@@ -512,7 +494,6 @@ const POSSystem = () => {
               )}
             </div>
             
-            {/* Cart Items */}
             {cart.length === 0 ? (
               <div className="text-center py-8">
                 <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground" />
@@ -589,7 +570,6 @@ const POSSystem = () => {
                   </TableBody>
                 </Table>
                 
-                {/* Promo Code */}
                 <div className="border rounded-md p-3 space-y-3">
                   <h3 className="text-sm font-medium flex items-center">
                     <Tag className="h-4 w-4 mr-1" />
@@ -623,7 +603,6 @@ const POSSystem = () => {
                   )}
                 </div>
                 
-                {/* Order Summary */}
                 <div className="border rounded-md p-3 space-y-3">
                   <h3 className="text-sm font-medium">Order Summary</h3>
                   
@@ -654,7 +633,6 @@ const POSSystem = () => {
                   </div>
                 </div>
                 
-                {/* Payment Method */}
                 <div className="border rounded-md p-3 space-y-3">
                   <h3 className="text-sm font-medium flex items-center">
                     <CreditCard className="h-4 w-4 mr-1" />

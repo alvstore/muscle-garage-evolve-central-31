@@ -1,84 +1,106 @@
 
-import React, { useRef, useState, useEffect } from "react";
+import React from 'react';
+import { GymWeightlifter, Shield, Clock24, Users } from 'lucide-react';
 
-const AboutSection = () => {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      {
-        threshold: 0.1,
-      }
-    );
+export interface AboutSectionProps {
+  title: string;
+  subtitle: string;
+  description: string;
+  goalTitle: string;
+  goalDescription: string;
+  facilities: { 
+    id: string;
+    title: string;
+    description: string;
+    iconType: string;
+  }[];
+}
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+const AboutSection: React.FC<AboutSectionProps> = ({ 
+  title = "ABOUT US",
+  subtitle = "WHERE FITNESS MEETS PASSION",
+  description = "Muscle Garage is a premier fitness facility dedicated to helping you achieve your fitness goals. Our state-of-the-art equipment, expert trainers, and supportive community create the perfect environment for your fitness journey.",
+  goalTitle = "OUR MISSION",
+  goalDescription = "To inspire and empower individuals to transform their lives through fitness, providing exceptional facilities, expert guidance, and a supportive community.",
+  facilities = [
+    {
+      id: "1",
+      title: "Expert Trainers",
+      description: "Certified professionals dedicated to your success",
+      iconType: "trainers"
+    },
+    {
+      id: "2",
+      title: "Premium Equipment",
+      description: "Top-of-the-line machines and free weights",
+      iconType: "equipment"
+    },
+    {
+      id: "3",
+      title: "24/7 Access",
+      description: "Train on your schedule, whenever you want",
+      iconType: "hours"
+    },
+    {
+      id: "4",
+      title: "Supportive Community",
+      description: "Connect with like-minded fitness enthusiasts",
+      iconType: "community"
     }
-
-    return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
-      }
-    };
-  }, []);
+  ]
+}) => {
+  const renderIcon = (type: string) => {
+    switch (type) {
+      case "trainers":
+        return <Users className="h-10 w-10 text-gym-yellow" />;
+      case "equipment":
+        return <GymWeightlifter className="h-10 w-10 text-gym-yellow" />;
+      case "hours":
+        return <Clock24 className="h-10 w-10 text-gym-yellow" />;
+      case "community":
+        return <Shield className="h-10 w-10 text-gym-yellow" />;
+      default:
+        return <GymWeightlifter className="h-10 w-10 text-gym-yellow" />;
+    }
+  };
 
   return (
-    <section 
-      id="about" 
-      ref={sectionRef}
-      className="section-padding bg-gym-gray-900"
-    >
+    <section id="about" className="section-padding bg-gym-gray-900">
       <div className="gym-container">
-        <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
+        <div className="text-center max-w-3xl mx-auto mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-5xl font-impact mb-4">
-            ABOUT <span className="text-gym-yellow">MUSCLE GARAGE</span>
+            {title} <span className="text-gym-yellow">{subtitle}</span>
           </h2>
-          <p className="text-gray-300">
-            Discover the ultimate fitness experience at Muscle Garage. We are dedicated to helping you achieve your fitness goals.
-          </p>
+          <p className="text-gray-300">{description}</p>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{ animationDelay: '0.2s' }}>
-            <div className="rounded-lg overflow-hidden">
-              <img src="/about-img.jpg" alt="Muscle Garage Gym" className="w-full h-auto" />
-            </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <img
+              src="/about-gym.jpg"
+              alt="Gym Interior"
+              className="w-full h-full object-cover rounded-lg"
+            />
           </div>
-          
-          <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-2xl font-bold mb-4">Welcome to Muscle Garage</h3>
-            <p className="mb-4">
-              Founded in 2015, Muscle Garage has grown to become one of the most trusted fitness centers in Ahmedabad. 
-              Our mission is to provide a comprehensive fitness experience for all, from beginners to experienced athletes.
-            </p>
-            <p className="mb-4">
-              With state-of-the-art equipment, specialized training programs, and expert trainers, 
-              we ensure that every member receives personalized attention and achieves their fitness goals.
-            </p>
-            <div className="grid grid-cols-2 gap-4 mt-8">
-              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
-                <div className="text-4xl font-bold text-gym-yellow mb-2">5+</div>
-                <p>Years Experience</p>
-              </div>
-              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
-                <div className="text-4xl font-bold text-gym-yellow mb-2">1500+</div>
-                <p>Members</p>
-              </div>
-              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
-                <div className="text-4xl font-bold text-gym-yellow mb-2">25+</div>
-                <p>Professional Trainers</p>
-              </div>
-              <div className="bg-gym-gray-800 p-6 rounded-lg text-center">
-                <div className="text-4xl font-bold text-gym-yellow mb-2">10+</div>
-                <p>Fitness Programs</p>
-              </div>
+          <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            <h3 className="text-2xl font-impact mb-4">
+              {goalTitle} <span className="text-gym-yellow">FOR YOU</span>
+            </h3>
+            <p className="text-gray-300 mb-6">{goalDescription}</p>
+            
+            <h4 className="text-xl font-impact mb-4">OUR FACILITIES</h4>
+            <div className="space-y-4">
+              {facilities.map((facility) => (
+                <div key={facility.id} className="flex items-start">
+                  <div className="mr-4 mt-1">
+                    {renderIcon(facility.iconType)}
+                  </div>
+                  <div>
+                    <h5 className="text-lg font-bold">{facility.title}</h5>
+                    <p className="text-gray-400">{facility.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

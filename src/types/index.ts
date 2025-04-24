@@ -1,4 +1,3 @@
-
 export interface Member {
   id: string;
   email: string;
@@ -11,7 +10,7 @@ export interface Member {
   membershipStartDate?: string;
   membershipEndDate?: string;
   avatar?: string;
-  // Adding missing properties referenced in components
+  // Add properties being used across components
   dateOfBirth?: string;
   address?: string;
   city?: string;
@@ -181,6 +180,7 @@ export interface DietPlan {
   goal?: string;
   updatedAt: string;
   createdAt: string;
+  notes?: string;
 }
 
 export interface MealPlan {
@@ -192,6 +192,7 @@ export interface MealPlan {
     protein: number;
     carbs: number;
     fats: number;
+    calories?: number;
   };
 }
 

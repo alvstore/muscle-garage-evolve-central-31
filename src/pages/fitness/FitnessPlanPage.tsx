@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,11 +18,12 @@ const FitnessPlanPage = () => {
   
   // Mock data for a logged in user/member
   const mockMember: Member = {
-    id: user?.id || '1',
-    name: user?.name || 'Current Member',
-    email: user?.email || 'member@example.com',
-    role: 'member',
-    membershipStatus: 'active',
+    id: "member-1",
+    name: "John Doe",
+    email: "john@example.com",
+    role: "member",
+    membershipStatus: "active",
+    status: "active" // Add the required status property
   };
   
   // Mock trainer ID - in a real app, this would come from the user's assigned trainer

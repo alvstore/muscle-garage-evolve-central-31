@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,7 +47,7 @@ const mockAnnouncements: Announcement[] = [
   }
 ];
 
-// Mock members data
+// Update mock members to include required status property
 const mockMembers: Member[] = [
   {
     id: 'member1',
@@ -57,7 +56,8 @@ const mockMembers: Member[] = [
     role: 'member',
     membershipStatus: 'active',
     trainerId: 'trainer1',
-    goal: 'Weight Loss'
+    goal: 'Weight Loss',
+    status: 'active' // Add the required status property
   },
   {
     id: 'member2',
@@ -66,7 +66,8 @@ const mockMembers: Member[] = [
     role: 'member',
     membershipStatus: 'active',
     trainerId: 'trainer1',
-    goal: 'Muscle Gain'
+    goal: 'Muscle Gain',
+    status: 'active' // Add the required status property
   },
   {
     id: 'member3',
@@ -75,7 +76,8 @@ const mockMembers: Member[] = [
     role: 'member',
     membershipStatus: 'active',
     trainerId: 'trainer2',
-    goal: 'Strength'
+    goal: 'Strength',
+    status: 'active' // Add the required status property
   }
 ];
 
