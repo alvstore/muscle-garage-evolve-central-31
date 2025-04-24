@@ -1,10 +1,11 @@
+
 import { ReactNode } from 'react';
 import { Permission } from '@/hooks/use-permissions';
 
 export interface NavItem {
   href: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   badge?: string;
   permission: Permission;
   children?: Array<{
