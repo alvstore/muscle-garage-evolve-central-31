@@ -10,4 +10,5 @@ export interface MembershipAssignment {
   paymentStatus: 'paid' | 'partial' | 'pending';
   paymentMethod?: string;
   trainerId?: string;
+  branchId?: string;
 }
