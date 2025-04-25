@@ -7,13 +7,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Invoice } from '@/types/notification';
-import InvoiceForm from './InvoiceForm';
+import { Invoice as NotificationInvoice } from '@/types/notification';
+import { Invoice as FinanceInvoice } from '@/types/finance';
+import InvoiceForm from '../InvoiceForm';
 
 export interface InvoiceFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoice?: Invoice | null;
+  invoice?: FinanceInvoice | NotificationInvoice | null;
   onComplete?: () => void;
   onSuccess?: () => void;
 }

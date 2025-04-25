@@ -34,8 +34,17 @@ const InvoicePage = () => {
     setSelectedInvoice(null);
   };
 
-  // Type assertion to ensure compatibility with the component's expected invoice format
-  const typedInvoices = invoices as Invoice[];
+  // Convert invoices to the format expected by InvoiceFormDialog
+  const adaptedInvoices = invoices.map(invoice => ({
+    ...invoice,
+    paymentMethod: invoice.payment_method || '',
+    // Add other required fields from notification.Invoice that might be missing
+    description: invoice.description || '',
+    createdAt: invoice.created_at || '',
+    created_at: invoice.created_at || '',
+    branchId: invoice.branch_id || '',
+    branch_id: invoice.branch_id || '',
+  }));
 
   return (
     <Container>
@@ -51,7 +60,7 @@ const InvoicePage = () => {
         <div className="rounded-md border">
           <DataTable 
             columns={InvoiceColumn(handleEditInvoice)} 
-            data={typedInvoices} 
+            data={adaptedInvoices} 
             isLoading={isLoading}
           />
         </div>
