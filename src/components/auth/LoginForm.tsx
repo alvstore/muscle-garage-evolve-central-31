@@ -13,29 +13,7 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
-// Mock user data for demo login
-const MOCK_USERS = {
-  admin: {
-    email: "admin@example.com",
-    password: "admin123",
-    role: "admin"
-  },
-  staff: {
-    email: "staff@example.com",
-    password: "staff123",
-    role: "staff"
-  },
-  trainer: {
-    email: "trainer@example.com",
-    password: "trainer123",
-    role: "trainer"
-  },
-  member: {
-    email: "member@example.com",
-    password: "member123",
-    role: "member"
-  }
-};
+// Note: In a production environment, authentication would be handled by a backend service
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -64,25 +42,18 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // For demo purposes, we'll use mock login instead of real API
-      // This is temporary and would be replaced with the real API in production
+      // For demo purposes, we'll simulate a successful login
+      // In production, this would call your actual authentication API
       const { email, password } = values;
       
-      // Find the matching mock user
-      const foundUser = Object.values(MOCK_USERS).find(
-        user => user.email.toLowerCase() === email.toLowerCase() && user.password === password
-      );
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      if (foundUser) {
-        // Call the login function from AuthContext
-        await login(email, password);
-        
-        toast.success(`Logged in successfully as ${foundUser.role}`);
-        navigate('/dashboard');
-      } else {
-        // Show error for invalid credentials
-        toast.error("Invalid email or password");
-      }
+      // Call the login function from AuthContext
+      await login(email, password);
+      
+      toast.success('Logged in successfully');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       toast.error("Login failed. Please try again.");
@@ -92,7 +63,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gym-black">
       {/* Left side - Image */}
       <div 
         className="hidden lg:flex lg:w-1/2 bg-cover bg-center" 
@@ -102,7 +73,7 @@ const LoginForm = () => {
           position: 'relative'
         }}
       >
-        <div className="absolute inset-0 bg-indigo-900 opacity-80"></div>
+        <div className="absolute inset-0 bg-gym-black opacity-80"></div>
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
           <div className="mb-8">
             <Logo variant="white" size="lg" />
@@ -137,22 +108,17 @@ const LoginForm = () => {
       </div>
       
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex justify-center items-center p-8">
+      <div className="w-full lg:w-1/2 flex justify-center items-center p-8 bg-gym-black text-white">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <div className="lg:hidden mb-6">
               <Logo />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
-            <p className="text-gray-500 mt-2">Enter your credentials to access your account</p>
+            <h1 className="text-3xl font-bold text-white">Sign In</h1>
+            <p className="text-gray-400 mt-2">Enter your credentials to access your account</p>
           </div>
           
-          <div className="mb-6 p-4 bg-indigo-50 rounded-lg text-sm">
-            <div className="font-medium">Admin Email: <span className="text-indigo-600">admin@example.com</span> / Pass: <span className="text-indigo-600">admin123</span></div>
-            <div className="mt-1">Member Email: <span className="text-indigo-600">member@example.com</span> / Pass: <span className="text-indigo-600">member123</span></div>
-            <div className="mt-1">Staff Email: <span className="text-indigo-600">staff@example.com</span> / Pass: <span className="text-indigo-600">staff123</span></div>
-            <div className="mt-1">Trainer Email: <span className="text-indigo-600">trainer@example.com</span> / Pass: <span className="text-indigo-600">trainer123</span></div>
-          </div>
+
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -161,10 +127,10 @@ const LoginForm = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Email</FormLabel>
+                    <FormLabel className="text-white">Email</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="admin@example.com"
+                        placeholder="example@example.com"
                         type="email"
                         autoComplete="email"
                         className="h-12"
@@ -182,7 +148,7 @@ const LoginForm = () => {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex justify-between items-center">
-                      <FormLabel className="text-gray-700">Password</FormLabel>
+                      <FormLabel className="text-white">Password</FormLabel>
                     </div>
                     <FormControl>
                       <div className="relative">
@@ -229,14 +195,16 @@ const LoginForm = () => {
                     </div>
                   )}
                 />
-                <Button variant="link" className="p-0 h-auto font-normal text-indigo-600" type="button" size="sm">
-                  Forgot Password?
-                </Button>
+                <div className="text-center mt-6">
+                  <a href="#" className="text-gym-yellow hover:text-gym-yellow-hover text-sm">
+                    Forgot your password?
+                  </a>
+                </div>
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white" 
+                className="w-full h-12 bg-gym-yellow text-gym-black hover:bg-gym-yellow-hover" 
                 disabled={isLoading}
               >
                 {isLoading ? (
