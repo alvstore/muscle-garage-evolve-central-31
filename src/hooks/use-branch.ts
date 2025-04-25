@@ -269,19 +269,17 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   return (
-    <BranchContext.Provider
-      value={{
-        branches,
-        currentBranch,
-        setCurrentBranch,
-        isLoading,
-        error,
-        switchBranch,
-        fetchBranches,
-        createBranch,
-        updateBranch
-      }}
-    >
+    <BranchContext.Provider value={{
+      branches,
+      currentBranch,
+      setCurrentBranch,
+      isLoading,
+      error,
+      switchBranch,
+      fetchBranches,
+      createBranch,
+      updateBranch
+    }}>
       {children}
     </BranchContext.Provider>
   );
