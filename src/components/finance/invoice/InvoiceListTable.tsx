@@ -8,29 +8,33 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Edit, Trash2, CreditCard } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { Invoice } from '@/types/finance';
+import { InvoiceActions } from './InvoiceActions';
 
 export interface InvoiceListTableProps {
   invoices: Invoice[];
   isLoading: boolean;
-  onEdit?: (invoice: Invoice) => void;
-  onDelete?: (id: string) => void;
+  readonly?: boolean;
   allowPayment?: boolean;
   allowDownload?: boolean;
+  onEdit?: (invoice: Invoice) => void;
+  onMarkAsPaid?: (id: string) => void;
+  onSendPaymentLink?: (id: string) => void;
+  onDownload?: (id: string) => void;
 }
 
 export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
   invoices,
   isLoading,
-  onEdit,
-  onDelete,
+  readonly = false,
   allowPayment = true,
   allowDownload = true,
+  onEdit,
+  onMarkAsPaid,
+  onSendPaymentLink,
+  onDownload,
 }) => {
   if (isLoading) {
     return <div className="flex justify-center py-8">Loading invoices...</div>;
@@ -40,21 +44,6 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
     return <div className="text-center py-10">No invoices found</div>;
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge className="bg-green-500">Paid</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-500">Pending</Badge>;
-      case 'overdue':
-        return <Badge className="bg-red-500">Overdue</Badge>;
-      case 'cancelled':
-        return <Badge className="bg-gray-500">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -63,9 +52,9 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
             <TableHead>Invoice #</TableHead>
             <TableHead>Member</TableHead>
             <TableHead>Amount</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Issue Date</TableHead>
             <TableHead>Due Date</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -74,46 +63,29 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
             <TableRow key={invoice.id}>
               <TableCell>{invoice.id.substring(0, 8)}...</TableCell>
               <TableCell>{invoice.memberName || 'Unknown'}</TableCell>
-              <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-              <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-              <TableCell>{format(new Date(invoice.issued_date || invoice.issuedDate), 'MMM d, yyyy')}</TableCell>
-              <TableCell>{format(new Date(invoice.due_date || invoice.dueDate), 'MMM d, yyyy')}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  {allowDownload && (
-                    <Button size="sm" variant="outline" title="Download">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {allowPayment && invoice.status !== 'paid' && (
-                    <Button size="sm" variant="outline" title="Pay">
-                      <CreditCard className="h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {onEdit && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => onEdit(invoice)} 
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {onDelete && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => onDelete(invoice.id)} 
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+              <TableCell>${invoice.amount.toLocaleString()}</TableCell>
+              <TableCell>{format(new Date(invoice.issued_date), 'MMM d, yyyy')}</TableCell>
+              <TableCell>{format(new Date(invoice.due_date), 'MMM d, yyyy')}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant={invoice.status === "paid" ? "default" : 
+                         invoice.status === "pending" ? "outline" : 
+                         "destructive"}
+                >
+                  {invoice.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <InvoiceActions
+                  invoice={invoice}
+                  readonly={readonly}
+                  allowPayment={allowPayment}
+                  allowDownload={allowDownload}
+                  onEdit={onEdit || (() => {})}
+                  onMarkAsPaid={onMarkAsPaid || (() => {})}
+                  onSendPaymentLink={onSendPaymentLink || (() => {})}
+                  onDownload={onDownload || (() => {})}
+                />
               </TableCell>
             </TableRow>
           ))}
