@@ -67,7 +67,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onCancel || onComplete}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onCancel) {
+                    onCancel();
+                  } else if (onComplete) {
+                    onComplete();
+                  }
+                }}
                 disabled={isSubmitting}
               >
                 Cancel

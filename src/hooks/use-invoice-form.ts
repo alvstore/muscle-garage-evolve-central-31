@@ -57,8 +57,10 @@ export const useInvoiceForm = (
         ...formData,
         id: invoice?.id || `temp-${Date.now()}`,
         branch_id: currentBranch?.id || '',
+        issued_date: invoice?.issued_date || invoice?.issuedDate || new Date().toISOString(),
         created_at: invoice?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        items: invoice?.items || [],
       };
       
       if (invoice?.id) {
