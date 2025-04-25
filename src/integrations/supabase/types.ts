@@ -2031,6 +2031,53 @@ export type Database = {
           },
         ]
       }
+      trainer_attendance: {
+        Row: {
+          branch_id: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          status: string | null
+          trainer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          trainer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          trainer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -2231,6 +2278,10 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      trainer_is_assigned_to_member: {
+        Args: { trainer_uuid: string; member_uuid: string }
+        Returns: boolean
       }
       user_has_branch_access: {
         Args: { branch_id: string }
