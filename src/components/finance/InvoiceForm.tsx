@@ -1,339 +1,228 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Invoice, InvoiceStatus } from '@/types/finance';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { useBranch } from '@/hooks/use-branch';
+import { supabase } from '@/integrations/supabase/client';
 
-import { useState, useEffect } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { PlusIcon, Trash2Icon } from "lucide-react";
-import { 
-  Invoice, 
-  InvoiceItem, 
-  InvoiceStatus
-} from "@/types/finance";
-import { useBranch } from "@/hooks/use-branch";
-
-interface InvoiceFormProps {
+export interface InvoiceFormProps {
   invoice: Invoice | null;
-  onSave: (invoice: Invoice) => void;
-  onCancel: () => void;
+  onComplete?: () => void;
 }
 
-// Mock data for member selection
-const mockMembers = [
-  { id: "member-1", name: "John Doe" },
-  { id: "member-2", name: "Jane Smith" },
-  { id: "member-3", name: "Alex Johnson" },
-];
-
-const InvoiceForm = ({ invoice, onSave, onCancel }: InvoiceFormProps) => {
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
   const { currentBranch } = useBranch();
-  const [formData, setFormData] = useState<Invoice>({
-    id: "",
-    member_id: "",
-    memberId: "",
-    memberName: "",
-    amount: 0,
-    status: "pending",
-    due_date: new Date().toISOString(),
-    dueDate: new Date().toISOString(),
-    issued_date: new Date().toISOString(),
-    issuedDate: new Date().toISOString(),
-    paid_date: null,
-    paidDate: null,
-    items: [
-      {
-        id: `item-${Date.now()}`,
-        name: "",
-        quantity: 1,
-        price: 0,
-        unitPrice: 0,
-      },
-    ],
-    branch_id: currentBranch?.id || "branch-1",
-    branchId: currentBranch?.id || "branch-1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    member_id: invoice?.member_id || '',
+    member_name: invoice?.memberName || '',
+    description: invoice?.description || '',
+    amount: invoice?.amount || 0,
+    status: invoice?.status || 'pending',
+    due_date: invoice?.due_date || invoice?.dueDate || new Date().toISOString().split('T')[0],
+    payment_method: invoice?.payment_method || '',
+    notes: invoice?.notes || '',
   });
 
-  useEffect(() => {
-    if (invoice) {
-      setFormData({
-        ...invoice,
-        // Ensure both snake_case and camelCase versions are set
-        member_id: invoice.member_id || invoice.memberId,
-        memberId: invoice.member_id || invoice.memberId,
-        due_date: invoice.due_date || invoice.dueDate,
-        dueDate: invoice.due_date || invoice.dueDate,
-        issued_date: invoice.issued_date || invoice.issuedDate,
-        issuedDate: invoice.issued_date || invoice.issuedDate,
-        paid_date: invoice.paid_date || invoice.paidDate,
-        paidDate: invoice.paid_date || invoice.paidDate,
-        branch_id: invoice.branch_id || invoice.branchId,
-        branchId: invoice.branch_id || invoice.branchId,
-      });
-    }
-  }, [invoice]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    if (name === "memberId" || name === "member_id") {
-      const selectedMember = mockMembers.find(member => member.id === value);
-      setFormData({
-        ...formData,
-        member_id: value,
-        memberId: value,
-        memberName: selectedMember?.name || "",
-      });
-    } else {
-      setFormData({ 
-        ...formData, 
-        [name]: value,
-        // For status, update both properties
-        ...(name === 'status' ? { status: value as InvoiceStatus } : {})
-      });
-    }
-  };
-
-  const handleDateChange = (name: string, date: Date | undefined) => {
-    if (date) {
-      const dateString = date.toISOString();
-      if (name === "issuedDate" || name === "issued_date") {
-        setFormData({ 
-          ...formData, 
-          issued_date: dateString,
-          issuedDate: dateString 
-        });
-      } else if (name === "dueDate" || name === "due_date") {
-        setFormData({ 
-          ...formData, 
-          due_date: dateString,
-          dueDate: dateString 
-        });
-      }
-    }
-  };
-
-  const handleItemChange = (id: string, field: keyof InvoiceItem, value: string | number) => {
-    const updatedItems = formData.items.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
-        // Make sure price and unitPrice are always in sync
-        if (field === 'price') {
-          updatedItem.unitPrice = value as number;
-        } else if (field === 'unitPrice') {
-          updatedItem.price = value as number;
-        }
-        return updatedItem;
-      }
-      return item;
-    });
-    
-    setFormData({ ...formData, items: updatedItems });
-    updateTotalAmount(updatedItems);
-  };
-
-  const addItem = () => {
-    const newItem: InvoiceItem = {
-      id: `item-${Date.now()}`,
-      name: "",
-      quantity: 1,
-      price: 0,
-      unitPrice: 0,
-    };
-    
-    const updatedItems = [...formData.items, newItem];
-    setFormData({ ...formData, items: updatedItems });
-  };
-
-  const removeItem = (id: string) => {
-    if (formData.items.length <= 1) {
-      return; // Keep at least one item
-    }
-    
-    const updatedItems = formData.items.filter(item => item.id !== id);
-    setFormData({ ...formData, items: updatedItems });
-    updateTotalAmount(updatedItems);
-  };
-
-  const updateTotalAmount = (items: InvoiceItem[]) => {
-    const total = items.reduce((sum, item) => sum + (item.quantity * (item.price || item.unitPrice || 0)), 0);
-    setFormData(prev => ({ ...prev, amount: total }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    setIsSubmitting(true);
+    
+    try {
+      if (invoice?.id) {
+        // Update existing invoice
+        await supabase
+          .from('invoices')
+          .update({
+            ...formData,
+            branch_id: currentBranch?.id || '',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', invoice.id);
+          
+        toast.success('Invoice updated successfully');
+      } else {
+        // Create new invoice
+        await supabase
+          .from('invoices')
+          .insert([{
+            ...formData,
+            branch_id: currentBranch?.id || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]);
+          
+        toast.success('Invoice created successfully');
+      }
+      
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      toast.error('Failed to save invoice');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[700px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{invoice ? 'Edit' : 'Create'} Invoice</DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="memberId">Member</Label>
-                <Select
-                  value={formData.memberId || formData.member_id || ""}
-                  onValueChange={(value) => handleSelectChange("memberId", value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockMembers.map(member => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleSelectChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardHeader>
+          <CardTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="member_id">Member ID</Label>
+              <Input
+                id="member_id"
+                name="member_id"
+                value={formData.member_id}
+                onChange={handleChange}
+                placeholder="Member ID"
+              />
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="issuedDate">Issue Date</Label>
-                <DatePicker
-                  date={formData.issuedDate || formData.issued_date ? new Date(formData.issuedDate || formData.issued_date) : undefined}
-                  onSelect={(date) => handleDateChange("issuedDate", date)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Due Date</Label>
-                <DatePicker
-                  date={formData.dueDate || formData.due_date ? new Date(formData.dueDate || formData.due_date) : undefined}
-                  onSelect={(date) => handleDateChange("dueDate", date)}
-                />
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-medium">Invoice Items</h3>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={addItem}
-                  className="flex items-center gap-1"
-                >
-                  <PlusIcon className="h-4 w-4" /> Add Item
-                </Button>
-              </div>
-              
-              {formData.items.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-12 gap-2 mb-2">
-                  <div className="col-span-6">
-                    <Input
-                      placeholder="Item name"
-                      value={item.name}
-                      onChange={(e) => handleItemChange(item.id, "name", e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      placeholder="Quantity"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(item.id, "quantity", Number(e.target.value))}
-                      min="1"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="col-span-3">
-                    <Input
-                      type="number"
-                      placeholder="Unit Price"
-                      value={item.unitPrice || item.price}
-                      onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
-                      min="0"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => removeItem(item.id)}
-                      disabled={formData.items.length <= 1}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="flex justify-end mt-4">
-                <div className="bg-gray-50 p-2 rounded">
-                  <span className="font-medium">Total Amount: </span>
-                  <span className="font-bold">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'USD',
-                    }).format(formData.amount)}
-                  </span>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="member_name">Member Name</Label>
+              <Input
+                id="member_name"
+                name="member_name"
+                value={formData.member_name}
+                onChange={handleChange}
+                placeholder="Member Name"
+              />
             </div>
           </div>
           
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Invoice description"
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                name="status" 
+                value={formData.status} 
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    status: value 
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="due_date">Due Date</Label>
+              <Input
+                id="due_date"
+                name="due_date"
+                type="date"
+                value={formData.due_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="payment_method">Payment Method</Label>
+              <Select 
+                name="payment_method" 
+                value={formData.payment_method} 
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    payment_method: value 
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="online">Online/Card</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              placeholder="Additional notes..."
+              rows={3}
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            {onComplete && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onComplete} 
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : invoice ? 'Update Invoice' : 'Create Invoice'}
             </Button>
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+    </form>
   );
 };
 
