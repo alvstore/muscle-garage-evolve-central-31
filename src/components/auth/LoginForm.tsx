@@ -6,23 +6,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      await login(email, password);
-      navigate("/dashboard");
+      const result = await login(email, password);
+      if (result.success) {
+        toast.success("Login successful");
+        navigate("/dashboard");
+      } else {
+        setError(result.error || "Login failed. Please check your credentials.");
+        toast.error(result.error || "Login failed. Please check your credentials.");
+      }
     } catch (error: any) {
-      toast.error(error.message || "Failed to login");
+      console.error("Login error:", error);
+      const errorMessage = error.message || "Failed to login. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -36,6 +49,13 @@ const LoginForm = () => {
             Sign in to your account
           </h2>
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div>
@@ -93,9 +113,9 @@ const LoginForm = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading || authLoading ? "Signing in..." : "Sign in"}
             </Button>
           </div>
         </form>

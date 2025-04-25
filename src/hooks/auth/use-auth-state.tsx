@@ -1,114 +1,77 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/services/supabaseClient';
+import { toast } from 'sonner';
+import { createContext, useContext, ReactNode } from 'react';
+import { UserRole } from '@/types';
 
 interface AuthStateContextType {
   user: User | null;
-  isAuthenticated: boolean;
+  session: Session | null;
   isLoading: boolean;
-  setUser: (user: User | null) => void;
-  setIsLoading: (loading: boolean) => void;
+  isAuthenticated: boolean;
 }
 
-const AuthStateContext = createContext<AuthStateContextType | undefined>(undefined);
+const AuthStateContext = createContext<AuthStateContextType>({
+  user: null,
+  session: null,
+  isLoading: true,
+  isAuthenticated: false,
+});
 
 export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuthStatus = async () => {
+    const setupAuth = async () => {
       try {
-        // First set up the auth state change listener
+        setIsLoading(true);
+        
+        // Set up the auth state listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (session?.user) {
-              // Get user profile data
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-                
-              if (profileError && profileError.code !== 'PGRST116') {
-                console.error("Error fetching user profile:", profileError);
-                setUser(null);
-                setIsLoading(false);
-                return;
-              }
-              
-              // Create user object for auth context
-              const userData: User = {
-                id: session.user.id,
-                name: profile?.full_name || session.user.email?.split('@')[0] || 'User',
-                email: session.user.email || '',
-                role: (profile?.role as any) || 'member',
-                branchId: profile?.branch_id,
-                branchIds: profile?.accessible_branch_ids || [],
-                isBranchManager: profile?.is_branch_manager || false,
-                avatar: profile?.avatar_url,
-              };
-              
-              // Store user data in localStorage
-              localStorage.setItem('user', JSON.stringify(userData));
-              setUser(userData);
-            } else {
-              localStorage.removeItem('user');
+          (event, newSession) => {
+            if (event === 'SIGNED_OUT') {
               setUser(null);
+              setSession(null);
+            } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+              setUser(newSession?.user || null);
+              setSession(newSession);
             }
-            setIsLoading(false);
           }
         );
 
-        // Then check for an existing session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Then check for existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (!session) {
-          // Try to get from localStorage as fallback
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            try {
-              const parsedUser = JSON.parse(storedUser);
-              // Validate stored user by checking with Supabase
-              const { data } = await supabase.auth.getUser();
-              if (data.user) {
-                setUser(parsedUser as User);
-              } else {
-                // Invalid stored user, clear it
-                localStorage.removeItem('user');
-              }
-            } catch (e) {
-              console.error("Error parsing stored user:", e);
-              localStorage.removeItem('user');
-            }
-          }
-          setIsLoading(false);
+        if (currentSession) {
+          setUser(currentSession.user);
+          setSession(currentSession);
         }
-        
-        // Cleanup function
+
         return () => {
           subscription.unsubscribe();
         };
       } catch (error) {
-        console.error("Auth status check failed:", error);
-        localStorage.removeItem('user');
+        console.error('Auth setup error:', error);
+        toast.error('Authentication setup failed');
+      } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuthStatus();
+    setupAuth();
   }, []);
-  
+
   return (
     <AuthStateContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        session,
         isLoading,
-        setUser,
-        setIsLoading,
+        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -116,10 +79,4 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuthState = (): AuthStateContextType => {
-  const context = useContext(AuthStateContext);
-  if (context === undefined) {
-    throw new Error('useAuthState must be used within an AuthStateProvider');
-  }
-  return context;
-};
+export const useAuthState = () => useContext(AuthStateContext);
