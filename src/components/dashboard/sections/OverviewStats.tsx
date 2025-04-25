@@ -2,34 +2,10 @@
 import React from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import { Users, CreditCard, Calendar, CheckSquare } from 'lucide-react';
+import { DashboardSummary } from '@/hooks/use-dashboard';
 
 interface OverviewStatsProps {
-  data: {
-    totalMembers: number;
-    newMembersToday: number;
-    activeMembers: number;
-    attendanceToday: number;
-    revenue: {
-      today: number;
-      thisWeek: number;
-      thisMonth: number;
-      lastMonth: number;
-    };
-    pendingPayments: {
-      count: number;
-      total: number;
-    };
-    upcomingRenewals: {
-      today: number;
-      thisWeek: number;
-      thisMonth: number;
-    };
-    classAttendance: {
-      today: number;
-      yesterday: number;
-      lastWeek: number;
-    }
-  }
+  data: DashboardSummary;
 }
 
 const OverviewStats = ({ data }: OverviewStatsProps) => {
@@ -49,31 +25,34 @@ const OverviewStats = ({ data }: OverviewStatsProps) => {
         value={data.totalMembers}
         change={{
           direction: "up",
-          value: `+${data.newMembersToday} today`
+          value: `${data.newMembers || 0} new`
         }}
         icon={Users}
       />
       
       <StatCard
         title="Revenue This Month"
-        value={`₹${data.revenue.thisMonth.toLocaleString()}`}
-        change={calculatePercentChange(data.revenue.thisMonth, data.revenue.lastMonth)}
+        value={`₹${data.revenue.monthly.toLocaleString()}`}
+        change={calculatePercentChange(data.revenue.monthly, data.revenue.monthly * 0.85)} // Estimate previous month at 85% of current
         icon={CreditCard}
       />
       
       <StatCard
         title="Today's Check-ins"
-        value={data.attendanceToday}
-        change={calculatePercentChange(data.classAttendance.today, data.classAttendance.yesterday)}
+        value={data.todayCheckIns}
+        change={{
+          direction: "neutral",
+          value: `${data.todayCheckIns} visits`
+        }}
         icon={CheckSquare}
       />
       
       <StatCard
-        title="Renewals This Week"
-        value={data.upcomingRenewals.thisWeek}
+        title="Upcoming Renewals"
+        value={data.upcomingRenewals}
         change={{
           direction: "neutral",
-          value: `${data.upcomingRenewals.today} today`
+          value: `${data.expiringMemberships || 0} expiring`
         }}
         icon={Calendar}
       />

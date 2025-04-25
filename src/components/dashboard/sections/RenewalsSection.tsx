@@ -1,71 +1,61 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import UpcomingRenewals from '@/components/dashboard/UpcomingRenewals';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "lucide-react";
+import { format, parseISO } from 'date-fns';
 import { RenewalItem } from '@/types/dashboard';
 
-const RenewalsSection = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [renewals, setRenewals] = useState<RenewalItem[]>([]);
+interface RenewalsSectionProps {
+  renewals?: RenewalItem[];
+}
 
-  useEffect(() => {
-    // Simulate API call to fetch renewals
-    const fetchRenewals = async () => {
-      // In a real app, this would be an API call with proper error handling
-      setTimeout(() => {
-        setRenewals([
-          {
-            id: "renewal1",
-            memberName: "Emily Davidson",
-            memberAvatar: "/placeholder.svg",
-            membershipPlan: "Premium Annual",
-            expiryDate: "2023-07-28T00:00:00Z",
-            status: "active",
-            renewalAmount: 999
-          },
-          {
-            id: "renewal2",
-            memberName: "Michael Wong",
-            memberAvatar: "/placeholder.svg",
-            membershipPlan: "Basic Quarterly",
-            expiryDate: "2023-07-30T00:00:00Z",
-            status: "active",
-            renewalAmount: 249
-          },
-          {
-            id: "renewal3",
-            memberName: "David Clark",
-            memberAvatar: "/placeholder.svg",
-            membershipPlan: "Standard Monthly",
-            expiryDate: "2023-08-01T00:00:00Z",
-            status: "active",
-            renewalAmount: 99
-          }
-        ]);
-        setIsLoading(false);
-      }, 1000);
-    };
-
-    fetchRenewals();
-  }, []);
-
+const RenewalsSection = ({ renewals = [] }: RenewalsSectionProps) => {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Upcoming Renewals</CardTitle>
-        <CardDescription>
-          Memberships up for renewal soon
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div>
+          <CardTitle>Upcoming Renewals</CardTitle>
+          <CardDescription>Memberships due for renewal soon</CardDescription>
+        </div>
+        <Calendar className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            <div className="h-12 animate-pulse rounded bg-muted"></div>
-            <div className="h-12 animate-pulse rounded bg-muted"></div>
-            <div className="h-12 animate-pulse rounded bg-muted"></div>
+        {renewals.length === 0 ? (
+          <div className="flex items-center justify-center h-40">
+            <p className="text-muted-foreground">No upcoming renewals</p>
           </div>
         ) : (
-          <UpcomingRenewals renewals={renewals} />
+          <div className="space-y-4">
+            {renewals.map((renewal) => (
+              <div key={renewal.id} className="flex items-center gap-4">
+                <div className="rounded-full w-10 h-10 flex items-center justify-center bg-muted">
+                  <span className="font-medium text-xs">{renewal.memberName.substring(0, 2).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="font-medium truncate">{renewal.memberName}</div>
+                    <Badge
+                      variant={
+                        renewal.status === 'active' ? 'default' :
+                        renewal.status === 'expired' ? 'destructive' : 'secondary'
+                      }
+                      className="ml-2"
+                    >
+                      {renewal.status}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{renewal.membershipPlan}</span>
+                    <span className="font-medium">₹{renewal.renewalAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Expires: {format(parseISO(renewal.expiryDate), 'dd MMM yyyy')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

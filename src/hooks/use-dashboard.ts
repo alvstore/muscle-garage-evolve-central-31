@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
+import { fetchDashboardSummary } from '@/services/dashboardService';
+import { toast } from 'sonner';
 
 export interface DashboardSummary {
   totalMembers: number;
@@ -21,6 +23,18 @@ export interface DashboardSummary {
   expiringMemberships?: number;
   classSessions?: number;
   inventoryAlerts?: number;
+  attendanceTrend?: Array<{ date: string; count: number }>;
+  membersByStatus?: {
+    active: number;
+    inactive: number;
+    expired: number;
+  };
+  revenueData?: Array<{
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }>;
 }
 
 export const useDashboard = () => {
@@ -41,57 +55,79 @@ export const useDashboard = () => {
     newMembers: 0,
     expiringMemberships: 0,
     classSessions: 0,
-    inventoryAlerts: 0
+    inventoryAlerts: 0,
+    attendanceTrend: [],
+    membersByStatus: {
+      active: 0,
+      inactive: 0,
+      expired: 0
+    },
+    revenueData: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const { currentBranch } = useBranch();
 
   // Function to fetch dashboard data
-  const fetchDashboardData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, using system-wide data');
+    }
+
     try {
       setIsLoading(true);
       
-      // This is where you'd make API calls to get the actual data
-      // For now, we'll use placeholder data
+      const summaryData = await fetchDashboardSummary(currentBranch?.id);
       
-      // Simulating a loading delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Additional fetch operations for staff, trainers, and classes count
+      const { count: staffCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'staff')
+        .eq(currentBranch?.id ? 'branch_id' : 'id', currentBranch?.id || '');
       
-      setDashboardData({
-        totalMembers: 120,
-        activeMembers: 95,
-        pendingPayments: { count: 5, total: 7500 },
-        upcomingRenewals: 8,
-        todayCheckIns: 35,
-        revenue: {
-          daily: 2500,
-          weekly: 15000,
-          monthly: 65000
-        },
-        totalTrainers: 8,
-        totalStaff: 12,
-        activeClasses: 15,
-        newMembers: 5,
-        expiringMemberships: 3,
-        classSessions: 25,
-        inventoryAlerts: 2
-      });
+      const { count: trainerCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'trainer')
+        .eq(currentBranch?.id ? 'branch_id' : 'id', currentBranch?.id || '');
       
-      setIsLoading(false);
+      const { count: activeClassesCount } = await supabase
+        .from('class_schedules')
+        .select('*', { count: 'exact', head: true })
+        .gte('start_time', new Date().toISOString())
+        .eq(currentBranch?.id ? 'branch_id' : 'id', currentBranch?.id || '');
+      
+      // Combine all data
+      const fullDashboardData: DashboardSummary = {
+        ...summaryData,
+        activeMembers: summaryData.membersByStatus?.active || 0,
+        totalStaff: staffCount || 0,
+        totalTrainers: trainerCount || 0,
+        activeClasses: activeClassesCount || 0,
+        // These could be calculated from real data in a more advanced implementation
+        newMembers: 0, // Would need date filtering
+        expiringMemberships: summaryData.upcomingRenewals,
+        classSessions: 0, // Would need to count past classes
+        inventoryAlerts: 0 // Would need inventory table queries
+      };
+      
+      setDashboardData(fullDashboardData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
       setIsLoading(false);
     }
-  }, [currentBranch]);
+  }, [currentBranch?.id]);
 
   // Initial fetch
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData, currentBranch]);
+    fetchData();
+  }, [fetchData]);
 
   return {
     dashboardData,
     isLoading,
-    refreshData: fetchDashboardData
+    refreshData: fetchData
   };
 };

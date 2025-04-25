@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Users, CalendarCheck, CreditCard, Activity, Gift, DollarSign, FileText, TrendingUp, RefreshCcw } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { SearchAndExport } from '@/components/dashboard/sections/SearchAndExport';
 import OverviewStats from '@/components/dashboard/sections/OverviewStats';
 import RevenueSection from '@/components/dashboard/sections/RevenueSection';
@@ -13,213 +14,62 @@ import ChurnPredictionSection from '@/components/dashboard/sections/ChurnPredict
 import RenewalsSection from '@/components/dashboard/sections/RenewalsSection';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useBranch } from '@/hooks/use-branch';
+import { useDashboard } from '@/hooks/use-dashboard';
+import { fetchPendingPayments, fetchMembershipRenewals, fetchUpcomingClasses } from '@/services/dashboardService';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-  const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(getDashboardDataDefaults());
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [upcomingRenewals, setUpcomingRenewals] = useState([]);
+  const [upcomingClasses, setUpcomingClasses] = useState([]);
   
   const { isSystemAdmin } = usePermissions();
   const { currentBranch } = useBranch();
+  const { dashboardData, isLoading, refreshData } = useDashboard();
 
   useEffect(() => {
-    setIsLoading(true);
-    toast.info(`Loading data for ${currentBranch?.name || 'all branches'}`);
+    async function loadAdditionalData() {
+      try {
+        // Load additional data for dashboard sections
+        const paymentsData = await fetchPendingPayments(currentBranch?.id);
+        const renewalsData = await fetchMembershipRenewals(currentBranch?.id);
+        const classesData = await fetchUpcomingClasses(currentBranch?.id);
+        
+        setPendingPayments(paymentsData);
+        setUpcomingRenewals(renewalsData);
+        setUpcomingClasses(classesData);
+      } catch (error) {
+        console.error("Error loading additional dashboard data:", error);
+      }
+    }
     
-    setTimeout(() => {
-      const scopedData = getScopedDashboardData(currentBranch?.id);
-      setDashboardData(scopedData);
-      setIsLoading(false);
-    }, 1000);
-  }, [currentBranch]);
-
-  function getDashboardDataDefaults() {
-    return {
-      totalMembers: 0,
-      newMembersToday: 0,
-      activeMembers: 0,
-      attendanceToday: 0,
-      revenue: {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0,
-        lastMonth: 0
-      },
-      pendingPayments: {
-        count: 0,
-        total: 0
-      },
-      upcomingRenewals: {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0
-      },
-      classAttendance: {
-        today: 0,
-        yesterday: 0,
-        lastWeek: 0
-      },
-      membersByStatus: {
-        active: 0,
-        inactive: 0,
-        expired: 0
-      },
-      attendanceTrend: [] as {date: string, count: number}[],
-      revenueData: [] as {month: string, revenue: number, expenses: number, profit: number}[]
-    };
-  }
-
-  function getScopedDashboardData(branchId?: string) {
-    const mockData = {
-      totalMembers: 328,
-      newMembersToday: 5,
-      activeMembers: 287,
-      attendanceToday: 152,
-      revenue: {
-        today: 2450,
-        thisWeek: 12780,
-        thisMonth: 45600,
-        lastMonth: 39800
-      },
-      pendingPayments: {
-        count: 23,
-        total: 8750
-      },
-      upcomingRenewals: {
-        today: 3,
-        thisWeek: 18,
-        thisMonth: 42
-      },
-      classAttendance: {
-        today: 152,
-        yesterday: 143,
-        lastWeek: 982
-      },
-      membersByStatus: {
-        active: 287,
-        inactive: 24,
-        expired: 17
-      },
-      attendanceTrend: [
-        { date: '2022-06-01', count: 120 },
-        { date: '2022-06-02', count: 132 },
-        { date: '2022-06-03', count: 125 },
-        { date: '2022-06-04', count: 140 },
-        { date: '2022-06-05', count: 147 },
-        { date: '2022-06-06', count: 138 },
-        { date: '2022-06-07', count: 152 }
-      ],
-      revenueData: [
-        { month: 'Jan', revenue: 15000, expenses: 4000, profit: 11000 },
-        { month: 'Feb', revenue: 18000, expenses: 4200, profit: 13800 },
-        { month: 'Mar', revenue: 16500, expenses: 4800, profit: 11700 },
-        { month: 'Apr', revenue: 17800, expenses: 5100, profit: 12700 },
-        { month: 'May', revenue: 19200, expenses: 5400, profit: 13800 },
-        { month: 'Jun', revenue: 21000, expenses: 5600, profit: 15400 }
-      ]
-    };
-
-    if (branchId) {
-      const branchMultiplier = Math.random() * 0.5 + 0.2;
-      return {
-        ...mockData,
-        totalMembers: Math.floor(mockData.totalMembers * branchMultiplier),
-        newMembersToday: Math.floor(mockData.newMembersToday * branchMultiplier),
-        activeMembers: Math.floor(mockData.activeMembers * branchMultiplier),
-        attendanceToday: Math.floor(mockData.attendanceToday * branchMultiplier),
-        revenue: {
-          today: Math.floor(mockData.revenue.today * branchMultiplier),
-          thisWeek: Math.floor(mockData.revenue.thisWeek * branchMultiplier),
-          thisMonth: Math.floor(mockData.revenue.thisMonth * branchMultiplier),
-          lastMonth: Math.floor(mockData.revenue.lastMonth * branchMultiplier)
-        },
-        pendingPayments: {
-          count: Math.floor(mockData.pendingPayments.count * branchMultiplier),
-          total: Math.floor(mockData.pendingPayments.total * branchMultiplier)
-        },
-        membersByStatus: {
-          active: Math.floor(mockData.membersByStatus.active * branchMultiplier),
-          inactive: Math.floor(mockData.membersByStatus.inactive * branchMultiplier),
-          expired: Math.floor(mockData.membersByStatus.expired * branchMultiplier)
-        },
-        revenueData: mockData.revenueData.map(item => ({
-          ...item,
-          revenue: Math.floor(item.revenue * branchMultiplier),
-          expenses: Math.floor(item.expenses * branchMultiplier),
-          profit: Math.floor(item.profit * branchMultiplier)
-        }))
-      };
-    }
-
-    return mockData;
-  }
-
-  const featuredActions = [
-    {
-      title: "Member Registration",
-      description: "Quickly register new members with form validation",
-      icon: <Users className="h-10 w-10 text-indigo-500" />,
-      url: "/members/new"
-    },
-    {
-      title: "Add New Class",
-      description: "Create and schedule new fitness classes",
-      icon: <CalendarCheck className="h-10 w-10 text-indigo-500" />,
-      url: "/classes"
-    },
-    {
-      title: "Process Payment",
-      description: "Process membership payments and invoices",
-      icon: <CreditCard className="h-10 w-10 text-indigo-500" />,
-      url: "/finance/invoices"
-    },
-    {
-      title: "Attendance Tracking",
-      description: "Track member check-ins and attendance",
-      icon: <Activity className="h-10 w-10 text-indigo-500" />,
-      url: "/attendance"
-    },
-    {
-      title: "Create Promotion",
-      description: "Set up referral programs and special offers",
-      icon: <Gift className="h-10 w-10 text-indigo-500" />,
-      url: "/marketing/promo"
-    },
-    {
-      title: "Financial Reports",
-      description: "View revenue and financial analytics",
-      icon: <DollarSign className="h-10 w-10 text-indigo-500" />,
-      url: "/reports"
-    }
-  ];
+    loadAdditionalData();
+  }, [currentBranch?.id]);
 
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     toast.info(`Searching for: ${query}`);
   };
 
   const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
+    setStartDate(startDate);
+    setEndDate(endDate);
     toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
+    // Here you could refetch data with the new date range
   };
 
   const handleExport = () => {
     toast.success('Dashboard data exported successfully');
+    // Implement actual export functionality here
   };
 
   const handleRefresh = () => {
-    setIsLoading(true);
     toast("Refreshing dashboard data", {
       description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
     });
-    setTimeout(() => {
-      const scopedData = getScopedDashboardData(currentBranch?.id);
-      setDashboardData(scopedData);
-      setIsLoading(false);
-      toast.success("Dashboard updated", {
-        description: "All data has been refreshed with the latest information."
-      });
-    }, 1000);
+    refreshData();
   };
 
   const dashboardTitle = currentBranch ? `${currentBranch.name} Dashboard` : "All Branches Dashboard";
@@ -286,8 +136,12 @@ const AdminDashboard = () => {
             </>
           ) : (
             <>
-              <RevenueSection data={dashboardData.revenueData} />
-              <MemberStatusSection data={dashboardData.membersByStatus} />
+              <RevenueSection data={dashboardData.revenueData || []} />
+              <MemberStatusSection data={dashboardData.membersByStatus || {
+                active: 0,
+                inactive: 0,
+                expired: 0
+              }} />
             </>
           )}
         </div>
@@ -300,34 +154,13 @@ const AdminDashboard = () => {
             </>
           ) : (
             <>
-              <AttendanceSection data={dashboardData.attendanceTrend} />
-              <RenewalsSection />
+              <AttendanceSection data={dashboardData.attendanceTrend || []} />
+              <RenewalsSection renewals={upcomingRenewals} />
             </>
           )}
         </div>
         
-        {!isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredActions.map((action, index) => (
-              <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg">
-                      {action.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1">{action.title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{action.description}</p>
-                      <Button variant="ghost" className="mt-3 px-0 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-transparent" asChild>
-                        <a href={action.url}>Show</a>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        {/* Removed mock data featured actions cards */}
       </div>
     </div>
   );

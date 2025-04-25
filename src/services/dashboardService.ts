@@ -1,5 +1,5 @@
 
-import { supabase } from "./supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { BranchAnalytics, ClassItem, DashboardSummary, MemberStatusData, Payment, RenewalItem } from "@/types/dashboard";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
 
@@ -25,7 +25,12 @@ export async function fetchDashboardSummary(branchId?: string): Promise<Dashboar
         monthly: 0
       },
       attendanceTrend: [],
-      revenueData: []
+      revenueData: [],
+      membersByStatus: {
+        active: 0,
+        inactive: 0,
+        expired: 0
+      }
     };
 
     // Get total members
@@ -235,6 +240,7 @@ export async function fetchPendingPayments(branchId?: string): Promise<Payment[]
         )
       `)
       .eq('status', 'pending')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '')
       .order('due_date')
       .limit(5);
 
@@ -280,6 +286,7 @@ export async function fetchMembershipRenewals(branchId?: string): Promise<Renewa
       `)
       .eq('status', 'active')
       .lte('end_date', format(subDays(new Date(), -30), 'yyyy-MM-dd'))
+      .eq(branchId ? 'branch_id' : 'id', branchId || '')
       .order('end_date')
       .limit(5);
 
@@ -324,6 +331,7 @@ export async function fetchUpcomingClasses(branchId?: string): Promise<ClassItem
         )
       `)
       .gt('start_time', today.toISOString())
+      .eq(branchId ? 'branch_id' : 'id', branchId || '')
       .order('start_time')
       .limit(5);
 
