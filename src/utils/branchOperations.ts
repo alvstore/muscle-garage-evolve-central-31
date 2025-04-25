@@ -1,7 +1,6 @@
 
 import { supabase } from '@/services/supabaseClient';
 import { Branch } from '@/types/branch';
-import { toast } from 'sonner';
 
 export const fetchUserBranches = async (userId: string) => {
   const { data: profile, error: profileError } = await supabase
@@ -60,4 +59,3 @@ export const formatBranchData = (branch: any): Branch => ({
   createdAt: branch.created_at || '',
   updatedAt: branch.updated_at || ''
 });
-
