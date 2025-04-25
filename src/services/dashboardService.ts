@@ -1,252 +1,321 @@
 
-import { supabase } from './supabaseClient';
-import { useBranch } from '@/hooks/use-branch';
+import { supabase } from "./supabaseClient";
+import { BranchAnalytics, ClassItem, DashboardSummary, MemberStatusData, Payment, RenewalItem } from "@/types/dashboard";
+import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
 
-export interface DashboardSummary {
-  totalMembers: number;
-  activeMembers: number;
-  totalTrainers: number;
-  totalStaff: number;
-  activeClasses: number;
-  totalClasses: number;
-  revenueToday: number;
-  revenueThisMonth: number;
-  unpaidInvoices: number;
-  pendingPayments: number;
-  attendanceTrend: { date: string; count: number }[];
-  expiringMemberships: number;
+export async function fetchDashboardSummary(branchId?: string): Promise<DashboardSummary> {
+  try {
+    // Start with default empty summary
+    const summary: DashboardSummary = {
+      totalMembers: 0,
+      todayCheckIns: 0,
+      upcomingRenewals: 0,
+      pendingPayments: {
+        count: 0,
+        total: 0
+      },
+      revenue: {
+        daily: 0,
+        weekly: 0,
+        monthly: 0
+      },
+      attendanceTrend: [],
+      revenueData: []
+    };
+
+    // Get total members
+    const { count: totalMembers, error: membersError } = await supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (membersError) throw membersError;
+    summary.totalMembers = totalMembers || 0;
+
+    // Get today's check-ins
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const { count: todayCheckIns, error: checkInsError } = await supabase
+      .from('member_attendance')
+      .select('*', { count: 'exact', head: true })
+      .gte('check_in', `${today}T00:00:00`)
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (checkInsError) throw checkInsError;
+    summary.todayCheckIns = todayCheckIns || 0;
+
+    // Get upcoming renewals
+    const nextWeek = format(subDays(new Date(), -7), 'yyyy-MM-dd');
+    const { count: upcomingRenewals, error: renewalsError } = await supabase
+      .from('member_memberships')
+      .select('*', { count: 'exact', head: true })
+      .lte('end_date', nextWeek)
+      .eq('status', 'active')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (renewalsError) throw renewalsError;
+    summary.upcomingRenewals = upcomingRenewals || 0;
+
+    // Get revenue data
+    // Daily revenue
+    const { data: dailyRevenue, error: dailyRevenueError } = await supabase
+      .from('payments')
+      .select('amount')
+      .gte('payment_date', `${today}T00:00:00`)
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (dailyRevenueError) throw dailyRevenueError;
+    summary.revenue.daily = dailyRevenue?.reduce((total, payment) => total + (payment.amount || 0), 0) || 0;
+
+    // Weekly revenue
+    const startOfCurrentWeek = format(startOfWeek(new Date()), 'yyyy-MM-dd');
+    const endOfCurrentWeek = format(endOfWeek(new Date()), 'yyyy-MM-dd');
+    
+    const { data: weeklyRevenue, error: weeklyRevenueError } = await supabase
+      .from('payments')
+      .select('amount')
+      .gte('payment_date', `${startOfCurrentWeek}T00:00:00`)
+      .lte('payment_date', `${endOfCurrentWeek}T23:59:59`)
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (weeklyRevenueError) throw weeklyRevenueError;
+    summary.revenue.weekly = weeklyRevenue?.reduce((total, payment) => total + (payment.amount || 0), 0) || 0;
+
+    // Monthly revenue
+    const startOfCurrentMonth = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    const endOfCurrentMonth = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+    
+    const { data: monthlyRevenue, error: monthlyRevenueError } = await supabase
+      .from('payments')
+      .select('amount')
+      .gte('payment_date', `${startOfCurrentMonth}T00:00:00`)
+      .lte('payment_date', `${endOfCurrentMonth}T23:59:59`)
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (monthlyRevenueError) throw monthlyRevenueError;
+    summary.revenue.monthly = monthlyRevenue?.reduce((total, payment) => total + (payment.amount || 0), 0) || 0;
+
+    // Get pending payments
+    const { data: pendingPayments, error: pendingPaymentsError } = await supabase
+      .from('invoices')
+      .select('amount')
+      .eq('status', 'pending')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    if (pendingPaymentsError) throw pendingPaymentsError;
+    summary.pendingPayments.count = pendingPayments?.length || 0;
+    summary.pendingPayments.total = pendingPayments?.reduce((total, invoice) => total + (invoice.amount || 0), 0) || 0;
+
+    // Get attendance trend for last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), i);
+      return format(date, 'yyyy-MM-dd');
+    }).reverse();
+
+    // Use raw SQL query for group by functionality
+    const { data: attendanceData, error: attendanceError } = await supabase
+      .rpc('get_daily_attendance', { days: 7, branch_filter: branchId || null });
+
+    if (attendanceError) {
+      console.error('Error fetching attendance trend:', attendanceError);
+      // Fallback to empty data
+      summary.attendanceTrend = last7Days.map(date => ({ date, count: 0 }));
+    } else {
+      const attendanceMap = new Map(attendanceData?.map(item => [item.date, item.count]) || []);
+      summary.attendanceTrend = last7Days.map(date => ({
+        date,
+        count: attendanceMap.get(date) || 0
+      }));
+    }
+
+    // Get membership status breakdown
+    const { data: activeMembers, error: activeMembersError } = await supabase
+      .rpc('get_member_status_counts', { status_filter: 'active', branch_filter: branchId || null });
+
+    if (!activeMembersError && activeMembers) {
+      summary.membersByStatus = {
+        active: activeMembers[0]?.count || 0,
+        inactive: 0,
+        expired: 0
+      };
+    }
+
+    // Revenue data for chart over last 6 months
+    const { data: revenueChartData, error: revenueChartError } = await supabase
+      .rpc('get_monthly_revenue', { months_back: 6, branch_filter: branchId || null });
+
+    if (!revenueChartError && revenueChartData) {
+      summary.revenueData = revenueChartData.map(item => ({
+        month: item.month,
+        revenue: item.revenue || 0,
+        expenses: item.expenses || 0,
+        profit: (item.revenue || 0) - (item.expenses || 0)
+      }));
+    }
+
+    return summary;
+  } catch (error) {
+    console.error("Error fetching dashboard summary:", error);
+    throw error;
+  }
 }
 
-/**
- * Fetches summary data for the admin dashboard
- */
-export const getDashboardSummary = async (branchId?: string): Promise<DashboardSummary> => {
+export async function fetchPendingPayments(branchId?: string): Promise<Payment[]> {
   try {
-    // Base query with branch filter if provided
-    const baseQuery = branchId ? { branch_id: branchId } : {};
-    
-    // Get total and active members
-    const { count: totalMembers } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .match(baseQuery);
-      
-    const { count: activeMembers } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, status: 'active' });
-      
-    // Get trainers count
-    const { count: totalTrainers } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, role: 'trainer' });
-      
-    // Get staff count
-    const { count: totalStaff } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, role: 'staff' });
-      
-    // Get classes count
-    const { count: totalClasses } = await supabase
-      .from('classes')
-      .select('*', { count: 'exact', head: true })
-      .match(baseQuery);
-      
-    const { count: activeClasses } = await supabase
-      .from('classes')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, is_active: true });
-      
-    // Calculate today's revenue
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const { data: todayPayments } = await supabase
-      .from('payments')
-      .select('amount')
-      .match({ ...baseQuery, status: 'completed' })
-      .gte('payment_date', today.toISOString());
-      
-    const revenueToday = todayPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    
-    // Calculate this month's revenue
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    const { data: monthPayments } = await supabase
-      .from('payments')
-      .select('amount')
-      .match({ ...baseQuery, status: 'completed' })
-      .gte('payment_date', firstDayOfMonth.toISOString());
-      
-    const revenueThisMonth = monthPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    
-    // Get unpaid invoices count
-    const { count: unpaidInvoices } = await supabase
+    const { data, error } = await supabase
       .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery })
-      .in('status', ['pending', 'overdue']);
-      
-    // Get pending payments count
-    const { count: pendingPayments } = await supabase
-      .from('payments')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, status: 'pending' });
-      
-    // Get attendance trend for last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const { data: attendanceData } = await supabase
-      .from('member_attendance')
-      .select('check_in')
-      .match(baseQuery)
-      .gte('check_in', sevenDaysAgo.toISOString())
-      .order('check_in', { ascending: true });
-      
-    // Process attendance data for trend chart
-    const attendanceTrend: { date: string; count: number }[] = [];
-    
-    if (attendanceData) {
-      const attendanceByDay = new Map<string, number>();
-      
-      // Initialize the map with zeros for the last 7 days
-      for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateString = date.toISOString().split('T')[0];
-        attendanceByDay.set(dateString, 0);
-      }
-      
-      // Count attendance for each day
-      attendanceData.forEach(record => {
-        const dateString = record.check_in.split('T')[0];
-        const count = attendanceByDay.get(dateString) || 0;
-        attendanceByDay.set(dateString, count + 1);
-      });
-      
-      // Convert map to array for chart rendering
-      attendanceByDay.forEach((count, date) => {
-        attendanceTrend.push({ date, count });
-      });
-    }
-    
-    // Sort attendance trend by date
-    attendanceTrend.sort((a, b) => a.date.localeCompare(b.date));
-    
-    // Get expiring memberships count
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    const { count: expiringMemberships } = await supabase
-      .from('member_memberships')
-      .select('*', { count: 'exact', head: true })
-      .match({ ...baseQuery, status: 'active' })
-      .lte('end_date', thirtyDaysFromNow.toISOString())
-      .gte('end_date', today.toISOString());
-      
-    return {
-      totalMembers: totalMembers || 0,
-      activeMembers: activeMembers || 0,
-      totalTrainers: totalTrainers || 0,
-      totalStaff: totalStaff || 0,
-      activeClasses: activeClasses || 0,
-      totalClasses: totalClasses || 0,
-      revenueToday,
-      revenueThisMonth,
-      unpaidInvoices: unpaidInvoices || 0,
-      pendingPayments: pendingPayments || 0,
-      attendanceTrend,
-      expiringMemberships: expiringMemberships || 0
-    };
+      .select(`
+        id,
+        amount,
+        due_date,
+        status,
+        members:member_id (
+          id,
+          name,
+          email,
+          phone
+        ),
+        memberships:membership_plan_id (
+          name
+        )
+      `)
+      .eq('status', 'pending')
+      .order('due_date')
+      .limit(5);
+
+    if (error) throw error;
+
+    return (data || []).map(invoice => ({
+      id: invoice.id,
+      memberId: invoice.members?.id || '',
+      memberName: invoice.members?.name || 'Unknown',
+      membershipPlan: invoice.memberships?.name || 'Standard',
+      amount: invoice.amount,
+      dueDate: invoice.due_date,
+      status: invoice.status === 'overdue' ? 'overdue' : 'pending',
+      contactInfo: invoice.members?.phone || invoice.members?.email || ''
+    }));
   } catch (error) {
-    console.error('Error fetching dashboard summary:', error);
-    // Return default values in case of error
-    return {
-      totalMembers: 0,
-      activeMembers: 0,
-      totalTrainers: 0,
-      totalStaff: 0,
-      activeClasses: 0,
-      totalClasses: 0,
-      revenueToday: 0,
-      revenueThisMonth: 0,
-      unpaidInvoices: 0,
-      pendingPayments: 0,
-      attendanceTrend: [],
-      expiringMemberships: 0
-    };
+    console.error("Error fetching pending payments:", error);
+    return [];
   }
-};
+}
 
-/**
- * Hook to fetch real-time dashboard summary
- */
-export const useDashboardSummary = () => {
-  const { currentBranch } = useBranch();
-  
-  const fetchDashboardData = async () => {
-    return await getDashboardSummary(currentBranch?.id);
-  };
-  
-  return { fetchDashboardData };
-};
-
-/**
- * Fetches member distribution data for charts
- */
-export const getMemberDistribution = async (branchId?: string) => {
+export async function fetchMembershipRenewals(branchId?: string): Promise<RenewalItem[]> {
   try {
-    // Get member distribution by status
-    const { data: statusData } = await supabase
-      .from('members')
-      .select('status, count')
-      .match(branchId ? { branch_id: branchId } : {})
-      .group('status');
-      
-    // Format status distribution data
-    const statusDistribution = statusData?.map(item => ({
-      name: item.status,
-      value: item.count
-    })) || [];
-    
-    // Get member distribution by membership type
-    const { data: membershipData } = await supabase
+    const { data, error } = await supabase
       .from('member_memberships')
-      .select('membership_id, count')
-      .match(branchId ? { branch_id: branchId } : {})
-      .group('membership_id');
-      
-    // Get membership names and combine with counts
-    const membershipDistribution = [];
-    if (membershipData) {
-      for (const item of membershipData) {
-        const { data } = await supabase
-          .from('memberships')
-          .select('name')
-          .eq('id', item.membership_id)
-          .single();
-          
-        if (data) {
-          membershipDistribution.push({
-            name: data.name,
-            value: item.count
-          });
-        }
-      }
-    }
-    
-    return {
-      statusDistribution,
-      membershipDistribution
-    };
+      .select(`
+        id,
+        end_date,
+        status,
+        total_amount,
+        members:member_id (
+          id,
+          name
+        ),
+        memberships:membership_id (
+          name
+        )
+      `)
+      .eq('status', 'active')
+      .lte('end_date', format(subDays(new Date(), -30), 'yyyy-MM-dd'))
+      .order('end_date')
+      .limit(5);
+
+    if (error) throw error;
+
+    return (data || []).map(membership => ({
+      id: membership.id,
+      memberName: membership.members?.name || 'Unknown',
+      membershipPlan: membership.memberships?.name || 'Standard',
+      expiryDate: membership.end_date,
+      status: membership.status,
+      renewalAmount: membership.total_amount || 0
+    }));
   } catch (error) {
-    console.error('Error fetching member distribution:', error);
-    return {
-      statusDistribution: [],
-      membershipDistribution: []
-    };
+    console.error("Error fetching membership renewals:", error);
+    return [];
   }
-};
+}
+
+export async function fetchUpcomingClasses(branchId?: string): Promise<ClassItem[]> {
+  try {
+    const today = new Date();
+    const { data, error } = await supabase
+      .from('class_schedules')
+      .select(`
+        id,
+        name,
+        start_time,
+        end_time,
+        capacity,
+        enrolled,
+        type,
+        difficulty,
+        profiles:trainer_id (
+          full_name,
+          avatar_url
+        )
+      `)
+      .gt('start_time', today.toISOString())
+      .order('start_time')
+      .limit(5);
+
+    if (error) throw error;
+
+    return (data || []).map(classItem => {
+      const startTime = new Date(classItem.start_time);
+      const endTime = new Date(classItem.end_time);
+      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      
+      return {
+        id: classItem.id,
+        name: classItem.name,
+        trainer: classItem.profiles?.full_name || 'TBD',
+        trainerAvatar: classItem.profiles?.avatar_url,
+        time: format(startTime, 'h:mm a'),
+        duration: `${duration} min`,
+        capacity: classItem.capacity,
+        enrolled: classItem.enrolled || 0,
+        type: classItem.type,
+        level: classItem.difficulty as any
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching upcoming classes:", error);
+    return [];
+  }
+}
+
+export async function fetchBranchAnalytics(): Promise<BranchAnalytics[]> {
+  try {
+    const { data, error } = await supabase
+      .from('branches')
+      .select(`
+        id,
+        name,
+        members:members (
+          id
+        ),
+        payments:payments (
+          amount
+        ),
+        member_attendance:member_attendance (
+          id
+        )
+      `);
+
+    if (error) throw error;
+
+    return (data || []).map(branch => ({
+      branchId: branch.id,
+      branchName: branch.name,
+      memberCount: branch.members?.length || 0,
+      revenue: branch.payments?.reduce((total, payment) => total + (payment.amount || 0), 0) || 0,
+      attendance: branch.member_attendance?.length || 0
+    }));
+  } catch (error) {
+    console.error("Error fetching branch analytics:", error);
+    return [];
+  }
+}

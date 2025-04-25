@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { BackupLogEntry } from '@/types/notification';
-import { getBackupLogs } from '@/services/backupService';
+import { BackupLogEntry } from '@/types/backup';
+import backupService from '@/services/backupService';
 import BackupLogsHeader from './BackupLogsHeader';
 import BackupLogsFilters from './BackupLogsFilters';
 import BackupLogsTable from './BackupLogsTable';
@@ -22,7 +22,7 @@ const BackupLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const backupLogs = await getBackupLogs();
+      const backupLogs = await backupService.getBackupLogs();
       setLogs(backupLogs);
     } catch (error) {
       console.error('Failed to fetch backup logs:', error);
@@ -47,7 +47,7 @@ const BackupLogs = () => {
       if (!searchTerm) return true;
       const term = searchTerm.toLowerCase();
       return (
-        log.user_name.toLowerCase().includes(term) ||
+        log.user_name?.toLowerCase().includes(term) ||
         log.modules.some(m => m.toLowerCase().includes(term))
       );
     });

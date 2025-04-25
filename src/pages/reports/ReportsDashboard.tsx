@@ -1,120 +1,183 @@
 
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, AreaChart, Area } from 'recharts';
-import { useAttendanceStats, useRevenueStats, useMembershipStats } from '@/hooks/use-reports';
-import { format } from 'date-fns';
-
-// Define DateRangePickerProps interface to match the component's expected props
-interface DateRangePickerProps {
-  value: { from: Date | null; to: Date | null; };
-  onChange: (value: { from: Date | null; to: Date | null; }) => void;
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useAttendanceStats, useMembershipStats, useRevenueStats } from '@/hooks/use-stats';
+import { addDays, subDays } from 'date-fns';
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const ReportsDashboard = () => {
-  const [dateRange, setDateRange] = useState<{
-    from: Date | null;
-    to: Date | null;
-  }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 7)),
+  const [date, setDate] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 30),
     to: new Date(),
   });
 
-  const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
-  const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
+  // Fetch stats using custom hooks
+  const { data: attendanceData, isLoading: attendanceLoading } = useAttendanceStats(date);
+  const { data: revenueData, isLoading: revenueLoading } = useRevenueStats(date);
+  const { data: membershipData, isLoading: membershipLoading } = useMembershipStats(date);
 
-  // Updated to pass an empty string if the date is null
-  const { data: attendanceData } = useAttendanceStats('daily', startDate, endDate);
-  const { data: revenueData } = useRevenueStats('daily', startDate, endDate);
-  const { data: membershipData } = useMembershipStats('daily', startDate, endDate);
+  // Prepare data for charts
+  const formatChartData = (stats: any) => {
+    if (!stats?.labels || !stats?.data) return [];
+    return stats.labels.map((label: string, index: number) => ({
+      name: label,
+      value: stats.data[index]
+    }));
+  };
+
+  const attendanceChartData = formatChartData(attendanceData);
+  const revenueChartData = formatChartData(revenueData);
+  const membershipChartData = formatChartData(membershipData);
+
+  // Show only last 7 days for attendance data to avoid crowding
+  const recentAttendanceData = attendanceChartData?.length ? 
+    attendanceChartData.slice(-7) : 
+    [];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Format currency
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
 
   return (
     <Container>
-      <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Reports Dashboard</h1>
+      <div className="space-y-6 py-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 items-start">
+          <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+          <DateRangePicker
+            date={date}
+            onDateChange={(newDate: any) => {
+              if (newDate.to) {
+                setDate(newDate);
+              } else {
+                // If only from date is set, default to is from + 30 days
+                setDate({ 
+                  from: newDate.from, 
+                  to: addDays(newDate.from, 30) 
+                });
+              }
+            }}
+          />
+        </div>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Date Range</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DateRangePicker 
-              value={dateRange} 
-              onChange={setDateRange} 
-            />
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="attendance">
+          <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="memberships">Memberships</TabsTrigger>
+          </TabsList>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Attendance Chart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {attendanceData && Array.isArray(attendanceData) && attendanceData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={attendanceData.slice(-7)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="members" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-muted-foreground">No attendance data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="attendance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance Analytics</CardTitle>
+                <CardDescription>Daily attendance for the selected period</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                {attendanceLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : recentAttendanceData?.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={recentAttendanceData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" name="Daily Check-ins" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-muted-foreground">No attendance data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Revenue Chart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {revenueData && Array.isArray(revenueData) && revenueData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData.slice(-7)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="revenue" stroke="#82ca9d" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-muted-foreground">No revenue data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="revenue">
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Analysis</CardTitle>
+                <CardDescription>Weekly revenue for the selected period</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                {revenueLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : revenueChartData?.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={revenueChartData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} />
+                      <YAxis 
+                        tickFormatter={(value) => formatter.format(value).replace(/\.00$/, '')}
+                      />
+                      <Tooltip formatter={(value) => formatter.format(value)} />
+                      <Legend />
+                      <Line type="monotone" dataKey="value" name="Revenue" stroke="#82ca9d" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-muted-foreground">No revenue data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Membership Chart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {membershipData && Array.isArray(membershipData) && membershipData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={membershipData.slice(-7)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="members" stroke="#ffc658" fill="#ffc658" fillOpacity={0.3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                <p className="text-muted-foreground">No membership data available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="memberships">
+            <Card>
+              <CardHeader>
+                <CardTitle>Membership Overview</CardTitle>
+                <CardDescription>Membership activity for the selected period</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                {membershipLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : membershipChartData?.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={membershipChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={150}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {membershipChartData.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                      <Tooltip formatter={(value) => value} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-muted-foreground">No membership data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/services/supabaseClient";
 import { BackupLogEntry } from '@/types/backup';
+import { toast } from 'sonner';
 
 // Function to create a backup log entry
 const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp'>) => {
@@ -73,8 +74,9 @@ const getBackupLogs = async (filters?: {
 // Function to export data from a specific table
 const exportTableData = async (tableName: string) => {
   try {
+    // Use dynamic querying with type safety
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('*');
 
     if (error) throw error;
@@ -89,16 +91,16 @@ const exportTableData = async (tableName: string) => {
 // Function to import data into a specific table
 const importTableData = async (
   tableName: string, 
-  data: any[], 
+  tableData: any[], 
   options?: { upsert?: boolean }
 ) => {
   try {
-    const { data: result, error } = options?.upsert 
-      ? await supabase.from(tableName).upsert(data)
-      : await supabase.from(tableName).insert(data);
+    const { data, error } = options?.upsert 
+      ? await supabase.from(tableName as any).upsert(tableData)
+      : await supabase.from(tableName as any).insert(tableData);
 
     if (error) throw error;
-    return result;
+    return data;
 
   } catch (error) {
     console.error(`Error importing data into ${tableName}:`, error);
@@ -121,10 +123,10 @@ const createFullBackup = async (
   try {
     for (const module of includeModules) {
       try {
-        const data = await exportTableData(module);
-        exportedData[module] = data;
-        totalRecords += data.length;
-        successCount += data.length;
+        const tableData = await exportTableData(module);
+        exportedData[module] = tableData;
+        totalRecords += tableData.length;
+        successCount += tableData.length;
       } catch (error) {
         failedCount += 1;
         console.error(`Failed to export ${module}:`, error);
@@ -190,15 +192,15 @@ const restoreFromBackup = async (
   try {
     for (const module of modules) {
       try {
-        const data = backupData[module];
-        totalRecords += data.length;
+        const tableData = backupData[module];
+        totalRecords += tableData.length;
         
-        if (data.length > 0) {
-          await importTableData(module, data, options);
-          successCount += data.length;
+        if (tableData.length > 0) {
+          await importTableData(module, tableData, options);
+          successCount += tableData.length;
         }
       } catch (error) {
-        failedCount += data.length;
+        failedCount += backupData[module].length;
         console.error(`Failed to import ${module}:`, error);
       }
     }
@@ -246,7 +248,8 @@ const restoreFromBackup = async (
   }
 };
 
-export const backupService = {
+// Export all functions
+const backupService = {
   createBackupLog,
   getBackupLogs,
   exportTableData,

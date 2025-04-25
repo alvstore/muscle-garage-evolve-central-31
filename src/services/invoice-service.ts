@@ -24,7 +24,7 @@ export class InvoiceService {
         issued_date: new Date().toISOString(),
         due_date: dueDate.toISOString(),
         description: description || 'Membership fee',
-        items: items.length ? items : [
+        items: JSON.stringify(items.length ? items : [
           {
             id: uuidv4(),
             name: 'Membership fee',
@@ -32,7 +32,7 @@ export class InvoiceService {
             quantity: 1,
             price: amount
           }
-        ]
+        ])
       };
       
       const { data: invoice, error } = await supabase
@@ -68,3 +68,4 @@ export class InvoiceService {
     return data as unknown as Invoice[];
   }
 }
+
