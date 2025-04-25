@@ -97,18 +97,26 @@ export const useDashboard = () => {
         .gte('start_time', new Date().toISOString())
         .eq(currentBranch?.id ? 'branch_id' : 'id', currentBranch?.id || '');
       
-      // Combine all data
+      // Ensure all required fields are non-optional
+      const revenue = {
+        daily: summaryData.revenue?.daily ?? 0,
+        weekly: summaryData.revenue?.weekly ?? 0,
+        monthly: summaryData.revenue?.monthly ?? 0
+      };
+      
+      // Combine all data with proper types
       const fullDashboardData: DashboardSummary = {
         ...summaryData,
         activeMembers: summaryData.membersByStatus?.active || 0,
         totalStaff: staffCount || 0,
         totalTrainers: trainerCount || 0,
         activeClasses: activeClassesCount || 0,
+        revenue: revenue,
         // These could be calculated from real data in a more advanced implementation
-        newMembers: 0, // Would need date filtering
-        expiringMemberships: summaryData.upcomingRenewals,
-        classSessions: 0, // Would need to count past classes
-        inventoryAlerts: 0 // Would need inventory table queries
+        newMembers: summaryData.newMembers || 0, 
+        expiringMemberships: summaryData.upcomingRenewals || 0,
+        classSessions: summaryData.classSessions || 0, 
+        inventoryAlerts: summaryData.inventoryAlerts || 0 
       };
       
       setDashboardData(fullDashboardData);

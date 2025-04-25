@@ -69,9 +69,7 @@ export interface MemberStatusData {
 
 export interface DashboardSummary {
   totalMembers: number;
-  newMembersToday?: number;
-  activeMembers?: number;
-  attendanceToday?: number;
+  activeMembers: number;
   todayCheckIns: number;
   upcomingRenewals: number;
   pendingPayments: {
@@ -79,20 +77,19 @@ export interface DashboardSummary {
     total: number;
   };
   revenue: {
-    today?: number;
-    thisWeek?: number;
-    thisMonth?: number;
-    lastMonth?: number;
-    daily?: number;
-    weekly?: number;
-    monthly?: number;
+    daily: number;
+    weekly: number;
+    monthly: number;
   };
-  classAttendance?: {
-    today: number;
-    yesterday: number;
-    lastWeek: number;
-  };
-  attendanceTrend: AttendanceData[];
+  // Optional fields
+  totalTrainers?: number;
+  totalStaff?: number;
+  activeClasses?: number;
+  newMembers?: number;
+  expiringMemberships?: number;
+  classSessions?: number;
+  inventoryAlerts?: number;
+  attendanceTrend?: AttendanceData[];
   membersByStatus?: {
     active: number;
     inactive: number;
