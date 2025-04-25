@@ -23,6 +23,12 @@ const deviceSchema = z.object({
   deviceSerial: z.string().min(1, "Serial number is required"),
   deviceLocation: z.string().min(1, "Location is required"),
   isActive: z.boolean().default(true),
+  apiMethod: z.enum(["OpenAPI", "ISAPI"]).default("OpenAPI"),
+  ipAddress: z.string().optional(),
+  port: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  useISAPIFallback: z.boolean().default(false),
 });
 
 const BranchSpecificSettings = () => {
@@ -81,6 +87,12 @@ const BranchSpecificSettings = () => {
       deviceSerial: "",
       deviceLocation: "",
       isActive: true,
+      apiMethod: "OpenAPI",
+      ipAddress: "",
+      port: "",
+      username: "",
+      password: "",
+      useISAPIFallback: false,
     },
   });
   
@@ -93,6 +105,12 @@ const BranchSpecificSettings = () => {
         deviceSerial: editingDevice.deviceSerial,
         deviceLocation: editingDevice.deviceLocation,
         isActive: editingDevice.isActive,
+        apiMethod: editingDevice.apiMethod,
+        ipAddress: editingDevice.ipAddress || "",
+        port: editingDevice.port || "",
+        username: editingDevice.username || "",
+        password: editingDevice.password || "",
+        useISAPIFallback: editingDevice.useISAPIFallback || false,
       });
     } else {
       form.reset({
@@ -102,6 +120,12 @@ const BranchSpecificSettings = () => {
         deviceSerial: "",
         deviceLocation: "",
         isActive: true,
+        apiMethod: "OpenAPI",
+        ipAddress: "",
+        port: "",
+        username: "",
+        password: "",
+        useISAPIFallback: false,
       });
     }
   }, [editingDevice, form]);
@@ -157,7 +181,12 @@ const BranchSpecificSettings = () => {
                 deviceLocation: data.deviceLocation,
                 isActive: data.isActive,
                 updatedAt: new Date().toISOString(),
-                apiMethod: data.apiMethod
+                apiMethod: data.apiMethod,
+                ipAddress: data.ipAddress,
+                port: data.port,
+                username: data.username,
+                password: data.password,
+                useISAPIFallback: data.useISAPIFallback
               } 
             : device
         )
@@ -179,7 +208,12 @@ const BranchSpecificSettings = () => {
         isActive: data.isActive,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        apiMethod: data.apiMethod || "OpenAPI"
+        apiMethod: data.apiMethod,
+        ipAddress: data.ipAddress,
+        port: data.port,
+        username: data.username,
+        password: data.password,
+        useISAPIFallback: data.useISAPIFallback
       };
       
       setBranchSettings(prev => ({
@@ -454,6 +488,83 @@ const BranchSpecificSettings = () => {
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="ipAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>IP Address</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="192.168.1.100" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="port"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Port</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="8000" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Username</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="admin" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Password</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="••••••••" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="useISAPIFallback"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                  <div className="space-y-0.5">
+                                    <FormLabel>Use ISAPI Fallback</FormLabel>
+                                    <FormDescription>
+                                      Fallback to ISAPI if OpenAPI fails
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
                                 </FormItem>
                               )}
                             />

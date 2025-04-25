@@ -33,6 +33,7 @@ export interface DeviceMapping {
 }
 
 export interface DeviceMappingFormValues {
+  deviceId: string;
   deviceName: string;
   deviceType: DeviceType;
   deviceSerial: string;
@@ -44,4 +45,17 @@ export interface DeviceMappingFormValues {
   username: string;
   password: string;
   useISAPIFallback: boolean;
+}
+
+export interface BranchDeviceSettings {
+  branchId: string;
+  devices: DeviceMapping[];
+  defaultAccessRules: {
+    gymOnlyAccess: boolean;
+    swimmingOnlyAccess: boolean;
+    premiumAccess: boolean;
+  };
+  syncFrequency: 'realtime' | '15min' | 'hourly' | 'daily';
+  integrationEnabled: boolean;
+  useISAPIWhenOpenAPIFails: boolean;
 }
