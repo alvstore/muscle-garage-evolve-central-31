@@ -104,7 +104,8 @@ export function useAuthActions() {
     }
   };
 
-  const register = async (userData: any) => {
+  // Fix the return type to match the interface
+  const register = async (userData: any): Promise<void> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -121,7 +122,6 @@ export function useAuthActions() {
       if (error) throw error;
       
       toast.success("Registration successful! You can now log in.");
-      return data;
     } catch (error: any) {
       console.error("Registration failed:", error);
       toast.error(error.message || "Registration failed. Please try again.");
@@ -201,8 +201,6 @@ export function useAuthActions() {
           
         if (profileError) throw profileError;
       }
-      
-      return data;
     } catch (error: any) {
       console.error("Failed to create admin account:", error);
       throw error;

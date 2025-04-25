@@ -5,7 +5,7 @@ import { profileRoutes } from './routes/admin/profileRoutes';
 import { financeRoutes } from './routes/admin/financeRoutes';
 import { settingsRoutes } from './routes/admin/settingsRoutes';
 import { websiteRoutes } from './routes/admin/websiteRoutes';
-import { membershipRoutes } from './routes/admin/membershipRoutes';
+import { adminMembershipRoutes } from './routes/admin/membershipRoutes';
 import AdminLayout from '@/layouts/AdminLayout';
 
 const AdminRoutes: RouteObject = {
@@ -17,7 +17,7 @@ const AdminRoutes: RouteObject = {
     ...financeRoutes,
     ...settingsRoutes,
     ...websiteRoutes,
-    ...membershipRoutes,
+    ...adminMembershipRoutes,
   ],
 };
 
