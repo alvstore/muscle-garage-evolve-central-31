@@ -17,34 +17,19 @@ interface ReminderRulesListProps {
 }
 
 const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
-  const { rules, isLoading, toggleRuleStatus, deleteRule } = useReminderRules();
-  const [reminderRules, setReminderRules] = useState<ReminderRule[]>([]);
+  const { reminderRules, isLoading, updateReminderRule, deleteReminderRule } = useReminderRules();
+  const [rules, setRules] = useState<ReminderRule[]>([]);
   const { toast } = useToast();
   
   useEffect(() => {
-    if (rules) {
-      const convertedRules: ReminderRule[] = rules.map(rule => ({
-        id: rule.id,
-        title: rule.title,
-        description: rule.description || '',
-        triggerType: rule.triggerType,
-        triggerValue: rule.triggerValue || 0,
-        notificationChannel: rule.notificationChannel || 'email',
-        conditions: rule.conditions as Record<string, any>,
-        isActive: rule.isActive,
-        createdAt: rule.createdAt,
-        updatedAt: rule.updatedAt,
-        message: rule.message || '',
-        sendVia: rule.sendVia || [],
-        targetRoles: rule.targetRoles || []
-      }));
-      setReminderRules(convertedRules);
+    if (reminderRules) {
+      setRules(reminderRules);
     }
-  }, [rules]);
+  }, [reminderRules]);
 
-  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+  const toggleRuleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      await toggleRuleStatus(id, !currentStatus);
+      await updateReminderRule(id, { isActive: !currentStatus });
       toast({
         title: "Status updated",
         description: `Rule ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
@@ -58,9 +43,9 @@ const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
     }
   };
 
-  const handleDeleteRule = async (id: string) => {
+  const deleteRule = async (id: string) => {
     try {
-      await deleteRule(id);
+      await deleteReminderRule(id);
       toast({
         title: "Rule deleted",
         description: "Reminder rule deleted successfully",
@@ -104,14 +89,14 @@ const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
                   Loading reminder rules...
                 </TableCell>
               </TableRow>
-            ) : reminderRules.length === 0 ? (
+            ) : rules.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                   No reminder rules found. Click the button above to create one.
                 </TableCell>
               </TableRow>
             ) : (
-              reminderRules.map((rule) => (
+              rules.map((rule) => (
                 <TableRow key={rule.id}>
                   <TableCell>
                     <div>
@@ -141,7 +126,7 @@ const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
                   <TableCell>
                     <Switch 
                       checked={rule.isActive} 
-                      onCheckedChange={() => handleToggleStatus(rule.id, rule.isActive)}
+                      onCheckedChange={() => toggleRuleStatus(rule.id, rule.isActive)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -168,7 +153,7 @@ const ReminderRulesList = ({ onEdit, onAdd }: ReminderRulesListProps) => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteRule(rule.id)}>
+                            <AlertDialogAction onClick={() => deleteRule(rule.id)}>
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>

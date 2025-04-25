@@ -1,171 +1,170 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import { Rating } from '@/components/ui/rating';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Feedback, FeedbackType } from '@/types/notification';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/use-auth";
+import { useFeedback } from "@/hooks/use-feedback";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FeedbackType } from "@/types/notification";
 
-interface FeedbackFormProps {
-  initialValues?: Partial<Feedback>;
-  onSubmit: (data: Partial<Feedback>) => void;
-  onCancel: () => void;
-}
-
-const formSchema = z.object({
-  title: z.string().min(2, { message: 'Title is required' }),
-  type: z.enum(['general', 'trainer', 'class', 'facility', 'service', 'equipment'] as const),
-  rating: z.number().min(1).max(5),
+const feedbackSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  type: z.enum(["general", "trainer", "class", "facility", "service", "equipment"] as const),
+  rating: z.coerce.number().min(1).max(5),
   comments: z.string().optional(),
   anonymous: z.boolean().default(false),
 });
 
-const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, onCancel }) => {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+export interface FeedbackFormProps {
+  onComplete: () => void;
+  allowedFeedbackTypes: string[];
+}
+
+const FeedbackForm: React.FC<FeedbackFormProps> = ({ 
+  onComplete, 
+  allowedFeedbackTypes = ["general", "trainer", "class", "facility", "service", "equipment"] 
+}) => {
+  const { user } = useAuth();
+  const { submitFeedback } = useFeedback();
+
+  const form = useForm<z.infer<typeof feedbackSchema>>({
+    resolver: zodResolver(feedbackSchema),
     defaultValues: {
-      title: initialValues?.title || '',
-      type: (initialValues?.type as FeedbackType) || 'general',
-      rating: initialValues?.rating || 3,
-      comments: initialValues?.comments || '',
-      anonymous: initialValues?.anonymous || false,
+      title: "",
+      type: "general" as FeedbackType,
+      rating: 5,
+      comments: "",
+      anonymous: false,
     },
   });
 
-  const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    onSubmit({
+  const onSubmit = async (data: z.infer<typeof feedbackSchema>) => {
+    const success = await submitFeedback({
       ...data,
-      // Convert to Feedback type
-      memberId: initialValues?.memberId || initialValues?.member_id || '',
-      createdAt: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      memberId: user?.id,
+      memberName: user?.name || user?.email,
     });
+
+    if (success) {
+      onComplete();
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Submit Feedback</CardTitle>
-        <CardDescription>
-          Help us improve by sharing your thoughts and experience
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter a title for your feedback" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Brief title for your feedback" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Feedback Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="trainer">Trainer</SelectItem>
-                      <SelectItem value="class">Class</SelectItem>
-                      <SelectItem value="facility">Facility</SelectItem>
-                      <SelectItem value="service">Service</SelectItem>
-                      <SelectItem value="equipment">Equipment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Feedback Type</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="grid grid-cols-3 gap-4"
+                >
+                  {allowedFeedbackTypes.map((type) => (
+                    <FormItem key={type} className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value={type} />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="rating"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rating</FormLabel>
-                  <FormControl>
-                    <Rating
-                      value={field.value}
-                      onChange={field.onChange}
-                      count={5}
-                      size="lg"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="rating"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rating (1-5)</FormLabel>
+              <FormControl>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <Button
+                      key={rating}
+                      type="button"
+                      variant={field.value === rating ? "default" : "outline"}
+                      onClick={() => field.onChange(rating)}
+                      className="w-10 h-10 rounded-full"
+                    >
+                      {rating}
+                    </Button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="comments"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Comments (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Share your thoughts..." {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="comments"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Comments</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Please share your thoughts in detail"
+                  className="min-h-[120px]"
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormDescription>
+                Your detailed feedback helps us improve our services
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="anonymous"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Submit anonymously</FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          onClick={form.handleSubmit(handleSubmit)}
-        >
-          Submit Feedback
-        </Button>
-      </CardFooter>
-    </Card>
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onComplete}>
+            Cancel
+          </Button>
+          <Button type="submit">Submit Feedback</Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 

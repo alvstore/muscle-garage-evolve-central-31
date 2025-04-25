@@ -127,7 +127,7 @@ const InvoicePage = () => {
           
           <TabsContent value="all-invoices">
             <EnhancedInvoiceList 
-              readonly={false} 
+              readOnly={false} 
               allowPayment={true}
               allowDownload={true}
               filter="all"
@@ -136,7 +136,7 @@ const InvoicePage = () => {
           
           <TabsContent value="pending">
             <EnhancedInvoiceList 
-              readonly={false} 
+              readOnly={false} 
               allowPayment={true}
               allowDownload={true}
               filter="pending"
@@ -145,7 +145,7 @@ const InvoicePage = () => {
           
           <TabsContent value="paid">
             <EnhancedInvoiceList 
-              readonly={false}
+              readOnly={false}
               allowPayment={false}
               allowDownload={true}
               filter="paid"
@@ -154,7 +154,7 @@ const InvoicePage = () => {
           
           <TabsContent value="overdue">
             <EnhancedInvoiceList 
-              readonly={false}
+              readOnly={false}
               allowPayment={true}
               allowDownload={true}
               filter="overdue"

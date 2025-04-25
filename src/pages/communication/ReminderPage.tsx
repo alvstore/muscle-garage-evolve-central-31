@@ -1,20 +1,27 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import ReminderRulesList from "@/components/communication/ReminderRulesList";
-import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
-import { ReminderRule } from "@/types/notification";
+import { PlusIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import ReminderRulesList from '@/components/communication/ReminderRulesList';
+import ReminderRuleForm from '@/components/communication/ReminderRuleForm';
+import { useReminderRules } from '@/hooks/use-reminder-rules';
+import { ReminderRule } from '@/types/notification';
+
+interface ReminderRuleFormProps {
+  initialValues?: Partial<ReminderRule>;
+  onSubmit: (data: Partial<ReminderRule>) => void;
+  onCancel: () => void;
+}
 
 const ReminderPage = () => {
+  const { reminderRules, isLoading, createReminderRule, updateReminderRule, fetchReminderRules } = useReminderRules();
   const [showForm, setShowForm] = useState(false);
-  const [currentTab, setCurrentTab] = useState("all");
-  const [editingRule, setEditingRule] = useState<ReminderRule | undefined>(undefined);
+  const [editingRule, setEditingRule] = useState<ReminderRule | null>(null);
   
-  const handleCreateRule = () => {
-    setEditingRule(undefined);
+  const handleAddRule = () => {
+    setEditingRule(null);
     setShowForm(true);
   };
   
@@ -23,68 +30,64 @@ const ReminderPage = () => {
     setShowForm(true);
   };
   
-  const handleCompleteForm = () => {
-    toast.success(editingRule 
-      ? "Reminder rule updated successfully" 
-      : "New reminder rule created successfully"
-    );
+  const handleSubmitRule = async (ruleData: Partial<ReminderRule>) => {
+    try {
+      if (editingRule) {
+        await updateReminderRule(editingRule.id, ruleData);
+      } else {
+        await createReminderRule(ruleData as Omit<ReminderRule, 'id' | 'createdAt' | 'updatedAt'>);
+      }
+      
+      setShowForm(false);
+      setEditingRule(null);
+      fetchReminderRules();
+    } catch (error) {
+      console.error('Error saving reminder rule:', error);
+    }
+  };
+  
+  const handleCancelForm = () => {
     setShowForm(false);
-    setEditingRule(undefined);
+    setEditingRule(null);
   };
   
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Reminder Rules</h1>
-        <Button 
-          onClick={handleCreateRule}
-          className="flex items-center gap-1"
-        >
-          <Plus className="h-4 w-4" />
-          Create Rule
-        </Button>
+    <Container>
+      <div className="py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Reminder Rules</h1>
+          {!showForm && (
+            <Button onClick={handleAddRule}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Rule
+            </Button>
+          )}
+        </div>
+        
+        {showForm ? (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>{editingRule ? 'Edit Reminder Rule' : 'Create Reminder Rule'}</CardTitle>
+              <CardDescription>
+                Configure when and how reminders are sent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReminderRuleForm 
+                initialValues={editingRule || undefined} 
+                onSubmit={handleSubmitRule} 
+                onCancel={handleCancelForm}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <ReminderRulesList 
+            onEdit={handleEditRule} 
+            onAdd={handleAddRule} 
+          />
+        )}
       </div>
-      
-      <p className="text-muted-foreground">
-        Set up automated reminders for membership renewals, missed attendances, birthdays, and other events.
-      </p>
-      
-      {showForm ? (
-        <ReminderRuleForm
-          onComplete={handleCompleteForm}
-          editRule={editingRule}
-        />
-      ) : (
-        <Tabs 
-          defaultValue={currentTab} 
-          onValueChange={setCurrentTab}
-          className="space-y-4"
-        >
-          <TabsList>
-            <TabsTrigger value="all">All Rules</TabsTrigger>
-            <TabsTrigger value="membership">Membership</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="other">Other</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all">
-            <ReminderRulesList onEdit={handleEditRule} />
-          </TabsContent>
-          
-          <TabsContent value="membership">
-            <ReminderRulesList onEdit={handleEditRule} />
-          </TabsContent>
-          
-          <TabsContent value="attendance">
-            <ReminderRulesList onEdit={handleEditRule} />
-          </TabsContent>
-          
-          <TabsContent value="other">
-            <ReminderRulesList onEdit={handleEditRule} />
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
+    </Container>
   );
 };
 

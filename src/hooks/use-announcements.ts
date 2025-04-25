@@ -2,33 +2,52 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
-import { useBranch } from './use-branch';
 import { toast } from 'sonner';
+import { useBranch } from './use-branch';
+import { useAuth } from './use-auth';
 
-export const useAnnouncements = () => {
+interface UseAnnouncementsProps {
+  limit?: number;
+}
+
+export const useAnnouncements = (props?: UseAnnouncementsProps) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { currentBranch } = useBranch();
+  const { user } = useAuth();
+  const limit = props?.limit || 100;
 
   const fetchAnnouncements = useCallback(async () => {
-    setIsLoading(true);
     try {
-      let query = supabase.from('announcements').select('*');
+      setIsLoading(true);
       
+      let query = supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      // Filter by branch if a branch is selected
       if (currentBranch?.id) {
         query = query.eq('branch_id', currentBranch.id);
       }
       
-      const { data, error } = await query.order('created_at', { ascending: false });
+      // Filter announcements by user role if not admin
+      if (user && user.role !== 'admin') {
+        query = query.contains('target_roles', [user.role]);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         throw error;
       }
       
       if (data) {
-        const formattedAnnouncements = data.map(announcement => 
+        const formattedAnnouncements: Announcement[] = data.map(announcement => 
           adaptAnnouncementFromDB(announcement)
         );
+        
         setAnnouncements(formattedAnnouncements);
       }
     } catch (error: any) {
@@ -37,37 +56,30 @@ export const useAnnouncements = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch?.id]);
+  }, [currentBranch?.id, limit, user]);
 
-  const createAnnouncement = async (announcementData: Omit<Announcement, 'id' | 'createdAt'>): Promise<Announcement | null> => {
+  const createAnnouncement = async (announcementData: Omit<Announcement, "id" | "createdAt">): Promise<Announcement | null> => {
     try {
-      const timestamp = new Date().toISOString();
-      
-      const newAnnouncementData = {
-        title: announcementData.title,
-        content: announcementData.content,
-        priority: announcementData.priority,
-        author_id: announcementData.authorId || announcementData.author_id,
-        author_name: announcementData.authorName || announcementData.author_name,
-        target_roles: announcementData.targetRoles || announcementData.target_roles || [],
-        channels: announcementData.channels || [],
-        branch_id: announcementData.branchId || announcementData.branch_id || currentBranch?.id,
-        created_at: timestamp,
-        updated_at: timestamp,
-        expires_at: announcementData.expiresAt || announcementData.expires_at,
-        status: announcementData.status || 'active',
-      };
-      
       const { data, error } = await supabase
         .from('announcements')
-        .insert(newAnnouncementData)
-        .select('*')
+        .insert({
+          title: announcementData.title,
+          content: announcementData.content,
+          author_id: announcementData.authorId,
+          author_name: announcementData.authorName,
+          priority: announcementData.priority,
+          expires_at: announcementData.expiresAt,
+          channels: announcementData.channels || [],
+          target_roles: announcementData.targetRoles || [],
+          branch_id: announcementData.branchId || currentBranch?.id
+        })
+        .select()
         .single();
       
       if (error) {
         throw error;
       }
-      
+
       const newAnnouncement = adaptAnnouncementFromDB(data);
       setAnnouncements(prev => [newAnnouncement, ...prev]);
       toast.success('Announcement created successfully');
@@ -76,6 +88,48 @@ export const useAnnouncements = () => {
       console.error('Error creating announcement:', error);
       toast.error('Failed to create announcement');
       return null;
+    }
+  };
+
+  const updateAnnouncement = async (id: string, updates: Partial<Announcement>): Promise<boolean> => {
+    try {
+      // Convert to snake_case for DB
+      const dbUpdates: any = {};
+      
+      if (updates.title) dbUpdates.title = updates.title;
+      if (updates.content) dbUpdates.content = updates.content;
+      if (updates.authorId) dbUpdates.author_id = updates.authorId;
+      if (updates.authorName) dbUpdates.author_name = updates.authorName;
+      if (updates.priority) dbUpdates.priority = updates.priority;
+      if (updates.expiresAt) dbUpdates.expires_at = updates.expiresAt;
+      if (updates.channels) dbUpdates.channels = updates.channels;
+      if (updates.targetRoles) dbUpdates.target_roles = updates.targetRoles;
+      if (updates.branchId) dbUpdates.branch_id = updates.branchId;
+
+      const { error } = await supabase
+        .from('announcements')
+        .update(dbUpdates)
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update the local state
+      setAnnouncements(prev => 
+        prev.map(announcement => 
+          announcement.id === id 
+            ? { ...announcement, ...updates } 
+            : announcement
+        )
+      );
+      
+      toast.success('Announcement updated successfully');
+      return true;
+    } catch (error: any) {
+      console.error('Error updating announcement:', error);
+      toast.error('Failed to update announcement');
+      return false;
     }
   };
 
@@ -97,54 +151,6 @@ export const useAnnouncements = () => {
       console.error('Error deleting announcement:', error);
       toast.error('Failed to delete announcement');
       return false;
-    }
-  };
-
-  const updateAnnouncement = async (id: string, updates: Partial<Announcement>): Promise<Announcement | null> => {
-    try {
-      const updateData = {
-        ...updates,
-        updated_at: new Date().toISOString(),
-        // Convert camelCase to snake_case where needed
-        target_roles: updates.targetRoles || updates.target_roles,
-        author_id: updates.authorId || updates.author_id,
-        author_name: updates.authorName || updates.author_name,
-        branch_id: updates.branchId || updates.branch_id,
-        expires_at: updates.expiresAt || updates.expires_at,
-      };
-      
-      // Remove camelCase fields before sending to Supabase
-      delete updateData.targetRoles;
-      delete updateData.authorId;
-      delete updateData.authorName;
-      delete updateData.branchId;
-      delete updateData.expiresAt;
-      delete updateData.createdAt;
-      delete updateData.updatedAt;
-      
-      const { data, error } = await supabase
-        .from('announcements')
-        .update(updateData)
-        .eq('id', id)
-        .select('*')
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      const updatedAnnouncement = adaptAnnouncementFromDB(data);
-      setAnnouncements(prev => 
-        prev.map(announcement => 
-          announcement.id === id ? updatedAnnouncement : announcement
-        )
-      );
-      toast.success('Announcement updated successfully');
-      return updatedAnnouncement;
-    } catch (error: any) {
-      console.error('Error updating announcement:', error);
-      toast.error('Failed to update announcement');
-      return null;
     }
   };
 

@@ -1,151 +1,139 @@
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from '@/services/supabaseClient';
-import { CreateStaffDialog } from '@/components/staff/CreateStaffDialog';
-import { PersonCard } from '@/components/shared/PersonCard';
-import { useAuth } from '@/hooks/use-auth';
-
-interface StaffProfile {
-  id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  avatar_url?: string;
-  branch_id?: string;
-  department?: string;
-  position?: string;
-  is_active?: boolean;
-  accessible_branch_ids?: string[];
-  address?: string;
-  city?: string;
-  country?: string;
-  created_at?: string;
-  date_of_birth?: string;
-  gender?: string;
-  role?: string;
-  state?: string;
-  updated_at?: string;
-}
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusIcon, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { useStaff } from '@/hooks/use-staff';
+import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
+import { supabase } from "@/integrations/supabase/client";
 
 const StaffListPage = () => {
-  const { user } = useAuth();
-  const [staff, setStaff] = useState<StaffProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
+  const [open, setOpen] = useState(false);
+  const { staff, isLoading, fetchStaff } = useStaff();
+  const { toast } = useToast();
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+
   useEffect(() => {
     fetchStaff();
-  }, []);
-  
-  const fetchStaff = async () => {
+  }, [fetchStaff]);
+
+  const handleEdit = (staffMember: any) => {
+    setSelectedStaff(staffMember);
+    setOpen(true);
+  };
+
+  const handleDelete = async (staffMember: any) => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      // Optimistically update the UI
+      const optimisticStaffList = staff.filter((s) => s.id !== staffMember.id);
+      // setStaff(optimisticStaffList);
+
+      // Delete the staff member from Supabase
+      const { error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('role', 'staff');
-      
-      if (error) throw error;
-      
-      if (data) {
-        setStaff(data.map(staff => ({
-          ...staff,
-          position: staff.position || staff.department || 'Staff',
-          is_active: staff.is_active !== false
-        })));
+        .delete()
+        .eq('id', staffMember.id);
+
+      if (error) {
+        // If there's an error, revert the UI
+        // setStaff(staff);
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "Failed to delete staff member. Please try again.",
+        });
       } else {
-        setStaff([]);
+        // If the deletion was successful, show a success message
+        toast({
+          title: "Success",
+          description: "Staff member deleted successfully.",
+        });
+        fetchStaff();
       }
     } catch (error) {
-      console.error('Error fetching staff:', error);
-      toast.error('Failed to load staff members');
-    } finally {
-      setLoading(false);
+      // If there's an error, revert the UI
+      // setStaff(staff);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: "Failed to delete staff member. Please try again.",
+      });
     }
-  };
-  
-  const handleEdit = (id: string) => {
-    toast.info(`Edit staff ${id} - coming soon`);
-  };
-  
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this staff member?')) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            is_active: false
-          })
-          .eq('id', id);
-        
-        if (error) throw error;
-        
-        toast.success('Staff member deactivated successfully');
-        fetchStaff();
-      } catch (error) {
-        console.error('Error deactivating staff member:', error);
-        toast.error('Failed to deactivate staff member');
-      }
-    }
-  };
-  
-  const handleViewProfile = (id: string) => {
-    toast.info(`View profile ${id} - coming soon`);
   };
 
   return (
     <Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Staff Management</h1>
-            <p className="text-muted-foreground">Manage staff members across all branches</p>
-          </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Staff Member
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>Staff Members</CardTitle>
+          <Button onClick={() => setOpen(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add Staff
           </Button>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <p>Loading staff members...</p>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : staff.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      No staff members found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  staff.map((staffMember) => (
+                    <TableRow key={staffMember.id}>
+                      <TableCell className="font-medium">{staffMember.name}</TableCell>
+                      <TableCell>{staffMember.email}</TableCell>
+                      <TableCell>{staffMember.role}</TableCell>
+                      <TableCell>{staffMember.department}</TableCell>
+                      <TableCell>
+                        {staffMember.is_active ? (
+                          <Badge variant="success">Active</Badge>
+                        ) : (
+                          <Badge variant="destructive">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(staffMember)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(staffMember)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        ) : staff.length === 0 ? (
-          <div className="text-center py-10">
-            <p>No staff members found. Click "Add Staff Member" to create one.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {staff.map((staff) => (
-              <PersonCard
-                key={staff.id}
-                id={staff.id}
-                name={staff.full_name}
-                email={staff.email}
-                phone={staff.phone}
-                avatar={staff.avatar_url}
-                role="Staff"
-                department={staff.department}
-                status={staff.is_active ? 'active' : 'inactive'}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onViewProfile={handleViewProfile}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <CreateStaffDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog}
-        onSuccess={fetchStaff}
-      />
+        </CardContent>
+      </Card>
+      <CreateStaffDialog open={open} onOpenChange={setOpen} onSuccess={() => {
+        fetchStaff();
+        setSelectedStaff(null);
+      }} />
     </Container>
   );
 };

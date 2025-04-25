@@ -1,96 +1,116 @@
 
-import React, { useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { Feedback } from '@/types/notification';
-import { useAuth } from '@/hooks/use-auth';
-import { useBranch } from '@/hooks/use-branch';
-import { useMemberSpecificData } from '@/hooks/use-member-specific-data';
-import FeedbackForm from '@/components/communication/FeedbackForm';
-import FeedbackHeader from '@/components/communication/feedback/FeedbackHeader';
-import BranchInfo from '@/components/communication/feedback/BranchInfo';
-import FeedbackTabs from '@/components/communication/feedback/FeedbackTabs';
+import React, { useState, useEffect } from 'react';
+import { Container } from "@/components/ui/container";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PlusIcon } from "lucide-react";
 import { useFeedback } from '@/hooks/use-feedback';
+import { useAuth } from '@/hooks/use-auth';
+import FeedbackList from '@/components/communication/FeedbackList';
+import FeedbackForm from '@/components/communication/FeedbackForm';
+import { FeedbackType } from '@/types/notification';
+
+interface FeedbackTabsProps {
+  feedbacks: any[];
+  isLoading: boolean;
+  isMember: boolean;
+  memberFeedbackTypes: string[];
+  activeTab: string;
+  onTabChange: React.Dispatch<React.SetStateAction<string>>;
+}
 
 const FeedbackPage = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("all");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const { feedback, isLoading, fetchFeedback } = useFeedback();
   const { user } = useAuth();
-  const { currentBranch } = useBranch();
-  const isMember = user?.role === 'member';
-
-  const { data: feedbacks, isLoading, refetch } = useFeedback(currentBranch?.id, user?.id);
-
-  // Filter feedback types based on user role
-  const memberFeedbackTypes = ['general', 'trainer', 'class'];
   
-  // Fix for the TypeScript error: Properly define the function return type to match hook expectations
-  const { data: filteredFeedbacks } = useMemberSpecificData<Feedback[], Feedback[]>(
-    feedbacks || [],
-    (feedbackArray: Feedback[], userId: string) => {
-      // When a member is logged in, only return their feedbacks
-      if (userId) {
-        return feedbackArray.filter(item => item.memberId === userId);
-      }
-      // For non-members, return all feedbacks
-      return feedbackArray;
-    }
-  );
-
-  const addFeedbackMutation = useMutation({
-    mutationFn: async (newFeedback: Feedback) => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { 
-        ...newFeedback, 
-        id: `feedback${Date.now()}`,
-        branchId: currentBranch?.id,
-        memberId: user?.id
-      };
-    },
-    onSuccess: () => {
-      toast({
-        title: "Feedback submitted",
-        description: "Your feedback has been submitted successfully."
-      });
-      refetch();
-      setIsModalOpen(false);
-    },
-    onError: () => {
-      toast({
-        title: "Error submitting feedback",
-        description: "There was an error submitting your feedback. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
+  const handleFeedbackSubmitted = () => {
+    setShowAddForm(false);
+    fetchFeedback();
+  };
+  
+  const isMember = user?.role === 'member';
+  
+  const memberFeedbackTypes = ['trainer', 'class', 'facility', 'equipment', 'service'];
+  
   return (
     <Container>
       <div className="py-6">
-        <FeedbackHeader onNewFeedback={() => setIsModalOpen(true)} />
-        <BranchInfo branch={currentBranch} />
-
-        <FeedbackTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          feedbacks={filteredFeedbacks as Feedback[]}
-          isLoading={isLoading}
-          isMember={isMember}
-          memberFeedbackTypes={memberFeedbackTypes}
-        />
-
-        {isModalOpen && (
-          <FeedbackForm
-            onComplete={() => {
-              setIsModalOpen(false);
-            }}
-            allowedFeedbackTypes={isMember ? memberFeedbackTypes as any[] : undefined}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Feedback Management</h1>
+          {!showAddForm && (
+            <Button onClick={() => setShowAddForm(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Feedback
+            </Button>
+          )}
+        </div>
+        
+        {showAddForm ? (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Submit Feedback</CardTitle>
+              <CardDescription>
+                We value your feedback to improve our services
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FeedbackForm 
+                onComplete={handleFeedbackSubmitted} 
+                allowedFeedbackTypes={memberFeedbackTypes}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <FeedbackTabs 
+            feedbacks={feedback}
+            isLoading={isLoading}
+            isMember={isMember}
+            memberFeedbackTypes={memberFeedbackTypes}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
           />
         )}
       </div>
     </Container>
+  );
+};
+
+const FeedbackTabs = ({ 
+  feedbacks, 
+  isLoading, 
+  isMember, 
+  memberFeedbackTypes,
+  activeTab,
+  onTabChange 
+}: FeedbackTabsProps) => {
+  const [filteredFeedbacks, setFilteredFeedbacks] = useState(feedbacks);
+  
+  useEffect(() => {
+    if (activeTab === "all") {
+      setFilteredFeedbacks(feedbacks);
+    } else {
+      setFilteredFeedbacks(feedbacks.filter(feedback => feedback.type === activeTab));
+    }
+  }, [activeTab, feedbacks]);
+  
+  return (
+    <Tabs value={activeTab} onValueChange={onTabChange}>
+      <TabsList className="mb-8">
+        <TabsTrigger value="all">All Feedback</TabsTrigger>
+        {memberFeedbackTypes.map(type => (
+          <TabsTrigger key={type} value={type}>
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      
+      <TabsContent value={activeTab}>
+        <FeedbackList feedbacks={filteredFeedbacks} isLoading={isLoading} />
+      </TabsContent>
+    </Tabs>
   );
 };
 
