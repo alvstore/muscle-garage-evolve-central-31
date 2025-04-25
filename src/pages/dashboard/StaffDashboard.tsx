@@ -1,12 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useDashboard } from "@/hooks/use-dashboard";
 import StaffStatsOverview from "@/components/dashboard/staff/StaffStatsOverview";
-import { useAttendanceStats, useRevenueStats, useMembershipStats } from "@/hooks/use-stats";
+import { useAttendanceStats, useRevenueStats } from "@/hooks/use-stats";
 
 const StaffDashboard = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -36,7 +37,7 @@ const StaffDashboard = () => {
   const getPaymentsData = () => {
     return paymentsData?.map(item => ({
       date: item.date,
-      members: item.members ? item.members.length : 0
+      revenue: item.revenue
     })) || [];
   };
 
@@ -72,7 +73,7 @@ const StaffDashboard = () => {
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="members" stroke="#82ca9d" />
+                  <Line type="monotone" dataKey="revenue" stroke="#82ca9d" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

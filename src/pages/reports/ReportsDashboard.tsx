@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -5,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, AreaChart, Area } from 'recharts';
 import { useAttendanceStats, useRevenueStats, useMembershipStats } from '@/hooks/use-reports';
 import { format } from 'date-fns';
+
+// Define DateRangePickerProps interface to match the component's expected props
+interface DateRangePickerProps {
+  value: { from: Date | null; to: Date | null; };
+  onChange: (value: { from: Date | null; to: Date | null; }) => void;
+}
 
 const ReportsDashboard = () => {
   const [dateRange, setDateRange] = useState<{
@@ -18,6 +25,7 @@ const ReportsDashboard = () => {
   const startDate = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
   const endDate = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
 
+  // Updated to pass an empty string if the date is null
   const { data: attendanceData } = useAttendanceStats('daily', startDate, endDate);
   const { data: revenueData } = useRevenueStats('daily', startDate, endDate);
   const { data: membershipData } = useMembershipStats('daily', startDate, endDate);
@@ -32,7 +40,10 @@ const ReportsDashboard = () => {
             <CardTitle>Date Range</CardTitle>
           </CardHeader>
           <CardContent>
-            <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+            <DateRangePicker 
+              value={dateRange} 
+              onChange={setDateRange} 
+            />
           </CardContent>
         </Card>
 

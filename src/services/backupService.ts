@@ -1,227 +1,258 @@
-import { supabase } from '@/integrations/supabase/client';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
 
-// List of tables to include in the export
-const TABLES = [
-  'branches',
-  'members',
-  'trainers',
-  'staff',
-  'classes',
-  'class_bookings',
-  'announcements',
-  'feedback',
-  'invoices',
-  'payments',
-  'member_memberships',
-  'memberships',
-  'body_measurements',
-  'diet_plans',
-  'workout_plans',
-  'inventory_items',
-  'leads',
-  'motivational_messages',
-  'reminder_rules',
-];
+import { supabase } from "@/services/supabaseClient";
+import { BackupLogEntry } from '@/types/backup';
 
-interface BackupMetadata {
-  timestamp: string;
-  tables: string[];
-  recordCounts: Record<string, number>;
-  totalRecords: number;
-  version: string;
-}
-
-export const exportData = async () => {
+// Function to create a backup log entry
+const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp'>) => {
   try {
-    const zip = new JSZip();
-    const metadata: BackupMetadata = {
-      timestamp: new Date().toISOString(),
-      tables: TABLES,
-      recordCounts: {},
-      totalRecords: 0,
-      version: '1.0.0',
-    };
-    
-    let totalRecords = 0;
-    
-    // Export each table to a separate JSON file in the ZIP archive
-    for (const table of TABLES) {
-      const { data, error } = await supabase
-        .from(table as any)
-        .select('*');
-        
-      if (error) {
-        console.error(`Error exporting ${table}:`, error);
-        continue;
-      }
-      
-      if (!data) {
-        continue;
-      }
-      
-      // Add the data to the zip file
-      zip.file(`${table}.json`, JSON.stringify(data, null, 2));
-      
-      // Update metadata
-      metadata.recordCounts[table] = data.length;
-      totalRecords += data.length;
-    }
-    
-    // Update total records in metadata
-    metadata.totalRecords = totalRecords;
-    
-    // Add metadata file to the zip
-    zip.file('metadata.json', JSON.stringify(metadata, null, 2));
-    
-    // Generate the zip file
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    
-    // Save the zip file
-    const formattedDate = format(new Date(), 'yyyy-MM-dd_HH-mm');
-    saveAs(zipBlob, `gym_crm_backup_${formattedDate}.zip`);
-    
-    // Log the backup
-    await supabase
+    const { data, error } = await supabase
       .from('backup_logs')
       .insert({
-        type: 'export',
-        timestamp: new Date().toISOString(),
-        records_exported: totalRecords,
-        tables_exported: TABLES,
-      });
-      
-    return {
-      success: true,
-      timestamp: metadata.timestamp,
-      totalRecords,
-    };
+        action: logData.action,
+        user_id: logData.user_id,
+        user_name: logData.user_name,
+        modules: logData.modules,
+        success: logData.success,
+        total_records: logData.total_records,
+        success_count: logData.success_count,
+        failed_count: logData.failed_count
+      })
+      .select();
+
+    if (error) throw error;
+    return data[0] as BackupLogEntry;
+
   } catch (error) {
-    console.error('Error exporting data:', error);
-    throw new Error('Failed to export data');
+    console.error("Error creating backup log:", error);
+    throw error;
   }
 };
 
-export const importData = async (file: File) => {
+// Function to get backup logs
+const getBackupLogs = async (filters?: {
+  action?: 'backup' | 'restore';
+  startDate?: string;
+  endDate?: string;
+  success?: boolean;
+}) => {
   try {
-    // Read the zip file
-    const zipData = await file.arrayBuffer();
-    const zip = await JSZip.loadAsync(zipData);
-    
-    // Extract metadata
-    const metadataFile = zip.file('metadata.json');
-    if (!metadataFile) {
-      throw new Error('Invalid backup file: missing metadata');
-    }
-    
-    const metadataText = await metadataFile.async('text');
-    const metadata: BackupMetadata = JSON.parse(metadataText);
-    
-    // Validate the backup version
-    if (metadata.version !== '1.0.0') {
-      throw new Error(`Unsupported backup version: ${metadata.version}`);
-    }
-    
-    // Import each table
-    let totalImported = 0;
-    
-    // First, clear all existing data (in reverse order to respect foreign keys)
-    for (const table of [...metadata.tables].reverse()) {
-      await supabase
-        .from(table as any)
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all except system records
-    }
-    
-    // Then import the data (in forward order to respect foreign keys)
-    for (const table of metadata.tables) {
-      const tableFile = zip.file(`${table}.json`);
-      if (!tableFile) {
-        console.warn(`Missing table in backup: ${table}`);
-        continue;
-      }
-      
-      const tableText = await tableFile.async('text');
-      const tableData = JSON.parse(tableText);
-      
-      if (tableData.length > 0) {
-        const { error } = await supabase
-          .from(table as any)
-          .insert(tableData);
-          
-        if (error) {
-          console.error(`Error importing ${table}:`, error);
-          throw new Error(`Failed to import ${table}: ${error.message}`);
-        }
-        
-        totalImported += tableData.length;
-      }
-    }
-    
-    // Log the import
-    await supabase
+    let query = supabase
       .from('backup_logs')
-      .insert({
-        type: 'import',
-        timestamp: new Date().toISOString(),
-        records_imported: totalImported,
-        tables_imported: metadata.tables,
-      });
-      
-    return {
-      success: true,
-      timestamp: metadata.timestamp,
-      totalRecords: totalImported,
-    };
+      .select('*')
+      .order('timestamp', { ascending: false });
+
+    if (filters) {
+      if (filters.action) {
+        query = query.eq('action', filters.action);
+      }
+
+      if (filters.success !== undefined) {
+        query = query.eq('success', filters.success);
+      }
+
+      if (filters.startDate) {
+        query = query.gte('timestamp', filters.startDate);
+      }
+
+      if (filters.endDate) {
+        query = query.lte('timestamp', filters.endDate);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data as BackupLogEntry[];
+
   } catch (error) {
-    console.error('Error importing data:', error);
-    throw new Error(`Failed to import data: ${(error as Error).message}`);
+    console.error("Error fetching backup logs:", error);
+    throw error;
   }
 };
 
-export const getBackupLogs = async (): Promise<BackupLogEntry[]> => {
-  // In a real app, you'd fetch this from the database
-  return [
-    {
-      id: '1',
-      user_name: 'Admin User',
+// Function to export data from a specific table
+const exportTableData = async (tableName: string) => {
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*');
+
+    if (error) throw error;
+    return data;
+
+  } catch (error) {
+    console.error(`Error exporting data from ${tableName}:`, error);
+    throw error;
+  }
+};
+
+// Function to import data into a specific table
+const importTableData = async (
+  tableName: string, 
+  data: any[], 
+  options?: { upsert?: boolean }
+) => {
+  try {
+    const { data: result, error } = options?.upsert 
+      ? await supabase.from(tableName).upsert(data)
+      : await supabase.from(tableName).insert(data);
+
+    if (error) throw error;
+    return result;
+
+  } catch (error) {
+    console.error(`Error importing data into ${tableName}:`, error);
+    throw error;
+  }
+};
+
+// Function to create a full backup
+const createFullBackup = async (
+  userId: string, 
+  userName: string, 
+  includeModules: string[]
+) => {
+  const exportedData: Record<string, any[]> = {};
+  let totalRecords = 0;
+  let successCount = 0;
+  let failedCount = 0;
+  let success = true;
+
+  try {
+    for (const module of includeModules) {
+      try {
+        const data = await exportTableData(module);
+        exportedData[module] = data;
+        totalRecords += data.length;
+        successCount += data.length;
+      } catch (error) {
+        failedCount += 1;
+        console.error(`Failed to export ${module}:`, error);
+      }
+    }
+
+    // Create backup log
+    await createBackupLog({
       action: 'backup',
-      modules: ['members', 'invoices'],
-      timestamp: new Date().toISOString(),
+      user_id: userId,
+      user_name: userName,
+      modules: includeModules,
+      success: failedCount === 0,
+      total_records: totalRecords,
+      success_count: successCount,
+      failed_count: failedCount
+    });
+
+    return { 
       success: true,
-      total_records: 250,
-      success_count: 250,
-      failed_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      user_name: 'Admin User',
-      action: 'restore',
-      modules: ['members'],
-      timestamp: new Date().toISOString(),
+      data: exportedData, 
+      totalRecords,
+      successCount,
+      failedCount
+    };
+  } catch (error) {
+    console.error("Error creating full backup:", error);
+    
+    // Log the failure
+    await createBackupLog({
+      action: 'backup',
+      user_id: userId,
+      user_name: userName,
+      modules: includeModules,
       success: false,
-      total_records: 150,
-      success_count: 130,
-      failed_count: 20,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      total_records: totalRecords,
+      success_count: successCount,
+      failed_count: failedCount
+    });
+    
+    return { 
+      success: false, 
+      error: error, 
+      totalRecords,
+      successCount,
+      failedCount
+    };
+  }
+};
+
+// Function to restore from a backup
+const restoreFromBackup = async (
+  backupData: Record<string, any[]>,
+  userId: string,
+  userName: string,
+  options?: { upsert?: boolean }
+) => {
+  const modules = Object.keys(backupData);
+  let totalRecords = 0;
+  let successCount = 0;
+  let failedCount = 0;
+
+  try {
+    for (const module of modules) {
+      try {
+        const data = backupData[module];
+        totalRecords += data.length;
+        
+        if (data.length > 0) {
+          await importTableData(module, data, options);
+          successCount += data.length;
+        }
+      } catch (error) {
+        failedCount += data.length;
+        console.error(`Failed to import ${module}:`, error);
+      }
     }
-  ];
+
+    // Create restore log
+    await createBackupLog({
+      action: 'restore',
+      user_id: userId,
+      user_name: userName,
+      modules,
+      success: failedCount === 0,
+      total_records: totalRecords,
+      success_count: successCount,
+      failed_count: failedCount
+    });
+
+    return { 
+      success: true, 
+      totalRecords,
+      successCount,
+      failedCount
+    };
+  } catch (error) {
+    console.error("Error restoring from backup:", error);
+    
+    // Log the failure
+    await createBackupLog({
+      action: 'restore',
+      user_id: userId,
+      user_name: userName,
+      modules,
+      success: false,
+      total_records: totalRecords,
+      success_count: successCount,
+      failed_count: failedCount
+    });
+    
+    return { 
+      success: false, 
+      error, 
+      totalRecords,
+      successCount,
+      failedCount
+    };
+  }
 };
 
-export const createBackup = async (modules: string[]): Promise<boolean> => {
-  // Placeholder implementation
-  console.log('Creating backup for modules:', modules);
-  return true;
+export const backupService = {
+  createBackupLog,
+  getBackupLogs,
+  exportTableData,
+  importTableData,
+  createFullBackup,
+  restoreFromBackup
 };
 
-export const restoreBackup = async (backupId: string): Promise<boolean> => {
-  // Placeholder implementation
-  console.log('Restoring backup with ID:', backupId);
-  return true;
-};
+export default backupService;

@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTableViewOptions } from '@/components/ui/data-table-view-options';
 import { DataTable } from '@/components/ui/data-table';
-import { invoicesData } from '@/data/invoices';
 import { InvoiceColumn } from '@/components/finance/invoice/InvoiceColumn';
 import InvoiceFormDialog from '@/components/finance/invoice/InvoiceFormDialog';
 import { Invoice } from '@/types/notification';
@@ -29,8 +29,8 @@ const InvoicePage = () => {
     setOpenFormDialog(true);
   };
 
-  const refreshInvoices = () => {
-    fetchInvoices();
+  const refreshInvoices = async () => {
+    await fetchInvoices();
     setOpenFormDialog(false);
     setSelectedInvoice(null);
   };
