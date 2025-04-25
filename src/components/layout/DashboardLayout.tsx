@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,7 +12,11 @@ import TrainerSidebar from "./TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";
 
-const DashboardLayout = () => {
+interface DashboardLayoutProps {
+  children?: ReactNode;
+}
+
+const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, isLoading, logout } = useAuth();
   
   const [darkMode, setDarkMode] = useState(() => {
@@ -125,7 +129,7 @@ const DashboardLayout = () => {
           />
           
           <main className="p-4 relative bg-gray-50 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-64px)]">
-            <Outlet />
+            {children || <Outlet />}
           </main>
         </div>
       </div>
