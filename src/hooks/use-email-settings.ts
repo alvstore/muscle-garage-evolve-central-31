@@ -1,13 +1,13 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useBranch } from './use-branch';
 
 export interface EmailSettings {
-  id: string;
-  provider: string;
+  id?: string;
+  provider: 'sendgrid' | 'mailgun' | 'smtp';
   from_email: string;
+  is_active: boolean;
   sendgrid_api_key?: string;
   mailgun_api_key?: string;
   mailgun_domain?: string;
@@ -16,96 +16,104 @@ export interface EmailSettings {
   smtp_username?: string;
   smtp_password?: string;
   smtp_secure?: boolean;
-  is_active: boolean;
   branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
   notifications: {
     sendOnRegistration: boolean;
     sendOnInvoice: boolean;
     sendClassUpdates: boolean;
   };
-  created_at: string;
-  updated_at: string;
 }
 
-export const useEmailSettings = () => {
+export const useEmailSettings = (branchId?: string) => {
   const [settings, setSettings] = useState<EmailSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { currentBranch } = useBranch();
 
   const fetchSettings = useCallback(async () => {
-    if (!currentBranch?.id) return;
-    
-    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('email_settings')
-        .select('*')
-        .eq('branch_id', currentBranch.id)
-        .maybeSingle();
-
-      if (error) throw error;
+      setIsLoading(true);
+      let query = supabase.from('email_settings').select('*');
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      } else {
+        query = query.is('branch_id', null);
+      }
+      
+      const { data, error } = await query.maybeSingle();
+      
+      if (error) {
+        throw error;
+      }
       
       if (data) {
         setSettings(data as EmailSettings);
       } else {
-        setSettings(null);
+        // Create default settings if none exist
+        const defaultSettings: Omit<EmailSettings, 'id'> = {
+          provider: 'sendgrid',
+          from_email: '',
+          is_active: true,
+          notifications: {
+            sendOnRegistration: true,
+            sendOnInvoice: true,
+            sendClassUpdates: true
+          },
+          branch_id: branchId
+        };
+        
+        setSettings(defaultSettings as EmailSettings);
       }
-    } catch (error) {
-      console.error('Error fetching email settings:', error);
+    } catch (err: any) {
+      console.error('Error fetching email settings:', err);
       toast.error('Failed to fetch email settings');
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch?.id]);
+  }, [branchId]);
 
-  const saveSettings = async (updatedSettings: Partial<EmailSettings>): Promise<boolean> => {
-    if (!currentBranch?.id) {
-      toast.error('No branch selected');
-      return false;
-    }
-    
-    setIsLoading(true);
+  const saveSettings = async (updatedSettings: Partial<EmailSettings>) => {
     try {
-      if (settings?.id) {
+      setIsLoading(true);
+      
+      const currentSettings = settings || {} as EmailSettings;
+      const mergedSettings = {
+        ...currentSettings,
+        ...updatedSettings,
+        branch_id: branchId,
+        updated_at: new Date().toISOString()
+      };
+      
+      let result;
+      if (mergedSettings.id) {
         // Update existing settings
-        const { error } = await supabase
-          .from('email_settings')
-          .update({
-            ...updatedSettings,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', settings.id);
-
-        if (error) throw error;
-        
-        setSettings({
-          ...settings,
-          ...updatedSettings,
-          updated_at: new Date().toISOString()
-        });
-        
-        toast.success('Email settings updated successfully');
-      } else {
-        // Create new settings
         const { data, error } = await supabase
           .from('email_settings')
-          .insert([{
-            ...updatedSettings,
-            branch_id: currentBranch.id,
-            is_active: updatedSettings.is_active ?? true
-          }])
+          .update(mergedSettings)
+          .eq('id', mergedSettings.id)
           .select()
           .single();
-
-        if (error) throw error;
         
-        setSettings(data as EmailSettings);
-        toast.success('Email settings created successfully');
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new settings
+        const { data, error } = await supabase
+          .from('email_settings')
+          .insert(mergedSettings)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
       }
       
+      setSettings(result as EmailSettings);
+      toast.success('Email settings saved successfully');
       return true;
-    } catch (error) {
-      console.error('Error saving email settings:', error);
+    } catch (err: any) {
+      console.error('Error saving email settings:', err);
       toast.error('Failed to save email settings');
       return false;
     } finally {
@@ -113,39 +121,28 @@ export const useEmailSettings = () => {
     }
   };
 
-  const testEmailConnection = async (): Promise<boolean> => {
-    if (!settings) {
-      toast.error('No email settings configured');
-      return false;
-    }
-    
-    setIsLoading(true);
+  const testEmailConnection = async () => {
     try {
-      // We would typically call an edge function for this
-      // For now, just simulate success
+      setIsLoading(true);
+      
+      // Simulate testing connection
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success('Email connection test successful');
       return true;
-    } catch (error) {
-      console.error('Email test failed:', error);
-      toast.error('Email connection test failed');
+    } catch (err: any) {
+      console.error('Error testing email connection:', err);
+      toast.error('Failed to connect to email service');
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (currentBranch?.id) {
-      fetchSettings();
-    }
-  }, [currentBranch?.id, fetchSettings]);
-
-  return { 
-    settings, 
-    isLoading, 
-    fetchSettings, 
+  return {
+    settings: settings as EmailSettings,
+    isLoading,
+    fetchSettings,
     saveSettings,
     testEmailConnection
   };

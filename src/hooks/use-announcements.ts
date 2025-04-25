@@ -1,154 +1,163 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/supabaseClient';
-import { Announcement } from '@/types/notification';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
+import { useBranch } from './use-branch';
 import { toast } from 'sonner';
 
-interface UseAnnouncementsOptions {
-  onlyActive?: boolean;
-  targetRole?: string;
-  limit?: number;
-  branchId?: string;
-}
+export const useAnnouncements = () => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { currentBranch } = useBranch();
 
-export const useAnnouncements = (options: UseAnnouncementsOptions = {}) => {
-  const queryClient = useQueryClient();
-  const { onlyActive = true, targetRole, limit, branchId } = options;
-
-  const { data: announcements = [], isLoading, error } = useQuery({
-    queryKey: ['announcements', onlyActive, targetRole, limit, branchId],
-    queryFn: async () => {
-      let query = supabase
-        .from('announcements')
-        .select('*');
-
-      if (onlyActive) {
-        const now = new Date().toISOString();
-        query = query.or(`expires_at.gt.${now},expires_at.is.null`);
+  const fetchAnnouncements = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase.from('announcements').select('*');
+      
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
       }
-
-      if (targetRole) {
-        query = query.contains('target_roles', [targetRole]);
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
       }
-
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
+      
+      if (data) {
+        const formattedAnnouncements = data.map(announcement => 
+          adaptAnnouncementFromDB(announcement)
+        );
+        setAnnouncements(formattedAnnouncements);
       }
+    } catch (error: any) {
+      console.error('Error fetching announcements:', error);
+      toast.error('Failed to load announcements');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentBranch?.id]);
 
-      if (limit) {
-        query = query.limit(limit);
-      }
-
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      return (data || []).map((item: any): Announcement => ({
-        id: item.id,
-        title: item.title,
-        content: item.content,
-        authorId: item.author_id,
-        authorName: item.author_name,
-        createdAt: item.created_at,
-        expiresAt: item.expires_at,
-        priority: item.priority,
-        targetRoles: item.target_roles,
-        channels: item.channels,
-        branchId: item.branch_id,
-        sentCount: item.sent_count
-      }));
-    },
-  });
-
-  const createAnnouncement = useMutation({
-    mutationFn: async (announcement: Omit<Announcement, "id" | "createdAt">) => {
+  const createAnnouncement = async (announcementData: Omit<Announcement, 'id' | 'createdAt'>): Promise<Announcement | null> => {
+    try {
+      const timestamp = new Date().toISOString();
+      
+      const newAnnouncementData = {
+        title: announcementData.title,
+        content: announcementData.content,
+        priority: announcementData.priority,
+        author_id: announcementData.authorId || announcementData.author_id,
+        author_name: announcementData.authorName || announcementData.author_name,
+        target_roles: announcementData.targetRoles || announcementData.target_roles || [],
+        channels: announcementData.channels || [],
+        branch_id: announcementData.branchId || announcementData.branch_id || currentBranch?.id,
+        created_at: timestamp,
+        updated_at: timestamp,
+        expires_at: announcementData.expiresAt || announcementData.expires_at,
+        status: announcementData.status || 'active',
+      };
+      
       const { data, error } = await supabase
         .from('announcements')
-        .insert([{
-          title: announcement.title,
-          content: announcement.content,
-          priority: announcement.priority,
-          target_roles: announcement.targetRoles,
-          channels: announcement.channels,
-          expires_at: announcement.expiresAt,
-          author_id: announcement.authorId,
-          author_name: announcement.authorName,
-          branch_id: announcement.branchId, // Corrected to use branchId
-        }])
-        .select()
+        .insert(newAnnouncementData)
+        .select('*')
         .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newAnnouncement = adaptAnnouncementFromDB(data);
+      setAnnouncements(prev => [newAnnouncement, ...prev]);
       toast.success('Announcement created successfully');
-    },
-    onError: (error: any) => {
+      return newAnnouncement;
+    } catch (error: any) {
       console.error('Error creating announcement:', error);
-      toast.error(`Failed to create announcement: ${error.message}`);
-    },
-  });
+      toast.error('Failed to create announcement');
+      return null;
+    }
+  };
 
-  const updateAnnouncement = useMutation({
-    mutationFn: async (announcement: Announcement) => {
-      const { data, error } = await supabase
-        .from('announcements')
-        .update({
-          title: announcement.title,
-          content: announcement.content,
-          priority: announcement.priority,
-          target_roles: announcement.targetRoles,
-          channels: announcement.channels,
-          expires_at: announcement.expiresAt,
-          branch_id: announcement.branchId, // Corrected to use branchId
-        })
-        .eq('id', announcement.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      toast.success('Announcement updated successfully');
-    },
-    onError: (error: any) => {
-      console.error('Error updating announcement:', error);
-      toast.error(`Failed to update announcement: ${error.message}`);
-    },
-  });
-
-  const deleteAnnouncement = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteAnnouncement = async (id: string): Promise<boolean> => {
+    try {
       const { error } = await supabase
         .from('announcements')
         .delete()
         .eq('id', id);
-
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setAnnouncements(prev => prev.filter(announcement => announcement.id !== id));
       toast.success('Announcement deleted successfully');
-    },
-    onError: (error: any) => {
+      return true;
+    } catch (error: any) {
       console.error('Error deleting announcement:', error);
-      toast.error(`Failed to delete announcement: ${error.message}`);
-    },
-  });
+      toast.error('Failed to delete announcement');
+      return false;
+    }
+  };
+
+  const updateAnnouncement = async (id: string, updates: Partial<Announcement>): Promise<Announcement | null> => {
+    try {
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+        // Convert camelCase to snake_case where needed
+        target_roles: updates.targetRoles || updates.target_roles,
+        author_id: updates.authorId || updates.author_id,
+        author_name: updates.authorName || updates.author_name,
+        branch_id: updates.branchId || updates.branch_id,
+        expires_at: updates.expiresAt || updates.expires_at,
+      };
+      
+      // Remove camelCase fields before sending to Supabase
+      delete updateData.targetRoles;
+      delete updateData.authorId;
+      delete updateData.authorName;
+      delete updateData.branchId;
+      delete updateData.expiresAt;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
+      
+      const { data, error } = await supabase
+        .from('announcements')
+        .update(updateData)
+        .eq('id', id)
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const updatedAnnouncement = adaptAnnouncementFromDB(data);
+      setAnnouncements(prev => 
+        prev.map(announcement => 
+          announcement.id === id ? updatedAnnouncement : announcement
+        )
+      );
+      toast.success('Announcement updated successfully');
+      return updatedAnnouncement;
+    } catch (error: any) {
+      console.error('Error updating announcement:', error);
+      toast.error('Failed to update announcement');
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
 
   return {
     announcements,
-    loading: isLoading,
-    error,
+    isLoading,
+    fetchAnnouncements,
     createAnnouncement,
     updateAnnouncement,
-    deleteAnnouncement,
+    deleteAnnouncement
   };
 };

@@ -1,7 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -9,278 +9,219 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Plus, Pencil, Trash } from 'lucide-react';
-import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { supabase } from '@/services/supabaseClient';
+} from "@/components/ui/table"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import { useBranch } from '@/hooks/use-branch';
-
-interface ClassType {
-  id: string;
-  name: string;
-  description: string;
-  is_active: boolean;
-  branch_id: string;
-  created_at: string;
-  updated_at: string;
-}
+import { ClassType } from '@/types/classes';
+import { classTypesService } from '@/services/class-types-service';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  name: z.string().min(2, {
+    message: "Class type name must be at least 2 characters.",
+  }),
   description: z.string().optional(),
   is_active: z.boolean().default(true),
 });
 
 const ClassTypesPage = () => {
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingClassType, setEditingClassType] = useState<ClassType | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteClassTypeId, setDeleteClassTypeId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedClassTypeId, setSelectedClassTypeId] = useState<string | null>(null);
   const { currentBranch } = useBranch();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       is_active: true,
     },
   });
 
-  useEffect(() => {
-    loadClassTypes();
-  }, [currentBranch]);
-
-  useEffect(() => {
-    if (editingClassType) {
-      form.reset({
-        name: editingClassType.name,
-        description: editingClassType.description || '',
-        is_active: editingClassType.is_active,
-      });
-    }
-  }, [editingClassType, form]);
-
-  async function loadClassTypes() {
-    setLoading(true);
+  const fetchClassTypes = useCallback(async () => {
+    setIsLoading(true);
     try {
-      let query = supabase.from('class_types').select('*');
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setClassTypes(data || []);
+      // Use the service instead of direct Supabase calls
+      const classTypes = await classTypesService.fetchClassTypes();
+      setClassTypes(classTypes);
     } catch (error) {
-      console.error('Error loading class types:', error);
-      toast.error('Failed to load class types');
+      console.error("Error fetching class types:", error);
+      toast.error("Could not load class types");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  }, []);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const classTypeData = {
-        ...values,
-        branch_id: currentBranch?.id,
-        updated_at: new Date().toISOString(),
-      };
+  useEffect(() => {
+    fetchClassTypes();
+  }, [fetchClassTypes]);
 
-      if (editingClassType) {
-        const { error } = await supabase
-          .from('class_types')
-          .update(classTypeData)
-          .eq('id', editingClassType.id);
-
-        if (error) throw error;
-        toast.success('Class type updated successfully');
-      } else {
-        const { error } = await supabase
-          .from('class_types')
-          .insert([{
-            ...classTypeData,
-            created_at: new Date().toISOString(),
-          }]);
-
-        if (error) throw error;
-        toast.success('Class type created successfully');
-      }
-
-      form.reset();
-      setOpenDialog(false);
-      setEditingClassType(null);
-      loadClassTypes();
-    } catch (error) {
-      console.error('Error saving class type:', error);
-      toast.error('Failed to save class type');
-    }
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
   };
 
-  const handleEdit = (classType: ClassType) => {
-    setEditingClassType(classType);
-    setOpenDialog(true);
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedClassTypeId(null);
+    form.reset();
   };
 
-  const handleDelete = async () => {
-    if (!deleteClassTypeId) return;
-    
+  const handleCreateClassType = async (data: {
+    name: string;
+    description: string;
+    is_active: boolean;
+  }) => {
     try {
-      const { error } = await supabase
-        .from('class_types')
-        .delete()
-        .eq('id', deleteClassTypeId);
-        
-      if (error) throw error;
+      setIsCreating(true);
+      // Use the service instead of direct Supabase calls
+      const newClassType = await classTypesService.createClassType({
+        ...data,
+        branch_id: currentBranch?.id
+      });
       
-      toast.success('Class type deleted successfully');
-      loadClassTypes();
-      setDeleteDialogOpen(false);
-      setDeleteClassTypeId(null);
+      setClassTypes([...classTypes, newClassType]);
+      toast.success("Class type created successfully");
+      setIsDialogOpen(false);
+      form.reset();
     } catch (error) {
-      console.error('Error deleting class type:', error);
-      toast.error('Failed to delete class type');
+      console.error("Error creating class type:", error);
+      toast.error("Failed to create class type");
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const confirmDelete = (id: string) => {
-    setDeleteClassTypeId(id);
-    setDeleteDialogOpen(true);
+  const handleUpdateClassType = async (id: string, data: Partial<ClassType>) => {
+    try {
+      setIsUpdating(true);
+      // Use the service instead of direct Supabase calls
+      const updatedClassType = await classTypesService.updateClassType(id, data);
+      
+      setClassTypes(
+        classTypes.map((type) =>
+          type.id === id ? updatedClassType : type
+        )
+      );
+      toast.success("Class type updated successfully");
+      return true;
+    } catch (error) {
+      console.error("Error updating class type:", error);
+      toast.error("Failed to update class type");
+      return false;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteClassType = async (id: string) => {
+    try {
+      setIsDeleting(true);
+      // Use the service instead of direct Supabase calls
+      await classTypesService.deleteClassType(id);
+      
+      setClassTypes(classTypes.filter((type) => type.id !== id));
+      toast.success("Class type deleted successfully");
+    } catch (error) {
+      console.error("Error deleting class type:", error);
+      toast.error("Failed to delete class type");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
-    <Container>
+    <div className="container py-10">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Class Types</h1>
-        <Button onClick={() => {
-          form.reset({ name: '', description: '', is_active: true });
-          setEditingClassType(null);
-          setOpenDialog(true);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Class Type
-        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Class Types</h1>
+        <Button onClick={handleOpenDialog}>Add Class Type</Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Class Types</CardTitle>
+          <CardTitle>Available Class Types</CardTitle>
           <CardDescription>
-            Manage types of classes offered in your gym
+            Manage and view different types of classes offered.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : classTypes.length === 0 ? (
-            <div className="text-center py-10">
-              <p>No class types found</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => {
-                  form.reset({ name: '', description: '', is_active: true });
-                  setEditingClassType(null);
-                  setOpenDialog(true);
-                }}
-              >
-                Create your first class type
-              </Button>
-            </div>
-          ) : (
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableCell colSpan={4} className="text-center">Loading class types...</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {classTypes.map((classType) => (
+                ) : classTypes.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">No class types found.</TableCell>
+                  </TableRow>
+                ) : (
+                  classTypes.map((classType) => (
                     <TableRow key={classType.id}>
                       <TableCell className="font-medium">{classType.name}</TableCell>
-                      <TableCell>
-                        {classType.description || "No description"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={classType.is_active ? "success" : "destructive"}>
-                          {classType.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{classType.description}</TableCell>
+                      <TableCell>{classType.is_active ? "Active" : "Inactive"}</TableCell>
                       <TableCell className="text-right">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(classType)}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedClassTypeId(classType.id);
+                            form.setValue("name", classType.name);
+                            form.setValue("description", classType.description || "");
+                            form.setValue("is_active", classType.is_active);
+                            setIsDialogOpen(true);
+                          }}
                         >
-                          <Pencil className="h-4 w-4" />
+                          Edit
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => confirmDelete(classType.id)}
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClassType(classType.id)}
+                          disabled={isDeleting}
                         >
-                          <Trash className="h-4 w-4" />
+                          {isDeleting ? "Deleting..." : "Delete"}
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent>
+      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle>
-              {editingClassType ? 'Edit Class Type' : 'Create Class Type'}
-            </DialogTitle>
+            <DialogTitle>{selectedClassTypeId ? "Edit Class Type" : "Create Class Type"}</DialogTitle>
             <DialogDescription>
-              {editingClassType 
-                ? 'Update the details of this class type' 
-                : 'Enter the details for the new class type'}
+              {selectedClassTypeId ? "Update class type details." : "Create a new class type."}
             </DialogDescription>
           </DialogHeader>
-          
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(selectedClassTypeId ? (data) => handleUpdateClassType(selectedClassTypeId, data) : handleCreateClassType)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -294,7 +235,6 @@ const ClassTypesPage = () => {
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={form.control}
                 name="description"
@@ -302,67 +242,45 @@ const ClassTypesPage = () => {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe this class type" 
-                        {...field} 
-                        value={field.value || ''}
-                      />
+                      <Input placeholder="Class Type Description" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Active</FormLabel>
+                      <FormDescription>
+                        Set class type as active or inactive
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    setOpenDialog(false);
-                    setEditingClassType(null);
-                  }}
-                >
+                <Button type="button" variant="outline" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingClassType ? 'Update' : 'Create'}
+                <Button type="submit" disabled={isCreating || isUpdating}>
+                  {isCreating ? "Creating..." : isUpdating ? "Updating..." : "Save changes"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this class type? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteDialogOpen(false);
-                setDeleteClassTypeId(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Container>
+    </div>
   );
 };
 

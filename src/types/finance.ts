@@ -1,7 +1,6 @@
-
 export type TransactionType = 'income' | 'expense';
 
-export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'online' | 'card' | 'other';
+export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'online' | 'card' | 'razorpay' | 'other';
 
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | null;
 
@@ -29,7 +28,6 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
-  // Adding unitPrice as an alias for price to maintain compatibility
   unitPrice?: number; 
 }
 
@@ -63,7 +61,6 @@ export interface Invoice {
   updatedAt?: string;
 }
 
-// Adapter functions to help with mapping between API and UI formats
 export function adaptInvoiceFromDB(dbInvoice: any): Invoice {
   const invoice: Invoice = {
     id: dbInvoice.id,

@@ -43,8 +43,9 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ initialValues, onSubmit, on
     onSubmit({
       ...data,
       // Convert to Feedback type
-      memberId: initialValues?.memberId || '',
+      memberId: initialValues?.memberId || initialValues?.member_id || '',
       createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     });
   };
 

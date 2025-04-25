@@ -1,4 +1,3 @@
-
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
 
 export type ReminderTriggerType = 
@@ -38,9 +37,14 @@ export interface Feedback {
   memberId?: string;
   memberName?: string;
   branchId?: string;
-  createdAt: string;
+  createdAt?: string;
   relatedId?: string;
   anonymous: boolean;
+  member_id?: string;
+  member_name?: string;
+  branch_id?: string;
+  created_at?: string;
+  related_id?: string;
 }
 
 export interface Announcement {
@@ -57,6 +61,14 @@ export interface Announcement {
   channels: string[];
   branchId?: string;
   status?: 'active' | 'draft' | 'expired';
+  sentCount?: number;
+  author_id?: string;
+  author_name?: string;
+  created_at?: string;
+  updated_at?: string;
+  expires_at?: string;
+  target_roles?: string[];
+  branch_id?: string;
 }
 
 export interface MotivationalMessage {
@@ -84,4 +96,51 @@ export interface BackupLogEntry {
   failed_count?: number;
   created_at: string;
   updated_at: string;
+}
+
+export function adaptFeedbackFromDB(dbFeedback: any): Feedback {
+  return {
+    id: dbFeedback.id,
+    title: dbFeedback.title,
+    type: dbFeedback.type as FeedbackType,
+    rating: dbFeedback.rating,
+    comments: dbFeedback.comments,
+    memberId: dbFeedback.member_id,
+    memberName: dbFeedback.member_name,
+    branchId: dbFeedback.branch_id,
+    createdAt: dbFeedback.created_at,
+    relatedId: dbFeedback.related_id,
+    anonymous: dbFeedback.anonymous || false,
+    member_id: dbFeedback.member_id,
+    member_name: dbFeedback.member_name,
+    branch_id: dbFeedback.branch_id,
+    created_at: dbFeedback.created_at,
+    related_id: dbFeedback.related_id
+  };
+}
+
+export function adaptAnnouncementFromDB(dbAnnouncement: any): Announcement {
+  return {
+    id: dbAnnouncement.id,
+    title: dbAnnouncement.title,
+    content: dbAnnouncement.content,
+    priority: dbAnnouncement.priority,
+    authorId: dbAnnouncement.author_id,
+    authorName: dbAnnouncement.author_name,
+    createdAt: dbAnnouncement.created_at,
+    updatedAt: dbAnnouncement.updated_at,
+    expiresAt: dbAnnouncement.expires_at,
+    targetRoles: dbAnnouncement.target_roles || [],
+    channels: dbAnnouncement.channels || [],
+    branchId: dbAnnouncement.branch_id,
+    status: dbAnnouncement.status,
+    sentCount: dbAnnouncement.sent_count,
+    author_id: dbAnnouncement.author_id,
+    author_name: dbAnnouncement.author_name,
+    created_at: dbAnnouncement.created_at,
+    updated_at: dbAnnouncement.updated_at,
+    expires_at: dbAnnouncement.expires_at,
+    target_roles: dbAnnouncement.target_roles || [],
+    branch_id: dbAnnouncement.branch_id
+  };
 }

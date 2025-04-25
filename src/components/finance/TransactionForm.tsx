@@ -1,239 +1,247 @@
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { TransactionType, PaymentMethod, RecurringPeriod } from '@/types/finance';
 
-import { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
-import { 
-  FinancialTransaction, 
-  TransactionType,
-  PaymentMethod,
-  RecurringPeriod
-} from "@/types/finance";
-import { useTransactions } from "@/hooks/use-transactions";
-import { useCategories } from "@/hooks/use-categories";
-import { useBranch } from "@/hooks/use-branch";
-import { useAuth } from "@/hooks/use-auth";
+const formSchema = z.object({
+  type: z.enum(['income', 'expense']),
+  amount: z.number({
+    required_error: "Amount is required.",
+    invalid_type_error: "Amount must be a number.",
+  }).min(0.01, { message: "Amount must be greater than 0." }),
+  description: z.string().min(2, {
+    message: "Description must be at least 2 characters.",
+  }),
+  transaction_date: z.date({
+    required_error: "A date is required.",
+  }),
+  payment_method: z.enum(['cash', 'credit_card', 'debit_card', 'bank_transfer', 'check', 'online', 'card', 'other']).optional(),
+  category_id: z.string().optional(),
+  recurring: z.boolean().default(false),
+  recurring_period: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  defaultType?: TransactionType;
-  initialData?: FinancialTransaction;
+  onSubmit: (values: FormValues) => void;
+  onCancel: () => void;
 }
 
-const TransactionForm = ({ 
-  isOpen, 
-  onClose, 
-  defaultType = 'income', 
-  initialData 
-}: TransactionFormProps) => {
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
-  const { createTransaction } = useTransactions();
-  const incomeCategories = useCategories('income');
-  const expenseCategories = useCategories('expense');
-  
-  const [formData, setFormData] = useState<Omit<FinancialTransaction, 'id'>>({
-    type: initialData?.type || defaultType,
-    amount: initialData?.amount || 0,
-    description: initialData?.description || '',
-    transaction_date: initialData?.transaction_date || new Date().toISOString(),
-    payment_method: initialData?.payment_method || 'cash',
-    recorded_by: user?.id,
-    branch_id: currentBranch?.id,
-    category_id: initialData?.category_id || undefined,
-    reference_id: initialData?.reference_id || null,
-    recurring: initialData?.recurring || false,
-    recurring_period: initialData?.recurring_period || null,
-    transaction_id: initialData?.transaction_id || null,
+const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel }) => {
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurring_period, setRecurring_period] = useState<RecurringPeriod>(null);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      type: 'income',
+      amount: 0,
+      description: '',
+      transaction_date: new Date(),
+      recurring: false,
+    },
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleSubmit = (values: FormValues) => {
+    onSubmit(values);
   };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await createTransaction(formData);
-      onClose();
-    } catch (error) {
-      console.error("Error submitting transaction:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const categories = formData.type === 'income' 
-    ? incomeCategories.categories 
-    : expenseCategories.categories;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>
-            {initialData ? 'Edit' : 'Add'} {formData.type === 'income' ? 'Income' : 'Expense'}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Transaction Type</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => handleChange('type', value)}
-              >
-                <SelectTrigger id="type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="income">Income</SelectItem>
                   <SelectItem value="expense">Expense</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                value={formData.amount}
-                onChange={(e) => handleChange('amount', Number(e.target.value))}
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Transaction details"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="transaction_date">Date</Label>
-              <DatePicker
-                date={formData.transaction_date ? new Date(formData.transaction_date) : undefined}
-                onSelect={(date) => date && handleChange('transaction_date', date.toISOString())}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="payment_method">Payment Method</Label>
-              <Select
-                value={formData.payment_method || 'cash'}
-                onValueChange={(value) => handleChange('payment_method', value)}
-              >
-                <SelectTrigger id="payment_method">
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="Amount" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="transaction_date"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Transaction Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="payment_method"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment Method</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a payment method" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="credit_card">Credit Card</SelectItem>
+                  <SelectItem value="debit_card">Debit Card</SelectItem>
                   <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="online">Online Payment</SelectItem>
+                  <SelectItem value="check">Check</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="category_id">Category</Label>
-            <Select
-              value={formData.category_id || ''}
-              onValueChange={(value) => handleChange('category_id', value)}
-            >
-              <SelectTrigger id="category_id">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">No Category</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="recurring"
-                checked={formData.recurring}
-                onChange={(e) => handleChange('recurring', e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="recurring">Recurring Transaction</Label>
-            </div>
-            
-            {formData.recurring && (
-              <div className="space-y-2">
-                <Label htmlFor="recurring_period">Frequency</Label>
-                <Select
-                  value={formData.recurring_period || ''}
-                  onValueChange={(value) => handleChange('recurring_period', value === 'none' ? null : value)}
-                >
-                  <SelectTrigger id="recurring_period">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="recurring"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Recurring</FormLabel>
               </div>
-            )}
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    setIsRecurring(checked);
+                  }}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="recurring_period"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Recurring Period</FormLabel>
+              <Select
+                disabled={!isRecurring}
+                value={recurring_period || null}
+                onValueChange={(value) => {
+                  // Convert "none" to null
+                  const period = value === "none" ? null : value;
+                  setRecurring_period(period as RecurringPeriod);
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a period" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button 
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button type="submit">Submit</Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 

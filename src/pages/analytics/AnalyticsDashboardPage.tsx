@@ -1,341 +1,235 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useDashboard } from '@/hooks/use-dashboard';
+import { Container } from '@/components/ui/container';
+import { Skeleton } from '@/components/ui/skeleton';
 
-import React from "react";
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
-import { Navigate, useNavigate } from "react-router-dom";
-import { BarChart, Calendar, Users, FileText, Activity, Dumbbell, TrendingUp } from "lucide-react";
-import { useSupabaseData } from '@/hooks/use-supabase-data';
+interface ChartData {
+  name: string;
+  total: number;
+  members: number;
+}
+
+interface RevenueData {
+  name: string;
+  total: number;
+  expenses: number;
+  profit: number;
+}
+
+interface GrowthData {
+  name: string;
+  growth: number;
+}
 
 const AnalyticsDashboardPage = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  const { data: members } = useSupabaseData('members', {
-    columns: '*',
-    limit: 10
-  });
-  
-  const { data: trainers } = useSupabaseData('profiles', {
-    columns: '*',
-    filters: { role: 'trainer' },
-    limit: 10
-  });
-  
-  const { data: classes } = useSupabaseData('class_schedules', {
-    columns: '*',
-    limit: 10
-  });
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<RevenueData[]>([]);
+  const [membershipGrowthData, setMembershipGrowthData] = useState<GrowthData[]>([]);
+  const { data, isLoading } = useDashboard();
 
-  // If the user is a member, they shouldn't access this page
-  if (user?.role === "member") {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  const memberCount = members?.length || 0;
-  const trainerCount = trainers?.length || 0;
-  const classCount = classes?.length || 0;
+  useEffect(() => {
+    // Convert chart data to the new format with 3 parameters
+    setChartData([
+      { name: 'Jan', total: 1200, members: 32 },
+      { name: 'Feb', total: 1500, members: 40 },
+      { name: 'Mar', total: 1800, members: 45 },
+      { name: 'Apr', total: 2000, members: 55 },
+      { name: 'May', total: 2400, members: 70 },
+      { name: 'Jun', total: 2800, members: 85 },
+      { name: 'Jul', total: 3200, members: 90 },
+    ]);
+
+    setMonthlyRevenueData([
+      { name: 'Jan', total: 15000, expenses: 5000, profit: 10000 },
+      { name: 'Feb', total: 18000, expenses: 5500, profit: 12500 },
+      { name: 'Mar', total: 21000, expenses: 6000, profit: 15000 },
+      { name: 'Apr', total: 24000, expenses: 6500, profit: 17500 },
+      { name: 'May', total: 28000, expenses: 7000, profit: 21000 },
+      { name: 'Jun', total: 32000, expenses: 7500, profit: 24500 },
+      { name: 'Jul', total: 36000, expenses: 8000, profit: 28000 },
+    ]);
+
+    setMembershipGrowthData([
+      { name: 'Jan', growth: 10 },
+      { name: 'Feb', growth: 15 },
+      { name: 'Mar', growth: 20 },
+      { name: 'Apr', growth: 25 },
+      { name: 'May', growth: 30 },
+      { name: 'Jun', growth: 35 },
+      { name: 'Jul', growth: 40 },
+    ]);
+  }, []);
+
+  // Calculate statistics
+  const totalRevenue = monthlyRevenueData.reduce((sum, month) => sum + month.total, 0);
+  const averageRevenue = totalRevenue / monthlyRevenueData.length;
+  const totalGrowth = membershipGrowthData.reduce((sum, month) => sum + month.growth, 0);
+  const averageGrowth = totalGrowth / membershipGrowthData.length;
+
+  // Type-safe access to data arrays
+  const activeMembers = Array.isArray(data.members) ? data.members.length : 0;
+  const activeTrainers = Array.isArray(data.trainers) ? data.trainers.length : 0;
+  const activeClasses = Array.isArray(data.classes) ? data.classes.length : 0;
 
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+        <p className="text-muted-foreground">
+          Comprehensive insights into your gym's performance
+        </p>
+
+        <div className="grid gap-4 mt-8 md:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Users className="h-4 w-4 mr-2 text-blue-500" />
-                Total Members
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Total Revenue</CardTitle>
+              <CardDescription>Over the past 7 months</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{memberCount}</div>
-              <p className="text-xs text-muted-foreground">Active members in the system</p>
+              {isLoading ? (
+                <Skeleton className="h-4 w-[100px]" />
+              ) : (
+                <div className="text-2xl font-bold">${totalRevenue}</div>
+              )}
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Dumbbell className="h-4 w-4 mr-2 text-purple-500" />
-                Trainers
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Average Revenue</CardTitle>
+              <CardDescription>Per month</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{trainerCount}</div>
-              <p className="text-xs text-muted-foreground">Active trainers</p>
+              {isLoading ? (
+                <Skeleton className="h-4 w-[100px]" />
+              ) : (
+                <div className="text-2xl font-bold">${averageRevenue.toFixed(2)}</div>
+              )}
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-indigo-500" />
-                Active Classes
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Active Members</CardTitle>
+              <CardDescription>Currently subscribed</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{classCount}</div>
-              <p className="text-xs text-muted-foreground">Scheduled classes</p>
+              {isLoading ? (
+                <Skeleton className="h-4 w-[100px]" />
+              ) : (
+                <div className="text-2xl font-bold">{activeMembers}</div>
+              )}
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <FileText className="h-4 w-4 mr-2 text-green-500" />
-                Pending Invoices
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Membership Growth</CardTitle>
+              <CardDescription>Average monthly growth</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Unpaid invoices</p>
+              {isLoading ? (
+                <Skeleton className="h-4 w-[100px]" />
+              ) : (
+                <div className="text-2xl font-bold">{averageGrowth.toFixed(2)}%</div>
+              )}
             </CardContent>
           </Card>
         </div>
-        
-        <Tabs defaultValue="users" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="classes">Classes & Programs</TabsTrigger>
-            <TabsTrigger value="finances">Finances</TabsTrigger>
-            <TabsTrigger value="reports">Analytics</TabsTrigger>
-            <TabsTrigger value="settings">System Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="users" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>User Management</CardTitle>
-                  <Button 
-                    onClick={() => navigate("/members/new")}
-                    className="flex items-center gap-2"
-                  >
-                    <Users className="h-4 w-4" />
-                    Add New User
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/members")}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Members
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/trainers")}
-                    >
-                      <Dumbbell className="h-4 w-4 mr-2" />
-                      Manage Trainers
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/settings/roles")}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Roles & Permissions
-                    </Button>
+
+        <div className="grid gap-4 mt-8 md:grid-cols-1 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue and Members</CardTitle>
+              <CardDescription>Monthly revenue and new members</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="total" stroke="#8884d8" fill="#8884d8" name="Revenue" />
+                  <Area type="monotone" dataKey="members" stroke="#82ca9d" fill="#82ca9d" name="Members" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Revenue</CardTitle>
+              <CardDescription>Revenue, expenses, and profit over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={monthlyRevenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="total" stroke="#8884d8" fill="#8884d8" name="Revenue" />
+                  <Area type="monotone" dataKey="expenses" stroke="#ffc658" fill="#ffc658" name="Expenses" />
+                  <Area type="monotone" dataKey="profit" stroke="#82ca9d" fill="#82ca9d" name="Profit" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 mt-8 md:grid-cols-1 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Membership Growth</CardTitle>
+              <CardDescription>New members added each month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={membershipGrowthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="growth" stroke="#82ca9d" fill="#82ca9d" name="Growth" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Gym Statistics</CardTitle>
+              <CardDescription>Key metrics about your gym</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span>Active Members:</span>
+                    <span className="font-bold">{activeMembers}</span>
                   </div>
-                  
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/attendance")}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Attendance Logs
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/fitness-plans")}
-                    >
-                      <Activity className="h-4 w-4 mr-2" />
-                      Fitness Data
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <span>Active Trainers:</span>
+                    <span className="font-bold">{activeTrainers}</span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="classes" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Classes & Programs</CardTitle>
-                  <Button 
-                    onClick={() => navigate("/classes/new")}
-                    className="flex items-center gap-2"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Create New Class
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/classes")}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Manage Classes
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/memberships")}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Membership Plans
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <span>Active Classes:</span>
+                    <span className="font-bold">{activeClasses}</span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="finances" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Financial Management</CardTitle>
-                  <Button 
-                    onClick={() => navigate("/finance/invoices/new")}
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Create Invoice
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/finance/invoices")}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Invoices
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/finance/transactions")}
-                    >
-                      <Activity className="h-4 w-4 mr-2" />
-                      Transactions
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/finance/dashboard")}
-                    >
-                      <BarChart className="h-4 w-4 mr-2" />
-                      Finance Dashboard
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="reports" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics & Reports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/reports")}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Generate Reports
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/reports?type=revenue")}
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Revenue Reports
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/reports?type=membership")}
-                    >
-                      <BarChart className="h-4 w-4 mr-2" />
-                      Membership Analysis
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/settings/integrations")}
-                    >
-                      <Activity className="h-4 w-4 mr-2" />
-                      Integrations & APIs
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/settings/email")}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Email Configuration
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => navigate("/settings")}
-                    >
-                      <Activity className="h-4 w-4 mr-2" />
-                      General Settings
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Container>
   );

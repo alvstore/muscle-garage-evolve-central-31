@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 
-// Base schema with common fields
 const baseEmailSchema = z.object({
   provider: z.enum(["sendgrid", "mailgun", "smtp"]),
   from_email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,7 +25,6 @@ const baseEmailSchema = z.object({
   }),
 });
 
-// Provider-specific schemas
 const sendgridSchema = baseEmailSchema.extend({
   provider: z.literal("sendgrid"),
   sendgrid_api_key: z.string().min(1, { message: "API Key is required" }),
@@ -47,7 +45,6 @@ const smtpSchema = baseEmailSchema.extend({
   smtp_secure: z.boolean().default(true),
 });
 
-// Combined schema with discriminated union
 const emailSchema = z.discriminatedUnion("provider", [
   sendgridSchema,
   mailgunSchema,
@@ -57,7 +54,7 @@ const emailSchema = z.discriminatedUnion("provider", [
 type EmailFormValues = z.infer<typeof emailSchema>;
 
 const EmailSettings = ({ branchId }: { branchId?: string }) => {
-  const { settings, isLoading, fetchSettings, saveSettings, testEmailSettings } = useEmailSettings(branchId);
+  const { settings, isLoading, fetchSettings, saveSettings, testEmailConnection } = useEmailSettings(branchId);
   const [showSecrets, setShowSecrets] = React.useState(false);
   const [testEmailAddress, setTestEmailAddress] = React.useState("");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
@@ -94,7 +91,7 @@ const EmailSettings = ({ branchId }: { branchId?: string }) => {
 
     setIsSendingTest(true);
     const formValues = form.getValues();
-    const success = await testEmailSettings(formValues, testEmailAddress);
+    const success = await testEmailConnection();
     
     if (success) {
       await saveSettings(formValues);

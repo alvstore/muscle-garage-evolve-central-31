@@ -1,97 +1,111 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ReminderRule } from '@/types/notification';
 import { toast } from 'sonner';
+import { ReminderRule, ReminderTriggerType, NotificationChannel } from '@/types/notification';
 
 export const useReminderRules = () => {
-  const [rules, setRules] = useState<ReminderRule[]>([]);
+  const [reminderRules, setReminderRules] = useState<ReminderRule[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const fetchRules = useCallback(async () => {
+  const fetchReminderRules = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('reminder_rules')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedRules: ReminderRule[] = data.map(rule => ({
-        id: rule.id,
-        title: rule.title,
-        description: rule.description || '',
-        triggerType: rule.trigger_type as ReminderTriggerType,
-        triggerValue: rule.trigger_value,
-        notificationChannel: rule.notification_channel as NotificationChannel,
-        conditions: rule.conditions as Record<string, any>,
-        isActive: rule.is_active,
-        createdAt: rule.created_at,
-        updatedAt: rule.updated_at,
-        message: rule.message || '',
-        sendVia: rule.send_via || [],
-        targetRoles: rule.target_roles || []
-      }));
-
-      setRules(formattedRules);
-    } catch (error) {
-      console.error('Error fetching reminder rules:', error);
+      const { data, error } = await supabase.from('reminder_rules').select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const formattedRules: ReminderRule[] = data.map(rule => ({
+          id: rule.id,
+          title: rule.title,
+          description: rule.description || '',
+          triggerType: rule.trigger_type as ReminderTriggerType,
+          triggerValue: rule.trigger_value,
+          notificationChannel: rule.notification_channel as NotificationChannel,
+          conditions: rule.conditions,
+          isActive: rule.is_active,
+          createdAt: rule.created_at,
+          updatedAt: rule.updated_at,
+          message: rule.message,
+          sendVia: rule.send_via || [],
+          targetRoles: rule.target_roles || []
+        }));
+        
+        setReminderRules(formattedRules);
+      }
+    } catch (err: any) {
+      console.error('Error fetching reminder rules:', err);
+      setError(err);
       toast.error('Failed to fetch reminder rules');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const createRule = async (rule: Omit<ReminderRule, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createReminderRule = async (rule: Omit<ReminderRule, 'id' | 'createdAt' | 'updatedAt'>) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('reminder_rules')
-        .insert({
-          title: rule.title,
-          description: rule.description,
-          trigger_type: rule.triggerType,
-          trigger_value: rule.triggerValue,
-          notification_channel: rule.notificationChannel,
-          conditions: rule.conditions,
-          is_active: rule.isActive,
-          message: rule.message,
-          send_via: rule.sendVia,
-          target_roles: rule.targetRoles
-        })
-        .select();
-
-      if (error) throw error;
-      
-      const newRule: ReminderRule = {
-        id: data[0].id,
-        title: data[0].title,
-        description: data[0].description || '',
-        triggerType: data[0].trigger_type,
-        triggerValue: data[0].trigger_value,
-        notificationChannel: data[0].notification_channel,
-        conditions: data[0].conditions,
-        isActive: data[0].is_active,
-        createdAt: data[0].created_at,
-        updatedAt: data[0].updated_at,
-        message: data[0].message || '',
-        sendVia: data[0].send_via || [],
-        targetRoles: data[0].target_roles || []
+      const dbRule = {
+        title: rule.title,
+        description: rule.description,
+        trigger_type: rule.triggerType,
+        trigger_value: rule.triggerValue,
+        notification_channel: rule.notificationChannel,
+        conditions: rule.conditions,
+        is_active: rule.isActive,
+        message: rule.message,
+        send_via: rule.sendVia,
+        target_roles: rule.targetRoles
       };
       
-      setRules([newRule, ...rules]);
+      const { data, error } = await supabase
+        .from('reminder_rules')
+        .insert(dbRule)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newRule: ReminderRule = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        triggerType: data.trigger_type as ReminderTriggerType,
+        triggerValue: data.trigger_value,
+        notificationChannel: data.notification_channel as NotificationChannel,
+        conditions: data.conditions,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        message: data.message,
+        sendVia: data.send_via || [],
+        targetRoles: data.target_roles || []
+      };
+      
+      setReminderRules(prevRules => [newRule, ...prevRules]);
       toast.success('Reminder rule created successfully');
-      return true;
-    } catch (error) {
-      console.error('Error creating reminder rule:', error);
+      
+      return newRule;
+    } catch (err: any) {
+      console.error('Error creating reminder rule:', err);
       toast.error('Failed to create reminder rule');
-      return false;
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateRule = async (id: string, updates: Partial<Omit<ReminderRule, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const updateReminderRule = async (id: string, updates: Partial<ReminderRule>) => {
+    setIsLoading(true);
     try {
-      const dbUpdates: any = {};
+      const dbUpdates: Record<string, any> = {};
       
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
@@ -103,57 +117,90 @@ export const useReminderRules = () => {
       if (updates.message !== undefined) dbUpdates.message = updates.message;
       if (updates.sendVia !== undefined) dbUpdates.send_via = updates.sendVia;
       if (updates.targetRoles !== undefined) dbUpdates.target_roles = updates.targetRoles;
-
-      const { error } = await supabase
+      
+      const { data, error } = await supabase
         .from('reminder_rules')
         .update(dbUpdates)
-        .eq('id', id);
-
-      if (error) throw error;
+        .eq('id', id)
+        .select()
+        .single();
       
-      setRules(rules.map(rule => 
-        rule.id === id ? { ...rule, ...updates } : rule
-      ));
+      if (error) {
+        throw error;
+      }
       
+      const updatedRule: ReminderRule = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        triggerType: data.trigger_type as ReminderTriggerType,
+        triggerValue: data.trigger_value,
+        notificationChannel: data.notification_channel as NotificationChannel,
+        conditions: data.conditions,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        message: data.message,
+        sendVia: data.send_via || [],
+        targetRoles: data.target_roles || []
+      };
+      
+      setReminderRules(prevRules => 
+        prevRules.map(rule => rule.id === id ? updatedRule : rule)
+      );
       toast.success('Reminder rule updated successfully');
-      return true;
-    } catch (error) {
-      console.error('Error updating reminder rule:', error);
+      
+      return updatedRule;
+    } catch (err: any) {
+      console.error('Error updating reminder rule:', err);
       toast.error('Failed to update reminder rule');
-      return false;
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const deleteRule = async (id: string) => {
+  const deleteReminderRule = async (id: string) => {
+    setIsLoading(true);
     try {
       const { error } = await supabase
         .from('reminder_rules')
         .delete()
         .eq('id', id);
-
-      if (error) throw error;
       
-      setRules(rules.filter(rule => rule.id !== id));
+      if (error) {
+        throw error;
+      }
+      
+      setReminderRules(prevRules => 
+        prevRules.filter(rule => rule.id !== id)
+      );
       toast.success('Reminder rule deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting reminder rule:', error);
+    } catch (err: any) {
+      console.error('Error deleting reminder rule:', err);
       toast.error('Failed to delete reminder rule');
-      return false;
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const toggleRuleStatus = async (id: string, isActive: boolean) => {
-    return updateRule(id, { isActive });
+  const toggleReminderRuleStatus = async (id: string, isActive: boolean) => {
+    return updateReminderRule(id, { isActive });
   };
 
+  useEffect(() => {
+    fetchReminderRules();
+  }, [fetchReminderRules]);
+
   return {
-    rules,
+    reminderRules,
     isLoading,
-    fetchRules,
-    createRule,
-    updateRule,
-    deleteRule,
-    toggleRuleStatus
+    error,
+    fetchReminderRules,
+    createReminderRule,
+    updateReminderRule,
+    deleteReminderRule,
+    toggleReminderRuleStatus
   };
 };
