@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Invoice } from '@/types/finance';
+import { Invoice, InvoiceStatus } from '@/types/finance';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useBranch } from '@/hooks/use-branch';
@@ -20,13 +20,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
   const { currentBranch } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    member_id: invoice?.memberId || '',
-    member_name: invoice?.memberName || '',
+    member_id: invoice?.member_id || '',
+    member_name: invoice?.member_name || '',
     description: invoice?.description || '',
     amount: invoice?.amount || 0,
     status: invoice?.status || 'pending',
-    due_date: invoice?.dueDate || new Date().toISOString().split('T')[0],
-    payment_method: invoice?.paymentMethod || 'online',
+    due_date: invoice?.due_date || new Date().toISOString().split('T')[0],
+    payment_method: invoice?.payment_method || 'online',
     notes: invoice?.notes || '',
   });
 
@@ -134,7 +134,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select name="status" value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <Select 
+                name="status" 
+                value={formData.status} 
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    status: value as InvoiceStatus 
+                  }));
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -162,7 +171,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="payment_method">Payment Method</Label>
-              <Select name="payment_method" value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
+              <Select 
+                name="payment_method" 
+                value={formData.payment_method} 
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    payment_method: value 
+                  }));
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>

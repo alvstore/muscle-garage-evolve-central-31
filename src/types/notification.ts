@@ -1,41 +1,5 @@
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  userId: string;
-  read: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BackupLogEntry {
-  id: string;
-  action: string;
-  modules: string[];
-  success: boolean;
-  timestamp: string;
-  total_records: number;
-  success_count: number;
-  failed_count: number;
-  user_id: string;
-  user_name: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface MotivationalMessage {
-  id: string;
-  title: string;
-  content: string;
-  category: 'motivation' | 'fitness' | 'nutrition' | 'wellness';
-  tags?: string[];
-  author?: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// Define the base types and interfaces for notification related features
 
 export interface Announcement {
   id: string;
@@ -50,114 +14,147 @@ export interface Announcement {
   targetRoles: string[];
   channels: string[];
   authorId: string;
-  sentCount?: number;
-}
-
-export interface ReminderRule {
-  id: string;
-  name: string;
-  description?: string;
-  triggerType: string;
-  triggerValue: number;
-  active: boolean;
-  message: string;
-  targetType: string;
-  channels: string[];
-  targetRoles: string[];
-  sendVia: string[];
-  createdAt: string;
-  updatedAt: string;
-  notificationChannel?: string;
-  conditions?: Record<string, any>;
 }
 
 export interface Feedback {
   id: string;
+  member_id: string;
+  memberId?: string; // For compatibility
+  member_name: string;
+  memberName?: string; // For compatibility
+  type: string;
+  related_id: string;
+  rating: number;
+  comments: string;
+  anonymous: boolean;
+  title: string;
+  created_at: string;
+  createdAt?: string; // For compatibility
+  branch_id: string;
+  branchId?: string; // For compatibility
+}
+
+export interface ReminderRule {
+  id: string;
+  title: string;
+  name?: string; // For compatibility
+  description?: string;
+  triggerType: string;
+  triggerValue?: number;
+  notificationChannel?: string;
+  conditions?: Record<string, any>;
+  isActive?: boolean;
+  active?: boolean; // For compatibility
+  enabled?: boolean; // For compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  message?: string;
+  sendVia: string[];
+  targetRoles: string[];
+}
+
+export interface MotivationalMessage {
+  id: string;
   title: string;
   content: string;
-  rating: number;
+  category: 'motivation' | 'fitness' | 'nutrition' | 'wellness';
+  tags?: string[];
+  author?: string;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  frequency?: string; // Added for compatibility
+  targetGoal?: string; // Added for compatibility
+}
+
+// Adapter functions to convert database records to frontend types
+
+export function adaptAnnouncementFromDB(data: any): Announcement {
+  return {
+    id: data.id,
+    title: data.title,
+    content: data.content,
+    priority: data.priority || 'normal',
+    authorName: data.author_name || 'System',
+    createdAt: data.created_at,
+    expiresAt: data.expires_at,
+    channel: data.channel || '',
+    branchId: data.branch_id || '',
+    targetRoles: data.target_roles || [],
+    channels: data.channels || [],
+    authorId: data.author_id || '',
+  };
+}
+
+export function adaptFeedbackFromDB(data: any): Feedback {
+  return {
+    id: data.id,
+    member_id: data.member_id,
+    memberId: data.member_id,
+    member_name: data.member_name,
+    memberName: data.member_name,
+    type: data.type,
+    related_id: data.related_id,
+    rating: data.rating,
+    comments: data.comments,
+    anonymous: data.anonymous || false,
+    title: data.title,
+    created_at: data.created_at,
+    createdAt: data.created_at,
+    branch_id: data.branch_id || '',
+    branchId: data.branch_id || '',
+  };
+}
+
+export function adaptReminderRuleFromDB(data: any): ReminderRule {
+  return {
+    id: data.id,
+    title: data.title,
+    name: data.title, // For compatibility
+    description: data.description || '',
+    triggerType: data.trigger_type,
+    triggerValue: data.trigger_value,
+    notificationChannel: data.notification_channel,
+    conditions: data.conditions || {},
+    isActive: data.is_active,
+    active: data.is_active,
+    enabled: data.is_active,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    message: data.message || '',
+    sendVia: data.send_via || [],
+    targetRoles: data.target_roles || [],
+  };
+}
+
+export function adaptMotivationalMessageFromDB(data: any): MotivationalMessage {
+  return {
+    id: data.id,
+    title: data.title,
+    content: data.content,
+    category: data.category,
+    tags: data.tags || [],
+    author: data.author || 'Unknown',
+    active: data.active || false,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    frequency: data.category, // For compatibility
+    targetGoal: data.tags?.join(', ') || 'General', // For compatibility
+  };
+}
+
+// Types for notification related components
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'equipment';
+
+export interface NotificationType {
+  id: string;
+  title: string;
+  message: string;
   type: string;
-  memberName?: string;
-  memberId?: string;
-  anonymous: boolean;
-  branchId?: string;
   createdAt: string;
-  updatedAt: string;
-  comments?: string;
-  relatedId?: string;
+  isRead: boolean;
+  link?: string;
+  priority?: 'high' | 'normal' | 'low';
 }
 
-export type FeedbackType = 'general' | 'facility' | 'trainer' | 'class' | 'equipment';
-export type NotificationChannel = 'in-app' | 'email' | 'sms' | 'whatsapp';
-export type ReminderTriggerType = 'days_before_expiry' | 'days_since_last_visit' | 'on_birthday' | 'class_reminder';
-
-// Adapter functions to convert from DB format to frontend format
-export function adaptAnnouncementFromDB(announcement: any): Announcement {
-  return {
-    id: announcement.id,
-    title: announcement.title,
-    content: announcement.content,
-    priority: announcement.priority,
-    authorName: announcement.author_name,
-    createdAt: announcement.created_at,
-    expiresAt: announcement.expires_at,
-    channel: announcement.channel || '',
-    branchId: announcement.branch_id || '',
-    targetRoles: announcement.target_roles || [],
-    channels: announcement.channels || [],
-    authorId: announcement.author_id,
-    sentCount: announcement.sent_count
-  };
-}
-
-export function adaptMotivationalMessageFromDB(message: any): MotivationalMessage {
-  return {
-    id: message.id,
-    title: message.title,
-    content: message.content,
-    category: message.category,
-    tags: message.tags,
-    author: message.author,
-    active: message.active,
-    created_at: message.created_at,
-    updated_at: message.updated_at
-  };
-}
-
-export function adaptReminderRuleFromDB(rule: any): ReminderRule {
-  return {
-    id: rule.id,
-    name: rule.title || '',
-    description: rule.description,
-    triggerType: rule.trigger_type,
-    triggerValue: rule.trigger_value,
-    active: rule.is_active,
-    message: rule.message || '',
-    targetType: rule.target_type || '',
-    channels: rule.send_via || [],
-    createdAt: rule.created_at,
-    updatedAt: rule.updated_at,
-    targetRoles: rule.target_roles || [],
-    sendVia: rule.send_via || [],
-    notificationChannel: rule.notification_channel,
-    conditions: rule.conditions || {}
-  };
-}
-
-export function adaptFeedbackFromDB(feedback: any): Feedback {
-  return {
-    id: feedback.id,
-    title: feedback.title,
-    content: feedback.comments || feedback.content,
-    rating: feedback.rating,
-    type: feedback.type,
-    memberName: feedback.member_name,
-    memberId: feedback.member_id,
-    anonymous: feedback.anonymous || false,
-    branchId: feedback.branch_id,
-    createdAt: feedback.created_at,
-    updatedAt: feedback.updated_at,
-    comments: feedback.comments,
-    relatedId: feedback.related_id
-  };
-}
+export type MotivationalCategory = 'motivation' | 'fitness' | 'nutrition' | 'wellness';

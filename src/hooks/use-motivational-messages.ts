@@ -91,8 +91,8 @@ export const useMotivationalMessages = () => {
     }
   };
 
-  const toggleActive = async (id: string, currentStatus: boolean) => {
-    return await updateMessage(id, { active: !currentStatus });
+  const toggleActive = async (id: string, isActive: boolean) => {
+    return await updateMessage(id, { active: isActive });
   };
 
   useEffect(() => {

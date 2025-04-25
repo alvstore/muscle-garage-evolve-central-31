@@ -1,7 +1,7 @@
 
 import { Users, DollarSign, UserCheck, CalendarCheck2 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
-import { DashboardSummary } from "@/types/dashboard";
+import { DashboardSummary } from "@/hooks/use-dashboard";
 
 interface StaffStatsOverviewProps {
   isLoading: boolean;

@@ -17,6 +17,17 @@ export interface DashboardSummary {
     previous: number;
     percentChange: number;
   };
+  // Added properties that were missing but referenced in other files
+  totalTrainers?: number;
+  activeClasses?: number;
+  activeMembers?: number;
+  totalStaff?: number;
+  totalClasses?: number;
+  revenueToday?: number;
+  revenueThisMonth?: number;
+  unpaidInvoices?: number;
+  attendanceTrend?: any[];
+  expiringMemberships?: number;
 }
 
 export const useDashboard = () => {
@@ -32,7 +43,18 @@ export const useDashboard = () => {
       current: 0,
       previous: 0,
       percentChange: 0
-    }
+    },
+    // Initialize additional properties
+    totalTrainers: 0,
+    activeClasses: 0,
+    activeMembers: 0,
+    totalStaff: 0,
+    totalClasses: 0,
+    revenueToday: 0,
+    revenueThisMonth: 0,
+    unpaidInvoices: 0,
+    attendanceTrend: [],
+    expiringMemberships: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const { currentBranch } = useBranch();
@@ -100,6 +122,20 @@ export const useDashboard = () => {
       const previousRevenue = previousMonthRevenue?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
       const percentChange = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
       
+      // Fetch total trainers for analytics dashboard
+      const { count: totalTrainers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'trainer')
+        .eq('branch_id', currentBranch?.id || '');
+        
+      // Fetch active classes
+      const { count: activeClasses } = await supabase
+        .from('class_schedules')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'scheduled')
+        .eq('branch_id', currentBranch?.id || '');
+      
       setDashboardData({
         totalMembers: totalMembers || 0,
         todayCheckIns: todayCheckIns || 0,
@@ -112,7 +148,14 @@ export const useDashboard = () => {
           current: currentRevenue,
           previous: previousRevenue,
           percentChange
-        }
+        },
+        totalTrainers: totalTrainers || 0,
+        activeClasses: activeClasses || 0,
+        activeMembers: totalMembers || 0,
+        totalStaff: 0, // Default value
+        totalClasses: 0, // Default value
+        attendanceTrend: [], // Default value
+        expiringMemberships: upcomingRenewals || 0
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

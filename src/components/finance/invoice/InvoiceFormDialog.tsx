@@ -13,21 +13,26 @@ import InvoiceForm from './InvoiceForm';
 export interface InvoiceFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoice: Invoice | null;
+  invoice?: Invoice | null;
   onComplete?: () => void;
+  onSuccess?: () => void;
 }
 
-export const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
+const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
   open,
   onOpenChange,
-  invoice,
+  invoice = null,
   onComplete,
+  onSuccess,
 }) => {
   const isEditing = Boolean(invoice);
 
   const handleComplete = () => {
     if (onComplete) {
       onComplete();
+    }
+    if (onSuccess) {
+      onSuccess();
     }
     onOpenChange(false);
   };

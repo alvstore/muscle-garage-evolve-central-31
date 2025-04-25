@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import MotivationalMessageForm from "@/components/communication/MotivationalMessageForm";
@@ -16,17 +15,17 @@ export default function MotivationalPage() {
   const { 
     messages, 
     isLoading, 
-    createMessage, 
+    addMessage, 
     updateMessage, 
     deleteMessage, 
-    toggleMessageActive 
+    toggleActive 
   } = useMotivationalMessages();
   
   const handleFormSubmit = async (message: MotivationalMessage) => {
     if (editMessage) {
-      await updateMessage(message);
+      await updateMessage(message.id, message);
     } else {
-      await createMessage(message);
+      await addMessage(message);
     }
     
     setShowForm(false);
@@ -43,6 +42,10 @@ export default function MotivationalPage() {
     setEditMessage(null);
   };
 
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    await toggleActive(id, isActive);
+  };
+
   return (
     <Container>
       <div className="py-6">
@@ -56,9 +59,11 @@ export default function MotivationalPage() {
         
         {showForm ? (
           <MotivationalMessageForm 
-            initialMessage={editMessage}
-            onSubmit={handleFormSubmit}
-            onCancel={cancelForm}
+            message={editMessage}
+            onComplete={() => {
+              setShowForm(false);
+              setEditMessage(null);
+            }}
           />
         ) : (
           <MotivationalMessagesList 
@@ -66,7 +71,7 @@ export default function MotivationalPage() {
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={deleteMessage}
-            onToggleActive={toggleMessageActive}
+            onToggleActive={handleToggleActive}
           />
         )}
       </div>

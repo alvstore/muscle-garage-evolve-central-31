@@ -220,11 +220,11 @@ const AnalyticsDashboardPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Active Trainers:</span>
-                    <span className="font-bold">{activeTrainers}</span>
+                    <span className="font-bold">{activeTrainers || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Active Classes:</span>
-                    <span className="font-bold">{activeClasses}</span>
+                    <span className="font-bold">{activeClasses || 0}</span>
                   </div>
                 </>
               )}

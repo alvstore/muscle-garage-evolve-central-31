@@ -11,7 +11,7 @@ import StaffDashboardHeader from "@/components/dashboard/staff/StaffDashboardHea
 import StaffStatsOverview from "@/components/dashboard/staff/StaffStatsOverview";
 import { useBranch } from "@/hooks/use-branch";
 import { supabase } from "@/services/supabaseClient";
-import { DashboardSummary, getDashboardSummary } from "@/services/dashboardService";
+import { DashboardSummary } from "@/hooks/use-dashboard";
 
 const StaffDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,9 +25,19 @@ const StaffDashboard = () => {
     revenueToday: 0,
     revenueThisMonth: 0,
     unpaidInvoices: 0,
-    pendingPayments: 0,
+    pendingPayments: {
+      total: 0,
+      count: 0
+    },
+    todayCheckIns: 0,
+    upcomingRenewals: 0,
     attendanceTrend: [],
-    expiringMemberships: 0
+    expiringMemberships: 0,
+    revenue: {
+      current: 0,
+      previous: 0,
+      percentChange: 0
+    }
   });
   
   const [recentActivities, setRecentActivities] = useState([]);
@@ -48,7 +58,30 @@ const StaffDashboard = () => {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      const data = await getDashboardSummary(currentBranch?.id);
+      const data = {
+        totalMembers: 0,
+        activeMembers: 0,
+        totalTrainers: 0,
+        totalStaff: 0,
+        activeClasses: 0,
+        totalClasses: 0,
+        revenueToday: 0,
+        revenueThisMonth: 0,
+        unpaidInvoices: 0,
+        pendingPayments: {
+          total: 0,
+          count: 0
+        },
+        todayCheckIns: 0,
+        upcomingRenewals: 0,
+        attendanceTrend: [],
+        expiringMemberships: 0,
+        revenue: {
+          current: 0,
+          previous: 0,
+          percentChange: 0
+        }
+      };
       setDashboardData(data);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -60,7 +93,6 @@ const StaffDashboard = () => {
 
   const fetchRecentActivities = async () => {
     try {
-      // Fetch recent member check-ins
       const { data: checkIns } = await supabase
         .from('member_attendance')
         .select(`
@@ -71,7 +103,6 @@ const StaffDashboard = () => {
         .order('check_in', { ascending: false })
         .limit(5);
       
-      // Fetch recent payments
       const { data: payments } = await supabase
         .from('payments')
         .select(`
@@ -82,13 +113,12 @@ const StaffDashboard = () => {
         .order('payment_date', { ascending: false })
         .limit(5);
       
-      // Combine and format activities
       const activities = [
         ...(checkIns || []).map(item => ({
           id: item.id,
           type: 'check-in',
           date: item.check_in,
-          name: (item.members && typeof item.members === 'object' ? item.members.name : 'Unknown Member') as string,
+          name: (item.members && typeof item.members === 'object' ? item.members?.name || 'Unknown Member' : 'Unknown Member'),
           memberId: item.member_id,
           details: 'Checked in at the gym'
         })),
@@ -96,7 +126,7 @@ const StaffDashboard = () => {
           id: item.id,
           type: 'payment',
           date: item.payment_date,
-          name: (item.members && typeof item.members === 'object' ? item.members.name : 'Unknown Member') as string,
+          name: (item.members && typeof item.members === 'object' ? item.members?.name || 'Unknown Member' : 'Unknown Member'),
           memberId: item.member_id,
           amount: item.amount,
           method: item.payment_method,
@@ -104,7 +134,6 @@ const StaffDashboard = () => {
         }))
       ];
       
-      // Sort by date, newest first
       activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       setRecentActivities(activities.slice(0, 10));
@@ -154,7 +183,9 @@ const StaffDashboard = () => {
         content: item.content,
         authorName: item.author_name,
         createdAt: item.created_at,
-        priority: item.priority
+        priority: item.priority,
+        channel: item.channel,
+        branchId: item.branch_id
       })) : []);
     } catch (error) {
       console.error("Error fetching announcements:", error);
@@ -167,17 +198,15 @@ const StaffDashboard = () => {
       const currentDate = new Date();
       const currentMonth = currentDate.getMonth();
       
-      // Get revenue for the last 6 months
       const data = [];
       
       for (let i = 5; i >= 0; i--) {
-        const month = (currentMonth - i + 12) % 12; // Ensure we wrap around properly
+        const month = (currentMonth - i + 12) % 12;
         const year = currentDate.getFullYear() - (currentMonth < i ? 1 : 0);
         
         const startDate = new Date(year, month, 1);
         const endDate = new Date(year, month + 1, 0);
         
-        // Query for income
         const { data: income } = await supabase
           .from('transactions')
           .select('amount')
@@ -188,7 +217,6 @@ const StaffDashboard = () => {
           .gte('transaction_date', startDate.toISOString())
           .lte('transaction_date', endDate.toISOString());
           
-        // Query for expenses
         const { data: expenses } = await supabase
           .from('transactions')
           .select('amount')
@@ -240,14 +268,7 @@ const StaffDashboard = () => {
     <div className="space-y-6">
       <StaffDashboardHeader isLoading={isLoading} onRefresh={handleRefresh} />
       <StaffStatsOverview isLoading={isLoading} dashboardData={{
-        ...dashboardData,
-        todayCheckIns: 0,
-        upcomingRenewals: 0,
-        revenue: {
-          daily: 0,
-          weekly: 0,
-          monthly: 0
-        }
+        ...dashboardData
       }} />
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -255,7 +276,7 @@ const StaffDashboard = () => {
           {isLoading ? (
             <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
           ) : (
-            <AttendanceChart data={dashboardData.attendanceTrend} />
+            <AttendanceChart data={dashboardData.attendanceTrend || []} />
           )}
         </div>
         

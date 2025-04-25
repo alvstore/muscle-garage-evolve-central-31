@@ -66,12 +66,12 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
                 <div>
                   <h3 className="font-medium">{message.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {message.frequency} • {message.targetGoal}
+                    {message.category} • {message.tags?.join(', ') || 'No tags'}
                   </p>
                 </div>
                 <div className="flex space-x-1">
-                  <Badge variant={message.isActive ? "success" : "secondary"}>
-                    {message.isActive ? "Active" : "Inactive"}
+                  <Badge variant={message.active ? "success" : "secondary"}>
+                    {message.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               </div>
@@ -80,16 +80,16 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
               
               <div className="flex items-center justify-between text-sm pt-2 border-t mt-2">
                 <span className="text-muted-foreground">
-                  Created {message.createdAt && formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                  Created {message.created_at && formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                 </span>
                 <div className="flex space-x-2">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="h-8 w-8 p-0" 
-                    onClick={() => onToggleActive(message.id, !message.isActive)}
+                    onClick={() => onToggleActive(message.id, !message.active)}
                   >
-                    {message.isActive ? (
+                    {message.active ? (
                       <ToggleRight className="h-4 w-4" />
                     ) : (
                       <ToggleLeft className="h-4 w-4" />
