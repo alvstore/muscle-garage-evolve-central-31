@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { BranchAnalytics, ClassItem, DashboardSummary, MemberStatusData, Payment, RenewalItem } from "@/types/dashboard";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
@@ -12,6 +13,7 @@ export async function fetchDashboardSummary(branchId?: string): Promise<Dashboar
     // Start with default empty summary
     const summary: DashboardSummary = {
       totalMembers: 0,
+      activeMembers: 0, // Added the required activeMembers property
       todayCheckIns: 0,
       upcomingRenewals: 0,
       pendingPayments: {
@@ -165,6 +167,9 @@ export async function fetchDashboardSummary(branchId?: string): Promise<Dashboar
       inactive: inactiveCount || 0,
       expired: expiredCount || 0
     };
+    
+    // Set activeMembers based on the active members count
+    summary.activeMembers = activeCount || 0;
 
     // Revenue data for chart over last 6 months - manual collection instead of RPC
     const revenueData: {
