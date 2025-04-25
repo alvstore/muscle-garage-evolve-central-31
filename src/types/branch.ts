@@ -8,7 +8,7 @@ export interface Branch {
   country?: string;
   email?: string;
   phone?: string;
-  isActive?: boolean;
+  is_active?: boolean;
   managerId?: string;
   manager?: string;
   maxCapacity?: number;

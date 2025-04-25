@@ -4,153 +4,53 @@ import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
 import { toast } from 'sonner';
 
-export interface Invoice {
-  id: string;
-  memberId?: string;
-  memberName?: string;
-  amount: number;
-  issuedDate: string;
-  dueDate: string;
-  paidDate?: string;
-  status: 'paid' | 'pending' | 'overdue' | 'partial';
-  paymentMethod?: string;
-  notes?: string;
-  items?: any[];
-  branchId?: string;
-  membershipPlanId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface Transaction {
   id: string;
   type: 'income' | 'expense';
   amount: number;
-  transactionDate: string;
-  categoryId?: string;
-  categoryName?: string;
+  transaction_date: string;
   description?: string;
-  paymentMethod?: string;
-  referenceId?: string;
-  branchId?: string;
-  recordedBy?: string;
-  recordedByName?: string;
+  payment_method?: string;
+  category_id?: string;
+  category_name?: string;
+  reference_id?: string;
+  recorded_by?: string;
+  branch_id?: string;
+  created_at?: string;
 }
 
-// Hook to manage invoices
-export const useInvoices = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { currentBranch } = useBranch();
+export interface Invoice {
+  id: string;
+  member_id?: string;
+  member_name?: string;
+  amount: number;
+  due_date: string;
+  paid_date?: string;
+  issued_date: string;
+  status: 'paid' | 'pending' | 'overdue' | 'cancelled';
+  description?: string;
+  payment_method?: string;
+  branch_id?: string;
+  membership_plan_id?: string;
+  membership_plan_name?: string;
+  items?: any[];
+  created_at?: string;
+  created_by?: string;
+}
 
-  const fetchInvoices = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Only fetch if we have a branch
-      if (!currentBranch?.id) {
-        setInvoices([]);
-        return;
-      }
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  branch_id?: string;
+  is_active?: boolean;
+}
 
-      const { data, error: fetchError } = await supabase
-        .from('invoices')
-        .select(`
-          id,
-          member_id,
-          amount,
-          issued_date,
-          due_date,
-          paid_date,
-          status,
-          payment_method,
-          notes,
-          items,
-          branch_id,
-          membership_plan_id,
-          created_at,
-          updated_at,
-          members:member_id (name)
-        `)
-        .eq('branch_id', currentBranch.id)
-        .order('due_date', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      
-      // Format the data for the frontend
-      const formattedInvoices = data?.map(invoice => ({
-        id: invoice.id,
-        memberId: invoice.member_id,
-        memberName: invoice.members?.name,
-        amount: invoice.amount,
-        issuedDate: invoice.issued_date,
-        dueDate: invoice.due_date,
-        paidDate: invoice.paid_date,
-        status: invoice.status as 'paid' | 'pending' | 'overdue' | 'partial',
-        paymentMethod: invoice.payment_method,
-        notes: invoice.notes,
-        items: invoice.items,
-        branchId: invoice.branch_id,
-        membershipPlanId: invoice.membership_plan_id,
-        createdAt: invoice.created_at,
-        updatedAt: invoice.updated_at
-      })) || [];
-      
-      setInvoices(formattedInvoices);
-    } catch (err) {
-      console.error('Error fetching invoices:', err);
-      setError('Failed to load invoices');
-      toast.error('Failed to load invoices');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!currentBranch?.id) {
-      setInvoices([]);
-      setIsLoading(false);
-      return;
-    }
-    
-    fetchInvoices();
-    
-    // Set up real-time subscription for invoices table
-    const channel = supabase
-      .channel('invoices_realtime')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'invoices',
-          filter: `branch_id=eq.${currentBranch.id}`
-        }, 
-        (payload) => {
-          console.log('Invoices data changed:', payload);
-          fetchInvoices();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch]);
-
-  return {
-    invoices,
-    isLoading,
-    error,
-    refetch: fetchInvoices
-  };
-};
-
-// Hook to manage transactions
-export const useTransactions = () => {
+export const useFinance = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentBranch } = useBranch();
@@ -160,51 +60,67 @@ export const useTransactions = () => {
       setIsLoading(true);
       setError(null);
       
-      // Only fetch if we have a branch
       if (!currentBranch?.id) {
         setTransactions([]);
         return;
       }
 
-      const { data, error: fetchError } = await supabase
+      const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select(`
-          id,
-          type,
-          amount,
-          transaction_date,
-          category_id,
-          description,
-          payment_method,
-          reference_id,
-          branch_id,
-          recorded_by,
-          income_categories:category_id (name),
-          expense_categories:category_id (name),
-          profiles:recorded_by (full_name)
+          *,
+          income_categories(name),
+          expense_categories(name),
+          profiles(full_name)
         `)
         .eq('branch_id', currentBranch.id)
         .order('transaction_date', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (transactionsError) throw transactionsError;
       
       // Format the data for the frontend
-      const formattedTransactions = data?.map(transaction => ({
-        id: transaction.id,
-        type: transaction.type as 'income' | 'expense',
-        amount: transaction.amount,
-        transactionDate: transaction.transaction_date,
-        categoryId: transaction.category_id,
-        categoryName: transaction.type === 'income' 
-          ? transaction.income_categories?.name 
-          : transaction.expense_categories?.name,
-        description: transaction.description,
-        paymentMethod: transaction.payment_method,
-        referenceId: transaction.reference_id,
-        branchId: transaction.branch_id,
-        recordedBy: transaction.recorded_by,
-        recordedByName: transaction.profiles?.full_name
-      })) || [];
+      const formattedTransactions: Transaction[] = transactionsData?.map(transaction => {
+        let categoryName = '';
+        
+        // Handle the case where income_categories or expense_categories might be arrays
+        if (transaction.type === 'income' && transaction.income_categories) {
+          if (Array.isArray(transaction.income_categories)) {
+            categoryName = transaction.income_categories[0]?.name || '';
+          } else {
+            categoryName = transaction.income_categories.name || '';
+          }
+        } else if (transaction.expense_categories) {
+          if (Array.isArray(transaction.expense_categories)) {
+            categoryName = transaction.expense_categories[0]?.name || '';
+          } else {
+            categoryName = transaction.expense_categories.name || '';
+          }
+        }
+        
+        let recordedBy = '';
+        if (transaction.profiles) {
+          if (Array.isArray(transaction.profiles)) {
+            recordedBy = transaction.profiles[0]?.full_name || '';
+          } else {
+            recordedBy = transaction.profiles.full_name || '';
+          }
+        }
+        
+        return {
+          id: transaction.id,
+          type: transaction.type,
+          amount: transaction.amount,
+          transaction_date: transaction.transaction_date,
+          description: transaction.description,
+          payment_method: transaction.payment_method,
+          category_id: transaction.category_id,
+          category_name: categoryName,
+          reference_id: transaction.reference_id,
+          recorded_by: recordedBy,
+          branch_id: transaction.branch_id,
+          created_at: transaction.created_at
+        };
+      }) || [];
       
       setTransactions(formattedTransactions);
     } catch (err) {
@@ -216,42 +132,157 @@ export const useTransactions = () => {
     }
   };
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!currentBranch?.id) {
-      setTransactions([]);
-      setIsLoading(false);
-      return;
-    }
-    
-    fetchTransactions();
-    
-    // Set up real-time subscription for transactions table
-    const channel = supabase
-      .channel('transactions_realtime')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'transactions',
-          filter: `branch_id=eq.${currentBranch.id}`
-        }, 
-        (payload) => {
-          console.log('Transactions data changed:', payload);
-          fetchTransactions();
-        }
-      )
-      .subscribe();
+  const fetchInvoices = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!currentBranch?.id) {
+        setInvoices([]);
+        return;
+      }
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch]);
+      const { data: invoicesData, error: invoicesError } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          members(name),
+          memberships(name),
+          profiles(full_name)
+        `)
+        .eq('branch_id', currentBranch.id)
+        .order('issued_date', { ascending: false });
+
+      if (invoicesError) throw invoicesError;
+      
+      // Format the data for the frontend
+      const formattedInvoices: Invoice[] = invoicesData?.map(invoice => {
+        let memberName = '';
+        if (invoice.members) {
+          if (Array.isArray(invoice.members)) {
+            memberName = invoice.members[0]?.name || '';
+          } else {
+            memberName = invoice.members.name || '';
+          }
+        }
+        
+        let membershipPlanName = '';
+        if (invoice.memberships) {
+          if (Array.isArray(invoice.memberships)) {
+            membershipPlanName = invoice.memberships[0]?.name || '';
+          } else {
+            membershipPlanName = invoice.memberships.name || '';
+          }
+        }
+        
+        let createdBy = '';
+        if (invoice.profiles) {
+          if (Array.isArray(invoice.profiles)) {
+            createdBy = invoice.profiles[0]?.full_name || '';
+          } else {
+            createdBy = invoice.profiles.full_name || '';
+          }
+        }
+        
+        return {
+          id: invoice.id,
+          member_id: invoice.member_id,
+          member_name: memberName,
+          amount: invoice.amount,
+          due_date: invoice.due_date,
+          paid_date: invoice.paid_date,
+          issued_date: invoice.issued_date,
+          status: invoice.status,
+          description: invoice.description,
+          payment_method: invoice.payment_method,
+          branch_id: invoice.branch_id,
+          membership_plan_id: invoice.membership_plan_id,
+          membership_plan_name: membershipPlanName,
+          items: invoice.items,
+          created_at: invoice.created_at,
+          created_by: createdBy
+        };
+      }) || [];
+      
+      setInvoices(formattedInvoices);
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+      setError('Failed to load invoices');
+      toast.error('Failed to load invoices');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      if (!currentBranch?.id) {
+        setIncomeCategories([]);
+        setExpenseCategories([]);
+        return;
+      }
+
+      // Fetch income categories
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('income_categories')
+        .select('*')
+        .eq('branch_id', currentBranch.id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (incomeError) throw incomeError;
+      
+      // Fetch expense categories
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_categories')
+        .select('*')
+        .eq('branch_id', currentBranch.id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (expenseError) throw expenseError;
+      
+      setIncomeCategories(incomeData || []);
+      setExpenseCategories(expenseData || []);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      toast.error('Failed to load categories');
+    }
+  };
+
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchTransactions();
+      fetchInvoices();
+      fetchCategories();
+    }
+  }, [currentBranch?.id]);
 
   return {
     transactions,
+    invoices,
+    incomeCategories,
+    expenseCategories,
     isLoading,
     error,
-    refetch: fetchTransactions
+    fetchTransactions,
+    fetchInvoices,
+    fetchCategories
   };
+};
+
+// For component separation, also exposing these hooks
+export const useTransactions = () => {
+  const { transactions, isLoading, error, fetchTransactions } = useFinance();
+  return { transactions, isLoading, error, fetchTransactions };
+};
+
+export const useInvoices = () => {
+  const { invoices, isLoading, error, fetchInvoices } = useFinance();
+  return { invoices, isLoading, error, fetchInvoices };
+};
+
+export const useCategories = () => {
+  const { incomeCategories, expenseCategories, fetchCategories } = useFinance();
+  return { incomeCategories, expenseCategories, fetchCategories };
 };

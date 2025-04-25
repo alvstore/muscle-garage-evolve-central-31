@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,30 +22,28 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const BranchManagementPage = () => {
-  const { branches, isLoading: branchesLoading, fetchBranches } = useBranch();
+  const { branches, isLoading } = useBranch();
   const [isCreating, setIsCreating] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleRefresh = async () => {
-    await fetchBranches();
     toast.success("Branches refreshed");
   };
 
   const handleDelete = async () => {
     if (!deletingBranch) return;
     
-    setIsLoading(true);
+    setIsDeleting(true);
     try {
       // In a real app, this would call an API
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success(`Branch ${deletingBranch.name} deleted successfully`);
-      await fetchBranches();
     } catch (error) {
       toast.error("Failed to delete branch");
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
       setDeletingBranch(null);
     }
   };
@@ -78,8 +76,8 @@ const BranchManagementPage = () => {
                     <Building2 className="h-5 w-5 mr-2 text-indigo-600" />
                     {branch.name}
                   </CardTitle>
-                  <Badge variant={branch.isActive ? "secondary" : "destructive"}>
-                    {branch.isActive ? "Active" : "Inactive"}
+                  <Badge variant={branch.is_active ? "secondary" : "destructive"}>
+                    {branch.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <CardDescription>{branch.address}</CardDescription>
@@ -126,24 +124,24 @@ const BranchManagementPage = () => {
         <CreateBranchDialog
           open={isCreating}
           onOpenChange={setIsCreating}
-          onComplete={async () => {
+          onComplete={() => {
             setIsCreating(false);
-            await fetchBranches();
           }}
         />
 
         {/* Edit Branch Dialog */}
-        <EditBranchDialog
-          open={!!editingBranch}
-          onOpenChange={(open) => {
-            if (!open) setEditingBranch(null);
-          }}
-          branch={editingBranch}
-          onComplete={async () => {
-            setEditingBranch(null);
-            await fetchBranches();
-          }}
-        />
+        {editingBranch && (
+          <EditBranchDialog
+            open={!!editingBranch}
+            onOpenChange={(open) => {
+              if (!open) setEditingBranch(null);
+            }}
+            branch={editingBranch}
+            onComplete={() => {
+              setEditingBranch(null);
+            }}
+          />
+        )}
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!deletingBranch} onOpenChange={(open) => {
@@ -161,10 +159,10 @@ const BranchManagementPage = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleDelete}
-                disabled={isLoading}
+                disabled={isDeleting}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isLoading ? "Deleting..." : "Delete"}
+                {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

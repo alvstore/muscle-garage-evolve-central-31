@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +25,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   manager: z.string().optional(),
-  isActive: z.boolean().default(true),
+  is_active: z.boolean().default(true),
   maxCapacity: z.string().optional(),
   openingHours: z.string().optional(),
   closingHours: z.string().optional(),
@@ -55,7 +54,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       phone: branch?.phone || "",
       email: branch?.email || "",
       manager: branch?.manager || "",
-      isActive: branch?.isActive ?? true,
+      is_active: branch?.is_active ?? true,
       maxCapacity: branch?.maxCapacity?.toString() || "",
       openingHours: branch?.openingHours || "",
       closingHours: branch?.closingHours || "",
@@ -77,7 +76,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         email: values.email || '',
         manager: values.manager || '',
         managerId: branch?.managerId || '',
-        isActive: values.isActive,
+        is_active: values.is_active,
         maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : 0,
         openingHours: values.openingHours || '',
         closingHours: values.closingHours || '',
@@ -87,16 +86,24 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         timezone: values.timezone
       };
       
+      let success = false;
+      
       if (isEditMode && branch) {
-        await updateBranch(branch.id, branchData);
+        const result = await updateBranch(branch.id, branchData);
+        success = !!result;
       } else {
-        await createBranch(branchData);
+        const result = await createBranch(branchData);
+        success = !!result;
       }
       
-      form.reset();
-      onComplete();
+      if (success) {
+        form.reset();
+        onComplete();
+        toast.success(`Branch ${isEditMode ? 'updated' : 'created'} successfully`);
+      }
     } catch (error) {
       console.error("Error submitting branch form:", error);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} branch`);
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +148,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           
           <FormField
             control={form.control}
-            name="isActive"
+            name="is_active"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">

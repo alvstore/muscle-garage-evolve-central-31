@@ -24,16 +24,14 @@ const EditBranchDialog = ({
 }: EditBranchDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Branch</DialogTitle>
         </DialogHeader>
-        {branch && (
-          <BranchForm 
-            branch={branch} 
-            onComplete={onComplete} 
-          />
-        )}
+        <BranchForm 
+          branch={branch}
+          onComplete={onComplete}
+        />
       </DialogContent>
     </Dialog>
   );

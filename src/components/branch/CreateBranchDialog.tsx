@@ -32,7 +32,7 @@ const CreateBranchDialog = ({
   const setOpen = isControlled ? setControlledOpen : setInternalOpen;
 
   // Only show for admin role
-  if (userRole !== 'admin') return null;
+  if (userRole !== 'admin' && !can('manage_branches')) return null;
 
   return (
     <PermissionGuard permission="manage_branches">

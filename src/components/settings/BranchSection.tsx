@@ -54,7 +54,7 @@ const BranchSection = () => {
           
           <div>
             <div className="flex justify-between items-center mb-2">
-              <p className="font-medium">Active Branches: {branches.filter(b => b.isActive).length}</p>
+              <p className="font-medium">Active Branches: {branches.filter(b => b.is_active).length}</p>
               <Badge variant="outline" className="text-xs">{branches.length} total</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -64,7 +64,7 @@ const BranchSection = () => {
                     <Building2 className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
                     <span className="text-sm">{branch.name}</span>
                   </div>
-                  {branch.isActive ? (
+                  {branch.is_active ? (
                     <Badge variant="default" className="bg-green-500 text-white text-xs">Active</Badge>
                   ) : (
                     <Badge variant="secondary" className="text-xs">Inactive</Badge>

@@ -15,7 +15,6 @@ import RenewalsSection from '@/components/dashboard/sections/RenewalsSection';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useBranch } from '@/hooks/use-branch';
 import { useDashboard } from '@/hooks/use-dashboard';
-import { fetchPendingPayments, fetchMembershipRenewals, fetchUpcomingClasses } from '@/services/dashboardService';
 
 const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,22 +29,8 @@ const AdminDashboard = () => {
   const { dashboardData, isLoading, refreshData } = useDashboard();
 
   useEffect(() => {
-    async function loadAdditionalData() {
-      try {
-        // Load additional data for dashboard sections
-        const paymentsData = await fetchPendingPayments(currentBranch?.id);
-        const renewalsData = await fetchMembershipRenewals(currentBranch?.id);
-        const classesData = await fetchUpcomingClasses(currentBranch?.id);
-        
-        setPendingPayments(paymentsData);
-        setUpcomingRenewals(renewalsData);
-        setUpcomingClasses(classesData);
-      } catch (error) {
-        console.error("Error loading additional dashboard data:", error);
-      }
-    }
-    
-    loadAdditionalData();
+    // This effect would load any additional data needed
+    // The main dashboard data is now loaded via the useDashboard hook
   }, [currentBranch?.id]);
 
   const handleSearch = (query: string) => {
@@ -57,12 +42,10 @@ const AdminDashboard = () => {
     setStartDate(startDate);
     setEndDate(endDate);
     toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
-    // Here you could refetch data with the new date range
   };
 
   const handleExport = () => {
     toast.success('Dashboard data exported successfully');
-    // Implement actual export functionality here
   };
 
   const handleRefresh = () => {
@@ -159,8 +142,6 @@ const AdminDashboard = () => {
             </>
           )}
         </div>
-        
-        {/* Removed mock data featured actions cards */}
       </div>
     </div>
   );

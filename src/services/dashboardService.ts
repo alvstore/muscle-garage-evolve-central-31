@@ -127,3 +127,110 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
     throw error;
   }
 };
+
+export const fetchPendingPayments = async (branchId?: string) => {
+  try {
+    const query = supabase
+      .from('invoices')
+      .select(`
+        id,
+        member_id,
+        amount,
+        due_date,
+        status,
+        issued_date,
+        members(name, email, phone)
+      `)
+      .eq('status', 'pending');
+    
+    if (branchId) {
+      query.eq('branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching pending payments:', error);
+    return [];
+  }
+};
+
+export const fetchMembershipRenewals = async (branchId?: string) => {
+  try {
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
+    const query = supabase
+      .from('member_memberships')
+      .select(`
+        id,
+        member_id,
+        start_date,
+        end_date,
+        status,
+        total_amount,
+        amount_paid,
+        members(name, email, phone),
+        memberships(name, price)
+      `)
+      .eq('status', 'active')
+      .lt('end_date', nextWeek.toISOString())
+      .gt('end_date', today.toISOString());
+    
+    if (branchId) {
+      query.eq('branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching upcoming renewals:', error);
+    return [];
+  }
+};
+
+export const fetchUpcomingClasses = async (branchId?: string) => {
+  try {
+    const now = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 59);
+    
+    const query = supabase
+      .from('class_schedules')
+      .select(`
+        id,
+        name,
+        type,
+        start_time,
+        end_time,
+        capacity,
+        enrolled,
+        trainer_id,
+        profiles(full_name)
+      `)
+      .gte('start_time', now.toISOString())
+      .lte('start_time', tomorrow.toISOString())
+      .order('start_time');
+    
+    if (branchId) {
+      query.eq('branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching upcoming classes:', error);
+    return [];
+  }
+};

@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/tooltip';
 
 const BranchSelector = () => {
-  const { branches, currentBranch, setCurrentBranch, isLoading, fetchBranches } = useBranch();
+  const { branches, currentBranch, switchBranch, isLoading } = useBranch();
   const { updateUserBranch } = useAuth();
   
   const handleChangeBranch = async (branchId: string) => {
@@ -30,16 +30,12 @@ const BranchSelector = () => {
     if (branch) {
       try {
         await updateUserBranch(branch.id);
-        setCurrentBranch(branch);
+        switchBranch(branch.id);
         toast.success(`Switched to ${branch.name}`);
       } catch (error) {
         toast.error("Failed to switch branch");
       }
     }
-  };
-
-  const handleCreateComplete = () => {
-    fetchBranches();
   };
   
   if (isLoading) {
@@ -93,7 +89,7 @@ const BranchSelector = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <CreateBranchDialog onComplete={handleCreateComplete} />
+                  <CreateBranchDialog onComplete={() => {}} />
                 </div>
               </TooltipTrigger>
               <TooltipContent className="bg-indigo-950 text-indigo-100 border-indigo-800">
