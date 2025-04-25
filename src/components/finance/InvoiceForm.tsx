@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,11 @@ import { supabase } from '@/integrations/supabase/client';
 export interface InvoiceFormProps {
   invoice: Invoice | null;
   onComplete?: () => void;
+  onSave?: (invoice: Invoice) => void; // Added onSave prop
+  onCancel?: () => void; // Added onCancel prop
 }
 
-const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete, onSave, onCancel }) => {
   const { currentBranch } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,7 +26,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
     member_name: invoice?.memberName || '',
     description: invoice?.description || '',
     amount: invoice?.amount || 0,
-    status: invoice?.status || 'pending',
+    status: invoice?.status || 'pending' as InvoiceStatus, // Explicitly type as InvoiceStatus
     due_date: invoice?.due_date || invoice?.dueDate || new Date().toISOString().split('T')[0],
     payment_method: invoice?.payment_method || '',
     notes: invoice?.notes || '',
@@ -65,7 +68,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
         toast.success('Invoice created successfully');
       }
       
-      if (onComplete) {
+      // Use onSave if provided, otherwise use onComplete
+      if (onSave) {
+        onSave({
+          ...invoice,
+          ...formData,
+          id: invoice?.id || '',
+          created_at: invoice?.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as Invoice);
+      } else if (onComplete) {
         onComplete();
       }
     } catch (error) {
@@ -139,7 +151,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
                 onValueChange={(value) => {
                   setFormData(prev => ({ 
                     ...prev, 
-                    status: value 
+                    status: value as InvoiceStatus // Cast the string value to InvoiceStatus
                   }));
                 }}
               >
@@ -206,11 +218,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
-            {onComplete && (
+            {(onCancel || onComplete) && (
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={onComplete} 
+                onClick={onCancel || onComplete} 
                 disabled={isSubmitting}
               >
                 Cancel

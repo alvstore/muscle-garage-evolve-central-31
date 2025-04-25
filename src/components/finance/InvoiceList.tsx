@@ -142,6 +142,10 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
     setIsFormOpen(false);
   };
 
+  const handleCancelForm = () => {
+    setIsFormOpen(false);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -232,7 +236,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         <InvoiceForm
           invoice={editingInvoice}
           onSave={handleSaveInvoice}
-          onCancel={() => setIsFormOpen(false)}
+          onCancel={handleCancelForm}
         />
       )}
     </>

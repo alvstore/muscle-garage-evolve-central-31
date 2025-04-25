@@ -31,7 +31,7 @@ const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
 
   // Convert invoice to FinanceInvoice type if needed
   const normalizedInvoice = invoice ? 
-    ('items' in invoice ? invoice : notificationToFinanceInvoice(invoice as NotificationInvoice)) : 
+    ('items' in invoice ? invoice as FinanceInvoice : notificationToFinanceInvoice(invoice as NotificationInvoice)) : 
     null;
 
   const handleComplete = () => {
