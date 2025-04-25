@@ -10,8 +10,17 @@ export interface StatsResult {
   total?: number;
 }
 
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 // Attendance stats function
-export const useAttendanceStats = (dateRange: { from: Date; to: Date }, branchId?: string, granularity: 'daily' | 'weekly' | 'monthly' = 'daily') => {
+export const useAttendanceStats = (
+  dateRange: string | DateRange,
+  branchId?: string,
+  granularity: 'daily' | 'weekly' | 'monthly' = 'daily'
+) => {
   const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -21,8 +30,18 @@ export const useAttendanceStats = (dateRange: { from: Date; to: Date }, branchId
       setIsLoading(true);
       setError(null);
       
-      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const toDate = format(dateRange.to, 'yyyy-MM-dd');
+      // Parse date range if it's a string
+      let fromDate: string;
+      let toDate: string;
+      
+      if (typeof dateRange === 'string') {
+        // For backward compatibility, support single string format
+        fromDate = format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd');
+        toDate = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        fromDate = format(dateRange.from, 'yyyy-MM-dd');
+        toDate = format(dateRange.to, 'yyyy-MM-dd');
+      }
       
       // Get attendance data between dates
       let query = supabase
@@ -51,8 +70,9 @@ export const useAttendanceStats = (dateRange: { from: Date; to: Date }, branchId
         });
         
         // Fill in missing days
-        let currentDate = new Date(dateRange.from);
-        while (currentDate <= dateRange.to) {
+        let currentDate = new Date(fromDate);
+        const endDate = new Date(toDate);
+        while (currentDate <= endDate) {
           const dateKey = format(currentDate, 'yyyy-MM-dd');
           labels.push(format(currentDate, 'dd MMM'));
           if (!processedData[dateKey]) processedData[dateKey] = 0;
@@ -120,7 +140,11 @@ export const useAttendanceStats = (dateRange: { from: Date; to: Date }, branchId
 };
 
 // Revenue stats function
-export const useRevenueStats = (dateRange: { from: Date; to: Date }, branchId?: string, granularity: 'daily' | 'weekly' | 'monthly' = 'weekly') => {
+export const useRevenueStats = (
+  dateRange: string | DateRange,
+  branchId?: string,
+  granularity: 'daily' | 'weekly' | 'monthly' = 'weekly'
+) => {
   const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -130,8 +154,18 @@ export const useRevenueStats = (dateRange: { from: Date; to: Date }, branchId?: 
       setIsLoading(true);
       setError(null);
       
-      const fromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const toDate = format(dateRange.to, 'yyyy-MM-dd');
+      // Parse date range if it's a string
+      let fromDate: string;
+      let toDate: string;
+      
+      if (typeof dateRange === 'string') {
+        // For backward compatibility, support single string format
+        fromDate = format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd');
+        toDate = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        fromDate = format(dateRange.from, 'yyyy-MM-dd');
+        toDate = format(dateRange.to, 'yyyy-MM-dd');
+      }
       
       // Get revenue data between dates
       let query = supabase
@@ -161,8 +195,9 @@ export const useRevenueStats = (dateRange: { from: Date; to: Date }, branchId?: 
         });
         
         // Fill in missing days
-        let currentDate = new Date(dateRange.from);
-        while (currentDate <= dateRange.to) {
+        let currentDate = new Date(fromDate);
+        const endDate = new Date(toDate);
+        while (currentDate <= endDate) {
           const dateKey = format(currentDate, 'yyyy-MM-dd');
           labels.push(format(currentDate, 'dd MMM'));
           if (!processedData[dateKey]) processedData[dateKey] = 0;
@@ -232,7 +267,7 @@ export const useRevenueStats = (dateRange: { from: Date; to: Date }, branchId?: 
 };
 
 // Membership stats function
-export const useMembershipStats = (dateRange: { from: Date; to: Date }, branchId?: string) => {
+export const useMembershipStats = (dateRange: DateRange, branchId?: string) => {
   const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

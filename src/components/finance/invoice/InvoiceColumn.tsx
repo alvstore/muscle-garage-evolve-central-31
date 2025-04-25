@@ -1,109 +1,92 @@
 
-import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import { Eye, MoreHorizontal } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Invoice } from '@/types/notification';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
+import { Invoice } from "@/types/finance";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
-// Helper function to format price
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(price);
-};
-
-// Helper function for invoice status badge
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'paid':
-      return <Badge variant="success">Paid</Badge>;
-    case 'pending':
-      return <Badge variant="outline">Pending</Badge>;
-    case 'overdue':
-      return <Badge variant="destructive">Overdue</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
-};
-
-// Define the columns for the invoice data table
-export const InvoiceColumn = (onEdit: (invoice: Invoice) => void): ColumnDef<Invoice>[] => [
-  {
-    accessorKey: 'id',
-    header: 'Invoice ID',
-    cell: ({ row }) => <span className="font-medium">{row.getValue('id')}</span>,
-  },
-  {
-    accessorKey: 'memberName',
-    header: 'Member',
-    cell: ({ row }) => row.getValue('memberName'),
-  },
-  {
-    accessorKey: 'amount',
-    header: 'Amount',
-    cell: ({ row }) => formatPrice(row.getValue('amount')),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => getStatusBadge(row.getValue('status')),
-  },
-  {
-    accessorKey: 'issuedDate',
-    header: 'Issued Date',
-    cell: ({ row }) => {
-      const date = row.getValue('issuedDate');
-      if (!date) return '-';
-      return format(new Date(date as string), 'MMM dd, yyyy');
+export const InvoiceColumn = (handleEditInvoice: (invoice: Invoice) => void): ColumnDef<Invoice>[] => {
+  return [
+    {
+      accessorKey: "id",
+      header: "Invoice ID",
+      cell: ({ row }) => {
+        return <div className="font-medium">{row.getValue("id").substring(0, 8)}...</div>;
+      },
     },
-  },
-  {
-    accessorKey: 'dueDate',
-    header: 'Due Date',
-    cell: ({ row }) => {
-      const date = row.getValue('dueDate');
-      if (!date) return '-';
-      return format(new Date(date as string), 'MMM dd, yyyy');
+    {
+      accessorKey: "memberId",
+      header: "Member",
+      cell: ({ row }) => {
+        const invoice = row.original;
+        return <div>{invoice.memberName || 'Unknown'}</div>;
+      },
     },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const invoice = row.original;
-      
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onEdit(invoice)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View/Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Download PDF</DropdownMenuItem>
-            <DropdownMenuItem>Send to Email</DropdownMenuItem>
-            {invoice.status === 'pending' && (
+    {
+      accessorKey: "amount",
+      header: "Amount",
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("amount"));
+        const formatted = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(amount);
+        return <div className="font-medium">{formatted}</div>;
+      },
+    },
+    {
+      accessorKey: "dueDate",
+      header: "Due Date",
+      cell: ({ row }) => {
+        return <div>{format(new Date(row.getValue("dueDate")), "MMM d, yyyy")}</div>;
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+        return (
+          <Badge 
+            variant={status === "paid" ? "default" : status === "pending" ? "outline" : "destructive"}
+          >
+            {status}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const invoice = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem>View Details</DropdownMenuItem>
+              <DropdownMenuItem>Download PDF</DropdownMenuItem>
               <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
-  },
-];
+  ];
+};

@@ -1,11 +1,10 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/integrations/supabase/types';
 
 const supabaseUrl = 'https://rnqgpucxlvubwqpkgstc.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWdwdWN4bHZ1YndxcGtnc3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDgwNjQsImV4cCI6MjA2MDgyNDA2NH0.V5nFuGrJnTdFx60uI8hv46VKUmWoA2aAOx_jJjJFcUA';
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Function to get the current user's branch
 export const getCurrentUserBranch = async () => {
@@ -71,9 +70,9 @@ export const getUserRole = async () => {
   return profile.role;
 };
 
-// Enhanced Supabase query wrapper with branch-specific filtering
+// Basic generic function for branched queries without the infinite recursion risk
 export const branchSpecificQuery = async <T>(
-  table: keyof Database['public']['Tables'],
+  tableName: string,
   options: { 
     select?: string, 
     filterBranch?: boolean 
@@ -81,7 +80,7 @@ export const branchSpecificQuery = async <T>(
 ) => {
   const { select = '*', filterBranch = true } = options;
   
-  let query = supabase.from(table).select(select);
+  let query = supabase.from(tableName).select(select);
   
   if (filterBranch) {
     const currentBranchId = await getCurrentUserBranch();

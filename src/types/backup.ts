@@ -10,4 +10,6 @@ export interface BackupLogEntry {
   total_records?: number;
   success_count?: number;
   failed_count?: number;
+  created_at: string;
+  updated_at: string;
 }

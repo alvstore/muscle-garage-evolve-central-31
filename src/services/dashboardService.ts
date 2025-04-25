@@ -111,46 +111,97 @@ export async function fetchDashboardSummary(branchId?: string): Promise<Dashboar
       return format(date, 'yyyy-MM-dd');
     }).reverse();
 
-    // Use raw SQL query for group by functionality
-    const { data: attendanceData, error: attendanceError } = await supabase
-      .rpc('get_daily_attendance', { days: 7, branch_filter: branchId || null });
+    // Instead of using RPC which doesn't exist, use manual queries
+    const attendanceTrend: { date: string; count: number }[] = [];
 
-    if (attendanceError) {
-      console.error('Error fetching attendance trend:', attendanceError);
-      // Fallback to empty data
-      summary.attendanceTrend = last7Days.map(date => ({ date, count: 0 }));
-    } else {
-      const attendanceMap = new Map(attendanceData?.map(item => [item.date, item.count]) || []);
-      summary.attendanceTrend = last7Days.map(date => ({
-        date,
-        count: attendanceMap.get(date) || 0
-      }));
+    for (const day of last7Days) {
+      const { count, error } = await supabase
+        .from('member_attendance')
+        .select('*', { count: 'exact', head: true })
+        .gte('check_in', `${day}T00:00:00`)
+        .lte('check_in', `${day}T23:59:59`)
+        .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+      if (error) {
+        console.error(`Error fetching attendance for ${day}:`, error);
+        attendanceTrend.push({ date: day, count: 0 });
+      } else {
+        attendanceTrend.push({ date: day, count: count || 0 });
+      }
     }
 
-    // Get membership status breakdown
-    const { data: activeMembers, error: activeMembersError } = await supabase
-      .rpc('get_member_status_counts', { status_filter: 'active', branch_filter: branchId || null });
+    summary.attendanceTrend = attendanceTrend;
 
-    if (!activeMembersError && activeMembers) {
-      summary.membersByStatus = {
-        active: activeMembers[0]?.count || 0,
-        inactive: 0,
-        expired: 0
-      };
+    // Get membership status breakdown - manual count instead of RPC
+    const { count: activeCount, error: activeError } = await supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    const { count: inactiveCount, error: inactiveError } = await supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'inactive')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    const { count: expiredCount, error: expiredError } = await supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'expired')
+      .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+    summary.membersByStatus = {
+      active: activeCount || 0,
+      inactive: inactiveCount || 0,
+      expired: expiredCount || 0
+    };
+
+    // Revenue data for chart over last 6 months - manual collection instead of RPC
+    const revenueData: {
+      month: string;
+      revenue: number;
+      expenses: number;
+      profit: number;
+    }[] = [];
+
+    // Get last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStart = format(startOfMonth(date), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(date), 'yyyy-MM-dd');
+      const monthLabel = format(date, 'MMM yyyy');
+
+      // Get revenue
+      const { data: monthRevenue, error: monthRevError } = await supabase
+        .from('payments')
+        .select('amount')
+        .gte('payment_date', `${monthStart}T00:00:00`)
+        .lte('payment_date', `${monthEnd}T23:59:59`)
+        .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+      // Get expenses
+      const { data: monthExpenses, error: monthExpError } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'expense')
+        .gte('transaction_date', `${monthStart}T00:00:00`)
+        .lte('transaction_date', `${monthEnd}T23:59:59`)
+        .eq(branchId ? 'branch_id' : 'id', branchId || '');
+
+      const revenue = monthRevenue?.reduce((total, payment) => total + (payment.amount || 0), 0) || 0;
+      const expenses = monthExpenses?.reduce((total, expense) => total + (expense.amount || 0), 0) || 0;
+
+      revenueData.push({
+        month: monthLabel,
+        revenue,
+        expenses,
+        profit: revenue - expenses
+      });
     }
 
-    // Revenue data for chart over last 6 months
-    const { data: revenueChartData, error: revenueChartError } = await supabase
-      .rpc('get_monthly_revenue', { months_back: 6, branch_filter: branchId || null });
-
-    if (!revenueChartError && revenueChartData) {
-      summary.revenueData = revenueChartData.map(item => ({
-        month: item.month,
-        revenue: item.revenue || 0,
-        expenses: item.expenses || 0,
-        profit: (item.revenue || 0) - (item.expenses || 0)
-      }));
-    }
+    summary.revenueData = revenueData;
 
     return summary;
   } catch (error) {
@@ -168,13 +219,13 @@ export async function fetchPendingPayments(branchId?: string): Promise<Payment[]
         amount,
         due_date,
         status,
-        members:member_id (
+        members (
           id,
           name,
           email,
           phone
         ),
-        memberships:membership_plan_id (
+        memberships (
           name
         )
       `)
@@ -209,11 +260,11 @@ export async function fetchMembershipRenewals(branchId?: string): Promise<Renewa
         end_date,
         status,
         total_amount,
-        members:member_id (
+        members (
           id,
           name
         ),
-        memberships:membership_id (
+        memberships (
           name
         )
       `)
@@ -229,7 +280,7 @@ export async function fetchMembershipRenewals(branchId?: string): Promise<Renewa
       memberName: membership.members?.name || 'Unknown',
       membershipPlan: membership.memberships?.name || 'Standard',
       expiryDate: membership.end_date,
-      status: membership.status,
+      status: membership.status as 'active' | 'inactive' | 'expired',
       renewalAmount: membership.total_amount || 0
     }));
   } catch (error) {
@@ -252,7 +303,7 @@ export async function fetchUpcomingClasses(branchId?: string): Promise<ClassItem
         enrolled,
         type,
         difficulty,
-        profiles:trainer_id (
+        trainer:profiles!class_schedules_trainer_id_fkey (
           full_name,
           avatar_url
         )
@@ -271,8 +322,8 @@ export async function fetchUpcomingClasses(branchId?: string): Promise<ClassItem
       return {
         id: classItem.id,
         name: classItem.name,
-        trainer: classItem.profiles?.full_name || 'TBD',
-        trainerAvatar: classItem.profiles?.avatar_url,
+        trainer: classItem.trainer?.full_name || 'TBD',
+        trainerAvatar: classItem.trainer?.avatar_url,
         time: format(startTime, 'h:mm a'),
         duration: `${duration} min`,
         capacity: classItem.capacity,
@@ -294,13 +345,13 @@ export async function fetchBranchAnalytics(): Promise<BranchAnalytics[]> {
       .select(`
         id,
         name,
-        members:members (
+        members!inner (
           id
         ),
-        payments:payments (
+        payments (
           amount
         ),
-        member_attendance:member_attendance (
+        member_attendance (
           id
         )
       `);

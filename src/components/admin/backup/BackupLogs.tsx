@@ -22,8 +22,10 @@ const BackupLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const backupLogs = await backupService.getBackupLogs();
-      setLogs(backupLogs);
+      // Using the updated service function
+      const { data: backupLogs, error } = await backupService.getBackupLogs();
+      if (error) throw error;
+      setLogs(backupLogs || []);
     } catch (error) {
       console.error('Failed to fetch backup logs:', error);
       setLogs([]);

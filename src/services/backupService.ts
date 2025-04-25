@@ -4,7 +4,7 @@ import { BackupLogEntry } from '@/types/backup';
 import { toast } from 'sonner';
 
 // Function to create a backup log entry
-const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp'>) => {
+const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp' | 'created_at' | 'updated_at'>) => {
   try {
     const { data, error } = await supabase
       .from('backup_logs')
@@ -63,20 +63,39 @@ const getBackupLogs = async (filters?: {
     const { data, error } = await query;
 
     if (error) throw error;
-    return data as BackupLogEntry[];
+    return { data: data as BackupLogEntry[], error: null };
 
   } catch (error) {
     console.error("Error fetching backup logs:", error);
-    throw error;
+    return { data: null, error };
   }
 };
 
+// Valid table names - to ensure type safety
+const validTables = [
+  'members', 'announcements', 'branches', 'backup_logs', 
+  'body_measurements', 'class_bookings', 'classes',
+  'class_schedules', 'diet_plans', 'email_settings',
+  'exercises', 'expense_categories', 'feedback',
+  'global_settings', 'income_categories', 'inventory_items',
+  'invoices', 'meal_items', 'meal_plans',
+  'measurements', 'member_attendance', 'member_memberships',
+  'member_progress', 'memberships', 'motivational_messages',
+  'orders', 'payment_gateway_settings', 'payment_settings',
+  'payments', 'profiles', 'promo_codes',
+  'referrals', 'reminder_rules', 'staff_attendance',
+  'store_products', 'trainer_assignments', 'transactions',
+  'webhook_logs', 'workout_days', 'workout_plans'
+] as const;
+
+type ValidTable = typeof validTables[number];
+
 // Function to export data from a specific table
-const exportTableData = async (tableName: string) => {
+const exportTableData = async (tableName: ValidTable) => {
   try {
-    // Use dynamic querying with type safety
+    // Use validated table name to ensure type safety
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select('*');
 
     if (error) throw error;
@@ -90,14 +109,14 @@ const exportTableData = async (tableName: string) => {
 
 // Function to import data into a specific table
 const importTableData = async (
-  tableName: string, 
+  tableName: ValidTable, 
   tableData: any[], 
   options?: { upsert?: boolean }
 ) => {
   try {
     const { data, error } = options?.upsert 
-      ? await supabase.from(tableName as any).upsert(tableData)
-      : await supabase.from(tableName as any).insert(tableData);
+      ? await supabase.from(tableName).upsert(tableData)
+      : await supabase.from(tableName).insert(tableData);
 
     if (error) throw error;
     return data;
@@ -112,7 +131,7 @@ const importTableData = async (
 const createFullBackup = async (
   userId: string, 
   userName: string, 
-  includeModules: string[]
+  includeModules: ValidTable[]
 ) => {
   const exportedData: Record<string, any[]> = {};
   let totalRecords = 0;
@@ -184,7 +203,7 @@ const restoreFromBackup = async (
   userName: string,
   options?: { upsert?: boolean }
 ) => {
-  const modules = Object.keys(backupData);
+  const modules = Object.keys(backupData) as ValidTable[];
   let totalRecords = 0;
   let successCount = 0;
   let failedCount = 0;

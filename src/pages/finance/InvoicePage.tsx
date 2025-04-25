@@ -3,12 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { DataTableViewOptions } from '@/components/ui/data-table-view-options';
 import { DataTable } from '@/components/ui/data-table';
-import { invoicesData } from '@/data/invoices';
 import { InvoiceColumn } from '@/components/finance/invoice/InvoiceColumn';
 import InvoiceFormDialog from '@/components/finance/invoice/InvoiceFormDialog';
-import { Invoice } from '@/types/notification';
+import { Invoice } from '@/types/finance';
 import { useInvoices } from '@/hooks/use-invoices';
 
 const InvoicePage = () => {
@@ -48,7 +46,6 @@ const InvoicePage = () => {
         </div>
         
         <div className="rounded-md border">
-          <DataTableViewOptions table={null} />
           <DataTable 
             columns={InvoiceColumn(handleEditInvoice)} 
             data={invoices} 
