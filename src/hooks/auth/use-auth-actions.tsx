@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
-interface LoginResult {
+export interface LoginResult {
   success: boolean;
   error?: string;
 }
@@ -11,7 +10,7 @@ interface LoginResult {
 export const useAuthActions = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = async (email: string, password: string): Promise<LoginResult> => {
+  const login = async (email: string, password: string, branchId?: string): Promise<LoginResult> => {
     try {
       setIsLoading(true);
       
