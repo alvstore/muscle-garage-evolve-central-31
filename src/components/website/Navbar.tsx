@@ -78,7 +78,7 @@ const Navbar = () => {
   return <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? "bg-gym-black shadow-lg py-2" : "bg-transparent py-4"}`}>
       <div className="gym-container flex justify-between items-center">
         <a href="#home" className="flex items-center">
-          <span className="text-2xl md:text-3xl font-impact text-gym-yellow">MUSCLE GARAGE</span>
+          <span className="text-2xl md:text-3xl font-impact text-gym-yellow">MUSCLE GARAAGE</span>
         </a>
 
         {/* Desktop Navigation */}
