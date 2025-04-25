@@ -24,8 +24,10 @@ export interface Feedback {
   memberName?: string; // For compatibility
   type: string;
   related_id: string;
+  relatedId?: string; // For compatibility
   rating: number;
   comments: string;
+  content?: string; // For compatibility
   anonymous: boolean;
   title: string;
   created_at: string;
@@ -51,6 +53,8 @@ export interface ReminderRule {
   message?: string;
   sendVia: string[];
   targetRoles: string[];
+  channels?: string[]; // For compatibility
+  targetType?: string; // For compatibility
 }
 
 export interface MotivationalMessage {
@@ -65,10 +69,27 @@ export interface MotivationalMessage {
   updated_at?: string;
   frequency?: string; // Added for compatibility
   targetGoal?: string; // Added for compatibility
+  isActive?: boolean; // For compatibility
+  createdAt?: string; // For compatibility
+}
+
+// Backup related interfaces
+export interface BackupLogEntry {
+  id: string;
+  user_id?: string;
+  user_name?: string;
+  action: string;
+  modules: string[];
+  timestamp: string;
+  success: boolean;
+  total_records?: number;
+  success_count?: number;
+  failed_count?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // Adapter functions to convert database records to frontend types
-
 export function adaptAnnouncementFromDB(data: any): Announcement {
   return {
     id: data.id,
@@ -95,8 +116,10 @@ export function adaptFeedbackFromDB(data: any): Feedback {
     memberName: data.member_name,
     type: data.type,
     related_id: data.related_id,
+    relatedId: data.related_id,
     rating: data.rating,
     comments: data.comments,
+    content: data.comments, // Adding content for compatibility
     anonymous: data.anonymous || false,
     title: data.title,
     created_at: data.created_at,
@@ -124,6 +147,8 @@ export function adaptReminderRuleFromDB(data: any): ReminderRule {
     message: data.message || '',
     sendVia: data.send_via || [],
     targetRoles: data.target_roles || [],
+    channels: data.send_via || [], // For compatibility
+    targetType: data.target_type || 'all_members', // For compatibility
   };
 }
 
@@ -132,12 +157,14 @@ export function adaptMotivationalMessageFromDB(data: any): MotivationalMessage {
     id: data.id,
     title: data.title,
     content: data.content,
-    category: data.category,
+    category: data.category as 'motivation' | 'fitness' | 'nutrition' | 'wellness',
     tags: data.tags || [],
     author: data.author || 'Unknown',
     active: data.active || false,
+    isActive: data.active || false, // For compatibility
     created_at: data.created_at,
     updated_at: data.updated_at,
+    createdAt: data.created_at, // For compatibility
     frequency: data.category, // For compatibility
     targetGoal: data.tags?.join(', ') || 'General', // For compatibility
   };
@@ -158,3 +185,31 @@ export interface NotificationType {
 }
 
 export type MotivationalCategory = 'motivation' | 'fitness' | 'nutrition' | 'wellness';
+
+export type NotificationChannel = 'email' | 'sms' | 'in-app' | 'whatsapp';
+
+export interface Invoice {
+  id: string;
+  memberName: string;
+  member_id?: string;
+  description: string;
+  amount: number;
+  status: string;
+  dueDate: string;
+  due_date?: string; // For compatibility
+  paymentMethod: string;
+  payment_method?: string; // For compatibility
+  notes?: string;
+  createdAt: string;
+  created_at?: string; // For compatibility
+  paidDate?: string;
+  paid_date?: string; // For compatibility
+  branchId?: string;
+  branch_id?: string; // For compatibility
+  razorpayOrderId?: string;
+  razorpay_order_id?: string; // For compatibility
+  razorpayPaymentId?: string;
+  razorpay_payment_id?: string; // For compatibility
+}
+
+export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';

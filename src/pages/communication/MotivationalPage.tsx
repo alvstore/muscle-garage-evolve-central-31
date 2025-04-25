@@ -46,6 +46,11 @@ export default function MotivationalPage() {
     await toggleActive(id, isActive);
   };
 
+  const handleDelete = async (id: string) => {
+    await deleteMessage(id);
+    return;
+  };
+
   return (
     <Container>
       <div className="py-6">
@@ -70,7 +75,7 @@ export default function MotivationalPage() {
             messages={messages}
             isLoading={isLoading}
             onEdit={handleEdit}
-            onDelete={deleteMessage}
+            onDelete={handleDelete}
             onToggleActive={handleToggleActive}
           />
         )}

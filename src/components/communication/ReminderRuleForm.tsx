@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,14 +34,14 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   
   useEffect(() => {
     if (editRule) {
-      setName(editRule.name);
+      setName(editRule.name || editRule.title || '');
       setDescription(editRule.description || '');
       setTriggerType(editRule.triggerType);
-      setTriggerValue(editRule.triggerValue);
-      setMessage(editRule.message);
-      setTargetType(editRule.targetType);
-      setActive(editRule.active);
-      setChannels(editRule.channels);
+      setTriggerValue(editRule.triggerValue || 7);
+      setMessage(editRule.message || '');
+      setTargetType(editRule.targetType || 'all_members');
+      setActive(editRule.active || editRule.isActive || false);
+      setChannels(editRule.channels || editRule.sendVia || ['app']);
       setTargetRoles(editRule.targetRoles || ['member']);
     }
   }, [editRule]);
@@ -74,6 +75,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
     
     try {
       const ruleData = {
+        title: name, // Ensure we set the title property
         name,
         description,
         triggerType,

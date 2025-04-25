@@ -1,6 +1,16 @@
 
 import { supabase } from './supabaseClient';
-import { Announcement, Feedback, MotivationalMessage, ReminderRule, FeedbackType } from '@/types/notification';
+import { 
+  Announcement, 
+  Feedback, 
+  MotivationalMessage, 
+  ReminderRule, 
+  FeedbackType,
+  adaptAnnouncementFromDB,
+  adaptFeedbackFromDB,
+  adaptReminderRuleFromDB,
+  adaptMotivationalMessageFromDB
+} from '@/types/notification';
 
 // Announcement Service
 export const announcementService = {
@@ -13,20 +23,7 @@ export const announcementService = {
 
       if (error) throw error;
 
-      return data.map(item => ({
-        id: item.id,
-        title: item.title,
-        content: item.content,
-        priority: item.priority,
-        authorName: item.author_name,
-        createdAt: item.created_at,
-        expiresAt: item.expires_at,
-        channel: item.channel,
-        branchId: item.branch_id,
-        targetRoles: item.target_roles || [],
-        channels: item.channels || [],
-        authorId: item.author_id
-      }));
+      return data.map(adaptAnnouncementFromDB);
     } catch (error) {
       console.error('Error fetching announcements:', error);
       return [];
@@ -53,21 +50,8 @@ export const announcementService = {
         .single();
 
       if (error) throw error;
-
-      return {
-        id: data.id,
-        title: data.title,
-        content: data.content,
-        priority: data.priority,
-        authorName: data.author_name,
-        createdAt: data.created_at,
-        expiresAt: data.expires_at,
-        channel: data.channel,
-        branchId: data.branch_id,
-        targetRoles: data.target_roles || [],
-        channels: data.channels || [],
-        authorId: data.author_id
-      };
+      
+      return adaptAnnouncementFromDB(data);
     } catch (error) {
       console.error('Error creating announcement:', error);
       return null;
@@ -130,23 +114,7 @@ export const feedbackService = {
 
       if (error) throw error;
 
-      return data.map(item => ({
-        id: item.id,
-        member_id: item.member_id,
-        member_name: item.member_name,
-        type: item.type,
-        related_id: item.related_id,
-        rating: item.rating,
-        comments: item.comments,
-        anonymous: item.anonymous,
-        title: item.title,
-        created_at: item.created_at,
-        branch_id: item.branch_id,
-        // For backward compatibility
-        memberId: item.member_id,
-        memberName: item.member_name,
-        createdAt: item.created_at
-      }));
+      return data.map(adaptFeedbackFromDB);
     } catch (error) {
       console.error('Error fetching feedback:', error);
       return [];
@@ -173,19 +141,7 @@ export const feedbackService = {
 
       if (error) throw error;
 
-      return {
-        id: data.id,
-        member_id: data.member_id,
-        member_name: data.member_name,
-        type: data.type,
-        related_id: data.related_id,
-        rating: data.rating,
-        comments: data.comments,
-        anonymous: data.anonymous,
-        title: data.title,
-        created_at: data.created_at,
-        branch_id: data.branch_id
-      };
+      return adaptFeedbackFromDB(data);
     } catch (error) {
       console.error('Error creating feedback:', error);
       return null;
@@ -204,24 +160,7 @@ export const reminderRuleService = {
 
       if (error) throw error;
 
-      return data.map(item => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        triggerType: item.trigger_type,
-        notificationChannel: item.notification_channel,
-        conditions: item.conditions || {},
-        isActive: item.is_active,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        name: item.title,
-        triggerValue: item.trigger_value,
-        message: item.message,
-        sendVia: item.send_via,
-        targetRoles: item.target_roles,
-        active: item.is_active,
-        enabled: item.is_active
-      }));
+      return data.map(adaptReminderRuleFromDB);
     } catch (error) {
       console.error('Error fetching reminder rules:', error);
       return [];
@@ -233,7 +172,7 @@ export const reminderRuleService = {
       const { data, error } = await supabase
         .from('reminder_rules')
         .insert({
-          title: rule.title,
+          title: rule.title || rule.name,
           description: rule.description,
           trigger_type: rule.triggerType,
           notification_channel: rule.notificationChannel,
@@ -241,7 +180,7 @@ export const reminderRuleService = {
           is_active: rule.active || rule.isActive || rule.enabled || false,
           trigger_value: rule.triggerValue,
           message: rule.message,
-          send_via: rule.sendVia,
+          send_via: rule.sendVia || rule.channels || [],
           target_roles: rule.targetRoles
         })
         .select()
@@ -249,24 +188,7 @@ export const reminderRuleService = {
 
       if (error) throw error;
 
-      return {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        triggerType: data.trigger_type,
-        notificationChannel: data.notification_channel,
-        conditions: data.conditions,
-        isActive: data.is_active,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        name: data.title,
-        triggerValue: data.trigger_value,
-        message: data.message,
-        sendVia: data.send_via,
-        targetRoles: data.target_roles,
-        active: data.is_active,
-        enabled: data.is_active
-      };
+      return adaptReminderRuleFromDB(data);
     } catch (error) {
       console.error('Error creating reminder rule:', error);
       return null;
@@ -275,20 +197,26 @@ export const reminderRuleService = {
 
   async updateReminderRule(id: string, rule: Partial<ReminderRule>): Promise<boolean> {
     try {
+      const updateData: any = {};
+
+      if (rule.title) updateData.title = rule.title;
+      if (rule.name) updateData.title = rule.name;
+      if (rule.description !== undefined) updateData.description = rule.description;
+      if (rule.triggerType) updateData.trigger_type = rule.triggerType;
+      if (rule.notificationChannel) updateData.notification_channel = rule.notificationChannel;
+      if (rule.conditions) updateData.conditions = rule.conditions;
+      if (rule.active !== undefined) updateData.is_active = rule.active;
+      if (rule.isActive !== undefined) updateData.is_active = rule.isActive;
+      if (rule.enabled !== undefined) updateData.is_active = rule.enabled;
+      if (rule.triggerValue !== undefined) updateData.trigger_value = rule.triggerValue;
+      if (rule.message) updateData.message = rule.message;
+      if (rule.sendVia) updateData.send_via = rule.sendVia;
+      if (rule.channels) updateData.send_via = rule.channels;
+      if (rule.targetRoles) updateData.target_roles = rule.targetRoles;
+      
       const { error } = await supabase
         .from('reminder_rules')
-        .update({
-          title: rule.title,
-          description: rule.description,
-          trigger_type: rule.triggerType,
-          notification_channel: rule.notificationChannel,
-          conditions: rule.conditions,
-          is_active: rule.active || rule.isActive || rule.enabled,
-          trigger_value: rule.triggerValue,
-          message: rule.message,
-          send_via: rule.sendVia,
-          target_roles: rule.targetRoles
-        })
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
@@ -311,14 +239,16 @@ export const motivationalMessageService = {
 
       if (error) throw error;
 
-      return data;
+      return data.map(adaptMotivationalMessageFromDB);
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
       return [];
     }
   },
 
-  async createMotivationalMessage(message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>): Promise<MotivationalMessage | null> {
+  async createMotivationalMessage(
+    message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<MotivationalMessage | null> {
     try {
       const { data, error } = await supabase
         .from('motivational_messages')
@@ -328,14 +258,14 @@ export const motivationalMessageService = {
           author: message.author,
           category: message.category,
           tags: message.tags,
-          active: message.active
+          active: message.active || message.isActive
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      return data;
+      return adaptMotivationalMessageFromDB(data);
     } catch (error) {
       console.error('Error creating motivational message:', error);
       return null;

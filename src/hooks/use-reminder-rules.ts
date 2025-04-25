@@ -38,15 +38,15 @@ export const useReminderRules = () => {
       const { error: createError } = await supabase
         .from('reminder_rules')
         .insert({
-          title: rule.name,
+          title: rule.title || rule.name,
           description: rule.description,
           trigger_type: rule.triggerType,
           trigger_value: rule.triggerValue,
           notification_channel: rule.notificationChannel,
-          send_via: rule.channels || rule.sendVia,
+          send_via: rule.sendVia,
           target_roles: rule.targetRoles,
           message: rule.message,
-          is_active: rule.active,
+          is_active: rule.active || rule.isActive || false,
           conditions: rule.conditions || {},
           target_type: rule.targetType || ''
         });
@@ -66,16 +66,15 @@ export const useReminderRules = () => {
     try {
       const updateData: any = {};
       
-      if (updates.name !== undefined) updateData.title = updates.name;
+      if (updates.name !== undefined || updates.title !== undefined) updateData.title = updates.title || updates.name;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.triggerType !== undefined) updateData.trigger_type = updates.triggerType;
       if (updates.triggerValue !== undefined) updateData.trigger_value = updates.triggerValue;
       if (updates.notificationChannel !== undefined) updateData.notification_channel = updates.notificationChannel;
       if (updates.sendVia !== undefined) updateData.send_via = updates.sendVia;
-      if (updates.channels !== undefined) updateData.send_via = updates.channels;
       if (updates.targetRoles !== undefined) updateData.target_roles = updates.targetRoles;
       if (updates.message !== undefined) updateData.message = updates.message;
-      if (updates.active !== undefined) updateData.is_active = updates.active;
+      if (updates.active !== undefined || updates.isActive !== undefined) updateData.is_active = updates.active || updates.isActive;
       if (updates.conditions !== undefined) updateData.conditions = updates.conditions;
       if (updates.targetType !== undefined) updateData.target_type = updates.targetType;
       

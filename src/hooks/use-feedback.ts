@@ -48,14 +48,14 @@ export const useFeedback = () => {
         .from('feedback')
         .insert({
           title: feedbackData.title,
-          comments: feedbackData.content,
+          comments: feedbackData.comments || feedbackData.content,
           rating: feedbackData.rating,
           type: feedbackData.type,
-          member_id: feedbackData.memberId,
-          member_name: feedbackData.memberName,
+          member_id: feedbackData.member_id || feedbackData.memberId,
+          member_name: feedbackData.member_name || feedbackData.memberName,
           anonymous: feedbackData.anonymous,
-          branch_id: feedbackData.branchId,
-          related_id: feedbackData.relatedId
+          branch_id: feedbackData.branch_id || feedbackData.branchId,
+          related_id: feedbackData.related_id || feedbackData.relatedId
         });
       
       if (error) {

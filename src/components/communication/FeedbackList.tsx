@@ -51,13 +51,13 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks, isLoading, hideH
                 <h3 className="font-semibold">{feedback.title}</h3>
                 <Badge variant={getBadgeVariant(feedback.rating) as any}>{getRatingText(feedback.rating)}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-2">{feedback.content}</p>
+              <p className="text-sm text-muted-foreground mb-2">{feedback.comments || feedback.content}</p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
-                  {feedback.anonymous ? 'Anonymous User' : feedback.memberName || 'Unknown'} • {feedback.type}
+                  {feedback.anonymous ? 'Anonymous User' : feedback.memberName || feedback.member_name || 'Unknown'} • {feedback.type}
                 </span>
                 <span>
-                  {feedback.createdAt && formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
+                  {(feedback.createdAt || feedback.created_at) && formatDistanceToNow(new Date(feedback.createdAt || feedback.created_at), { addSuffix: true })}
                 </span>
               </div>
             </div>

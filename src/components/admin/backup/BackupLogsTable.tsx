@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, Upload } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { BackupLogEntry } from '@/types/notification';
 
 interface BackupLogsTableProps {
@@ -10,88 +10,52 @@ interface BackupLogsTableProps {
   loading: boolean;
 }
 
-const BackupLogsTable = ({ logs, loading }: BackupLogsTableProps) => {
+const BackupLogsTable: React.FC<BackupLogsTableProps> = ({ logs, loading }) => {
   if (loading) {
-    return (
-      <TableRow>
-        <TableCell colSpan={6} className="h-24 text-center">
-          Loading logs...
-        </TableCell>
-      </TableRow>
-    );
+    return <div className="text-center py-6">Loading backup logs...</div>;
   }
 
-  if (logs.length === 0) {
-    return (
-      <TableRow>
-        <TableCell colSpan={6} className="h-24 text-center">
-          No logs found
-        </TableCell>
-      </TableRow>
-    );
+  if (!logs || logs.length === 0) {
+    return <div className="text-center py-6">No backup logs available</div>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[120px]">Date</TableHead>
-          <TableHead>User</TableHead>
           <TableHead>Action</TableHead>
-          <TableHead>Modules</TableHead>
+          <TableHead>User</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Details</TableHead>
+          <TableHead>Modules</TableHead>
+          <TableHead>Records</TableHead>
+          <TableHead>Timestamp</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {logs.map((log) => (
           <TableRow key={log.id}>
-            <TableCell className="font-mono text-xs">
-              {new Date(log.timestamp).toLocaleDateString()}
-              <div className="text-muted-foreground">
-                {new Date(log.timestamp).toLocaleTimeString()}
-              </div>
+            <TableCell className="font-medium">
+              {log.action === 'backup' ? 'Backup' : 'Restore'}
             </TableCell>
-            <TableCell>{log.user_name}</TableCell>
+            <TableCell>{log.user_name || 'System'}</TableCell>
             <TableCell>
-              <div className="flex items-center gap-1.5">
-                {log.action === 'export' ? (
-                  <>
-                    <Download className="h-3.5 w-3.5 text-blue-500" />
-                    <span>Export</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-3.5 w-3.5 text-green-500" />
-                    <span>Import</span>
-                  </>
-                )}
-              </div>
+              <Badge variant={log.success ? 'success' : 'destructive'}>
+                {log.success ? 'Success' : 'Failed'}
+              </Badge>
             </TableCell>
+            <TableCell>{log.modules.join(', ')}</TableCell>
             <TableCell>
-              <div className="flex flex-wrap gap-1">
-                {log.modules.map((module) => (
-                  <Badge key={module} variant="outline" className="text-xs">
-                    {module}
-                  </Badge>
-                ))}
-              </div>
-            </TableCell>
-            <TableCell>
-              {log.success ? (
-                <Badge variant="success" className="bg-green-100 text-green-700 hover:bg-green-100">
-                  Success
-                </Badge>
+              {log.total_records !== undefined ? (
+                <>
+                  {log.success_count}/{log.total_records}{' '}
+                  {log.failed_count ? `(${log.failed_count} failed)` : ''}
+                </>
               ) : (
-                <Badge variant="destructive">Failed</Badge>
+                'N/A'
               )}
             </TableCell>
-            <TableCell className="text-right">
-              {log.action === 'import' && log.total_records && (
-                <span className="text-sm">
-                  {log.success_count}/{log.total_records} records
-                </span>
-              )}
+            <TableCell>
+              {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
             </TableCell>
           </TableRow>
         ))}

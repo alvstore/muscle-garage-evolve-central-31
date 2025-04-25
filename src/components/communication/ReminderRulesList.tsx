@@ -64,12 +64,12 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
             <div key={rule.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium">{rule.name}</h3>
+                  <h3 className="font-medium">{rule.name || rule.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
                 </div>
                 <Switch 
-                  checked={rule.active}
-                  onCheckedChange={() => onToggleActive(rule.id, rule.active)}
+                  checked={rule.active || rule.isActive || false}
+                  onCheckedChange={() => onToggleActive(rule.id, rule.active || rule.isActive || false)}
                 />
               </div>
               
@@ -85,7 +85,7 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
                 </Badge>
                 
                 <div className="flex gap-1">
-                  {rule.channels.map(channel => (
+                  {(rule.sendVia || rule.channels || []).map(channel => (
                     <Badge key={channel} className="bg-gray-100 text-gray-800">
                       {getChannelIcon(channel)}
                     </Badge>

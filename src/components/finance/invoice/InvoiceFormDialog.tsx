@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Invoice } from '@/types/finance';
+import { Invoice } from '@/types/notification';
 import InvoiceForm from './InvoiceForm';
 
 export interface InvoiceFormDialogProps {
