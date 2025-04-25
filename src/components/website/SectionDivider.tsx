@@ -1,38 +1,24 @@
 
-import React from 'react';
-import { Dumbbell, ShoppingBag, Award, Droplet } from 'lucide-react';
-
-type EquipmentType = 'barbell' | 'dumbbell' | 'kettlebell' | 'proteinShake';
+import GymEquipment3D from "./GymEquipment3D";
 
 interface SectionDividerProps {
-  equipmentType: EquipmentType;
+  equipmentType: "dumbbell" | "barbell" | "kettlebell" | "proteinShake";
   className?: string;
 }
 
-const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType, className = '' }) => {
-  const renderEquipment = () => {
-    switch (equipmentType) {
-      case 'barbell':
-        return <Dumbbell className="h-8 w-8 text-gym-yellow" />; // Changed from Barbell to Dumbbell
-      case 'dumbbell':
-        return <Dumbbell className="h-8 w-8 text-gym-yellow" />;
-      case 'kettlebell':
-        return <ShoppingBag className="h-8 w-8 text-gym-yellow" />;
-      case 'proteinShake':
-        return <Droplet className="h-8 w-8 text-gym-yellow" />;
-      default:
-        return <Award className="h-8 w-8 text-gym-yellow" />;
-    }
-  };
-
+const SectionDivider = ({ equipmentType, className = "" }: SectionDividerProps) => {
   return (
-    <div className={`py-6 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="w-full max-w-sm flex items-center">
-          <div className="flex-1 h-px bg-gym-gray-700"></div>
-          <div className="px-4">{renderEquipment()}</div>
-          <div className="flex-1 h-px bg-gym-gray-700"></div>
-        </div>
+    <div className={`relative py-12 ${className}`}>
+      {/* Center equipment */}
+      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10">
+        <GymEquipment3D type={equipmentType} rotationSpeed={1} />
+      </div>
+      
+      {/* Divider lines */}
+      <div className="flex items-center justify-center max-w-7xl mx-auto px-4">
+        <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent to-gym-yellow/70"></div>
+        <div className="w-44 h-20"></div>
+        <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent to-gym-yellow/70"></div>
       </div>
     </div>
   );

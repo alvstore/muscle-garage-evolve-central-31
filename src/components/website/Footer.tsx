@@ -1,74 +1,109 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { ChevronRight } from "lucide-react";
 
-const Footer: React.FC = () => {
+const Footer = () => {
   return (
-    <footer className="bg-gym-gray-950 text-white py-12">
-      <div className="gym-container">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-gym-black text-white">
+      <div className="gym-container py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          {/* Column 1 - About */}
           <div>
-            <h3 className="text-xl font-bold mb-4">MUSCLE GARAGE</h3>
-            <p className="text-gray-400 mb-4">
-              Your premier fitness destination for achieving your health and wellness goals. Join our community and transform your life.
+            <h3 className="text-2xl font-impact mb-6">MUSCLE GARAGE</h3>
+            <p className="text-gray-400 mb-6">
+              One of the largest premium fitness facilities in Ahmedabad offering state-of-the-art equipment and expert training services.
             </p>
-          </div>
-          
-          <div>
-            <h4 className="text-lg font-medium mb-4">Quick Links</h4>
-            <ul className="space-y-2">
-              <li><Link to="/public" className="text-gray-400 hover:text-gym-yellow">Home</Link></li>
-              <li><Link to="/public#about" className="text-gray-400 hover:text-gym-yellow">About</Link></li>
-              <li><Link to="/public#memberships" className="text-gray-400 hover:text-gym-yellow">Memberships</Link></li>
-              <li><Link to="/public#trainers" className="text-gray-400 hover:text-gym-yellow">Trainers</Link></li>
-              <li><Link to="/public#contact" className="text-gray-400 hover:text-gym-yellow">Contact</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-lg font-medium mb-4">Programs</h4>
-            <ul className="space-y-2">
-              <li><Link to="#" className="text-gray-400 hover:text-gym-yellow">Personal Training</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-gym-yellow">Group Classes</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-gym-yellow">Nutritional Guidance</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-gym-yellow">Weight Management</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-gym-yellow">Strength Training</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-lg font-medium mb-4">Connect With Us</h4>
-            <div className="flex space-x-4 mb-4">
-              <a href="#" className="text-gray-400 hover:text-gym-yellow">
-                {/* Social media icons would go here */}
-                <span className="sr-only">Facebook</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-gym-yellow">
-                {/* Social media icons would go here */}
-                <span className="sr-only">Instagram</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-gym-yellow">
-                {/* Social media icons would go here */}
-                <span className="sr-only">Twitter</span>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-gym-yellow">
-                {/* Social media icons would go here */}
-                <span className="sr-only">YouTube</span>
-              </a>
+            <div className="bg-gym-gray-800 p-4 rounded-lg">
+              <p className="font-bold mb-1">Emergency Contact:</p>
+              <p className="text-gym-yellow">+91 98765 43210</p>
             </div>
-            <p className="text-gray-400">
-              Subscribe to our newsletter for the latest updates and offers.
+          </div>
+          
+          {/* Column 2 - Quick Links */}
+          <div>
+            <h3 className="text-xl font-bold mb-6">Quick Links</h3>
+            <ul className="space-y-3">
+              {["Home", "About Us", "Gallery", "Membership", "Trainers", "Classes", "Contact Us"].map((link) => (
+                <li key={link}>
+                  <a 
+                    href={`#${link.toLowerCase().replace(/\s+/g, "-")}`} 
+                    className="text-gray-400 hover:text-gym-yellow transition-colors flex items-center"
+                  >
+                    <ChevronRight size={16} className="text-gym-yellow mr-2" />
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          {/* Column 3 - Operating Hours */}
+          <div>
+            <h3 className="text-xl font-bold mb-6">Operating Hours</h3>
+            <ul className="space-y-3">
+              <li className="flex justify-between">
+                <span className="text-gray-400">Monday - Friday:</span>
+                <span>5:00 AM - 11:00 PM</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-400">Saturday:</span>
+                <span>6:00 AM - 10:00 PM</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-400">Sunday:</span>
+                <span>6:00 AM - 10:00 PM</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-400">Public Holidays:</span>
+                <span>8:00 AM - 8:00 PM</span>
+              </li>
+            </ul>
+            <div className="mt-6 p-3 bg-gym-yellow/10 rounded-lg border border-gym-yellow/30">
+              <p className="text-gym-yellow text-sm">
+                <strong>Note:</strong> Hours may vary during special events and holidays. Please check our social media for updates.
+              </p>
+            </div>
+          </div>
+          
+          {/* Column 4 - Newsletter */}
+          <div>
+            <h3 className="text-xl font-bold mb-6">Newsletter</h3>
+            <p className="text-gray-400 mb-4">
+              Subscribe to our newsletter for the latest updates, fitness tips, and exclusive offers.
             </p>
+            <form className="space-y-3">
+              <div>
+                <input
+                  type="email"
+                  placeholder="Your Email Address"
+                  className="w-full p-3 rounded-md bg-gym-gray-800 border border-gym-gray-700 text-white focus:border-gym-yellow focus:ring-1 focus:ring-gym-yellow"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full btn btn-primary"
+              >
+                Subscribe
+              </button>
+            </form>
           </div>
         </div>
         
-        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm mb-4 md:mb-0">
-            © {new Date().getFullYear()} Muscle Garage. All rights reserved.
+        {/* Bottom Footer */}
+        <div className="border-t border-gym-gray-800 mt-10 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-400 text-center md:text-left mb-4 md:mb-0">
+            &copy; {new Date().getFullYear()} Muscle Garage. All Rights Reserved.
           </p>
-          <div className="flex space-x-4">
-            <Link to="#" className="text-gray-400 hover:text-gym-yellow text-sm">Privacy Policy</Link>
-            <Link to="#" className="text-gray-400 hover:text-gym-yellow text-sm">Terms of Service</Link>
+          <div className="flex space-x-6">
+            <a href="#" className="text-gray-400 hover:text-gym-yellow transition-colors">
+              Privacy Policy
+            </a>
+            <a href="#" className="text-gray-400 hover:text-gym-yellow transition-colors">
+              Terms of Service
+            </a>
+            <a href="#" className="text-gray-400 hover:text-gym-yellow transition-colors">
+              Sitemap
+            </a>
           </div>
         </div>
       </div>

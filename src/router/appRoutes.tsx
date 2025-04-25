@@ -27,8 +27,7 @@ import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 
-// Load the public website
-import PublicWebsite from '@/pages/website/PublicWebsite';
+// Note: Index is already imported above and will be used as the public website
 
 export const appRoutes: RouteObject[] = [
   {
@@ -37,7 +36,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: '/',
-    element: <PublicWebsite />
+    element: <Index />
   },
   {
     path: '/dashboard',

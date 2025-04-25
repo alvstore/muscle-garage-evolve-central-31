@@ -68,6 +68,12 @@ export default {
 					'red': '#e53e3e',
 					'green': '#38a169',
 					'gold': '#d69e2e',
+					'yellow': '#ffcc00',
+					'yellow-dark': '#e6b800',
+					'yellow-hover': '#ffd633',
+					'gray-900': '#111111',
+					'gray-800': '#1a1a1a',
+					'black': '#0f0f0f'
 				}
 			},
 			borderRadius: {
