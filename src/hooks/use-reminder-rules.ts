@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { ReminderRule, adaptReminderRuleFromDB, ReminderTriggerType, NotificationChannel } from '@/types/notification';
+import { ReminderRule, adaptReminderRuleFromDB } from '@/types/notification';
 import { toast } from 'sonner';
 
 export const useReminderRules = () => {
@@ -21,8 +21,10 @@ export const useReminderRules = () => {
       
       if (fetchError) throw new Error(fetchError.message);
       
-      const adaptedRules = data.map(adaptReminderRuleFromDB);
-      setReminderRules(adaptedRules);
+      if (data) {
+        const adaptedRules = data.map(adaptReminderRuleFromDB);
+        setReminderRules(adaptedRules);
+      }
     } catch (err: any) {
       setError(err);
       console.error('Error fetching reminder rules:', err);
@@ -36,7 +38,7 @@ export const useReminderRules = () => {
       const { error: createError } = await supabase
         .from('reminder_rules')
         .insert([{
-          title: rule.title,
+          title: rule.name,
           description: rule.description,
           trigger_type: rule.triggerType,
           trigger_value: rule.triggerValue,
@@ -44,8 +46,9 @@ export const useReminderRules = () => {
           send_via: rule.sendVia,
           target_roles: rule.targetRoles,
           message: rule.message,
-          is_active: rule.isActive,
-          conditions: rule.conditions || {}
+          is_active: rule.active,
+          conditions: rule.conditions || {},
+          target_type: rule.targetType || ''
         }]);
       
       if (createError) throw new Error(createError.message);
@@ -63,7 +66,7 @@ export const useReminderRules = () => {
     try {
       const updateData: any = {};
       
-      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.name !== undefined) updateData.title = updates.name;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.triggerType !== undefined) updateData.trigger_type = updates.triggerType;
       if (updates.triggerValue !== undefined) updateData.trigger_value = updates.triggerValue;
@@ -71,8 +74,9 @@ export const useReminderRules = () => {
       if (updates.sendVia !== undefined) updateData.send_via = updates.sendVia;
       if (updates.targetRoles !== undefined) updateData.target_roles = updates.targetRoles;
       if (updates.message !== undefined) updateData.message = updates.message;
-      if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+      if (updates.active !== undefined) updateData.is_active = updates.active;
       if (updates.conditions !== undefined) updateData.conditions = updates.conditions;
+      if (updates.targetType !== undefined) updateData.target_type = updates.targetType;
       
       const { error: updateError } = await supabase
         .from('reminder_rules')
@@ -108,8 +112,8 @@ export const useReminderRules = () => {
     }
   };
 
-  const toggleRuleStatus = async (id: string, isActive: boolean) => {
-    return await updateReminderRule(id, { isActive: !isActive });
+  const toggleRuleStatus = async (id: string, active: boolean) => {
+    return await updateReminderRule(id, { active: !active });
   };
 
   useEffect(() => {

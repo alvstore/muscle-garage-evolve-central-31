@@ -28,18 +28,18 @@ export const useMotivationalMessages = () => {
     }
   }, []);
 
-  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { error } = await supabase
         .from('motivational_messages')
-        .insert([{
+        .insert({
           title: message.title,
           content: message.content,
           category: message.category,
           tags: message.tags || [],
           author: message.author || 'Unknown',
           active: message.active
-        }]);
+        });
       
       if (error) throw error;
       
@@ -53,7 +53,7 @@ export const useMotivationalMessages = () => {
     }
   };
 
-  const updateMessage = async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const updateMessage = async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>>) => {
     try {
       const { error } = await supabase
         .from('motivational_messages')

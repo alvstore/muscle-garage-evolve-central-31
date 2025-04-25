@@ -69,6 +69,7 @@ export const useAnnouncements = (props?: UseAnnouncementsProps) => {
           author_name: announcementData.authorName,
           priority: announcementData.priority,
           expires_at: announcementData.expiresAt,
+          channel: announcementData.channel,
           channels: announcementData.channels || [],
           target_roles: announcementData.targetRoles || [],
           branch_id: announcementData.branchId || currentBranch?.id
@@ -102,6 +103,7 @@ export const useAnnouncements = (props?: UseAnnouncementsProps) => {
       if (updates.authorName) dbUpdates.author_name = updates.authorName;
       if (updates.priority) dbUpdates.priority = updates.priority;
       if (updates.expiresAt) dbUpdates.expires_at = updates.expiresAt;
+      if (updates.channel) dbUpdates.channel = updates.channel;
       if (updates.channels) dbUpdates.channels = updates.channels;
       if (updates.targetRoles) dbUpdates.target_roles = updates.targetRoles;
       if (updates.branchId) dbUpdates.branch_id = updates.branchId;

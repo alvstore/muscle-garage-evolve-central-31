@@ -42,8 +42,8 @@ export const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <InvoiceForm 
-          invoice={invoice} 
-          onComplete={handleComplete} 
+          invoice={invoice}
+          onComplete={handleComplete}
         />
       </DialogContent>
     </Dialog>

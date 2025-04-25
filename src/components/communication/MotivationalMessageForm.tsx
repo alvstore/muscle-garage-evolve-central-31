@@ -21,7 +21,7 @@ const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({
   onComplete
 }) => {
   const { user } = useAuth();
-  const { createMessage, updateMessage } = useMotivationalMessages();
+  const { addMessage, updateMessage } = useMotivationalMessages();
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -78,7 +78,7 @@ const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({
           toast.success('Message updated successfully');
         }
       } else {
-        success = await createMessage(messageData);
+        success = await addMessage(messageData);
         if (success) {
           toast.success('Message created successfully');
         }

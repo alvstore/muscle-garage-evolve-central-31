@@ -15,11 +15,13 @@ import { toast } from 'sonner';
 interface FeedbackFormProps {
   allowedFeedbackTypes?: string[];
   onComplete?: () => void;
+  onSubmitSuccess?: () => void;
 }
 
 const FeedbackForm: React.FC<FeedbackFormProps> = ({ 
   allowedFeedbackTypes = ['general', 'facility', 'trainer', 'class', 'equipment'],
-  onComplete
+  onComplete,
+  onSubmitSuccess
 }) => {
   const { user } = useAuth();
   const { currentBranch } = useBranch();
@@ -67,6 +69,9 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
         resetForm();
         if (onComplete) {
           onComplete();
+        }
+        if (onSubmitSuccess) {
+          onSubmitSuccess();
         }
       } else {
         toast.error('Failed to submit feedback. Please try again.');
