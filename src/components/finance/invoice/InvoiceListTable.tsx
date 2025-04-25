@@ -23,6 +23,7 @@ export interface InvoiceListTableProps {
   onMarkAsPaid?: (id: string) => void;
   onSendPaymentLink?: (id: string) => void;
   onDownload?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
@@ -35,6 +36,7 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
   onMarkAsPaid,
   onSendPaymentLink,
   onDownload,
+  onDelete,
 }) => {
   if (isLoading) {
     return <div className="flex justify-center py-8">Loading invoices...</div>;
@@ -85,6 +87,7 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
                   onMarkAsPaid={onMarkAsPaid || (() => {})}
                   onSendPaymentLink={onSendPaymentLink || (() => {})}
                   onDownload={onDownload || (() => {})}
+                  onDelete={onDelete}
                 />
               </TableCell>
             </TableRow>

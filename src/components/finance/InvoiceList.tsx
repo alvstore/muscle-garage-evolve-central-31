@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,7 +84,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Invoices</CardTitle>
           {!readonly && (
-            <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-1">
+            <Button onClick={handleAddInvoice} className="flex items-center gap-1">
               <PlusIcon className="h-4 w-4" /> Create Invoice
             </Button>
           )}

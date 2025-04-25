@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { FileTextIcon, CreditCardIcon, DownloadIcon } from "lucide-react";
+import { FileTextIcon, CreditCardIcon, DownloadIcon, TrashIcon } from "lucide-react";
 import { Invoice } from "@/types/finance";
 
 interface InvoiceActionsProps {
@@ -13,6 +13,7 @@ interface InvoiceActionsProps {
   onMarkAsPaid: (id: string) => void;
   onSendPaymentLink: (id: string) => void;
   onDownload: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const InvoiceActions = ({
@@ -24,6 +25,7 @@ export const InvoiceActions = ({
   onMarkAsPaid,
   onSendPaymentLink,
   onDownload,
+  onDelete,
 }: InvoiceActionsProps) => {
   return (
     <div className="flex justify-end gap-2">
@@ -48,6 +50,12 @@ export const InvoiceActions = ({
       {allowDownload && (
         <Button variant="ghost" size="sm" onClick={() => onDownload(invoice.id)}>
           <DownloadIcon className="h-4 w-4" />
+        </Button>
+      )}
+
+      {onDelete && !readonly && invoice.status !== "paid" && (
+        <Button variant="ghost" size="sm" onClick={() => onDelete(invoice.id)}>
+          <TrashIcon className="h-4 w-4" />
         </Button>
       )}
     </div>

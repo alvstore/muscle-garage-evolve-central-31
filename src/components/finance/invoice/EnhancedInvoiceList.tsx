@@ -6,6 +6,7 @@ import { InvoiceListHeader } from '@/components/finance/invoice/InvoiceListHeade
 import { InvoiceListTable } from '@/components/finance/invoice/InvoiceListTable';
 import InvoiceFormDialog from '@/components/finance/invoice/InvoiceFormDialog';
 import { toast } from 'sonner';
+import { Invoice } from '@/types/finance';
 
 export interface EnhancedInvoiceListProps {
   filter?: string;
@@ -21,9 +22,9 @@ const EnhancedInvoiceList: React.FC<EnhancedInvoiceListProps> = ({
   readOnly = false
 }) => {
   const { invoices, isLoading, fetchInvoices, deleteInvoice } = useInvoices();
-  const [filteredInvoices, setFilteredInvoices] = useState([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (invoices) {
@@ -42,12 +43,12 @@ const EnhancedInvoiceList: React.FC<EnhancedInvoiceListProps> = ({
     setShowInvoiceForm(true);
   };
 
-  const handleEditInvoice = (invoice) => {
+  const handleEditInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setShowInvoiceForm(true);
   };
 
-  const handleDeleteInvoice = async (id) => {
+  const handleDeleteInvoice = async (id: string) => {
     try {
       await deleteInvoice(id);
       toast.success('Invoice deleted successfully');
