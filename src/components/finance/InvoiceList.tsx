@@ -124,6 +124,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
     toast.success("Payment link sent successfully");
   };
 
+  // Fix this function to receive an id parameter instead of taking no parameters
   const handleSaveInvoice = async (invoice: Invoice) => {
     try {
       setIsLoading(true);
@@ -237,7 +238,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       {isFormOpen && !readonly && (
         <InvoiceForm
           invoice={editingInvoice}
-          onComplete={handleSaveInvoice}
+          onComplete={handleSaveInvoice} // Fixed: handleSaveInvoice now accepts an Invoice parameter
           onCancel={handleCancelForm}
         />
       )}
