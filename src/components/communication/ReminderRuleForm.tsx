@@ -1,362 +1,243 @@
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/components/ui/use-toast';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useReminderRules } from '@/hooks/use-reminder-rules';
-import { ReminderRule, ReminderTriggerType, NotificationChannel } from '@/types/notification';
+import { toast } from 'sonner';
+import { ReminderRule } from '@/types/notification';
 
-export interface ReminderRuleFormProps {
-  editRule?: ReminderRule;
+interface ReminderRuleFormProps {
+  editRule?: ReminderRule | null;
   onComplete?: () => void;
 }
 
-const schema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
-  description: z.string().optional(),
-  triggerType: z.string(),
-  triggerValue: z.string().transform(Number).optional(),
-  notificationChannel: z.string(),
-  sendVia: z.array(z.string()).min(1, { message: 'At least one notification channel must be selected' }),
-  targetRoles: z.array(z.string()).min(1, { message: 'At least one target role must be selected' }),
-  message: z.string().optional(),
-  isActive: z.boolean().default(true),
-});
-
-const triggerTypes = [
-  { value: 'membership_expiry', label: 'Membership Expiry', needsValue: true },
-  { value: 'birthday', label: 'Birthday', needsValue: true },
-  { value: 'class_reminder', label: 'Class Reminder', needsValue: true },
-  { value: 'payment_due', label: 'Payment Due', needsValue: true },
-  { value: 'attendance_missed', label: 'Attendance Missed', needsValue: true },
-  { value: 'membership_renewal', label: 'Membership Renewal', needsValue: true },
-  { value: 'goal_achieved', label: 'Goal Achieved', needsValue: false },
-  { value: 'follow_up', label: 'Follow Up', needsValue: true },
-];
-
-const notificationChannels = [
-  { value: 'email', label: 'Email' },
-  { value: 'sms', label: 'SMS' },
-  { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'app', label: 'In-App' },
-  { value: 'push', label: 'Push Notification' },
-];
-
-const targetRoles = [
-  { value: 'member', label: 'Member' },
-  { value: 'trainer', label: 'Trainer' },
-  { value: 'staff', label: 'Staff' },
-  { value: 'admin', label: 'Admin' },
-];
-
-const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ editRule, onComplete }) => {
+const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
+  editRule = null,
+  onComplete
+}) => {
   const { createReminderRule, updateReminderRule } = useReminderRules();
-  const { toast } = useToast();
-  const [needsValue, setNeedsValue] = useState(editRule ? 
-    triggerTypes.find(t => t.value === editRule.triggerType)?.needsValue ?? false : 
-    true);
-
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      title: editRule?.title || '',
-      description: editRule?.description || '',
-      triggerType: editRule?.triggerType || 'membership_expiry',
-      triggerValue: editRule?.triggerValue?.toString() || '7',
-      notificationChannel: editRule?.notificationChannel || 'email',
-      sendVia: editRule?.sendVia || ['email'],
-      targetRoles: editRule?.targetRoles || ['member'],
-      message: editRule?.message || '',
-      isActive: editRule?.isActive ?? true,
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [triggerType, setTriggerType] = useState('days_before_expiry');
+  const [triggerValue, setTriggerValue] = useState<number>(7);
+  const [message, setMessage] = useState('');
+  const [targetType, setTargetType] = useState('all_members');
+  const [active, setActive] = useState(true);
+  const [channels, setChannels] = useState<string[]>(['app']);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  useEffect(() => {
+    if (editRule) {
+      setName(editRule.name);
+      setDescription(editRule.description || '');
+      setTriggerType(editRule.triggerType);
+      setTriggerValue(editRule.triggerValue);
+      setMessage(editRule.message);
+      setTargetType(editRule.targetType);
+      setActive(editRule.active);
+      setChannels(editRule.channels);
+    }
+  }, [editRule]);
+  
+  const availableChannels = [
+    { id: 'app', label: 'In-App Notification' },
+    { id: 'email', label: 'Email' },
+    { id: 'sms', label: 'SMS' },
+    { id: 'whatsapp', label: 'WhatsApp' }
+  ];
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      toast.error('Please provide a name for the reminder rule');
+      return;
+    }
+    
+    if (!message.trim()) {
+      toast.error('Please provide a message template');
+      return;
+    }
+    
+    if (channels.length === 0) {
+      toast.error('Please select at least one communication channel');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       const ruleData = {
-        title: values.title,
-        description: values.description,
-        triggerType: values.triggerType as ReminderTriggerType,
-        triggerValue: values.triggerValue,
-        notificationChannel: values.notificationChannel as NotificationChannel,
-        sendVia: values.sendVia,
-        targetRoles: values.targetRoles,
-        message: values.message,
-        isActive: values.isActive,
-        conditions: {}
+        name,
+        description,
+        triggerType,
+        triggerValue,
+        message,
+        targetType,
+        active,
+        channels
       };
-
-      let success = false;
-
+      
+      let success;
+      
       if (editRule) {
         success = await updateReminderRule(editRule.id, ruleData);
         if (success) {
-          toast({
-            title: "Rule Updated",
-            description: "The reminder rule has been updated successfully.",
-          });
+          toast.success('Reminder rule updated successfully');
         }
       } else {
         success = await createReminderRule(ruleData);
         if (success) {
-          toast({
-            title: "Rule Created",
-            description: "New reminder rule has been created successfully.",
-          });
-          form.reset();
+          toast.success('Reminder rule created successfully');
         }
       }
-
+      
       if (success && onComplete) {
         onComplete();
+      } else if (!success) {
+        toast.error('Failed to save reminder rule');
       }
     } catch (error) {
-      console.error("Error saving reminder rule:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem saving the reminder rule.",
-        variant: "destructive",
-      });
+      console.error('Error saving reminder rule:', error);
+      toast.error('An error occurred while saving the reminder rule');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleToggleChannel = (channelId: string) => {
+    if (channels.includes(channelId)) {
+      setChannels(channels.filter(id => id !== channelId));
+    } else {
+      setChannels([...channels, channelId]);
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter rule title" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Describe what this rule does" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="triggerType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trigger Type</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    const selectedType = triggerTypes.find(t => t.value === value);
-                    setNeedsValue(selectedType?.needsValue ?? false);
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select trigger type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {triggerTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Form fields */}
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="rule-name">Rule Name</Label>
+          <Input
+            id="rule-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name for this reminder rule"
+            required
           />
-
-          {needsValue && (
-            <FormField
-              control={form.control}
-              name="triggerValue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Days Before/After</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Number of days before/after the event to send the reminder
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
         </div>
-
-        <FormField
-          control={form.control}
-          name="notificationChannel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Primary Notification Channel</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select notification channel" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {notificationChannels.map((channel) => (
-                    <SelectItem key={channel.value} value={channel.value}>
-                      {channel.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="sendVia"
-          render={() => (
-            <FormItem>
-              <FormLabel>Send Via</FormLabel>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                {notificationChannels.map((channel) => (
-                  <FormField
-                    key={channel.value}
-                    control={form.control}
-                    name="sendVia"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(channel.value)}
-                            onCheckedChange={(checked) => {
-                              const updatedList = checked
-                                ? [...field.value, channel.value]
-                                : field.value.filter((val) => val !== channel.value);
-                              field.onChange(updatedList);
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {channel.label}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="targetRoles"
-          render={() => (
-            <FormItem>
-              <FormLabel>Target Roles</FormLabel>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                {targetRoles.map((role) => (
-                  <FormField
-                    key={role.value}
-                    control={form.control}
-                    name="targetRoles"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(role.value)}
-                            onCheckedChange={(checked) => {
-                              const updatedList = checked
-                                ? [...field.value, role.value]
-                                : field.value.filter((val) => val !== role.value);
-                              field.onChange(updatedList);
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {role.label}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="message"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Message Template</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter the message to send"
-                  {...field}
-                  rows={4}
+        
+        <div>
+          <Label htmlFor="rule-description">Description (Optional)</Label>
+          <Textarea
+            id="rule-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short description of what this rule does"
+            rows={2}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="trigger-type">Trigger Type</Label>
+            <Select value={triggerType} onValueChange={setTriggerType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select trigger" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="days_before_expiry">Days Before Membership Expiry</SelectItem>
+                <SelectItem value="days_after_joining">Days After Joining</SelectItem>
+                <SelectItem value="days_of_absence">Days of Absence</SelectItem>
+                <SelectItem value="birthday">Birthday</SelectItem>
+                <SelectItem value="class_reminder">Class Reminder</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="trigger-value">Trigger Value</Label>
+            <Input
+              id="trigger-value"
+              type="number"
+              value={triggerValue}
+              onChange={(e) => setTriggerValue(Number(e.target.value))}
+              min={0}
+              max={365}
+              required
+            />
+          </div>
+        </div>
+        
+        <div>
+          <Label htmlFor="target-type">Target Recipients</Label>
+          <Select value={targetType} onValueChange={setTargetType}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select recipients" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all_members">All Members</SelectItem>
+              <SelectItem value="active_members">Active Members Only</SelectItem>
+              <SelectItem value="inactive_members">Inactive Members</SelectItem>
+              <SelectItem value="expiring_members">Expiring Members</SelectItem>
+              <SelectItem value="new_members">New Members</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="message-template">Message Template</Label>
+          <Textarea
+            id="message-template"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Template for the reminder message"
+            rows={4}
+            required
+          />
+          <p className="text-sm text-muted-foreground mt-2">
+            Use {'{name}'} for member name, {'{days}'} for days value, {'{date}'} for formatted date
+          </p>
+        </div>
+        
+        <div>
+          <Label className="mb-2 block">Communication Channels</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {availableChannels.map((channel) => (
+              <div key={channel.id} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`channel-${channel.id}`} 
+                  checked={channels.includes(channel.id)}
+                  onCheckedChange={() => handleToggleChannel(channel.id)}
                 />
-              </FormControl>
-              <FormDescription>
-                You can use {"{"}variables{"}"} like {"{"}name{"}"}, {"{"}date{"}"}, etc.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="isActive"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel className="font-normal">
-                Activate this rule
-              </FormLabel>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full">
-          {editRule ? 'Update Rule' : 'Create Rule'}
+                <Label htmlFor={`channel-${channel.id}`} className="text-sm">{channel.label}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="active" 
+            checked={active} 
+            onCheckedChange={(checked) => setActive(checked === true)}
+          />
+          <Label htmlFor="active">Rule is active</Label>
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : editRule ? 'Update Rule' : 'Create Rule'}
         </Button>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 };
 

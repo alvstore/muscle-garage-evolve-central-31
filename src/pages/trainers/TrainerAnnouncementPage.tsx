@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useAnnouncements } from '@/hooks/use-announcements';
-import { TrainerAnnouncementForm } from '@/components/communication/TrainerAnnouncementForm';
+import TrainerAnnouncementForm from '@/components/communication/TrainerAnnouncementForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const TrainerAnnouncementPage = () => {

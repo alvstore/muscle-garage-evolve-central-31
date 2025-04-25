@@ -1,224 +1,171 @@
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
-import { useFeedback } from '@/hooks/use-feedback';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from '@/hooks/use-auth';
-import { FeedbackType } from '@/types/notification';
+import { useBranch } from '@/hooks/use-branch';
+import { useFeedback } from '@/hooks/use-feedback';
+import { toast } from 'sonner';
 
-export interface FeedbackFormProps {
-  onSubmitSuccess?: () => void;
-  allowedTypes?: string[];
+interface FeedbackFormProps {
+  allowedFeedbackTypes?: string[];
+  onComplete?: () => void;
 }
 
-const feedbackTypes = [
-  { value: 'general', label: 'General Feedback' },
-  { value: 'trainer', label: 'Trainer Feedback' },
-  { value: 'class', label: 'Class Feedback' },
-  { value: 'facility', label: 'Facility Feedback' },
-  { value: 'service', label: 'Service Feedback' },
-  { value: 'equipment', label: 'Equipment Feedback' },
-  { value: 'fitness-plan', label: 'Fitness Plan Feedback' },
-];
-
-const schema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters'),
-  type: z.string(),
-  rating: z.string().transform(Number),
-  comments: z.string().optional(),
-  anonymous: z.boolean().optional(),
-});
-
 const FeedbackForm: React.FC<FeedbackFormProps> = ({ 
-  onSubmitSuccess, 
-  allowedTypes = feedbackTypes.map(t => t.value)
+  allowedFeedbackTypes = ['general', 'facility', 'trainer', 'class', 'equipment'],
+  onComplete
 }) => {
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const { submitFeedback } = useFeedback();
+
+  // Form state
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [rating, setRating] = useState<number>(5);
+  const [type, setType] = useState(allowedFeedbackTypes[0] || 'general');
+  const [anonymous, setAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      title: '',
-      type: 'general',
-      rating: '5',
-      comments: '',
-      anonymous: false,
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim()) {
+      toast.error('Please provide a title for your feedback');
+      return;
+    }
+    
+    if (!content.trim()) {
+      toast.error('Please provide feedback content');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
+      const feedbackData = {
+        title,
+        content,
+        rating,
+        type,
+        memberId: anonymous ? undefined : user?.id,
+        memberName: anonymous ? undefined : user?.name,
+        anonymous,
+        branchId: currentBranch?.id
+      };
       
-      const success = await submitFeedback({
-        title: values.title,
-        type: values.type as FeedbackType,
-        rating: values.rating,
-        comments: values.comments,
-        anonymous: values.anonymous,
-        memberName: values.anonymous ? undefined : user?.name,
-        memberId: values.anonymous ? undefined : user?.id,
-      });
+      const success = await submitFeedback(feedbackData);
       
       if (success) {
-        toast({
-          title: "Feedback submitted",
-          description: "Thank you for your feedback!",
-        });
-        
-        form.reset();
-        
-        if (onSubmitSuccess) {
-          onSubmitSuccess();
+        toast.success('Thank you for your feedback!');
+        resetForm();
+        if (onComplete) {
+          onComplete();
         }
       } else {
-        toast({
-          title: "Failed to submit feedback",
-          variant: "destructive",
-        });
+        toast.error('Failed to submit feedback. Please try again.');
       }
     } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while submitting your feedback.",
-        variant: "destructive",
-      });
+      console.error('Error submitting feedback:', error);
+      toast.error('An error occurred while submitting your feedback');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Filter feedback types to only those that are allowed
-  const availableFeedbackTypes = feedbackTypes.filter(
-    (type) => allowedTypes.includes(type.value)
-  );
+  
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setRating(5);
+    setType(allowedFeedbackTypes[0] || 'general');
+    setAnonymous(false);
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Provide a title for your feedback" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="feedback-title">Title</Label>
+          <Input
+            id="feedback-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Brief title for your feedback"
+            required
+          />
+        </div>
         
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Feedback Type</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availableFeedbackTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="rating"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Rating (1-5)</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a rating" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="1">1 - Poor</SelectItem>
-                  <SelectItem value="2">2 - Fair</SelectItem>
-                  <SelectItem value="3">3 - Good</SelectItem>
-                  <SelectItem value="4">4 - Very Good</SelectItem>
-                  <SelectItem value="5">5 - Excellent</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="comments"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Comments</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Share your thoughts and suggestions..."
-                  {...field}
-                  rows={4}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div>
+          <Label htmlFor="feedback-type">Feedback Category</Label>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select feedback type" />
+            </SelectTrigger>
+            <SelectContent>
+              {allowedFeedbackTypes.map(type => (
+                <SelectItem key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
-        <FormField
-          control={form.control}
-          name="anonymous"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center gap-2">
-              <FormControl>
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-              </FormControl>
-              <FormLabel className="m-0">Submit anonymously</FormLabel>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div>
+          <Label htmlFor="feedback-content">Your Feedback</Label>
+          <Textarea
+            id="feedback-content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Please share your experience or suggestions"
+            rows={5}
+            required
+          />
+        </div>
         
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <div>
+          <Label>Rating</Label>
+          <RadioGroup 
+            className="flex space-x-4 mt-2" 
+            value={String(rating)} 
+            onValueChange={val => setRating(Number(val))}
+          >
+            {[1, 2, 3, 4, 5].map((value) => (
+              <div className="flex flex-col items-center space-y-1" key={value}>
+                <RadioGroupItem value={String(value)} id={`rating-${value}`} />
+                <Label htmlFor={`rating-${value}`} className="text-xs">{value}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="anonymous" 
+            checked={anonymous} 
+            onCheckedChange={(checked) => setAnonymous(checked === true)}
+          />
+          <Label htmlFor="anonymous" className="text-sm">
+            Submit anonymously
+          </Label>
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={resetForm}>
+          Reset
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
         </Button>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 };
 

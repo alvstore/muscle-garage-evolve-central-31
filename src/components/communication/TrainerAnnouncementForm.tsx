@@ -39,10 +39,12 @@ import { SendIcon, Users, MessageSquare, Bell, Check, Loader2 } from 'lucide-rea
 import { Member } from '@/types';
 
 interface TrainerAnnouncementFormProps {
+  onSubmit: (data: any) => Promise<void>;
   members?: Member[];
 }
 
-const TrainerAnnouncementForm: React.FC<TrainerAnnouncementFormProps> = ({ 
+export const TrainerAnnouncementForm: React.FC<TrainerAnnouncementFormProps> = ({ 
+  onSubmit,
   members = [] 
 }) => {
   const { user } = useAuth();
