@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useInvoices } from '@/hooks/use-invoices';
-import { Invoice } from '@/types/finance';
 import { InvoiceListHeader } from '@/components/finance/invoice/InvoiceListHeader';
 import { InvoiceListTable } from '@/components/finance/invoice/InvoiceListTable';
-import { InvoiceFormDialog } from '@/components/finance/invoice/InvoiceFormDialog';
+import InvoiceFormDialog from '@/components/finance/invoice/InvoiceFormDialog';
 import { toast } from 'sonner';
 
 export interface EnhancedInvoiceListProps {
@@ -15,16 +14,16 @@ export interface EnhancedInvoiceListProps {
   readOnly?: boolean;
 }
 
-const EnhancedInvoiceList = ({ 
+const EnhancedInvoiceList: React.FC<EnhancedInvoiceListProps> = ({
   filter = 'all',
   allowPayment = true,
   allowDownload = true,
   readOnly = false
-}: EnhancedInvoiceListProps) => {
+}) => {
   const { invoices, isLoading, fetchInvoices, deleteInvoice } = useInvoices();
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     if (invoices) {
@@ -43,12 +42,12 @@ const EnhancedInvoiceList = ({
     setShowInvoiceForm(true);
   };
 
-  const handleEditInvoice = (invoice: Invoice) => {
+  const handleEditInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setShowInvoiceForm(true);
   };
 
-  const handleDeleteInvoice = async (id: string) => {
+  const handleDeleteInvoice = async (id) => {
     try {
       await deleteInvoice(id);
       toast.success('Invoice deleted successfully');
@@ -72,7 +71,7 @@ const EnhancedInvoiceList = ({
       
       <CardContent>
         <InvoiceListTable 
-          invoices={filteredInvoices} 
+          invoices={filteredInvoices}
           isLoading={isLoading}
           onEdit={readOnly ? undefined : handleEditInvoice}
           onDelete={readOnly ? undefined : handleDeleteInvoice}
@@ -82,9 +81,9 @@ const EnhancedInvoiceList = ({
       </CardContent>
       
       {!readOnly && (
-        <InvoiceFormDialog 
-          open={showInvoiceForm} 
-          onOpenChange={setShowInvoiceForm} 
+        <InvoiceFormDialog
+          open={showInvoiceForm}
+          onOpenChange={setShowInvoiceForm}
           invoice={selectedInvoice}
           onComplete={handleInvoiceFormComplete}
         />

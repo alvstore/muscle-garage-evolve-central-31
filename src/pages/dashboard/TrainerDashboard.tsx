@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useBranch } from "@/hooks/use-branch";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { PlusIcon } from "lucide-react";
 
 // Mock announcements that would be used for trainers
@@ -70,11 +71,13 @@ const TrainerDashboard = () => {
         if (assignmentsError) throw assignmentsError;
         
         if (assignments && assignments.length > 0) {
-          const members = assignments.map(assignment => ({
-            id: assignment.members?.id || '',
-            name: assignment.members?.name || 'Unknown',
-            // Add other fields as needed
-          })).filter(member => member.id !== ''); // Filter out any members without valid IDs
+          const members = assignments
+            .filter(assignment => assignment.members) // Filter out any null members
+            .map(assignment => ({
+              id: assignment.members.id || '',
+              name: assignment.members.name || 'Unknown',
+              // Add other fields as needed
+            }));
           
           setAssignedMembers(members);
         }

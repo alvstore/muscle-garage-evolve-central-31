@@ -1,129 +1,177 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import TrainerAnnouncementForm from '@/components/communication/TrainerAnnouncementForm';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import Announcements from '@/components/dashboard/Announcements';
-import FeedbackList from '@/components/communication/FeedbackList';
-import { Announcement } from '@/types/notification';
-import { Member } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
-// Mock data
-const mockAnnouncements: Announcement[] = [
-  {
-    id: "announcement1",
-    title: "New Workout Program",
-    content: "I've created a new workout program focused on strength building. Check it out!",
-    authorId: "trainer1",
-    authorName: "Alex Trainer",
-    createdAt: "2023-07-10T10:00:00Z",
-    priority: "medium",
-    targetRoles: ["member"],
-    channels: ["in-app", "email"],
-    sentCount: 15,
-    forRoles: ["member"],
-    createdBy: "trainer1"
-  },
-  {
-    id: "announcement2",
-    title: "Holiday Schedule",
-    content: "Please note that I'll be away on vacation from July 20-25. Make sure to follow your workout plan during this time.",
-    authorId: "trainer1",
-    authorName: "Alex Trainer",
-    createdAt: "2023-07-12T14:30:00Z",
-    priority: "high",
-    targetRoles: ["member"],
-    channels: ["in-app", "email", "sms"],
-    sentCount: 15,
-    forRoles: ["member"],
-    createdBy: "trainer1"
-  }
-];
-
-// Update mock members to include required status property
-const mockMembers: Member[] = [
-  {
-    id: 'member1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer1',
-    goal: 'Weight Loss',
-    status: 'active' // Add the required status property
-  },
-  {
-    id: 'member2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer1',
-    goal: 'Muscle Gain',
-    status: 'active' // Add the required status property
-  },
-  {
-    id: 'member3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    role: 'member',
-    membershipStatus: 'active',
-    trainerId: 'trainer2',
-    goal: 'Strength',
-    status: 'active' // Add the required status property
-  }
-];
+import { useAnnouncements } from '@/hooks/use-announcements';
+import { TrainerAnnouncementForm } from '@/components/communication/TrainerAnnouncementForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const TrainerAnnouncementPage = () => {
+  const [activeTab, setActiveTab] = useState('published');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { user } = useAuth();
+  const { announcements, createAnnouncement, isLoading, fetchAnnouncements } = useAnnouncements();
   
-  // Filter members to only show those assigned to this trainer
-  const trainerMembers = mockMembers.filter(member => member.trainerId === user?.id);
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
   
-  // Filter announcements to only show those created by this trainer
-  const trainerAnnouncements = mockAnnouncements.filter(announcement => announcement.authorId === user?.id);
+  const trainerAnnouncements = [
+    {
+      id: '1',
+      title: 'New Training Protocol',
+      content: 'Starting next week, we will be implementing a new training protocol for cardio sessions.',
+      authorName: user?.name || 'Trainer',
+      createdAt: new Date().toISOString(),
+      priority: 'high' as const,
+      channels: ['app', 'email'],
+      targetRoles: ['member'],
+    },
+    {
+      id: '2',
+      title: 'Schedule Changes',
+      content: 'Please note that the weekend schedule will be modified during the upcoming holiday season.',
+      authorName: user?.name || 'Trainer',
+      createdAt: new Date().toISOString(),
+      priority: 'medium' as const,
+      channels: ['app'],
+      targetRoles: ['member'],
+    }
+  ];
+  
+  const handleCreateAnnouncement = async (formData) => {
+    const success = await createAnnouncement({
+      ...formData,
+      authorName: user?.name,
+      authorId: user?.id,
+      targetRoles: ['member'],
+      priority: formData.priority || 'medium',
+    });
+    
+    if (success) {
+      setShowCreateForm(false);
+      fetchAnnouncements();
+    }
+  };
+  
+  const myTrainerAnnouncements = announcements?.filter(a => a.authorId === user?.id) || [];
+  
+  const publishedAnnouncements = myTrainerAnnouncements.filter(a => 
+    new Date(a.expiresAt || '2099-12-31') > new Date()
+  );
+  
+  const expiredAnnouncements = myTrainerAnnouncements.filter(a => 
+    new Date(a.expiresAt || '2099-12-31') <= new Date()
+  );
   
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Member Communications</h1>
-          <p className="text-muted-foreground">Manage communications with your assigned members</p>
+    <Container>
+      <div className="py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Trainer Announcements</h1>
+            <p className="text-muted-foreground">Create and manage announcements for your members</p>
+          </div>
+          
+          <Button onClick={() => setShowCreateForm(true)}>
+            <PlusIcon className="w-4 h-4 mr-2" />
+            New Announcement
+          </Button>
         </div>
+        
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="published">Active</TabsTrigger>
+            <TabsTrigger value="expired">Expired</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="published" className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-10">Loading announcements...</div>
+            ) : publishedAnnouncements.length > 0 ? (
+              publishedAnnouncements.map(announcement => (
+                <Card key={announcement.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle>{announcement.title}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p>{announcement.content}</p>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>
+                          {new Date(announcement.createdAt).toLocaleDateString()}
+                        </span>
+                        {announcement.expiresAt && (
+                          <span>
+                            Expires: {new Date(announcement.expiresAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground">No active announcements</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="expired" className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-10">Loading announcements...</div>
+            ) : expiredAnnouncements.length > 0 ? (
+              expiredAnnouncements.map(announcement => (
+                <Card key={announcement.id}>
+                  <CardHeader>
+                    <CardTitle>{announcement.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p>{announcement.content}</p>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>
+                          Created: {new Date(announcement.createdAt).toLocaleDateString()}
+                        </span>
+                        {announcement.expiresAt && (
+                          <span>
+                            Expired: {new Date(announcement.expiresAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground">No expired announcements</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
       
-      <Tabs defaultValue="announcements">
-        <TabsList className="mb-6">
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
-          <TabsTrigger value="feedback">Member Feedback</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="announcements" className="space-y-6">
-          <TrainerAnnouncementForm members={trainerMembers} />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>My Announcements</CardTitle>
-              <CardDescription>Previous announcements you've sent to members</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Announcements announcements={trainerAnnouncements} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="feedback">
-          <FeedbackList />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Announcement</DialogTitle>
+          </DialogHeader>
+          <TrainerAnnouncementForm onSubmit={handleCreateAnnouncement} />
+        </DialogContent>
+      </Dialog>
+    </Container>
   );
 };
 

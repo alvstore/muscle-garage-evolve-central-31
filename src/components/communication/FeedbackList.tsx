@@ -1,64 +1,85 @@
 
-import React from 'react';
-import { format } from 'date-fns';
-import { Card } from '@/components/ui/card';
-import { Feedback } from '@/types/notification';
-import { Star, MessageSquare } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash } from "lucide-react";
+import { useFeedback } from '@/hooks/use-feedback';
 
-interface FeedbackListProps {
-  feedbacks: Feedback[];
-  isLoading: boolean;
+export interface FeedbackListProps {
+  hideHeader?: boolean;
+  specificType?: string;
 }
 
-const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks, isLoading }) => {
-  if (isLoading) {
-    return <div className="flex justify-center py-8">Loading feedback...</div>;
-  }
+const FeedbackList: React.FC<FeedbackListProps> = ({ hideHeader = false, specificType }) => {
+  const { feedback, isLoading, fetchFeedback } = useFeedback();
 
-  if (!feedbacks || feedbacks.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-medium">No feedback yet</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          When members submit feedback, it will appear here.
-        </p>
-      </div>
-    );
+  useEffect(() => {
+    fetchFeedback();
+  }, [fetchFeedback]);
+
+  const filteredFeedback = specificType && specificType !== 'all'
+    ? feedback.filter(item => item.type === specificType)
+    : feedback;
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading feedback...</div>;
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {feedbacks.map((feedback) => (
-        <Card key={feedback.id} className="p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium">{feedback.title}</h3>
-              <p className="text-xs text-muted-foreground mt-1 capitalize">
-                Type: {feedback.type}
-              </p>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-1">{feedback.rating}</span>
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            </div>
-          </div>
-
-          {feedback.comments && (
-            <p className="mt-2 text-sm text-gray-600">{feedback.comments}</p>
-          )}
-
-          <div className="mt-4 flex justify-between text-xs text-muted-foreground">
-            <span>
-              {feedback.anonymous 
-                ? "Anonymous" 
-                : `By ${feedback.memberName || "Unknown Member"}`}
-            </span>
-            <span>{format(new Date(feedback.createdAt), 'MMM d, yyyy')}</span>
-          </div>
-        </Card>
-      ))}
-    </div>
+    <Card>
+      {!hideHeader && (
+        <CardHeader>
+          <CardTitle>Member Feedback</CardTitle>
+        </CardHeader>
+      )}
+      
+      <CardContent>
+        {filteredFeedback.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Member</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            
+            <TableBody>
+              {filteredFeedback.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <Badge variant="outline">{item.type}</Badge>
+                  </TableCell>
+                  <TableCell>{item.title}</TableCell>
+                  <TableCell>{item.rating}/5</TableCell>
+                  <TableCell>
+                    {item.anonymous ? "Anonymous" : item.memberName || "Unknown"}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 mr-1">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="text-center p-4">No feedback found</div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,170 +1,86 @@
-import { useState } from "react";
-import { Container } from "@/components/ui/container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MemberInvoiceList from "@/components/finance/MemberInvoiceList";
-import WebhookLogs from "@/components/finance/WebhookLogs";
-import { useAuth } from "@/hooks/use-auth";
-import EnhancedInvoiceList from "@/components/finance/invoice/EnhancedInvoiceList";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { format, subDays, startOfWeek, startOfMonth, startOfYear } from "date-fns";
+
+import React, { useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EnhancedInvoiceList from '@/components/finance/invoice/EnhancedInvoiceList';
+import { InvoiceStatsOverview } from '@/components/finance/invoice/InvoiceStatsOverview';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const InvoicePage = () => {
-  const { user } = useAuth();
-  const isMember = user?.role === "member";
-  const [activeTab, setActiveTab] = useState(isMember ? "invoices" : "all-invoices");
+  const [activeTab, setActiveTab] = useState('all');
+  const { can } = usePermissions();
   
-  // Date range state
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' | 'custom'>('month');
-  const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-
-  const handleDateRangeChange = (value: string) => {
-    const today = new Date();
-    
-    switch (value) {
-      case 'today':
-        setStartDate(new Date(today.setHours(0, 0, 0, 0)));
-        setEndDate(new Date());
-        break;
-      case 'week':
-        setStartDate(startOfWeek(today));
-        setEndDate(new Date());
-        break;
-      case 'month':
-        setStartDate(startOfMonth(today));
-        setEndDate(new Date());
-        break;
-      case 'year':
-        setStartDate(startOfYear(today));
-        setEndDate(new Date());
-        break;
-      case 'custom':
-        // Keep current dates when switching to custom
-        break;
-    }
-    
-    setDateRange(value as any);
-  };
-
-  if (isMember) {
-    return (
-      <Container>
-        <div className="py-6">
-          <h1 className="text-2xl font-bold mb-6">My Invoices</h1>
-          <MemberInvoiceList />
-        </div>
-      </Container>
-    );
-  }
+  const isReadOnly = !can('create', 'invoices');
 
   return (
     <Container>
-      <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Invoice Management</h1>
-        
-        <div className="mb-6 bg-white p-4 rounded-lg border shadow-sm">
-          <h3 className="text-lg font-medium mb-3">Filter Invoices</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label className="mb-2 block">Date Range</Label>
-              <Select value={dateRange} onValueChange={handleDateRangeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select date range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {dateRange === 'custom' && (
-              <>
-                <div>
-                  <Label className="mb-2 block">Start Date</Label>
-                  <DatePicker
-                    date={startDate}
-                    onSelect={setStartDate}
-                  />
-                </div>
-                <div>
-                  <Label className="mb-2 block">End Date</Label>
-                  <DatePicker
-                    date={endDate}
-                    onSelect={setEndDate}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          
-          {dateRange !== 'custom' ? (
-            <p className="text-sm text-muted-foreground mt-2">
-              Showing invoices from {startDate ? format(startDate, 'PPP') : ''} to {endDate ? format(endDate, 'PPP') : ''}
-            </p>
-          ) : null}
+      <div className="space-y-6 py-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Invoices</h1>
+          <p className="text-muted-foreground">
+            Create and manage invoices for gym members.
+          </p>
         </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="all-invoices">All Invoices</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="paid">Paid</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            <TabsTrigger value="webhooks">Payment Webhooks</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all-invoices">
-            <EnhancedInvoiceList 
-              readOnly={false} 
-              allowPayment={true}
-              allowDownload={true}
-              filter="all"
-            />
-          </TabsContent>
-          
-          <TabsContent value="pending">
-            <EnhancedInvoiceList 
-              readOnly={false} 
-              allowPayment={true}
-              allowDownload={true}
-              filter="pending"
-            />
-          </TabsContent>
-          
-          <TabsContent value="paid">
-            <EnhancedInvoiceList 
-              readOnly={false}
-              allowPayment={false}
-              allowDownload={true}
-              filter="paid"
-            />
-          </TabsContent>
-          
-          <TabsContent value="overdue">
-            <EnhancedInvoiceList 
-              readOnly={false}
-              allowPayment={true}
-              allowDownload={true}
-              filter="overdue"
-            />
-          </TabsContent>
-          
-          <TabsContent value="webhooks">
-            <WebhookLogs />
-          </TabsContent>
-        </Tabs>
+
+        <InvoiceStatsOverview />
+
+        <Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="paid">Paid</TabsTrigger>
+              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="p-0 pt-4">
+              <EnhancedInvoiceList 
+                readOnly={isReadOnly}
+                allowPayment={true}
+                allowDownload={true}
+                filter="all"
+              />
+            </TabsContent>
+            
+            <TabsContent value="pending" className="p-0 pt-4">
+              <EnhancedInvoiceList 
+                readOnly={isReadOnly}
+                allowPayment={true}
+                allowDownload={true}
+                filter="pending"
+              />
+            </TabsContent>
+            
+            <TabsContent value="paid" className="p-0 pt-4">
+              <EnhancedInvoiceList 
+                readOnly={isReadOnly}
+                allowPayment={true}
+                allowDownload={true}
+                filter="paid"
+              />
+            </TabsContent>
+            
+            <TabsContent value="overdue" className="p-0 pt-4">
+              <EnhancedInvoiceList 
+                readOnly={isReadOnly}
+                allowPayment={true}
+                allowDownload={true}
+                filter="overdue"
+              />
+            </TabsContent>
+            
+            <TabsContent value="cancelled" className="p-0 pt-4">
+              <EnhancedInvoiceList 
+                readOnly={isReadOnly}
+                allowPayment={false}
+                allowDownload={true}
+                filter="cancelled"
+              />
+            </TabsContent>
+          </Tabs>
+        </Card>
       </div>
     </Container>
   );

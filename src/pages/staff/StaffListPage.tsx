@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -20,8 +21,8 @@ const StaffListPage = () => {
   useEffect(() => {
     if (staff) {
       const filtered = staff.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.email.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.email?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredStaff(filtered);
     }
@@ -44,13 +45,13 @@ const StaffListPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              <div className="col-span-1">
+              <div className="col-span-1 relative">
                 <Input
                   type="search"
                   placeholder="Search staff..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="md:w-auto"
+                  className="md:w-auto pr-8"
                 />
                 {searchQuery ? (
                   <SearchIcon className="absolute top-2.5 right-2 h-5 w-5 text-gray-500" />
@@ -86,10 +87,14 @@ const StaffListPage = () => {
         )}
       </div>
 
-      <CreateStaffDialog open={openCreateDialog} onOpenChange={setOpenCreateDialog} onSuccess={() => {
-        fetchStaff();
-        setSearchQuery('');
-      }} />
+      <CreateStaffDialog 
+        open={openCreateDialog} 
+        onOpenChange={setOpenCreateDialog} 
+        onSuccess={() => {
+          fetchStaff();
+          setSearchQuery('');
+        }} 
+      />
     </Container>
   );
 };

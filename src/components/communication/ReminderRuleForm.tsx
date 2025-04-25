@@ -3,347 +3,360 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/components/ui/use-toast';
+import { useReminderRules } from '@/hooks/use-reminder-rules';
 import { ReminderRule, ReminderTriggerType, NotificationChannel } from '@/types/notification';
 
-interface ReminderRuleFormProps {
-  initialValues?: Partial<ReminderRule>;
-  onSubmit: (data: Partial<ReminderRule>) => void;
-  onCancel: () => void;
+export interface ReminderRuleFormProps {
+  editRule?: ReminderRule;
+  onComplete?: () => void;
 }
 
-// Define a proper schema for the form
-const formSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
+const schema = z.object({
+  title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
   description: z.string().optional(),
-  triggerType: z.enum(['membership_expiry', 'birthday', 'class_reminder', 'payment_due', 'attendance_missed', 'membership_renewal', 'goal_achieved', 'follow_up']),
-  triggerValue: z.number().optional(),
-  notificationChannel: z.enum(['email', 'sms', 'whatsapp', 'app', 'push']),
-  message: z.string().min(5, { message: "Message must be at least 5 characters" }),
-  sendVia: z.array(z.string()).min(1, { message: "Select at least one channel" }),
-  targetRoles: z.array(z.string()).min(1, { message: "Select at least one user role" }),
+  triggerType: z.string(),
+  triggerValue: z.string().transform(Number).optional(),
+  notificationChannel: z.string(),
+  sendVia: z.array(z.string()).min(1, { message: 'At least one notification channel must be selected' }),
+  targetRoles: z.array(z.string()).min(1, { message: 'At least one target role must be selected' }),
+  message: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
-const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ initialValues, onSubmit, onCancel }) => {
-  const [advancedMode, setAdvancedMode] = useState(false);
+const triggerTypes = [
+  { value: 'membership_expiry', label: 'Membership Expiry', needsValue: true },
+  { value: 'birthday', label: 'Birthday', needsValue: true },
+  { value: 'class_reminder', label: 'Class Reminder', needsValue: true },
+  { value: 'payment_due', label: 'Payment Due', needsValue: true },
+  { value: 'attendance_missed', label: 'Attendance Missed', needsValue: true },
+  { value: 'membership_renewal', label: 'Membership Renewal', needsValue: true },
+  { value: 'goal_achieved', label: 'Goal Achieved', needsValue: false },
+  { value: 'follow_up', label: 'Follow Up', needsValue: true },
+];
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+const notificationChannels = [
+  { value: 'email', label: 'Email' },
+  { value: 'sms', label: 'SMS' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'app', label: 'In-App' },
+  { value: 'push', label: 'Push Notification' },
+];
+
+const targetRoles = [
+  { value: 'member', label: 'Member' },
+  { value: 'trainer', label: 'Trainer' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'admin', label: 'Admin' },
+];
+
+const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({ editRule, onComplete }) => {
+  const { createReminderRule, updateReminderRule } = useReminderRules();
+  const { toast } = useToast();
+  const [needsValue, setNeedsValue] = useState(editRule ? 
+    triggerTypes.find(t => t.value === editRule.triggerType)?.needsValue ?? false : 
+    true);
+
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
     defaultValues: {
-      title: initialValues?.title || '',
-      description: initialValues?.description || '',
-      triggerType: initialValues?.triggerType || 'membership_expiry',
-      triggerValue: initialValues?.triggerValue || 7,
-      notificationChannel: initialValues?.notificationChannel || 'email',
-      message: initialValues?.message || '',
-      sendVia: initialValues?.sendVia || ['email'],
-      targetRoles: initialValues?.targetRoles || ['member'],
-      isActive: initialValues?.isActive !== undefined ? initialValues.isActive : true,
+      title: editRule?.title || '',
+      description: editRule?.description || '',
+      triggerType: editRule?.triggerType || 'membership_expiry',
+      triggerValue: editRule?.triggerValue?.toString() || '7',
+      notificationChannel: editRule?.notificationChannel || 'email',
+      sendVia: editRule?.sendVia || ['email'],
+      targetRoles: editRule?.targetRoles || ['member'],
+      message: editRule?.message || '',
+      isActive: editRule?.isActive ?? true,
     },
   });
 
-  const triggerLabels: Record<ReminderTriggerType, string> = {
-    'membership_expiry': 'Membership Expiry',
-    'birthday': 'Member Birthday',
-    'class_reminder': 'Class Reminder',
-    'payment_due': 'Payment Due',
-    'attendance_missed': 'Attendance Missed',
-    'membership_renewal': 'Membership Renewal',
-    'goal_achieved': 'Goal Achieved',
-    'follow_up': 'Follow-up'
-  };
+  const onSubmit = async (values: z.infer<typeof schema>) => {
+    try {
+      const ruleData = {
+        title: values.title,
+        description: values.description,
+        triggerType: values.triggerType as ReminderTriggerType,
+        triggerValue: values.triggerValue,
+        notificationChannel: values.notificationChannel as NotificationChannel,
+        sendVia: values.sendVia,
+        targetRoles: values.targetRoles,
+        message: values.message,
+        isActive: values.isActive,
+        conditions: {}
+      };
 
-  const channelLabels: Record<NotificationChannel, string> = {
-    'email': 'Email',
-    'sms': 'SMS',
-    'whatsapp': 'WhatsApp',
-    'app': 'In-App',
-    'push': 'Push Notification'
-  };
+      let success = false;
 
-  const selectedTriggerType = form.watch('triggerType');
-  const showTriggerValue = ['membership_expiry', 'payment_due', 'class_reminder'].includes(selectedTriggerType);
+      if (editRule) {
+        success = await updateReminderRule(editRule.id, ruleData);
+        if (success) {
+          toast({
+            title: "Rule Updated",
+            description: "The reminder rule has been updated successfully.",
+          });
+        }
+      } else {
+        success = await createReminderRule(ruleData);
+        if (success) {
+          toast({
+            title: "Rule Created",
+            description: "New reminder rule has been created successfully.",
+          });
+          form.reset();
+        }
+      }
 
-  const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    onSubmit({
-      ...data,
-      conditions: initialValues?.conditions || {}
-    });
+      if (success && onComplete) {
+        onComplete();
+      }
+    } catch (error) {
+      console.error("Error saving reminder rule:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving the reminder rule.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{initialValues ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rule Title</FormLabel>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter rule title" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Describe what this rule does" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="triggerType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trigger Type</FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    const selectedType = triggerTypes.find(t => t.value === value);
+                    setNeedsValue(selectedType?.needsValue ?? false);
+                  }}
+                  defaultValue={field.value}
+                >
                   <FormControl>
-                    <Input placeholder="Enter a title for this reminder rule" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select trigger type" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Add a description to help identify this rule"
-                      {...field}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="triggerType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Trigger Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a trigger" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(triggerLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {showTriggerValue && (
-              <FormField
-                control={form.control}
-                name="triggerValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {selectedTriggerType === 'membership_expiry' && 'Days Before Expiry'}
-                      {selectedTriggerType === 'payment_due' && 'Days Before Due Date'}
-                      {selectedTriggerType === 'class_reminder' && 'Hours Before Class'}
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))} 
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <SelectContent>
+                    {triggerTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
+          {needsValue && (
             <FormField
               control={form.control}
-              name="message"
+              name="triggerValue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Message</FormLabel>
+                  <FormLabel>Days Before/After</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Enter the message to be sent"
-                      className="min-h-24"
-                      {...field} 
-                    />
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormDescription>
-                    You can use variables like {'{member_name}'}, {'{date}'}, etc.
+                    Number of days before/after the event to send the reminder
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          )}
+        </div>
 
-            <FormField
-              control={form.control}
-              name="notificationChannel"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Primary Notification Channel</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select channel" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(channelLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="notificationChannel"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Primary Notification Channel</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select notification channel" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {notificationChannels.map((channel) => (
+                    <SelectItem key={channel.value} value={channel.value}>
+                      {channel.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="sendVia"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Send Via</FormLabel>
-                    <FormDescription>
-                      Select notification channels to use
-                    </FormDescription>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(channelLabels).map(([key, label]) => (
-                      <FormField
-                        key={key}
-                        control={form.control}
-                        name="sendVia"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={key}
-                              className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(key)}
-                                  onCheckedChange={(checked) => {
-                                    const updatedValue = checked
-                                      ? [...field.value, key]
-                                      : field.value?.filter((value) => value !== key);
-                                    field.onChange(updatedValue);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                {label}
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="sendVia"
+          render={() => (
+            <FormItem>
+              <FormLabel>Send Via</FormLabel>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                {notificationChannels.map((channel) => (
+                  <FormField
+                    key={channel.value}
+                    control={form.control}
+                    name="sendVia"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(channel.value)}
+                            onCheckedChange={(checked) => {
+                              const updatedList = checked
+                                ? [...field.value, channel.value]
+                                : field.value.filter((val) => val !== channel.value);
+                              field.onChange(updatedList);
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          {channel.label}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="targetRoles"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Target Roles</FormLabel>
-                    <FormDescription>
-                      Select user roles to receive this notification
-                    </FormDescription>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['admin', 'manager', 'trainer', 'staff', 'member'].map((role) => (
-                      <FormField
-                        key={role}
-                        control={form.control}
-                        name="targetRoles"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={role}
-                              className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(role)}
-                                  onCheckedChange={(checked) => {
-                                    const updatedValue = checked
-                                      ? [...field.value, role]
-                                      : field.value?.filter((value) => value !== role);
-                                    field.onChange(updatedValue);
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer capitalize">
-                                {role}
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="targetRoles"
+          render={() => (
+            <FormItem>
+              <FormLabel>Target Roles</FormLabel>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                {targetRoles.map((role) => (
+                  <FormField
+                    key={role.value}
+                    control={form.control}
+                    name="targetRoles"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(role.value)}
+                            onCheckedChange={(checked) => {
+                              const updatedList = checked
+                                ? [...field.value, role.value]
+                                : field.value.filter((val) => val !== role.value);
+                              field.onChange(updatedList);
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          {role.label}
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between space-x-2 rounded-md border p-4">
-                  <div>
-                    <FormLabel>Active</FormLabel>
-                    <FormDescription>
-                      Enable or disable this reminder rule
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message Template</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter the message to send"
+                  {...field}
+                  rows={4}
+                />
+              </FormControl>
+              <FormDescription>
+                You can use {"{"}variables{"}"} like {"{"}name{"}"}, {"{"}date{"}"}, etc.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <CardFooter className="flex justify-between px-0 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {initialValues ? 'Update Rule' : 'Create Rule'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel className="font-normal">
+                Activate this rule
+              </FormLabel>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full">
+          {editRule ? 'Update Rule' : 'Create Rule'}
+        </Button>
+      </form>
+    </Form>
   );
 };
 

@@ -1,6 +1,6 @@
 
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
-export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service' | 'equipment';
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'service' | 'equipment' | 'fitness-plan';
 export type ReminderTriggerType = 
   'membership_expiry' | 
   'birthday' | 
@@ -24,6 +24,7 @@ export interface Announcement {
   channels: string[];
   targetRoles?: string[];
   branchId?: string;
+  sentCount?: number; // Added for trainer announcements
 }
 
 export interface Feedback {
@@ -60,6 +61,35 @@ export interface ReminderRule {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// Adding missing MotivationalMessage type
+export interface MotivationalMessage {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags?: string[];
+  author?: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Adding missing BackupLogEntry type
+export interface BackupLogEntry {
+  id: string;
+  action: string;
+  user_id?: string;
+  user_name?: string;
+  timestamp: string;
+  modules: string[];
+  success: boolean;
+  total_records?: number;
+  success_count?: number;
+  failed_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Adapter functions for API compatibility
@@ -117,5 +147,19 @@ export function adaptReminderRuleFromDB(dbRule: any): ReminderRule {
     isActive: dbRule.is_active,
     createdAt: dbRule.created_at,
     updatedAt: dbRule.updated_at,
+  };
+}
+
+export function adaptMotivationalMessageFromDB(dbMessage: any): MotivationalMessage {
+  return {
+    id: dbMessage.id,
+    title: dbMessage.title,
+    content: dbMessage.content,
+    category: dbMessage.category,
+    tags: dbMessage.tags || [],
+    author: dbMessage.author,
+    active: dbMessage.active,
+    createdAt: dbMessage.created_at,
+    updatedAt: dbMessage.updated_at,
   };
 }

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { MotivationalMessage } from '@/types/notification';
+import { MotivationalMessage, adaptMotivationalMessageFromDB } from '@/types/notification';
 import { toast } from 'sonner';
 
 export const useMotivationalMessages = () => {
@@ -18,7 +18,8 @@ export const useMotivationalMessages = () => {
       
       if (error) throw error;
       
-      setMessages(data as MotivationalMessage[]);
+      const adaptedMessages = data.map(msg => adaptMotivationalMessageFromDB(msg));
+      setMessages(adaptedMessages);
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
       toast.error('Failed to load motivational messages');
@@ -27,11 +28,18 @@ export const useMotivationalMessages = () => {
     }
   }, []);
 
-  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
+  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const { error } = await supabase
         .from('motivational_messages')
-        .insert([message]);
+        .insert([{
+          title: message.title,
+          content: message.content,
+          category: message.category,
+          tags: message.tags || [],
+          author: message.author || 'Unknown',
+          active: message.active
+        }]);
       
       if (error) throw error;
       
@@ -45,7 +53,7 @@ export const useMotivationalMessages = () => {
     }
   };
 
-  const updateMessage = async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>>) => {
+  const updateMessage = async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'createdAt' | 'updatedAt'>>) => {
     try {
       const { error } = await supabase
         .from('motivational_messages')

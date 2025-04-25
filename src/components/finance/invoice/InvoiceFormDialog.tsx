@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Invoice } from '@/types/finance';
-import { InvoiceForm } from './InvoiceForm';
+import InvoiceForm from './InvoiceForm';
 
 export interface InvoiceFormDialogProps {
   open: boolean;
@@ -50,3 +50,5 @@ export const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
     </Dialog>
   );
 };
+
+export default InvoiceFormDialog;

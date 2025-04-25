@@ -1,92 +1,92 @@
 
 import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import ReminderRulesList from '@/components/communication/ReminderRulesList';
-import ReminderRuleForm from '@/components/communication/ReminderRuleForm';
-import { useReminderRules } from '@/hooks/use-reminder-rules';
-import { ReminderRule } from '@/types/notification';
-
-interface ReminderRuleFormProps {
-  initialValues?: Partial<ReminderRule>;
-  onSubmit: (data: Partial<ReminderRule>) => void;
-  onCancel: () => void;
-}
+import ReminderRulesList from "@/components/communication/ReminderRulesList";
+import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ReminderRule } from "@/types/notification";
 
 const ReminderPage = () => {
-  const { reminderRules, isLoading, createReminderRule, updateReminderRule, fetchReminderRules } = useReminderRules();
-  const [showForm, setShowForm] = useState(false);
-  const [editingRule, setEditingRule] = useState<ReminderRule | null>(null);
-  
-  const handleAddRule = () => {
-    setEditingRule(null);
-    setShowForm(true);
+  const [activeTab, setActiveTab] = useState<string>('list');
+  const [openRuleDialog, setOpenRuleDialog] = useState(false);
+  const [editRule, setEditRule] = useState<ReminderRule | null>(null);
+
+  const handleCreateNew = () => {
+    setEditRule(null);
+    setOpenRuleDialog(true);
   };
-  
+
   const handleEditRule = (rule: ReminderRule) => {
-    setEditingRule(rule);
-    setShowForm(true);
+    setEditRule(rule);
+    setOpenRuleDialog(true);
   };
-  
-  const handleSubmitRule = async (ruleData: Partial<ReminderRule>) => {
-    try {
-      if (editingRule) {
-        await updateReminderRule(editingRule.id, ruleData);
-      } else {
-        await createReminderRule(ruleData as Omit<ReminderRule, 'id' | 'createdAt' | 'updatedAt'>);
-      }
-      
-      setShowForm(false);
-      setEditingRule(null);
-      fetchReminderRules();
-    } catch (error) {
-      console.error('Error saving reminder rule:', error);
-    }
+
+  const handleRuleComplete = () => {
+    setOpenRuleDialog(false);
   };
-  
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingRule(null);
-  };
-  
+
   return (
     <Container>
       <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Reminder Rules</h1>
-          {!showForm && (
-            <Button onClick={handleAddRule}>
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Rule
-            </Button>
-          )}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Reminder Rules</h1>
+            <p className="text-muted-foreground">
+              Configure automated reminders for members and staff
+            </p>
+          </div>
+          <Button 
+            onClick={handleCreateNew}
+            className="ml-auto"
+          >
+            <PlusIcon className="mr-2 h-4 w-4" />
+            New Reminder Rule
+          </Button>
         </div>
-        
-        {showForm ? (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>{editingRule ? 'Edit Reminder Rule' : 'Create Reminder Rule'}</CardTitle>
-              <CardDescription>
-                Configure when and how reminders are sent
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReminderRuleForm 
-                initialValues={editingRule || undefined} 
-                onSubmit={handleSubmitRule} 
-                onCancel={handleCancelForm}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <ReminderRulesList 
-            onEdit={handleEditRule} 
-            onAdd={handleAddRule} 
-          />
-        )}
+
+        <Tabs defaultValue="list" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="list">Rules List</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="logs">Activity Logs</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="space-y-4">
+            <ReminderRulesList onEdit={handleEditRule} />
+          </TabsContent>
+          
+          <TabsContent value="analytics">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-center py-10 text-muted-foreground">
+                Reminders analytics will be available soon.
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="logs">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-center py-10 text-muted-foreground">
+                Reminder notification logs will be available soon.
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <Dialog open={openRuleDialog} onOpenChange={setOpenRuleDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editRule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</DialogTitle>
+          </DialogHeader>
+          <ReminderRuleForm 
+            editRule={editRule} 
+            onComplete={handleRuleComplete} 
+          />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };
