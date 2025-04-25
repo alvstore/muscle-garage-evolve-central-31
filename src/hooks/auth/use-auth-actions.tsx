@@ -49,7 +49,7 @@ export const useAuthActions = () => {
           console.error('Error fetching user profile:', profileError);
           return { 
             success: true, // Still allow login but warn about profile issue
-            error: 'Login successful but profile data couldn't be loaded'
+            error: "Login successful but profile data couldn't be loaded"
           };
         }
         
@@ -58,7 +58,7 @@ export const useAuthActions = () => {
         console.error('Error fetching user profile:', profileErr);
         return { 
           success: true, // Still allow login but warn about profile issue
-          error: 'Login successful but profile data couldn't be loaded'
+          error: "Login successful but profile data couldn't be loaded"
         };
       }
     } catch (err: any) {
