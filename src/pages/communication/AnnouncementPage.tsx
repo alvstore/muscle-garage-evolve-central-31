@@ -14,6 +14,11 @@ export default function AnnouncementPage() {
   
   const isMember = userRole === "member";
 
+  const handleSuccess = () => {
+    setActiveTab("list");
+    setEditAnnouncement(null);
+  };
+
   return (
     <Container>
       <div className="py-6">
@@ -34,10 +39,7 @@ export default function AnnouncementPage() {
           {!isMember && (
             <TabsContent value="create" className="space-y-4">
               <CreateAnnouncementForm 
-                onSuccess={() => {
-                  setActiveTab("list");
-                  setEditAnnouncement(null);
-                }} 
+                onSuccess={handleSuccess}
               />
             </TabsContent>
           )}
