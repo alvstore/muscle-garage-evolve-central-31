@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Invoice, InvoiceStatus } from '@/types/finance';
 import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
 export interface InvoiceFormState {
@@ -16,7 +16,11 @@ export interface InvoiceFormState {
   notes: string;
 }
 
-export const useInvoiceForm = (invoice: Invoice | null, onComplete?: () => void, onSave?: (invoice: Invoice) => void) => {
+export const useInvoiceForm = (
+  invoice: Invoice | null, 
+  onComplete?: () => void, 
+  onSave?: (invoice: Invoice) => void
+) => {
   const { currentBranch } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<InvoiceFormState>({
@@ -48,39 +52,35 @@ export const useInvoiceForm = (invoice: Invoice | null, onComplete?: () => void,
     setIsSubmitting(true);
     
     try {
+      const submittedInvoice: Invoice = {
+        ...(invoice || {}),
+        ...formData,
+        id: invoice?.id || `temp-${Date.now()}`,
+        branch_id: currentBranch?.id || '',
+        created_at: invoice?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
       if (invoice?.id) {
         await supabase
           .from('invoices')
-          .update({
-            ...formData,
-            branch_id: currentBranch?.id || '',
-            updated_at: new Date().toISOString(),
-          })
+          .update(submittedInvoice)
           .eq('id', invoice.id);
           
         toast.success('Invoice updated successfully');
       } else {
         await supabase
           .from('invoices')
-          .insert([{
-            ...formData,
-            branch_id: currentBranch?.id || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }]);
+          .insert(submittedInvoice);
           
         toast.success('Invoice created successfully');
       }
       
       if (onSave) {
-        onSave({
-          ...invoice,
-          ...formData,
-          id: invoice?.id || '',
-          created_at: invoice?.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as Invoice);
-      } else if (onComplete) {
+        onSave(submittedInvoice);
+      }
+      
+      if (onComplete) {
         onComplete();
       }
     } catch (error) {

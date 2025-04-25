@@ -10,7 +10,7 @@ import { useInvoiceForm } from '@/hooks/use-invoice-form';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;
-  onComplete?: () => void;
+  onComplete?: (invoice?: Invoice) => void;  // Modified to accept optional Invoice
   onSave?: (invoice: Invoice) => void;
   onCancel?: () => void;
 }
@@ -28,7 +28,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     handleStatusChange,
     handlePaymentMethodChange,
     handleSubmit,
-  } = useInvoiceForm(invoice, onComplete, onSave);
+  } = useInvoiceForm(invoice, () => {
+    // If onComplete is provided without an Invoice, call it without parameters
+    if (onComplete) onComplete();
+  }, onSave);
 
   return (
     <form onSubmit={handleSubmit}>
