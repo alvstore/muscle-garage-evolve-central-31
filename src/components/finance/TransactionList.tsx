@@ -8,6 +8,7 @@ import { useBranch } from "@/hooks/use-branch";
 import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/stringUtils";
+import { useTransactions } from "@/hooks/use-transactions";
 
 interface TransactionListProps {
   filterStartDate?: Date;
@@ -17,82 +18,40 @@ interface TransactionListProps {
 }
 
 const TransactionList = ({ filterStartDate, filterEndDate, transactionType, webhookOnly }: TransactionListProps) => {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { transactions, isLoading } = useTransactions();
+  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([]);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
-    fetchTransactions();
-    
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('transaction_list_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'transactions',
-          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
-        }, 
-        () => {
-          fetchTransactions();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch, filterStartDate, filterEndDate, transactionType, webhookOnly]);
-
-  const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-      
-      let query = supabase
-        .from('transactions')
-        .select(`
-          *,
-          income_category:income_categories(name),
-          expense_category:expense_categories(name),
-          recorder:profiles(full_name)
-        `)
-        .eq('branch_id', currentBranch?.id || '');
+    if (transactions) {
+      let filtered = [...transactions];
       
       // Filter by transaction type if specified
       if (transactionType) {
-        query = query.eq('type', transactionType);
+        filtered = filtered.filter(t => t.type === transactionType);
       }
       
       // Filter by webhook only if specified
       if (webhookOnly) {
-        query = query.not('payment_method', 'is', null);
+        filtered = filtered.filter(t => t.payment_method && t.transaction_id);
       }
       
       // Apply date filters if provided
       if (filterStartDate) {
-        query = query.gte('transaction_date', filterStartDate.toISOString());
+        filtered = filtered.filter(t => 
+          new Date(t.transaction_date) >= filterStartDate
+        );
       }
       
       if (filterEndDate) {
-        query = query.lte('transaction_date', filterEndDate.toISOString());
+        filtered = filtered.filter(t => 
+          new Date(t.transaction_date) <= filterEndDate
+        );
       }
       
-      // Sort by date, newest first
-      query = query.order('transaction_date', { ascending: false });
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setTransactions(data || []);
-    } catch (error: any) {
-      console.error('Error fetching transactions:', error);
-      toast.error('Failed to fetch transactions');
-    } finally {
-      setLoading(false);
+      setFilteredTransactions(filtered);
     }
-  };
+  }, [transactions, filterStartDate, filterEndDate, transactionType, webhookOnly]);
 
   const getCategoryName = (transaction: any) => {
     if (transaction.type === 'income') {
@@ -116,11 +75,11 @@ const TransactionList = ({ filterStartDate, filterEndDate, transactionType, webh
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <p>Loading transactions...</p>
           </div>
-        ) : transactions.length > 0 ? (
+        ) : filteredTransactions.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -134,7 +93,7 @@ const TransactionList = ({ filterStartDate, filterEndDate, transactionType, webh
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>{format(new Date(transaction.transaction_date), "MMM d, yyyy")}</TableCell>
                     <TableCell>{transaction.description}</TableCell>

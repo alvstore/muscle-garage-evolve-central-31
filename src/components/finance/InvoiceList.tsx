@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusIcon } from "lucide-react";
@@ -8,6 +8,7 @@ import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
 import { useBranch } from "@/hooks/use-branch";
 import { InvoiceListTable } from "./invoice/InvoiceListTable";
+import { supabase } from '@/services/supabaseClient';
 
 interface InvoiceListProps {
   readonly?: boolean;
@@ -17,9 +18,49 @@ interface InvoiceListProps {
 
 const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = true }: InvoiceListProps) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const { currentBranch } = useBranch();
+
+  // Fetch invoices from Supabase
+  useEffect(() => {
+    fetchInvoices();
+  }, [currentBranch]);
+
+  const fetchInvoices = async () => {
+    try {
+      setIsLoading(true);
+      
+      let query = supabase
+        .from('invoices')
+        .select(`
+          *,
+          members(name)
+        `)
+        .order('issued_date', { ascending: false });
+        
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      const formattedInvoices: Invoice[] = data.map(invoice => ({
+        ...invoice,
+        memberName: invoice.members?.name || 'Unknown'
+      }));
+      
+      setInvoices(formattedInvoices);
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error);
+      toast.error('Failed to fetch invoices');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddInvoice = () => {
     setEditingInvoice(null);
@@ -31,9 +72,20 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
     setIsFormOpen(true);
   };
 
-  const handleMarkAsPaid = (id: string) => {
-    setInvoices(
-      invoices.map(invoice => 
+  const handleMarkAsPaid = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          status: 'paid',
+          paid_date: new Date().toISOString(),
+          payment_method: 'cash'
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setInvoices(invoices.map(invoice => 
         invoice.id === id
           ? { 
               ...invoice, 
@@ -42,32 +94,91 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
               payment_method: "cash"
             }
           : invoice
-      )
-    );
-    toast.success("Invoice marked as paid");
+      ));
+      toast.success("Invoice marked as paid");
+      
+      // Create transaction record for this payment
+      const invoice = invoices.find(inv => inv.id === id);
+      if (invoice) {
+        await supabase
+          .from('transactions')
+          .insert({
+            type: 'income',
+            amount: invoice.amount,
+            description: `Payment for invoice #${id.substring(0, 8)}`,
+            transaction_date: new Date().toISOString(),
+            payment_method: 'cash',
+            recorded_by: (await supabase.auth.getUser()).data.user?.id,
+            branch_id: currentBranch?.id || invoice.branch_id,
+            reference_id: id
+          });
+      }
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      toast.error('Failed to update invoice status');
+    }
   };
 
   const handleSendPaymentLink = (id: string) => {
+    // In a real implementation, this would generate a payment link
     toast.success("Payment link sent successfully");
   };
 
-  const handleSaveInvoice = (invoice: Invoice) => {
-    if (editingInvoice) {
-      setInvoices(invoices.map(inv => inv.id === invoice.id ? invoice : inv));
-      toast.success("Invoice updated successfully");
-    } else {
-      const newInvoice: Invoice = {
-        ...invoice,
-        id: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
-        branch_id: currentBranch?.id || 'branch-1',
-        branchId: currentBranch?.id || 'branch-1',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setInvoices([...invoices, newInvoice]);
-      toast.success("Invoice created successfully");
+  const handleSaveInvoice = async (invoice: Invoice) => {
+    try {
+      setIsLoading(true);
+      
+      if (editingInvoice) {
+        // Update existing invoice
+        const { error } = await supabase
+          .from('invoices')
+          .update({
+            member_id: invoice.member_id,
+            amount: invoice.amount,
+            description: invoice.description,
+            status: invoice.status,
+            due_date: invoice.due_date,
+            items: invoice.items,
+            notes: invoice.notes,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', invoice.id);
+          
+        if (error) throw error;
+        
+        setInvoices(invoices.map(inv => inv.id === invoice.id ? invoice : inv));
+        toast.success("Invoice updated successfully");
+      } else {
+        // Create new invoice
+        const newInvoice = {
+          ...invoice,
+          branch_id: currentBranch?.id || 'branch-1',
+          branchId: currentBranch?.id || 'branch-1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        };
+        
+        const { data, error } = await supabase
+          .from('invoices')
+          .insert(newInvoice)
+          .select();
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setInvoices([...invoices, data[0] as Invoice]);
+        }
+        
+        toast.success("Invoice created successfully");
+      }
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      toast.error('Failed to save invoice');
+    } finally {
+      setIsLoading(false);
+      setIsFormOpen(false);
     }
-    setIsFormOpen(false);
   };
 
   const handleCancelForm = () => {
@@ -75,7 +186,25 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   };
 
   const handleDownload = (id: string) => {
+    // In a real implementation, this would generate a PDF
     toast.success("Invoice downloaded");
+  };
+  
+  const handleDeleteInvoice = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setInvoices(invoices.filter(invoice => invoice.id !== id));
+      toast.success('Invoice deleted successfully');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error('Failed to delete invoice');
+    }
   };
 
   return (
@@ -92,7 +221,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         <CardContent>
           <InvoiceListTable
             invoices={invoices}
-            isLoading={false}
+            isLoading={isLoading}
             readonly={readonly}
             allowPayment={allowPayment}
             allowDownload={allowDownload}
@@ -100,6 +229,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
             onMarkAsPaid={handleMarkAsPaid}
             onSendPaymentLink={handleSendPaymentLink}
             onDownload={handleDownload}
+            onDelete={handleDeleteInvoice}
           />
         </CardContent>
       </Card>
