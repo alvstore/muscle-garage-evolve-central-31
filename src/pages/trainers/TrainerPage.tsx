@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,7 @@ const TrainerPage = () => {
         phone: trainer.phone || '',
         specialization: trainer.department || '',
         branch_id: trainer.branch_id || '',
-        branch_name: trainer.branches?.name || '',
+        branch_name: trainer.branches ? (trainer.branches as any).name : '',
         status: 'active' // Assuming all fetched trainers are active
       }));
       

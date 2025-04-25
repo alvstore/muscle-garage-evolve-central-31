@@ -3,6 +3,11 @@ import { supabase } from "./supabaseClient";
 import { BranchAnalytics, ClassItem, DashboardSummary, MemberStatusData, Payment, RenewalItem } from "@/types/dashboard";
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
 
+// Helper function for safer property access
+const safeGet = <T, K extends keyof T>(obj: T | null | undefined, key: K): T[K] | undefined => {
+  return obj ? obj[key] : undefined;
+};
+
 export async function fetchDashboardSummary(branchId?: string): Promise<DashboardSummary> {
   try {
     // Start with default empty summary
@@ -235,16 +240,21 @@ export async function fetchPendingPayments(branchId?: string): Promise<Payment[]
 
     if (error) throw error;
 
-    return (data || []).map(invoice => ({
-      id: invoice.id,
-      memberId: invoice.members?.id || '',
-      memberName: invoice.members?.name || 'Unknown',
-      membershipPlan: invoice.memberships?.name || 'Standard',
-      amount: invoice.amount,
-      dueDate: invoice.due_date,
-      status: invoice.status === 'overdue' ? 'overdue' : 'pending',
-      contactInfo: invoice.members?.phone || invoice.members?.email || ''
-    }));
+    return (data || []).map(invoice => {
+      const members = invoice.members as any;
+      const memberships = invoice.memberships as any;
+      
+      return {
+        id: invoice.id,
+        memberId: members?.id || '',
+        memberName: members?.name || 'Unknown',
+        membershipPlan: memberships?.name || 'Standard',
+        amount: invoice.amount,
+        dueDate: invoice.due_date,
+        status: invoice.status === 'overdue' ? 'overdue' : 'pending',
+        contactInfo: members?.phone || members?.email || ''
+      };
+    });
   } catch (error) {
     console.error("Error fetching pending payments:", error);
     return [];
@@ -275,14 +285,19 @@ export async function fetchMembershipRenewals(branchId?: string): Promise<Renewa
 
     if (error) throw error;
 
-    return (data || []).map(membership => ({
-      id: membership.id,
-      memberName: membership.members?.name || 'Unknown',
-      membershipPlan: membership.memberships?.name || 'Standard',
-      expiryDate: membership.end_date,
-      status: membership.status as 'active' | 'inactive' | 'expired',
-      renewalAmount: membership.total_amount || 0
-    }));
+    return (data || []).map(membership => {
+      const members = membership.members as any;
+      const memberships = membership.memberships as any;
+      
+      return {
+        id: membership.id,
+        memberName: members?.name || 'Unknown',
+        membershipPlan: memberships?.name || 'Standard',
+        expiryDate: membership.end_date,
+        status: (membership.status as 'active' | 'inactive' | 'expired'),
+        renewalAmount: membership.total_amount || 0
+      };
+    });
   } catch (error) {
     console.error("Error fetching membership renewals:", error);
     return [];
@@ -318,12 +333,13 @@ export async function fetchUpcomingClasses(branchId?: string): Promise<ClassItem
       const startTime = new Date(classItem.start_time);
       const endTime = new Date(classItem.end_time);
       const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      const trainer = classItem.trainer as any;
       
       return {
         id: classItem.id,
         name: classItem.name,
-        trainer: classItem.trainer?.full_name || 'TBD',
-        trainerAvatar: classItem.trainer?.avatar_url,
+        trainer: trainer?.full_name || 'TBD',
+        trainerAvatar: trainer?.avatar_url,
         time: format(startTime, 'h:mm a'),
         duration: `${duration} min`,
         capacity: classItem.capacity,

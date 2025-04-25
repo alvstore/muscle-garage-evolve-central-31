@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAttendanceStats, useRevenueStats, useMembershipStats, DateRange } from "@/hooks/use-stats";
 import { format, subDays } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell as RechartsCell } from 'recharts';
 
 interface DateRangePickerProps {
   date: DateRange;
@@ -77,6 +77,10 @@ const ReportsDashboard: React.FC = () => {
   const { data: revenueData, isLoading: revenueLoading } = useRevenueStats(dateRange);
   const { data: membershipData, isLoading: membershipLoading } = useMembershipStats(dateRange);
 
+  const handleDateChange = (date: DateRange) => {
+    setDateRange(date);
+  };
+
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -97,7 +101,7 @@ const ReportsDashboard: React.FC = () => {
           <div className="w-full md:w-2/3">
             <DateRangePicker 
               date={dateRange} 
-              onDateChange={setDateRange}
+              onDateChange={handleDateChange}
             />
           </div>
           <div className="w-full md:w-1/3">
@@ -246,7 +250,7 @@ const ReportsDashboard: React.FC = () => {
                           dataKey="value"
                         >
                           {membershipData?.data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
                         <Legend verticalAlign="bottom" />

@@ -18,7 +18,8 @@ export const InvoiceColumn = (handleEditInvoice: (invoice: Invoice) => void): Co
       accessorKey: "id",
       header: "Invoice ID",
       cell: ({ row }) => {
-        return <div className="font-medium">{row.getValue("id").substring(0, 8)}...</div>;
+        const id = row.getValue("id") as string;
+        return <div className="font-medium">{id.substring(0, 8)}...</div>;
       },
     },
     {
@@ -33,7 +34,7 @@ export const InvoiceColumn = (handleEditInvoice: (invoice: Invoice) => void): Co
       accessorKey: "amount",
       header: "Amount",
       cell: ({ row }) => {
-        const amount = parseFloat(row.getValue("amount"));
+        const amount = parseFloat(row.getValue("amount") as string);
         const formatted = new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
@@ -45,7 +46,7 @@ export const InvoiceColumn = (handleEditInvoice: (invoice: Invoice) => void): Co
       accessorKey: "dueDate",
       header: "Due Date",
       cell: ({ row }) => {
-        return <div>{format(new Date(row.getValue("dueDate")), "MMM d, yyyy")}</div>;
+        return <div>{format(new Date(row.getValue("dueDate") as string), "MMM d, yyyy")}</div>;
       },
     },
     {

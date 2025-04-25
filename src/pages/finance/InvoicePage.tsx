@@ -34,6 +34,9 @@ const InvoicePage = () => {
     setSelectedInvoice(null);
   };
 
+  // Type assertion to ensure compatibility with the component's expected invoice format
+  const typedInvoices = invoices as Invoice[];
+
   return (
     <Container>
       <div className="py-6">
@@ -48,7 +51,7 @@ const InvoicePage = () => {
         <div className="rounded-md border">
           <DataTable 
             columns={InvoiceColumn(handleEditInvoice)} 
-            data={invoices} 
+            data={typedInvoices} 
             isLoading={isLoading}
           />
         </div>
