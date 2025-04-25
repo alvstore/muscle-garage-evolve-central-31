@@ -4,23 +4,7 @@ import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { createContext, useContext, ReactNode } from 'react';
-
-export type Branch = {
-  id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  is_active?: boolean;
-  phone?: string;
-  email?: string;
-  manager?: string;
-  managerId?: string;
-  openingHours?: string;
-  closingHours?: string;
-  maxCapacity?: number;
-};
+import { Branch } from '@/types/branch';
 
 interface BranchContextType {
   branches: Branch[];
@@ -115,7 +99,13 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
         managerId: branch.manager_id || '',
         openingHours: branch.opening_hours || '',
         closingHours: branch.closing_hours || '',
-        maxCapacity: branch.max_capacity || 0
+        maxCapacity: branch.max_capacity || 0,
+        region: branch.region || '',
+        branchCode: branch.branch_code || '',
+        taxRate: branch.tax_rate || 0,
+        timezone: branch.timezone || '',
+        createdAt: branch.created_at || '',
+        updatedAt: branch.updated_at || ''
       }));
 
       // Set the branches and current branch
@@ -160,7 +150,11 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
           manager_id: branch.managerId,
           opening_hours: branch.openingHours,
           closing_hours: branch.closingHours,
-          max_capacity: branch.maxCapacity
+          max_capacity: branch.maxCapacity,
+          region: branch.region,
+          branch_code: branch.branchCode,
+          tax_rate: branch.taxRate,
+          timezone: branch.timezone
         })
         .select()
         .single();
@@ -181,7 +175,13 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
         managerId: data.manager_id || '',
         openingHours: data.opening_hours || '',
         closingHours: data.closing_hours || '',
-        maxCapacity: data.max_capacity || 0
+        maxCapacity: data.max_capacity || 0,
+        region: data.region || '',
+        branchCode: data.branch_code || '',
+        taxRate: data.tax_rate || 0,
+        timezone: data.timezone || '',
+        createdAt: data.created_at || '',
+        updatedAt: data.updated_at || ''
       };
 
       setBranches(prev => [...prev, newBranch]);
@@ -210,6 +210,10 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       if (branch.openingHours !== undefined) updates.opening_hours = branch.openingHours;
       if (branch.closingHours !== undefined) updates.closing_hours = branch.closingHours;
       if (branch.maxCapacity !== undefined) updates.max_capacity = branch.maxCapacity;
+      if (branch.region !== undefined) updates.region = branch.region;
+      if (branch.branchCode !== undefined) updates.branch_code = branch.branchCode;
+      if (branch.taxRate !== undefined) updates.tax_rate = branch.taxRate;
+      if (branch.timezone !== undefined) updates.timezone = branch.timezone;
       
       const { data, error } = await supabase
         .from('branches')
@@ -234,7 +238,13 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
         managerId: data.manager_id || '',
         openingHours: data.opening_hours || '',
         closingHours: data.closing_hours || '',
-        maxCapacity: data.max_capacity || 0
+        maxCapacity: data.max_capacity || 0,
+        region: data.region || '',
+        branchCode: data.branch_code || '',
+        taxRate: data.tax_rate || 0,
+        timezone: data.timezone || '',
+        createdAt: data.created_at || '',
+        updatedAt: data.updated_at || ''
       };
       
       setBranches(prev => prev.map(b => b.id === id ? updatedBranch : b));
