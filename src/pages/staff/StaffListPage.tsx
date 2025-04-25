@@ -1,138 +1,94 @@
-import { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusIcon, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useState, useEffect } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PlusIcon, SearchIcon } from 'lucide-react';
 import { useStaff } from '@/hooks/use-staff';
 import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
-import { supabase } from "@/integrations/supabase/client";
 
 const StaffListPage = () => {
-  const [open, setOpen] = useState(false);
-  const { staff, isLoading, fetchStaff } = useStaff();
-  const { toast } = useToast();
-  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { staff, isLoading, error, fetchStaff } = useStaff();
+  const [filteredStaff, setFilteredStaff] = useState(staff);
 
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
 
-  const handleEdit = (staffMember: any) => {
-    setSelectedStaff(staffMember);
-    setOpen(true);
-  };
-
-  const handleDelete = async (staffMember: any) => {
-    try {
-      // Optimistically update the UI
-      const optimisticStaffList = staff.filter((s) => s.id !== staffMember.id);
-      // setStaff(optimisticStaffList);
-
-      // Delete the staff member from Supabase
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', staffMember.id);
-
-      if (error) {
-        // If there's an error, revert the UI
-        // setStaff(staff);
-        toast({
-          variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-          description: "Failed to delete staff member. Please try again.",
-        });
-      } else {
-        // If the deletion was successful, show a success message
-        toast({
-          title: "Success",
-          description: "Staff member deleted successfully.",
-        });
-        fetchStaff();
-      }
-    } catch (error) {
-      // If there's an error, revert the UI
-      // setStaff(staff);
-      toast({
-        variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: "Failed to delete staff member. Please try again.",
-      });
+  useEffect(() => {
+    if (staff) {
+      const filtered = staff.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredStaff(filtered);
     }
-  };
+  }, [searchQuery, staff]);
+
+  if (isLoading) {
+    return <Container>Loading staff...</Container>;
+  }
+
+  if (error) {
+    return <Container>Error: {error.message}</Container>;
+  }
 
   return (
     <Container>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>Staff Members</CardTitle>
-          <Button onClick={() => setOpen(true)}>
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add Staff
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px]">Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : staff.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                      No staff members found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  staff.map((staffMember) => (
-                    <TableRow key={staffMember.id}>
-                      <TableCell className="font-medium">{staffMember.name}</TableCell>
-                      <TableCell>{staffMember.email}</TableCell>
-                      <TableCell>{staffMember.role}</TableCell>
-                      <TableCell>{staffMember.department}</TableCell>
-                      <TableCell>
-                        {staffMember.is_active ? (
-                          <Badge variant="success">Active</Badge>
-                        ) : (
-                          <Badge variant="destructive">Inactive</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(staffMember)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(staffMember)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-      <CreateStaffDialog open={open} onOpenChange={setOpen} onSuccess={() => {
+      <div className="md:flex items-center justify-between space-y-4 md:space-y-0">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle>Staff Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="col-span-1">
+                <Input
+                  type="search"
+                  placeholder="Search staff..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="md:w-auto"
+                />
+                {searchQuery ? (
+                  <SearchIcon className="absolute top-2.5 right-2 h-5 w-5 text-gray-500" />
+                ) : null}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button onClick={() => setOpenCreateDialog(true)} className="bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Staff
+        </Button>
+      </div>
+
+      <div className="grid gap-4 mt-4">
+        {filteredStaff && filteredStaff.length > 0 ? (
+          filteredStaff.map((staffMember) => (
+            <Card key={staffMember.id}>
+              <CardHeader>
+                <CardTitle>{staffMember.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Email: {staffMember.email}</p>
+                <p>Role: {staffMember.role}</p>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent>No staff members found.</CardContent>
+          </Card>
+        )}
+      </div>
+
+      <CreateStaffDialog open={openCreateDialog} onOpenChange={setOpenCreateDialog} onSuccess={() => {
         fetchStaff();
-        setSelectedStaff(null);
+        setSearchQuery('');
       }} />
     </Container>
   );
