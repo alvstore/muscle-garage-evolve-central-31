@@ -1,133 +1,171 @@
 
-import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Invoice } from "@/types/finance";
-import PaymentIntegration from "./PaymentIntegration";
-import { toast } from "sonner";
+import { formatCurrency } from "@/utils/stringUtils";
+import { supabase } from '@/services/supabaseClient';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 interface MemberInvoiceListProps {
+  memberId?: string;
   showPendingOnly?: boolean;
+  limit?: number;
 }
 
-const MemberInvoiceList = ({ showPendingOnly = false }: MemberInvoiceListProps) => {
+interface Invoice {
+  id: string;
+  amount: number;
+  issued_date: string;
+  due_date: string;
+  paid_date?: string;
+  status: 'paid' | 'pending' | 'overdue';
+  payment_method?: string;
+}
+
+const MemberInvoiceList: React.FC<MemberInvoiceListProps> = ({
+  memberId,
+  showPendingOnly = false,
+  limit = 5
+}) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const handlePaymentComplete = (invoiceId: string, paymentId: string) => {
-    setInvoices(prevInvoices => 
-      prevInvoices.map(invoice => 
-        invoice.id === invoiceId 
-          ? { 
-              ...invoice, 
-              status: "paid",
-              razorpayPaymentId: paymentId,
-              paidDate: new Date().toISOString()
-            } 
-          : invoice
-      )
-    );
-    toast.success("Payment processed successfully");
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      paid: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      overdue: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-      cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      try {
+        setIsLoading(true);
+        
+        // If viewing as a member, use current user's ID
+        const queryMemberId = memberId || user?.id;
+        
+        if (!queryMemberId) {
+          setInvoices([]);
+          return;
+        }
+        
+        // Build query
+        let query = supabase
+          .from('invoices')
+          .select('*');
+          
+        // Filter by member ID if provided or if user role is member
+        if (queryMemberId) {
+          query = query.eq('member_id', queryMemberId);
+        }
+        
+        // Filter by pending status if showPendingOnly is true
+        if (showPendingOnly) {
+          query = query.in('status', ['pending', 'overdue']);
+        }
+        
+        // Order by due date and limit results
+        query = query.order('due_date', { ascending: false }).limit(limit);
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        setInvoices(data || []);
+      } catch (error) {
+        console.error('Error fetching invoices:', error);
+        toast.error('Failed to load invoice data');
+      } finally {
+        setIsLoading(false);
+      }
     };
     
+    fetchInvoices();
+  }, [user, memberId, showPendingOnly, limit]);
+  
+  // Helper function to get badge variant based on status
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Paid</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="border-amber-500 text-amber-500">Pending</Badge>;
+      case 'overdue':
+        return <Badge variant="destructive">Overdue</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  if (isLoading) {
     return (
-      <Badge variant="outline" className={statusMap[status as keyof typeof statusMap]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoices</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <div className="h-10 w-10 rounded-full border-4 border-t-accent animate-spin"></div>
+        </CardContent>
+      </Card>
     );
-  };
+  }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(price);
-  };
-
-  // Filter invoices if showPendingOnly is true
-  const displayedInvoices = showPendingOnly 
-    ? invoices.filter(inv => inv.status === "pending" || inv.status === "overdue")
-    : invoices;
+  if (invoices.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{showPendingOnly ? "Pending Payments" : "Invoices"}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-6">No invoices found</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My Invoices</CardTitle>
+        <CardTitle>{showPendingOnly ? "Pending Payments" : "Invoices"}</CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="h-48 flex items-center justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : displayedInvoices.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No invoices found
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Invoice #</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invoices.map((invoice) => (
+              <TableRow key={invoice.id}>
+                <TableCell className="font-medium">{invoice.id.substring(0, 8)}</TableCell>
+                <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                <TableCell>
+                  {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+                </TableCell>
+                <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (invoice.status === 'paid') {
+                        toast.info('Invoice is already paid.');
+                      } else {
+                        toast.info('Payment page will be implemented soon.');
+                      }
+                    }}
+                  >
+                    {invoice.status === 'paid' ? 'View' : 'Pay Now'}
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayedInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{formatPrice(invoice.amount)}</TableCell>
-                  <TableCell>{format(new Date(invoice.dueDate), "MMM d, yyyy")}</TableCell>
-                  <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Handle download
-                        toast.success("Invoice downloaded");
-                      }}
-                    >
-                      Download
-                    </Button>
-                    
-                    {(invoice.status === "pending" || invoice.status === "overdue") && (
-                      <PaymentIntegration
-                        invoice={invoice}
-                        onPaymentComplete={(paymentId) => handlePaymentComplete(invoice.id, paymentId)}
-                      />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

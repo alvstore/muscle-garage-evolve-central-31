@@ -9,60 +9,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Search, Filter, MoreVertical } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
-
-type Member = {
-  id: string;
-  full_name?: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  role: string;
-  avatar_url?: string;
-  branch_id?: string;
-  // Membership-related (optionally)
-  membershipStatus?: string;
-  membershipId?: string;
-  membershipStartDate?: string;
-  membershipEndDate?: string;
-};
+import { useMembers } from "@/hooks/use-members";
+import { useBranch } from "@/hooks/use-branch";
 
 const MembersListPage = () => {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { members, isLoading, error } = useMembers();
+  const { currentBranch } = useBranch();
   const [searchTerm, setSearchTerm] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch from Supabase 'profiles' table, filter 'member' role
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("role", "member");
-
-        if (error) {
-          setError(error.message);
-          setMembers([]);
-        } else {
-          setMembers(data || []);
-        }
-      } catch (err: any) {
-        setError("Error loading members.");
-        setMembers([]);
-      }
-      setLoading(false);
-    };
-
-    fetchMembers();
-  }, []);
-
-  // Map profile/member status for badge color (placeholders for now)
+  // Map profile/member status for badge color
   const getStatusColor = (status?: string) => {
     switch (status) {
       case "active":
@@ -87,7 +44,7 @@ const MembersListPage = () => {
 
   const filteredMembers = members.filter(
     (member) =>
-      (member.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (member.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (member.phone || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -116,7 +73,14 @@ const MembersListPage = () => {
             </Button>
           </div>
         </div>
-        {loading ? (
+
+        {!currentBranch && (
+          <div className="text-center py-12 border rounded-lg text-amber-500">
+            No branch selected. Please select a branch to view members.
+          </div>
+        )}
+
+        {isLoading ? (
           <div className="flex justify-center py-20">
             <div className="h-10 w-10 rounded-full border-4 border-t-accent animate-spin"></div>
           </div>
@@ -130,16 +94,16 @@ const MembersListPage = () => {
                   <div className="p-4">
                     <div className="flex justify-between items-center">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={member.avatar_url} alt={member.full_name || "Member"} />
-                        <AvatarFallback>{getInitials(member.full_name)}</AvatarFallback>
+                        <AvatarImage src={""} alt={member.name || "Member"} />
+                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                       </Avatar>
-                      <Badge className={getStatusColor(member.membershipStatus)}>
-                        {member.membershipStatus
-                          ? member.membershipStatus.charAt(0).toUpperCase() + member.membershipStatus.slice(1)
+                      <Badge className={getStatusColor(member.membership_status)}>
+                        {member.membership_status
+                          ? member.membership_status.charAt(0).toUpperCase() + member.membership_status.slice(1)
                           : "Active"}
                       </Badge>
                     </div>
-                    <h3 className="font-medium text-lg mt-3">{member.full_name || "Unnamed"}</h3>
+                    <h3 className="font-medium text-lg mt-3">{member.name || "Unnamed"}</h3>
                     <div className="text-sm text-muted-foreground">{member.email || "—"}</div>
                     {member.phone && (
                       <div className="text-sm text-muted-foreground">{member.phone}</div>
@@ -147,13 +111,13 @@ const MembersListPage = () => {
                     <div className="mt-3 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Membership:</span>
-                        <span>{member.membershipId || "—"}</span>
+                        <span>{member.membership_id || "—"}</span>
                       </div>
-                      {member.membershipEndDate && (
+                      {member.membership_end_date && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Expires:</span>
                           <span>
-                            {new Date(member.membershipEndDate).toLocaleDateString()}
+                            {new Date(member.membership_end_date).toLocaleDateString()}
                           </span>
                         </div>
                       )}
