@@ -1,13 +1,9 @@
 
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
-interface AdminLayoutProps {
-  children?: ReactNode;
-}
-
-const AdminLayout: React.FC<AdminLayoutProps> = () => {
+const AdminLayout = () => {
   return (
     <DashboardLayout>
       <Outlet />
