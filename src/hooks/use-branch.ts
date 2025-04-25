@@ -278,7 +278,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       switchBranch,
       fetchBranches,
       createBranch,
-      updateBranch
+      updateBranch,
     }}>
       {children}
     </BranchContext.Provider>
