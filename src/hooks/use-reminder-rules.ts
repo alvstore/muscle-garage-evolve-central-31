@@ -37,19 +37,19 @@ export const useReminderRules = () => {
     try {
       const { error: createError } = await supabase
         .from('reminder_rules')
-        .insert([{
+        .insert({
           title: rule.name,
           description: rule.description,
           trigger_type: rule.triggerType,
           trigger_value: rule.triggerValue,
           notification_channel: rule.notificationChannel,
-          send_via: rule.sendVia,
+          send_via: rule.channels || rule.sendVia,
           target_roles: rule.targetRoles,
           message: rule.message,
           is_active: rule.active,
           conditions: rule.conditions || {},
           target_type: rule.targetType || ''
-        }]);
+        });
       
       if (createError) throw new Error(createError.message);
       
@@ -72,6 +72,7 @@ export const useReminderRules = () => {
       if (updates.triggerValue !== undefined) updateData.trigger_value = updates.triggerValue;
       if (updates.notificationChannel !== undefined) updateData.notification_channel = updates.notificationChannel;
       if (updates.sendVia !== undefined) updateData.send_via = updates.sendVia;
+      if (updates.channels !== undefined) updateData.send_via = updates.channels;
       if (updates.targetRoles !== undefined) updateData.target_roles = updates.targetRoles;
       if (updates.message !== undefined) updateData.message = updates.message;
       if (updates.active !== undefined) updateData.is_active = updates.active;

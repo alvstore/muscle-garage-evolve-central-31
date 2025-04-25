@@ -63,10 +63,10 @@ export interface ReminderRule {
   message: string;
   targetType: string;
   channels: string[];
-  createdAt: string;
-  updatedAt: string;
   targetRoles: string[];
   sendVia: string[];
+  createdAt: string;
+  updatedAt: string;
   notificationChannel?: string;
   conditions?: Record<string, any>;
 }
@@ -102,7 +102,7 @@ export function adaptAnnouncementFromDB(announcement: any): Announcement {
     createdAt: announcement.created_at,
     expiresAt: announcement.expires_at,
     channel: announcement.channel || '',
-    branchId: announcement.branch_id,
+    branchId: announcement.branch_id || '',
     targetRoles: announcement.target_roles || [],
     channels: announcement.channels || [],
     authorId: announcement.author_id,
@@ -127,12 +127,12 @@ export function adaptMotivationalMessageFromDB(message: any): MotivationalMessag
 export function adaptReminderRuleFromDB(rule: any): ReminderRule {
   return {
     id: rule.id,
-    name: rule.title,
+    name: rule.title || '',
     description: rule.description,
     triggerType: rule.trigger_type,
     triggerValue: rule.trigger_value,
     active: rule.is_active,
-    message: rule.message,
+    message: rule.message || '',
     targetType: rule.target_type || '',
     channels: rule.send_via || [],
     createdAt: rule.created_at,

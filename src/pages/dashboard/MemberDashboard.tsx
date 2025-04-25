@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Card,
@@ -76,7 +75,9 @@ const MemberDashboard = () => {
       authorName: 'Admin',
       targetRoles: ['member'],
       channels: ['in-app'],
-      priority: 'medium'
+      priority: 'medium',
+      channel: 'all',
+      branchId: 'main-branch',
     },
     {
       id: '2',
@@ -87,7 +88,9 @@ const MemberDashboard = () => {
       authorName: 'Admin',
       targetRoles: ['member'],
       channels: ['in-app'],
-      priority: 'low'
+      priority: 'low',
+      channel: 'all',
+      branchId: 'main-branch',
     }
   ];
 

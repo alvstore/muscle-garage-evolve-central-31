@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,11 +72,14 @@ const TrainerDashboard = () => {
         if (assignments && assignments.length > 0) {
           const members = assignments
             .filter(assignment => assignment.members) // Filter out any null members
-            .map(assignment => ({
-              id: assignment.members.id || '',
-              name: assignment.members.name || 'Unknown',
-              // Add other fields as needed
-            }));
+            .map(assignment => {
+              const members = assignment.members as any;
+              return {
+                id: members?.id || '',
+                name: members?.name || 'Unknown',
+                // Add other fields as needed
+              };
+            });
           
           setAssignedMembers(members);
         }

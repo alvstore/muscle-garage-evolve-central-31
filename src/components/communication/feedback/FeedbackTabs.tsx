@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FeedbackList from '../FeedbackList';
-import { FeedbackType } from '@/types/notification';
+import { FeedbackType, Feedback } from '@/types/notification';
+import { useFeedback } from '@/hooks/use-feedback';
 
 interface FeedbackTabsProps {
   showTabs?: boolean;
@@ -10,6 +11,12 @@ interface FeedbackTabsProps {
 
 const FeedbackTabs = ({ showTabs = true }: FeedbackTabsProps) => {
   const [activeTab, setActiveTab] = useState<FeedbackType | 'all'>('all');
+  const { feedbacks, isLoading } = useFeedback();
+
+  // Filter feedbacks based on the active tab
+  const filteredFeedbacks = activeTab === 'all' 
+    ? feedbacks 
+    : feedbacks.filter(feedback => feedback.type === activeTab);
 
   return (
     <div className="space-y-4">
@@ -25,7 +32,11 @@ const FeedbackTabs = ({ showTabs = true }: FeedbackTabsProps) => {
         </Tabs>
       )}
 
-      <FeedbackList hideHeader={showTabs} />
+      <FeedbackList 
+        feedbacks={filteredFeedbacks} 
+        isLoading={isLoading}
+        hideHeader={showTabs} 
+      />
     </div>
   );
 };

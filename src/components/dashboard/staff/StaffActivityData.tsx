@@ -75,6 +75,8 @@ export const getStaffActivityData = () => {
       priority: "high",
       targetRoles: ["member", "trainer", "staff"],
       channels: ["in-app", "email"],
+      channel: "all",
+      branchId: "main-branch",
     },
     {
       id: "announcement2",
@@ -86,6 +88,8 @@ export const getStaffActivityData = () => {
       priority: "medium",
       targetRoles: ["member", "trainer"],
       channels: ["in-app", "email"],
+      channel: "all",
+      branchId: "main-branch",
     }
   ];
 

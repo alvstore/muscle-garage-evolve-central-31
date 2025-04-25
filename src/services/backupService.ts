@@ -1,7 +1,70 @@
-
-import { supabase } from '@/services/supabaseClient';
-import { formatISO } from 'date-fns';
+import { supabase } from './supabaseClient';
+import { toast } from 'sonner';
 import { BackupLogEntry } from '@/types/notification';
+
+export interface BackupOptions {
+  modules: string[];
+  action: 'export' | 'import';
+  data?: any;
+}
+
+export const createBackupLog = async (
+  options: BackupOptions, 
+  success: boolean, 
+  totalRecords?: number,
+  successCount?: number,
+  failedCount?: number
+): Promise<BackupLogEntry | null> => {
+  
+  try {
+    const user = (await supabase.auth.getUser()).data.user;
+    
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+    
+    const logEntry = {
+      action: options.action,
+      modules: options.modules,
+      success,
+      timestamp: new Date().toISOString(),
+      total_records: totalRecords || 0,
+      success_count: successCount || 0,
+      failed_count: failedCount || 0,
+      user_id: user.id,
+      user_name: user.email || 'Unknown'
+    };
+
+    const { data, error } = await supabase
+      .from('backup_logs')
+      .insert(logEntry)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      id: data.id,
+      action: data.action,
+      modules: data.modules,
+      success: data.success,
+      timestamp: data.timestamp,
+      total_records: data.total_records,
+      success_count: data.success_count,
+      failed_count: data.failed_count,
+      user_id: data.user_id,
+      user_name: data.user_name,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (error) {
+    console.error('Error creating backup log:', error);
+    return null;
+  }
+};
 
 export const getBackupLogs = async (): Promise<BackupLogEntry[]> => {
   try {

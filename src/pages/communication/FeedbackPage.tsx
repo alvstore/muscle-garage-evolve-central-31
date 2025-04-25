@@ -9,12 +9,12 @@ import FeedbackForm from "@/components/communication/FeedbackForm";
 import { useFeedback } from "@/hooks/use-feedback";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Feedback } from '@/types/notification';
+import { Feedback, FeedbackType } from '@/types/notification';
 
 const FeedbackPage = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [openFeedbackForm, setOpenFeedbackForm] = useState(false);
-  const { feedback, isLoading, fetchFeedback } = useFeedback();
+  const { feedbacks, isLoading, fetchFeedbacks } = useFeedback();
   const { user } = useAuth();
   
   const isMember = user?.role === 'member';
@@ -23,12 +23,12 @@ const FeedbackPage = () => {
     : ['general', 'trainer', 'class', 'facility', 'service', 'equipment'];
 
   useEffect(() => {
-    fetchFeedback();
-  }, [fetchFeedback]);
+    fetchFeedbacks();
+  }, [fetchFeedbacks]);
 
   const handleCompleted = () => {
     setOpenFeedbackForm(false);
-    fetchFeedback();
+    fetchFeedbacks();
   };
 
   return (
@@ -79,8 +79,7 @@ const FeedbackPage = () => {
             <DialogTitle>Submit Feedback</DialogTitle>
           </DialogHeader>
           <FeedbackForm 
-            onSubmitSuccess={handleCompleted} 
-            allowedTypes={allowedFeedbackTypes} 
+            onSubmitSuccess={handleCompleted}
           />
         </DialogContent>
       </Dialog>

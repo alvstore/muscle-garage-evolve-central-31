@@ -8,11 +8,13 @@ import ReminderRulesList from "@/components/communication/ReminderRulesList";
 import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ReminderRule } from "@/types/notification";
+import { useReminderRules } from '@/hooks/use-reminder-rules';
 
 const ReminderPage = () => {
   const [activeTab, setActiveTab] = useState<string>('list');
   const [openRuleDialog, setOpenRuleDialog] = useState(false);
   const [editRule, setEditRule] = useState<ReminderRule | null>(null);
+  const { reminderRules, isLoading, deleteReminderRule, toggleRuleStatus } = useReminderRules();
 
   const handleCreateNew = () => {
     setEditRule(null);
@@ -22,6 +24,14 @@ const ReminderPage = () => {
   const handleEditRule = (rule: ReminderRule) => {
     setEditRule(rule);
     setOpenRuleDialog(true);
+  };
+
+  const handleDeleteRule = async (id: string) => {
+    await deleteReminderRule(id);
+  };
+
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    await toggleRuleStatus(id, isActive);
   };
 
   const handleRuleComplete = () => {
@@ -55,7 +65,13 @@ const ReminderPage = () => {
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
-            <ReminderRulesList onEdit={handleEditRule} />
+            <ReminderRulesList 
+              rules={reminderRules} 
+              isLoading={isLoading}
+              onEdit={handleEditRule} 
+              onDelete={handleDeleteRule}
+              onToggleActive={handleToggleActive}
+            />
           </TabsContent>
           
           <TabsContent value="analytics">

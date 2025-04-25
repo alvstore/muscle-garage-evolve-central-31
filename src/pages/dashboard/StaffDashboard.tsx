@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from 'sonner';
 import { Card } from "@/components/ui/card";
@@ -89,7 +88,7 @@ const StaffDashboard = () => {
           id: item.id,
           type: 'check-in',
           date: item.check_in,
-          name: item.members?.name || 'Unknown Member',
+          name: (item.members && typeof item.members === 'object' ? item.members.name : 'Unknown Member') as string,
           memberId: item.member_id,
           details: 'Checked in at the gym'
         })),
@@ -97,7 +96,7 @@ const StaffDashboard = () => {
           id: item.id,
           type: 'payment',
           date: item.payment_date,
-          name: item.members?.name || 'Unknown Member',
+          name: (item.members && typeof item.members === 'object' ? item.members.name : 'Unknown Member') as string,
           memberId: item.member_id,
           amount: item.amount,
           method: item.payment_method,
@@ -240,7 +239,16 @@ const StaffDashboard = () => {
   return (
     <div className="space-y-6">
       <StaffDashboardHeader isLoading={isLoading} onRefresh={handleRefresh} />
-      <StaffStatsOverview isLoading={isLoading} dashboardData={dashboardData} />
+      <StaffStatsOverview isLoading={isLoading} dashboardData={{
+        ...dashboardData,
+        todayCheckIns: 0,
+        upcomingRenewals: 0,
+        revenue: {
+          daily: 0,
+          weekly: 0,
+          monthly: 0
+        }
+      }} />
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>

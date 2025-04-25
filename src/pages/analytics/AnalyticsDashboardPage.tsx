@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useDashboard } from '@/hooks/use-dashboard';
+import { useDashboardData } from '@/hooks/use-dashboard';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -24,10 +24,7 @@ interface GrowthData {
 }
 
 const AnalyticsDashboardPage = () => {
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [monthlyRevenueData, setMonthlyRevenueData] = useState<RevenueData[]>([]);
-  const [membershipGrowthData, setMembershipGrowthData] = useState<GrowthData[]>([]);
-  const { data, isLoading } = useDashboard();
+  const { dashboardData, isLoading, refreshData } = useDashboardData();
 
   useEffect(() => {
     // Convert chart data to the new format with 3 parameters
@@ -69,9 +66,9 @@ const AnalyticsDashboardPage = () => {
   const averageGrowth = totalGrowth / membershipGrowthData.length;
 
   // Type-safe access to data arrays
-  const activeMembers = Array.isArray(data.members) ? data.members.length : 0;
-  const activeTrainers = Array.isArray(data.trainers) ? data.trainers.length : 0;
-  const activeClasses = Array.isArray(data.classes) ? data.classes.length : 0;
+  const activeMembers = Array.isArray(dashboardData.members) ? dashboardData.members.length : 0;
+  const activeTrainers = Array.isArray(dashboardData.trainers) ? dashboardData.trainers.length : 0;
+  const activeClasses = Array.isArray(dashboardData.classes) ? dashboardData.classes.length : 0;
 
   return (
     <Container>

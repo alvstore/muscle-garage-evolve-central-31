@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +28,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   const [targetType, setTargetType] = useState('all_members');
   const [active, setActive] = useState(true);
   const [channels, setChannels] = useState<string[]>(['app']);
+  const [targetRoles, setTargetRoles] = useState<string[]>(['member']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
@@ -41,6 +41,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
       setTargetType(editRule.targetType);
       setActive(editRule.active);
       setChannels(editRule.channels);
+      setTargetRoles(editRule.targetRoles || ['member']);
     }
   }, [editRule]);
   
@@ -80,7 +81,9 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
         message,
         targetType,
         active,
-        channels
+        channels,
+        targetRoles,
+        sendVia: channels
       };
       
       let success;
@@ -120,7 +123,6 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Form fields */}
       <div className="space-y-4">
         <div>
           <Label htmlFor="rule-name">Rule Name</Label>

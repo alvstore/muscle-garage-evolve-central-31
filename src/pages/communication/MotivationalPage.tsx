@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMotivationalMessages } from '@/hooks/use-motivational-messages';
-import { MotivationalMessagesList } from '@/components/communication/MotivationalMessagesList';
+import MotivationalMessagesList from '@/components/communication/MotivationalMessagesList';
 import MotivationalMessageForm from '@/components/communication/MotivationalMessageForm';
 import { MotivationalMessage } from '@/types/notification';
 
