@@ -39,13 +39,13 @@ const CreateBranchDialog = ({
       <Dialog open={open} onOpenChange={setOpen}>
         {!isControlled && (
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button size="sm">
               <Plus className="w-4 h-4 mr-1" />
               Add Branch
             </Button>
           </DialogTrigger>
         )}
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Branch</DialogTitle>
           </DialogHeader>

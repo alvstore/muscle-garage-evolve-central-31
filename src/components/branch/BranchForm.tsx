@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Form, 
   FormControl, 
@@ -18,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Branch } from "@/types/branch";
-import { useMutation } from "@tanstack/react-query";
+import { useBranch } from "@/hooks/use-branch";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Branch name must be at least 2 characters"),
@@ -45,6 +45,7 @@ interface BranchFormProps {
 const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!branch;
+  const { createBranch, updateBranch } = useBranch();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,277 +67,271 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
     },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      // Simulate API call
-      console.log("Submitting branch:", values);
-      
-      // In a real app, this would be an API call to save the branch
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const savedBranch = {
-        ...values,
-        id: branch?.id || `branch${Date.now()}`,
-        createdAt: branch?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : undefined,
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    try {
+      const branchData = {
+        name: values.name,
+        address: values.address,
+        phone: values.phone || '',
+        email: values.email || '',
+        manager: values.manager || '',
+        managerId: branch?.managerId || '',
+        isActive: values.isActive,
+        maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : 0,
+        openingHours: values.openingHours || '',
+        closingHours: values.closingHours || '',
+        region: values.region,
+        branchCode: values.branchCode,
+        taxRate: values.taxRate ? parseFloat(values.taxRate) : undefined,
+        timezone: values.timezone
       };
       
-      return savedBranch;
-    },
-    onSuccess: () => {
-      toast.success(isEditMode ? "Branch updated successfully" : "Branch created successfully");
+      if (isEditMode && branch) {
+        await updateBranch(branch.id, branchData);
+      } else {
+        await createBranch(branchData);
+      }
+      
       form.reset();
       onComplete();
-    },
-    onError: () => {
-      toast.error("There was a problem saving the branch");
-    },
-    onSettled: () => {
+    } catch (error) {
+      console.error("Error submitting branch form:", error);
+    } finally {
       setIsSubmitting(false);
     }
-  });
-
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
-    submitMutation.mutate(values);
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEditMode ? "Edit Branch" : "Add New Branch"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Branch Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter branch name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="branchCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Branch Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. NYC001" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Unique code for this branch location
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
+    <div className="w-full">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Branch Status</FormLabel>
-                    <FormDescription>
-                      Inactive branches won't be available for selection
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="address"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>Branch Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter branch address" {...field} />
+                    <Input placeholder="Enter branch name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="region"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Region</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Northeast" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="timezone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Timezone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. America/New_York" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter phone number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter email address" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="openingHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Opening Hours</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 06:00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="closingHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Closing Hours</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 22:00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="manager"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Branch Manager</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter manager name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="maxCapacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Maximum Capacity</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter maximum capacity" type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
             <FormField
               control={form.control}
-              name="taxRate"
+              name="branchCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tax Rate (%)</FormLabel>
+                  <FormLabel>Branch Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 8.5" type="number" step="0.01" {...field} />
+                    <Input placeholder="e.g. NYC001" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Used for calculating taxes on membership fees and product sales
+                    Unique code for this branch location
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Branch Status</FormLabel>
+                  <FormDescription>
+                    Inactive branches won't be available for selection
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter branch address" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="region"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Region</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Northeast" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={onComplete}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <span className="h-4 w-4 rounded-full border-2 border-current border-r-transparent animate-spin mr-2"></span>
-                    {isEditMode ? "Updating..." : "Creating..."}
-                  </span>
-                ) : isEditMode ? "Update Branch" : "Create Branch"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Asia/Kolkata" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter email address" type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="openingHours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Opening Hours</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 06:00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="closingHours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Closing Hours</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 22:00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="manager"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Branch Manager</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter manager name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="maxCapacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Maximum Capacity</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter maximum capacity" type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="taxRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tax Rate (%)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. 8.5" type="number" step="0.01" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Used for calculating taxes on membership fees and product sales
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={onComplete}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {isEditMode ? "Updating..." : "Creating..."}
+                </span>
+              ) : isEditMode ? "Update Branch" : "Create Branch"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 };
 

@@ -12,6 +12,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   register: (userData: any) => Promise<void>;
   updateUserBranch: (branchId: string) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   userRole?: UserRole;
 }
 
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   register: async () => {},
   updateUserBranch: () => {},
+  changePassword: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -36,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 // Inner provider that uses both state and actions
 const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const { user, isAuthenticated, isLoading } = useAuthState();
-  const { login, logout, register, updateUserBranch } = useAuthActions();
+  const { login, logout, register, updateUserBranch, changePassword } = useAuthActions();
   
   return (
     <AuthContext.Provider
@@ -48,6 +50,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
         logout,
         register,
         updateUserBranch,
+        changePassword,
         userRole: user?.role,
       }}
     >
