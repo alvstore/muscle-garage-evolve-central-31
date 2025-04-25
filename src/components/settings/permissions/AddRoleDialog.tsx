@@ -1,7 +1,10 @@
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AddRoleDialogProps {
   isOpen: boolean;
@@ -13,53 +16,52 @@ interface AddRoleDialogProps {
   onAddRole: () => void;
 }
 
-export function AddRoleDialog({
+export const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   isOpen,
   onOpenChange,
   newRoleName,
   onRoleNameChange,
   newRoleDescription,
   onRoleDescriptionChange,
-  onAddRole,
-}: AddRoleDialogProps) {
+  onAddRole
+}) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Role</DialogTitle>
-          <DialogDescription>
-            Add a new role with custom permissions
-          </DialogDescription>
+          <DialogTitle>Add New Role</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label htmlFor="name">Role Name</label>
+            <Label htmlFor="name">Role Name</Label>
             <Input
               id="name"
               value={newRoleName}
               onChange={(e) => onRoleNameChange(e.target.value)}
-              placeholder="e.g., Marketing Staff"
+              placeholder="Enter role name"
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="description">Description</label>
-            <Input
+            <Label htmlFor="description">Description</Label>
+            <Textarea
               id="description"
               value={newRoleDescription}
               onChange={(e) => onRoleDescriptionChange(e.target.value)}
-              placeholder="Describe role permissions and responsibilities"
+              placeholder="Describe this role's purpose and access level"
+              rows={3}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={onAddRole}>
-            Create Role
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button 
+            onClick={onAddRole}
+            disabled={!newRoleName.trim()}
+          >
+            Add Role
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};

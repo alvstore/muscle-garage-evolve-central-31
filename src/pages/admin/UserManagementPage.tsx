@@ -113,7 +113,7 @@ const UserManagementPage = () => {
                           <Badge variant={
                             user.role === 'admin' ? 'default' :
                             user.role === 'staff' ? 'secondary' :
-                            user.role === 'trainer' ? 'outline' : 'subtle'
+                            user.role === 'trainer' ? 'outline' : 'secondary'
                           }>
                             {user.role}
                           </Badge>

@@ -6,11 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DataTable } from '@/components/ui/data-table';
 import { PlusCircle, Search } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
@@ -68,8 +66,8 @@ const TrainerPage = () => {
 
   // Filter trainers based on search term
   const filteredTrainers = trainers.filter(trainer => 
-    trainer.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trainer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trainer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    trainer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trainer.department?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -78,7 +76,7 @@ const TrainerPage = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           is_active: !currentStatus 
         })
         .eq('id', trainerId);

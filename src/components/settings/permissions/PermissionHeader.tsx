@@ -1,21 +1,13 @@
 
-import { Badge } from "@/components/ui/badge";
-import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import React from 'react';
 
-export function PermissionHeader() {
+export const PermissionHeader = () => {
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <CardTitle>Role & Permissions Management</CardTitle>
-        <CardDescription>
-          Manage access control for different user roles
-        </CardDescription>
-      </div>
-      <Badge variant="secondary" className="px-3 py-1 flex items-center gap-1">
-        <Shield className="h-3.5 w-3.5" />
-        Admin Only
-      </Badge>
+    <div>
+      <h2 className="text-2xl font-bold mb-2">Role & Permissions Management</h2>
+      <p className="text-muted-foreground">
+        Configure roles and define their access permissions across the system. Each role can have specific permissions assigned to it.
+      </p>
     </div>
   );
-}
+};

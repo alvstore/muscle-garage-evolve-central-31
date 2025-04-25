@@ -1,7 +1,9 @@
 
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlusCircle, Search } from 'lucide-react';
 
 interface PermissionFiltersProps {
   searchTerm: string;
@@ -12,39 +14,45 @@ interface PermissionFiltersProps {
   onAddRoleClick: () => void;
 }
 
-export function PermissionFilters({
+export const PermissionFilters: React.FC<PermissionFiltersProps> = ({
   searchTerm,
   onSearchChange,
   selectedModule,
   onModuleChange,
   modules,
-  onAddRoleClick,
-}: PermissionFiltersProps) {
+  onAddRoleClick
+}) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div className="flex-1">
-        <Input
-          placeholder="Search permissions..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value.toLowerCase())}
-          className="max-w-md"
-        />
-      </div>
-      <div className="flex flex-col sm:flex-row gap-2">
+    <div className="flex flex-col md:flex-row gap-4 mb-4 justify-between">
+      <div className="flex flex-1 gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search permissions..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        
         <Select value={selectedModule} onValueChange={onModuleChange}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by module" />
+            <SelectValue placeholder="Module" />
           </SelectTrigger>
           <SelectContent>
-            {modules.map(module => (
+            {modules.map((module) => (
               <SelectItem key={module} value={module}>
                 {module.charAt(0).toUpperCase() + module.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={onAddRoleClick}>Add New Role</Button>
       </div>
+      
+      <Button onClick={onAddRoleClick}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Add Role
+      </Button>
     </div>
   );
-}
+};
