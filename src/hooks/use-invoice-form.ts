@@ -49,6 +49,12 @@ export const useInvoiceForm = (
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch first');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -56,7 +62,7 @@ export const useInvoiceForm = (
         ...(invoice || {}),
         ...formData,
         id: invoice?.id || `temp-${Date.now()}`,
-        branch_id: currentBranch?.id || '',
+        branch_id: currentBranch.id,
         issued_date: invoice?.issued_date || invoice?.issuedDate || new Date().toISOString(),
         created_at: invoice?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),

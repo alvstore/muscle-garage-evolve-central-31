@@ -33,17 +33,19 @@ export const useMembers = () => {
   const { currentBranch } = useBranch();
 
   const fetchMembers = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch members');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
       
-      let query = supabase.from('members').select('*');
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('branch_id', currentBranch.id);
       
       if (error) {
         throw error;
@@ -62,12 +64,17 @@ export const useMembers = () => {
   }, [currentBranch?.id]);
 
   const createMember = async (member: Omit<Member, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch first');
+      return null;
+    }
+    
     try {
       setIsLoading(true);
       
       const newMember = {
         ...member,
-        branch_id: member.branch_id || currentBranch?.id,
+        branch_id: currentBranch.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -87,6 +94,8 @@ export const useMembers = () => {
         toast.success('Member created successfully');
         return data as Member;
       }
+      
+      return null;
     } catch (err: any) {
       console.error('Error creating member:', err);
       toast.error('Failed to create member');
@@ -125,6 +134,8 @@ export const useMembers = () => {
         toast.success('Member updated successfully');
         return data as Member;
       }
+      
+      return null;
     } catch (err: any) {
       console.error('Error updating member:', err);
       toast.error('Failed to update member');
@@ -161,8 +172,10 @@ export const useMembers = () => {
   };
 
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+    if (currentBranch?.id) {
+      fetchMembers();
+    }
+  }, [fetchMembers, currentBranch?.id]);
 
   return {
     members,

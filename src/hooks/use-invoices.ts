@@ -11,22 +11,22 @@ export const useInvoices = () => {
   const { currentBranch } = useBranch();
 
   const fetchInvoices = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch invoices');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('invoices')
         .select(`
           *,
           members(name)
         `)
+        .eq('branch_id', currentBranch.id)
         .order('issued_date', { ascending: false });
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -45,6 +45,11 @@ export const useInvoices = () => {
   }, [currentBranch?.id]);
 
   const createInvoice = async (invoice: Omit<Invoice, 'id'>) => {
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch first');
+      return null;
+    }
+
     try {
       setIsLoading(true);
       
@@ -53,7 +58,7 @@ export const useInvoices = () => {
         .insert([
           {
             ...invoice,
-            branch_id: invoice.branch_id || currentBranch?.id,
+            branch_id: currentBranch.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -76,12 +81,13 @@ export const useInvoices = () => {
         };
         
         setInvoices([newInvoice, ...invoices]);
+        return newInvoice;
       } else {
-        setInvoices([data[0], ...invoices]);
+        const newInvoice = data[0];
+        setInvoices([newInvoice, ...invoices]);
+        return newInvoice;
       }
       
-      toast.success('Invoice created successfully');
-      return data[0];
     } catch (error) {
       console.error('Error creating invoice:', error);
       toast.error('Failed to create invoice');
@@ -110,6 +116,7 @@ export const useInvoices = () => {
       ));
       
       toast.success('Invoice updated successfully');
+      return { ...invoices.find(inv => inv.id === id), ...updates };
     } catch (error) {
       console.error('Error updating invoice:', error);
       toast.error('Failed to update invoice');
@@ -142,8 +149,10 @@ export const useInvoices = () => {
   };
 
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+    if (currentBranch?.id) {
+      fetchInvoices();
+    }
+  }, [fetchInvoices, currentBranch?.id]);
 
   return { 
     invoices, 

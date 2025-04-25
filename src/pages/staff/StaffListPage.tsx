@@ -7,16 +7,22 @@ import { Input } from '@/components/ui/input';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { useStaff } from '@/hooks/use-staff';
 import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
+import { useBranch } from '@/hooks/use-branch';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
 const StaffListPage = () => {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { staff, isLoading, error, fetchStaff } = useStaff();
   const [filteredStaff, setFilteredStaff] = useState(staff);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff]);
+    if (currentBranch?.id) {
+      fetchStaff();
+    }
+  }, [fetchStaff, currentBranch]);
 
   useEffect(() => {
     if (staff) {
@@ -28,64 +34,124 @@ const StaffListPage = () => {
     }
   }, [searchQuery, staff]);
 
-  if (isLoading) {
-    return <Container>Loading staff...</Container>;
-  }
-
-  if (error) {
-    return <Container>Error: {error.message}</Container>;
-  }
-
-  return (
-    <Container>
-      <div className="md:flex items-center justify-between space-y-4 md:space-y-0">
+  const renderContent = () => {
+    if (!currentBranch) {
+      return (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Staff Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              <div className="col-span-1 relative">
-                <Input
-                  type="search"
-                  placeholder="Search staff..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="md:w-auto pr-8"
-                />
-                {searchQuery ? (
-                  <SearchIcon className="absolute top-2.5 right-2 h-5 w-5 text-gray-500" />
-                ) : null}
-              </div>
-            </div>
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <p className="mb-4">Please select a branch to view staff members.</p>
           </CardContent>
         </Card>
+      );
+    }
+    
+    if (isLoading) {
+      return (
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-40" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
 
-        <Button onClick={() => setOpenCreateDialog(true)} className="bg-blue-500 text-white rounded-md px-4 py-2 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Staff
-        </Button>
-      </div>
+    if (error) {
+      return <Card><CardContent>Error: {error.message}</CardContent></Card>;
+    }
 
-      <div className="grid gap-4 mt-4">
+    return (
+      <div className="grid gap-4">
         {filteredStaff && filteredStaff.length > 0 ? (
           filteredStaff.map((staffMember) => (
             <Card key={staffMember.id}>
               <CardHeader>
                 <CardTitle>{staffMember.name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p>Email: {staffMember.email}</p>
-                <p>Role: {staffMember.role}</p>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Email:</span>
+                  <span>{staffMember.email}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Role:</span>
+                  <Badge variant={
+                    staffMember.role === 'admin' ? 'destructive' : 
+                    staffMember.role === 'staff' ? 'default' : 'secondary'
+                  }>
+                    {staffMember.role}
+                  </Badge>
+                </div>
+                {staffMember.department && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Department:</span>
+                    <span>{staffMember.department}</span>
+                  </div>
+                )}
+                {staffMember.is_branch_manager && (
+                  <div className="mt-2">
+                    <Badge variant="outline" className="bg-green-100">Branch Manager</Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
         ) : (
           <Card>
-            <CardContent>No staff members found.</CardContent>
+            <CardContent className="p-6 text-center">
+              <p>No staff members found for this branch.</p>
+            </CardContent>
           </Card>
         )}
       </div>
+    );
+  };
+
+  return (
+    <Container>
+      <div className="md:flex items-center justify-between space-y-4 md:space-y-0 mb-6">
+        <h1 className="text-2xl font-bold">Staff Management</h1>
+        <Button 
+          onClick={() => setOpenCreateDialog(true)} 
+          className="bg-blue-500 hover:bg-blue-600"
+          disabled={!currentBranch}
+        >
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Staff
+        </Button>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>Staff Members</CardTitle>
+          <div className="text-sm text-muted-foreground">
+            {currentBranch ? `Branch: ${currentBranch.name}` : 'No branch selected'}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="col-span-1 relative">
+              <Input
+                type="search"
+                placeholder="Search staff..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="md:w-auto pr-8"
+              />
+              <SearchIcon className="absolute top-2.5 right-2 h-5 w-5 text-gray-500" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {renderContent()}
 
       <CreateStaffDialog 
         open={openCreateDialog} 

@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/services/supabaseClient';
+import { useStaff } from '@/hooks/use-staff';
 
 export interface CreateStaffFormProps {
   onSuccess?: () => void;
@@ -22,6 +21,7 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({ onSuccess }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { currentBranch } = useBranch();
+  const { createStaffMember } = useStaff();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,6 +35,12 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     
+    if (!currentBranch) {
+      toast.error('Please select a branch first');
+      setIsLoading(false);
+      return;
+    }
+    
     if (!formData.email || !formData.name || !formData.password) {
       toast.error('Please fill in all required fields');
       setIsLoading(false);
@@ -42,31 +48,16 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({ onSuccess }) => {
     }
     
     try {
-      // Create user with auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const result = await createStaffMember({
         email: formData.email,
         password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: formData.name,
-          role: formData.role
-        }
+        name: formData.name,
+        role: formData.role
       });
       
-      if (authError) throw authError;
-      
-      // Create staff profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: formData.name,
-          role: formData.role,
-          branch_id: currentBranch?.id,
-          email: formData.email,
-        })
-        .eq('id', authData.user.id);
-        
-      if (profileError) throw profileError;
+      if (result.error) {
+        throw new Error(result.error);
+      }
       
       toast.success(`Staff member ${formData.name} created successfully`);
       setFormData({
@@ -144,7 +135,7 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({ onSuccess }) => {
         </div>
       </div>
       
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full" disabled={isLoading || !currentBranch}>
         {isLoading ? 'Creating...' : 'Create Staff Member'}
       </Button>
     </form>

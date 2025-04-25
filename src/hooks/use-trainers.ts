@@ -26,20 +26,20 @@ export const useTrainers = () => {
   const { currentBranch } = useBranch();
 
   const fetchTrainers = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch trainers');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'trainer');
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
+        .eq('role', 'trainer')
+        .eq('branch_id', currentBranch.id);
       
       if (error) {
         throw error;
@@ -53,6 +53,8 @@ export const useTrainers = () => {
           phone: item.phone,
           user_id: item.id,
           branch_id: item.branch_id,
+          specializations: item.department ? [item.department] : [],
+          bio: '',
           status: 'active',
           created_at: item.created_at,
           updated_at: item.updated_at
@@ -70,8 +72,10 @@ export const useTrainers = () => {
   }, [currentBranch?.id]);
 
   useEffect(() => {
-    fetchTrainers();
-  }, [fetchTrainers]);
+    if (currentBranch?.id) {
+      fetchTrainers();
+    }
+  }, [fetchTrainers, currentBranch?.id]);
 
   return {
     trainers,

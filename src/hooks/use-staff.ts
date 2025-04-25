@@ -26,19 +26,19 @@ export const useStaff = () => {
   const { currentBranch } = useBranch();
 
   const fetchStaff = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch staff');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('role', ['admin', 'staff', 'trainer']);
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
+        .in('role', ['admin', 'staff', 'trainer'])
+        .eq('branch_id', currentBranch.id);
       
       if (error) {
         throw error;
@@ -72,12 +72,18 @@ export const useStaff = () => {
   }, [currentBranch?.id]);
 
   useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff]);
+    if (currentBranch?.id) {
+      fetchStaff();
+    }
+  }, [fetchStaff, currentBranch?.id]);
 
-  const createStaffMember = async (userData: { email: string, password: string, name: string, role: string, branch_id?: string }): Promise<{ error?: string, success?: boolean }> => {
+  const createStaffMember = async (userData: { email: string, password: string, name: string, role: string }): Promise<{ error?: string, success?: boolean }> => {
     try {
       setIsLoading(true);
+      
+      if (!currentBranch?.id) {
+        throw new Error('No branch selected, cannot create staff member');
+      }
       
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -105,7 +111,7 @@ export const useStaff = () => {
         .update({
           full_name: userData.name,
           role: userData.role,
-          branch_id: userData.branch_id || currentBranch?.id
+          branch_id: currentBranch.id
         })
         .eq('id', authData.user.id);
       
