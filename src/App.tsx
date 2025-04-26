@@ -8,6 +8,8 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import { useAuth } from '@/hooks/use-auth';
 import { createInitialAdmin } from '@/utils/initAdmin';
 import PrivateRoute from '@/components/auth/PrivateRoute';
+import { PermissionsProvider } from '@/hooks/use-permissions';
+import Unauthorized from '@/pages/auth/Unauthorized';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -23,22 +25,25 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        
-        {/* Private routes */}
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
+      <PermissionsProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          
+          {/* Private routes */}
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </PermissionsProvider>
     </Router>
   );
 }
