@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { GenericStringError } from '@/types';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '@/services/supabaseClient';
+import { GenericStringError, convertErrorToGenericError } from '@/types';
 
 interface UseSupabaseQueryOptions<T> {
   tableName: string;
@@ -23,18 +22,7 @@ interface UseSupabaseQueryOptions<T> {
   branchId?: string;
 }
 
-export function useSupabaseQuery<T extends { id?: string }>({
-  tableName,
-  column,
-  value,
-  select = '*',
-  orderBy,
-  limit,
-  filterBranch = true,
-  additionalFilters = [],
-  subscribeToChanges = false,
-  branchId
-}: UseSupabaseQueryOptions<T>) {
+export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T>) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +33,11 @@ export function useSupabaseQuery<T extends { id?: string }>({
       setIsLoading(true);
       setError(null);
 
-      let query = supabase.from(tableName).select(select);
+      let query = supabase.from(options.tableName).select(options.select);
 
-      if (filterBranch && tableName !== 'branches') {
-        if (branchId) {
-          query = query.eq('branch_id', branchId);
+      if (options.filterBranch && options.tableName !== 'branches') {
+        if (options.branchId) {
+          query = query.eq('branch_id', options.branchId);
         } else {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -68,11 +56,11 @@ export function useSupabaseQuery<T extends { id?: string }>({
         }
       }
 
-      if (column && value !== undefined) {
-        query = query.eq(column, value);
+      if (options.column && options.value !== undefined) {
+        query = query.eq(options.column, options.value);
       }
 
-      additionalFilters.forEach(filter => {
+      options.additionalFilters.forEach(filter => {
         const { column, value, operator = 'eq' } = filter;
         if (operator === 'eq') query = query.eq(column, value);
         else if (operator === 'neq') query = query.neq(column, value);
@@ -85,40 +73,43 @@ export function useSupabaseQuery<T extends { id?: string }>({
         else if (operator === 'is') query = query.is(column, value);
       });
 
-      if (orderBy) {
-        query = query.order(orderBy.column, { ascending: orderBy.ascending });
+      if (options.orderBy) {
+        query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending });
       }
 
-      if (limit) {
-        query = query.limit(limit);
+      if (options.limit) {
+        query = query.limit(options.limit);
       }
 
       const { data: resultData, error: resultError } = await query;
 
       if (resultError) {
-        console.error(`Error fetching data from ${tableName}:`, resultError);
-        setError(resultError.message);
-        setData([] as unknown as T[]);
+        console.error('Supabase query error:', resultError);
+        if (Array.isArray(resultError.errors)) {
+          setData(convertErrorToGenericError<T>(resultError.errors));
+        } else {
+          setError(resultError.message || 'An error occurred while fetching data');
+        }
       } else {
-        setData(resultData as T[]);
+        setData(data || []);
+        setError(null);
       }
     } catch (err: any) {
-      console.error(`Unexpected error in useSupabaseQuery for ${tableName}:`, err);
+      console.error('Unexpected error in useSupabaseQuery:', err);
       setError(err.message || 'An unexpected error occurred');
-      setData([] as unknown as T[]);
     } finally {
       setIsLoading(false);
     }
-  }, [tableName, column, value, select, orderBy, limit, filterBranch, additionalFilters, branchId]);
+  }, [options.tableName, options.column, options.value, options.select, options.orderBy, options.limit, options.filterBranch, options.additionalFilters, options.branchId]);
 
   useEffect(() => {
-    if (subscribeToChanges) {
+    if (options.subscribeToChanges) {
       const channel = supabase
-        .channel(`${tableName}-changes`)
+        .channel(`${options.tableName}-changes`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
-          table: tableName
+          table: options.tableName
         }, (payload) => {
           fetchData();
         })
@@ -132,7 +123,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
         }
       };
     }
-  }, [tableName, subscribeToChanges, fetchData]);
+  }, [options.tableName, options.subscribeToChanges, fetchData]);
 
   useEffect(() => {
     fetchData();
@@ -141,7 +132,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
   const addItem = async (item: Omit<T, 'id'>): Promise<T | null> => {
     try {
       const { data, error } = await supabase
-        .from(tableName)
+        .from(options.tableName)
         .insert([item])
         .select();
 
@@ -150,7 +141,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
       await fetchData();
       return data?.[0] as T || null;
     } catch (err: any) {
-      console.error(`Error adding item to ${tableName}:`, err);
+      console.error(`Error adding item to ${options.tableName}:`, err);
       setError(err.message);
       return null;
     }
@@ -159,7 +150,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
   const updateItem = async (id: string, updates: Partial<T>): Promise<T | null> => {
     try {
       const { data, error } = await supabase
-        .from(tableName)
+        .from(options.tableName)
         .update(updates)
         .eq('id', id)
         .select();
@@ -169,7 +160,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
       await fetchData();
       return data?.[0] as T || null;
     } catch (err: any) {
-      console.error(`Error updating item in ${tableName}:`, err);
+      console.error(`Error updating item in ${options.tableName}:`, err);
       setError(err.message);
       return null;
     }
@@ -178,7 +169,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
   const deleteItem = async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from(tableName)
+        .from(options.tableName)
         .delete()
         .eq('id', id);
 
@@ -187,7 +178,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
       await fetchData();
       return true;
     } catch (err: any) {
-      console.error(`Error deleting item from ${tableName}:`, err);
+      console.error(`Error deleting item from ${options.tableName}:`, err);
       setError(err.message);
       return false;
     }
