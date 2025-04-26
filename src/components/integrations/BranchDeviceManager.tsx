@@ -56,9 +56,9 @@ import { Branch } from '@/types/branch';
 
 // Mock branches data
 const mockBranches: Branch[] = [
-  { id: "1", name: "Main Branch", address: "123 Main St", isActive: true },
-  { id: "2", name: "Downtown Branch", address: "456 MG Road", isActive: true },
-  { id: "3", name: "West Side", address: "789 West Avenue", isActive: true }
+  { id: "1", name: "Main Branch", address: "123 Main St", is_active: true },
+  { id: "2", name: "Downtown Branch", address: "456 MG Road", is_active: true },
+  { id: "3", name: "West Side", address: "789 West Avenue", is_active: true }
 ];
 
 // Mock device mappings data

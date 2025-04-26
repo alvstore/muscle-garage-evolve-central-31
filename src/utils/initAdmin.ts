@@ -1,9 +1,9 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 
 export async function createInitialAdmin() {
   try {
-    const email = "Rajat.lekhari@hotmail.com";
+    const email = "rajat.lekhari@alvstore.in";
     const password = "Rajat@3003";
     
     // Check if the admin account already exists

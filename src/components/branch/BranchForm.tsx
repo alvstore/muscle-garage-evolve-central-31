@@ -75,7 +75,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         phone: values.phone || '',
         email: values.email || '',
         manager: values.manager || '',
-        managerId: branch?.managerId || '',
+        manager_id: branch?.manager_id || '',
         is_active: values.is_active,
         maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : 0,
         openingHours: values.openingHours || '',

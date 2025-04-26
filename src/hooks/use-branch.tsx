@@ -1,216 +1,197 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Branch } from '@/types/branch';
-import { useAuth } from './use-auth';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './use-auth';
 import { toast } from 'sonner';
+import { Branch } from '@/types/branch';
 
-interface BranchContextType {
-  branches: Branch[];
+interface BranchContextData {
   currentBranch: Branch | null;
-  setCurrentBranch: (branch: Branch) => void;
+  availableBranches: Branch[];
+  branches: Branch[];
   isLoading: boolean;
-  fetchBranches: () => Promise<Branch[]>;
-  createBranch: (branch: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Branch | null>;
-  updateBranch: (id: string, branch: Partial<Branch>) => Promise<Branch | null>;
+  error: string | null;
+  switchBranch: (branchId: string) => void;
+  refreshBranches: () => Promise<void>;
+  createBranch: (branchData: Omit<Branch, 'id'>) => Promise<Branch | null>;
+  updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
+  deleteBranch: (id: string) => Promise<boolean>;
 }
 
-const BranchContext = createContext<BranchContextType>({
-  branches: [],
+const BranchContext = createContext<BranchContextData>({
   currentBranch: null,
-  setCurrentBranch: () => {},
+  availableBranches: [],
+  branches: [],
   isLoading: false,
-  fetchBranches: async () => [],
+  error: null,
+  switchBranch: () => {},
+  refreshBranches: async () => {},
   createBranch: async () => null,
   updateBranch: async () => null,
+  deleteBranch: async () => false,
 });
 
 export const BranchProvider = ({ children }: { children: ReactNode }) => {
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+  const [availableBranches, setAvailableBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
-  
-  const fetchBranches = async (): Promise<Branch[]> => {
+  const [error, setError] = useState<string | null>(null);
+  const { user, profile, updateUserBranch } = useAuth();
+
+  const fetchBranches = async (): Promise<void> => {
+    if (!user) {
+      setAvailableBranches([]);
+      setCurrentBranch(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-        
-      if (error) {
-        throw error;
+      let query = supabase.from('branches').select('*');
+
+      if (user.role !== 'admin' && profile?.accessible_branch_ids) {
+        query = query.in('id', profile.accessible_branch_ids);
       }
-      
-      const formattedBranches: Branch[] = data.map(branch => ({
-        id: branch.id,
-        name: branch.name,
-        address: branch.address || '',
-        phone: branch.phone || '',
-        email: branch.email || '',
-        manager: '',
-        managerId: branch.manager_id || '',
-        isActive: branch.is_active || true,
-        createdAt: branch.created_at,
-        updatedAt: branch.updated_at,
-        maxCapacity: branch.max_capacity || 0,
-        openingHours: branch.opening_hours || '',
-        closingHours: branch.closing_hours || ''
-      }));
-      
-      setBranches(formattedBranches);
-      return formattedBranches;
-    } catch (error: any) {
-      console.error("Error fetching branches:", error);
-      toast.error("Could not load branches");
-      return [];
+
+      if (user.role !== 'admin' && profile?.branch_id) {
+        query = query.eq('id', profile.branch_id);
+      }
+
+      const { data, error } = await query.order('name');
+
+      if (error) {
+        console.error('Error fetching branches:', error);
+        setError('Failed to load branches');
+        return;
+      }
+
+      if (data) {
+        setAvailableBranches(data);
+        
+        if (data.length > 0 && !currentBranch) {
+          const primaryBranch = profile?.branch_id ? 
+            data.find(b => b.id === profile.branch_id) : null;
+            
+          setCurrentBranch(primaryBranch || data[0]);
+          localStorage.setItem('currentBranchId', primaryBranch?.id || data[0].id);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error in fetchBranches:', err);
+      setError(err.message || 'Failed to load branches');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createBranch = async (branch: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>): Promise<Branch | null> => {
+  const createBranch = async (branchData: Omit<Branch, 'id'>) => {
     try {
       const { data, error } = await supabase
         .from('branches')
-        .insert({
-          name: branch.name,
-          address: branch.address,
-          phone: branch.phone,
-          email: branch.email,
-          manager_id: branch.managerId,
-          is_active: branch.isActive,
-          max_capacity: branch.maxCapacity,
-          opening_hours: branch.openingHours,
-          closing_hours: branch.closingHours
-        })
+        .insert([branchData])
         .select()
         .single();
-        
-      if (error) {
-        throw error;
+
+      if (error) throw error;
+      
+      if (data) {
+        await fetchBranches();
+        return data as Branch;
       }
       
-      const newBranch: Branch = {
-        id: data.id,
-        name: data.name,
-        address: data.address || '',
-        phone: data.phone || '',
-        email: data.email || '',
-        manager: '',
-        managerId: data.manager_id || '',
-        isActive: data.is_active || true,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        maxCapacity: data.max_capacity || 0,
-        openingHours: data.opening_hours || '',
-        closingHours: data.closing_hours || ''
-      };
-      
-      setBranches(prev => [...prev, newBranch]);
-      toast.success("Branch created successfully");
-      return newBranch;
+      return null;
     } catch (error: any) {
-      console.error("Error creating branch:", error);
-      toast.error(error.message || "Failed to create branch");
+      console.error('Error creating branch:', error);
+      toast.error('Failed to create branch');
       return null;
     }
   };
 
-  const updateBranch = async (id: string, branch: Partial<Branch>): Promise<Branch | null> => {
+  const updateBranch = async (id: string, branchData: Partial<Branch>) => {
     try {
-      const updates: any = {};
-      
-      if (branch.name) updates.name = branch.name;
-      if (branch.address !== undefined) updates.address = branch.address;
-      if (branch.phone !== undefined) updates.phone = branch.phone;
-      if (branch.email !== undefined) updates.email = branch.email;
-      if (branch.managerId !== undefined) updates.manager_id = branch.managerId;
-      if (branch.isActive !== undefined) updates.is_active = branch.isActive;
-      if (branch.maxCapacity !== undefined) updates.max_capacity = branch.maxCapacity;
-      if (branch.openingHours !== undefined) updates.opening_hours = branch.openingHours;
-      if (branch.closingHours !== undefined) updates.closing_hours = branch.closingHours;
-      
       const { data, error } = await supabase
         .from('branches')
-        .update(updates)
+        .update(branchData)
         .eq('id', id)
         .select()
         .single();
-        
-      if (error) {
-        throw error;
+
+      if (error) throw error;
+      
+      if (data) {
+        await fetchBranches();
+        return data as Branch;
       }
       
-      const updatedBranch: Branch = {
-        id: data.id,
-        name: data.name,
-        address: data.address || '',
-        phone: data.phone || '',
-        email: data.email || '',
-        manager: '',
-        managerId: data.manager_id || '',
-        isActive: data.is_active || true,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        maxCapacity: data.max_capacity || 0,
-        openingHours: data.opening_hours || '',
-        closingHours: data.closing_hours || ''
-      };
-      
-      setBranches(prev => prev.map(b => b.id === id ? updatedBranch : b));
-      
-      if (currentBranch?.id === id) {
-        setCurrentBranch(updatedBranch);
-      }
-      
-      toast.success("Branch updated successfully");
-      return updatedBranch;
+      return null;
     } catch (error: any) {
-      console.error("Error updating branch:", error);
-      toast.error(error.message || "Failed to update branch");
+      console.error('Error updating branch:', error);
+      toast.error('Failed to update branch');
       return null;
     }
   };
-  
-  useEffect(() => {
-    const initializeBranches = async () => {
-      const branchList = await fetchBranches();
+
+  const deleteBranch = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       
-      // Load last selected branch from localStorage if available
-      const savedBranchId = localStorage.getItem('currentBranchId');
-      const savedBranch = savedBranchId ? branchList.find(b => b.id === savedBranchId) : null;
-      
-      if (savedBranch) {
-        setCurrentBranch(savedBranch);
-      } else if (branchList.length > 0) {
-        // Default to first branch if no saved preference
-        setCurrentBranch(branchList[0]);
-      }
-    };
-    
-    if (isAuthenticated) {
-      initializeBranches();
+      await fetchBranches();
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting branch:', error);
+      toast.error('Failed to delete branch');
+      return false;
     }
-  }, [isAuthenticated]);
-  
-  const handleSetCurrentBranch = (branch: Branch) => {
-    setCurrentBranch(branch);
-    localStorage.setItem('currentBranchId', branch.id);
   };
-  
+
+  useEffect(() => {
+    if (user) {
+      fetchBranches();
+
+      const savedBranchId = localStorage.getItem('currentBranchId');
+      if (savedBranchId) {
+        switchBranch(savedBranchId);
+      }
+    }
+  }, [user, user?.id]);
+
+  const switchBranch = (branchId: string) => {
+    const branch = availableBranches.find(b => b.id === branchId);
+    if (branch) {
+      setCurrentBranch(branch);
+      localStorage.setItem('currentBranchId', branchId);
+      
+      if (updateUserBranch) {
+        updateUserBranch(branchId).catch(err => {
+          console.error('Error updating user branch:', err);
+        });
+      }
+      
+      toast.success(`Switched to ${branch.name}`);
+    } else {
+      toast.error('Branch not found');
+    }
+  };
+
   return (
     <BranchContext.Provider
       value={{
-        branches,
         currentBranch,
-        setCurrentBranch: handleSetCurrentBranch,
+        availableBranches,
+        branches: availableBranches,
         isLoading,
-        fetchBranches,
+        error,
+        switchBranch,
+        refreshBranches: fetchBranches,
         createBranch,
         updateBranch,
+        deleteBranch,
       }}
     >
       {children}

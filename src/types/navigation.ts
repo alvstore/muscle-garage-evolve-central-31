@@ -1,6 +1,6 @@
 
-import { UserRole } from './index';
 import { ReactNode } from 'react';
+import { UserRole } from './index';
 
 export type Permission = 
   | 'view_dashboard' 

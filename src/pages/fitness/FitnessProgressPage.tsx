@@ -22,21 +22,21 @@ const FitnessProgressPage = () => {
           id: "member1",
           name: "John Doe",
           email: "john@example.com",
-          role: "member",
+          role: "member" as 'member', // Explicitly cast to 'member' type
           membershipStatus: "active",
-          status: "active" // Add the required status property
+          status: "active"
         },
         {
           id: "member2",
           name: "Jane Smith",
           email: "jane@example.com",
-          role: "member",
+          role: "member" as 'member', // Explicitly cast to 'member' type
           membershipStatus: "active",
-          status: "active" // Add the required status property
+          status: "active"
         }
       ];
       
-      setMembers(fetchedMembers);
+      setMembers(fetchedMembers as Member[]); // Cast to Member[] to ensure compatibility
       if (fetchedMembers.length > 0) {
         setSelectedMemberId(fetchedMembers[0].id);
       }

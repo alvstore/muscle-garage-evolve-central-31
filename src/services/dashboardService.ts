@@ -8,14 +8,18 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
     let summary: DashboardSummary = {
       totalMembers: 0,
       activeMembers: 0,
-      pendingPayments: { count: 0, total: 0 },
-      upcomingRenewals: 0,
-      todayCheckIns: 0,
+      totalIncome: 0,
       revenue: {
         daily: 0,
         weekly: 0,
         monthly: 0
-      }
+      },
+      pendingPayments: { 
+        count: 0, 
+        total: 0 
+      },
+      upcomingRenewals: 0,
+      todayCheckIns: 0,
     };
 
     // Build our queries with branch filter if provided
@@ -108,6 +112,7 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
     summary = {
       totalMembers: totalMembers || 0,
       activeMembers: activeMembers || 0,
+      totalIncome: 0, // Set a default value
       pendingPayments: { 
         count: pendingPayments?.length || 0, 
         total: pendingPaymentsTotal 

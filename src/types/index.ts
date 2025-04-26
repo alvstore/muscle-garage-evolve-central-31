@@ -1,26 +1,10 @@
-export interface Member {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  phone?: string;
-  status: string;
-  membershipStatus: string;
-  membershipId?: string;
-  membershipStartDate?: string;
-  membershipEndDate?: string;
-  avatar?: string;
-  // Add properties being used across components
-  dateOfBirth?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-  goal?: string;
-  trainerId?: string;
+// Add or append to existing types file
+export interface GenericStringError {
+  id?: string;
+  message: string;
 }
 
+// User related types
 export type UserRole = 'admin' | 'staff' | 'trainer' | 'member';
 
 export interface User {
@@ -34,6 +18,9 @@ export interface User {
   branchIds?: string[];
   isBranchManager?: boolean;
   primaryBranchId?: string;
+  dateOfBirth?: string;
+  
+  // Address fields
   address?: string;
   city?: string;
   state?: string;
@@ -41,119 +28,171 @@ export interface User {
   country?: string;
 }
 
+// Member specific interface
+export interface Member {
+  id: string;
+  name: string;
+  email?: string;
+  role: 'member';
+  phone?: string;
+  status: string;
+  membershipStatus: string;
+  membershipId?: string;
+  membershipStartDate?: string;
+  membershipEndDate?: string;
+  avatar?: string;
+  goal?: string;
+  trainer?: string;
+  trainerId?: string;
+  dateOfBirth?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string; // Added zipCode property
+}
+
+// Trainer specific interface
 export interface Trainer {
   id: string;
-  email: string;
   name: string;
+  email: string;
   role: 'trainer';
-  avatar?: string;
-  phone?: string;
   specialty?: string;
   bio?: string;
-  rating?: number;
-}
-
-export interface Staff {
-  id: string;
-  email: string;
-  name: string;
-  role: 'staff';
   avatar?: string;
   phone?: string;
-  position?: string;
-  department?: string;
+  status: string;
+  branchId?: string;
+  rating?: number; // Added rating property
 }
 
+// Staff specific interface
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  role: 'staff';
+  position?: string;
+  phone?: string;
+  avatar?: string;
+  status: string;
+  branchId?: string;
+  department?: string; // Added department property
+}
+
+// Admin specific interface
 export interface Admin {
   id: string;
-  email: string;
   name: string;
+  email: string;
   role: 'admin';
   avatar?: string;
   phone?: string;
 }
 
+// Class interface
 export interface Class {
   id: string;
   name: string;
   description?: string;
+  trainer: string;
   trainerId: string;
-  capacity: number;
-  enrolled: number;
   startTime: string;
   endTime: string;
-  type: string;
+  capacity: number;
+  enrolled: number;
   location: string;
+  branchId?: string;
+  type?: string; // Added type property
 }
 
+// Membership interface
 export interface Membership {
   id: string;
   name: string;
+  description?: string;
   price: number;
-  durationDays: number;
-  benefits: string[];
-  active: boolean;
+  duration: number;
+  durationType: 'days' | 'weeks' | 'months' | 'years';
+  features?: string[];
+  isActive: boolean;
+  branchId?: string;
 }
 
+// Announcement interface
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  createdBy: string;
-  createdAt: string;
-  targetRoles: UserRole[];
-  expiresAt: string;
+  author: string;
+  authorId: string;
+  date: string;
+  branchId?: string;
+  targetRoles?: UserRole[];
+  priority?: 'low' | 'medium' | 'high';
+  expiresAt?: string;
+  createdBy?: string; // Added createdBy property
+  createdAt?: string;
 }
 
+// Dashboard summary interface
 export interface DashboardSummary {
   totalMembers: number;
-  todayCheckIns: number;
+  activeMembers: number;
+  newMembers: number;
   revenue: {
     daily: number;
     weekly: number;
     monthly: number;
   };
-  pendingPayments: {
+  todayCheckIns: number;
+  upcomingRenewals: number;
+  expiringMemberships: number;
+  pendingPayments?: {  // Changed to object type to match usage in mockData
     count: number;
     total: number;
   };
-  upcomingRenewals: number;
-  attendanceTrend: { date: string; count: number }[];
-  membersByStatus: {
+  classes?: {
+    total: number;
+    upcoming: number;
+    today: number;
+  };
+  attendanceTrend?: {  // Added attendanceTrend property
+    date: string;
+    count: number;
+  }[];
+  membersByStatus?: {  // Added membersByStatus property
     active: number;
     inactive: number;
     expired: number;
   };
-  recentNotifications: {
-    id: string;
-    userId: string;
-    title: string;
-    message: string;
-    type: string;
-    read: boolean;
-    createdAt: string;
-  }[];
+  revenueData?: any[];  // Added revenueData property
+  recentNotifications?: any[];  // Added recentNotifications property
 }
 
+// Workout plan related interfaces
 export interface WorkoutPlan {
   id: string;
   name: string;
-  description?: string;
   trainerId: string;
-  memberId: string;
-  workoutDays: WorkoutDay[];
-  isCustom?: boolean;
+  memberId?: string;
   isGlobal?: boolean;
-  updatedAt: string;
+  isCustom?: boolean;
+  description?: string;
+  difficulty?: string;
+  notes?: string;
+  days?: WorkoutDay[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface WorkoutDay {
   id: string;
   name: string;
+  dayLabel?: string;
   description?: string;
   exercises: Exercise[];
-  dayLabel?: string;
 }
 
 export interface Exercise {
@@ -164,50 +203,36 @@ export interface Exercise {
   weight?: number;
   rest?: number;
   notes?: string;
+  mediaUrl?: string;
 }
 
+// Diet plan related interfaces
 export interface DietPlan {
   id: string;
   name: string;
-  description?: string;
-  trainerId: string;
   memberId: string;
+  trainerId: string;
   mealPlans: MealPlan[];
-  isCustom?: boolean;
-  isGlobal?: boolean;
-  dailyCalories?: number;
-  dietType?: string;
-  goal?: string;
-  updatedAt: string;
-  createdAt: string;
   notes?: string;
+  isCustom: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MealPlan {
   id: string;
   name: string;
-  time?: string;
+  time: string;
   items: string[];
-  macros?: {
+  macros: {
     protein: number;
     carbs: number;
     fats: number;
-    calories?: number;
+    calories: number;
   };
 }
 
-export interface BodyMeasurement {
-  id?: string;
-  memberId?: string;
-  date: string;
-  weight?: number;
-  height?: number;
-  bmi?: number;
-  bodyFat?: number;
-  chest?: number;
-  waist?: number;
-  hips?: number;
-  arms?: number;
-  thighs?: number;
-  notes?: string;
+// Fix the type conversion issue in use-supabase-query.ts
+export function convertErrorToGenericError<T>(error: any): T {
+  return error as unknown as T;
 }

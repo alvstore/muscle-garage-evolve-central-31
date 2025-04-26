@@ -8,6 +8,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import Index from '@/pages/Index';
 import NotFound from '@/pages/NotFound';
 import Login from '@/pages/auth/Login';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
+import ResetPassword from '@/pages/auth/ResetPassword';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
@@ -27,12 +29,18 @@ import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 
-// Note: Index is already imported above and will be used as the public website
-
 export const appRoutes: RouteObject[] = [
   {
     path: '/login',
     element: <Login />
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPassword />
   },
   {
     path: '/',
