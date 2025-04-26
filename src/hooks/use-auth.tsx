@@ -31,6 +31,7 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   forgotPassword: (email: string) => Promise<boolean>;
   profile: Profile | null;
+  updateUserBranch: (branchId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -44,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   changePassword: async () => false,
   forgotPassword: async () => false,
   profile: null,
+  updateUserBranch: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -89,6 +91,27 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     
     fetchUserProfile();
   }, [user]);
+
+  const updateUserBranch = async (branchId: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ branch_id: branchId })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local profile state
+      setProfile(prev => prev ? { ...prev, branch_id: branchId } : null);
+      
+      return true;
+    } catch (err) {
+      console.error('Error updating user branch:', err);
+      return false;
+    }
+  };
   
   // Map Supabase user to our User type
   const mappedUser: AppUser | null = user && profile ? {
@@ -117,7 +140,8 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
         register,
         changePassword,
         forgotPassword,
-        profile
+        profile,
+        updateUserBranch
       }}
     >
       {children}

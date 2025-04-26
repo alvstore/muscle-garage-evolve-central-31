@@ -48,7 +48,7 @@ export type Permission =
 
 export const usePermissions = () => {
   const { user } = useAuth();
-  const { can, isSystemAdmin, isBranchAdmin } = usePermissionsManager();
+  const { can, isSystemAdmin, isBranchAdmin, userRole } = usePermissionsManager();
 
   const hasPermission = (permission: Permission): boolean => {
     return can(permission);
@@ -104,7 +104,11 @@ export const usePermissions = () => {
     canManageMembers,
     canAccessSettings,
     canAccessFinanceSection,
+    userRole,  // Expose userRole directly
   };
 };
+
+// Re-export the provider from the permissions manager
+export { PermissionsProvider } from './permissions/use-permissions-manager';
 
 export default usePermissions;

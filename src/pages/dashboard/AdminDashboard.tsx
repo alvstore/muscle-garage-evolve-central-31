@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const [upcomingRenewals, setUpcomingRenewals] = useState([]);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
   
-  const { isSystemAdmin } = usePermissions();
+  const { isSuperAdmin } = usePermissions();
   const { currentBranch } = useBranch();
   const { dashboardData, isLoading, refreshData } = useDashboard();
 
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
   const dashboardTitle = currentBranch ? `${currentBranch.name} Dashboard` : "All Branches Dashboard";
   const scopeDescription = currentBranch 
     ? `Showing data for ${currentBranch.name}` 
-    : isSystemAdmin() ? "Showing data for all branches" : "Please select a branch";
+    : isSuperAdmin() ? "Showing data for all branches" : "Please select a branch";
 
   return (
     <div className="space-y-6">

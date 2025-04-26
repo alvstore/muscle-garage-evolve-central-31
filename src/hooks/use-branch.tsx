@@ -20,19 +20,27 @@ interface Branch {
 interface BranchContextData {
   currentBranch: Branch | null;
   availableBranches: Branch[];
+  branches: Branch[];  // Add this to expose all branches
   isLoading: boolean;
   error: string | null;
   switchBranch: (branchId: string) => void;
   refreshBranches: () => Promise<void>;
+  createBranch: (branchData: Omit<Branch, 'id'>) => Promise<Branch | null>;
+  updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
+  deleteBranch: (id: string) => Promise<boolean>;
 }
 
 const BranchContext = createContext<BranchContextData>({
   currentBranch: null,
   availableBranches: [],
+  branches: [],
   isLoading: false,
   error: null,
   switchBranch: () => {},
   refreshBranches: async () => {},
+  createBranch: async () => null,
+  updateBranch: async () => null,
+  deleteBranch: async () => false,
 });
 
 export const BranchProvider = ({ children }: { children: ReactNode }) => {
@@ -40,14 +48,14 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   const [availableBranches, setAvailableBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, profile } = useAuth();
+  const { user, profile, updateUserBranch } = useAuth();
 
   const fetchBranches = async () => {
     if (!user) {
       setAvailableBranches([]);
       setCurrentBranch(null);
       setIsLoading(false);
-      return;
+      return [];
     }
 
     setIsLoading(true);
@@ -69,7 +77,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error fetching branches:', error);
         setError('Failed to load branches');
-        return;
+        return [];
       }
 
       if (data) {
@@ -84,12 +92,84 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
           setCurrentBranch(primaryBranch || data[0]);
           localStorage.setItem('currentBranchId', primaryBranch?.id || data[0].id);
         }
+
+        return data;
       }
+      return [];
     } catch (err: any) {
       console.error('Error in fetchBranches:', err);
       setError(err.message || 'Failed to load branches');
+      return [];
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Create branch function
+  const createBranch = async (branchData: Omit<Branch, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .insert([branchData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        await fetchBranches();
+        return data as Branch;
+      }
+      
+      return null;
+    } catch (error: any) {
+      console.error('Error creating branch:', error);
+      toast.error('Failed to create branch');
+      return null;
+    }
+  };
+
+  // Update branch function
+  const updateBranch = async (id: string, branchData: Partial<Branch>) => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .update(branchData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        await fetchBranches();
+        return data as Branch;
+      }
+      
+      return null;
+    } catch (error: any) {
+      console.error('Error updating branch:', error);
+      toast.error('Failed to update branch');
+      return null;
+    }
+  };
+
+  // Delete branch function
+  const deleteBranch = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      await fetchBranches();
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting branch:', error);
+      toast.error('Failed to delete branch');
+      return false;
     }
   };
 
@@ -110,6 +190,13 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     if (branch) {
       setCurrentBranch(branch);
       localStorage.setItem('currentBranchId', branchId);
+      
+      if (updateUserBranch) {
+        updateUserBranch(branchId).catch(err => {
+          console.error('Error updating user branch:', err);
+        });
+      }
+      
       toast.success(`Switched to ${branch.name}`);
     } else {
       toast.error('Branch not found');
@@ -121,10 +208,14 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       value={{
         currentBranch,
         availableBranches,
+        branches: availableBranches, // Expose branches as well
         isLoading,
         error,
         switchBranch,
         refreshBranches: fetchBranches,
+        createBranch,
+        updateBranch,
+        deleteBranch,
       }}
     >
       {children}

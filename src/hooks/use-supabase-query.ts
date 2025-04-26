@@ -1,187 +1,216 @@
 
-import { useState, useEffect } from 'react';
-import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
-import { SupabaseRealtimePayload } from '@supabase/supabase-js';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './use-auth';
-import { useBranch } from './use-branch';
+import { GenericStringError } from '@/types';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseSupabaseQueryOptions<T> {
-  table: string;
+  tableName: string;
+  column?: string;
+  value?: string | number;
   select?: string;
-  filters?: (query: PostgrestFilterBuilder<any, any, any[]>) => PostgrestFilterBuilder<any, any, any[]>;
-  branchScoped?: boolean;
-  realtimeEnabled?: boolean;
   orderBy?: {
     column: string;
-    ascending?: boolean;
+    ascending: boolean;
   };
   limit?: number;
+  filterBranch?: boolean;
+  additionalFilters?: {
+    column: string;
+    value: any;
+    operator?: 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like' | 'ilike' | 'is';
+  }[];
+  subscribeToChanges?: boolean;
+  branchId?: string;
 }
 
-export function useSupabaseQuery<T>({
-  table,
+export function useSupabaseQuery<T extends { id?: string }>({
+  tableName,
+  column,
+  value,
   select = '*',
-  filters,
-  branchScoped = true,
-  realtimeEnabled = true,
   orderBy,
-  limit
+  limit,
+  filterBranch = true,
+  additionalFilters = [],
+  subscribeToChanges = false,
+  branchId
 }: UseSupabaseQueryOptions<T>) {
   const [data, setData] = useState<T[]>([]);
-  const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentBranch } = useBranch();
-  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<RealtimeChannel | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      if (!user) {
-        if (isMounted) {
-          setData([]);
-          setIsLoading(false);
-        }
-        return;
-      }
-
+  const fetchData = useCallback(async () => {
+    try {
       setIsLoading(true);
       setError(null);
-      try {
-        let query = supabase.from(table).select(select);
-        
-        // Apply branch filtering if needed
-        if (branchScoped && currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
-        }
-        
-        // Apply custom filters
-        if (filters) {
-          query = filters(query);
-        }
-        
-        // Apply ordering
-        if (orderBy) {
-          query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true });
-        }
-        
-        // Apply limit
-        if (limit) {
-          query = query.limit(limit);
-        }
 
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        if (isMounted) {
-          setData(data || []);
-        }
-      } catch (err) {
-        console.error(`Error fetching data from ${table}:`, err);
-        if (isMounted) {
-          setError(err as Error);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    fetchData();
-    
-    // Set up realtime subscription if enabled
-    let subscription: any;
-    
-    if (realtimeEnabled) {
-      subscription = supabase
-        .channel(`${table}_changes`)
-        .on('postgres_changes', 
-          { 
-            event: '*', 
-            schema: 'public', 
-            table 
-          }, 
-          (payload) => {
-            handleRealtimeUpdate(payload);
+      let query = supabase.from(tableName).select(select);
+
+      // Apply branch filter if needed
+      if (filterBranch && tableName !== 'branches') {
+        // If branchId is provided, use it, otherwise get from current user
+        if (branchId) {
+          query = query.eq('branch_id', branchId);
+        } else {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('role, branch_id')
+              .eq('id', user.id)
+              .single();
+
+            if (userProfile) {
+              // Only filter by branch if not admin
+              if (userProfile.role !== 'admin') {
+                query = query.eq('branch_id', userProfile.branch_id);
+              }
+            }
           }
-        )
-        .subscribe();
-    }
-    
-    return () => {
-      isMounted = false;
-      if (subscription) {
-        supabase.removeChannel(subscription);
+        }
       }
-    };
-  }, [table, select, currentBranch?.id, user?.id, realtimeEnabled]);
 
-  const handleRealtimeUpdate = (payload: SupabaseRealtimePayload<any>) => {
-    if (!payload || !payload.new) return;
-    
-    const { eventType } = payload;
-    
-    // Apply branch filtering to realtime updates
-    if (branchScoped && currentBranch?.id && payload.new.branch_id !== currentBranch.id) {
-      return;
-    }
-
-    switch (eventType) {
-      case 'INSERT':
-        setData(prev => [payload.new, ...prev]);
-        break;
-      case 'UPDATE':
-        setData(prev => 
-          prev.map(item => 
-            item.id === payload.new.id ? payload.new : item
-          )
-        );
-        break;
-      case 'DELETE':
-        setData(prev => 
-          prev.filter(item => item.id !== payload.old.id)
-        );
-        break;
-      default:
-        break;
-    }
-  };
-
-  const refresh = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase.from(table).select(select);
-      
-      if (branchScoped && currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
+      // Apply main filter if specified
+      if (column && value !== undefined) {
+        query = query.eq(column, value);
       }
-      
-      if (filters) {
-        query = filters(query);
-      }
-      
+
+      // Apply additional filters
+      additionalFilters.forEach(filter => {
+        const { column, value, operator = 'eq' } = filter;
+        if (operator === 'eq') query = query.eq(column, value);
+        else if (operator === 'neq') query = query.neq(column, value);
+        else if (operator === 'gt') query = query.gt(column, value);
+        else if (operator === 'lt') query = query.lt(column, value);
+        else if (operator === 'gte') query = query.gte(column, value);
+        else if (operator === 'lte') query = query.lte(column, value);
+        else if (operator === 'like') query = query.like(column, value);
+        else if (operator === 'ilike') query = query.ilike(column, value);
+        else if (operator === 'is') query = query.is(column, value);
+      });
+
+      // Apply ordering if specified
       if (orderBy) {
-        query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true });
+        query = query.order(orderBy.column, { ascending: orderBy.ascending });
       }
-      
+
+      // Apply limit if specified
       if (limit) {
         query = query.limit(limit);
       }
 
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      setData(data || []);
-    } catch (err) {
-      console.error(`Error refreshing data from ${table}:`, err);
-      setError(err as Error);
+      const { data: resultData, error: resultError } = await query;
+
+      if (resultError) {
+        console.error(`Error fetching data from ${tableName}:`, resultError);
+        setError(resultError.message);
+        setData([]);
+      } else {
+        setData(resultData as T[]);
+      }
+    } catch (err: any) {
+      console.error(`Unexpected error in useSupabaseQuery for ${tableName}:`, err);
+      setError(err.message || 'An unexpected error occurred');
+      setData([]);
     } finally {
       setIsLoading(false);
     }
+  }, [tableName, column, value, select, orderBy, limit, filterBranch, additionalFilters, branchId]);
+
+  // Subscribe to changes via Realtime
+  useEffect(() => {
+    if (subscribeToChanges) {
+      const channel = supabase
+        .channel(`${tableName}-changes`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: tableName
+        }, (payload) => {
+          // Refresh data when changes occur
+          fetchData();
+        })
+        .subscribe();
+
+      setSubscription(channel);
+
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+  }, [tableName, subscribeToChanges, fetchData]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Helper functions for CRUD operations
+  const addItem = async (item: Omit<T, 'id'>): Promise<T | null> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .insert([item])
+        .select();
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchData();
+      return data?.[0] as T || null;
+    } catch (err: any) {
+      console.error(`Error adding item to ${tableName}:`, err);
+      setError(err.message);
+      return null;
+    }
   };
 
-  return { data, error, isLoading, refresh };
-}
+  const updateItem = async (id: string, updates: Partial<T>): Promise<T | null> => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .update(updates)
+        .eq('id', id)
+        .select();
 
-export default useSupabaseQuery;
+      if (error) throw error;
+
+      // Refresh data
+      await fetchData();
+      return data?.[0] as T || null;
+    } catch (err: any) {
+      console.error(`Error updating item in ${tableName}:`, err);
+      setError(err.message);
+      return null;
+    }
+  };
+
+  const deleteItem = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Refresh data
+      await fetchData();
+      return true;
+    } catch (err: any) {
+      console.error(`Error deleting item from ${tableName}:`, err);
+      setError(err.message);
+      return false;
+    }
+  };
+
+  const refreshData = () => {
+    fetchData();
+  };
+
+  return { data, isLoading, error, refreshData, addItem, updateItem, deleteItem };
+}
