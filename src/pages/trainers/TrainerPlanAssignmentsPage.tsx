@@ -120,43 +120,37 @@ const mockWorkoutPlans: WorkoutPlan[] = [
 ];
 
 // Mock members data
-const member1 = {
-  id: "member1",
-  name: "John Smith",
-  email: "john@example.com",
-  role: "member",
-  membershipStatus: "active",
-  trainerId: "trainer1", 
-  goal: "Weight Loss",
-  status: "active"
-};
-
-const member2 = {
-  id: "member2",
-  name: "Jane Doe",
-  email: "jane@example.com",
-  role: "member",
-  membershipStatus: "active",
-  trainerId: "trainer1",
-  goal: "Muscle Building",
-  status: "active"
-};
-
-const member3 = {
-  id: "member3",
-  name: "Bob Johnson",
-  email: "bob@example.com",
-  role: "member",
-  membershipStatus: "active",
-  trainerId: "trainer1",
-  goal: "General Fitness",
-  status: "active"
-};
-
 const mockMembers: Member[] = [
-  member1,
-  member2,
-  member3
+  {
+    id: "member1",
+    name: "John Doe",
+    email: "john@example.com",
+    role: "member" as 'member',
+    membershipStatus: "active",
+    trainerId: "trainer1",
+    goal: "Weight loss",
+    status: "active"
+  },
+  {
+    id: "member2",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    role: "member" as 'member',
+    membershipStatus: "active",
+    trainerId: "trainer1",
+    goal: "Muscle gain",
+    status: "active"
+  },
+  {
+    id: "member3",
+    name: "Alex Johnson",
+    email: "alex@example.com",
+    role: "member" as 'member',
+    membershipStatus: "active",
+    trainerId: "trainer2",
+    goal: "General fitness",
+    status: "active"
+  }
 ];
 
 // Mock assignments

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { GenericStringError, convertErrorToGenericError } from '@/types';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseSupabaseQueryOptions<T> {
   tableName: string;
@@ -85,13 +86,9 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T>) {
 
       if (resultError) {
         console.error('Supabase query error:', resultError);
-        if (Array.isArray(resultError.errors)) {
-          setData(convertErrorToGenericError<T>(resultError.errors));
-        } else {
-          setError(resultError.message || 'An error occurred while fetching data');
-        }
+        setError(resultError.message || 'An error occurred while fetching data');
       } else {
-        setData(data || []);
+        setData(resultData || []);
         setError(null);
       }
     } catch (err: any) {

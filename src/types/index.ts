@@ -33,7 +33,7 @@ export interface User {
 export interface Member {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   role: 'member';
   phone?: string;
   status: string;
@@ -50,6 +50,7 @@ export interface Member {
   city?: string;
   state?: string;
   country?: string;
+  zipCode?: string; // Added zipCode property
 }
 
 // Trainer specific interface
@@ -64,6 +65,7 @@ export interface Trainer {
   phone?: string;
   status: string;
   branchId?: string;
+  rating?: number; // Added rating property
 }
 
 // Staff specific interface
@@ -77,6 +79,7 @@ export interface Staff {
   avatar?: string;
   status: string;
   branchId?: string;
+  department?: string; // Added department property
 }
 
 // Admin specific interface
@@ -102,6 +105,7 @@ export interface Class {
   enrolled: number;
   location: string;
   branchId?: string;
+  type?: string; // Added type property
 }
 
 // Membership interface
@@ -129,6 +133,8 @@ export interface Announcement {
   targetRoles?: UserRole[];
   priority?: 'low' | 'medium' | 'high';
   expiresAt?: string;
+  createdBy?: string; // Added createdBy property
+  createdAt?: string;
 }
 
 // Dashboard summary interface
@@ -144,7 +150,10 @@ export interface DashboardSummary {
   todayCheckIns: number;
   upcomingRenewals: number;
   expiringMemberships: number;
-  pendingPayments?: number;
+  pendingPayments?: {  // Changed to object type to match usage in mockData
+    count: number;
+    total: number;
+  };
   classes?: {
     total: number;
     upcoming: number;

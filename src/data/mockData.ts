@@ -140,6 +140,7 @@ export const mockTrainers: Trainer[] = [
     phone: "+1234567892",
     specialty: "Weight Loss",
     bio: "Certified personal trainer with 8 years of experience specializing in weight management and functional training.",
+    status: "active",
     rating: 4.8
   },
   {
@@ -151,6 +152,7 @@ export const mockTrainers: Trainer[] = [
     phone: "+1234567898",
     specialty: "Bodybuilding",
     bio: "Former competitive bodybuilder with extensive knowledge in muscle hypertrophy and nutrition.",
+    status: "active",
     rating: 4.9
   },
   {
@@ -162,6 +164,7 @@ export const mockTrainers: Trainer[] = [
     phone: "+1234567899",
     specialty: "Yoga & Flexibility",
     bio: "Yoga instructor and flexibility coach who focuses on mobility, balance, and mind-body connection.",
+    status: "active",
     rating: 4.7
   }
 ];
@@ -176,6 +179,7 @@ export const mockStaff: Staff[] = [
     avatar: "/placeholder.svg",
     phone: "+1234567891",
     position: "Front Desk",
+    status: "active",
     department: "Operations"
   },
   {
@@ -186,6 +190,7 @@ export const mockStaff: Staff[] = [
     avatar: "/placeholder.svg",
     phone: "+1234567900",
     position: "Sales Associate",
+    status: "active",
     department: "Sales"
   }
 ];
@@ -208,61 +213,66 @@ export const mockClasses: Class[] = [
     id: "class1",
     name: "HIIT Extreme",
     description: "High-intensity interval training to maximize calorie burn and improve conditioning.",
+    trainer: "Chris Rodriguez",
     trainerId: "trainer1",
     capacity: 15,
     enrolled: 12,
     startTime: "2023-07-20T08:00:00Z",
     endTime: "2023-07-20T09:00:00Z",
-    type: "Group",
-    location: "Studio A"
+    location: "Studio A",
+    type: "Group"
   },
   {
     id: "class2",
     name: "Power Yoga",
     description: "Dynamic yoga practice focused on building strength and flexibility.",
+    trainer: "Jessica Wu",
     trainerId: "trainer3",
     capacity: 20,
     enrolled: 15,
     startTime: "2023-07-20T10:00:00Z",
     endTime: "2023-07-20T11:00:00Z",
-    type: "Group",
-    location: "Studio B"
+    location: "Studio B",
+    type: "Group"
   },
   {
     id: "class3",
     name: "Muscle Building 101",
     description: "Learn proper techniques for hypertrophy training.",
+    trainer: "Sam Johnson",
     trainerId: "trainer2",
     capacity: 10,
     enrolled: 8,
     startTime: "2023-07-20T17:00:00Z",
     endTime: "2023-07-20T18:00:00Z",
-    type: "Workshop",
-    location: "Weight Room"
+    location: "Weight Room",
+    type: "Workshop"
   },
   {
     id: "class4",
     name: "Spin Class",
     description: "High-energy indoor cycling workout set to motivating music.",
+    trainer: "Chris Rodriguez",
     trainerId: "trainer1",
     capacity: 25,
     enrolled: 20,
     startTime: "2023-07-21T07:00:00Z",
     endTime: "2023-07-21T08:00:00Z",
-    type: "Group",
-    location: "Spin Studio"
+    location: "Spin Studio",
+    type: "Group"
   },
   {
     id: "class5",
     name: "Core Crusher",
     description: "30-minute focused workout for developing core strength and stability.",
+    trainer: "Jessica Wu",
     trainerId: "trainer3",
     capacity: 15,
     enrolled: 10,
     startTime: "2023-07-21T12:00:00Z",
     endTime: "2023-07-21T12:30:00Z",
-    type: "Group",
-    location: "Studio A"
+    location: "Studio A",
+    type: "Group"
   }
 ];
 
@@ -272,62 +282,67 @@ export const mockMemberships: Membership[] = [
     id: "membership1",
     name: "Premium Annual",
     price: 999,
-    durationDays: 365,
-    benefits: [
+    duration: 365,
+    durationType: "days",
+    features: [
       "Unlimited gym access",
       "Free group classes",
       "2 personal training sessions/month",
       "Locker rental",
       "Spa access"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership2",
     name: "Standard Monthly",
     price: 99,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    durationType: "days",
+    features: [
       "Unlimited gym access",
       "5 group classes/month",
       "Fitness assessment"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership3",
     name: "Basic Quarterly",
     price: 249,
-    durationDays: 90,
-    benefits: [
+    duration: 90,
+    durationType: "days",
+    features: [
       "Unlimited gym access",
       "3 group classes/month"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership4",
     name: "Student Special",
     price: 69,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    durationType: "days",
+    features: [
       "Unlimited gym access",
       "2 group classes/month",
       "Valid student ID required"
     ],
-    active: true
+    isActive: true
   },
   {
     id: "membership5",
     name: "Family Plan",
     price: 199,
-    durationDays: 30,
-    benefits: [
+    duration: 30,
+    durationType: "days",
+    features: [
       "Access for up to 4 family members",
       "10 group classes to share/month",
       "Childcare services"
     ],
-    active: true
+    isActive: true
   }
 ];
 
@@ -337,34 +352,42 @@ export const mockAnnouncements: Announcement[] = [
     id: "announcement1",
     title: "New Yoga Class Schedule",
     content: "We're excited to announce our expanded yoga schedule with 5 new classes per week!",
-    createdBy: "admin1",
-    createdAt: "2023-07-15T10:00:00Z",
+    author: "Alex Johnson",
+    authorId: "admin1",
+    date: "2023-07-15T10:00:00Z",
     targetRoles: ["member", "trainer", "staff", "admin"],
-    expiresAt: "2023-07-30T23:59:59Z"
+    expiresAt: "2023-07-30T23:59:59Z",
+    createdBy: "admin1"
   },
   {
     id: "announcement2",
     title: "Maintenance Notice",
     content: "The pool area will be closed for maintenance from July 25-27. We apologize for any inconvenience.",
-    createdBy: "admin1",
-    createdAt: "2023-07-18T15:30:00Z",
+    author: "Alex Johnson",
+    authorId: "admin1",
+    date: "2023-07-18T15:30:00Z",
     targetRoles: ["member", "trainer", "staff", "admin"],
-    expiresAt: "2023-07-28T23:59:59Z"
+    expiresAt: "2023-07-28T23:59:59Z",
+    createdBy: "admin1"
   },
   {
     id: "announcement3",
     title: "Staff Meeting",
     content: "Reminder: Monthly staff meeting this Friday at 2 PM in the conference room.",
-    createdBy: "admin1",
-    createdAt: "2023-07-19T09:00:00Z",
+    author: "Alex Johnson",
+    authorId: "admin1",
+    date: "2023-07-19T09:00:00Z",
     targetRoles: ["trainer", "staff", "admin"],
-    expiresAt: "2023-07-21T23:59:59Z"
+    expiresAt: "2023-07-21T23:59:59Z",
+    createdBy: "admin1"
   }
 ];
 
 // Mock Dashboard Summary
 export const mockDashboardSummary: DashboardSummary = {
   totalMembers: 243,
+  activeMembers: 205,
+  newMembers: 12,
   todayCheckIns: 87,
   revenue: {
     daily: 1250,
@@ -376,6 +399,7 @@ export const mockDashboardSummary: DashboardSummary = {
     total: 1490
   },
   upcomingRenewals: 8,
+  expiringMemberships: 20,
   attendanceTrend: [
     { date: "2023-07-14", count: 78 },
     { date: "2023-07-15", count: 82 },

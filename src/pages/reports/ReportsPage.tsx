@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -165,7 +164,7 @@ const ReportsPage = () => {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle>{classItem.name}</CardTitle>
-                        <Badge>{classItem.type}</Badge>
+                        <Badge>{classItem.type || 'N/A'}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
