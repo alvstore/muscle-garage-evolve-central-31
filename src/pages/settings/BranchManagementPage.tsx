@@ -85,7 +85,7 @@ const BranchManagementPage = () => {
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="font-medium">Manager:</span> {branch.manager || "Not assigned"}
+                    <span className="font-medium">Manager:</span> {branch.manager_name || "Not assigned"}
                   </div>
                   <div>
                     <span className="font-medium">Phone:</span> {branch.phone || "N/A"}

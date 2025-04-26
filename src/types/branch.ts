@@ -6,18 +6,11 @@ export interface Branch {
   city?: string;
   state?: string;
   country?: string;
-  email?: string;
   phone?: string;
-  is_active?: boolean;
-  managerId?: string;
-  manager?: string;
-  maxCapacity?: number;
-  openingHours?: string;
-  closingHours?: string;
-  region?: string;
-  branchCode?: string;
-  taxRate?: number;
-  timezone?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  email?: string;
+  is_active: boolean;
+  manager_id?: string;
+  manager_name?: string; // Added to represent the manager's name
+  openingHours?: string; // Added for business hours
+  closingHours?: string; // Added for business hours
 }

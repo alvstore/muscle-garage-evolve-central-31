@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './use-auth';
@@ -55,7 +54,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       setAvailableBranches([]);
       setCurrentBranch(null);
       setIsLoading(false);
-      return [];
+      return;
     }
 
     setIsLoading(true);
@@ -77,7 +76,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error fetching branches:', error);
         setError('Failed to load branches');
-        return [];
+        return;
       }
 
       if (data) {
@@ -92,14 +91,10 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
           setCurrentBranch(primaryBranch || data[0]);
           localStorage.setItem('currentBranchId', primaryBranch?.id || data[0].id);
         }
-
-        return data;
       }
-      return [];
     } catch (err: any) {
       console.error('Error in fetchBranches:', err);
       setError(err.message || 'Failed to load branches');
-      return [];
     } finally {
       setIsLoading(false);
     }

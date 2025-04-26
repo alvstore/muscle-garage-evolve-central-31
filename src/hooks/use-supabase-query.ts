@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { GenericStringError } from '@/types';
@@ -48,9 +47,7 @@ export function useSupabaseQuery<T extends { id?: string }>({
 
       let query = supabase.from(tableName).select(select);
 
-      // Apply branch filter if needed
       if (filterBranch && tableName !== 'branches') {
-        // If branchId is provided, use it, otherwise get from current user
         if (branchId) {
           query = query.eq('branch_id', branchId);
         } else {
@@ -63,7 +60,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
               .single();
 
             if (userProfile) {
-              // Only filter by branch if not admin
               if (userProfile.role !== 'admin') {
                 query = query.eq('branch_id', userProfile.branch_id);
               }
@@ -72,12 +68,10 @@ export function useSupabaseQuery<T extends { id?: string }>({
         }
       }
 
-      // Apply main filter if specified
       if (column && value !== undefined) {
         query = query.eq(column, value);
       }
 
-      // Apply additional filters
       additionalFilters.forEach(filter => {
         const { column, value, operator = 'eq' } = filter;
         if (operator === 'eq') query = query.eq(column, value);
@@ -91,12 +85,10 @@ export function useSupabaseQuery<T extends { id?: string }>({
         else if (operator === 'is') query = query.is(column, value);
       });
 
-      // Apply ordering if specified
       if (orderBy) {
         query = query.order(orderBy.column, { ascending: orderBy.ascending });
       }
 
-      // Apply limit if specified
       if (limit) {
         query = query.limit(limit);
       }
@@ -119,7 +111,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
     }
   }, [tableName, column, value, select, orderBy, limit, filterBranch, additionalFilters, branchId]);
 
-  // Subscribe to changes via Realtime
   useEffect(() => {
     if (subscribeToChanges) {
       const channel = supabase
@@ -129,7 +120,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
           schema: 'public',
           table: tableName
         }, (payload) => {
-          // Refresh data when changes occur
           fetchData();
         })
         .subscribe();
@@ -144,12 +134,10 @@ export function useSupabaseQuery<T extends { id?: string }>({
     }
   }, [tableName, subscribeToChanges, fetchData]);
 
-  // Initial data fetch
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Helper functions for CRUD operations
   const addItem = async (item: Omit<T, 'id'>): Promise<T | null> => {
     try {
       const { data, error } = await supabase
@@ -159,7 +147,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
 
       if (error) throw error;
 
-      // Refresh data
       await fetchData();
       return data?.[0] as T || null;
     } catch (err: any) {
@@ -179,7 +166,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
 
       if (error) throw error;
 
-      // Refresh data
       await fetchData();
       return data?.[0] as T || null;
     } catch (err: any) {
@@ -198,7 +184,6 @@ export function useSupabaseQuery<T extends { id?: string }>({
 
       if (error) throw error;
 
-      // Refresh data
       await fetchData();
       return true;
     } catch (err: any) {
@@ -208,9 +193,5 @@ export function useSupabaseQuery<T extends { id?: string }>({
     }
   };
 
-  const refreshData = () => {
-    fetchData();
-  };
-
-  return { data, isLoading, error, refreshData, addItem, updateItem, deleteItem };
+  return { data, isLoading, error, refreshData: fetchData, addItem, updateItem, deleteItem };
 }

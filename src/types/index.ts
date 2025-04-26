@@ -211,3 +211,8 @@ export interface BodyMeasurement {
   thighs?: number;
   notes?: string;
 }
+
+// Add GenericStringError type
+export interface GenericStringError {
+  message: string;
+}
