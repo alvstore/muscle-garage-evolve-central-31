@@ -30,7 +30,7 @@ export const getCurrentUserBranch = async () => {
       return null;
     }
 
-    return profile.branch_id;
+    return profile?.branch_id;
   } catch (error) {
     console.error('Error in getCurrentUserBranch:', error);
     return null;
@@ -46,7 +46,7 @@ export const userHasBranchAccess = async (branchId: string) => {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('branch_id, accessible_branch_ids')
+      .select('branch_id, accessible_branch_ids, role')
       .eq('id', user.id)
       .single();
 
@@ -55,11 +55,17 @@ export const userHasBranchAccess = async (branchId: string) => {
       return false;
     }
 
-    return (
-      profile.branch_id === branchId || 
-      profile.accessible_branch_ids?.includes(branchId) || 
-      false
-    );
+    // Admin has access to all branches
+    if (profile?.role === 'admin') return true;
+    
+    // User has access to their own branch
+    if (profile?.branch_id === branchId) return true;
+
+    // Branch manager or staff with multiple branch access
+    if (profile?.accessible_branch_ids?.includes(branchId)) return true;
+
+    // Default: no access
+    return false;
   } catch (error) {
     console.error('Error in userHasBranchAccess:', error);
     return false;
@@ -84,7 +90,7 @@ export const getUserRole = async () => {
       return null;
     }
 
-    return profile.role;
+    return profile?.role;
   } catch (error) {
     console.error('Error in getUserRole:', error);
     return null;

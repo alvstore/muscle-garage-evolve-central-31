@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface LoginResult {
@@ -10,11 +11,10 @@ export interface LoginResult {
 export const useAuthActions = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = async (email: string, password: string, branchId?: string): Promise<LoginResult> => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     try {
       setIsLoading(true);
       
-      // Try to sign in with provided credentials
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -28,7 +28,6 @@ export const useAuthActions = () => {
         };
       }
       
-      // Check if we got a user and session back
       if (!data.user || !data.session) {
         return { 
           success: false, 
@@ -36,30 +35,7 @@ export const useAuthActions = () => {
         };
       }
       
-      try {
-        // Fetch the user profile to ensure it exists and can be accessed
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-          
-        if (profileError) {
-          console.error('Error fetching user profile:', profileError);
-          return { 
-            success: true, // Still allow login but warn about profile issue
-            error: "Login successful but profile data couldn't be loaded"
-          };
-        }
-        
-        return { success: true };
-      } catch (profileErr: any) {
-        console.error('Error fetching user profile:', profileErr);
-        return { 
-          success: true, // Still allow login but warn about profile issue
-          error: "Login successful but profile data couldn't be loaded"
-        };
-      }
+      return { success: true };
     } catch (err: any) {
       console.error('Login failed:', err);
       return { 
@@ -114,11 +90,6 @@ export const useAuthActions = () => {
     }
   };
   
-  const updateUserBranch = (branchId: string) => {
-    // This would update the user's branch in the profile
-    // Implementation would depend on your specific requirements
-  };
-  
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -139,12 +110,32 @@ export const useAuthActions = () => {
     }
   };
 
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Password reset instructions sent to your email');
+      return true;
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      toast.error(error.message || 'Failed to send reset instructions');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     login,
     logout,
     register,
-    updateUserBranch,
     changePassword,
+    forgotPassword,
     isLoading
   };
 };

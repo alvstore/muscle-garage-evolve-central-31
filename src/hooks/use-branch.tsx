@@ -1,100 +1,130 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
-import { useAuth } from '@/hooks/use-auth';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './use-auth';
 import { toast } from 'sonner';
-import { createContext, useContext, ReactNode } from 'react';
-import { Branch } from '@/types/branch';
-import { fetchUserBranches, formatBranchData } from '@/utils/branchOperations';
-import { useBranchOperations } from '@/hooks/useBranchOperations';
 
-interface BranchContextType {
-  branches: Branch[];
-  currentBranch: Branch | null;
-  setCurrentBranch: (branch: Branch) => void;
-  isLoading: boolean;
-  error: string | null;
-  switchBranch: (branchId: string) => boolean;
-  fetchBranches: () => Promise<void>;
-  createBranch: (branch: Omit<Branch, 'id'>) => Promise<Branch | null>;
-  updateBranch: (id: string, branch: Partial<Branch>) => Promise<Branch | null>;
+interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  manager_id?: string;
+  is_active: boolean;
 }
 
-export const BranchContext = createContext<BranchContextType>({
-  branches: [],
+interface BranchContextData {
+  currentBranch: Branch | null;
+  availableBranches: Branch[];
+  isLoading: boolean;
+  error: string | null;
+  switchBranch: (branchId: string) => void;
+  refreshBranches: () => Promise<void>;
+}
+
+const BranchContext = createContext<BranchContextData>({
   currentBranch: null,
-  setCurrentBranch: () => {},
-  isLoading: true,
+  availableBranches: [],
+  isLoading: false,
   error: null,
-  switchBranch: () => false,
-  fetchBranches: async () => {},
-  createBranch: async () => null,
-  updateBranch: async () => null,
+  switchBranch: () => {},
+  refreshBranches: async () => {},
 });
 
 export const BranchProvider = ({ children }: { children: ReactNode }) => {
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+  const [availableBranches, setAvailableBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const { createBranch, updateBranch } = useBranchOperations();
+  const { user, profile } = useAuth();
 
   const fetchBranches = async () => {
     if (!user) {
+      setAvailableBranches([]);
+      setCurrentBranch(null);
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
+      let query = supabase.from('branches').select('*');
 
-      const { branchesData, primaryBranchId } = await fetchUserBranches(user.id);
-      const formattedBranches = branchesData.map(formatBranchData);
-      
-      setBranches(formattedBranches);
+      // If not admin, limit to accessible branches
+      if (user.role !== 'admin' && profile?.accessible_branch_ids) {
+        query = query.in('id', profile.accessible_branch_ids);
+      }
 
-      if (formattedBranches.length > 0) {
-        const primaryBranch = formattedBranches.find(b => b.id === primaryBranchId) || formattedBranches[0];
-        setCurrentBranch(primaryBranch);
+      if (user.role !== 'admin' && profile?.branch_id) {
+        query = query.eq('id', profile.branch_id);
+      }
+
+      const { data, error } = await query.order('name');
+
+      if (error) {
+        console.error('Error fetching branches:', error);
+        setError('Failed to load branches');
+        return;
+      }
+
+      if (data) {
+        setAvailableBranches(data);
+        
+        // If we have branches but no current branch, set the first one
+        if (data.length > 0 && !currentBranch) {
+          // Prioritize user's primary branch if it exists
+          const primaryBranch = profile?.branch_id ? 
+            data.find(b => b.id === profile.branch_id) : null;
+            
+          setCurrentBranch(primaryBranch || data[0]);
+          localStorage.setItem('currentBranchId', primaryBranch?.id || data[0].id);
+        }
       }
     } catch (err: any) {
-      console.error('Error fetching branches:', err);
-      setError('Failed to load branch data');
-      toast.error('Failed to load branch data');
+      console.error('Error in fetchBranches:', err);
+      setError(err.message || 'Failed to load branches');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const switchBranch = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
-    if (branch) {
-      setCurrentBranch(branch);
-      return true;
-    }
-    return false;
-  };
-
   useEffect(() => {
     if (user) {
       fetchBranches();
+
+      // Try to restore previously selected branch from localStorage
+      const savedBranchId = localStorage.getItem('currentBranchId');
+      if (savedBranchId) {
+        switchBranch(savedBranchId);
+      }
     }
-  }, [user]);
+  }, [user, user?.id]);
+
+  const switchBranch = (branchId: string) => {
+    const branch = availableBranches.find(b => b.id === branchId);
+    if (branch) {
+      setCurrentBranch(branch);
+      localStorage.setItem('currentBranchId', branchId);
+      toast.success(`Switched to ${branch.name}`);
+    } else {
+      toast.error('Branch not found');
+    }
+  };
 
   return (
     <BranchContext.Provider
       value={{
-        branches,
         currentBranch,
-        setCurrentBranch,
+        availableBranches,
         isLoading,
         error,
         switchBranch,
-        fetchBranches,
-        createBranch,
-        updateBranch
+        refreshBranches: fetchBranches,
       }}
     >
       {children}

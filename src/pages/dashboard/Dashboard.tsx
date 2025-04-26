@@ -11,13 +11,19 @@ import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      console.log("User role in dashboard:", user.role);
+    }
+  }, [user]);
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
-          <p className="mt-4 text-lg font-medium">Loading...</p>
+          <p className="mt-4 text-lg font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -38,7 +44,7 @@ const Dashboard = () => {
       case "member":
         return <MemberDashboard />;
       default:
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/unauthorized" replace />;
     }
   };
 
