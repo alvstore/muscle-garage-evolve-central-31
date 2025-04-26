@@ -2,17 +2,19 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
+import { useAuth } from "@/hooks/use-auth";
 
 const Login = () => {
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Check if user is already logged in
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
+    if (!isLoading && user) {
       navigate("/dashboard");
     }
-  }, [navigate]);
+  }, [user, isLoading, navigate]);
+
+  if (isLoading) return <div>Loading...</div>;
 
   return <LoginForm />;
 };
