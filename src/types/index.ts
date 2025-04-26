@@ -1,4 +1,3 @@
-
 // Add or append to existing types file
 export interface GenericStringError {
   id?: string;
@@ -159,6 +158,16 @@ export interface DashboardSummary {
     upcoming: number;
     today: number;
   };
+  attendanceTrend?: {  // Added attendanceTrend property
+    date: string;
+    count: number;
+  }[];
+  membersByStatus?: {  // Added membersByStatus property
+    active: number;
+    inactive: number;
+    expired: number;
+  };
+  revenueData?: any[];  // Added revenueData property
 }
 
 // Workout plan related interfaces
