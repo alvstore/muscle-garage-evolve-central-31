@@ -5,8 +5,9 @@ import { User as AppUser, UserRole } from '@/types';
 import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
 import { useAuthActions, LoginResult } from './auth/use-auth-actions';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 const AuthProviderInner = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authStateLoading } = useAuthState();
   const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -78,6 +80,17 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
             toast.error('Failed to load user profile data');
           } else if (data) {
             setProfile(data);
+            
+            // Handle role-based redirection
+            if (data.role === 'admin') {
+              navigate('/dashboard');
+            } else if (data.role === 'staff') {
+              navigate('/staff-dashboard');
+            } else if (data.role === 'trainer') {
+              navigate('/trainer-dashboard');
+            } else if (data.role === 'member') {
+              navigate('/member-dashboard');
+            }
           }
         } catch (err) {
           console.error('Profile fetch error:', err);
@@ -90,7 +103,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     };
     
     fetchUserProfile();
-  }, [user]);
+  }, [user, navigate]);
 
   const updateUserBranch = async (branchId: string): Promise<boolean> => {
     if (!user) return false;

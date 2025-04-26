@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { GenericStringError, convertErrorToGenericError } from '@/types';
+import { GenericStringError } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseSupabaseQueryOptions<T> {

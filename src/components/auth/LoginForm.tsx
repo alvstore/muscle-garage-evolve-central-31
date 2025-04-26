@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -59,7 +60,8 @@ const LoginForm = () => {
       const result = await login(email, password);
       
       if (result.success) {
-        navigate("/dashboard");
+        toast.success("Login successful");
+        // Redirect will be handled by auth state change in useAuth hook
       } else {
         setError(result.error || "Login failed. Please check your credentials.");
       }

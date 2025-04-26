@@ -233,6 +233,6 @@ export interface MealPlan {
 }
 
 // Fix the type conversion issue in use-supabase-query.ts
-export function convertErrorToGenericError<T>(errors: any[]): T[] {
-  return errors as unknown as T[];
+export function convertErrorToGenericError<T>(error: any): T {
+  return error as unknown as T;
 }

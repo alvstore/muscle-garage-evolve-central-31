@@ -1,51 +1,46 @@
 
 import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './hooks/use-branch';
-import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
-import AppRouter from './router/AppRouter';
-import RouteChecker from './components/debug/RouteChecker';
-import { createInitialAdmin } from './utils/initAdmin';
-import { toast } from 'sonner';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Dashboard from '@/pages/dashboard/Dashboard';
+import Login from '@/pages/auth/Login';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
+import ResetPassword from '@/pages/auth/ResetPassword';
+import { useAuth } from '@/hooks/use-auth';
+import { createInitialAdmin } from '@/utils/initAdmin';
+import PrivateRoute from '@/components/auth/PrivateRoute';
 
-// Create a query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
-    },
-  },
-});
+function App() {
+  const { isAuthenticated, isLoading } = useAuth();
 
-export default function App() {
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Initialize admin account
-        await createInitialAdmin();
-      } catch (error) {
-        console.error("Error during app initialization:", error);
-        toast.error("Error initializing application");
-      }
+    // Create the initial admin account on app startup
+    const initializeAdmin = async () => {
+      await createInitialAdmin();
     };
     
-    initializeApp();
+    initializeAdmin();
   }, []);
-  
+
   return (
-    <>
-      <RouteChecker />
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BranchProvider>
-            <PermissionsProvider>
-              <AppRouter />
-            </PermissionsProvider>
-          </BranchProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </>
+    <Router>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        
+        {/* Private routes */}
+        <Route
+          path="/*"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
+
+export default App;
