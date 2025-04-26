@@ -2324,6 +2324,10 @@ export type Database = {
         Args: { trainer_uuid: string; member_uuid: string }
         Returns: boolean
       }
+      upsert_settings_batch: {
+        Args: { settings_array: Json }
+        Returns: undefined
+      }
       user_has_branch_access: {
         Args: { branch_id: string }
         Returns: boolean

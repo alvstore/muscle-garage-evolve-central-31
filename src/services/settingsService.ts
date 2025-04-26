@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -72,7 +71,6 @@ export const settingsService = {
   
   async getAccessControlSettings(): Promise<AccessControlSettings> {
     try {
-      // Fetch all access control related settings
       const { data, error } = await supabase
         .from('settings')
         .select('*')
@@ -80,7 +78,6 @@ export const settingsService = {
       
       if (error) throw error;
       
-      // If no settings exist, return default values
       if (!data || data.length === 0) {
         return {
           appKey: '',
@@ -100,7 +97,6 @@ export const settingsService = {
         };
       }
       
-      // Convert array of settings to structured AccessControlSettings object
       const settings: Record<string, any> = {};
       
       data.forEach((setting) => {
@@ -140,7 +136,6 @@ export const settingsService = {
   
   async updateAccessControlSettings(settings: AccessControlSettings): Promise<void> {
     try {
-      // Split the settings into separate records for better organization
       const credentials = {
         appKey: settings.appKey,
         secretKey: settings.secretKey,
@@ -150,7 +145,6 @@ export const settingsService = {
       const deviceSerials = settings.deviceSerials;
       const accessRules = settings.planBasedAccess;
       
-      // Batch update all settings
       const { error } = await supabase.rpc('upsert_settings_batch', {
         settings_array: [
           { category: 'access_control', key: 'credentials', value: credentials },
@@ -161,7 +155,6 @@ export const settingsService = {
       
       if (error) {
         console.error('Error batch updating settings:', error);
-        // Fallback to individual updates if RPC fails
         await this.updateSetting('access_control', 'credentials', credentials);
         await this.updateSetting('access_control', 'device_serials', deviceSerials);
         await this.updateSetting('access_control', 'access_rules', accessRules);
