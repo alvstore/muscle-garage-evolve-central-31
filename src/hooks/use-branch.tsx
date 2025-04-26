@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
+import { Branch } from '@/types/branch';
 
 interface Branch {
   id: string;
@@ -19,7 +20,7 @@ interface Branch {
 interface BranchContextData {
   currentBranch: Branch | null;
   availableBranches: Branch[];
-  branches: Branch[];  // Add this to expose all branches
+  branches: Branch[];
   isLoading: boolean;
   error: string | null;
   switchBranch: (branchId: string) => void;
@@ -49,7 +50,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const { user, profile, updateUserBranch } = useAuth();
 
-  const fetchBranches = async () => {
+  const fetchBranches = async (): Promise<void> => {
     if (!user) {
       setAvailableBranches([]);
       setCurrentBranch(null);
@@ -62,7 +63,6 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     try {
       let query = supabase.from('branches').select('*');
 
-      // If not admin, limit to accessible branches
       if (user.role !== 'admin' && profile?.accessible_branch_ids) {
         query = query.in('id', profile.accessible_branch_ids);
       }
@@ -82,9 +82,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       if (data) {
         setAvailableBranches(data);
         
-        // If we have branches but no current branch, set the first one
         if (data.length > 0 && !currentBranch) {
-          // Prioritize user's primary branch if it exists
           const primaryBranch = profile?.branch_id ? 
             data.find(b => b.id === profile.branch_id) : null;
             
@@ -100,7 +98,6 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Create branch function
   const createBranch = async (branchData: Omit<Branch, 'id'>) => {
     try {
       const { data, error } = await supabase
@@ -124,7 +121,6 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Update branch function
   const updateBranch = async (id: string, branchData: Partial<Branch>) => {
     try {
       const { data, error } = await supabase
@@ -149,7 +145,6 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Delete branch function
   const deleteBranch = async (id: string) => {
     try {
       const { error } = await supabase
@@ -172,7 +167,6 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       fetchBranches();
 
-      // Try to restore previously selected branch from localStorage
       const savedBranchId = localStorage.getItem('currentBranchId');
       if (savedBranchId) {
         switchBranch(savedBranchId);
@@ -203,7 +197,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       value={{
         currentBranch,
         availableBranches,
-        branches: availableBranches, // Expose branches as well
+        branches: availableBranches,
         isLoading,
         error,
         switchBranch,

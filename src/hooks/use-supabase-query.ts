@@ -98,14 +98,14 @@ export function useSupabaseQuery<T extends { id?: string }>({
       if (resultError) {
         console.error(`Error fetching data from ${tableName}:`, resultError);
         setError(resultError.message);
-        setData([]);
+        setData([] as unknown as T[]);
       } else {
         setData(resultData as T[]);
       }
     } catch (err: any) {
       console.error(`Unexpected error in useSupabaseQuery for ${tableName}:`, err);
       setError(err.message || 'An unexpected error occurred');
-      setData([]);
+      setData([] as unknown as T[]);
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/services/supabaseClient';
 import { Branch } from '@/types/branch';
 
@@ -47,8 +46,9 @@ export const formatBranchData = (branch: any): Branch => ({
   is_active: branch.is_active || false,
   phone: branch.phone || '',
   email: branch.email || '',
+  manager_id: branch.manager_id || '',
+  manager_name: branch.manager_name || '',
   manager: branch.manager || '',
-  managerId: branch.manager_id || '',
   openingHours: branch.opening_hours || '',
   closingHours: branch.closing_hours || '',
   maxCapacity: branch.max_capacity || 0,

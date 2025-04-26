@@ -18,7 +18,7 @@ export const useBranchOperations = () => {
           is_active: branch.is_active,
           phone: branch.phone,
           email: branch.email,
-          manager_id: branch.managerId,
+          manager_id: branch.manager_id,
           opening_hours: branch.openingHours,
           closing_hours: branch.closingHours,
           max_capacity: branch.maxCapacity,

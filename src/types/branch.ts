@@ -10,7 +10,13 @@ export interface Branch {
   email?: string;
   is_active: boolean;
   manager_id?: string;
-  manager_name?: string; // Added to represent the manager's name
-  openingHours?: string; // Added for business hours
-  closingHours?: string; // Added for business hours
+  manager_name?: string;
+  manager?: string;
+  openingHours?: string;
+  closingHours?: string;
+  maxCapacity?: number;
+  region?: string;
+  branchCode?: string;
+  taxRate?: number;
+  timezone?: string;
 }
