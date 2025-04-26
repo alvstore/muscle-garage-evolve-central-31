@@ -168,6 +168,7 @@ export interface DashboardSummary {
     expired: number;
   };
   revenueData?: any[];  // Added revenueData property
+  recentNotifications?: any[];  // Added recentNotifications property
 }
 
 // Workout plan related interfaces
