@@ -4,19 +4,6 @@ import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { Branch } from '@/types/branch';
 
-interface Branch {
-  id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  manager_id?: string;
-  is_active: boolean;
-}
-
 interface BranchContextData {
   currentBranch: Branch | null;
   availableBranches: Branch[];

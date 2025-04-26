@@ -55,7 +55,5 @@ export const formatBranchData = (branch: any): Branch => ({
   region: branch.region || '',
   branchCode: branch.branch_code || '',
   taxRate: branch.tax_rate || 0,
-  timezone: branch.timezone || '',
-  createdAt: branch.created_at || '',
-  updatedAt: branch.updated_at || ''
+  timezone: branch.timezone || ''
 });

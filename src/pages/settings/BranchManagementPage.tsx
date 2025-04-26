@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -85,7 +84,7 @@ const BranchManagementPage = () => {
               <CardContent>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="font-medium">Manager:</span> {branch.manager_name || "Not assigned"}
+                    <span className="font-medium">Manager:</span> {branch.manager || "Not assigned"}
                   </div>
                   <div>
                     <span className="font-medium">Phone:</span> {branch.phone || "N/A"}
@@ -120,7 +119,6 @@ const BranchManagementPage = () => {
           ))}
         </div>
 
-        {/* Create Branch Dialog */}
         <CreateBranchDialog
           open={isCreating}
           onOpenChange={setIsCreating}
@@ -129,7 +127,6 @@ const BranchManagementPage = () => {
           }}
         />
 
-        {/* Edit Branch Dialog */}
         {editingBranch && (
           <EditBranchDialog
             open={!!editingBranch}
@@ -143,7 +140,6 @@ const BranchManagementPage = () => {
           />
         )}
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!deletingBranch} onOpenChange={(open) => {
           if (!open) setDeletingBranch(null);
         }}>
