@@ -41,15 +41,8 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
     return isUserBranchAdmin(userRole, user?.isBranchManager);
   };
   
-  const contextValue = {
-    can,
-    isSystemAdmin,
-    isBranchAdmin,
-    userRole
-  };
-
   return (
-    <PermissionsContext.Provider value={contextValue}>
+    <PermissionsContext.Provider value={{ can, isSystemAdmin, isBranchAdmin, userRole }}>
       {children}
     </PermissionsContext.Provider>
   );

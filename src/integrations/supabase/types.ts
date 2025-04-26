@@ -1865,47 +1865,6 @@ export type Database = {
         }
         Relationships: []
       }
-      settings: {
-        Row: {
-          branch_id: string | null
-          category: string
-          created_at: string | null
-          description: string | null
-          id: string
-          key: string
-          updated_at: string | null
-          value: Json | null
-        }
-        Insert: {
-          branch_id?: string | null
-          category: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key: string
-          updated_at?: string | null
-          value?: Json | null
-        }
-        Update: {
-          branch_id?: string | null
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          key?: string
-          updated_at?: string | null
-          value?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "settings_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       staff_attendance: {
         Row: {
           branch_id: string | null
@@ -2323,10 +2282,6 @@ export type Database = {
       trainer_is_assigned_to_member: {
         Args: { trainer_uuid: string; member_uuid: string }
         Returns: boolean
-      }
-      upsert_settings_batch: {
-        Args: { settings_array: Json }
-        Returns: undefined
       }
       user_has_branch_access: {
         Args: { branch_id: string }

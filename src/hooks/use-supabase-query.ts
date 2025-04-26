@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { GenericStringError } from '@/types';
+import { GenericStringError, convertErrorToGenericError } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseSupabaseQueryOptions<T> {
@@ -62,21 +61,18 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T>) {
         query = query.eq(options.column, options.value);
       }
 
-      // Make sure additionalFilters is defined before iterating
-      if (options.additionalFilters && options.additionalFilters.length > 0) {
-        options.additionalFilters.forEach(filter => {
-          const { column, value, operator = 'eq' } = filter;
-          if (operator === 'eq') query = query.eq(column, value);
-          else if (operator === 'neq') query = query.neq(column, value);
-          else if (operator === 'gt') query = query.gt(column, value);
-          else if (operator === 'lt') query = query.lt(column, value);
-          else if (operator === 'gte') query = query.gte(column, value);
-          else if (operator === 'lte') query = query.lte(column, value);
-          else if (operator === 'like') query = query.like(column, value);
-          else if (operator === 'ilike') query = query.ilike(column, value);
-          else if (operator === 'is') query = query.is(column, value);
-        });
-      }
+      options.additionalFilters.forEach(filter => {
+        const { column, value, operator = 'eq' } = filter;
+        if (operator === 'eq') query = query.eq(column, value);
+        else if (operator === 'neq') query = query.neq(column, value);
+        else if (operator === 'gt') query = query.gt(column, value);
+        else if (operator === 'lt') query = query.lt(column, value);
+        else if (operator === 'gte') query = query.gte(column, value);
+        else if (operator === 'lte') query = query.lte(column, value);
+        else if (operator === 'like') query = query.like(column, value);
+        else if (operator === 'ilike') query = query.ilike(column, value);
+        else if (operator === 'is') query = query.is(column, value);
+      });
 
       if (options.orderBy) {
         query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending });
@@ -91,15 +87,13 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T>) {
       if (resultError) {
         console.error('Supabase query error:', resultError);
         setError(resultError.message || 'An error occurred while fetching data');
-        setData([]); // Set empty array instead of error object
       } else {
-        setData(resultData as T[] || []);
+        setData(resultData || []);
         setError(null);
       }
     } catch (err: any) {
       console.error('Unexpected error in useSupabaseQuery:', err);
       setError(err.message || 'An unexpected error occurred');
-      setData([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }

@@ -3,7 +3,7 @@ import { supabase } from '@/services/supabaseClient';
 
 export async function createInitialAdmin() {
   try {
-    const email = "rajat.lekhari@alvstore.in";
+    const email = "Rajat.lekhari@hotmail.com";
     const password = "Rajat@3003";
     
     // Check if the admin account already exists
