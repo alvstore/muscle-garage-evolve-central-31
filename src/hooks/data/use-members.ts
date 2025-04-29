@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '../use-branch';
 import { useSupabaseQuery } from '../use-supabase-query';
 import { toast } from 'sonner';

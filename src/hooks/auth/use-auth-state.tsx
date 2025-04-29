@@ -33,7 +33,6 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
         // Set up the auth state listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, newSession) => {
-            console.log('Auth state changed:', event, newSession?.user?.id);
             if (event === 'SIGNED_OUT') {
               setUser(null);
               setSession(null);
@@ -48,7 +47,6 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession) {
-          console.log('Existing session found:', currentSession.user.id);
           setUser(currentSession.user);
           setSession(currentSession);
         }

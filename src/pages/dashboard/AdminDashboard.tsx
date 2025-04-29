@@ -1,4 +1,4 @@
-import { fetchDashboardSummary, fetchPendingPayments, fetchMembershipRenewals, fetchUpcomingClasses } from '@/services/dashboardService';
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -33,36 +33,9 @@ const AdminDashboard = () => {
     // The main dashboard data is now loaded via the useDashboard hook
   }, [currentBranch?.id]);
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
-    try {
-      // Implement actual search functionality using dashboardService
-      await fetchDashboardSummary(query, currentBranch?.id);
-      toast.success(`Search results updated for: ${query}`);
-    } catch (error) {
-      toast.error(`Search failed: ${error.message}`);
-    }
-  };
-  
-  const handleExport = async () => {
-    try {
-      // Implement actual export functionality
-      const exportUrl = await fetchPendingPayments({
-        branchId: currentBranch?.id,
-        startDate,
-        endDate,
-        searchQuery
-      });
-      toast.success('Dashboard data exported successfully', {
-        description: 'Download will begin shortly',
-        action: {
-          label: 'Download',
-          onClick: () => window.open(exportUrl, '_blank')
-        }
-      });
-    } catch (error) {
-      toast.error(`Export failed: ${error.message}`);
-    }
+    toast.info(`Searching for: ${query}`);
   };
 
   const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
@@ -70,11 +43,11 @@ const AdminDashboard = () => {
     setEndDate(endDate);
     toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
   };
-  // Remove this duplicate function
-  // const handleExport = () => {
-  //   toast.success('Dashboard data exported successfully');
-  // };
-  
+
+  const handleExport = () => {
+    toast.success('Dashboard data exported successfully');
+  };
+
   const handleRefresh = () => {
     toast("Refreshing dashboard data", {
       description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`

@@ -1,6 +1,5 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
 const supabaseUrl = 'https://rnqgpucxlvubwqpkgstc.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWdwdWN4bHZ1YndxcGtnc3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDgwNjQsImV4cCI6MjA2MDgyNDA2NH0.V5nFuGrJnTdFx60uI8hv46VKUmWoA2aAOx_jJjJFcUA';
@@ -122,26 +121,5 @@ export const branchSpecificQuery = async <T>(
   } catch (error) {
     console.error(`Error in branchSpecificQuery for ${tableName}:`, error);
     throw error;
-  }
-};
-
-// Define schemas for database tables
-export const ProfileSchema = z.object({
-  id: z.string().uuid(),
-  user_id: z.string().uuid(),
-  role: z.enum(['admin', 'staff', 'trainer', 'member']),
-  branch_id: z.string().uuid().nullable(),
-  // Add other profile fields
-});
-
-export type Profile = z.infer<typeof ProfileSchema>;
-
-// Create a wrapper for Supabase operations with schema validation
-export const validateData = <T>(schema: z.ZodType<T>, data: unknown): T => {
-  try {
-    return schema.parse(data);
-  } catch (error) {
-    console.error('Schema validation error:', error);
-    throw new Error(`Invalid data structure: ${error.message}`);
   }
 };

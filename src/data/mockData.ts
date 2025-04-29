@@ -10,9 +10,6 @@ import {
   DashboardSummary
 } from "@/types";
 
-import { supabase } from '@/services/supabaseClient';
-import { useBranch } from '@/hooks/use-branch';
-
 // Mock Users
 export const mockUsers: User[] = [
   {
@@ -447,99 +444,3 @@ export const mockDashboardSummary: DashboardSummary = {
     }
   ]
 };
-
-
-// Define types based on usage in components
-export interface User { /* ... */ }
-export interface Member { /* ... */ }
-export interface Trainer { /* ... */ }
-export interface Class { /* ... */ }
-
-// Export empty arrays as fallbacks
-
-// Functions to fetch real data
-export async function fetchUsers(branchId?: string): Promise<User[]> {
-  try {
-    let query = supabase.from('profiles').select('*');
-    
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    return data as User[];
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return [];
-  }
-}
-
-export async function fetchMembers(branchId?: string): Promise<Member[]> {
-  try {
-    let query = supabase.from('members').select('*');
-    
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    return data as Member[];
-  } catch (error) {
-    console.error('Error fetching members:', error);
-    return [];
-  }
-}
-
-// ... similar functions for other data types
-
-// Initialize data fetching
-// Export empty arrays as fallbacks
-export const realTimeUsers: User[] = [];
-export const realTimeMembers: Member[] = [];
-export const realTimeTrainers: Trainer[] = [];
-export const realTimeClasses: Class[] = [];
-
-// Then update the initialization function
-// Keep the first mockUsers declaration (lines 17-42) for backward compatibility
-// But remove the second declaration at line 507
-
-// Remove this duplicate declaration:
-// 
-// You've already started transitioning to real data with realTimeUsers, which is good!
-// Make sure the initializeMockData function is properly updating realTimeUsers:
-
-export async function initializeMockData(branchId?: string) {
-  try {
-    const users = await fetchUsers(branchId);
-    const members = await fetchMembers(branchId);
-    const trainers = await fetchTrainers(branchId);
-    const classes = await fetchClasses(branchId);
-    // ... fetch other data types
-    
-    // Update the arrays with real data
-    realTimeUsers.length = 0;
-    realTimeUsers.push(...users);
-    
-    realTimeMembers.length = 0;
-    realTimeMembers.push(...members);
-    
-    realTimeTrainers.length = 0;
-    realTimeTrainers.push(...trainers);
-    
-    realTimeClasses.length = 0;
-    realTimeClasses.push(...classes);
-    
-    // ... update other arrays
-    
-    return { users, members, trainers, classes };
-  } catch (error) {
-    console.error('Error initializing data:', error);
-    return {};
-  }
-}

@@ -1,5 +1,5 @@
 
-import { createContext, useContext, ReactNode, useMemo } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser, UserRole } from '@/types';
 import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
@@ -78,7 +78,6 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
             toast.error('Failed to load user profile data');
           } else if (data) {
             setProfile(data);
-            console.log('Profile loaded:', data);
           }
         } catch (err) {
           console.error('Profile fetch error:', err);
@@ -106,12 +105,10 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
       
       // Update local profile state
       setProfile(prev => prev ? { ...prev, branch_id: branchId } : null);
-      toast.success('Branch updated successfully');
       
       return true;
     } catch (err) {
       console.error('Error updating user branch:', err);
-      toast.error('Failed to update branch');
       return false;
     }
   };
@@ -153,13 +150,3 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-// Custom hook to get userRole from profile
-
-export function useUserRole() {
-  const { profile } = useAuth();
-  return useMemo(() => {
-    if (!profile) return undefined;
-    if (profile.role === 'admin') return 'admin';
-    return profile.role as UserRole;
-  }, [profile]);
-}

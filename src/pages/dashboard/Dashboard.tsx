@@ -8,18 +8,16 @@ import MemberDashboard from "./MemberDashboard";
 import { UserRole } from "@/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
 const Dashboard = () => {
   const { user, userRole, isLoading } = useAuth();
   
   useEffect(() => {
-    if (!isLoading && !user) {
-      toast.error("Please login to access the dashboard");
+    if (user) {
+      console.log("User role in dashboard:", user.role);
     }
-  }, [user, isLoading]);
+  }, [user]);
 
-  // Show loading indicator while auth state is being determined
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -31,12 +29,10 @@ const Dashboard = () => {
     );
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Determine which dashboard to render based on user role
   const renderDashboard = (role: UserRole) => {
     switch (role) {
       case "admin":
@@ -54,7 +50,7 @@ const Dashboard = () => {
 
   // Use userRole from the fetched profile, falling back to user.role if needed
   const effectiveRole = userRole || user.role as UserRole;
-
+  
   return renderDashboard(effectiveRole);
 };
 

@@ -22,14 +22,14 @@ const Login = () => {
       } else if (role === 'trainer') {
         navigate("/trainers/dashboard");
       } else if (role === 'member') {
-        navigate("/members/profile");
+        navigate("/dashboard/overview");
       } else {
         navigate("/dashboard/overview");
       }
     }
   }, [navigate, user, userRole, isAuthenticated, isLoading]);
 
-  // If still loading, render a loader
+  // If still loading, render nothing or a loader
   if (isLoading && isAuthenticated) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }

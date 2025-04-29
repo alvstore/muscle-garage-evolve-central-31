@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Navigate, RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -14,7 +13,6 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
-import AdminDashboard from '@/pages/dashboard/AdminDashboard';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -30,11 +28,13 @@ import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
-import { websiteRoutes } from './routes/websiteRoutes';
 
 export const appRoutes: RouteObject[] = [
-  // Public routes - website is the root route
-  ...websiteRoutes,
+  // Public routes
+  {
+    path: '/',
+    element: <Index />
+  },
   {
     path: '/login',
     element: <Login />
@@ -50,22 +50,6 @@ export const appRoutes: RouteObject[] = [
   {
     path: '/unauthorized',
     element: <Unauthorized />
-  },
-  
-  // Admin routes
-  {
-    path: '/admin',
-    element: <Navigate to="/admin/dashboard" replace />
-  },
-  {
-    path: '/admin/dashboard',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <DashboardLayout>
-          <AdminDashboard />
-        </DashboardLayout>
-      </PrivateRoute>
-    )
   },
   
   // Protected routes
