@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -59,13 +60,17 @@ const LoginForm = () => {
       const result = await login(email, password);
       
       if (result.success) {
-        navigate("/dashboard");
+        // Login successful - navigation will be handled by the Login page component
+        // based on user role
+        toast.success("Login successful");
       } else {
         setError(result.error || "Login failed. Please check your credentials.");
+        toast.error(result.error || "Login failed");
       }
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to login. Please try again.");
+      toast.error("Login error: " + (error.message || "Unknown error"));
     }
   };
 
@@ -76,6 +81,11 @@ const LoginForm = () => {
           <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
             Sign in to your account
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            <Link to="/" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+              ← Back to home
+            </Link>
+          </p>
         </div>
 
         {error && (

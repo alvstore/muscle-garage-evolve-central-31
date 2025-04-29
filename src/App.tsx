@@ -7,7 +7,7 @@ import { PermissionsProvider } from './hooks/permissions/use-permissions-manager
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
 import { createInitialAdmin } from './utils/initAdmin';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -23,7 +23,7 @@ export default function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize admin account
+        // Initialize admin account if needed
         await createInitialAdmin();
       } catch (error) {
         console.error("Error during app initialization:", error);
@@ -36,12 +36,13 @@ export default function App() {
   
   return (
     <>
-      <RouteChecker />
+      <Toaster position="top-right" richColors />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BranchProvider>
             <PermissionsProvider>
               <AppRouter />
+              <RouteChecker />
             </PermissionsProvider>
           </BranchProvider>
         </AuthProvider>

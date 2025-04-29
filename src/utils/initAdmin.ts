@@ -1,27 +1,30 @@
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export async function createInitialAdmin() {
   try {
-    const email = "Rajat.lekhari@hotmail.com";
-    const password = "Rajat@3003";
-    
-    // Check if the admin account already exists
-    const { data: existingUsers, error: checkError } = await supabase
+    // Check if an admin account already exists
+    const { data: existingAdmins, error: checkError } = await supabase
       .from('profiles')
-      .select('id, email')
-      .eq('role', 'admin');
+      .select('id')
+      .eq('role', 'admin')
+      .limit(1);
     
     if (checkError) {
       console.error("Error checking for existing admin:", checkError);
       return null;
     }
     
-    // If admin account already exists, no need to create a new one
-    if (existingUsers && existingUsers.length > 0) {
+    // If at least one admin exists, no need to create a new one
+    if (existingAdmins && existingAdmins.length > 0) {
       console.log("Admin account already exists");
       return null;
     }
+    
+    // Admin credentials - only used for initial setup
+    const email = "Rajat.lekhari@hotmail.com";
+    const password = "Rajat@3003";
     
     // Create the admin account
     const { data, error } = await supabase.auth.signUp({
@@ -41,6 +44,7 @@ export async function createInitialAdmin() {
     }
     
     console.log("Admin account created successfully");
+    toast.success("Admin account created successfully");
     
     // Ensure profile has admin role
     if (data.user) {
@@ -51,12 +55,14 @@ export async function createInitialAdmin() {
         
       if (profileError) {
         console.error("Error updating admin profile:", profileError);
+        toast.error("Error finalizing admin account setup");
       }
     }
     
     return data.user;
   } catch (error) {
     console.error("Unexpected error creating admin account:", error);
+    toast.error("Unexpected error during initialization");
     return null;
   }
 }

@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, isLoading } = useAuth();
+  const { user, userRole, isLoading } = useAuth();
   
   useEffect(() => {
     if (user) {
@@ -48,7 +48,10 @@ const Dashboard = () => {
     }
   };
 
-  return renderDashboard(user.role as UserRole);
+  // Use userRole from the fetched profile, falling back to user.role if needed
+  const effectiveRole = userRole || user.role as UserRole;
+  
+  return renderDashboard(effectiveRole);
 };
 
 export default Dashboard;

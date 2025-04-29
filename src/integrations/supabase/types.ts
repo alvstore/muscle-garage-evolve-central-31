@@ -65,6 +65,56 @@ export type Database = {
           },
         ]
       }
+      automation_rules: {
+        Row: {
+          actions: Json
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger_condition: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions: Json
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger_condition: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger_condition?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       backup_logs: {
         Row: {
           action: string
@@ -495,6 +545,106 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          branch_id: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          branch_id?: string | null
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      essl_device_settings: {
+        Row: {
+          api_password: string | null
+          api_url: string | null
+          api_username: string | null
+          branch_id: string
+          created_at: string
+          device_name: string
+          device_serial: string
+          devices: Json
+          id: string
+          is_active: boolean
+          push_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_password?: string | null
+          api_url?: string | null
+          api_username?: string | null
+          branch_id: string
+          created_at?: string
+          device_name: string
+          device_serial: string
+          devices?: Json
+          id?: string
+          is_active?: boolean
+          push_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_password?: string | null
+          api_url?: string | null
+          api_username?: string | null
+          branch_id?: string
+          created_at?: string
+          device_name?: string
+          device_serial?: string
+          devices?: Json
+          id?: string
+          is_active?: boolean
+          push_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "essl_device_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           created_at: string | null
@@ -699,6 +849,50 @@ export type Database = {
           whatsapp_provider?: string | null
         }
         Relationships: []
+      }
+      hikvision_api_settings: {
+        Row: {
+          api_url: string
+          app_key: string
+          app_secret: string
+          branch_id: string
+          created_at: string
+          devices: Json
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          api_url: string
+          app_key: string
+          app_secret: string
+          branch_id: string
+          created_at?: string
+          devices?: Json
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          api_url?: string
+          app_key?: string
+          app_secret?: string
+          branch_id?: string
+          created_at?: string
+          devices?: Json
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hikvision_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income_categories: {
         Row: {
@@ -1865,6 +2059,94 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          branch_id: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json | null
+        }
+        Insert: {
+          branch_id?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_templates: {
+        Row: {
+          branch_id: string | null
+          category: string
+          content: string
+          created_at: string
+          dlt_template_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          branch_id?: string | null
+          category: string
+          content: string
+          created_at?: string
+          dlt_template_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          dlt_template_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_attendance: {
         Row: {
           branch_id: string | null
@@ -2187,6 +2469,59 @@ export type Database = {
           },
         ]
       }
+      whatsapp_templates: {
+        Row: {
+          branch_id: string | null
+          category: string
+          content: string
+          created_at: string
+          footer_text: string | null
+          header_text: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          variables: Json | null
+          whatsapp_template_name: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          category: string
+          content: string
+          created_at?: string
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          variables?: Json | null
+          whatsapp_template_name?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json | null
+          whatsapp_template_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_days: {
         Row: {
           created_at: string | null
@@ -2282,6 +2617,10 @@ export type Database = {
       trainer_is_assigned_to_member: {
         Args: { trainer_uuid: string; member_uuid: string }
         Returns: boolean
+      }
+      upsert_settings_batch: {
+        Args: { settings_array: Json }
+        Returns: undefined
       }
       user_has_branch_access: {
         Args: { branch_id: string }

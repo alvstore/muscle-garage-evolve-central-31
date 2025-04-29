@@ -30,6 +30,11 @@ import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 
 export const appRoutes: RouteObject[] = [
+  // Public routes
+  {
+    path: '/',
+    element: <Index />
+  },
   {
     path: '/login',
     element: <Login />
@@ -43,16 +48,14 @@ export const appRoutes: RouteObject[] = [
     element: <ResetPassword />
   },
   {
-    path: '/',
-    element: <Index />
+    path: '/unauthorized',
+    element: <Unauthorized />
   },
+  
+  // Protected routes
   {
     path: '/dashboard',
     element: <Navigate to="/dashboard/overview" replace />
-  },
-  {
-    path: '/unauthorized',
-    element: <Unauthorized />
   },
   {
     element: <PrivateRoute />,

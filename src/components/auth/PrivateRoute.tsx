@@ -19,7 +19,7 @@ const PrivateRoute = ({
   requiredPermission,
   children
 }: PrivateRouteProps) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, userRole, isLoading } = useAuth();
   const { can } = usePermissions();
   const location = useLocation();
 
@@ -38,9 +38,12 @@ const PrivateRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Determine effective role, prioritizing the one from the profile
+  const effectiveRole = userRole || (user?.role as UserRole);
+
   // If allowedRoles is specified, check if user has an allowed role
-  if (allowedRoles && allowedRoles.length > 0 && user) {
-    if (!allowedRoles.includes(user.role as UserRole)) {
+  if (allowedRoles && allowedRoles.length > 0 && effectiveRole) {
+    if (!allowedRoles.includes(effectiveRole)) {
       // Redirect to unauthorized page if user doesn't have an allowed role
       return <Navigate to="/unauthorized" replace />;
     }
