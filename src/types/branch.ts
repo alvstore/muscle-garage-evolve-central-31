@@ -6,9 +6,9 @@ export interface Branch {
   city?: string;
   state?: string;
   country?: string;
+  is_active: boolean;
   phone?: string;
   email?: string;
-  is_active: boolean;
   manager_id?: string;
   manager_name?: string;
   manager?: string;
@@ -19,4 +19,17 @@ export interface Branch {
   branchCode?: string;
   taxRate?: number;
   timezone?: string;
+}
+
+export interface BranchSummary {
+  id: string;
+  name: string;
+  memberCount: number;
+  staffCount: number;
+  trainerCount: number;
+  revenue: {
+    daily: number;
+    monthly: number;
+    annual: number;
+  };
 }

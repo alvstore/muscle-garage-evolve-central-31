@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 
 export async function createInitialAdmin() {
   try {
+    console.log("Checking for existing admin account...");
+    
     // Check if an admin account already exists
     const { data: existingAdmins, error: checkError } = await supabase
       .from('profiles')
@@ -23,8 +25,10 @@ export async function createInitialAdmin() {
     }
     
     // Admin credentials - only used for initial setup
-    const email = "Rajat.lekhari@hotmail.com";
+    const email = "rajat.lekhari@alvstore.in";
     const password = "Rajat@3003";
+    
+    console.log("Creating admin account with email:", email);
     
     // Create the admin account
     const { data, error } = await supabase.auth.signUp({

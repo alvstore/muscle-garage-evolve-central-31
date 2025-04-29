@@ -45,12 +45,14 @@ const PrivateRoute = ({
   if (allowedRoles && allowedRoles.length > 0 && effectiveRole) {
     if (!allowedRoles.includes(effectiveRole)) {
       // Redirect to unauthorized page if user doesn't have an allowed role
+      console.log(`User with role ${effectiveRole} is not allowed to access this route. Allowed roles: ${allowedRoles.join(', ')}`);
       return <Navigate to="/unauthorized" replace />;
     }
   }
 
   // Check for specific permission if required
   if (requiredPermission && !can(requiredPermission as any)) {
+    console.log(`User with role ${effectiveRole} lacks required permission: ${requiredPermission}`);
     return <Navigate to="/unauthorized" replace />;
   }
 

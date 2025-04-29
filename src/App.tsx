@@ -5,7 +5,6 @@ import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
 import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 import AppRouter from './router/AppRouter';
-import RouteChecker from './components/debug/RouteChecker';
 import { createInitialAdmin } from './utils/initAdmin';
 import { toast, Toaster } from 'sonner';
 
@@ -42,7 +41,6 @@ export default function App() {
           <BranchProvider>
             <PermissionsProvider>
               <AppRouter />
-              <RouteChecker />
             </PermissionsProvider>
           </BranchProvider>
         </AuthProvider>

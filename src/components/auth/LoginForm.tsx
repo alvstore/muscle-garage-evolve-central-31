@@ -57,12 +57,13 @@ const LoginForm = () => {
     if (!validateForm()) return;
 
     try {
+      console.log("Attempting login with:", email);
       const result = await login(email, password);
       
       if (result.success) {
+        toast.success("Login successful");
         // Login successful - navigation will be handled by the Login page component
         // based on user role
-        toast.success("Login successful");
       } else {
         setError(result.error || "Login failed. Please check your credentials.");
         toast.error(result.error || "Login failed");

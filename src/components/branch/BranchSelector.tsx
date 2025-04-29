@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Check, ChevronDown, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, ChevronDown, Building2, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -22,8 +22,17 @@ import {
 } from '@/components/ui/tooltip';
 
 const BranchSelector = () => {
-  const { branches, currentBranch, switchBranch, isLoading } = useBranch();
-  const { updateUserBranch } = useAuth();
+  const { branches, currentBranch, switchBranch, isLoading, fetchBranches } = useBranch();
+  const { user, updateUserBranch } = useAuth();
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  useEffect(() => {
+    // Fetch branches on component mount
+    if (user && !initialLoadDone) {
+      fetchBranches();
+      setInitialLoadDone(true);
+    }
+  }, [user, initialLoadDone]);
   
   const handleChangeBranch = async (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
@@ -37,6 +46,10 @@ const BranchSelector = () => {
       }
     }
   };
+
+  const handleCreateBranchComplete = () => {
+    fetchBranches();
+  };
   
   if (isLoading) {
     return (
@@ -46,6 +59,22 @@ const BranchSelector = () => {
           <span>Loading branches...</span>
         </Button>
       </div>
+    );
+  }
+
+  // If no branches available, offer to create one
+  if (branches.length === 0) {
+    return (
+      <PermissionGuard permission="manage_branches">
+        <div className="flex items-center gap-2">
+          <CreateBranchDialog onComplete={handleCreateBranchComplete}>
+            <Button variant="outline" size="sm" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
+              <span>Create Branch</span>
+            </Button>
+          </CreateBranchDialog>
+        </div>
+      </PermissionGuard>
     );
   }
 
@@ -89,7 +118,7 @@ const BranchSelector = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <CreateBranchDialog onComplete={() => {}} />
+                  <CreateBranchDialog onComplete={handleCreateBranchComplete} />
                 </div>
               </TooltipTrigger>
               <TooltipContent className="bg-indigo-950 text-indigo-100 border-indigo-800">

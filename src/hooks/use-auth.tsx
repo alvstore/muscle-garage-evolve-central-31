@@ -78,6 +78,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
             toast.error('Failed to load user profile data');
           } else if (data) {
             setProfile(data);
+            console.log('Profile loaded:', data);
           }
         } catch (err) {
           console.error('Profile fetch error:', err);
@@ -105,10 +106,12 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
       
       // Update local profile state
       setProfile(prev => prev ? { ...prev, branch_id: branchId } : null);
+      toast.success('Branch updated successfully');
       
       return true;
     } catch (err) {
       console.error('Error updating user branch:', err);
+      toast.error('Failed to update branch');
       return false;
     }
   };

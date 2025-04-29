@@ -14,6 +14,7 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
+import AdminDashboard from '@/pages/dashboard/AdminDashboard';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -49,6 +50,22 @@ export const appRoutes: RouteObject[] = [
   {
     path: '/unauthorized',
     element: <Unauthorized />
+  },
+  
+  // Admin routes
+  {
+    path: '/admin',
+    element: <Navigate to="/admin/dashboard" replace />
+  },
+  {
+    path: '/admin/dashboard',
+    element: (
+      <PrivateRoute allowedRoles={['admin']}>
+        <DashboardLayout>
+          <AdminDashboard />
+        </DashboardLayout>
+      </PrivateRoute>
+    )
   },
   
   // Protected routes
