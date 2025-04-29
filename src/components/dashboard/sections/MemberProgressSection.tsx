@@ -91,9 +91,15 @@ const MemberProgressSection = () => {
     ? measurements[0] 
     : null;
   
+  // Replace these hardcoded values:
   const weightLossPercentage = progress ? 75 : 0;
   const bodyFatReductionPercentage = progress ? 62 : 0;
   const bmiImprovementPercentage = progress ? 55 : 0;
+  
+  // With actual data from the progress object:
+  const weightLossPercentage = progress?.weight_loss_percent || 0;
+  const bodyFatReductionPercentage = progress?.body_fat_reduction_percent || 0;
+  const bmiImprovementPercentage = progress?.bmi_improvement_percent || 0;
   
   const workoutCompletionPercentage = progress?.workout_completion_percent || 0;
   const classAttendancePercentage = 70;

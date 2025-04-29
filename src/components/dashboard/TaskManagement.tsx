@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { supabase } from '@/services/supabaseClient';
 
 interface Task {
   id: string;
@@ -50,44 +51,8 @@ interface User {
 const TaskManagement = () => {
   const { user } = useAuth();
   const { userRole, can } = usePermissions();
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Review member progress reports',
-      description: 'Go through monthly progress reports for all personal training clients',
-      dueDate: '2025-04-15',
-      priority: 'high',
-      assignedTo: 'trainer1',
-      assigneeName: 'Alex Trainer',
-      completed: false,
-      createdAt: '2025-04-05T10:30:00',
-      updatedAt: '2025-04-05T10:30:00'
-    },
-    {
-      id: '2',
-      title: 'Prepare nutrition plans for new members',
-      description: 'Create customized diet plans for the 3 new members who joined this week',
-      dueDate: '2025-04-20',
-      priority: 'medium',
-      assignedTo: 'trainer2',
-      assigneeName: 'Sarah Fitness',
-      assigneeAvatar: '/placeholder.svg',
-      completed: false,
-      createdAt: '2025-04-07T14:15:00',
-      updatedAt: '2025-04-07T14:15:00'
-    },
-    {
-      id: '3',
-      title: 'Update equipment maintenance schedule',
-      dueDate: '2025-04-12',
-      priority: 'medium',
-      assignedTo: 'staff1',
-      assigneeName: 'John Staff',
-      completed: true,
-      createdAt: '2025-04-02T09:00:00',
-      updatedAt: '2025-04-10T11:20:00'
-    }
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TaskFormData>({
@@ -470,3 +435,49 @@ const TaskManagement = () => {
 };
 
 export default TaskManagement;
+
+
+useEffect(() => {
+  fetchTasks();
+}, [user?.id]);
+
+const fetchTasks = async () => {
+  if (!user?.id) return;
+  
+  try {
+    setIsLoading(true);
+    
+    // Fetch tasks assigned to the user or created by the user
+    let query = supabase
+      .from('tasks')
+      .select('*')
+      .or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    if (data) {
+      const formattedTasks: Task[] = data.map(task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description || '',
+        dueDate: task.due_date,
+        priority: task.priority as 'low' | 'medium' | 'high',
+        assignedTo: task.assigned_to,
+        assigneeName: task.assignee_name,
+        assigneeAvatar: task.assignee_avatar,
+        completed: task.completed,
+        createdAt: task.created_at,
+        updatedAt: task.updated_at
+      }));
+      
+      setTasks(formattedTasks);
+    }
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    toast.error('Failed to load tasks');
+  } finally {
+    setIsLoading(false);
+  }
+};

@@ -8,6 +8,8 @@ import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { MembershipPlan } from "@/types/membership";
 import MembershipPlanForm from "./MembershipPlanForm";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import { supabase } from '@/services/supabaseClient';
 
 const mockPlans: MembershipPlan[] = [
   {
@@ -52,9 +54,35 @@ const mockPlans: MembershipPlan[] = [
 ];
 
 const MembershipPlans = () => {
-  const [plans, setPlans] = useState<MembershipPlan[]>(mockPlans);
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+
+  useEffect(() => {
+    fetchMembershipPlans();
+  }, []);
+
+  const fetchMembershipPlans = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('*')
+        .order('price');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setPlans(data);
+      }
+    } catch (error) {
+      console.error('Error fetching membership plans:', error);
+      toast.error('Failed to load membership plans');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddPlan = () => {
     setEditingPlan(null);
