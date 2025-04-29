@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 const ContactSection = () => {
@@ -42,23 +43,52 @@ const ContactSection = () => {
       [name]: value
     }));
   };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real application, you would send this data to your backend
-    console.log("Form submitted:", formData);
-    toast({
-      title: "Message Sent!",
-      description: "We'll get back to you as soon as possible."
-    });
+  const [submitting, setSubmitting] = useState(false);
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      inquiryType: "membership",
-      message: ""
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const leadInput = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        source: 'website' as LeadSource,
+        status: 'new' as LeadStatus,
+        funnelStage: 'cold' as FunnelStage,
+        notes: `${formData.inquiryType}: ${formData.message}`
+      };
+      const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));
+      if (result) {
+        toast({
+          title: "Message Sent!",
+          description: "We'll get back to you as soon as possible."
+        });
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          inquiryType: "membership",
+          message: ""
+        });
+      } else {
+        toast({
+          title: "Failed to send message",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Failed to send message",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   };
   return <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
       <div className="gym-container">
@@ -122,8 +152,8 @@ const ContactSection = () => {
               </div>
 
               <div>
-                <button type="submit" className="w-full btn btn-primary">
-                  Send Message
+                <button type="submit" className="w-full btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Sending...' : 'Send Message'}
                 </button>
               </div>
             </form>
