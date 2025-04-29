@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Navigate, RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -28,13 +29,11 @@ import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
+import { websiteRoutes } from './routes/websiteRoutes';
 
 export const appRoutes: RouteObject[] = [
-  // Public routes
-  {
-    path: '/',
-    element: <Index />
-  },
+  // Public routes - website is the root route
+  ...websiteRoutes,
   {
     path: '/login',
     element: <Login />

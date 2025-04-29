@@ -1,187 +1,162 @@
-@import url('https://fonts.googleapis.com/css2?family=Impact:wght@400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer utilities {
-  .font-impact {
-    font-family: 'Impact', sans-serif;
-    font-weight: 400;
-  }
-}
-
+ 
 @layer base {
-  * {
-    @apply border-border;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    scroll-behavior: smooth;
-  }
-  
-  /* Scope heading styles to public website only */
-  .public-website h1, 
-  .public-website h2, 
-  .public-website h3, 
-  .public-website h4, 
-  .public-website h5, 
-  .public-website h6 {
-    @apply font-impact tracking-wide;
-  }
-
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
+ 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 220 47.4% 20.2%;
+ 
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-
+ 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
+ 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 0 63% 57%;
-    --accent-foreground: 210 40% 98%;
-
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-
+ 
     --radius: 0.5rem;
-
-    --sidebar-background: 220 47.4% 12%;
-
-    --sidebar-foreground: 210 40% 98%;
-
-    --sidebar-primary: 0 63% 57%;
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 220 47.4% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-
-    --sidebar-border: 220 47.4% 18%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-
+ 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
+ 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
+ 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
+ 
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
+ 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
+ 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 0 63% 57%;
+ 
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
+ 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
+ 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    
-    --sidebar-background: 220 47.4% 12%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 0 63% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 47.4% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 47.4% 18%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-
-@layer components {
-  .gym-container {
-    @apply container max-w-7xl mx-auto px-4 md:px-6;
-  }
-  
-  .section-padding {
-    @apply py-16 md:py-24;
-  }
-  
-  .btn {
-    @apply inline-block px-6 py-3 font-bold text-center rounded-md transition-all duration-300;
-  }
-  
-  .btn-primary {
-    @apply bg-gym-yellow text-gym-black hover:bg-gym-yellow-hover;
-  }
-  
-  .btn-outline {
-    @apply border-2 border-gym-yellow text-gym-yellow hover:bg-gym-yellow hover:text-gym-black;
-  }
-  
-  .card-hover {
-    @apply transition-transform duration-300 hover:scale-105;
-  }
-  
-  .animate-fade-in {
-    animation: fadeIn 1s ease-in-out forwards;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-}
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
 }
 
-@layer components {
-  .gym-gradient {
-    @apply bg-gradient-to-br from-gym-navy to-gym-navy/90;
-  }
+/* GYM WEBSITE CUSTOM STYLES */
+.font-impact {
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
 
-  .gym-card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
-  }
+:root {
+  --gym-black: #0F0F0F;
+  --gym-gray-900: #121212;
+  --gym-gray-800: #1A1A1A;
+  --gym-gray-700: #2E2E2E;
+  --gym-gray-600: #444444;
+  --gym-yellow: #FFC107;
+}
 
-  .stat-card {
-    @apply p-6 rounded-lg flex flex-col space-y-2;
-  }
+.bg-gym-black {
+  background-color: var(--gym-black);
+}
 
-  .form-input {
-    @apply w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50;
+.bg-gym-gray-900 {
+  background-color: var(--gym-gray-900);
+}
+
+.bg-gym-gray-800 {
+  background-color: var(--gym-gray-800);
+}
+
+.bg-gym-gray-700 {
+  background-color: var(--gym-gray-700);
+}
+
+.bg-gym-yellow {
+  background-color: var(--gym-yellow);
+}
+
+.text-gym-yellow {
+  color: var(--gym-yellow);
+}
+
+.text-gym-black {
+  color: var(--gym-black);
+}
+
+.btn {
+  @apply px-6 py-3 rounded-full font-bold transition-colors;
+}
+
+.btn-primary {
+  @apply bg-gym-yellow text-gym-black hover:bg-white;
+}
+
+.section-padding {
+  @apply py-16 md:py-24;
+}
+
+.gym-container {
+  @apply container mx-auto px-4;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes pulseSoft {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s infinite ease-in-out;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .gym-container {
+    @apply px-4;
   }
 }
