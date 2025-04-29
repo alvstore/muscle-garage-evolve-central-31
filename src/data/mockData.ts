@@ -510,6 +510,15 @@ export const realTimeTrainers: Trainer[] = [];
 export const realTimeClasses: Class[] = [];
 
 // Then update the initialization function
+// Keep the first mockUsers declaration (lines 17-42) for backward compatibility
+// But remove the second declaration at line 507
+
+// Remove this duplicate declaration:
+// export const mockUsers: User[] = [];
+
+// You've already started transitioning to real data with realTimeUsers, which is good!
+// Make sure the initializeMockData function is properly updating realTimeUsers:
+
 export async function initializeMockData(branchId?: string) {
   try {
     const users = await fetchUsers(branchId);
@@ -522,14 +531,14 @@ export async function initializeMockData(branchId?: string) {
     realTimeUsers.length = 0;
     realTimeUsers.push(...users);
     
-    mockMembers.length = 0;
-    mockMembers.push(...members);
+    realTimeMembers.length = 0;
+    realTimeMembers.push(...members);
     
-    mockTrainers.length = 0;
-    mockTrainers.push(...trainers);
+    realTimeTrainers.length = 0;
+    realTimeTrainers.push(...trainers);
     
-    mockClasses.length = 0;
-    mockClasses.push(...classes);
+    realTimeClasses.length = 0;
+    realTimeClasses.push(...classes);
     
     // ... update other arrays
     
