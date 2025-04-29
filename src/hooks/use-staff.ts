@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
 import { toast } from 'sonner';
 

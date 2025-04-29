@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { FinancialTransaction, TransactionType } from '@/types/finance';
 import { toast } from 'sonner';
 import { useBranch } from './use-branch';
