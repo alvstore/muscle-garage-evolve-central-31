@@ -1,4 +1,5 @@
 
+import { dashboardService } from '@/services/dashboardService';
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -71,9 +72,10 @@ const AdminDashboard = () => {
     toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
   };
 
-  const handleExport = () => {
-    toast.success('Dashboard data exported successfully');
-  };
+  // Remove this duplicate function
+  // const handleExport = () => {
+  //   toast.success('Dashboard data exported successfully');
+  // };
 
   const handleRefresh = () => {
     toast("Refreshing dashboard data", {
