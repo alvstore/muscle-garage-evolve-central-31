@@ -19,81 +19,73 @@ import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 
-const MemberDashboard = () => {
-  const { user } = useAuth();
-  
-  const mockUpcomingClasses = [
-    {
-      id: '1',
-      name: 'Yoga Class',
-      time: '10:00 AM',
-      trainer: 'John Doe'
-    },
-    {
-      id: '2',
-      name: 'CrossFit',
-      time: '2:00 PM',
-      trainer: 'Jane Smith'
-    }
-  ];
-  
-  const mockFitnessGoals = [
-    {
-      id: '1',
-      name: 'Weight Loss',
-      target: '10kg in 3 months',
-      progress: 65
-    },
-    {
-      id: '2',
-      name: 'Muscle Gain',
-      target: '5kg in 2 months',
-      progress: 40
-    }
-  ];
-  
-  const mockDietRecommendations = [
-    {
-      id: '1',
-      name: 'Breakfast',
-      description: 'Oatmeal with fruits and nuts'
-    },
-    {
-      id: '2',
-      name: 'Lunch',
-      description: 'Grilled chicken with vegetables'
-    }
-  ];
-  
-  const mockAnnouncements: Announcement[] = [
-    {
-      id: '1',
-      title: 'Gym Holiday Hours',
-      content: 'The gym will be closed on Christmas Day.',
-      createdAt: new Date().toISOString(),
-      authorId: 'admin1',
-      authorName: 'Admin',
-      targetRoles: ['member'],
-      channels: ['in-app'],
-      priority: 'medium',
-      channel: 'all',
-      branchId: 'main-branch',
-    },
-    {
-      id: '2',
-      title: 'New Equipment',
-      content: 'We have added new treadmills to the cardio section.',
-      createdAt: new Date().toISOString(),
-      authorId: 'admin1',
-      authorName: 'Admin',
-      targetRoles: ['member'],
-      channels: ['in-app'],
-      priority: 'low',
-      channel: 'all',
-      branchId: 'main-branch',
-    }
-  ];
+// Replace mock data declarations with hooks
+import { useEffect, useState } from 'react';
+import { supabase } from '@/services/supabaseClient';
+import { useBranch } from '@/hooks/use-branch';
 
+// Inside your component:
+const MemberDashboard = () => {
+  const { currentBranch } = useBranch();
+  const [upcomingClasses, setUpcomingClasses] = useState([]);
+  const [fitnessGoals, setFitnessGoals] = useState([]);
+  const [dietRecommendations, setDietRecommendations] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch upcoming classes
+        const { data: classesData } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('branch_id', currentBranch?.id)
+          .gte('start_time', new Date().toISOString())
+          .order('start_time', { ascending: true })
+          .limit(5);
+        
+        setUpcomingClasses(classesData || []);
+        
+        // Fetch fitness goals
+        const { data: goalsData } = await supabase
+          .from('fitness_goals')
+          .select('*')
+          .eq('branch_id', currentBranch?.id)
+          .limit(5);
+        
+        setFitnessGoals(goalsData || []);
+        
+        // Fetch diet recommendations
+        const { data: dietData } = await supabase
+          .from('diet_recommendations')
+          .select('*')
+          .eq('branch_id', currentBranch?.id)
+          .limit(5);
+        
+        setDietRecommendations(dietData || []);
+        
+        // Fetch announcements
+        const { data: announcementsData } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('branch_id', currentBranch?.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        setAnnouncements(announcementsData || []);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, [currentBranch]);
+  
+  // Rest of your component using the state variables instead of mock data
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -171,7 +163,7 @@ const MemberDashboard = () => {
             <CardDescription>Your scheduled classes for the week</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpcomingClasses classes={mockUpcomingClasses} />
+            <UpcomingClasses classes={upcomingClasses} />
           </CardContent>
         </Card>
 
@@ -183,7 +175,7 @@ const MemberDashboard = () => {
             <CardDescription>Track your fitness journey</CardDescription>
           </CardHeader>
           <CardContent>
-            <FitnessGoals goals={mockFitnessGoals} />
+            <FitnessGoals goals={fitnessGoals} />
           </CardContent>
         </Card>
       </div>
@@ -201,7 +193,7 @@ const MemberDashboard = () => {
             <CardDescription>Personalized diet tips for you</CardDescription>
           </CardHeader>
           <CardContent>
-            <DietRecommendations recommendations={mockDietRecommendations} />
+            <DietRecommendations recommendations={dietRecommendations} />
             <div className="flex justify-end mt-4">
               <Button 
                 variant="outline" 
@@ -228,7 +220,7 @@ const MemberDashboard = () => {
             <CardDescription>Stay updated with gym news</CardDescription>
           </CardHeader>
           <CardContent>
-            <Announcements announcements={mockAnnouncements} />
+            <Announcements announcements={announcements} />
           </CardContent>
         </Card>
       </div>

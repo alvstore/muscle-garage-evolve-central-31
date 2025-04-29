@@ -10,6 +10,9 @@ import {
   DashboardSummary
 } from "@/types";
 
+import { supabase } from '@/services/supabaseClient';
+import { useBranch } from '@/hooks/use-branch';
+
 // Mock Users
 export const mockUsers: User[] = [
   {
@@ -444,3 +447,88 @@ export const mockDashboardSummary: DashboardSummary = {
     }
   ]
 };
+
+
+// Define types based on usage in components
+export interface User { /* ... */ }
+export interface Member { /* ... */ }
+export interface Trainer { /* ... */ }
+export interface Class { /* ... */ }
+
+// Export empty arrays as fallbacks
+export const mockUsers: User[] = [];
+export const mockMembers: Member[] = [];
+export const mockTrainers: Trainer[] = [];
+export const mockClasses: Class[] = [];
+
+// Functions to fetch real data
+export async function fetchUsers(branchId?: string): Promise<User[]> {
+  try {
+    let query = supabase.from('profiles').select('*');
+    
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return data as User[];
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+}
+
+export async function fetchMembers(branchId?: string): Promise<Member[]> {
+  try {
+    let query = supabase.from('members').select('*');
+    
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    return data as Member[];
+  } catch (error) {
+    console.error('Error fetching members:', error);
+    return [];
+  }
+}
+
+// ... similar functions for other data types
+
+// Initialize data fetching
+export async function initializeMockData(branchId?: string) {
+  try {
+    const users = await fetchUsers(branchId);
+    const members = await fetchMembers(branchId);
+    const trainers = await fetchTrainers(branchId);
+    const classes = await fetchClasses(branchId);
+    // ... fetch other data types
+    
+    // Update the mock arrays with real data
+    mockUsers.length = 0;
+    mockUsers.push(...users);
+    
+    mockMembers.length = 0;
+    mockMembers.push(...members);
+    
+    mockTrainers.length = 0;
+    mockTrainers.push(...trainers);
+    
+    mockClasses.length = 0;
+    mockClasses.push(...classes);
+    
+    // ... update other arrays
+    
+    return { users, members, trainers, classes };
+  } catch (error) {
+    console.error('Error initializing data:', error);
+    return {};
+  }
+}
