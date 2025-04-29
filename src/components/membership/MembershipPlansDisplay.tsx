@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/services/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,22 +21,78 @@ interface MembershipPlanDisplayProps {
   };
 }
 
-const MembershipPlansDisplay: React.FC<MembershipPlanDisplayProps> = ({ 
-  currentPlan = {
-    name: "Premium Quarterly",
-    startDate: new Date(2025, 3, 1).toISOString(),
-    endDate: new Date(2025, 6, 1).toISOString(),
-    features: [
-      "Full access to gym equipment",
-      "Unlimited group classes",
-      "Personal trainer (1 session/month)",
-      "Nutrition consultation"
-    ],
-    price: 5499,
-    status: 'active',
-    trainer: "John Doe"
-  }
-}) => {
+const MembershipPlansDisplay: React.FC = () => {
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [newPlanName, setNewPlanName] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  // Fetch plans from Supabase
+  const fetchPlans = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from('memberships')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      setError('Failed to fetch plans');
+      setPlans([]);
+    } else {
+      // Parse features if stored as JSON string
+      setPlans(
+        (data || []).map(plan => ({
+          ...plan,
+          features: Array.isArray(plan.features)
+            ? plan.features
+            : (typeof plan.features === 'string' ? JSON.parse(plan.features) : [])
+        }))
+      );
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  // Create a new plan (demo: just name, you can expand fields)
+  const handleCreatePlan = async () => {
+    if (!newPlanName) return;
+    setCreating(true);
+    const { error } = await supabase.from('memberships').insert([
+      {
+        name: newPlanName,
+        description: '',
+        duration_days: 30,
+        price: 0,
+        features: JSON.stringify([]),
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        branch_id: null
+      }
+    ]);
+    setCreating(false);
+    if (error) {
+      setError('Failed to create plan');
+    } else {
+      setNewPlanName('');
+      fetchPlans();
+    }
+  };
+
+  // Delete a plan
+  const handleDeletePlan = async (id: string) => {
+    const { error } = await supabase.from('memberships').delete().eq('id', id);
+    if (error) {
+      setError('Failed to delete plan');
+    } else {
+      fetchPlans();
+    }
+  };
+
   const navigate = useNavigate();
   
   const getStatusBadge = (status: string) => {
@@ -71,94 +128,55 @@ const MembershipPlansDisplay: React.FC<MembershipPlanDisplayProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>My Membership</CardTitle>
-          {getStatusBadge(currentPlan.status)}
+          <CardTitle>Membership Plans</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
-        {currentPlan ? (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold">{currentPlan.name}</h3>
-                <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                  <CalendarClock className="h-4 w-4 mr-1" />
-                  <span>
-                    {format(new Date(currentPlan.startDate), 'MMM d, yyyy')} - {format(new Date(currentPlan.endDate), 'MMM d, yyyy')}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 md:mt-0">
-                <div className="text-2xl font-bold">{formatPrice(currentPlan.price)}</div>
-              </div>
-            </div>
-            
-            {daysRemaining <= 30 && currentPlan.status === 'active' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start space-x-3">
-                <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="mb-4 flex gap-2">
+          <input
+            type="text"
+            className="border px-2 py-1 rounded"
+            placeholder="New plan name"
+            value={newPlanName}
+            onChange={e => setNewPlanName(e.target.value)}
+            disabled={creating}
+          />
+          <Button size="sm" onClick={handleCreatePlan} disabled={creating || !newPlanName}>
+            Add Plan
+          </Button>
+        </div>
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">{error}</div>
+        ) : plans.length === 0 ? (
+          <div className="text-center py-8">No membership plans found.</div>
+        ) : (
+          <div className="space-y-4">
+            {plans.map(plan => (
+              <div key={plan.id} className="border rounded p-4 flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h4 className="font-medium text-amber-800">Membership Expiring Soon</h4>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Your membership will expire in {daysRemaining} days. Consider renewing to avoid interruption.
-                  </p>
-                  <Button 
-                    className="mt-3" 
-                    size="sm" 
-                    onClick={handleRenewPlan}
-                  >
-                    Renew Membership
+                  <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                  <div className="text-gray-500 text-sm mb-1">{plan.description}</div>
+                  <div className="text-sm mb-1">Duration: {plan.duration_days} days</div>
+                  <div className="text-lg font-bold mb-1">{formatPrice(plan.price)}</div>
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {(plan.features || []).map((f, i) => (
+                      <Badge key={i} variant="outline">{f}</Badge>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-400">Created: {format(new Date(plan.created_at), 'MMM d, yyyy')}</div>
+                </div>
+                <div className="flex flex-col gap-2 mt-3 md:mt-0 md:items-end">
+                  <Badge className={plan.is_active ? 'bg-green-500' : 'bg-red-500'}>
+                    {plan.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeletePlan(plan.id)}>
+                    Delete
                   </Button>
                 </div>
               </div>
-            )}
-            
-            <div>
-              <h4 className="font-medium mb-2">Membership Benefits</h4>
-              <ul className="space-y-2">
-                {currentPlan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            {currentPlan.trainer && (
-              <div>
-                <h4 className="font-medium mb-2">Assigned Trainer</h4>
-                <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                    <span className="font-bold text-primary">
-                      {currentPlan.trainer.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium">{currentPlan.trainer}</p>
-                    <p className="text-sm text-muted-foreground">Personal Trainer</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => navigate('/invoices')}>
-                View Invoices
-              </Button>
-              {currentPlan.status === 'active' && (
-                <Button onClick={() => navigate('/fitness/plans')}>
-                  View Fitness Plans
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <h3 className="text-lg font-medium mb-2">No Active Membership</h3>
-            <p className="text-muted-foreground mb-4">You don't have an active membership plan.</p>
-            <Button onClick={handleRenewPlan}>
-              Browse Membership Plans
-            </Button>
+            ))}
           </div>
         )}
       </CardContent>
