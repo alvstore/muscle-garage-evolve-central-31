@@ -456,9 +456,6 @@ export interface Trainer { /* ... */ }
 export interface Class { /* ... */ }
 
 // Export empty arrays as fallbacks
-export const mockMembers: Member[] = [];
-export const mockTrainers: Trainer[] = [];
-export const mockClasses: Class[] = [];
 
 // Functions to fetch real data
 export async function fetchUsers(branchId?: string): Promise<User[]> {

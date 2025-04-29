@@ -153,10 +153,12 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-// Ensure userRole is correctly set from profile data
-const userRole = useMemo(() => {
-  if (!profile) return undefined;
-  // Explicitly check for admin roles with proper priority
-  if (profile.role === 'admin') return 'admin';
-  return profile.role as UserRole;
-}, [profile]);
+// Custom hook to get userRole from profile
+export function useUserRole() {
+  const { profile } = useAuth();
+  return useMemo(() => {
+    if (!profile) return undefined;
+    if (profile.role === 'admin') return 'admin';
+    return profile.role as UserRole;
+  }, [profile]);
+}

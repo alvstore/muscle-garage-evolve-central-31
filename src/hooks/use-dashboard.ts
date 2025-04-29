@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchDashboardSummary } from '@/services/dashboardService';
 import { useBranch } from './use-branch';
 import { useAuth } from './use-auth';
 
@@ -67,7 +67,7 @@ export const useDashboard = () => {
     setIsLoading(true);
     try {
       // Replace mock data with actual API calls
-      const data = await dashboardService.getDashboardData(currentBranch?.id);
+      const data = await fetchDashboardSummary(currentBranch?.id);
       setDashboardData(data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

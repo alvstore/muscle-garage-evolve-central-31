@@ -1,5 +1,4 @@
-
-import { dashboardService } from '@/services/dashboardService';
+import { fetchDashboardSummary, fetchPendingPayments, fetchMembershipRenewals, fetchUpcomingClasses } from '@/services/dashboardService';
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ const AdminDashboard = () => {
     setSearchQuery(query);
     try {
       // Implement actual search functionality using dashboardService
-      await dashboardService.searchDashboardData(query, currentBranch?.id);
+      await fetchDashboardSummary(query, currentBranch?.id);
       toast.success(`Search results updated for: ${query}`);
     } catch (error) {
       toast.error(`Search failed: ${error.message}`);
@@ -48,7 +47,7 @@ const AdminDashboard = () => {
   const handleExport = async () => {
     try {
       // Implement actual export functionality
-      const exportUrl = await dashboardService.exportDashboardData({
+      const exportUrl = await fetchPendingPayments({
         branchId: currentBranch?.id,
         startDate,
         endDate,
