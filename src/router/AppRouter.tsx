@@ -33,3 +33,27 @@ export default function AppRouter() {
   // Provide access to the router throughout the application
   return <RouterProvider router={router} />;
 }
+
+// Implement a more robust PrivateRoute component
+const PrivateRoute = ({ element, requiredRoles, ...rest }) => {
+  const { user, userRole, isLoading } = useAuth();
+  
+  // Show loading indicator while auth state is being determined
+  if (isLoading) {
+    return <LoadingScreen message="Checking access permissions..." />;
+  }
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" state={{ from: rest.location }} replace />;
+  }
+  
+  // Check if user has required role
+  const hasRequiredRole = requiredRoles.includes(userRole || user.role);
+  
+  if (!hasRequiredRole) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  
+  return element;
+};

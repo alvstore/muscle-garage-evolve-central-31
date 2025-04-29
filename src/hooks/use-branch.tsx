@@ -210,4 +210,36 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useBranch = () => useContext(BranchContext);
+export const useBranch = () => {
+  const context = useContext(BranchContext);
+  const { user, userRole } = useAuth();
+  
+  if (!context) {
+    throw new Error('useBranch must be used within a BranchProvider');
+  }
+  
+  const { currentBranch, setCurrentBranch, branches, isLoading } = context;
+  
+  // Determine if user can switch branches
+  const canSwitchBranches = useMemo(() => {
+    return userRole === 'admin' || user?.role === 'admin';
+  }, [userRole, user?.role]);
+  
+  // Get user's assigned branch if they can't switch
+  useEffect(() => {
+    if (!canSwitchBranches && user?.branch_id && branches.length > 0 && !currentBranch) {
+      const userBranch = branches.find(branch => branch.id === user.branch_id);
+      if (userBranch) {
+        setCurrentBranch(userBranch);
+      }
+    }
+  }, [canSwitchBranches, user?.branch_id, branches, currentBranch, setCurrentBranch]);
+  
+  return {
+    currentBranch,
+    setCurrentBranch,
+    branches,
+    isLoading,
+    canSwitchBranches
+  };
+};

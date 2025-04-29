@@ -4,7 +4,7 @@ import { User } from '@supabase/supabase-js';
 import { User as AppUser, UserRole } from '@/types';
 import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
 import { useAuthActions, LoginResult } from './auth/use-auth-actions';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -153,3 +153,10 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+// Ensure userRole is correctly set from profile data
+const userRole = useMemo(() => {
+  if (!profile) return undefined;
+  // Explicitly check for admin roles with proper priority
+  if (profile.role === 'admin') return 'admin';
+  return profile.role as UserRole;
+}, [profile]);

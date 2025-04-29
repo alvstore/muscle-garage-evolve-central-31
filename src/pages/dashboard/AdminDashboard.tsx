@@ -33,9 +33,36 @@ const AdminDashboard = () => {
     // The main dashboard data is now loaded via the useDashboard hook
   }, [currentBranch?.id]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    toast.info(`Searching for: ${query}`);
+    try {
+      // Implement actual search functionality using dashboardService
+      await dashboardService.searchDashboardData(query, currentBranch?.id);
+      toast.success(`Search results updated for: ${query}`);
+    } catch (error) {
+      toast.error(`Search failed: ${error.message}`);
+    }
+  };
+  
+  const handleExport = async () => {
+    try {
+      // Implement actual export functionality
+      const exportUrl = await dashboardService.exportDashboardData({
+        branchId: currentBranch?.id,
+        startDate,
+        endDate,
+        searchQuery
+      });
+      toast.success('Dashboard data exported successfully', {
+        description: 'Download will begin shortly',
+        action: {
+          label: 'Download',
+          onClick: () => window.open(exportUrl, '_blank')
+        }
+      });
+    } catch (error) {
+      toast.error(`Export failed: ${error.message}`);
+    }
   };
 
   const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {

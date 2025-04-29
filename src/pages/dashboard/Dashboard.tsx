@@ -54,7 +54,7 @@ const Dashboard = () => {
 
   // Use userRole from the fetched profile, falling back to user.role if needed
   const effectiveRole = userRole || user.role as UserRole;
-  
+
   return renderDashboard(effectiveRole);
 };
 
