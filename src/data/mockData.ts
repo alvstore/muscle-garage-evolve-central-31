@@ -503,6 +503,13 @@ export async function fetchMembers(branchId?: string): Promise<Member[]> {
 // ... similar functions for other data types
 
 // Initialize data fetching
+// Export empty arrays as fallbacks
+export const realTimeUsers: User[] = [];
+export const realTimeMembers: Member[] = [];
+export const realTimeTrainers: Trainer[] = [];
+export const realTimeClasses: Class[] = [];
+
+// Then update the initialization function
 export async function initializeMockData(branchId?: string) {
   try {
     const users = await fetchUsers(branchId);
@@ -511,9 +518,9 @@ export async function initializeMockData(branchId?: string) {
     const classes = await fetchClasses(branchId);
     // ... fetch other data types
     
-    // Update the mock arrays with real data
-    mockUsers.length = 0;
-    mockUsers.push(...users);
+    // Update the arrays with real data
+    realTimeUsers.length = 0;
+    realTimeUsers.push(...users);
     
     mockMembers.length = 0;
     mockMembers.push(...members);
