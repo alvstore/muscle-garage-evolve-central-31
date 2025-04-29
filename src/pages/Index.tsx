@@ -33,27 +33,27 @@ const Index = () => {
       <HighlightsSection />
       
       {/* About Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbell" />
       <AboutSection />
       
       {/* Trainers Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="barbell" />
       <TrainersSection />
       
       {/* Gallery Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="kettlebell" />
       <GallerySection />
       
       {/* Testimonials Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbell" />
       <TestimonialsSection />
       
       {/* Membership Plans Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="kettlebell" />
       <MembershipSection />
       
       {/* Contact Section */}
-      <SectionDivider />
+      <SectionDivider equipmentType="proteinShake" />
       <ContactSection />
       
       {/* Footer */}
