@@ -113,7 +113,7 @@ const ContactSection = () => {
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
                   Full Name
                 </label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-white" placeholder="Your name" required />
+                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" placeholder="Your name" required />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -121,13 +121,13 @@ const ContactSection = () => {
                   <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
                     Email
                   </label>
-                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-white" placeholder="Your email" required />
+                  <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" placeholder="Your email" required />
                 </div>
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
                     Phone Number
                   </label>
-                  <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-white" placeholder="Your phone" required />
+                  <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" placeholder="Your phone" required />
                 </div>
               </div>
 
@@ -135,7 +135,7 @@ const ContactSection = () => {
                 <label htmlFor="inquiryType" className="block text-sm font-medium text-gray-300 mb-1">
                   Inquiry Type
                 </label>
-                <select id="inquiryType" name="inquiryType" value={formData.inquiryType} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-white" required>
+                <select id="inquiryType" name="inquiryType" value={formData.inquiryType} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" required>
                   <option value="membership">Membership Inquiry</option>
                   <option value="training">Personal Training</option>
                   <option value="classes">Group Classes</option>
@@ -148,7 +148,7 @@ const ContactSection = () => {
                 <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
                   Message
                 </label>
-                <textarea id="message" name="message" value={formData.message} onChange={handleChange} rows={4} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-white" placeholder="Tell us how we can help..." required></textarea>
+                <textarea id="message" name="message" value={formData.message} onChange={handleChange} rows={4} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" placeholder="Tell us how we can help..." required></textarea>
               </div>
 
               <div>
