@@ -71,7 +71,11 @@ const AdminDashboard = () => {
     setEndDate(endDate);
     toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
   };
-
+  // Remove this duplicate function
+  // const handleExport = () => {
+  //   toast.success('Dashboard data exported successfully');
+  // };
+  
   const handleRefresh = () => {
     toast("Refreshing dashboard data", {
       description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
