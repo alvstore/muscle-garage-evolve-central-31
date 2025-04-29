@@ -89,7 +89,8 @@ const ContactSection = () => {
     }
   };
 
-  return <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
+  return (
+    <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
       <div className="gym-container">
         <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
           <h2 className="text-3xl md:text-5xl font-impact mb-4">
