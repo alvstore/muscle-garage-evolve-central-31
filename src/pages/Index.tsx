@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,10 +15,8 @@ import Footer from '@/components/website/Footer';
 import Navbar from '@/components/website/Navbar';
 import FloatingWhatsAppButton from '@/components/website/FloatingWhatsAppButton';
 import '../index.css';
-
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-gym-black text-white">
+  return <div className="min-h-screen bg-gym-black text-white">
       {/* Navbar */}
       <Navbar />
       
@@ -65,11 +62,9 @@ const Index = () => {
       {/* Login Button */}
       <div className="fixed top-4 right-4 z-50">
         <Button asChild variant="outline" className="bg-gym-yellow text-gym-black hover:bg-white">
-          <Link to="/login">Admin Login</Link>
+          
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
