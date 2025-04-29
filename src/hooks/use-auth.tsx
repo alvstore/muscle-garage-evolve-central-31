@@ -1,5 +1,5 @@
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser, UserRole } from '@/types';
 import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
@@ -154,7 +154,6 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => useContext(AuthContext);
 // Custom hook to get userRole from profile
-import { useMemo } from 'react';
 
 export function useUserRole() {
   const { profile } = useAuth();
