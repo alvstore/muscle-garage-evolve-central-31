@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,73 +8,55 @@ import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { MembershipPlan } from "@/types/membership";
 import MembershipPlanForm from "./MembershipPlanForm";
 import { toast } from "sonner";
-import { useEffect } from "react";
 import { supabase } from '@/services/supabaseClient';
-
-const mockPlans: MembershipPlan[] = [
-  {
-    id: "basic-1m",
-    name: "Basic Monthly",
-    description: "Access to basic facilities with limited class bookings",
-    price: 1999,
-    durationDays: 30,
-    durationLabel: "1-month",
-    benefits: ["Access to gym equipment", "2 group classes per week", "Locker access"],
-    allowedClasses: "basic-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "premium-3m",
-    name: "Premium Quarterly",
-    description: "Full access to all facilities and classes with added benefits",
-    price: 5499,
-    durationDays: 90,
-    durationLabel: "3-month",
-    benefits: ["Full access to gym equipment", "Unlimited group classes", "Personal trainer (1 session/month)", "Nutrition consultation"],
-    allowedClasses: "group-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "platinum-12m",
-    name: "Platinum Annual",
-    description: "Our most comprehensive package with all premium features",
-    price: 18999,
-    durationDays: 365,
-    durationLabel: "12-month",
-    benefits: ["24/7 access to gym equipment", "Unlimited group & premium classes", "Personal trainer (2 sessions/month)", "Nutrition consultation", "Free supplements"],
-    allowedClasses: "all",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-];
+import { useBranch } from '@/hooks/use-branch';
 
 const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
     fetchMembershipPlans();
-  }, []);
+  }, [currentBranch?.id]);
 
   const fetchMembershipPlans = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('membership_plans')
+      
+      let query = supabase
+        .from('memberships')
         .select('*')
         .order('price');
+      
+      // Filter by branch if a branch is selected
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
       if (data) {
-        setPlans(data);
+        // Format the data to match the MembershipPlan type
+        const formattedPlans = data.map(plan => ({
+          id: plan.id,
+          name: plan.name,
+          description: plan.description || '',
+          price: plan.price,
+          durationDays: plan.duration_days,
+          durationLabel: getDurationLabel(plan.duration_days),
+          benefits: plan.features?.features || [],
+          allowedClasses: plan.allowed_classes || 'basic-only',
+          status: plan.is_active ? 'active' : 'inactive',
+          createdAt: plan.created_at,
+          updatedAt: plan.updated_at,
+        }));
+        
+        setPlans(formattedPlans);
       }
     } catch (error) {
       console.error('Error fetching membership plans:', error);
@@ -82,6 +64,14 @@ const MembershipPlans = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to convert duration days to label
+  const getDurationLabel = (days: number): string => {
+    if (days <= 31) return '1-month';
+    if (days <= 92) return '3-month';
+    if (days <= 183) return '6-month';
+    return '12-month';
   };
 
   const handleAddPlan = () => {
@@ -94,28 +84,87 @@ const MembershipPlans = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeletePlan = (id: string) => {
-    // In a real application, you would make an API call
-    setPlans(plans.filter(plan => plan.id !== id));
-    toast.success("Membership plan deleted successfully");
+  const handleDeletePlan = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('memberships')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setPlans(plans.filter(plan => plan.id !== id));
+      toast.success("Membership plan deleted successfully");
+    } catch (error) {
+      console.error('Error deleting membership plan:', error);
+      toast.error('Failed to delete membership plan');
+    }
   };
 
-  const handleSavePlan = (plan: MembershipPlan) => {
-    // In a real application, you would make an API call
-    if (editingPlan) {
-      setPlans(plans.map(p => p.id === plan.id ? plan : p));
-      toast.success("Membership plan updated successfully");
-    } else {
-      const newPlan: MembershipPlan = {
-        ...plan,
-        id: `plan-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+  const handleSavePlan = async (plan: MembershipPlan) => {
+    try {
+      // Convert the plan data to match the database schema
+      const dbPlan = {
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        duration_days: plan.durationDays,
+        features: { features: plan.benefits },
+        allowed_classes: plan.allowedClasses,
+        is_active: plan.status === 'active',
+        branch_id: currentBranch?.id,
+        updated_at: new Date().toISOString()
       };
-      setPlans([...plans, newPlan]);
-      toast.success("Membership plan created successfully");
+
+      if (editingPlan) {
+        // Update existing plan
+        const { error } = await supabase
+          .from('memberships')
+          .update(dbPlan)
+          .eq('id', plan.id);
+        
+        if (error) throw error;
+        
+        setPlans(plans.map(p => p.id === plan.id ? plan : p));
+        toast.success("Membership plan updated successfully");
+      } else {
+        // Create new plan
+        const { data, error } = await supabase
+          .from('memberships')
+          .insert({
+            ...dbPlan,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        if (data) {
+          const newPlan: MembershipPlan = {
+            id: data.id,
+            name: data.name,
+            description: data.description || '',
+            price: data.price,
+            durationDays: data.duration_days,
+            durationLabel: getDurationLabel(data.duration_days),
+            benefits: data.features?.features || [],
+            allowedClasses: data.allowed_classes || 'basic-only',
+            status: data.is_active ? 'active' : 'inactive',
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          };
+          
+          setPlans([...plans, newPlan]);
+          toast.success("Membership plan created successfully");
+        }
+      }
+      
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Error saving membership plan:', error);
+      toast.error('Failed to save membership plan');
     }
-    setIsFormOpen(false);
   };
 
   const formatPrice = (price: number) => {
@@ -139,47 +188,55 @@ const MembershipPlans = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Class Access</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plans.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>{plan.durationLabel}</TableCell>
-                  <TableCell>{formatPrice(plan.price)}</TableCell>
-                  <TableCell>
-                    {plan.allowedClasses === 'all' ? 'All Classes' : 
-                     plan.allowedClasses === 'group-only' ? 'Group Classes Only' : 
-                     'Basic Classes Only'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusColor(plan.status)}>
-                      {plan.status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
-                        <EditIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center py-8">Loading membership plans...</div>
+          ) : plans.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No membership plans found. Click "Add Plan" to create one.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Class Access</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {plans.map((plan) => (
+                  <TableRow key={plan.id}>
+                    <TableCell className="font-medium">{plan.name}</TableCell>
+                    <TableCell>{plan.durationLabel}</TableCell>
+                    <TableCell>{formatPrice(plan.price)}</TableCell>
+                    <TableCell>
+                      {plan.allowedClasses === 'all' ? 'All Classes' : 
+                       plan.allowedClasses === 'group-only' ? 'Group Classes Only' : 
+                       'Basic Classes Only'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getStatusColor(plan.status)}>
+                        {plan.status === 'active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
