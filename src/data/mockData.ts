@@ -456,7 +456,6 @@ export interface Trainer { /* ... */ }
 export interface Class { /* ... */ }
 
 // Export empty arrays as fallbacks
-export const mockUsers: User[] = [];
 export const mockMembers: Member[] = [];
 export const mockTrainers: Trainer[] = [];
 export const mockClasses: Class[] = [];
@@ -514,8 +513,7 @@ export const realTimeClasses: Class[] = [];
 // But remove the second declaration at line 507
 
 // Remove this duplicate declaration:
-// export const mockUsers: User[] = [];
-
+// 
 // You've already started transitioning to real data with realTimeUsers, which is good!
 // Make sure the initializeMockData function is properly updating realTimeUsers:
 
