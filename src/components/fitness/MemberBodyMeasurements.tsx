@@ -9,6 +9,7 @@ import { measurementService } from '@/services/measurementService';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { User } from '@/types/user';
+import { useBranch } from '@/hooks/use-branch';
 
 interface MemberBodyMeasurementsProps {
   memberId?: string;
@@ -24,6 +25,7 @@ const MemberBodyMeasurements = ({
   onSaveMeasurements
 }: MemberBodyMeasurementsProps) => {
   const { user } = useAuth();
+  const { currentBranch } = useBranch();
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tracker');
@@ -56,10 +58,13 @@ const MemberBodyMeasurements = ({
         onSaveMeasurements(measurement);
       } else {
         // Otherwise use our regular save flow
-        const savedMeasurement = await measurementService.saveMeasurement({
+        const measurementWithBranch = {
           ...measurement,
-          memberId: memberId as string
-        });
+          memberId: memberId as string,
+          branch_id: currentBranch?.id
+        };
+
+        const savedMeasurement = await measurementService.saveMeasurement(measurementWithBranch);
         
         setMeasurements(prev => [savedMeasurement, ...prev]);
         toast.success('Measurement saved successfully');

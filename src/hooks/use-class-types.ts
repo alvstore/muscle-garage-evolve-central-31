@@ -3,54 +3,47 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
 import { toast } from 'sonner';
-import { User } from '@/types/user';
 
-export interface StaffMember extends User {
-  branch_id?: string;
-  department?: string;
+export interface ClassType {
+  id: string;
+  name: string;
+  description?: string;
   is_active?: boolean;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export const useStaff = (role?: 'staff' | 'trainer' | 'admin') => {
-  const [staff, setStaff] = useState<StaffMember[]>([]);
+export const useClassTypes = () => {
+  const [classTypes, setClassTypes] = useState<ClassType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentBranch } = useBranch();
 
-  const fetchStaff = async () => {
+  const fetchClassTypes = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
       // Only fetch if we have a branch
       if (!currentBranch?.id) {
-        setStaff([]);
+        setClassTypes([]);
         return;
       }
 
-      let query = supabase
-        .from('profiles')
+      const { data, error: fetchError } = await supabase
+        .from('class_types')
         .select('*')
         .eq('branch_id', currentBranch.id)
         .eq('is_active', true);
-        
-      // Filter by role if provided
-      if (role) {
-        query = query.eq('role', role);
-      } else {
-        // Get staff and trainers by default
-        query = query.in('role', ['staff', 'trainer']);
-      }
-
-      const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
       
-      setStaff(data as StaffMember[] || []);
+      setClassTypes(data || []);
     } catch (err) {
-      console.error('Error fetching staff:', err);
-      setError('Failed to load staff');
-      toast.error('Failed to load staff');
+      console.error('Error fetching class types:', err);
+      setError('Failed to load class types');
+      toast.error('Failed to load class types');
     } finally {
       setIsLoading(false);
     }
@@ -59,26 +52,26 @@ export const useStaff = (role?: 'staff' | 'trainer' | 'admin') => {
   // Set up real-time subscription
   useEffect(() => {
     if (!currentBranch?.id) {
-      setStaff([]);
+      setClassTypes([]);
       setIsLoading(false);
       return;
     }
     
-    fetchStaff();
+    fetchClassTypes();
     
-    // Set up real-time subscription for profiles table
+    // Set up real-time subscription for class_types table
     const channel = supabase
-      .channel('staff_realtime')
+      .channel('class_types_realtime')
       .on('postgres_changes', 
         { 
           event: '*', 
           schema: 'public', 
-          table: 'profiles',
+          table: 'class_types',
           filter: `branch_id=eq.${currentBranch.id}`
         }, 
         (payload) => {
-          console.log('Staff data changed:', payload);
-          fetchStaff();
+          console.log('Class types data changed:', payload);
+          fetchClassTypes();
         }
       )
       .subscribe();
@@ -86,17 +79,12 @@ export const useStaff = (role?: 'staff' | 'trainer' | 'admin') => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentBranch, role]);
+  }, [currentBranch]);
 
   return {
-    staff,
+    classTypes,
     isLoading,
     error,
-    refetch: fetchStaff
+    refetch: fetchClassTypes
   };
-};
-
-// Convenience hook for trainers only
-export const useTrainers = () => {
-  return useStaff('trainer');
 };

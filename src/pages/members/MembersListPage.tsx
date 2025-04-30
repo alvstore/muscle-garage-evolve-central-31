@@ -67,7 +67,7 @@ const MembersListPage = () => {
             <Button variant="outline" size="icon" type="button">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button onClick={() => navigate("/members/new")}>
+            <Button onClick={() => navigate("/members/new")} disabled={!currentBranch}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add Member
             </Button>
