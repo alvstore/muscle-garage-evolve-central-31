@@ -88,7 +88,7 @@ export const useDashboard = () => {
         .from('profiles')
         .select('id')
         .eq('role', 'member')
-        .in('status', ['active', 'trial']);
+        .eq('is_active', true);
       
       if (branchFilter && user.role !== 'admin') {
         activeMemberQuery = activeMemberQuery.eq('branch_id', branchFilter);
@@ -119,9 +119,8 @@ export const useDashboard = () => {
       
       // Fetch member status distribution
       let memberStatusQuery = supabase
-        .from('profiles')
-        .select('status')
-        .eq('role', 'member');
+        .from('members')
+        .select('status');
       
       if (branchFilter && user.role !== 'admin') {
         memberStatusQuery = memberStatusQuery.eq('branch_id', branchFilter);
@@ -145,9 +144,9 @@ export const useDashboard = () => {
       sevenDaysAgo.setDate(today.getDate() - 7);
       
       let attendanceQuery = supabase
-        .from('attendance')
-        .select('check_in_time')
-        .gte('check_in_time', sevenDaysAgo.toISOString());
+        .from('member_attendance')
+        .select('check_in')
+        .gte('check_in', sevenDaysAgo.toISOString());
       
       if (branchFilter && user.role !== 'admin') {
         attendanceQuery = attendanceQuery.eq('branch_id', branchFilter);
@@ -171,7 +170,7 @@ export const useDashboard = () => {
       
       if (attendanceData) {
         attendanceData.forEach(record => {
-          const dateString = record.check_in_time.split('T')[0];
+          const dateString = record.check_in.split('T')[0];
           if (dateMap[dateString] !== undefined) {
             dateMap[dateString]++;
           }
@@ -192,7 +191,8 @@ export const useDashboard = () => {
       let revenueQuery = supabase
         .from('transactions')
         .select('amount, created_at')
-        .gte('created_at', sixMonthsAgo.toISOString());
+        .gte('created_at', sixMonthsAgo.toISOString())
+        .eq('type', 'income');
       
       if (branchFilter && user.role !== 'admin') {
         revenueQuery = revenueQuery.eq('branch_id', branchFilter);
@@ -256,7 +256,7 @@ export const useDashboard = () => {
       let classesQuery = supabase
         .from('classes')
         .select('id')
-        .eq('status', 'active');
+        .eq('is_active', true);
       
       if (branchFilter && user.role !== 'admin') {
         classesQuery = classesQuery.eq('branch_id', branchFilter);

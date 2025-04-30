@@ -1,185 +1,72 @@
 
-import { BodyMeasurement, PTPlan } from '@/types/measurements';
-import api from './api';
-import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface BodyMeasurement {
+  id?: string;
+  memberId: string;
+  date: string;
+  weight?: number;
+  height?: number;
+  bmi?: number;
+  body_fat_percentage?: number;
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  arms?: number;
+  thighs?: number;
+  notes?: string;
+  recorded_by?: string;
+  branch_id?: string;
+  addedBy?: {
+    id: string;
+    role: string;
+    name: string;
+  };
+}
 
 export const measurementService = {
-  /**
-   * Get all measurements for a member
-   */
-  getAllMeasurements: async (memberId: string): Promise<BodyMeasurement[]> => {
+  async getMeasurementHistory(memberId: string): Promise<BodyMeasurement[]> {
     try {
-      const response = await api.get(`/measurements/${memberId}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('fitness_progress')
+        .select('*')
+        .eq('member_id', memberId)
+        .order('date', { ascending: false });
+        
+      if (error) throw error;
+      
+      return data || [];
     } catch (error) {
-      console.error('Error fetching measurements:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get measurement history for a member (alias for getAllMeasurements)
-   */
-  getMeasurementHistory: async (memberId: string): Promise<BodyMeasurement[]> => {
-    return measurementService.getAllMeasurements(memberId);
-  },
-
-  /**
-   * Get a specific measurement by ID
-   */
-  getMeasurement: async (id: string): Promise<BodyMeasurement> => {
-    try {
-      const response = await api.get(`/measurements/detail/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching measurement:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Create a new measurement
-   */
-  addMeasurement: async (measurement: Omit<BodyMeasurement, 'id'>): Promise<BodyMeasurement> => {
-    try {
-      const response = await api.post('/measurements', measurement);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding measurement:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Save a measurement (create or update)
-   */
-  saveMeasurement: async (measurement: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
-    try {
-      if (measurement.id) {
-        // Update existing measurement
-        const response = await api.put(`/measurements/${measurement.id}`, measurement);
-        return response.data;
-      } else {
-        // Create new measurement
-        const response = await api.post('/measurements', measurement);
-        return response.data;
-      }
-    } catch (error) {
-      console.error('Error saving measurement:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update an existing measurement
-   */
-  updateMeasurement: async (id: string, measurement: Partial<BodyMeasurement>): Promise<BodyMeasurement> => {
-    try {
-      const response = await api.put(`/measurements/${id}`, measurement);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating measurement:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete a measurement
-   */
-  deleteMeasurement: async (id: string): Promise<boolean> => {
-    try {
-      await api.delete(`/measurements/${id}`);
-      return true;
-    } catch (error) {
-      console.error('Error deleting measurement:', error);
-      return false;
-    }
-  },
-
-  // PT Plan methods
-  
-  /**
-   * Get all PT plans for a member
-   */
-  getPTPlans: async (memberId: string): Promise<PTPlan[]> => {
-    try {
-      const response = await api.get(`/pt-plans/${memberId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching PT plans:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Get the active PT plan for a member
-   */
-  getActivePTPlan: async (memberId: string): Promise<PTPlan | null> => {
-    try {
-      const plans = await measurementService.getPTPlans(memberId);
-      const activePlan = plans.find(plan => plan.isActive);
-      return activePlan || null;
-    } catch (error) {
-      console.error('Error getting active PT plan:', error);
-      return null;
-    }
-  },
-  
-  /**
-   * Check if a member has an active PT plan
-   */
-  hasActivePTPlan: async (memberId: string): Promise<boolean> => {
-    try {
-      const plans = await measurementService.getPTPlans(memberId);
-      return plans.some(plan => plan.isActive);
-    } catch (error) {
-      console.error('Error checking PT plan status:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Add a new PT plan
-   */
-  addPTPlan: async (plan: Omit<PTPlan, 'id'>): Promise<PTPlan> => {
-    try {
-      const response = await api.post('/pt-plans', plan);
-      toast.success('PT plan created successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Error creating PT plan:', error);
-      toast.error('Failed to create PT plan');
+      console.error("Error fetching measurement history:", error);
       throw error;
     }
   },
   
-  /**
-   * Update a PT plan
-   */
-  updatePTPlan: async (id: string, plan: Partial<PTPlan>): Promise<PTPlan> => {
+  async saveMeasurement(measurement: Partial<BodyMeasurement>): Promise<BodyMeasurement> {
     try {
-      const response = await api.put(`/pt-plans/${id}`, plan);
-      toast.success('PT plan updated successfully');
-      return response.data;
+      const { data, error } = await supabase
+        .from('fitness_progress')
+        .insert({
+          member_id: measurement.memberId,
+          date: measurement.date,
+          weight: measurement.weight,
+          body_fat_percentage: measurement.body_fat_percentage,
+          muscle_mass: measurement.bmi, // Assuming BMI is stored as muscle_mass for now
+          workout_completion: 0, // Default value
+          diet_adherence: 0, // Default value
+          notes: measurement.notes,
+          created_by: measurement.addedBy?.id,
+          branch_id: measurement.branch_id
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return data as unknown as BodyMeasurement;
     } catch (error) {
-      console.error('Error updating PT plan:', error);
-      toast.error('Failed to update PT plan');
+      console.error("Error saving measurement:", error);
       throw error;
-    }
-  },
-  
-  /**
-   * Delete a PT plan
-   */
-  deletePTPlan: async (id: string): Promise<boolean> => {
-    try {
-      await api.delete(`/pt-plans/${id}`);
-      toast.success('PT plan deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting PT plan:', error);
-      toast.error('Failed to delete PT plan');
-      return false;
     }
   }
 };

@@ -1,84 +1,69 @@
 
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format } from 'date-fns';
 import { BodyMeasurement } from '@/types/measurements';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2 } from 'lucide-react';
 
-export interface MeasurementHistoryProps {
+interface MeasurementHistoryProps {
   measurements: BodyMeasurement[];
   isLoading: boolean;
 }
 
-const MeasurementHistory: React.FC<MeasurementHistoryProps> = ({ measurements, isLoading }) => {
-  const sortedMeasurements = [...measurements].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-  
-  if (measurements.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-muted-foreground">No measurement history available.</p>
-        <p className="text-sm text-muted-foreground mt-1">Add your first measurement to see your history.</p>
-      </div>
-    );
-  }
-  
+const MeasurementHistory: React.FC<MeasurementHistoryProps> = ({ 
+  measurements,
+  isLoading
+}) => {
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMMM dd, yyyy');
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Weight (kg)</TableHead>
-            <TableHead>BMI</TableHead>
-            <TableHead>Measurements (cm)</TableHead>
-            <TableHead>Body Fat %</TableHead>
-            <TableHead>Added By</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedMeasurements.map((measurement) => (
-            <TableRow key={measurement.id}>
-              <TableCell>{new Date(measurement.date).toLocaleDateString()}</TableCell>
-              <TableCell>{measurement.weight || '-'}</TableCell>
-              <TableCell>{measurement.bmi?.toFixed(1) || '-'}</TableCell>
-              <TableCell>
-                <div className="text-xs space-y-1">
-                  {measurement.chest && <div>Chest: {measurement.chest} cm</div>}
-                  {measurement.waist && <div>Waist: {measurement.waist} cm</div>}
-                  {measurement.hips && <div>Hips: {measurement.hips} cm</div>}
-                  {measurement.biceps && <div>Biceps: {measurement.biceps} cm</div>}
-                  {measurement.thighs && <div>Thighs: {measurement.thighs} cm</div>}
-                </div>
-              </TableCell>
-              <TableCell>{measurement.bodyFat ? `${measurement.bodyFat}%` : '-'}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="capitalize">
-                  {measurement.addedBy.role}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" size="sm">View</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Measurement History</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : measurements.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-3 px-4 text-left font-medium">Date</th>
+                  <th className="py-3 px-4 text-left font-medium">Weight (kg)</th>
+                  <th className="py-3 px-4 text-left font-medium">Body Fat (%)</th>
+                  <th className="py-3 px-4 text-left font-medium">Waist (cm)</th>
+                  <th className="py-3 px-4 text-left font-medium">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {measurements.map((measurement) => (
+                  <tr key={measurement.id} className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">{formatDate(measurement.date)}</td>
+                    <td className="py-3 px-4">{measurement.weight || '-'}</td>
+                    <td className="py-3 px-4">{measurement.body_fat_percentage || '-'}</td>
+                    <td className="py-3 px-4">{measurement.waist || '-'}</td>
+                    <td className="py-3 px-4">{measurement.notes || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No measurement history found.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

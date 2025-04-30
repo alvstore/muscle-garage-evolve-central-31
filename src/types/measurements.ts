@@ -1,46 +1,32 @@
 
-// Types for body measurements and progress tracking
+export const PROGRESS_TIMEFRAMES = [
+  { label: "7 Days", value: "7d" },
+  { label: "30 Days", value: "30d" },
+  { label: "90 Days", value: "90d" },
+  { label: "6 Months", value: "6m" },
+  { label: "1 Year", value: "1y" },
+  { label: "All Time", value: "all" }
+];
 
 export interface BodyMeasurement {
-  id: string;
+  id?: string;
   memberId: string;
   date: string;
-  height?: number; // cm
-  weight?: number; // kg
-  bmi?: number; // auto-calculated
-  chest?: number; // cm
-  waist?: number; // cm
-  hips?: number; // cm
-  biceps?: number; // cm
-  thighs?: number; // cm
-  bodyFat?: number; // percentage
-  addedBy: {
+  weight?: number;
+  height?: number;
+  bmi?: number;
+  body_fat_percentage?: number;
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  arms?: number;
+  thighs?: number;
+  notes?: string;
+  recorded_by?: string;
+  branch_id?: string;
+  addedBy?: {
     id: string;
-    role: "admin" | "staff" | "trainer" | "member";
+    role: string;
     name: string;
   };
-  notes?: string;
 }
-
-export interface PTPlan {
-  id: string;
-  memberId: string;
-  trainerId: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-}
-
-export interface ProgressTimeframe {
-  value: "7days" | "30days" | "3months" | "6months" | "1year" | "all";
-  label: string;
-}
-
-export const PROGRESS_TIMEFRAMES: ProgressTimeframe[] = [
-  { value: "7days", label: "Last 7 Days" },
-  { value: "30days", label: "Last 30 Days" },
-  { value: "3months", label: "Last 3 Months" },
-  { value: "6months", label: "Last 6 Months" },
-  { value: "1year", label: "Last Year" },
-  { value: "all", label: "All Time" }
-];

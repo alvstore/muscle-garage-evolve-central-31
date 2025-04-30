@@ -13,6 +13,7 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
+import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -28,10 +29,10 @@ import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
+import { websiteRoutes } from './routes/admin/websiteRoutes';
 
-// Website and backup pages (placeholders)
+// Website page (placeholder)
 const WebsitePage = () => <div>Website Management Page</div>;
-const SystemBackupPage = () => <div>System Backup Page</div>;
 
 export const appRoutes: RouteObject[] = [
   // Public routes
@@ -75,15 +76,13 @@ export const appRoutes: RouteObject[] = [
             path: '/dashboard/realtime',
             element: <RealTimeDashboardPage />
           },
-          
-          // New placeholder routes for missing pages
-          {
-            path: '/website',
-            element: <WebsitePage />
-          },
           {
             path: '/system-backup',
             element: <SystemBackupPage />
+          },
+          {
+            path: '/website',
+            element: <WebsitePage />
           },
           
           // Include route groups
@@ -100,6 +99,7 @@ export const appRoutes: RouteObject[] = [
           ...adminRoutes,
           ...branchRoutes,
           ...analyticsRoutes,
+          ...websiteRoutes
         ]
       }
     ]
