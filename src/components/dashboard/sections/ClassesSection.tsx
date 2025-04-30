@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -95,7 +96,8 @@ const ClassesSection = () => {
           const formattedBookings = bookingData.map(booking => ({
             id: booking.id,
             memberId: booking.member_id,
-            memberName: booking.members && typeof booking.members === 'object' ? booking.members.name : 'Unknown Member', 
+            memberName: booking.members && typeof booking.members === 'object' ? 
+              (booking.members as any).name || 'Unknown Member' : 'Unknown Member',
             memberAvatar: '',
             status: booking.status as "attended" | "confirmed" | "missed",
             classId: booking.class_id,

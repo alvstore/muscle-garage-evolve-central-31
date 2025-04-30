@@ -221,7 +221,7 @@ export const useBookClass = () => {
           id: data.id,
           classId: data.class_id,
           memberId: data.member_id,
-          memberName: data.members ? data.members.name : 'Unknown',
+          memberName: data.members?.name || 'Unknown',
           memberAvatar: '',
           bookingDate: data.created_at,
           status: data.status as BookingStatus,
