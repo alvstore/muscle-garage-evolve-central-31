@@ -1,20 +1,24 @@
 
-import React from 'react';
+import GymEquipment3D from "./GymEquipment3D";
 
-export interface SectionDividerProps {
-  equipmentType: string;
+interface SectionDividerProps {
+  equipmentType: "dumbbell" | "barbell" | "kettlebell" | "proteinShake";
+  className?: string;
 }
 
-const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType }) => {
+const SectionDivider = ({ equipmentType, className = "" }: SectionDividerProps) => {
   return (
-    <div className="relative py-8">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-full border-t border-gym-gray-700"></div>
+    <div className={`relative py-12 ${className}`}>
+      {/* Center equipment */}
+      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10">
+        <GymEquipment3D type={equipmentType} rotationSpeed={1} />
       </div>
-      <div className="relative flex justify-center">
-        <span className="bg-gym-black px-4 text-gym-yellow text-2xl">
-          {equipmentType}
-        </span>
+      
+      {/* Divider lines */}
+      <div className="flex items-center justify-center max-w-7xl mx-auto px-4">
+        <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent to-gym-yellow/70"></div>
+        <div className="w-44 h-20"></div>
+        <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent to-gym-yellow/70"></div>
       </div>
     </div>
   );
