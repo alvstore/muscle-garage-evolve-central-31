@@ -34,11 +34,38 @@ export const useStaff = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      // Get the current user to determine role
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get user profile to check if admin
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user?.id)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+      }
+      
+      const isAdmin = userProfile?.role === 'admin';
+      
+      let query = supabase
         .from('profiles')
         .select('*')
-        .in('role', ['admin', 'staff', 'trainer'])
+        .in('role', ['staff', 'trainer'])
         .eq('branch_id', currentBranch.id);
+      
+      // Only admins can see other admins
+      if (isAdmin) {
+        query = supabase
+          .from('profiles')
+          .select('*')
+          .in('role', ['admin', 'staff', 'trainer'])
+          .eq('branch_id', currentBranch.id);
+      }
+        
+      const { data, error } = await query;
       
       if (error) {
         throw error;

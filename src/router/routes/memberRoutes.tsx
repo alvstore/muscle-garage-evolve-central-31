@@ -8,6 +8,7 @@ import MembersListPage from '@/pages/members/MembersListPage';
 import NewMemberPage from '@/pages/members/NewMemberPage';
 import MemberProfilePage from '@/pages/members/MemberProfilePage';
 import MemberProgressPage from '@/pages/members/MemberProgressPage';
+import MemberEditPage from '@/pages/members/MemberEditPage';
 
 export const memberRoutes: RouteObject[] = [
   {
@@ -39,6 +40,14 @@ export const memberRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/:id/edit',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <MemberEditPage />
       </PrivateRoute>
     )
   },

@@ -28,6 +28,7 @@ export const useMembers = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [activeMemberCount, setActiveMemberCount] = useState(0);
 
   // Function to fetch members from Supabase
   const fetchMembers = async () => {
@@ -45,6 +46,11 @@ export const useMembers = () => {
         .eq('branch_id', currentBranch.id);
 
       if (error) throw error;
+
+      // Count active members correctly based on the 'status' column in members table
+      // not from profiles table
+      const activeCount = data?.filter(m => m.status === 'active').length || 0;
+      setActiveMemberCount(activeCount);
       
       setMembers(data || []);
     } catch (err: any) {
@@ -70,6 +76,42 @@ export const useMembers = () => {
         .single();
       
       if (error) throw error;
+      
+      // After successfully creating a member, let's assign a default membership if one was provided
+      if (member.membership_id) {
+        try {
+          const { error: membershipError } = await supabase
+            .from('member_memberships')
+            .insert({
+              member_id: data.id,
+              membership_id: member.membership_id,
+              start_date: member.membership_start_date || new Date().toISOString(),
+              end_date: member.membership_end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'active',
+              branch_id: currentBranch?.id,
+              total_amount: 0, // Default value, should be updated later
+              amount_paid: 0,
+              payment_status: 'pending'
+            });
+            
+          if (membershipError) {
+            console.error('Error assigning membership:', membershipError);
+            toast.error('Member created but failed to assign membership');
+          } else {
+            // Update member with membership status
+            await supabase
+              .from('members')
+              .update({
+                membership_status: 'active',
+                status: 'active'
+              })
+              .eq('id', data.id);
+          }
+        } catch (membershipErr) {
+          console.error('Error in membership assignment:', membershipErr);
+          toast.error('Member created but failed to assign membership');
+        }
+      }
       
       setMembers(prev => [data as Member, ...prev]);
       toast.success('Member added successfully');
@@ -159,6 +201,7 @@ export const useMembers = () => {
 
   return {
     members,
+    activeMemberCount,
     isLoading,
     error,
     refetch: fetchMembers,

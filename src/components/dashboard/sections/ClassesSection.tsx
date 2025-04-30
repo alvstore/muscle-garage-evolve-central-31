@@ -93,18 +93,22 @@ const ClassesSection = () => {
         if (bookingError) throw bookingError;
         
         if (bookingData) {
-          const formattedBookings = bookingData.map(booking => ({
-            id: booking.id,
-            memberId: booking.member_id,
-            memberName: booking.members && typeof booking.members === 'object' ? 
-              (booking.members as any).name || 'Unknown Member' : 'Unknown Member',
-            memberAvatar: '',
-            status: booking.status as "attended" | "confirmed" | "missed",
-            classId: booking.class_id,
-            bookingDate: booking.created_at,
-            createdAt: booking.created_at,
-            updatedAt: booking.updated_at
-          }));
+          const formattedBookings = bookingData.map(booking => {
+            // Fix the type issue by correctly accessing the members object
+            const memberObj = booking.members as any;
+            return {
+              id: booking.id,
+              memberId: booking.member_id,
+              memberName: memberObj && typeof memberObj === 'object' ? 
+                memberObj.name || 'Unknown Member' : 'Unknown Member',
+              memberAvatar: '',
+              status: booking.status as "attended" | "confirmed" | "missed",
+              classId: booking.class_id,
+              bookingDate: booking.created_at,
+              createdAt: booking.created_at,
+              updatedAt: booking.updated_at
+            };
+          });
           
           setBookings(formattedBookings);
         }

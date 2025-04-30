@@ -29,6 +29,10 @@ import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 
+// Website and backup pages (placeholders)
+const WebsitePage = () => <div>Website Management Page</div>;
+const SystemBackupPage = () => <div>System Backup Page</div>;
+
 export const appRoutes: RouteObject[] = [
   // Public routes
   {
@@ -70,6 +74,16 @@ export const appRoutes: RouteObject[] = [
           {
             path: '/dashboard/realtime',
             element: <RealTimeDashboardPage />
+          },
+          
+          // New placeholder routes for missing pages
+          {
+            path: '/website',
+            element: <WebsitePage />
+          },
+          {
+            path: '/system-backup',
+            element: <SystemBackupPage />
           },
           
           // Include route groups
