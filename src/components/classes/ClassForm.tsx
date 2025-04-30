@@ -1,505 +1,426 @@
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { format, addHours, parseISO } from "date-fns";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useBranch } from "@/hooks/use-branch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { CalendarIcon, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { GymClass, ClassDifficulty } from "@/types/class";
 
 interface ClassFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  initialData: GymClass | null;
-  onClose: () => void;
+  classItem: any;
+  onSave: (classData: any) => void;
+  onCancel: () => void;
 }
 
-interface ClassFormData {
-  name: string;
-  description: string;
-  trainerId: string;
-  capacity: number;
-  date: Date;
-  startTime: string;
-  endTime: string;
-  type: string;
-  location: string;
-  difficulty: ClassDifficulty;
-  recurring: boolean;
-  recurringPattern: string;
-}
-
-const ClassForm = ({ 
-  open, 
-  onOpenChange, 
-  initialData, 
-  onClose 
-}: ClassFormProps) => {
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [selectedTrainer, setSelectedTrainer] = useState("");
-  
-  // Mock trainers data - in real app would come from API
-  const trainers = [
-    { id: "t1", name: "Jane Smith" },
-    { id: "t2", name: "Mike Johnson" },
-    { id: "t3", name: "Robert Chen" },
-    { id: "t4", name: "Sarah Williams" }
-  ];
-  
-  // Class types - in real app might come from API/configuration
-  const classTypes = [
-    "Yoga", "Pilates", "HIIT", "Strength", "Cardio", 
-    "Zumba", "Spinning", "Boxing", "CrossFit", "Other"
-  ];
-  
-  const form = useForm<ClassFormData>({
-    defaultValues: {
-      name: "",
-      description: "",
-      trainerId: "",
-      capacity: 10,
-      date: new Date(),
-      startTime: "08:00",
-      endTime: "09:00",
-      type: "",
-      location: "",
-      difficulty: "all",
-      recurring: false,
-      recurringPattern: "WEEKLY",
-    }
+const ClassForm = ({ classItem, onSave, onCancel }: ClassFormProps) => {
+  const { currentBranch } = useBranch();
+  const [trainers, setTrainers] = useState<{ id: string; name: string }[]>([]);
+  const [formData, setFormData] = useState({
+    name: classItem?.name || "",
+    description: classItem?.description || "",
+    trainer_id: classItem?.trainer_id || "",
+    trainerName: classItem?.trainerName || "",
+    type: classItem?.type || "fitness",
+    difficulty: classItem?.difficulty || "beginner",
+    capacity: classItem?.capacity || 10,
+    location: classItem?.location || "",
+    start_time: classItem?.start_time || new Date().toISOString(),
+    end_time: classItem?.end_time || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    recurring: classItem?.recurring || false,
+    recurring_pattern: classItem?.recurring_pattern || "weekly",
+    status: classItem?.status || "scheduled",
   });
-  
+
+  // Format date for display
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    classItem?.start_time ? new Date(classItem.start_time) : new Date()
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    classItem?.end_time ? new Date(classItem.end_time) : new Date(Date.now() + 60 * 60 * 1000)
+  );
+  const [startTime, setStartTime] = useState(
+    classItem?.start_time ? format(new Date(classItem.start_time), "HH:mm") : format(new Date(), "HH:mm")
+  );
+  const [endTime, setEndTime] = useState(
+    classItem?.end_time 
+      ? format(new Date(classItem.end_time), "HH:mm") 
+      : format(new Date(Date.now() + 60 * 60 * 1000), "HH:mm")
+  );
+
+  // Fetch trainers on component mount
   useEffect(() => {
-    if (initialData) {
-      const startDate = parseISO(initialData.startTime);
-      const startTimeStr = format(startDate, "HH:mm");
-      const endTimeStr = format(parseISO(initialData.endTime), "HH:mm");
-      
-      form.reset({
-        name: initialData.name,
-        description: initialData.description || "",
-        trainerId: initialData.trainerId,
-        capacity: initialData.capacity,
-        date: startDate,
-        startTime: startTimeStr,
-        endTime: endTimeStr,
-        type: initialData.type,
-        location: initialData.location || "",
-        difficulty: initialData.difficulty,
-        recurring: initialData.recurring,
-        recurringPattern: initialData.recurringPattern || "WEEKLY",
-      });
-      
-      setIsRecurring(initialData.recurring);
-      setSelectedTrainer(initialData.trainerId);
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        trainerId: "",
-        capacity: 10,
-        date: new Date(),
-        startTime: "08:00",
-        endTime: "09:00",
-        type: "",
-        location: "",
-        difficulty: "all",
-        recurring: false,
-        recurringPattern: "WEEKLY",
-      });
-      setIsRecurring(false);
-      setSelectedTrainer("");
-    }
-  }, [initialData, form]);
-  
-  const onSubmit = (data: ClassFormData) => {
-    // In a real app, would send to API
-    console.log("Form submitted with data:", data);
-    
-    // Mock class creation
-    const newClass: Partial<GymClass> = {
-      name: data.name,
-      description: data.description,
-      trainerId: data.trainerId,
-      trainerName: trainers.find(t => t.id === data.trainerId)?.name || "",
-      capacity: data.capacity,
-      enrolled: initialData?.enrolled || 0,
-      // Combine date and time strings into ISO strings
-      startTime: new Date(
-        data.date.getFullYear(),
-        data.date.getMonth(),
-        data.date.getDate(),
-        parseInt(data.startTime.split(':')[0]),
-        parseInt(data.startTime.split(':')[1])
-      ).toISOString(),
-      endTime: new Date(
-        data.date.getFullYear(),
-        data.date.getMonth(),
-        data.date.getDate(),
-        parseInt(data.endTime.split(':')[0]),
-        parseInt(data.endTime.split(':')[1])
-      ).toISOString(),
-      type: data.type,
-      location: data.location,
-      difficulty: data.difficulty,
-      status: "scheduled",
-      recurring: data.recurring,
-      recurringPattern: data.recurring ? data.recurringPattern : undefined,
+    const fetchTrainers = async () => {
+      try {
+        let query = supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('role', 'trainer');
+        
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        if (data) {
+          setTrainers(
+            data.map(trainer => ({
+              id: trainer.id,
+              name: trainer.full_name || 'Unnamed Trainer'
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching trainers:', error);
+      }
     };
     
-    console.log("New class data:", newClass);
+    fetchTrainers();
+  }, [currentBranch?.id]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value });
     
-    // Close form
-    onClose();
+    // Update trainer name if trainer is selected
+    if (name === 'trainer_id') {
+      const selectedTrainer = trainers.find(trainer => trainer.id === value);
+      if (selectedTrainer) {
+        setFormData(prev => ({ ...prev, trainerName: selectedTrainer.name }));
+      }
+    }
+  };
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setStartDate(date);
+      // Update the start_time in formData by combining date and time
+      const currentTime = startTime.split(':');
+      const newDate = new Date(date);
+      newDate.setHours(parseInt(currentTime[0], 10), parseInt(currentTime[1], 10));
+      setFormData({ ...formData, start_time: newDate.toISOString() });
+    }
+  };
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setEndDate(date);
+      // Update the end_time in formData by combining date and time
+      const currentTime = endTime.split(':');
+      const newDate = new Date(date);
+      newDate.setHours(parseInt(currentTime[0], 10), parseInt(currentTime[1], 10));
+      setFormData({ ...formData, end_time: newDate.toISOString() });
+    }
+  };
+
+  const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setStartTime(newTime);
+    // Update the start_time in formData by combining date and time
+    if (startDate) {
+      const timeParts = newTime.split(':');
+      const newDateTime = new Date(startDate);
+      newDateTime.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
+      setFormData({ ...formData, start_time: newDateTime.toISOString() });
+    }
+  };
+
+  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setEndTime(newTime);
+    // Update the end_time in formData by combining date and time
+    if (endDate) {
+      const timeParts = newTime.split(':');
+      const newDateTime = new Date(endDate);
+      newDateTime.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
+      setFormData({ ...formData, end_time: newDateTime.toISOString() });
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={true} onOpenChange={onCancel}>
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>
-            {initialData ? "Edit Class" : "Create New Class"}
-          </DialogTitle>
+          <DialogTitle>{classItem ? 'Edit Class' : 'Add New Class'}</DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Class Name</Label>
+              <Input
+                id="name"
                 name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Class Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter class name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="trainerId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trainer</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedTrainer(value);
-                      }}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select trainer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {trainers.map((trainer) => (
-                          <SelectItem key={trainer.id} value={trainer.id}>
-                            {trainer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter class name"
+                required
               />
             </div>
             
-            <FormField
-              control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="type">Class Type</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleSelectChange('type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fitness">Fitness</SelectItem>
+                  <SelectItem value="yoga">Yoga</SelectItem>
+                  <SelectItem value="cardio">Cardio</SelectItem>
+                  <SelectItem value="strength">Strength</SelectItem>
+                  <SelectItem value="hiit">HIIT</SelectItem>
+                  <SelectItem value="pilates">Pilates</SelectItem>
+                  <SelectItem value="dance">Dance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
               name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter class description" 
-                      className="resize-none" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Enter class description"
+              rows={3}
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Time</FormLabel>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        type="time" 
-                        {...field} 
-                        onChange={(e) => {
-                          field.onChange(e);
-                          // Automatically set end time to be 1 hour after start time
-                          const startTime = e.target.value;
-                          if (startTime) {
-                            const [hours, minutes] = startTime.split(':').map(Number);
-                            const startDate = new Date();
-                            startDate.setHours(hours, minutes, 0);
-                            const endDate = addHours(startDate, 1);
-                            form.setValue("endTime", 
-                              `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`
-                            );
-                          }
-                        }}
-                      />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Time</FormLabel>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <Input type="time" {...field} />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="trainer">Trainer</Label>
+              <Select
+                value={formData.trainer_id}
+                onValueChange={(value) => handleSelectChange('trainer_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select trainer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {trainers.map((trainer) => (
+                    <SelectItem key={trainer.id} value={trainer.id}>
+                      {trainer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Class Type</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {classTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="difficulty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Difficulty Level</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="all">All Levels</SelectItem>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="difficulty">Difficulty</Label>
+              <Select
+                value={formData.difficulty}
+                onValueChange={(value) => handleSelectChange('difficulty', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="all-levels">All Levels</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="capacity">Capacity</Label>
+              <Input
+                id="capacity"
                 name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Capacity</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min={1} 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="number"
+                value={formData.capacity}
+                onChange={handleInputChange}
+                min="1"
+                required
               />
             </div>
             
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter class location" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex flex-col space-y-4">
-              <FormField
-                control={form.control}
-                name="recurring"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Recurring Class</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Create a repeating class schedule
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          setIsRecurring(checked);
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                placeholder="Room or area"
+                required
               />
-              
-              {isRecurring && (
-                <FormField
-                  control={form.control}
-                  name="recurringPattern"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Recurrence Pattern</FormLabel>
-                      <Select 
-                        value={field.value} 
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select pattern" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="WEEKLY">Weekly</SelectItem>
-                          <SelectItem value="MON,WED,FRI">Monday, Wednesday, Friday</SelectItem>
-                          <SelectItem value="TUE,THU">Tuesday, Thursday</SelectItem>
-                          <SelectItem value="WEEKEND">Weekends</SelectItem>
-                          <SelectItem value="DAILY">Daily</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <div className="flex space-x-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={handleStartDateSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={handleStartTimeChange}
+                  required
                 />
-              )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>End Date</Label>
+              <div className="flex space-x-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={handleEndDateSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {initialData ? "Update Class" : "Create Class"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time</Label>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={handleEndTimeChange}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="recurring">Recurring</Label>
+              <Select
+                value={formData.recurring ? "true" : "false"}
+                onValueChange={(value) => handleSelectChange('recurring', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Is recurring?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">No</SelectItem>
+                  <SelectItem value="true">Yes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {formData.recurring && (
+            <div className="space-y-2">
+              <Label htmlFor="recurring_pattern">Recurring Pattern</Label>
+              <Select
+                value={formData.recurring_pattern}
+                onValueChange={(value) => handleSelectChange('recurring_pattern', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pattern" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit">{classItem ? 'Update Class' : 'Create Class'}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

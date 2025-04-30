@@ -391,6 +391,7 @@ export type Database = {
           name: string
           recurrence: string | null
           start_time: string
+          status: Database["public"]["Enums"]["class_status"] | null
           trainer_id: string | null
           updated_at: string | null
         }
@@ -405,6 +406,7 @@ export type Database = {
           name: string
           recurrence?: string | null
           start_time: string
+          status?: Database["public"]["Enums"]["class_status"] | null
           trainer_id?: string | null
           updated_at?: string | null
         }
@@ -419,6 +421,7 @@ export type Database = {
           name?: string
           recurrence?: string | null
           start_time?: string
+          status?: Database["public"]["Enums"]["class_status"] | null
           trainer_id?: string | null
           updated_at?: string | null
         }
@@ -796,6 +799,92 @@ export type Database = {
           },
         ]
       }
+      follow_up_history: {
+        Row: {
+          content: string
+          id: string
+          lead_id: string | null
+          response: string | null
+          response_at: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          template_id: string | null
+          type: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          lead_id?: string | null
+          response?: string | null
+          response_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status: string
+          template_id?: string | null
+          type: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          lead_id?: string | null
+          response?: string | null
+          response_at?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          template_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_history_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_up_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_settings: {
         Row: {
           created_at: string | null
@@ -1093,6 +1182,74 @@ export type Database = {
             columns: ["membership_plan_id"]
             isOneToOne: false
             referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          conversion_date: string | null
+          conversion_value: number | null
+          created_at: string | null
+          email: string | null
+          follow_up_date: string | null
+          funnel_stage: string
+          id: string
+          interests: string[] | null
+          last_contact_date: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string
+          status: string
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          conversion_date?: string | null
+          conversion_value?: number | null
+          created_at?: string | null
+          email?: string | null
+          follow_up_date?: string | null
+          funnel_stage: string
+          id?: string
+          interests?: string[] | null
+          last_contact_date?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source: string
+          status: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          conversion_date?: string | null
+          conversion_value?: number | null
+          created_at?: string | null
+          email?: string | null
+          follow_up_date?: string | null
+          funnel_stage?: string
+          id?: string
+          interests?: string[] | null
+          last_contact_date?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2628,7 +2785,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      class_status: "active" | "cancelled" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2743,6 +2900,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      class_status: ["active", "cancelled", "completed"],
+    },
   },
 } as const
