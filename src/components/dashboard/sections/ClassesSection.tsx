@@ -33,6 +33,11 @@ interface Class {
   updatedAt: string;
 }
 
+interface Trainer {
+  id: string;
+  name: string;
+}
+
 const ClassesSection = () => {
   const [selectedTab, setSelectedTab] = useState('upcoming');
   const [showAllClasses, setShowAllClasses] = useState(false);
@@ -40,7 +45,7 @@ const ClassesSection = () => {
   const { currentBranch } = useBranch();
   const { classes, isLoading, error } = useClasses();
   const [bookings, setBookings] = useState<ClassBooking[]>([]);
-  const [trainers, setTrainers<{id: string, name: string}[]>([]);
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
   
   const toggleClassesVisibility = () => {
     setShowAllClasses(!showAllClasses);
