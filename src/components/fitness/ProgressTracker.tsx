@@ -3,17 +3,20 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BodyMeasurement } from '@/types/measurements';
+import { Member } from '@/types';
 
 interface ProgressTrackerProps {
-  measurements: BodyMeasurement[];
+  measurements?: BodyMeasurement[];
   targetWeight?: number;
   targetBodyFat?: number;
+  member?: Member;
 }
 
 const ProgressTracker: React.FC<ProgressTrackerProps> = ({
-  measurements,
+  measurements = [],
   targetWeight,
-  targetBodyFat
+  targetBodyFat,
+  member
 }) => {
   const getLatestAndOldest = () => {
     if (!measurements.length) return { latest: null, oldest: null };
@@ -70,6 +73,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       <CardHeader>
         <CardTitle>Progress Tracker</CardTitle>
         <CardDescription>
+          {member ? `Tracking progress for ${member.name}` : ''}
           {oldest && latest ? 
             `Tracking progress from ${formatDate(oldest.date)} to ${formatDate(latest.date)}` : 
             "No measurement data available"

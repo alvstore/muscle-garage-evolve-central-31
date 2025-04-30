@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
@@ -173,13 +174,13 @@ export const useMembershipStats = (dateRange: DateRange) => {
         const fromDate = startOfDay(dateRange.from).toISOString();
         const toDate = endOfDay(dateRange.to).toISOString();
 
-        // Query membership data - we'll count different membership statuses
+        // Since we can't use .group() with Supabase, we'll fetch all the data
+        // and group it manually
         let query = supabase
           .from('member_memberships')
-          .select('status, count')
+          .select('status')
           .gte('created_at', fromDate)
-          .lte('created_at', toDate)
-          .group('status');
+          .lte('created_at', toDate);
           
         // Apply branch filter if available
         if (currentBranch?.id) {
@@ -194,25 +195,21 @@ export const useMembershipStats = (dateRange: DateRange) => {
         const categories = ['New', 'Renewed', 'Expired', 'Cancelled'];
         const counts = [0, 0, 0, 0]; // Initialize with zeros
         
-        // Fill in actual data where available
+        // Group the data manually
         if (membershipData && membershipData.length > 0) {
+          // Count statuses
+          const statusCounts: Record<string, number> = {};
+          
           membershipData.forEach(record => {
-            switch (record.status.toLowerCase()) {
-              case 'active':
-                // Assuming new memberships
-                counts[0] = parseInt(record.count);
-                break;
-              case 'renewed':
-                counts[1] = parseInt(record.count);
-                break;
-              case 'expired':
-                counts[2] = parseInt(record.count);
-                break;
-              case 'cancelled':
-                counts[3] = parseInt(record.count);
-                break;
-            }
+            const status = record.status.toLowerCase();
+            statusCounts[status] = (statusCounts[status] || 0) + 1;
           });
+          
+          // Map the counts to our predefined categories
+          if (statusCounts['active']) counts[0] = statusCounts['active'];
+          if (statusCounts['renewed']) counts[1] = statusCounts['renewed'];
+          if (statusCounts['expired']) counts[2] = statusCounts['expired'];
+          if (statusCounts['cancelled']) counts[3] = statusCounts['cancelled'];
         }
         
         setData({ labels: categories, data: counts });

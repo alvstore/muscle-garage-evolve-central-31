@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,13 +8,21 @@ import { BodyMeasurement } from '@/types/measurements';
 import { measurementService } from '@/services/measurementService';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { User } from '@/types/user';
 
 interface MemberBodyMeasurementsProps {
-  memberId: string;
+  memberId?: string;
   canAddMeasurements?: boolean;
+  currentUser?: User;
+  onSaveMeasurements?: (measurement: Partial<BodyMeasurement>) => void;
 }
 
-const MemberBodyMeasurements = ({ memberId, canAddMeasurements = true }: MemberBodyMeasurementsProps) => {
+const MemberBodyMeasurements = ({ 
+  memberId, 
+  canAddMeasurements = true,
+  currentUser,
+  onSaveMeasurements
+}: MemberBodyMeasurementsProps) => {
   const { user } = useAuth();
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,16 +48,22 @@ const MemberBodyMeasurements = ({ memberId, canAddMeasurements = true }: MemberB
   }, [memberId]);
 
   const handleSaveMeasurement = async (measurement: Partial<BodyMeasurement>) => {
-    if (!memberId) return;
+    if (!memberId && !onSaveMeasurements) return;
     
     try {
-      const savedMeasurement = await measurementService.saveMeasurement({
-        ...measurement,
-        memberId
-      });
-      
-      setMeasurements(prev => [savedMeasurement, ...prev]);
-      toast.success('Measurement saved successfully');
+      if (onSaveMeasurements) {
+        // If we have an external save function, use it
+        onSaveMeasurements(measurement);
+      } else {
+        // Otherwise use our regular save flow
+        const savedMeasurement = await measurementService.saveMeasurement({
+          ...measurement,
+          memberId: memberId as string
+        });
+        
+        setMeasurements(prev => [savedMeasurement, ...prev]);
+        toast.success('Measurement saved successfully');
+      }
       
       // Switch to the tracker tab after saving
       setActiveTab('tracker');
@@ -60,6 +73,9 @@ const MemberBodyMeasurements = ({ memberId, canAddMeasurements = true }: MemberB
       throw error;
     }
   };
+
+  // Use the provided currentUser or the one from useAuth
+  const effectiveUser = currentUser || user;
 
   return (
     <Card>
@@ -89,10 +105,10 @@ const MemberBodyMeasurements = ({ memberId, canAddMeasurements = true }: MemberB
           
           {canAddMeasurements && (
             <TabsContent value="add">
-              {user && (
+              {effectiveUser && (
                 <BodyMeasurementForm
                   memberId={memberId}
-                  currentUser={user}
+                  currentUser={effectiveUser}
                   onSave={handleSaveMeasurement}
                 />
               )}

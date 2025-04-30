@@ -65,7 +65,7 @@ export const useBodyMeasurements = (memberId?: string) => {
 
   const addMeasurement = async (measurement: Omit<BodyMeasurement, "id">) => {
     try {
-      const newMeasurement = await measurementService.addMeasurement(measurement);
+      const newMeasurement = await measurementService.saveMeasurement(measurement);
       setMeasurements(prev => [...prev, newMeasurement]);
       
       // Update latest measurement if this is newer
