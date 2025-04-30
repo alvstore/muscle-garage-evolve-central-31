@@ -1,104 +1,88 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { classService } from '@/services/classService';
-import { GymClass, ClassBooking } from '@/types/class';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from '@/hooks/use-branch';
+import { useState, useEffect } from 'react';
+
+interface Class {
+  id: string;
+  name: string;
+  description: string;
+  trainerId: string;
+  schedule: string;
+  capacity: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const useClasses = () => {
-  return useQuery({
-    queryKey: ['classes'],
-    queryFn: classService.getClasses,
-  });
-};
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
 
-export const useClassDetails = (classId: string) => {
-  return useQuery({
-    queryKey: ['classes', classId],
-    queryFn: () => classService.getClassById(classId),
-    enabled: !!classId,
-  });
-};
-
-export const useClassBookings = (classId: string) => {
-  return useQuery({
-    queryKey: ['classes', classId, 'bookings'],
-    queryFn: () => classService.getClassBookings(classId),
-    enabled: !!classId,
-  });
-};
-
-export const useMemberBookings = (memberId: string) => {
-  return useQuery({
-    queryKey: ['members', memberId, 'bookings'],
-    queryFn: () => classService.getMemberBookings(memberId),
-    enabled: !!memberId,
-  });
-};
-
-export const useBookClass = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ classId, memberId }: { classId: string; memberId: string }) => 
-      classService.bookClass(classId, memberId),
-    onSuccess: (data, variables) => {
-      if (data) {
-        // Invalidate affected queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ['classes', variables.classId, 'bookings'] });
-        queryClient.invalidateQueries({ queryKey: ['members', variables.memberId, 'bookings'] });
-        queryClient.invalidateQueries({ queryKey: ['classes', variables.classId] });
-        queryClient.invalidateQueries({ queryKey: ['classes'] }); // Refresh all classes to update enrolled count
+  useEffect(() => {
+    const fetchClasses = async () => {
+      if (!currentBranch?.id) {
+        setClasses([]);
+        setIsLoading(false);
+        return;
       }
-    },
-    onError: (error: any) => {
-      console.error('Booking error:', error);
-      
-      // Detailed error handling based on error type
-      const errorMessage = error?.response?.data?.message || 
-                        'Failed to book class. Please try again later.';
-      toast.error(errorMessage);
-    }
-  });
-};
 
-export const useCancelBooking = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (bookingId: string) => classService.cancelBooking(bookingId),
-    onSuccess: (data, bookingId) => {
-      if (data) {
-        // Invalidate all related queries
-        queryClient.invalidateQueries({ queryKey: ['classes'] });
-        queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      }
-    },
-    onError: (error: any) => {
-      console.error('Cancellation error:', error);
-      const errorMessage = error?.response?.data?.message || 
-                        'Failed to cancel booking. Please try again later.';
-      toast.error(errorMessage);
-    }
-  });
-};
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('branch_id', currentBranch.id);
 
-export const useMarkAttendance = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (bookingId: string) => classService.markAttendance(bookingId),
-    onSuccess: (data, bookingId) => {
-      if (data) {
-        // Invalidate all related queries
-        queryClient.invalidateQueries({ queryKey: ['classes'] });
-        queryClient.invalidateQueries({ queryKey: ['bookings'] });
+        if (error) throw error;
+
+        const formattedClasses = data?.map(c => ({
+          id: c.id,
+          name: c.name,
+          description: c.description || '',
+          trainerId: c.trainer_id,
+          schedule: c.recurrence || '',
+          capacity: c.capacity,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at
+        })) || [];
+
+        setClasses(formattedClasses);
+      } catch (err: any) {
+        console.error('Error fetching classes:', err);
+        setError(err);
+      } finally {
+        setIsLoading(false);
       }
-    },
-    onError: (error: any) => {
-      console.error('Attendance marking error:', error);
-      const errorMessage = error?.response?.data?.message || 
-                        'Failed to mark attendance. Please try again later.';
-      toast.error(errorMessage);
+    };
+
+    fetchClasses();
+
+    // Set up real-time subscription
+    if (currentBranch?.id) {
+      const channel = supabase
+        .channel('classes_changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'classes',
+          filter: `branch_id=eq.${currentBranch.id}`
+        }, () => {
+          fetchClasses();
+        })
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-  });
+  }, [currentBranch?.id]);
+
+  return {
+    classes,
+    isLoading,
+    error
+  };
 };
