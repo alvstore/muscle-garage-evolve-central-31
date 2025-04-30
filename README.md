@@ -1,5 +1,5 @@
 
-# Muscle Garage Evolve - Gym CRM Backend
+# Muscle Garaage - Gym CRM Backend
 
 A comprehensive backend system for managing gym operations with multi-branch architecture, role-based access control, and integrated fitness management.
 
@@ -324,4 +324,4 @@ This project is proprietary and confidential. Unauthorized copying, transfer, or
 
 ## 📞 Support
 
-For support, please contact support@muscle-garage-evolve.com
+For support, please contact rajat.lekhari@hotmail.com
