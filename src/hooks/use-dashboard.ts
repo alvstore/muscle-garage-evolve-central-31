@@ -145,7 +145,7 @@ export const useDashboard = () => {
       sevenDaysAgo.setDate(today.getDate() - 7);
       
       let attendanceQuery = supabase
-        .from('attendance')
+        .from('member_attendance') // Changed from 'attendance' to 'member_attendance'
         .select('check_in_time')
         .gte('check_in_time', sevenDaysAgo.toISOString());
       
