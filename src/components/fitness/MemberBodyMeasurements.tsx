@@ -1,64 +1,104 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import BodyMeasurementForm from "./BodyMeasurementForm";
-import { BodyMeasurement } from "@/types/measurements";
-import { User } from "@/types";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProgressTracker from './ProgressTracker';
+import MeasurementHistory from './MeasurementHistory';
+import BodyMeasurementForm from './BodyMeasurementForm';
+import { BodyMeasurement } from '@/types/measurements';
+import { measurementService } from '@/services/measurementService';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 
 interface MemberBodyMeasurementsProps {
-  memberId?: string;
-  currentUser: User;
-  onSaveMeasurements: (measurements: Partial<BodyMeasurement>) => void;
+  memberId: string;
+  canAddMeasurements?: boolean;
 }
 
-const MemberBodyMeasurements: React.FC<MemberBodyMeasurementsProps> = ({ 
-  memberId, 
-  currentUser,
-  onSaveMeasurements
-}) => {
-  const [includeMeasurements, setIncludeMeasurements] = useState(false);
+const MemberBodyMeasurements = ({ memberId, canAddMeasurements = true }: MemberBodyMeasurementsProps) => {
+  const { user } = useAuth();
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('tracker');
 
-  const handleSaveMeasurements = (measurements: Partial<BodyMeasurement>) => {
-    onSaveMeasurements(measurements);
+  useEffect(() => {
+    const fetchMeasurements = async () => {
+      if (!memberId) return;
+      
+      setIsLoading(true);
+      try {
+        const result = await measurementService.getMeasurementHistory(memberId);
+        setMeasurements(result);
+      } catch (error) {
+        console.error('Error fetching measurements:', error);
+        toast.error('Failed to load measurement data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchMeasurements();
+  }, [memberId]);
+
+  const handleSaveMeasurement = async (measurement: Partial<BodyMeasurement>) => {
+    if (!memberId) return;
+    
+    try {
+      const savedMeasurement = await measurementService.saveMeasurement({
+        ...measurement,
+        memberId
+      });
+      
+      setMeasurements(prev => [savedMeasurement, ...prev]);
+      toast.success('Measurement saved successfully');
+      
+      // Switch to the tracker tab after saving
+      setActiveTab('tracker');
+    } catch (error) {
+      console.error('Error saving measurement:', error);
+      toast.error('Failed to save measurement');
+      throw error;
+    }
   };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Initial Body Measurements</CardTitle>
-            <CardDescription>
-              Include initial body measurements for this member
-            </CardDescription>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="include-measurements" className="cursor-pointer">
-              Include Measurements
-            </Label>
-            <Switch
-              id="include-measurements"
-              checked={includeMeasurements}
-              onCheckedChange={setIncludeMeasurements}
-            />
-          </div>
-        </div>
+        <CardTitle>Body Measurements</CardTitle>
       </CardHeader>
       <CardContent>
-        {includeMeasurements ? (
-          <BodyMeasurementForm
-            memberId={memberId}
-            currentUser={currentUser}
-            onSave={handleSaveMeasurements}
-          />
-        ) : (
-          <div className="text-center py-6 text-muted-foreground">
-            <p>Toggle the switch above to include initial body measurements.</p>
-            <p className="text-sm mt-1">You can add measurements later from the member's profile.</p>
-          </div>
-        )}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="tracker">Progress Tracker</TabsTrigger>
+            <TabsTrigger value="history">Measurement History</TabsTrigger>
+            {canAddMeasurements && (
+              <TabsTrigger value="add">Add Measurement</TabsTrigger>
+            )}
+          </TabsList>
+          
+          <TabsContent value="tracker">
+            <ProgressTracker measurements={measurements} />
+          </TabsContent>
+          
+          <TabsContent value="history">
+            <MeasurementHistory 
+              measurements={measurements}
+              isLoading={isLoading}
+            />
+          </TabsContent>
+          
+          {canAddMeasurements && (
+            <TabsContent value="add">
+              {user && (
+                <BodyMeasurementForm
+                  memberId={memberId}
+                  currentUser={user}
+                  onSave={handleSaveMeasurement}
+                />
+              )}
+            </TabsContent>
+          )}
+        </Tabs>
       </CardContent>
     </Card>
   );

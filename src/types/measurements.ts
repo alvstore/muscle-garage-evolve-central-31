@@ -30,3 +30,14 @@ export interface BodyMeasurement {
     name: string;
   };
 }
+
+export interface PTPlan {
+  id: string;
+  trainerId: string;
+  memberId: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  name: string;
+  description?: string;
+}

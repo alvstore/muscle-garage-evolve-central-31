@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
@@ -156,6 +155,76 @@ export const useRevenueStats = (dateRange: DateRange) => {
     };
 
     fetchRevenueStats();
+  }, [dateRange, currentBranch?.id]);
+
+  return { data, isLoading };
+};
+
+export const useMembershipStats = (dateRange: DateRange) => {
+  const [data, setData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
+
+  useEffect(() => {
+    const fetchMembershipStats = async () => {
+      setIsLoading(true);
+      try {
+        // Format dates for query
+        const fromDate = startOfDay(dateRange.from).toISOString();
+        const toDate = endOfDay(dateRange.to).toISOString();
+
+        // Query membership data - we'll count different membership statuses
+        let query = supabase
+          .from('member_memberships')
+          .select('status, count')
+          .gte('created_at', fromDate)
+          .lte('created_at', toDate)
+          .group('status');
+          
+        // Apply branch filter if available
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
+
+        const { data: membershipData, error } = await query;
+
+        if (error) throw error;
+
+        // Define our categories for the chart
+        const categories = ['New', 'Renewed', 'Expired', 'Cancelled'];
+        const counts = [0, 0, 0, 0]; // Initialize with zeros
+        
+        // Fill in actual data where available
+        if (membershipData && membershipData.length > 0) {
+          membershipData.forEach(record => {
+            switch (record.status.toLowerCase()) {
+              case 'active':
+                // Assuming new memberships
+                counts[0] = parseInt(record.count);
+                break;
+              case 'renewed':
+                counts[1] = parseInt(record.count);
+                break;
+              case 'expired':
+                counts[2] = parseInt(record.count);
+                break;
+              case 'cancelled':
+                counts[3] = parseInt(record.count);
+                break;
+            }
+          });
+        }
+        
+        setData({ labels: categories, data: counts });
+      } catch (error) {
+        console.error('Error fetching membership stats:', error);
+        setData({ labels: ['New', 'Renewed', 'Expired', 'Cancelled'], data: [0, 0, 0, 0] });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMembershipStats();
   }, [dateRange, currentBranch?.id]);
 
   return { data, isLoading };
