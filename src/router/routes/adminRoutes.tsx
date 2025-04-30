@@ -18,7 +18,7 @@ export const adminRoutes: RouteObject[] = [
     element: <SystemBackupPage />
   },
   {
-    path: '/admin/trainer-management',
+    path: '/trainer-management',
     element: <TrainerPage />
   },
   {
