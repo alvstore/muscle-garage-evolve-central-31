@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarIcon, Clock, Users } from 'lucide-react';
-import { useClasses } from '@/hooks/use-classes'; // Updated import path
+import { useClasses } from '@/hooks/use-classes'; 
 import { formatDistanceToNow } from 'date-fns';
 import { useBranch } from '@/hooks/use-branch';
 
@@ -96,7 +96,7 @@ const ClassesSection = () => {
           const formattedBookings = bookingData.map(booking => ({
             id: booking.id,
             memberId: booking.member_id,
-            memberName: booking.members?.name || 'Unknown Member', // Fixed property access
+            memberName: booking.members?.name || 'Unknown Member', 
             memberAvatar: '',
             status: booking.status as "attended" | "confirmed" | "missed",
             classId: booking.class_id,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,7 @@ interface TrainerClassListProps {
 
 const TrainerClassList: React.FC<TrainerClassListProps> = ({ trainerId }) => {
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
-  const { data: classes, isLoading } = useClasses();
+  const { classes, isLoading } = useClasses();
   
   // Filter classes for this trainer only
   const trainerClasses = classes?.filter(c => c.trainerId === trainerId) || [];

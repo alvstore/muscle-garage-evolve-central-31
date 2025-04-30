@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,7 @@ interface TrainerBookingListProps {
 }
 
 const TrainerBookingList: React.FC<TrainerBookingListProps> = ({ trainerId }) => {
-  const { data: classes, isLoading } = useClasses();
+  const { classes, isLoading } = useClasses();
   
   if (isLoading) {
     return (
