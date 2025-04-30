@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FitnessPlanManager from '@/components/fitness/FitnessPlanManager';
@@ -10,7 +9,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Member } from '@/types';
 import { WorkoutPlan } from '@/types/workout';
-import { useBodyMeasurements } from '@/hooks/use-body-measurements';
 
 const FitnessPlanPage = () => {
   const { user } = useAuth();
@@ -27,9 +25,6 @@ const FitnessPlanPage = () => {
     membershipStatus: "active",
     status: "active" // Add the required status property
   };
-
-  // Get the member's body measurements
-  const { measurements } = useBodyMeasurements(mockMember.id);
   
   // Mock trainer ID - in a real app, this would come from the user's assigned trainer
   const mockTrainerId = 'trainer-123';
@@ -74,7 +69,7 @@ const FitnessPlanPage = () => {
         </TabsContent>
         
         <TabsContent value="progress" className="mt-6">
-          <ProgressTracker measurements={measurements} member={mockMember} />
+          <ProgressTracker member={mockMember} />
         </TabsContent>
         
         {canManagePlans && (

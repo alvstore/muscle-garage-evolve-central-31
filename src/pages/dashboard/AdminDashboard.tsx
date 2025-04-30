@@ -20,6 +20,9 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [upcomingRenewals, setUpcomingRenewals] = useState([]);
+  const [upcomingClasses, setUpcomingClasses] = useState([]);
   
   const { isSuperAdmin } = usePermissions();
   const { currentBranch } = useBranch();
@@ -135,7 +138,7 @@ const AdminDashboard = () => {
           ) : (
             <>
               <AttendanceSection data={dashboardData.attendanceTrend || []} />
-              <RenewalsSection renewals={[]} /> {/* We'll fetch renewals separately */}
+              <RenewalsSection renewals={upcomingRenewals} />
             </>
           )}
         </div>

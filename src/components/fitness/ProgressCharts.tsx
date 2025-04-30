@@ -1,182 +1,208 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  LineChart, 
-  Line, 
-  CartesianGrid, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
-import { format, subDays } from 'date-fns';
-import { BodyMeasurement, PROGRESS_TIMEFRAMES } from '@/types/measurements';
-import { Loader2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BodyMeasurement, PROGRESS_TIMEFRAMES, ProgressTimeframe } from '@/types/measurements';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface ProgressChartsProps {
+export interface ProgressChartsProps {
   measurements: BodyMeasurement[];
-  timeframe: string;
-  onTimeframeChange: (timeframe: string) => void;
+  timeframe: ProgressTimeframe['value'];
+  onTimeframeChange: (timeframe: ProgressTimeframe['value']) => void;
   isLoading: boolean;
 }
 
-const ProgressCharts = ({ 
+const ProgressCharts: React.FC<ProgressChartsProps> = ({
   measurements,
   timeframe,
   onTimeframeChange,
   isLoading
-}: ProgressChartsProps) => {
-  const [metricType, setMetricType] = useState('weight');
-
-  const getFilteredData = () => {
-    if (measurements.length === 0) return [];
-
-    // Apply timeframe filter
-    let filteredData = [...measurements];
+}) => {
+  // Filter measurements by timeframe
+  const filteredMeasurements = React.useMemo(() => {
+    if (timeframe === 'all') return [...measurements].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
     const now = new Date();
+    let cutoffDate = new Date();
     
     switch (timeframe) {
-      case '7d':
-        filteredData = measurements.filter(m => new Date(m.date) >= subDays(now, 7));
+      case '7days':
+        cutoffDate.setDate(now.getDate() - 7);
         break;
-      case '30d':
-        filteredData = measurements.filter(m => new Date(m.date) >= subDays(now, 30));
+      case '30days':
+        cutoffDate.setDate(now.getDate() - 30);
         break;
-      case '90d':
-        filteredData = measurements.filter(m => new Date(m.date) >= subDays(now, 90));
+      case '3months':
+        cutoffDate.setMonth(now.getMonth() - 3);
         break;
-      case '6m':
-        filteredData = measurements.filter(m => new Date(m.date) >= subDays(now, 180));
+      case '6months':
+        cutoffDate.setMonth(now.getMonth() - 6);
         break;
-      case '1y':
-        filteredData = measurements.filter(m => new Date(m.date) >= subDays(now, 365));
-        break;
-      default:
-        // 'all' - no filtering needed
+      case '1year':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
     }
-
-    // Sort by date ascending
-    return filteredData.sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+    
+    return [...measurements]
+      .filter(m => new Date(m.date) >= cutoffDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [measurements, timeframe]);
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-40" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-[400px] w-full" />
+      </div>
     );
-  };
-
-  const filteredData = getFilteredData();
-
-  // Format data for Recharts
-  const chartData = filteredData.map(measurement => ({
-    date: format(new Date(measurement.date), 'MMM dd'),
-    weight: measurement.weight || null,
-    bodyFat: measurement.body_fat_percentage || null,
-    chest: measurement.chest || null,
-    waist: measurement.waist || null,
-    hips: measurement.hips || null
-  }));
-
-  const getMetricLabel = () => {
-    switch (metricType) {
-      case 'weight': return 'Weight (kg)';
-      case 'bodyFat': return 'Body Fat (%)';
-      case 'chest': return 'Chest (cm)';
-      case 'waist': return 'Waist (cm)';
-      case 'hips': return 'Hips (cm)';
-      default: return '';
-    }
-  };
-
-  const getLineColor = () => {
-    switch (metricType) {
-      case 'weight': return '#8884d8';
-      case 'bodyFat': return '#82ca9d';
-      case 'chest': return '#ffc658';
-      case 'waist': return '#ff8042';
-      case 'hips': return '#0088fe';
-      default: return '#8884d8';
-    }
-  };
-
+  }
+  
+  if (measurements.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">No measurement data available.</p>
+        <p className="text-sm text-muted-foreground mt-1">Add your first measurement to start tracking progress.</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-medium">Progress Analytics</h3>
-          <p className="text-muted-foreground">Track changes over time</p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={timeframe} onValueChange={onTimeframeChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              {PROGRESS_TIMEFRAMES.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={metricType} onValueChange={setMetricType}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Select metric" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weight">Weight</SelectItem>
-              <SelectItem value="bodyFat">Body Fat</SelectItem>
-              <SelectItem value="chest">Chest</SelectItem>
-              <SelectItem value="waist">Waist</SelectItem>
-              <SelectItem value="hips">Hips</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Progress Trends</h3>
+        <Select
+          value={timeframe}
+          onValueChange={(value) => onTimeframeChange(value as ProgressTimeframe['value'])}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            {PROGRESS_TIMEFRAMES.map((tf) => (
+              <SelectItem key={tf.value} value={tf.value}>
+                {tf.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{getMetricLabel()} Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : chartData.length > 1 ? (
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+      
+      <Tabs defaultValue="weight">
+        <TabsList className="mb-4">
+          <TabsTrigger value="weight">Weight / BMI</TabsTrigger>
+          <TabsTrigger value="measurements">Body Measurements</TabsTrigger>
+          <TabsTrigger value="bodyFat">Body Fat</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="weight">
+          <Card>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={filteredMeasurements.map(m => ({
+                    date: formatDate(m.date),
+                    weight: m.weight,
+                    bmi: m.bmi
+                  }))}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="weight"
+                    name="Weight (kg)"
+                    stroke="#8884d8"
+                    activeDot={{ r: 8 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="bmi"
+                    name="BMI"
+                    stroke="#82ca9d"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="measurements">
+          <Card>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={filteredMeasurements.map(m => ({
+                    date: formatDate(m.date),
+                    chest: m.chest,
+                    waist: m.waist,
+                    hips: m.hips,
+                    biceps: m.biceps,
+                    thighs: m.thighs
+                  }))}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey={metricType} 
-                    stroke={getLineColor()} 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
+                  <Line type="monotone" dataKey="chest" name="Chest (cm)" stroke="#8884d8" />
+                  <Line type="monotone" dataKey="waist" name="Waist (cm)" stroke="#82ca9d" />
+                  <Line type="monotone" dataKey="hips" name="Hips (cm)" stroke="#ffc658" />
+                  <Line type="monotone" dataKey="biceps" name="Biceps (cm)" stroke="#ff8042" />
+                  <Line type="monotone" dataKey="thighs" name="Thighs (cm)" stroke="#0088fe" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="bodyFat">
+          <Card>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={filteredMeasurements.map(m => ({
+                    date: formatDate(m.date),
+                    bodyFat: m.bodyFat
+                  }))}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="bodyFat"
+                    name="Body Fat %"
+                    stroke="#ff8042"
                     activeDot={{ r: 8 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              {chartData.length === 0 ? (
-                <p>No measurement data available for the selected timeframe.</p>
-              ) : (
-                <p>Need at least two measurements to display a chart.</p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

@@ -67,9 +67,7 @@ const MemberBodyMeasurementCard: React.FC<MemberBodyMeasurementCardProps> = ({
             </div>
             <div className="p-2 bg-accent/20 rounded">
               <div className="text-sm text-muted-foreground">Body Fat</div>
-              <div className="font-semibold">
-                {latestMeasurement.body_fat_percentage ? `${latestMeasurement.body_fat_percentage}%` : "N/A"}
-              </div>
+              <div className="font-semibold">{latestMeasurement.bodyFat ? `${latestMeasurement.bodyFat}%` : "N/A"}</div>
             </div>
           </div>
         ) : (

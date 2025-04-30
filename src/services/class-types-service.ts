@@ -1,83 +1,81 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ClassType } from '@/types/classes';
+import { ClassType, adaptClassTypeFromDB } from '@/types/classes';
+
+// Mock data for class types since this table doesn't exist in the database yet
+const mockClassTypes: ClassType[] = [
+  {
+    id: "1",
+    name: "Yoga",
+    description: "Traditional yoga classes focusing on balance, flexibility, and mental well-being",
+    is_active: true,
+    branch_id: "branch-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "2",
+    name: "HIIT",
+    description: "High Intensity Interval Training to build strength and burn calories",
+    is_active: true,
+    branch_id: "branch-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "3",
+    name: "Pilates",
+    description: "Core strengthening and stability exercises",
+    is_active: true,
+    branch_id: "branch-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const classTypesService = {
-  // Fetch class types from the database
+  // Simulates fetching class types
   async fetchClassTypes(): Promise<ClassType[]> {
-    try {
-      const { data, error } = await supabase
-        .from('class_types')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching class types:", error);
-      throw error;
-    }
+    // In a real implementation, we would fetch from the database
+    // For now, we're returning mock data
+    return mockClassTypes;
   },
 
-  // Create a class type
+  // Simulates creating a class type
   async createClassType(classType: Partial<ClassType>): Promise<ClassType> {
-    try {
-      const { data, error } = await supabase
-        .from('class_types')
-        .insert({
-          name: classType.name,
-          description: classType.description,
-          is_active: classType.is_active,
-          branch_id: classType.branch_id
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error("Error creating class type:", error);
-      throw error;
-    }
+    const newClassType: ClassType = {
+      id: Date.now().toString(),
+      name: classType.name || '',
+      description: classType.description,
+      is_active: classType.is_active !== undefined ? classType.is_active : true,
+      branch_id: classType.branch_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // In a real implementation, we would save to the database
+    return newClassType;
   },
 
-  // Update a class type
+  // Simulates updating a class type
   async updateClassType(id: string, updates: Partial<ClassType>): Promise<ClassType> {
-    try {
-      const { data, error } = await supabase
-        .from('class_types')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          is_active: updates.is_active
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error("Error updating class type:", error);
-      throw error;
-    }
+    // In a real implementation, we would update in the database
+    const updatedClassType: ClassType = {
+      id,
+      name: updates.name || '',
+      description: updates.description,
+      is_active: updates.is_active !== undefined ? updates.is_active : true,
+      branch_id: updates.branch_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    return updatedClassType;
   },
 
-  // Delete a class type
+  // Simulates deleting a class type
   async deleteClassType(id: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('class_types')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error deleting class type:", error);
-      throw error;
-    }
+    // In a real implementation, we would delete from the database
+    console.log(`Class type ${id} deleted (simulated)`);
   }
 };

@@ -379,44 +379,6 @@ export type Database = {
           },
         ]
       }
-      class_types: {
-        Row: {
-          branch_id: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          branch_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          branch_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "class_types_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       classes: {
         Row: {
           branch_id: string | null
@@ -830,69 +792,6 @@ export type Database = {
           },
           {
             foreignKeyName: "feedback_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fitness_progress: {
-        Row: {
-          body_fat_percentage: number | null
-          branch_id: string | null
-          created_at: string | null
-          created_by: string | null
-          date: string | null
-          diet_adherence: number | null
-          id: string
-          member_id: string | null
-          muscle_mass: number | null
-          notes: string | null
-          updated_at: string | null
-          weight: number | null
-          workout_completion: number | null
-        }
-        Insert: {
-          body_fat_percentage?: number | null
-          branch_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          date?: string | null
-          diet_adherence?: number | null
-          id?: string
-          member_id?: string | null
-          muscle_mass?: number | null
-          notes?: string | null
-          updated_at?: string | null
-          weight?: number | null
-          workout_completion?: number | null
-        }
-        Update: {
-          body_fat_percentage?: number | null
-          branch_id?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          date?: string | null
-          diet_adherence?: number | null
-          id?: string
-          member_id?: string | null
-          muscle_mass?: number | null
-          notes?: string | null
-          updated_at?: string | null
-          weight?: number | null
-          workout_completion?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fitness_progress_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fitness_progress_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
@@ -2062,7 +1961,6 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
-          is_active: boolean | null
           is_branch_manager: boolean | null
           phone: string | null
           role: string
@@ -2083,7 +1981,6 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
-          is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
           role?: string
@@ -2104,7 +2001,6 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
-          is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
           role?: string

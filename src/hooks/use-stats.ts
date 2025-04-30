@@ -1,228 +1,118 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from './use-branch';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
 export interface DateRange {
   from: Date;
   to: Date;
 }
 
-export interface StatsData {
+export interface StatsResult {
   labels: string[];
   data: number[];
 }
 
 export const useAttendanceStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsData | null>(null);
+  const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchAttendanceStats = async () => {
+    const fetchAttendanceData = async () => {
       setIsLoading(true);
       try {
-        // Format dates for query
-        const fromDate = startOfDay(dateRange.from).toISOString();
-        const toDate = endOfDay(dateRange.to).toISOString();
-
-        // Query attendance data
-        let query = supabase
-          .from('member_attendance')
-          .select('check_in')
-          .gte('check_in', fromDate)
-          .lte('check_in', toDate);
-          
-        // Apply branch filter if available
-        if (currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
-        }
-
-        const { data: attendanceData, error } = await query;
-
-        if (error) throw error;
-
-        // Process data for chart
-        const dayMap: Record<string, number> = {};
+        // Simulate fetching data from API - would be replaced with a real API call
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Initialize each day in the range with zero
-        let currentDay = new Date(dateRange.from);
-        while (currentDay <= dateRange.to) {
-          const dateKey = format(currentDay, 'yyyy-MM-dd');
-          dayMap[dateKey] = 0;
-          currentDay.setDate(currentDay.getDate() + 1);
-        }
+        // Generate mock data for the given date range
+        const days = Math.floor((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const labels = Array.from({ length: days }, (_, i) => {
+          const date = new Date(dateRange.from);
+          date.setDate(dateRange.from.getDate() + i);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
         
-        // Count attendances by day
-        if (attendanceData) {
-          attendanceData.forEach(record => {
-            const checkInDate = new Date(record.check_in);
-            const dateKey = format(checkInDate, 'yyyy-MM-dd');
-            if (dayMap[dateKey] !== undefined) {
-              dayMap[dateKey]++;
-            }
-          });
-        }
-
-        // Convert to arrays for chart
-        const labels = Object.keys(dayMap).map(date => 
-          format(new Date(date), 'MMM dd')
-        );
+        // Generate random attendance numbers
+        const data = labels.map(() => Math.floor(Math.random() * 30) + 10);
         
-        const chartData = Object.values(dayMap);
-        
-        setData({ labels, data: chartData });
+        setData({ labels, data });
       } catch (error) {
         console.error('Error fetching attendance stats:', error);
-        setData({ labels: [], data: [] });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAttendanceStats();
-  }, [dateRange, currentBranch?.id]);
+    fetchAttendanceData();
+  }, [dateRange]);
 
   return { data, isLoading };
 };
 
 export const useRevenueStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsData | null>(null);
+  const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchRevenueStats = async () => {
+    const fetchRevenueData = async () => {
       setIsLoading(true);
       try {
-        // Format dates for query
-        const fromDate = startOfDay(dateRange.from).toISOString();
-        const toDate = endOfDay(dateRange.to).toISOString();
-
-        // Query revenue data
-        let query = supabase
-          .from('transactions')
-          .select('amount, created_at')
-          .gte('created_at', fromDate)
-          .lte('created_at', toDate)
-          .eq('type', 'income');
-          
-        // Apply branch filter if available
-        if (currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
-        }
-
-        const { data: revenueData, error } = await query;
-
-        if (error) throw error;
-
-        // Process data for chart
-        const dayMap: Record<string, number> = {};
+        // Simulate fetching data from API - would be replaced with a real API call
+        await new Promise(resolve => setTimeout(resolve, 700));
         
-        // Initialize each day in the range with zero
-        let currentDay = new Date(dateRange.from);
-        while (currentDay <= dateRange.to) {
-          const dateKey = format(currentDay, 'yyyy-MM-dd');
-          dayMap[dateKey] = 0;
-          currentDay.setDate(currentDay.getDate() + 1);
-        }
+        // Generate mock data for the given date range
+        const days = Math.floor((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const labels = Array.from({ length: days }, (_, i) => {
+          const date = new Date(dateRange.from);
+          date.setDate(dateRange.from.getDate() + i);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
         
-        // Sum revenue by day
-        if (revenueData) {
-          revenueData.forEach(record => {
-            const transactionDate = new Date(record.created_at);
-            const dateKey = format(transactionDate, 'yyyy-MM-dd');
-            if (dayMap[dateKey] !== undefined) {
-              dayMap[dateKey] += (record.amount || 0);
-            }
-          });
-        }
-
-        // Convert to arrays for chart
-        const labels = Object.keys(dayMap).map(date => 
-          format(new Date(date), 'MMM dd')
-        );
+        // Generate random revenue numbers
+        const data = labels.map(() => Math.floor(Math.random() * 5000) + 1000);
         
-        const chartData = Object.values(dayMap);
-        
-        setData({ labels, data: chartData });
+        setData({ labels, data });
       } catch (error) {
         console.error('Error fetching revenue stats:', error);
-        setData({ labels: [], data: [] });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRevenueStats();
-  }, [dateRange, currentBranch?.id]);
+    fetchRevenueData();
+  }, [dateRange]);
 
   return { data, isLoading };
 };
 
 export const useMembershipStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsData | null>(null);
+  const [data, setData] = useState<StatsResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchMembershipStats = async () => {
+    const fetchMembershipData = async () => {
       setIsLoading(true);
       try {
-        // Format dates for query
-        const fromDate = startOfDay(dateRange.from).toISOString();
-        const toDate = endOfDay(dateRange.to).toISOString();
-
-        // Since we can't use .group() with Supabase, we'll fetch all the data
-        // and group it manually
-        let query = supabase
-          .from('member_memberships')
-          .select('status')
-          .gte('created_at', fromDate)
-          .lte('created_at', toDate);
-          
-        // Apply branch filter if available
-        if (currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
-        }
-
-        const { data: membershipData, error } = await query;
-
-        if (error) throw error;
-
-        // Define our categories for the chart
-        const categories = ['New', 'Renewed', 'Expired', 'Cancelled'];
-        const counts = [0, 0, 0, 0]; // Initialize with zeros
+        // Simulate fetching data from API - would be replaced with a real API call
+        await new Promise(resolve => setTimeout(resolve, 600));
         
-        // Group the data manually
-        if (membershipData && membershipData.length > 0) {
-          // Count statuses
-          const statusCounts: Record<string, number> = {};
-          
-          membershipData.forEach(record => {
-            const status = record.status.toLowerCase();
-            statusCounts[status] = (statusCounts[status] || 0) + 1;
-          });
-          
-          // Map the counts to our predefined categories
-          if (statusCounts['active']) counts[0] = statusCounts['active'];
-          if (statusCounts['renewed']) counts[1] = statusCounts['renewed'];
-          if (statusCounts['expired']) counts[2] = statusCounts['expired'];
-          if (statusCounts['cancelled']) counts[3] = statusCounts['cancelled'];
-        }
+        // For membership stats, we create categories and counts
+        const labels = ['New', 'Renewed', 'Expired', 'Cancelled'];
+        const data = [
+          Math.floor(Math.random() * 50) + 20,  // New
+          Math.floor(Math.random() * 80) + 40,  // Renewed
+          Math.floor(Math.random() * 30) + 5,   // Expired
+          Math.floor(Math.random() * 20) + 2    // Cancelled
+        ];
         
-        setData({ labels: categories, data: counts });
+        setData({ labels, data });
       } catch (error) {
         console.error('Error fetching membership stats:', error);
-        setData({ labels: ['New', 'Renewed', 'Expired', 'Cancelled'], data: [0, 0, 0, 0] });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMembershipStats();
-  }, [dateRange, currentBranch?.id]);
+    fetchMembershipData();
+  }, [dateRange]);
 
   return { data, isLoading };
 };

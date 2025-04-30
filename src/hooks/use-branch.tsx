@@ -3,19 +3,22 @@ import { useState, useEffect, useContext, createContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Branch } from '@/types/branch';
+
+interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
 
 interface BranchContextType {
   branches: Branch[];
   currentBranch: Branch | null;
   setCurrentBranchId: (id: string) => void;
   loading: boolean;
-  isLoading: boolean; // Adding for compatibility
   refreshBranches: () => Promise<void>;
-  fetchBranches: () => Promise<void>; // Adding for compatibility
-  switchBranch: (id: string) => void; // Adding for compatibility
-  createBranch: (branch: Omit<Branch, 'id'>) => Promise<Branch | null>;
-  updateBranch: (id: string, branch: Partial<Branch>) => Promise<Branch | null>;
 }
 
 const BranchContext = createContext<BranchContextType>({
@@ -23,12 +26,7 @@ const BranchContext = createContext<BranchContextType>({
   currentBranch: null,
   setCurrentBranchId: () => {},
   loading: true,
-  isLoading: true,
   refreshBranches: async () => {},
-  fetchBranches: async () => {},
-  switchBranch: () => {},
-  createBranch: async () => null,
-  updateBranch: async () => null,
 });
 
 export const BranchProvider = ({ children }: { children: ReactNode }) => {
@@ -88,80 +86,14 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const switchBranch = (branchId: string) => {
-    setCurrentBranchId(branchId);
-  };
-
   const refreshBranches = async () => {
     setLoading(true);
     await fetchBranches();
   };
 
-  const createBranch = async (branch: Omit<Branch, 'id'>): Promise<Branch | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .insert(branch)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const newBranches = [...branches, data as Branch];
-      setBranches(newBranches);
-      toast.success("Branch created successfully");
-      return data as Branch;
-    } catch (err: any) {
-      console.error("Error creating branch:", err);
-      toast.error(err.message || "Failed to create branch");
-      return null;
-    }
-  };
-
-  const updateBranch = async (id: string, branch: Partial<Branch>): Promise<Branch | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .update(branch)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const updatedBranches = branches.map(b => 
-        b.id === id ? { ...b, ...data } as Branch : b
-      );
-      setBranches(updatedBranches);
-      
-      // Update current branch if it's the one being updated
-      if (currentBranch?.id === id) {
-        setCurrentBranch({ ...currentBranch, ...data } as Branch);
-      }
-      
-      toast.success("Branch updated successfully");
-      return data as Branch;
-    } catch (err: any) {
-      console.error("Error updating branch:", err);
-      toast.error(err.message || "Failed to update branch");
-      return null;
-    }
-  };
-
   return (
     <BranchContext.Provider
-      value={{ 
-        branches, 
-        currentBranch, 
-        setCurrentBranchId,
-        loading,
-        isLoading: loading,
-        refreshBranches,
-        fetchBranches,
-        switchBranch,
-        createBranch,
-        updateBranch
-      }}
+      value={{ branches, currentBranch, setCurrentBranchId, loading, refreshBranches }}
     >
       {children}
     </BranchContext.Provider>

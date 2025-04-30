@@ -1,35 +1,60 @@
 
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
+import TrainerDashboard from '@/pages/dashboard/TrainerDashboard';
+import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
+import TrainerPage from '@/pages/trainers/TrainerPage';
+import TrainerMemberProgressPage from '@/pages/trainers/TrainerMemberProgressPage';
+import TrainerAllocationPage from '@/pages/trainers/TrainerAllocationPage';
+import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-
-// Trainer pages
-const TrainerListPage = () => <div>Trainer List Page</div>;
-const TrainerProfilePage = () => <div>Trainer Profile Page</div>;
-const TrainerSchedulePage = () => <div>Trainer Schedule Page</div>;
 
 export const trainerRoutes: RouteObject[] = [
   {
-    path: '/trainers',
+    path: '/trainer/dashboard',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <TrainerListPage />
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerDashboard />
       </PrivateRoute>
     )
   },
   {
-    path: '/trainers/:id',
+    path: '/trainer/classes',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <TrainerProfilePage />
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerClassesPage />
       </PrivateRoute>
     )
   },
   {
-    path: '/trainers/schedule',
+    path: '/trainer/members',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <TrainerSchedulePage />
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerMemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainer/allocation',
+    element: (
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerAllocationPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainer/announcements',
+    element: (
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerAnnouncementPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/trainer/management',
+    element: (
+      <PrivateRoute allowedRoles={['trainer']}>
+        <TrainerPage />
       </PrivateRoute>
     )
   }

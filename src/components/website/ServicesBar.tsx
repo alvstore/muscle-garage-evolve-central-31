@@ -1,42 +1,86 @@
 
-import React from 'react';
-import { Dumbbell, Users, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { ArrowRight } from "lucide-react";
 
 const ServicesBar = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
   const services = [
     {
-      icon: <Dumbbell className="h-6 w-6" />,
-      title: 'Modern Equipment',
-      description: 'State-of-the-art fitness equipment for all your training needs'
+      icon: "🏋️",
+      title: "Personal Training",
+      description: "One-on-one sessions with expert trainers",
+      link: "#",
     },
     {
-      icon: <Dumbbell className="h-6 w-6" />,
-      title: 'Various Classes',
-      description: 'Wide range of fitness classes led by expert trainers'
+      icon: "⚡",
+      title: "HIIT Classes",
+      description: "High intensity interval training for maximum results",
+      link: "#",
     },
     {
-      icon: <Users className="h-6 w-6" />,
-      title: 'Expert Trainers',
-      description: 'Professional trainers to guide your fitness journey'
+      icon: "🧘",
+      title: "Yoga & Flexibility",
+      description: "Improve strength, balance and mindfulness",
+      link: "#",
     },
     {
-      icon: <Clock className="h-6 w-6" />,
-      title: 'Flexible Hours',
-      description: 'Open early until late to fit your busy schedule'
-    }
+      icon: "💪",
+      title: "Strength Training",
+      description: "Build muscle and increase your strength",
+      link: "#",
+    },
   ];
 
   return (
-    <section className="bg-gym-black py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <section
+      ref={sectionRef}
+      className={`py-16 bg-gym-gray-800 ${
+        isVisible ? "animate-fade-in" : "opacity-0"
+      }`}
+    >
+      <div className="gym-container">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service, index) => (
-            <div key={index} className="flex flex-col items-center text-center">
-              <div className="bg-gym-yellow p-4 rounded-full mb-4">
-                {service.icon}
-              </div>
-              <h3 className="text-gym-yellow text-xl font-bold mb-2">{service.title}</h3>
-              <p className="text-white">{service.description}</p>
+            <div
+              key={index}
+              className="bg-gym-gray-900 p-6 rounded-lg hover:bg-gym-yellow hover:text-gym-black transition-colors duration-300 group"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <div className="text-4xl mb-4">{service.icon}</div>
+              <h3 className="text-xl font-bold mb-2">{service.title}</h3>
+              <p className="text-gray-300 group-hover:text-gym-black mb-4">
+                {service.description}
+              </p>
+              <a
+                href={service.link}
+                className="inline-flex items-center text-gym-yellow group-hover:text-gym-black"
+              >
+                Learn More <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
             </div>
           ))}
         </div>

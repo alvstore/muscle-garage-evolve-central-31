@@ -1,102 +1,142 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
 import { toast } from 'sonner';
-import { User } from '@/types/user';
 
-export interface StaffMember extends User {
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
   branch_id?: string;
+  phone?: string;
   department?: string;
   is_active?: boolean;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  is_branch_manager?: boolean;
 }
 
-export const useStaff = (role?: 'staff' | 'trainer' | 'admin') => {
+export const useStaff = () => {
   const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch staff');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Only fetch if we have a branch
-      if (!currentBranch?.id) {
-        setStaff([]);
-        return;
-      }
-
-      let query = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('branch_id', currentBranch.id)
-        .eq('is_active', true);
-        
-      // Filter by role if provided
-      if (role) {
-        query = query.eq('role', role);
-      } else {
-        // Get staff and trainers by default
-        query = query.in('role', ['staff', 'trainer']);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) throw fetchError;
+        .in('role', ['admin', 'staff', 'trainer'])
+        .eq('branch_id', currentBranch.id);
       
-      setStaff(data as StaffMember[] || []);
-    } catch (err) {
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        const formattedStaff: StaffMember[] = data.map(item => ({
+          id: item.id,
+          name: item.full_name || '',
+          email: item.email || '',
+          role: item.role,
+          branch_id: item.branch_id,
+          phone: item.phone,
+          department: item.department,
+          is_active: true,
+          user_id: item.id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_branch_manager: item.is_branch_manager || false
+        }));
+        
+        setStaff(formattedStaff);
+      }
+    } catch (err: any) {
       console.error('Error fetching staff:', err);
-      setError('Failed to load staff');
-      toast.error('Failed to load staff');
+      setError(err);
+      toast.error('Failed to fetch staff members');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentBranch?.id]);
+
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchStaff();
+    }
+  }, [fetchStaff, currentBranch?.id]);
+
+  const createStaffMember = async (userData: { email: string, password: string, name: string, role: string }): Promise<{ error?: string, success?: boolean }> => {
+    try {
+      setIsLoading(true);
+      
+      if (!currentBranch?.id) {
+        throw new Error('No branch selected, cannot create staff member');
+      }
+      
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.name,
+            role: userData.role
+          }
+        }
+      });
+      
+      if (authError) {
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
+      
+      // Update profile with additional information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: userData.name,
+          role: userData.role,
+          branch_id: currentBranch.id
+        })
+        .eq('id', authData.user.id);
+      
+      if (profileError) {
+        throw profileError;
+      }
+      
+      await fetchStaff();
+      toast.success('Staff member created successfully');
+      
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error creating staff member:', err);
+      toast.error('Failed to create staff member');
+      return { error: err.message || 'An error occurred' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!currentBranch?.id) {
-      setStaff([]);
-      setIsLoading(false);
-      return;
-    }
-    
-    fetchStaff();
-    
-    // Set up real-time subscription for profiles table
-    const channel = supabase
-      .channel('staff_realtime')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'profiles',
-          filter: `branch_id=eq.${currentBranch.id}`
-        }, 
-        (payload) => {
-          console.log('Staff data changed:', payload);
-          fetchStaff();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch, role]);
-
   return {
     staff,
     isLoading,
     error,
-    refetch: fetchStaff
+    fetchStaff,
+    createStaffMember
   };
-};
-
-// Convenience hook for trainers only
-export const useTrainers = () => {
-  return useStaff('trainer');
 };

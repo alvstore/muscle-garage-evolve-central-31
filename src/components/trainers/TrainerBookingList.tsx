@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
 import { useClasses } from '@/hooks/use-classes';
-import { GymClass, ClassBooking, ClassDifficulty } from '@/types/class';
+import { GymClass, ClassBooking } from '@/types/class';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ interface TrainerBookingListProps {
 }
 
 const TrainerBookingList: React.FC<TrainerBookingListProps> = ({ trainerId }) => {
-  const { classes, isLoading } = useClasses();
+  const { data: classes, isLoading } = useClasses();
   
   if (isLoading) {
     return (
@@ -47,13 +48,8 @@ const TrainerBookingList: React.FC<TrainerBookingListProps> = ({ trainerId }) =>
     );
   }
   
-  // Filter classes for this trainer only and convert to GymClass
-  const trainerClasses = classes?.filter(c => c.trainerId === trainerId).map(c => ({
-    ...c,
-    difficulty: c.difficulty as ClassDifficulty, // Ensure proper type casting
-    trainer: c.trainer || '',
-    trainerName: c.trainerName || 'Unassigned'
-  })) || [];
+  // Filter classes for this trainer only
+  const trainerClasses = classes?.filter(c => c.trainerId === trainerId) || [];
   
   // Get bookings for all the trainer's classes
   const allBookings: {

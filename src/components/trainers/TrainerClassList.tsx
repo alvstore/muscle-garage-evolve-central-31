@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Users, MapPin, MoreVertical } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { GymClass, ClassDifficulty } from '@/types/class';
+import { GymClass } from '@/types/class';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClasses } from '@/hooks/use-classes';
 import { 
@@ -22,15 +23,10 @@ interface TrainerClassListProps {
 
 const TrainerClassList: React.FC<TrainerClassListProps> = ({ trainerId }) => {
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
-  const { classes, isLoading } = useClasses();
+  const { data: classes, isLoading } = useClasses();
   
-  // Filter classes for this trainer only and convert to GymClass type
-  const trainerClasses = classes?.filter(c => c.trainerId === trainerId).map(c => ({
-    ...c,
-    difficulty: c.difficulty as ClassDifficulty, // Ensure it's properly typed
-    trainer: c.trainer || '',
-    trainerName: c.trainerName || 'Unassigned'
-  })) || [];
+  // Filter classes for this trainer only
+  const trainerClasses = classes?.filter(c => c.trainerId === trainerId) || [];
   
   const handleViewDetails = (classItem: GymClass) => {
     setSelectedClass(classItem);
