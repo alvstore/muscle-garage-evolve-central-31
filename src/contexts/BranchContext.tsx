@@ -36,7 +36,7 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { createBranch, updateBranch } = useBranchOperations();
+  const { createBranch: createBranchOp, updateBranch: updateBranchOp } = useBranchOperations();
 
   const fetchBranches = async () => {
     if (!user) {
@@ -73,6 +73,41 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       return true;
     }
     return false;
+  };
+
+  const createBranch = async (branchData: Omit<Branch, 'id'>): Promise<Branch | null> => {
+    try {
+      const newBranch = await createBranchOp(branchData);
+      if (newBranch) {
+        setBranches([...branches, newBranch]);
+      }
+      return newBranch;
+    } catch (err: any) {
+      console.error('Error creating branch:', err);
+      setError('Failed to create branch');
+      toast.error('Failed to create branch');
+      return null;
+    }
+  };
+
+  const updateBranch = async (id: string, branchData: Partial<Branch>): Promise<Branch | null> => {
+    try {
+      const updatedBranch = await updateBranchOp(id, branchData);
+      if (updatedBranch) {
+        setBranches(branches.map(b => b.id === id ? updatedBranch : b));
+        
+        // Update currentBranch if it's the one being updated
+        if (currentBranch?.id === id) {
+          setCurrentBranch(updatedBranch);
+        }
+      }
+      return updatedBranch;
+    } catch (err: any) {
+      console.error('Error updating branch:', err);
+      setError('Failed to update branch');
+      toast.error('Failed to update branch');
+      return null;
+    }
   };
 
   useEffect(() => {

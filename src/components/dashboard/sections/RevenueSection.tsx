@@ -6,17 +6,19 @@ import { DollarSign, Loader2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/use-branch';
 
+interface RevenueData {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
 interface RevenueSectionProps {
-  data?: Array<{
-    month: string;
-    revenue: number;
-    expenses: number;
-    profit: number;
-  }>;
+  data?: RevenueData[];
 }
 
 const RevenueSection = ({ data: initialData }: RevenueSectionProps) => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(!initialData);
   const { currentBranch } = useBranch();
 
@@ -68,7 +70,7 @@ const RevenueSection = ({ data: initialData }: RevenueSectionProps) => {
         if (expenseResult.error) throw expenseResult.error;
         
         // Process the data to group by month
-        const months: {[key: string]: {revenue: number, expenses: number, profit: number}} = {};
+        const months: {[key: string]: RevenueData} = {};
         
         // Process income data
         (incomeResult.data || []).forEach(item => {

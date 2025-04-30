@@ -113,12 +113,12 @@ const ClassesSection = () => {
         
         // Process bookings
         if (bookingResult.data && bookingResult.data.length > 0) {
-          const mappedBookings = bookingResult.data.map(booking => ({
+          const mappedBookings: ClassBooking[] = bookingResult.data.map(booking => ({
             id: booking.id,
             memberId: booking.member_id,
             memberName: booking.members?.name || 'Unknown Member',
             memberAvatar: '/placeholder.svg', // Use a placeholder or fetch member avatar
-            status: booking.attended ? "attended" : "confirmed",
+            status: booking.attended ? "attended" as const : "confirmed" as const,
             classId: booking.class_id,
             bookingDate: booking.created_at,
             createdAt: booking.created_at,
