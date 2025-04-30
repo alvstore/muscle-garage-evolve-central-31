@@ -88,7 +88,7 @@ export const useDashboard = () => {
         .from('profiles')
         .select('id')
         .eq('role', 'member')
-        .in('status', ['active', 'trial']);
+        .in('state', ['active', 'trial']);
       
       if (branchFilter && user.role !== 'admin') {
         activeMemberQuery = activeMemberQuery.eq('branch_id', branchFilter);
@@ -120,7 +120,7 @@ export const useDashboard = () => {
       // Fetch member status distribution
       let memberStatusQuery = supabase
         .from('profiles')
-        .select('status')
+        .select('state')
         .eq('role', 'member');
       
       if (branchFilter && user.role !== 'admin') {
@@ -134,9 +134,9 @@ export const useDashboard = () => {
       }
       
       const membersByStatus = {
-        active: memberStatusData?.filter(m => m.status === 'active').length || 0,
-        inactive: memberStatusData?.filter(m => m.status === 'inactive').length || 0,
-        expired: memberStatusData?.filter(m => m.status === 'expired').length || 0
+        active: memberStatusData?.filter(m => m.state === 'active').length || 0,
+        inactive: memberStatusData?.filter(m => m.state === 'inactive').length || 0,
+        expired: memberStatusData?.filter(m => m.state === 'expired').length || 0
       };
       
       // Fetch attendance trend (last 7 days)
