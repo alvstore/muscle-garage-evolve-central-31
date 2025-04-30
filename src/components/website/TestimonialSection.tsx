@@ -7,21 +7,21 @@ const TestimonialSection = () => {
     {
       name: 'Sarah Johnson',
       role: 'Member since 2020',
-      quote: 'This gym completely changed my life. The trainers are exceptional and the facilities are always clean and well-maintained.',
+      quote: "This gym completely changed my life. The trainers are exceptional and the facilities are always clean and well-maintained.",
       image: '/images/testimonial1.jpg',
       rating: 5
     },
     {
       name: 'Michael Chen',
       role: 'Member since 2019',
-      quote: 'I've been to many gyms, but this one stands out for its community feel and professional staff. Worth every penny!',
+      quote: "I've been to many gyms, but this one stands out for its community feel and professional staff. Worth every penny!",
       image: '/images/testimonial2.jpg',
       rating: 5
     },
     {
       name: 'Emily Rodriguez',
       role: 'Member since 2021',
-      quote: 'The classes here are amazing! I've lost 30 pounds and gained so much confidence. Highly recommend!',
+      quote: "The classes here are amazing! I've lost 30 pounds and gained so much confidence. Highly recommend!",
       image: '/images/testimonial3.jpg',
       rating: 4
     }
