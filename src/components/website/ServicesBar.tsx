@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { GymDumbbell, Dumbbell, Users, Clock } from 'lucide-react';
+import { Dumbbell, Users, Clock } from 'lucide-react';
 
 const ServicesBar = () => {
   const services = [
     {
-      icon: <GymDumbbell className="h-6 w-6" />,
+      icon: <Dumbbell className="h-6 w-6" />,
       title: 'Modern Equipment',
       description: 'State-of-the-art fitness equipment for all your training needs'
     },

@@ -1,17 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import ClassAttendanceWidget from '@/components/dashboard/ClassAttendanceWidget';
-import UpcomingClasses from '@/components/dashboard/UpcomingClasses';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import { CalendarIcon, Clock, Users } from 'lucide-react';
+import { useClasses } from '@/hooks/data/use-classes';
+import { formatDistanceToNow } from 'date-fns';
 import { useBranch } from '@/hooks/use-branch';
 
 interface ClassBooking {
   id: string;
   memberId: string;
   memberName: string;
-  memberAvatar?: string;
+  memberAvatar: string;
   status: "attended" | "confirmed" | "missed";
   classId: string;
   bookingDate: string;
@@ -19,220 +22,213 @@ interface ClassBooking {
   updatedAt: string;
 }
 
-interface ClassItem {
+interface Class {
   id: string;
   name: string;
-  time: string;
-  trainer: string;
+  description: string;
+  trainerId: string;
+  schedule: string;
+  capacity: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ClassesSection = () => {
+  const [selectedTab, setSelectedTab] = useState('upcoming');
+  const [showAllClasses, setShowAllClasses] = useState(false);
+
   const { currentBranch } = useBranch();
-  const [classBookings, setClassBookings] = useState<ClassBooking[]>([]);
-  const [upcomingClasses, setUpcomingClasses] = useState<ClassItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [classId, setClassId] = useState<string>('');
-  const [className, setClassName] = useState('');
-  const [classTime, setClassTime] = useState('');
+  const { classes, isLoading, error } = useClasses();
+  const [bookings, setBookings] = useState<ClassBooking[]>([]);
+  const [trainers, setTrainers<{id: string, name: string}[]>([]);
+  
+  const toggleClassesVisibility = () => {
+    setShowAllClasses(!showAllClasses);
+  };
 
   useEffect(() => {
     const fetchClassData = async () => {
-      setLoading(true);
+      if (!currentBranch?.id) return;
+
       try {
-        // Get current date/time
-        const now = new Date();
+        // Fetch trainers
+        const { data: trainerData, error: trainerError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('role', 'trainer');
+
+        if (trainerError) throw trainerError;
         
-        // Get classes happening in the next 48 hours
-        const upcoming = new Date();
-        upcoming.setHours(upcoming.getHours() + 48);
-        
-        // Fetch upcoming classes
-        let classQuery = supabase
-          .from('class_schedules')
-          .select(`
-            id,
-            name,
-            start_time,
-            end_time,
-            profiles:trainer_id (full_name)
-          `)
-          .gte('start_time', now.toISOString())
-          .lte('start_time', upcoming.toISOString())
-          .order('start_time', { ascending: true })
-          .limit(5);
-        
-        // Fetch class bookings for today's classes
-        let bookingsQuery = supabase
+        if (trainerData) {
+          const formattedTrainers = trainerData.map(trainer => ({
+            id: trainer.id,
+            name: trainer.full_name || 'Unknown'
+          }));
+          setTrainers(formattedTrainers);
+        }
+
+        // Fetch class bookings
+        const { data: bookingData, error: bookingError } = await supabase
           .from('class_bookings')
           .select(`
-            id,
+            id, 
             member_id,
             class_id,
             status,
-            attended,
             created_at,
             updated_at,
-            members:member_id (name, id)
+            members:member_id (
+              id, name, email
+            )
           `)
-          .eq('status', 'confirmed')
-          .order('created_at', { ascending: false })
+          .eq('branch_id', currentBranch.id)
           .limit(10);
+
+        if (bookingError) throw bookingError;
         
-        // Apply branch filter if available
-        if (currentBranch?.id) {
-          classQuery = classQuery.eq('branch_id', currentBranch.id);
-        }
-        
-        // Execute queries in parallel
-        const [classResult, bookingResult] = await Promise.all([
-          classQuery,
-          bookingsQuery
-        ]);
-        
-        if (classResult.error) throw classResult.error;
-        if (bookingResult.error) throw bookingResult.error;
-        
-        // Process upcoming classes
-        if (classResult.data && classResult.data.length > 0) {
-          const mappedClasses = classResult.data.map(cls => ({
-            id: cls.id,
-            name: cls.name,
-            time: `${formatDate(cls.start_time)} - ${formatTime(cls.end_time)}`,
-            trainer: cls.profiles?.full_name || 'Unassigned'
-          }));
-          
-          setUpcomingClasses(mappedClasses);
-          
-          // Use the first class for the attendance widget
-          if (classResult.data[0]) {
-            setClassId(classResult.data[0].id);
-            setClassName(classResult.data[0].name);
-            setClassTime(`${formatDate(classResult.data[0].start_time)} - ${formatTime(classResult.data[0].end_time)}`);
-          }
-        }
-        
-        // Process bookings
-        if (bookingResult.data && bookingResult.data.length > 0) {
-          const mappedBookings: ClassBooking[] = bookingResult.data.map(booking => ({
+        if (bookingData) {
+          const formattedBookings = bookingData.map(booking => ({
             id: booking.id,
             memberId: booking.member_id,
             memberName: booking.members?.name || 'Unknown Member',
-            memberAvatar: '/placeholder.svg', // Use a placeholder or fetch member avatar
-            status: booking.attended ? "attended" as const : "confirmed" as const,
+            memberAvatar: '',
+            status: booking.status as "attended" | "confirmed" | "missed",
             classId: booking.class_id,
             bookingDate: booking.created_at,
             createdAt: booking.created_at,
             updatedAt: booking.updated_at
           }));
           
-          setClassBookings(mappedBookings);
+          setBookings(formattedBookings);
         }
-      } catch (error) {
-        console.error('Error fetching class data:', error);
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching class data:', err);
       }
     };
-    
-    fetchClassData();
-  }, [currentBranch?.id]);
 
-  const handleMarkAttendance = async (bookingId: string, status: "attended" | "missed") => {
-    try {
-      const { error } = await supabase
-        .from('class_bookings')
-        .update({ 
-          attended: status === 'attended',
-          status: status === 'attended' ? 'confirmed' : 'missed'
-        })
-        .eq('id', bookingId);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setClassBookings(prevBookings => 
-        prevBookings.map(booking => {
-          if (booking.id === bookingId) {
-            return {
-              ...booking,
-              status: status
-            };
-          }
-          return booking;
-        })
-      );
-    } catch (error) {
-      console.error('Error updating attendance:', error);
+    fetchClassData();
+  }, [currentBranch]);
+
+  const renderBookingStatus = (status: "attended" | "confirmed" | "missed") => {
+    switch (status) {
+      case "attended":
+        return <Badge variant="outline">Attended</Badge>;
+      case "confirmed":
+        return <Badge>Confirmed</Badge>;
+      case "missed":
+        return <Badge variant="destructive">Missed</Badge>;
+      default:
+        return <Badge>Unknown</Badge>;
     }
-  };
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  };
-  
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric',
-      minute: '2-digit'
-    });
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Class Attendance</CardTitle>
-          <CardDescription>
-            Attendance for upcoming classes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : classBookings.length > 0 && classId ? (
-            <ClassAttendanceWidget 
-              classId={classId}
-              className={className}
-              time={classTime}
-              bookings={classBookings}
-              onMarkAttendance={handleMarkAttendance}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No bookings found for upcoming classes.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="col-span-3">
-        <CardHeader>
-          <CardTitle>Upcoming Classes</CardTitle>
-          <CardDescription>
-            Classes scheduled in the next 48 hours
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <UpcomingClasses classes={upcomingClasses} />
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Classes & Bookings</CardTitle>
+          <Button size="sm">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            Schedule Class
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Tabs defaultValue={selectedTab} className="space-y-4" onValueChange={setSelectedTab}>
+          <TabsList>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="bookings">Recent Bookings</TabsTrigger>
+            <TabsTrigger value="all">All Classes</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upcoming" className="space-y-2">
+            {isLoading ? (
+              <p>Loading upcoming classes...</p>
+            ) : classes && classes.length > 0 ? (
+              classes.slice(0, showAllClasses ? classes.length : 3).map((cls) => (
+                <div key={cls.id} className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium">{cls.name}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      <Clock className="mr-1 inline-block h-4 w-4" />
+                      {cls.schedule}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">
+                    <Users className="mr-1 h-4 w-4" />
+                    {cls.capacity}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <p>No upcoming classes scheduled.</p>
+            )}
+            {classes && classes.length > 3 && (
+              <Button variant="link" onClick={toggleClassesVisibility}>
+                {showAllClasses ? "Show Less" : "Show All"}
+              </Button>
+            )}
+          </TabsContent>
+          <TabsContent value="bookings" className="space-y-2">
+            {isLoading ? (
+              <p>Loading recent bookings...</p>
+            ) : bookings && bookings.length > 0 ? (
+              bookings.map((booking) => (
+                <div key={booking.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
+                      <AvatarFallback>{booking.memberName.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-sm font-medium">{booking.memberName}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Booked{" "}
+                        {formatDistanceToNow(new Date(booking.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  {renderBookingStatus(booking.status)}
+                </div>
+              ))
+            ) : (
+              <p>No recent bookings found.</p>
+            )}
+          </TabsContent>
+          <TabsContent value="all">
+            {isLoading ? (
+              <p>Loading all classes...</p>
+            ) : classes && classes.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {classes.map((cls) => {
+                  const trainer = trainers.find(t => t.id === cls.trainerId);
+                  return (
+                    <Card key={cls.id}>
+                      <CardHeader>
+                        <CardTitle>{cls.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">{cls.description}</p>
+                        <p className="text-xs mt-2">
+                          Trainer: {trainer?.name || 'N/A'}
+                        </p>
+                        <p className="text-xs">Schedule: {cls.schedule}</p>
+                        <Badge variant="secondary" className="mt-2">
+                          Capacity: {cls.capacity}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>No classes found.</p>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
