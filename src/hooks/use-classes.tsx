@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/use-branch';
 import { useState, useEffect } from 'react';
-import { ClassBooking, GymClass } from '@/types/class';
+import { ClassBooking, GymClass, ClassDifficulty } from '@/types/class';
 import { toast } from 'sonner';
 
+// Interface to match with the GymClass type from @/types/class.ts
 interface Class {
   id: string;
   name: string;
@@ -22,7 +23,7 @@ interface Class {
   trainer: string;
   trainerName?: string;
   location?: string;
-  difficulty: string;
+  difficulty: ClassDifficulty;  // Use ClassDifficulty type instead of string
   type: string;
   recurring?: boolean;
 }
@@ -65,8 +66,8 @@ export const useClasses = () => {
           enrolled: c.enrolled || 0,
           trainer: c.trainer_id || '',
           location: c.location || 'Main Gym',
-          difficulty: 'all', // Default value
-          type: 'regular', // Default value
+          difficulty: (c.difficulty || 'all') as ClassDifficulty, // Cast to ClassDifficulty
+          type: c.type || 'regular',
           recurring: c.recurrence ? true : false
         })) || [];
 
@@ -139,9 +140,9 @@ export const useClassBookings = (classId: string) => {
           id: booking.id,
           classId: booking.class_id,
           memberId: booking.member_id,
-          memberName: booking.members?.name || 'Unknown',
+          memberName: booking.members ? booking.members.name : 'Unknown',
           memberAvatar: '', // No avatar field in the data, set to empty
-          status: booking.status as BookingStatus,
+          status: booking.status as "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show",
           bookingDate: booking.created_at,
           createdAt: booking.created_at,
           updatedAt: booking.updated_at,
@@ -220,7 +221,7 @@ export const useBookClass = () => {
           id: data.id,
           classId: data.class_id,
           memberId: data.member_id,
-          memberName: data.members?.name || 'Unknown',
+          memberName: data.members ? data.members.name : 'Unknown',
           memberAvatar: '',
           bookingDate: data.created_at,
           status: data.status as BookingStatus,
