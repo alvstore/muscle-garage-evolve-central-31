@@ -136,18 +136,22 @@ export const useClassBookings = (classId: string) => {
         if (error) throw error;
         
         // Format the bookings to match the expected structure
-        const formattedBookings = data?.map(booking => ({
-          id: booking.id,
-          classId: booking.class_id,
-          memberId: booking.member_id,
-          memberName: booking.members ? booking.members.name : 'Unknown',
-          memberAvatar: '', // No avatar field in the data, set to empty
-          status: booking.status as "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show",
-          bookingDate: booking.created_at,
-          createdAt: booking.created_at,
-          updatedAt: booking.updated_at,
-          attendanceTime: booking.attended ? booking.updated_at : undefined
-        })) || [];
+        const formattedBookings = data?.map(booking => {
+          // Fix the type issue by correctly accessing the members object
+          const memberObj = booking.members as any;
+          return {
+            id: booking.id,
+            classId: booking.class_id,
+            memberId: booking.member_id,
+            memberName: memberObj ? memberObj.name || 'Unknown' : 'Unknown',
+            memberAvatar: '', // No avatar field in the data, set to empty
+            status: booking.status as "pending" | "confirmed" | "cancelled" | "attended" | "missed" | "booked" | "no-show",
+            bookingDate: booking.created_at,
+            createdAt: booking.created_at,
+            updatedAt: booking.updated_at,
+            attendanceTime: booking.attended ? booking.updated_at : undefined
+          };
+        }) || [];
         
         return formattedBookings;
       } catch (err) {
@@ -216,12 +220,15 @@ export const useBookClass = () => {
           .update({ enrolled: classData.enrolled + 1 })
           .eq('id', classId);
         
+        // Fix the type issue by correctly accessing the members object
+        const memberObj = data.members as any;
+        
         // Format the response to match expected structure  
         const booking: ClassBooking = {
           id: data.id,
           classId: data.class_id,
           memberId: data.member_id,
-          memberName: data.members?.name || 'Unknown',
+          memberName: memberObj ? memberObj.name || 'Unknown' : 'Unknown',
           memberAvatar: '',
           bookingDate: data.created_at,
           status: data.status as BookingStatus,
