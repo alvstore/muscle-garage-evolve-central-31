@@ -15,6 +15,16 @@ interface Class {
   capacity: number;
   createdAt: string;
   updatedAt: string;
+  // Add missing properties needed by components
+  startTime: string;
+  endTime: string;
+  enrolled: number;
+  trainer: string;
+  trainerName?: string;
+  location?: string;
+  difficulty: string;
+  type: string;
+  recurring?: boolean;
 }
 
 export const useClasses = () => {
@@ -48,7 +58,16 @@ export const useClasses = () => {
           schedule: c.recurrence || '',
           capacity: c.capacity,
           createdAt: c.created_at,
-          updatedAt: c.updated_at
+          updatedAt: c.updated_at,
+          // Add missing properties
+          startTime: c.start_time,
+          endTime: c.end_time,
+          enrolled: c.enrolled || 0,
+          trainer: c.trainer_id || '',
+          location: c.location || 'Main Gym',
+          difficulty: 'all', // Default value
+          type: 'regular', // Default value
+          recurring: c.recurrence ? true : false
         })) || [];
 
         setClasses(formattedClasses);
@@ -89,7 +108,7 @@ export const useClasses = () => {
   };
 };
 
-// New hook to fetch class bookings
+// Hook to fetch class bookings
 export const useClassBookings = (classId: string) => {
   return useQuery({
     queryKey: ['classBookings', classId],
@@ -220,7 +239,7 @@ export const useBookClass = () => {
       queryClient.invalidateQueries({ queryKey: ['classBookings', variables.classId] });
       toast.success('Class booked successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || 'Failed to book class');
     }
   });
