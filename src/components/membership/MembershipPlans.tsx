@@ -16,7 +16,7 @@ const MembershipPlans = () => {
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
 
   const { data: plans, isLoading, error } = useSupabaseQuery<MembershipPlan[]>({
-    tableName: 'membership_plans',
+    tableName: 'memberships',
     select: '*',
     orderBy: {
       column: 'created_at',
@@ -37,7 +37,7 @@ const MembershipPlans = () => {
   const handleDeletePlan = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('membership_plans')
+        .from('memberships')
         .delete()
         .eq('id', id);
 
@@ -53,16 +53,32 @@ const MembershipPlans = () => {
     try {
       if (editingPlan) {
         const { error } = await supabase
-          .from('membership_plans')
-          .update(plan)
+          .from('memberships')
+          .update({
+            name: plan.name,
+            description: plan.description,
+            duration_days: plan.durationDays,
+            price: plan.price,
+            features: plan.benefits,
+            is_active: plan.status === 'active',
+            branch_id: plan.branchId
+          })
           .eq('id', plan.id);
 
         if (error) throw error;
         toast.success("Membership plan updated successfully");
       } else {
         const { error } = await supabase
-          .from('membership_plans')
-          .insert([plan]);
+          .from('memberships')
+          .insert([{
+            name: plan.name,
+            description: plan.description,
+            duration_days: plan.durationDays,
+            price: plan.price,
+            features: plan.benefits,
+            is_active: plan.status === 'active',
+            branch_id: plan.branchId
+          }]);
 
         if (error) throw error;
         toast.success("Membership plan created successfully");
