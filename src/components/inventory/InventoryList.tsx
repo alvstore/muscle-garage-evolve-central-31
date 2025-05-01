@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuTrigger 
@@ -22,7 +23,6 @@ import { InventoryItem, InventoryCategory, StockStatus } from "@/types/inventory
 import { format } from "date-fns";
 import InventoryForm from "./InventoryForm";
 import { toast } from "sonner";
-
 import { supabase } from '@/services/supabaseClient';
 import { useUserBranch } from '@/hooks/use-user-branch';
 
@@ -54,8 +54,6 @@ const InventoryList = () => {
     fetchInventory();
   }, [branchId]);
 
-const InventoryList = () => {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -161,28 +159,28 @@ const InventoryList = () => {
   const getStatusBadge = (status: StockStatus) => {
     switch(status) {
       case "in-stock":
-        return <Badge variant="outline" className="bg-green-100 text-green-800">In Stock</Badge>;
+        return <Badge variant="success" className="text-xs">In Stock</Badge>;
       case "low-stock":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Low Stock</Badge>;
+        return <Badge variant="warning" className="text-xs">Low Stock</Badge>;
       case "out-of-stock":
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Out of Stock</Badge>;
+        return <Badge variant="destructive" className="text-xs">Out of Stock</Badge>;
       case "expired":
-        return <Badge variant="outline" className="bg-purple-100 text-purple-800">Expired</Badge>;
+        return <Badge variant="destructive" className="text-xs">Expired</Badge>;
       default:
-        return null;
+        return <Badge variant="secondary" className="text-xs">Unknown</Badge>;
     }
   };
 
   const getCategoryBadge = (category: InventoryCategory) => {
     switch(category) {
       case "supplement":
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800">Supplement</Badge>;
+        return <Badge variant="outline" className="text-xs">Supplement</Badge>;
       case "equipment":
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800">Equipment</Badge>;
+        return <Badge variant="outline" className="text-xs">Equipment</Badge>;
       case "merchandise":
-        return <Badge variant="outline" className="bg-indigo-100 text-indigo-800">Merchandise</Badge>;
+        return <Badge variant="outline" className="text-xs">Merchandise</Badge>;
       default:
-        return null;
+        return <Badge variant="outline" className="text-xs">Other</Badge>;
     }
   };
 
@@ -193,181 +191,158 @@ const InventoryList = () => {
   ).length;
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {inventory.length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {inventory.reduce((sum, item) => sum + item.quantity, 0)} units in total
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${inventory.reduce((sum, item) => sum + (item.quantity * item.price), 0).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Cost: ${inventory.reduce((sum, item) => sum + (item.quantity * (item.costPrice || 0)), 0).toFixed(2)}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <AlertCircleIcon className="h-4 w-4 text-yellow-500" />
-              Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-500">
-              {alertsCount}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Items requiring attention
-            </p>
-          </CardContent>
-        </Card>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between space-x-4">
+        <h2 className="text-2xl font-semibold">Inventory Management</h2>
+        <Button
+          onClick={handleAddItem}
+          className="flex items-center space-x-2"
+        >
+          <PlusIcon className="h-4 w-4" />
+          <span>Add Item</span>
+        </Button>
       </div>
-    
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <PackageIcon className="h-5 w-5" />
-            Inventory Management
-          </CardTitle>
-          <Button onClick={handleAddItem} className="flex items-center gap-1">
-            <PlusIcon className="h-4 w-4" /> Add Item
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search by name or SKU..." 
-                className="pl-8" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="supplement">Supplements</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="merchandise">Merchandise</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="in-stock">In Stock</SelectItem>
-                  <SelectItem value="low-stock">Low Stock</SelectItem>
-                  <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInventory.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                      No inventory items found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredInventory.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="w-12 h-12 rounded-md overflow-hidden">
-                          <img 
-                            src={item.image || '/placeholder.svg'} 
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.sku}</TableCell>
-                      <TableCell>{getCategoryBadge(item.category)}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>${item.price.toFixed(2)}</TableCell>
-                      <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      <TableCell>{format(new Date(item.lastStockUpdate), "MMM d, yyyy")}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVerticalIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditItem(item)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Stock In</DropdownMenuItem>
-                            <DropdownMenuItem>Stock Out</DropdownMenuItem>
-                            <DropdownMenuItem>Transaction History</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
 
-      {isFormOpen && (
-        <InventoryForm
-          item={editingItem}
-          onSave={handleSaveItem}
-          onCancel={() => {
-            setIsFormOpen(false);
-            setEditingItem(null);
-          }}
-        />
-      )}
-    </>
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 max-w-[200px]">
+            <Label htmlFor="search">Search</Label>
+            <Input
+              id="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name or SKU..."
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex-1 max-w-[200px]">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={categoryFilter}
+              onValueChange={setCategoryFilter}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="supplement">Supplements</SelectItem>
+                <SelectItem value="equipment">Equipment</SelectItem>
+                <SelectItem value="merchandise">Merchandise</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex-1 max-w-[200px]">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="in-stock">In Stock</SelectItem>
+                <SelectItem value="low-stock">Low Stock</SelectItem>
+                <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="rounded-md border">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Inventory Items</h3>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={handleAddItem}
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add Item
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">SKU</th>
+                  <th className="px-4 py-2">Category</th>
+                  <th className="px-4 py-2">Quantity</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Price</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInventory
+                  .map((item) => (
+                    <tr key={item.id} className="border-b">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center space-x-3">
+                          <PackageIcon className="h-4 w-4 text-gray-500" />
+                          <span>{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">{item.sku}</td>
+                      <td className="px-4 py-2">
+                        {getCategoryBadge(item.category)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{item.quantity}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        {getStatusBadge(item.status)}
+                      </td>
+                      <td className="px-4 py-2">${item.price.toFixed(2)}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditItem(item)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(item)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {isFormOpen && (
+          <InventoryForm
+            item={editingItem}
+            onSave={handleSaveItem}
+            onClose={() => {
+              setIsFormOpen(false);
+              setEditingItem(null);
+            }}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
