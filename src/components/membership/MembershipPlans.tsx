@@ -8,53 +8,21 @@ import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { MembershipPlan } from "@/types/membership";
 import MembershipPlanForm from "./MembershipPlanForm";
 import { toast } from "sonner";
-
-const mockPlans: MembershipPlan[] = [
-  {
-    id: "basic-1m",
-    name: "Basic Monthly",
-    description: "Access to basic facilities with limited class bookings",
-    price: 1999,
-    durationDays: 30,
-    durationLabel: "1-month",
-    benefits: ["Access to gym equipment", "2 group classes per week", "Locker access"],
-    allowedClasses: "basic-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "premium-3m",
-    name: "Premium Quarterly",
-    description: "Full access to all facilities and classes with added benefits",
-    price: 5499,
-    durationDays: 90,
-    durationLabel: "3-month",
-    benefits: ["Full access to gym equipment", "Unlimited group classes", "Personal trainer (1 session/month)", "Nutrition consultation"],
-    allowedClasses: "group-only",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-  {
-    id: "platinum-12m",
-    name: "Platinum Annual",
-    description: "Our most comprehensive package with all premium features",
-    price: 18999,
-    durationDays: 365,
-    durationLabel: "12-month",
-    benefits: ["24/7 access to gym equipment", "Unlimited group & premium classes", "Personal trainer (2 sessions/month)", "Nutrition consultation", "Free supplements"],
-    allowedClasses: "all",
-    status: "active",
-    createdAt: new Date(2023, 0, 1).toISOString(),
-    updatedAt: new Date(2023, 0, 1).toISOString(),
-  },
-];
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { supabase } from "@/services/supabaseClient";
 
 const MembershipPlans = () => {
-  const [plans, setPlans] = useState<MembershipPlan[]>(mockPlans);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+
+  const { data: plans, isLoading, error } = useSupabaseQuery<MembershipPlan[]>({
+    tableName: 'membership_plans',
+    select: '*',
+    orderBy: {
+      column: 'created_at',
+      ascending: false
+    }
+  });
 
   const handleAddPlan = () => {
     setEditingPlan(null);
@@ -66,28 +34,36 @@ const MembershipPlans = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeletePlan = (id: string) => {
-    // In a real application, you would make an API call
-    setPlans(plans.filter(plan => plan.id !== id));
-    toast.success("Membership plan deleted successfully");
+  const handleDeletePlan = async (id: string) => {
+    try {
+      const result = await plans?.deleteItem(id);
+      if (result) {
+        toast.success("Membership plan deleted successfully");
+      }
+    } catch (err) {
+      toast.error("Failed to delete membership plan");
+      console.error("Error deleting plan:", err);
+    }
   };
 
-  const handleSavePlan = (plan: MembershipPlan) => {
-    // In a real application, you would make an API call
-    if (editingPlan) {
-      setPlans(plans.map(p => p.id === plan.id ? plan : p));
-      toast.success("Membership plan updated successfully");
-    } else {
-      const newPlan: MembershipPlan = {
-        ...plan,
-        id: `plan-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setPlans([...plans, newPlan]);
-      toast.success("Membership plan created successfully");
+  const handleSavePlan = async (plan: MembershipPlan) => {
+    try {
+      if (editingPlan) {
+        const result = await plans?.updateItem(plan.id, plan);
+        if (result) {
+          toast.success("Membership plan updated successfully");
+        }
+      } else {
+        const result = await plans?.addItem(plan);
+        if (result) {
+          toast.success("Membership plan created successfully");
+        }
+      }
+      setIsFormOpen(false);
+    } catch (err) {
+      toast.error("Failed to save membership plan");
+      console.error("Error saving plan:", err);
     }
-    setIsFormOpen(false);
   };
 
   const formatPrice = (price: number) => {
