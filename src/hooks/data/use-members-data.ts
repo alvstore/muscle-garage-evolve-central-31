@@ -47,7 +47,7 @@ export const useMembersData = () => {
       
       if (data) {
         // Map database fields to Member type
-        const mappedMembers = data.map(item => ({
+        const mappedMembers: Member[] = data.map(item => ({
           id: item.id,
           name: item.name,
           email: item.email,
@@ -57,7 +57,7 @@ export const useMembersData = () => {
           membershipId: item.membership_id,
           membershipStartDate: item.membership_start_date ? new Date(item.membership_start_date) : null,
           membershipEndDate: item.membership_end_date ? new Date(item.membership_end_date) : null,
-          role: 'member', // Default role
+          role: 'member' as const, // Use const assertion to ensure it's treated as a literal
           branchId: item.branch_id
         }));
         

@@ -122,7 +122,7 @@ const CreateReferralDialog = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={onClose}
+                  onClick={() => onClose()}
                   disabled={isSubmitting}
                 >
                   Cancel

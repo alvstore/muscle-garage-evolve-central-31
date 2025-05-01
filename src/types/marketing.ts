@@ -3,6 +3,7 @@ export type ReferralStatus = 'pending' | 'approved' | 'rejected' | 'rewarded';
 export type RewardStatus = 'pending' | 'processed' | 'failed';
 export type PromoCodeType = 'percentage' | 'fixed' | 'free-product' | 'membership_extension';
 export type PromoCodeStatus = 'active' | 'inactive' | 'expired' | 'scheduled';
+export type ReferralRewardType = 'discount' | 'points' | 'membership_extension';
 
 export interface Referral {
   id: string;
@@ -55,7 +56,7 @@ export interface ReferralProgram {
   id: string;
   name: string;
   description?: string;
-  reward_type: 'discount' | 'points' | 'membership_extension';
+  reward_type: ReferralRewardType;
   reward_value: number;
   start_date: string;
   end_date?: string;

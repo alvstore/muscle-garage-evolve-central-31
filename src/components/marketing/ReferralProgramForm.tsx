@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -15,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ReferralProgram } from "@/types/marketing";
+import { ReferralProgram, ReferralRewardType } from "@/types/marketing";
 import { stringToDate, dateToString } from "@/utils/date-utils";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -28,7 +27,7 @@ interface ReferralProgramFormProps {
 const programSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   description: z.string().min(10, { message: "Description must be at least 10 characters" }),
-  rewardType: z.enum(["fixed", "percentage", "product", "membership-extension"]),
+  rewardType: z.enum(["discount", "points", "membership_extension"]) as z.ZodType<ReferralRewardType>,
   rewardValue: z.coerce.number().positive({ message: "Reward value must be positive" }),
   extensionDays: z.coerce.number().nonnegative().optional(),
   isActive: z.boolean().default(true),
@@ -43,10 +42,10 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
     defaultValues: {
       name: program?.name || "",
       description: program?.description || "",
-      rewardType: (program?.rewardType || program?.reward_type || "fixed") as "fixed" | "percentage" | "product" | "membership-extension",
-      rewardValue: program?.rewardValue || program?.reward_value || 10,
+      rewardType: (program?.reward_type || "discount") as ReferralRewardType,
+      rewardValue: program?.reward_value || 10,
       extensionDays: program?.extensionDays || 0,
-      isActive: program?.isActive ?? program?.is_active ?? true,
+      isActive: program?.is_active ?? true,
       startDate: program?.startDate || stringToDate(program?.start_date) || new Date(),
       endDate: program?.endDate || stringToDate(program?.end_date),
       terms: program?.terms || "",
@@ -59,7 +58,7 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
         id: program?.id || uuidv4(),
         name: values.name,
         description: values.description,
-        reward_type: values.rewardType === "membership-extension" ? "membership_extension" : values.rewardType,
+        reward_type: values.rewardType,
         reward_value: values.rewardValue,
         extensionDays: values.extensionDays,
         is_active: values.isActive,
@@ -123,10 +122,9 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="fixed">Fixed Amount</SelectItem>
-                        <SelectItem value="percentage">Percentage Discount</SelectItem>
-                        <SelectItem value="product">Free Product</SelectItem>
-                        <SelectItem value="membership-extension">Membership Extension</SelectItem>
+                        <SelectItem value="discount">Discount</SelectItem>
+                        <SelectItem value="points">Points</SelectItem>
+                        <SelectItem value="membership_extension">Membership Extension</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -140,20 +138,18 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {form.watch("rewardType") === "percentage" 
-                        ? "Percentage Value" 
-                        : form.watch("rewardType") === "fixed" 
-                          ? "Fixed Amount" 
-                          : form.watch("rewardType") === "product"
-                            ? "Product Value"
-                            : "Reward Value"}
+                      {form.watch("rewardType") === "discount" 
+                        ? "Discount Percentage" 
+                        : form.watch("rewardType") === "points" 
+                          ? "Points Value" 
+                          : "Reward Value"}
                     </FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
                         min="0"
-                        step={form.watch("rewardType") === "percentage" ? "1" : "0.01"}
-                        placeholder={form.watch("rewardType") === "percentage" ? "10" : "10.00"}
+                        step={form.watch("rewardType") === "discount" ? "1" : "0.01"}
+                        placeholder={form.watch("rewardType") === "discount" ? "10" : "10.00"}
                         {...field}
                       />
                     </FormControl>
@@ -162,7 +158,7 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
                 )}
               />
               
-              {form.watch("rewardType") === "membership-extension" && (
+              {form.watch("rewardType") === "membership_extension" && (
                 <FormField
                   control={form.control}
                   name="extensionDays"
