@@ -36,10 +36,13 @@ const MembershipPlans = () => {
 
   const handleDeletePlan = async (id: string) => {
     try {
-      const result = await plans?.deleteItem(id);
-      if (result) {
-        toast.success("Membership plan deleted successfully");
-      }
+      const { error } = await supabase
+        .from('membership_plans')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success("Membership plan deleted successfully");
     } catch (err) {
       toast.error("Failed to delete membership plan");
       console.error("Error deleting plan:", err);
@@ -49,15 +52,20 @@ const MembershipPlans = () => {
   const handleSavePlan = async (plan: MembershipPlan) => {
     try {
       if (editingPlan) {
-        const result = await plans?.updateItem(plan.id, plan);
-        if (result) {
-          toast.success("Membership plan updated successfully");
-        }
+        const { error } = await supabase
+          .from('membership_plans')
+          .update(plan)
+          .eq('id', plan.id);
+
+        if (error) throw error;
+        toast.success("Membership plan updated successfully");
       } else {
-        const result = await plans?.addItem(plan);
-        if (result) {
-          toast.success("Membership plan created successfully");
-        }
+        const { error } = await supabase
+          .from('membership_plans')
+          .insert([plan]);
+
+        if (error) throw error;
+        toast.success("Membership plan created successfully");
       }
       setIsFormOpen(false);
     } catch (err) {
