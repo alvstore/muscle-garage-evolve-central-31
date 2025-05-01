@@ -63,14 +63,15 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
           : formattedBranches[0];
         
         if (primaryBranch) {
-          // When initializing, don't show a notification
-          if (!currentBranch) {
+          // When initializing or switching branches
+          if (!currentBranch || (primaryBranchId && primaryBranchId !== previousBranchIdRef.current)) {
             setCurrentBranch(primaryBranch);
             previousBranchIdRef.current = primaryBranch.id;
-          } else if (primaryBranchId && primaryBranchId !== previousBranchIdRef.current) {
-            setCurrentBranch(primaryBranch);
-            toast.success(`Switched to ${primaryBranch.name}`);
-            previousBranchIdRef.current = primaryBranch.id;
+            
+            // Only show toast if we're actually switching branches
+            if (currentBranch && primaryBranchId !== previousBranchIdRef.current) {
+              toast.success(`Switched to ${primaryBranch.name}`);
+            }
           }
         }
       }
@@ -114,8 +115,18 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       if (!branches.length) {
         fetchBranches();
       }
+      
+      // Check if we need to update the current branch based on user's branch_id
+      const userBranchId = user.branch_id;
+      if (userBranchId && previousBranchIdRef.current !== userBranchId) {
+        const branch = branches.find(b => b.id === userBranchId);
+        if (branch) {
+          setCurrentBranch(branch);
+          previousBranchIdRef.current = userBranchId;
+        }
+      }
     }
-  }, [user]);
+  }, [user, branches]);
 
   return (
     <BranchContext.Provider

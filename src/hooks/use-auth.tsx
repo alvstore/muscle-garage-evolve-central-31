@@ -65,7 +65,6 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
-        setIsLoadingProfile(true);
         try {
           const { data, error } = await supabase
             .from('profiles')
@@ -77,19 +76,23 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
             console.error('Error fetching profile:', error);
             toast.error('Failed to load user profile data');
           } else if (data) {
-            setProfile(data);
+            // Only update profile if it's different
+            if (!profile || JSON.stringify(profile) !== JSON.stringify(data)) {
+              setProfile(data);
+            }
           }
         } catch (err) {
           console.error('Profile fetch error:', err);
-        } finally {
-          setIsLoadingProfile(false);
         }
       } else {
         setProfile(null);
       }
     };
     
-    fetchUserProfile();
+    // Debounce the profile fetch to prevent rapid updates
+    const timer = setTimeout(fetchUserProfile, 500);
+    
+    return () => clearTimeout(timer);
   }, [user]);
 
   const updateUserBranch = async (branchId: string): Promise<boolean> => {
