@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PromoCode, PromoCodeType, PromoCodeStatus } from "@/types/marketing";
+import { stringToDate, dateToString } from "@/utils/date-utils";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ interface PromoCodeFormProps {
 const promoCodeSchema = z.object({
   code: z.string().min(3, { message: "Code must be at least 3 characters" }),
   description: z.string().min(5, { message: "Description must be at least 5 characters" }),
-  type: z.enum(["percentage", "fixed", "free-product"]),
+  type: z.enum(["percentage", "fixed", "free-product", "membership_extension"]),
   value: z.coerce.number().positive({ message: "Value must be positive" }),
   minPurchaseAmount: z.coerce.number().nonnegative().optional(),
   maxDiscountAmount: z.coerce.number().nonnegative().optional(),
@@ -44,15 +45,17 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
     defaultValues: {
       code: promoCode?.code || "",
       description: promoCode?.description || "",
-      type: promoCode?.type || "percentage",
+      type: (promoCode?.type as "percentage" | "fixed" | "free-product" | "membership_extension") || "percentage",
       value: promoCode?.value || 10,
       minPurchaseAmount: promoCode?.minPurchaseAmount || 0,
       maxDiscountAmount: promoCode?.maxDiscountAmount || 0,
-      startDate: promoCode?.startDate ? new Date(promoCode.startDate) : new Date(),
-      endDate: promoCode?.endDate ? new Date(promoCode.endDate) : new Date(new Date().setDate(new Date().getDate() + 30)),
+      startDate: promoCode?.startDate || stringToDate(promoCode?.start_date) || new Date(),
+      endDate: promoCode?.endDate || stringToDate(promoCode?.end_date) || new Date(new Date().setDate(new Date().getDate() + 30)),
       status: promoCode?.status || "active",
-      usageLimit: promoCode?.usageLimit || 0,
-      applicableToAll: promoCode?.applicableProducts === undefined || promoCode.applicableProducts.includes("all"),
+      usageLimit: promoCode?.usageLimit || promoCode?.usage_limit || 0,
+      applicableToAll: promoCode?.applicableProducts === undefined || 
+                       promoCode.applicableProducts?.includes("all") || 
+                       promoCode.applicable_products?.includes("all"),
     },
   });
 
@@ -66,16 +69,20 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
         value: values.value,
         minPurchaseAmount: values.minPurchaseAmount && values.minPurchaseAmount > 0 ? values.minPurchaseAmount : undefined,
         maxDiscountAmount: values.maxDiscountAmount && values.maxDiscountAmount > 0 ? values.maxDiscountAmount : undefined,
-        startDate: values.startDate.toISOString(),
-        endDate: values.endDate.toISOString(),
+        start_date: dateToString(values.startDate) || new Date().toISOString(),
+        end_date: dateToString(values.endDate) || new Date().toISOString(),
         status: values.status as PromoCodeStatus,
-        usageLimit: values.usageLimit && values.usageLimit > 0 ? values.usageLimit : undefined,
-        currentUsage: promoCode?.currentUsage || 0,
-        applicableProducts: values.applicableToAll ? ["all"] : promoCode?.applicableProducts || [],
-        applicableMemberships: promoCode?.applicableMemberships || ["all"],
+        usage_limit: values.usageLimit && values.usageLimit > 0 ? values.usageLimit : undefined,
+        current_usage: promoCode?.current_usage || 0,
+        applicable_products: values.applicableToAll ? ["all"] : promoCode?.applicable_products || [],
+        applicable_memberships: promoCode?.applicable_memberships || ["all"],
         createdBy: promoCode?.createdBy || "current-user-id",
         createdAt: promoCode?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        // UI properties
+        startDate: values.startDate,
+        endDate: values.endDate,
+        usageLimit: values.usageLimit
       };
       
       // In a real app, this would be an API call

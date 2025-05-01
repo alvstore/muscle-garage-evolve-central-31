@@ -75,8 +75,8 @@ const BranchManagementPage = () => {
                     <Building2 className="h-5 w-5 mr-2 text-indigo-600" />
                     {branch.name}
                   </CardTitle>
-                  <Badge variant={branch.is_active ? "secondary" : "destructive"}>
-                    {branch.is_active ? "Active" : "Inactive"}
+                  <Badge variant={branch.isActive ? "secondary" : "destructive"}>
+                    {branch.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <CardDescription>{branch.address}</CardDescription>

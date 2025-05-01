@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from '../use-branch';
-import { Member } from '@/types/index';
+import { Member } from '@/types/member';
 import { toast } from '@/utils/toast-manager';
 
 export const useMembersData = () => {
@@ -45,7 +45,24 @@ export const useMembersData = () => {
 
       if (fetchError) throw fetchError;
       
-      setMembers(data || []);
+      if (data) {
+        // Map database fields to Member type
+        const mappedMembers = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          email: item.email,
+          phone: item.phone,
+          status: item.status,
+          membershipStatus: item.membership_status,
+          membershipId: item.membership_id,
+          membershipStartDate: item.membership_start_date ? new Date(item.membership_start_date) : null,
+          membershipEndDate: item.membership_end_date ? new Date(item.membership_end_date) : null,
+          role: 'member', // Default role
+          branchId: item.branch_id
+        }));
+        
+        setMembers(mappedMembers);
+      }
     } catch (err: any) {
       console.error('Error fetching members:', err);
       setError('Failed to load members');

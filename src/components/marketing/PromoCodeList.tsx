@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -33,9 +32,10 @@ import {
   PlusCircle
 } from "lucide-react";
 import { PromoCode, PromoCodeStatus } from "@/types/marketing";
+import { stringToDate, formatDate } from "@/utils/date-utils";
 import { toast } from "sonner";
 
-// Mock data for promo codes
+// Mock data for promo codes with proper date handling
 const mockPromoCodes: PromoCode[] = [
   {
     id: "1",
@@ -44,14 +44,17 @@ const mockPromoCodes: PromoCode[] = [
     type: "percentage",
     value: 25,
     minPurchaseAmount: 0,
-    startDate: "2023-06-01T00:00:00Z",
-    endDate: "2023-08-31T23:59:59Z",
+    start_date: "2023-06-01T00:00:00Z",
+    end_date: "2023-08-31T23:59:59Z",
     status: "active",
-    usageLimit: 100,
-    currentUsage: 43,
-    applicableMemberships: ["all"],
+    usage_limit: 100,
+    current_usage: 43,
+    applicable_memberships: ["all"],
     createdBy: "Admin",
-    createdAt: "2023-05-15T10:00:00Z"
+    createdAt: "2023-05-15T10:00:00Z",
+    // UI properties
+    startDate: new Date("2023-06-01T00:00:00Z"),
+    endDate: new Date("2023-08-31T23:59:59Z")
   },
   {
     id: "2",
@@ -60,12 +63,12 @@ const mockPromoCodes: PromoCode[] = [
     type: "percentage",
     value: 50,
     minPurchaseAmount: 0,
-    startDate: "2023-01-01T00:00:00Z",
-    endDate: "2023-12-31T23:59:59Z",
+    start_date: "2023-01-01T00:00:00Z",
+    end_date: "2023-12-31T23:59:59Z",
     status: "active",
-    usageLimit: 0, // unlimited
-    currentUsage: 124,
-    applicableMemberships: ["basic", "premium"],
+    usage_limit: 0, // unlimited
+    current_usage: 124,
+    applicable_memberships: ["basic", "premium"],
     createdBy: "Admin",
     createdAt: "2023-01-01T00:00:00Z"
   },
@@ -76,12 +79,12 @@ const mockPromoCodes: PromoCode[] = [
     type: "fixed",
     value: 10,
     minPurchaseAmount: 50,
-    startDate: "2023-01-01T00:00:00Z",
-    endDate: "2023-12-31T23:59:59Z",
+    start_date: "2023-01-01T00:00:00Z",
+    end_date: "2023-12-31T23:59:59Z",
     status: "active",
-    usageLimit: 0,
-    currentUsage: 78,
-    applicableMemberships: ["all"],
+    usage_limit: 0,
+    current_usage: 78,
+    applicable_memberships: ["all"],
     createdBy: "Admin",
     createdAt: "2023-01-01T00:00:00Z"
   },
@@ -93,12 +96,12 @@ const mockPromoCodes: PromoCode[] = [
     value: 15,
     minPurchaseAmount: 0,
     maxDiscountAmount: 50,
-    startDate: "2023-03-01T00:00:00Z",
-    endDate: "2023-05-31T23:59:59Z",
+    start_date: "2023-03-01T00:00:00Z",
+    end_date: "2023-05-31T23:59:59Z",
     status: "expired",
-    usageLimit: 200,
-    currentUsage: 189,
-    applicableMemberships: ["all"],
+    usage_limit: 200,
+    current_usage: 189,
+    applicable_memberships: ["all"],
     createdBy: "Admin",
     createdAt: "2023-02-15T00:00:00Z"
   },
@@ -110,12 +113,12 @@ const mockPromoCodes: PromoCode[] = [
     value: 30,
     minPurchaseAmount: 0,
     maxDiscountAmount: 100,
-    startDate: "2023-11-24T00:00:00Z",
-    endDate: "2023-11-27T23:59:59Z",
+    start_date: "2023-11-24T00:00:00Z",
+    end_date: "2023-11-27T23:59:59Z",
     status: "scheduled",
-    usageLimit: 500,
-    currentUsage: 0,
-    applicableMemberships: ["all"],
+    usage_limit: 500,
+    current_usage: 0,
+    applicable_memberships: ["all"],
     createdBy: "Admin",
     createdAt: "2023-10-15T00:00:00Z"
   }
@@ -131,9 +134,14 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate API call and transform string dates to Date objects
     setTimeout(() => {
-      setPromoCodes(mockPromoCodes);
+      const processedCodes = mockPromoCodes.map(code => ({
+        ...code,
+        startDate: stringToDate(code.start_date),
+        endDate: stringToDate(code.end_date)
+      }));
+      setPromoCodes(processedCodes);
       setLoading(false);
     }, 1000);
   }, []);
@@ -150,8 +158,8 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
   };
 
   // Format date to readable format
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const formatDateDisplay = (dateString: string | Date) => {
+    return formatDate(dateString);
   };
 
   // Promo code status badge color mapping
@@ -277,17 +285,17 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
                     <TableCell>{getDiscountText(promo)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-xs">{formatDate(promo.startDate)}</span>
+                        <span className="text-xs">{formatDateDisplay(promo.start_date)}</span>
                         <span className="text-xs">to</span>
-                        <span className="text-xs">{formatDate(promo.endDate)}</span>
+                        <span className="text-xs">{formatDateDisplay(promo.end_date)}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(promo.status)}</TableCell>
                     <TableCell>
-                      {promo.usageLimit > 0 ? (
-                        <span>{promo.currentUsage} / {promo.usageLimit}</span>
+                      {promo.usage_limit > 0 ? (
+                        <span>{promo.current_usage} / {promo.usage_limit}</span>
                       ) : (
-                        <span>{promo.currentUsage} / ∞</span>
+                        <span>{promo.current_usage} / ∞</span>
                       )}
                     </TableCell>
                     <TableCell>{formatDate(promo.createdAt)}</TableCell>

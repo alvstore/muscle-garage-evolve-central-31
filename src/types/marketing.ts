@@ -30,8 +30,8 @@ export interface PromoCode {
   type: PromoCodeType;
   value: number;
   status: PromoCodeStatus;
-  start_date: Date | string;
-  end_date: Date | string;
+  start_date: string;
+  end_date: string;
   usage_limit?: number;
   current_usage: number;
   applicable_memberships?: string[];
@@ -57,8 +57,8 @@ export interface ReferralProgram {
   description?: string;
   reward_type: 'discount' | 'points' | 'membership_extension';
   reward_value: number;
-  start_date: Date | string;
-  end_date?: Date | string;
+  start_date: string;
+  end_date?: string;
   is_active: boolean;
   branch_id?: string;
   extensionDays?: number;

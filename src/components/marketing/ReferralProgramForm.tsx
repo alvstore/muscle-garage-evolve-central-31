@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ReferralProgram } from "@/types/marketing";
+import { stringToDate, dateToString } from "@/utils/date-utils";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 
@@ -42,12 +43,12 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
     defaultValues: {
       name: program?.name || "",
       description: program?.description || "",
-      rewardType: program?.rewardType || "fixed",
-      rewardValue: program?.rewardValue || 10,
+      rewardType: (program?.rewardType || program?.reward_type || "fixed") as "fixed" | "percentage" | "product" | "membership-extension",
+      rewardValue: program?.rewardValue || program?.reward_value || 10,
       extensionDays: program?.extensionDays || 0,
-      isActive: program?.isActive ?? true,
-      startDate: program?.startDate ? new Date(program.startDate) : new Date(),
-      endDate: program?.endDate ? new Date(program.endDate) : undefined,
+      isActive: program?.isActive ?? program?.is_active ?? true,
+      startDate: program?.startDate || stringToDate(program?.start_date) || new Date(),
+      endDate: program?.endDate || stringToDate(program?.end_date),
       terms: program?.terms || "",
     },
   });
@@ -58,17 +59,22 @@ const ReferralProgramForm: React.FC<ReferralProgramFormProps> = ({ program, onCo
         id: program?.id || uuidv4(),
         name: values.name,
         description: values.description,
-        rewardType: values.rewardType,
-        rewardValue: values.rewardValue,
+        reward_type: values.rewardType === "membership-extension" ? "membership_extension" : values.rewardType,
+        reward_value: values.rewardValue,
         extensionDays: values.extensionDays,
-        rewardProductId: program?.rewardProductId,
-        isActive: values.isActive,
-        startDate: values.startDate.toISOString(),
-        endDate: values.endDate ? values.endDate.toISOString() : undefined,
+        is_active: values.isActive,
+        start_date: dateToString(values.startDate) || new Date().toISOString(),
+        end_date: values.endDate ? dateToString(values.endDate) : undefined,
         terms: values.terms,
         createdBy: program?.createdBy || "current-user-id",
         createdAt: program?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        // UI properties
+        rewardType: values.rewardType,
+        rewardValue: values.rewardValue,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        isActive: values.isActive
       };
       
       // In a real app, this would be an API call
