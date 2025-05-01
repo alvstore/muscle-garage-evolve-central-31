@@ -17,6 +17,7 @@ import { useIncomeRecords } from '@/hooks/use-income-records';
 import { FinancialTransaction, PaymentMethod } from '@/types/finance';
 
 interface IncomeRecord extends FinancialTransaction {
+  id: string;
   source: string;
   attachment?: string;
   category_name?: string;
@@ -28,7 +29,7 @@ const IncomeRecordsPage = () => {
   const [selectedRecord, setSelectedRecord] = useState<IncomeRecord | null>(null);
   
   // Form state
-  const [formData, setFormData] = useState<Partial<FinancialTransaction> & Partial<IncomeRecord>>({
+  const [formData, setFormData] = useState<Partial<FinancialTransaction>>({
     type: 'income' as const,
     amount: 0,
     description: '',
@@ -87,13 +88,12 @@ const IncomeRecordsPage = () => {
       recurring: false,
       reference_id: null,
       transaction_id: null,
-      category_id: '',
-      category_name: ''
+      category_id: null
     });
     setShowCreateDialog(true);
   };
 
-  const handleEditRecord = (record: FinancialTransaction & IncomeRecord) => {
+  const handleEditRecord = (record: FinancialTransaction) => {
     setSelectedRecord(record);
     setFormData({
       type: record.type,
@@ -111,10 +111,10 @@ const IncomeRecordsPage = () => {
     setShowEditDialog(true);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const newRecord: Partial<FinancialTransaction> & Partial<IncomeRecord> = {
+      const newRecord: Partial<FinancialTransaction> = {
         type: 'income',
         amount: formData.amount,
         description: formData.description,
@@ -124,8 +124,7 @@ const IncomeRecordsPage = () => {
         recurring: formData.recurring,
         reference_id: formData.reference_id,
         transaction_id: formData.transaction_id,
-        category_id: formData.category_id,
-        category_name: formData.category_name
+        category_id: formData.category_id
       };
 
       await createRecord(newRecord);
@@ -142,7 +141,7 @@ const IncomeRecordsPage = () => {
     if (!selectedRecord) return;
 
     try {
-      const updatedRecord: Partial<FinancialTransaction> & Partial<IncomeRecord> = {
+      const updatedRecord: Partial<FinancialTransaction> = {
         amount: formData.amount,
         description: formData.description,
         payment_method: formData.payment_method as PaymentMethod,
