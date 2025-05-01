@@ -26,12 +26,14 @@ const BranchSelector = () => {
   const { updateUserBranch } = useAuth();
   
   const handleChangeBranch = async (branchId: string) => {
+    // Don't proceed if selecting the same branch
+    if (currentBranch?.id === branchId) return;
+    
     const branch = branches.find(b => b.id === branchId);
     if (branch) {
       try {
         await updateUserBranch(branch.id);
         switchBranch(branch.id);
-        toast.success(`Switched to ${branch.name}`);
       } catch (error) {
         toast.error("Failed to switch branch");
       }

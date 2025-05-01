@@ -1,5 +1,5 @@
 
-import { createContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { Branch } from '@/types/branch';
@@ -37,6 +37,9 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { createBranch, updateBranch } = useBranchOperations();
+  
+  // Reference to previous branch ID to prevent duplicate notifications
+  const previousBranchIdRef = useRef<string | null>(null);
 
   const fetchBranches = async () => {
     if (!user) {
@@ -55,7 +58,16 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
 
       if (formattedBranches.length > 0) {
         const primaryBranch = formattedBranches.find(b => b.id === primaryBranchId) || formattedBranches[0];
-        setCurrentBranch(primaryBranch);
+        
+        // When initializing, don't show a notification
+        if (!currentBranch) {
+          setCurrentBranch(primaryBranch);
+          previousBranchIdRef.current = primaryBranch.id;
+        } else if (primaryBranchId && primaryBranchId !== previousBranchIdRef.current) {
+          setCurrentBranch(primaryBranch);
+          toast.success(`Switched to ${primaryBranch.name}`);
+          previousBranchIdRef.current = primaryBranch.id;
+        }
       }
     } catch (err: any) {
       console.error('Error fetching branches:', err);
@@ -68,8 +80,14 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
 
   const switchBranch = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
+    
     if (branch) {
-      setCurrentBranch(branch);
+      // Only update and show toast if actually switching to a different branch
+      if (currentBranch?.id !== branch.id) {
+        setCurrentBranch(branch);
+        toast.success(`Switched to ${branch.name}`);
+        previousBranchIdRef.current = branch.id;
+      }
       return true;
     }
     return false;
