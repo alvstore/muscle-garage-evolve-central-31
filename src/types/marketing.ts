@@ -1,6 +1,8 @@
 
 export type ReferralStatus = 'pending' | 'approved' | 'rejected' | 'rewarded';
 export type RewardStatus = 'pending' | 'processed' | 'failed';
+export type PromoCodeType = 'percentage' | 'fixed' | 'free-product' | 'membership_extension';
+export type PromoCodeStatus = 'active' | 'inactive' | 'expired' | 'scheduled';
 
 export interface Referral {
   id: string;
@@ -25,16 +27,28 @@ export interface PromoCode {
   id: string;
   code: string;
   description?: string;
-  type: 'percentage' | 'fixed' | 'membership_extension';
+  type: PromoCodeType;
   value: number;
-  status: 'active' | 'expired' | 'disabled';
-  start_date: Date;
-  end_date: Date;
+  status: PromoCodeStatus;
+  start_date: Date | string;
+  end_date: Date | string;
   usage_limit?: number;
   current_usage: number;
   applicable_memberships?: string[];
   applicable_products?: string[];
   branch_id?: string;
+  minPurchaseAmount?: number;
+  maxDiscountAmount?: number;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // For UI components
+  startDate?: Date;
+  endDate?: Date;
+  usageLimit?: number;
+  currentUsage?: number;
+  applicableProducts?: string[];
+  applicableMemberships?: string[];
 }
 
 export interface ReferralProgram {
@@ -43,8 +57,20 @@ export interface ReferralProgram {
   description?: string;
   reward_type: 'discount' | 'points' | 'membership_extension';
   reward_value: number;
-  start_date: Date;
-  end_date?: Date;
+  start_date: Date | string;
+  end_date?: Date | string;
   is_active: boolean;
   branch_id?: string;
+  extensionDays?: number;
+  terms?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // For UI components
+  rewardType?: string;
+  rewardValue?: number;
+  startDate?: Date;
+  endDate?: Date;
+  isActive?: boolean;
+  rewardProductId?: string;
 }

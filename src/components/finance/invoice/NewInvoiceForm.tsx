@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,7 +240,7 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
                 <h2 className="text-2xl font-bold mb-4">{currentBranch?.name || 'Your Gym'}</h2>
                 <p className="text-gray-600">{currentBranch?.address || 'Office 149, 450 South Brand'}</p>
                 <p className="text-gray-600">{currentBranch?.city}, {currentBranch?.state}</p>
-                <p className="text-gray-600">{currentBranch?.phone || '+1 (123) 456 7891'}</p>
+                <p className="text-gray-600">{currentBranch?.phone || 'N/A'}</p>
               </div>
               
               <div className="flex flex-col gap-3">

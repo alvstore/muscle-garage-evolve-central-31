@@ -82,9 +82,10 @@ const CreateReferralDialog = () => {
             Send a referral invitation to a friend or potential member.
           </DialogDescription>
         </DialogHeader>
-        <DialogClose asChild>
-          {(onClose) => (
-            <form onSubmit={(e) => handleSubmit(e, onClose)} className="space-y-4 pt-4">
+        
+        <DialogClose>
+          {(props) => (
+            <form onSubmit={(e) => handleSubmit(e, props.onClick)} className="space-y-4 pt-4">
               <div className="grid gap-2">
                 <Label htmlFor="referred_email">Email Address*</Label>
                 <Input
@@ -121,7 +122,7 @@ const CreateReferralDialog = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={onClose}
+                  onClick={props.onClick}
                   disabled={isSubmitting}
                 >
                   Cancel

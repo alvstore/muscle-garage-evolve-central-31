@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +26,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   manager: z.string().optional(),
-  is_active: z.boolean().default(true),
+  isActive: z.boolean().default(true),
   maxCapacity: z.string().optional(),
   openingHours: z.string().optional(),
   closingHours: z.string().optional(),
@@ -54,7 +55,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       phone: branch?.phone || "",
       email: branch?.email || "",
       manager: branch?.manager || "",
-      is_active: branch?.is_active ?? true,
+      isActive: branch?.isActive ?? true,
       maxCapacity: branch?.maxCapacity?.toString() || "",
       openingHours: branch?.openingHours || "",
       closingHours: branch?.closingHours || "",
@@ -75,8 +76,8 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         phone: values.phone || '',
         email: values.email || '',
         manager: values.manager || '',
-        manager_id: branch?.manager_id || '',
-        is_active: values.is_active,
+        managerId: branch?.managerId || '',
+        isActive: values.isActive,
         maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : 0,
         openingHours: values.openingHours || '',
         closingHours: values.closingHours || '',
@@ -148,7 +149,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           
           <FormField
             control={form.control}
-            name="is_active"
+            name="isActive"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
