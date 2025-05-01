@@ -29,10 +29,9 @@ export const useAttendanceStats = (dateRange: DateRange) => {
         
         let query = supabase
           .from('member_attendance')
-          .select('check_in, count(*)')
+          .select('check_in, count')
           .gte('check_in', fromDate)
-          .lte('check_in', toDate)
-          .group('check_in');
+          .lte('check_in', toDate);
           
         if (currentBranch?.id) {
           query = query.eq('branch_id', currentBranch.id);
@@ -48,17 +47,31 @@ export const useAttendanceStats = (dateRange: DateRange) => {
           data: []
         };
         
+        // Convert the raw data into daily counts
         if (statsData && statsData.length > 0) {
-          // Sort by date
-          statsData.sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime());
+          // Create a map to count occurrences by date
+          const dateMap: Record<string, number> = {};
           
-          statsData.forEach((item) => {
+          statsData.forEach(item => {
             const date = new Date(item.check_in);
             const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
             
-            processedData.labels.push(formattedDate);
-            processedData.data.push(item.count);
+            if (!dateMap[formattedDate]) {
+              dateMap[formattedDate] = 0;
+            }
+            
+            dateMap[formattedDate] += 1;
           });
+          
+          // Convert the map to arrays for labels and data
+          const sortedDates = Object.keys(dateMap).sort((a, b) => {
+            const [aMonth, aDay] = a.split('/').map(Number);
+            const [bMonth, bDay] = b.split('/').map(Number);
+            return aMonth !== bMonth ? aMonth - bMonth : aDay - bDay;
+          });
+          
+          processedData.labels = sortedDates;
+          processedData.data = sortedDates.map(date => dateMap[date]);
         }
         
         setData(processedData);

@@ -21,15 +21,17 @@ export interface GymClass {
 export type ClassDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'all-levels';
 
 interface TrainerBookingListProps {
-  classes: any[];
-  isLoading: boolean;
-  onClassClick: (classId: string) => void;
+  classes?: any[];
+  isLoading?: boolean;
+  onClassClick?: (classId: string) => void;
+  trainerId: string;
 }
 
 const TrainerBookingList: React.FC<TrainerBookingListProps> = ({ 
-  classes, 
-  isLoading,
-  onClassClick
+  classes = [], 
+  isLoading = false,
+  onClassClick = () => {},
+  trainerId
 }) => {
   if (isLoading) {
     return (

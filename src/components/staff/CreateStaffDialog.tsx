@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import CreateStaffForm from "./CreateStaffForm";
+import { useStaff } from "@/hooks/use-staff";
 
 interface CreateStaffDialogProps {
   open: boolean;
@@ -15,16 +16,23 @@ interface CreateStaffDialogProps {
 }
 
 export default function CreateStaffDialog({ open, onOpenChange, onSuccess }: CreateStaffDialogProps) {
+  const { staff, fetchStaff } = useStaff();
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Staff Member</DialogTitle>
         </DialogHeader>
-        <CreateStaffForm onSuccess={() => {
-          if (onSuccess) onSuccess();
-          onOpenChange(false);
-        }} />
+        <CreateStaffForm 
+          onSuccess={() => {
+            if (onSuccess) onSuccess();
+            onOpenChange(false);
+          }}
+          onCancel={() => onOpenChange(false)}
+          staff={staff}
+          refetch={fetchStaff}
+        />
       </DialogContent>
     </Dialog>
   );

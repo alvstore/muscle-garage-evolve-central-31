@@ -15,19 +15,21 @@ import {
 import { GymClass, ClassDifficulty } from './TrainerBookingList';
 
 interface TrainerClassListProps {
-  classes: any[];
-  isLoading: boolean;
-  onClassClick: (classId: string) => void;
+  classes?: any[];
+  isLoading?: boolean;
+  onClassClick?: (classId: string) => void;
   onEditClass?: (classId: string) => void;
   onCancelClass?: (classId: string) => void;
+  trainerId: string;
 }
 
 const TrainerClassList: React.FC<TrainerClassListProps> = ({ 
-  classes, 
-  isLoading,
-  onClassClick,
+  classes = [], 
+  isLoading = false,
+  onClassClick = () => {},
   onEditClass,
-  onCancelClass
+  onCancelClass,
+  trainerId
 }) => {
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
 
