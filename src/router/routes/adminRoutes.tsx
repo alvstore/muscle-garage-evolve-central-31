@@ -7,6 +7,7 @@ import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 import UserManagementPage from '@/pages/admin/UserManagementPage';
 import RolePermissionsPage from '@/pages/admin/RolePermissionsPage';
 import TrainerPage from '@/pages/trainers/TrainerPage';
+import WebsiteManagementPage from '@/pages/website/WebsiteManagementPage';
 
 export const adminRoutes: RouteObject[] = [
   {
@@ -32,5 +33,13 @@ export const adminRoutes: RouteObject[] = [
   {
     path: '/admin/branch-management',
     element: <BranchManagementPage />
+  },
+  {
+    path: '/website',
+    element: <WebsiteManagementPage />
+  },
+  {
+    path: '/website/:section',
+    element: <WebsiteManagementPage />
   }
 ];

@@ -1,118 +1,243 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from './use-branch';
 
 export interface DateRange {
-  from: Date;
-  to: Date;
+  from: Date | undefined;
+  to: Date | undefined;
 }
 
-export interface StatsResult {
+export interface StatsData {
   labels: string[];
   data: number[];
 }
 
 export const useAttendanceStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsResult | null>(null);
+  const [data, setData] = useState<StatsData>({ labels: [], data: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchAttendanceData = async () => {
+    const fetchAttendanceStats = async () => {
+      if (!dateRange.from || !dateRange.to) return;
+      
       setIsLoading(true);
       try {
-        // Simulate fetching data from API - would be replaced with a real API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const fromDate = dateRange.from.toISOString();
+        const toDate = dateRange.to.toISOString();
         
-        // Generate mock data for the given date range
-        const days = Math.floor((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const labels = Array.from({ length: days }, (_, i) => {
-          const date = new Date(dateRange.from);
-          date.setDate(dateRange.from.getDate() + i);
-          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        });
+        let query = supabase
+          .from('member_attendance')
+          .select('check_in, count(*)')
+          .gte('check_in', fromDate)
+          .lte('check_in', toDate)
+          .group('check_in');
+          
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
         
-        // Generate random attendance numbers
-        const data = labels.map(() => Math.floor(Math.random() * 30) + 10);
+        const { data: statsData, error } = await query;
         
-        setData({ labels, data });
+        if (error) throw error;
+        
+        // Process data into formats needed for charts
+        const processedData: StatsData = {
+          labels: [],
+          data: []
+        };
+        
+        if (statsData && statsData.length > 0) {
+          // Sort by date
+          statsData.sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime());
+          
+          statsData.forEach((item) => {
+            const date = new Date(item.check_in);
+            const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+            
+            processedData.labels.push(formattedDate);
+            processedData.data.push(item.count);
+          });
+        }
+        
+        setData(processedData);
       } catch (error) {
         console.error('Error fetching attendance stats:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchAttendanceData();
-  }, [dateRange]);
+    
+    fetchAttendanceStats();
+  }, [dateRange.from, dateRange.to, currentBranch?.id]);
 
   return { data, isLoading };
 };
 
 export const useRevenueStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsResult | null>(null);
+  const [data, setData] = useState<StatsData>({ labels: [], data: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchRevenueData = async () => {
+    const fetchRevenueStats = async () => {
+      if (!dateRange.from || !dateRange.to) return;
+      
       setIsLoading(true);
       try {
-        // Simulate fetching data from API - would be replaced with a real API call
-        await new Promise(resolve => setTimeout(resolve, 700));
+        const fromDate = dateRange.from.toISOString();
+        const toDate = dateRange.to.toISOString();
         
-        // Generate mock data for the given date range
-        const days = Math.floor((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const labels = Array.from({ length: days }, (_, i) => {
-          const date = new Date(dateRange.from);
-          date.setDate(dateRange.from.getDate() + i);
-          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        let query = supabase
+          .from('transactions')
+          .select('amount, created_at')
+          .eq('type', 'income')
+          .gte('created_at', fromDate)
+          .lte('created_at', toDate);
+          
+        if (currentBranch?.id) {
+          query = query.eq('branch_id', currentBranch.id);
+        }
+        
+        const { data: transactionsData, error } = await query;
+        
+        if (error) throw error;
+        
+        // Group data by date
+        const dateMap: Record<string, number> = {};
+        
+        transactionsData?.forEach(transaction => {
+          const date = new Date(transaction.created_at);
+          const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+          
+          if (!dateMap[dateKey]) {
+            dateMap[dateKey] = 0;
+          }
+          
+          dateMap[dateKey] += transaction.amount || 0;
         });
         
-        // Generate random revenue numbers
-        const data = labels.map(() => Math.floor(Math.random() * 5000) + 1000);
+        const processedData: StatsData = {
+          labels: Object.keys(dateMap).sort((a, b) => {
+            const [aMonth, aDay] = a.split('/').map(Number);
+            const [bMonth, bDay] = b.split('/').map(Number);
+            return aMonth !== bMonth ? aMonth - bMonth : aDay - bDay;
+          }),
+          data: []
+        };
         
-        setData({ labels, data });
+        processedData.labels.forEach(label => {
+          processedData.data.push(dateMap[label]);
+        });
+        
+        setData(processedData);
       } catch (error) {
         console.error('Error fetching revenue stats:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchRevenueData();
-  }, [dateRange]);
+    
+    fetchRevenueStats();
+  }, [dateRange.from, dateRange.to, currentBranch?.id]);
 
   return { data, isLoading };
 };
 
 export const useMembershipStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<StatsResult | null>(null);
+  const [data, setData] = useState<StatsData>({ 
+    labels: ['New', 'Renewals', 'Expired', 'Cancelled'],
+    data: [0, 0, 0, 0] 
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchMembershipData = async () => {
+    const fetchMembershipStats = async () => {
+      if (!dateRange.from || !dateRange.to) return;
+      
       setIsLoading(true);
       try {
-        // Simulate fetching data from API - would be replaced with a real API call
-        await new Promise(resolve => setTimeout(resolve, 600));
+        const fromDate = dateRange.from.toISOString();
+        const toDate = dateRange.to.toISOString();
         
-        // For membership stats, we create categories and counts
-        const labels = ['New', 'Renewed', 'Expired', 'Cancelled'];
-        const data = [
-          Math.floor(Math.random() * 50) + 20,  // New
-          Math.floor(Math.random() * 80) + 40,  // Renewed
-          Math.floor(Math.random() * 30) + 5,   // Expired
-          Math.floor(Math.random() * 20) + 2    // Cancelled
-        ];
+        // Get new memberships
+        let newMembershipsQuery = supabase
+          .from('member_memberships')
+          .select('count(*)', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .gte('created_at', fromDate)
+          .lte('created_at', toDate);
         
-        setData({ labels, data });
+        // Get renewals
+        let renewalsQuery = supabase
+          .from('member_memberships')
+          .select('count(*)', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .gte('updated_at', fromDate)
+          .lte('updated_at', toDate)
+          .not('created_at', 'eq', 'updated_at');
+        
+        // Get expired memberships
+        let expiredQuery = supabase
+          .from('member_memberships')
+          .select('count(*)', { count: 'exact', head: true })
+          .eq('status', 'expired')
+          .gte('updated_at', fromDate)
+          .lte('updated_at', toDate);
+        
+        // Get cancelled memberships
+        let cancelledQuery = supabase
+          .from('member_memberships')
+          .select('count(*)', { count: 'exact', head: true })
+          .eq('status', 'cancelled')
+          .gte('updated_at', fromDate)
+          .lte('updated_at', toDate);
+        
+        // Apply branch filter if needed
+        if (currentBranch?.id) {
+          newMembershipsQuery = newMembershipsQuery.eq('branch_id', currentBranch.id);
+          renewalsQuery = renewalsQuery.eq('branch_id', currentBranch.id);
+          expiredQuery = expiredQuery.eq('branch_id', currentBranch.id);
+          cancelledQuery = cancelledQuery.eq('branch_id', currentBranch.id);
+        }
+        
+        const [
+          { count: newCount, error: newError },
+          { count: renewalCount, error: renewalError },
+          { count: expiredCount, error: expiredError },
+          { count: cancelledCount, error: cancelledError }
+        ] = await Promise.all([
+          newMembershipsQuery,
+          renewalsQuery,
+          expiredQuery,
+          cancelledQuery
+        ]);
+        
+        if (newError) throw newError;
+        if (renewalError) throw renewalError;
+        if (expiredError) throw expiredError;
+        if (cancelledError) throw cancelledError;
+        
+        setData({
+          labels: ['New', 'Renewals', 'Expired', 'Cancelled'],
+          data: [
+            newCount || 0,
+            renewalCount || 0,
+            expiredCount || 0,
+            cancelledCount || 0
+          ]
+        });
       } catch (error) {
         console.error('Error fetching membership stats:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchMembershipData();
-  }, [dateRange]);
+    
+    fetchMembershipStats();
+  }, [dateRange.from, dateRange.to, currentBranch?.id]);
 
   return { data, isLoading };
 };

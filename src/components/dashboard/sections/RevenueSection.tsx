@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { DollarSign } from "lucide-react";
 
+export interface RevenueData {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
 interface RevenueSectionProps {
-  data: Array<{
-    month: string;
-    revenue: number;
-    expenses: number;
-    profit: number;
-  }>;
+  data: RevenueData[];
 }
 
 const RevenueSection = ({ data }: RevenueSectionProps) => {

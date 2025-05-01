@@ -43,6 +43,7 @@ export const useBookClass = () => {
       classService.bookClass(classId, memberId),
     onSuccess: (data, variables) => {
       if (data) {
+        toast.success('Class booked successfully');
         // Invalidate affected queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['classes', variables.classId, 'bookings'] });
         queryClient.invalidateQueries({ queryKey: ['members', variables.memberId, 'bookings'] });
@@ -68,6 +69,7 @@ export const useCancelBooking = () => {
     mutationFn: (bookingId: string) => classService.cancelBooking(bookingId),
     onSuccess: (data, bookingId) => {
       if (data) {
+        toast.success('Booking cancelled successfully');
         // Invalidate all related queries
         queryClient.invalidateQueries({ queryKey: ['classes'] });
         queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -89,6 +91,7 @@ export const useMarkAttendance = () => {
     mutationFn: (bookingId: string) => classService.markAttendance(bookingId),
     onSuccess: (data, bookingId) => {
       if (data) {
+        toast.success('Attendance marked successfully');
         // Invalidate all related queries
         queryClient.invalidateQueries({ queryKey: ['classes'] });
         queryClient.invalidateQueries({ queryKey: ['bookings'] });

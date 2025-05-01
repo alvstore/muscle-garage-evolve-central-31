@@ -28,6 +28,18 @@ const AdminDashboard = () => {
   const { currentBranch } = useBranch();
   const { dashboardData, isLoading, refreshData } = useDashboard();
 
+  // Transform revenue data to the format expected by RevenueSection
+  const transformedRevenueData = React.useMemo(() => {
+    if (!dashboardData.revenueData) return [];
+    
+    return dashboardData.revenueData.map(item => ({
+      month: item.month,
+      revenue: item.revenue || item.amount,
+      expenses: item.expenses || item.amount * 0.4, // If no expenses data, use estimate
+      profit: item.profit || item.amount * 0.6 // If no profit data, use estimate
+    }));
+  }, [dashboardData.revenueData]);
+
   useEffect(() => {
     // This effect would load any additional data needed
     // The main dashboard data is now loaded via the useDashboard hook
@@ -119,7 +131,7 @@ const AdminDashboard = () => {
             </>
           ) : (
             <>
-              <RevenueSection data={dashboardData.revenueData || []} />
+              <RevenueSection data={transformedRevenueData} />
               <MemberStatusSection data={dashboardData.membersByStatus || {
                 active: 0,
                 inactive: 0,

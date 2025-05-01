@@ -1,262 +1,229 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { GymClass, ClassBooking } from '@/types/class';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar, Clock, MapPin, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useClassBookings } from '@/hooks/use-classes';
-import { toast } from 'sonner';
 
-interface TrainerClassDetailsProps {
-  gymClass: GymClass;
-  isOpen: boolean;
-  onClose: () => void;
+interface ClassDetailsProps {
+  classId: string;
+  onBack?: () => void;
 }
 
-const TrainerClassDetails: React.FC<TrainerClassDetailsProps> = ({
-  gymClass,
-  isOpen,
-  onClose,
-}) => {
-  const { data: bookings, isLoading } = useClassBookings(gymClass.id);
+// Helper function to get initials from a name
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+};
+
+const TrainerClassDetails: React.FC<ClassDetailsProps> = ({ classId, onBack }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [classDetails, setClassDetails] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
   
-  const confirmedBookings = bookings?.filter(booking => booking.status === 'confirmed') || [];
-  const cancelledBookings = bookings?.filter(booking => booking.status === 'cancelled') || [];
-  const attendedBookings = bookings?.filter(booking => booking.status === 'attended') || [];
-  
-  const getInitials = (name: string = '') => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
-  
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "beginner":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "advanced":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+  // Fetch class details and bookings
+  useEffect(() => {
+    const fetchClassDetails = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch class details
+        const { data: classData, error: classError } = await supabase
+          .from('class_schedules')
+          .select(`
+            *,
+            profiles:trainer_id (full_name, avatar_url)
+          `)
+          .eq('id', classId)
+          .single();
+          
+        if (classError) throw classError;
+        
+        // Fetch bookings for this class
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('class_bookings')
+          .select(`
+            *,
+            profiles:member_id (full_name, avatar_url)
+          `)
+          .eq('class_id', classId);
+          
+        if (bookingsError) throw bookingsError;
+        
+        setClassDetails(classData);
+        setBookings(bookingsData || []);
+      } catch (error) {
+        console.error('Error fetching class details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (classId) {
+      fetchClassDetails();
+    }
+  }, [classId]);
+
+  const handleMarkAttendance = async (bookingId: string, attended: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('class_bookings')
+        .update({
+          attended: attended
+        })
+        .eq('id', bookingId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === bookingId ? { ...booking, attended } : booking
+        )
+      );
+    } catch (error) {
+      console.error('Error marking attendance:', error);
     }
   };
   
-  const handleMarkAttendance = (bookingId: string) => {
-    toast.success('Attendance marked successfully');
-  };
-  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="animate-pulse bg-muted h-6 w-1/3 rounded"></CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="animate-pulse bg-muted h-4 w-1/4 rounded"></div>
+          <div className="animate-pulse bg-muted h-4 w-1/2 rounded"></div>
+          <div className="animate-pulse bg-muted h-20 w-full rounded"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!classDetails) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Class Not Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The class you're looking for could not be found.</p>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={onBack}>Go Back</Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{gymClass.name}</DialogTitle>
-          <DialogDescription className="flex flex-wrap gap-2 mt-2">
-            <Badge variant="outline" className={getDifficultyColor(gymClass.difficulty)}>
-              {gymClass.difficulty === "all" ? "All Levels" : gymClass.difficulty}
-            </Badge>
-            
-            <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-              {gymClass.type}
-            </Badge>
-            
-            {gymClass.recurring && (
-              <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                Recurring
-              </Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>{classDetails.name}</CardTitle>
+          <Badge>{classDetails.type}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4 mr-2" />
+            {classDetails.start_time && (
+              <span>{format(parseISO(classDetails.start_time), 'EEEE, MMMM d, yyyy')}</span>
             )}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          <p className="text-muted-foreground">
-            {gymClass.description || "No description provided for this class."}
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-              <span>{format(parseISO(gymClass.startTime), "EEEE, MMMM d, yyyy")}</span>
-            </div>
-            
-            <div className="flex items-center">
-              <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
-              <span>
-                {format(parseISO(gymClass.startTime), "h:mm a")} - 
-                {format(parseISO(gymClass.endTime), "h:mm a")}
-              </span>
-            </div>
-            
-            <div className="flex items-center">
-              <Users className="h-5 w-5 mr-2 text-muted-foreground" />
-              <span className={gymClass.enrolled >= gymClass.capacity ? "text-red-500 font-medium" : ""}>
-                {gymClass.enrolled}/{gymClass.capacity} enrolled
-              </span>
-            </div>
-            
-            <div className="flex items-center">
-              <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-              <span>{gymClass.location}</span>
-            </div>
           </div>
-          
-          <div className="border rounded-md">
-            <Tabs defaultValue="enrolled">
-              <TabsList className="w-full">
-                <TabsTrigger value="enrolled" className="flex-1">
-                  Enrolled ({confirmedBookings.length})
-                </TabsTrigger>
-                <TabsTrigger value="attended" className="flex-1">
-                  Attended ({attendedBookings.length})
-                </TabsTrigger>
-                <TabsTrigger value="cancelled" className="flex-1">
-                  Cancelled ({cancelledBookings.length})
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="enrolled" className="p-4">
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-1">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : confirmedBookings.length > 0 ? (
-                  <div className="space-y-2">
-                    {confirmedBookings.map(booking => (
-                      <div key={booking.id} className="flex justify-between items-center p-2 hover:bg-accent rounded-md">
-                        <div className="flex items-center gap-2">
-                          <Avatar>
-                            <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                            <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{booking.memberName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Booked on {format(new Date(booking.createdAt), "MMM d, yyyy")}
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleMarkAttendance(booking.id)}
-                        >
-                          Mark Attendance
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-6">No members enrolled for this class yet.</p>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="attended" className="p-4">
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-1">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : attendedBookings.length > 0 ? (
-                  <div className="space-y-2">
-                    {attendedBookings.map(booking => (
-                      <div key={booking.id} className="flex justify-between items-center p-2 hover:bg-accent rounded-md">
-                        <div className="flex items-center gap-2">
-                          <Avatar>
-                            <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                            <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{booking.memberName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Attended on {booking.attendanceTime ? format(new Date(booking.attendanceTime), "MMM d, yyyy h:mm a") : 'unknown'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-6">No attendance recorded for this class yet.</p>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="cancelled" className="p-4">
-                {isLoading ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-1">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : cancelledBookings.length > 0 ? (
-                  <div className="space-y-2">
-                    {cancelledBookings.map(booking => (
-                      <div key={booking.id} className="flex justify-between items-center p-2 hover:bg-accent rounded-md">
-                        <div className="flex items-center gap-2">
-                          <Avatar>
-                            <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                            <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{booking.memberName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Cancelled on {format(new Date(booking.updatedAt), "MMM d, yyyy")}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-6">No cancellations for this class.</p>
-                )}
-              </TabsContent>
-            </Tabs>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 mr-2" />
+            {classDetails.start_time && classDetails.end_time && (
+              <span>
+                {format(parseISO(classDetails.start_time), 'h:mm a')} - 
+                {format(parseISO(classDetails.end_time), 'h:mm a')}
+              </span>
+            )}
+          </div>
+          {classDetails.location && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span>{classDetails.location}</span>
+            </div>
+          )}
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="h-4 w-4 mr-2" />
+            <span>{bookings.length}/{classDetails.capacity} enrolled</span>
           </div>
         </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
+
+        {classDetails.description && (
+          <div>
+            <h3 className="text-sm font-medium mb-1">Description</h3>
+            <p className="text-sm text-muted-foreground">{classDetails.description}</p>
+          </div>
+        )}
+
+        <div>
+          <h3 className="text-sm font-medium mb-2">Bookings</h3>
+          {bookings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bookings for this class.</p>
+          ) : (
+            <div className="space-y-2">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="flex items-center justify-between p-2 rounded bg-muted/40">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={booking.profiles?.avatar_url} />
+                      <AvatarFallback>
+                        {booking.profiles?.full_name ? getInitials(booking.profiles.full_name) : 'NA'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{booking.profiles?.full_name || 'Unknown Member'}</span>
+                  </div>
+                  <div>
+                    {booking.attended === true ? (
+                      <Badge variant="outline" className="bg-green-100 text-green-800">Present</Badge>
+                    ) : booking.attended === false ? (
+                      <Badge variant="outline" className="bg-red-100 text-red-800">Absent</Badge>
+                    ) : (
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="h-7 text-xs bg-green-100 text-green-800 hover:bg-green-200"
+                          onClick={() => handleMarkAttendance(booking.id, true)}
+                        >
+                          Present
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs bg-red-100 text-red-800 hover:bg-red-200"
+                          onClick={() => handleMarkAttendance(booking.id, false)}
+                        >
+                          Absent
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter>
+        {onBack && (
+          <Button variant="outline" onClick={onBack}>
+            Back to Classes
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 

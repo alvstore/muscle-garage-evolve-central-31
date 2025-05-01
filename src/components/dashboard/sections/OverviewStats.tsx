@@ -32,24 +32,24 @@ const OverviewStats = ({ data }: OverviewStatsProps) => {
       
       <StatCard
         title="Revenue This Month"
-        value={`₹${data.revenue.monthly.toLocaleString()}`}
-        change={calculatePercentChange(data.revenue.monthly, data.revenue.monthly * 0.85)} // Estimate previous month at 85% of current
+        value={`₹${data.revenue?.monthly.toLocaleString() || 0}`}
+        change={calculatePercentChange(data.revenue?.monthly || 0, (data.revenue?.monthly || 0) * 0.85)} // Estimate previous month at 85% of current
         icon={CreditCard}
       />
       
       <StatCard
         title="Today's Check-ins"
-        value={data.todayCheckIns}
+        value={data.todayCheckIns || 0}
         change={{
           direction: "neutral",
-          value: `${data.todayCheckIns} visits`
+          value: `${data.todayCheckIns || 0} visits`
         }}
         icon={CheckSquare}
       />
       
       <StatCard
         title="Upcoming Renewals"
-        value={data.upcomingRenewals}
+        value={data.upcomingRenewals || 0}
         change={{
           direction: "neutral",
           value: `${data.expiringMemberships || 0} expiring`
