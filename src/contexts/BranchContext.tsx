@@ -90,11 +90,18 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
     const branch = branches.find(b => b.id === branchId);
     
     if (branch) {
-      // Only update and show toast if actually switching to a different branch
+      // Only update if actually switching to a different branch
       if (currentBranch?.id !== branch.id) {
-        setCurrentBranch(branch);
-        toast.success(`Switched to ${branch.name}`);
-        previousBranchIdRef.current = branch.id;
+        // Prevent multiple updates by checking if we're already in the process
+        if (previousBranchIdRef.current !== branch.id) {
+          setCurrentBranch(branch);
+          previousBranchIdRef.current = branch.id;
+          
+          // Debounce the toast message
+          setTimeout(() => {
+            toast.success(`Switched to ${branch.name}`);
+          }, 100);
+        }
       }
       return true;
     }
@@ -103,7 +110,10 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      fetchBranches();
+      // Only fetch branches if we don't have any branches loaded
+      if (!branches.length) {
+        fetchBranches();
+      }
     }
   }, [user]);
 
