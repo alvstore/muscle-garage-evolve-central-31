@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const BranchManagementPage = () => {
-  const { branches, isLoading } = useBranch();
+  const { branches, isLoading, deleteBranch } = useBranch();
   const [isCreating, setIsCreating] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
@@ -36,10 +36,10 @@ const BranchManagementPage = () => {
     
     setIsDeleting(true);
     try {
-      // In a real app, this would call an API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await deleteBranch(deletingBranch.id);
       toast.success(`Branch ${deletingBranch.name} deleted successfully`);
     } catch (error) {
+      console.error('Error deleting branch:', error);
       toast.error("Failed to delete branch");
     } finally {
       setIsDeleting(false);
