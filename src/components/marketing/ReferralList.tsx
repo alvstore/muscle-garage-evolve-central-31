@@ -28,146 +28,39 @@ import {
   Search
 } from "lucide-react";
 import { Referral, ReferralStatus } from "@/types/marketing";
-import { toast } from "sonner";
-
-// Mock data for referrals
-const mockReferrals: Referral[] = [
-  {
-    id: "1",
-    referrerId: "member-1",
-    referrerName: "John Smith",
-    referredEmail: "friend1@example.com",
-    referredName: "Michael Brown",
-    status: "pending",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-05-10T14:30:00Z"
-  },
-  {
-    id: "2",
-    referrerId: "member-2",
-    referrerName: "Sarah Wilson",
-    referredEmail: "friend2@example.com",
-    referredName: "Emma Johnson",
-    referredId: "member-10",
-    status: "approved",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-05-08T11:15:00Z",
-    convertedAt: "2023-05-15T09:30:00Z",
-    rewardAmount: 10,
-    rewardDescription: "$10 account credit",
-    rewardStatus: "pending"
-  },
-  {
-    id: "3",
-    referrerId: "member-3",
-    referrerName: "Robert Taylor",
-    referredEmail: "friend3@example.com",
-    status: "pending",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-05-12T16:45:00Z"
-  },
-  {
-    id: "4",
-    referrerId: "member-1",
-    referrerName: "John Smith",
-    referredEmail: "friend4@example.com",
-    referredName: "James Anderson",
-    referredId: "member-11",
-    status: "approved",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-05-05T10:20:00Z",
-    convertedAt: "2023-05-11T14:10:00Z",
-    rewardAmount: 10,
-    rewardDescription: "$10 account credit",
-    rewardStatus: "processed"
-  },
-  {
-    id: "5",
-    referrerId: "member-4",
-    referrerName: "Amy Davis",
-    referredEmail: "friend5@example.com",
-    status: "rejected",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-05-01T09:00:00Z"
-  },
-  {
-    id: "6",
-    referrerId: "member-5",
-    referrerName: "David Miller",
-    referredEmail: "friend6@example.com",
-    referredName: "Christine Lee",
-    referredId: "member-12",
-    status: "rewarded",
-    promoCodeId: "promo-1",
-    promoCode: "REFER10",
-    createdAt: "2023-04-28T15:30:00Z",
-    convertedAt: "2023-05-04T11:20:00Z",
-    rewardAmount: 10,
-    rewardDescription: "$10 account credit",
-    rewardStatus: "processed"
-  }
-];
+import { useReferrals } from '@/hooks/use-referrals';
+import CreateReferralDialog from './CreateReferralDialog';
 
 const ReferralList = () => {
-  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const { referrals, isLoading, refetch, approveReferral, rejectReferral, resendInvitation } = useReferrals();
   const [filteredReferrals, setFilteredReferrals] = useState<Referral[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setReferrals(mockReferrals);
-      setFilteredReferrals(mockReferrals);
-      setLoading(false);
-    }, 1000);
-  }, []);
 
   // Apply search filter when search term changes
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTerm && referrals) {
       const filtered = referrals.filter(referral => 
-        referral.referrerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        referral.referredEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (referral.referredName && referral.referredName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (referral.promoCode && referral.promoCode.toLowerCase().includes(searchTerm.toLowerCase()))
+        (referral.referrer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        referral.referred_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (referral.referred_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        (referral.promo_code?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
       );
       setFilteredReferrals(filtered);
     } else {
-      setFilteredReferrals(referrals);
+      setFilteredReferrals(referrals || []);
     }
   }, [searchTerm, referrals]);
 
   const handleApprove = (id: string) => {
-    // In a real app, this would be an API call
-    setReferrals(referrals.map(ref => 
-      ref.id === id ? { ...ref, status: "approved" as ReferralStatus } : ref
-    ));
-    setFilteredReferrals(filteredReferrals.map(ref => 
-      ref.id === id ? { ...ref, status: "approved" as ReferralStatus } : ref
-    ));
-    toast.success("Referral approved successfully");
+    approveReferral(id);
   };
 
   const handleReject = (id: string) => {
-    // In a real app, this would be an API call
-    setReferrals(referrals.map(ref => 
-      ref.id === id ? { ...ref, status: "rejected" as ReferralStatus } : ref
-    ));
-    setFilteredReferrals(filteredReferrals.map(ref => 
-      ref.id === id ? { ...ref, status: "rejected" as ReferralStatus } : ref
-    ));
-    toast.success("Referral rejected");
+    rejectReferral(id);
   };
 
   const handleResendEmail = (referral: Referral) => {
-    // In a real app, this would be an API call to resend the invitation
-    toast.success(`Invitation resent to ${referral.referredEmail}`);
+    resendInvitation(referral);
   };
 
   // Format date to readable format
@@ -191,15 +84,16 @@ const ReferralList = () => {
     }
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle>Referrals</CardTitle>
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Create Manual Referral
-          </Button>
+          <CreateReferralDialog />
         </div>
       </CardHeader>
       <CardContent>
@@ -222,14 +116,7 @@ const ReferralList = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setReferrals(mockReferrals);
-                    setFilteredReferrals(mockReferrals);
-                    setLoading(false);
-                  }, 1000);
-                }}
+                onClick={handleRefresh}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
@@ -244,7 +131,7 @@ const ReferralList = () => {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <div className="h-6 w-6 rounded-full border-2 border-t-primary animate-spin"></div>
@@ -287,34 +174,34 @@ const ReferralList = () => {
                 {filteredReferrals.map((referral) => (
                   <TableRow key={referral.id}>
                     <TableCell className="font-medium">
-                      {referral.referrerName}
+                      {referral.referrer_name}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        {referral.referredName && <span>{referral.referredName}</span>}
-                        <span className="text-xs text-muted-foreground">{referral.referredEmail}</span>
+                        {referral.referred_name && <span>{referral.referred_name}</span>}
+                        <span className="text-xs text-muted-foreground">{referral.referred_email}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(referral.status)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-xs">Created: {formatDate(referral.createdAt)}</span>
-                        {referral.convertedAt && (
-                          <span className="text-xs">Converted: {formatDate(referral.convertedAt)}</span>
+                        <span className="text-xs">Created: {formatDate(referral.created_at)}</span>
+                        {referral.converted_at && (
+                          <span className="text-xs">Converted: {formatDate(referral.converted_at)}</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {referral.promoCode && (
-                        <span className="font-mono text-xs">{referral.promoCode}</span>
+                      {referral.promo_code && (
+                        <span className="font-mono text-xs">{referral.promo_code}</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {referral.rewardAmount ? (
+                      {referral.reward_amount ? (
                         <div className="flex flex-col">
-                          <span>${referral.rewardAmount}</span>
+                          <span>${referral.reward_amount}</span>
                           <span className="text-xs text-muted-foreground">
-                            {referral.rewardStatus === "processed" ? "Processed" : "Pending"}
+                            {referral.reward_status === "processed" ? "Processed" : "Pending"}
                           </span>
                         </div>
                       ) : (

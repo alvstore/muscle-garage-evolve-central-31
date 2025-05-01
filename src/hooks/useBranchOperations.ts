@@ -1,96 +1,45 @@
 
-import { supabase } from '@/services/supabaseClient';
+import { useState } from 'react';
 import { Branch } from '@/types/branch';
-import { toast } from 'sonner';
-import { formatBranchData } from '@/utils/branchOperations';
+import { toast } from '@/utils/toast-manager';
+import { createBranchInDb, updateBranchInDb } from '@/utils/branchOperations';
 
 export const useBranchOperations = () => {
-  const createBranch = async (branch: Omit<Branch, 'id'>): Promise<Branch | null> => {
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const createBranch = async (branchData: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>): Promise<Branch | null> => {
     try {
-      const { data, error } = await supabase
-        .from('branches')
-        .insert({
-          name: branch.name,
-          address: branch.address,
-          city: branch.city,
-          state: branch.state,
-          country: branch.country,
-          is_active: branch.is_active,
-          phone: branch.phone,
-          email: branch.email,
-          manager_id: branch.manager_id,
-          opening_hours: branch.openingHours,
-          closing_hours: branch.closingHours,
-          max_capacity: branch.maxCapacity,
-          region: branch.region,
-          branch_code: branch.branchCode,
-          tax_rate: branch.taxRate,
-          timezone: branch.timezone
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const newBranch = formatBranchData(data);
-      toast.success("Branch created successfully");
+      setIsLoading(true);
+      const newBranch = await createBranchInDb(branchData);
+      toast.success(`Branch "${branchData.name}" created successfully`);
       return newBranch;
-    } catch (err: any) {
-      console.error("Error creating branch:", err);
-      toast.error(err.message || "Failed to create branch");
+    } catch (error: any) {
+      console.error('Error creating branch:', error);
+      toast.error(error.message || 'Failed to create branch');
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const updateBranch = async (id: string, branch: Partial<Branch>): Promise<Branch | null> => {
+  
+  const updateBranch = async (id: string, branchData: Partial<Branch>): Promise<Branch | null> => {
     try {
-      const updates: any = {};
-      const mappings = {
-        name: 'name',
-        address: 'address',
-        city: 'city',
-        state: 'state',
-        country: 'country',
-        is_active: 'is_active',
-        phone: 'phone',
-        email: 'email',
-        managerId: 'manager_id',
-        openingHours: 'opening_hours',
-        closingHours: 'closing_hours',
-        maxCapacity: 'max_capacity',
-        region: 'region',
-        branchCode: 'branch_code',
-        taxRate: 'tax_rate',
-        timezone: 'timezone'
-      } as const;
-
-      Object.entries(mappings).forEach(([key, dbField]) => {
-        if (branch[key as keyof typeof branch] !== undefined) {
-          updates[dbField] = branch[key as keyof typeof branch];
-        }
-      });
-
-      const { data, error } = await supabase
-        .from('branches')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      const updatedBranch = formatBranchData(data);
-      toast.success("Branch updated successfully");
+      setIsLoading(true);
+      const updatedBranch = await updateBranchInDb(id, branchData);
+      toast.success(`Branch updated successfully`);
       return updatedBranch;
-    } catch (err: any) {
-      console.error("Error updating branch:", err);
-      toast.error(err.message || "Failed to update branch");
+    } catch (error: any) {
+      console.error('Error updating branch:', error);
+      toast.error(error.message || 'Failed to update branch');
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   return {
     createBranch,
-    updateBranch
+    updateBranch,
+    isLoading
   };
 };

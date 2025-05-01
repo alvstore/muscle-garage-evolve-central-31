@@ -2883,6 +2883,10 @@ export type Database = {
         Args: { settings_array: Json }
         Returns: undefined
       }
+      user_belongs_to_branch: {
+        Args: { branch_id: string }
+        Returns: boolean
+      }
       user_has_branch_access: {
         Args: { branch_id: string }
         Returns: boolean
