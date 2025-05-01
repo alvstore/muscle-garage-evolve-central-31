@@ -23,101 +23,39 @@ import { format } from "date-fns";
 import InventoryForm from "./InventoryForm";
 import { toast } from "sonner";
 
-// Mock data for inventory items
-const mockInventoryItems: InventoryItem[] = [
-  {
-    id: "inv-1",
-    name: "Whey Protein",
-    sku: "SUP-WP-001",
-    category: "supplement",
-    description: "Premium whey protein isolate - 1kg",
-    quantity: 25,
-    price: 49.99,
-    costPrice: 30.00,
-    supplier: "NutriBulk",
-    supplierContact: "+1234567890",
-    manufactureDate: "2023-01-15T00:00:00Z",
-    expiryDate: "2024-01-15T00:00:00Z",
-    reorderLevel: 10,
-    location: "Shelf A1",
-    image: "/placeholder.svg",
-    status: "in-stock",
-    lastStockUpdate: "2023-06-01T10:00:00Z",
-    createdAt: "2023-01-20T12:00:00Z",
-    updatedAt: "2023-06-01T10:00:00Z",
-  },
-  {
-    id: "inv-2",
-    name: "Dumbbell Set (5-30kg)",
-    sku: "EQP-DB-001",
-    category: "equipment",
-    description: "Set of 6 pairs of dumbbells ranging from 5kg to 30kg",
-    quantity: 3,
-    price: 599.99,
-    costPrice: 350.00,
-    supplier: "GymEquip",
-    reorderLevel: 1,
-    status: "low-stock",
-    lastStockUpdate: "2023-05-15T14:00:00Z",
-    createdAt: "2023-02-10T15:30:00Z",
-    updatedAt: "2023-05-15T14:00:00Z",
-  },
-  {
-    id: "inv-3",
-    name: "Muscle Garage T-Shirt",
-    sku: "MER-TS-001",
-    category: "merchandise",
-    description: "Official gym t-shirt with logo - Medium size",
-    quantity: 45,
-    price: 24.99,
-    costPrice: 8.50,
-    reorderLevel: 15,
-    location: "Storage B2",
-    status: "in-stock",
-    lastStockUpdate: "2023-06-10T09:30:00Z",
-    createdAt: "2023-03-01T11:45:00Z",
-    updatedAt: "2023-06-10T09:30:00Z",
-  },
-  {
-    id: "inv-4",
-    name: "Pre-Workout Mix",
-    sku: "SUP-PW-001",
-    category: "supplement",
-    description: "Energy-boosting pre-workout formula - 30 servings",
-    quantity: 8,
-    price: 39.99,
-    costPrice: 22.00,
-    supplier: "NutriBulk",
-    supplierContact: "+1234567890",
-    manufactureDate: "2023-02-01T00:00:00Z",
-    expiryDate: "2023-08-01T00:00:00Z",
-    reorderLevel: 10,
-    location: "Shelf A2",
-    status: "low-stock",
-    lastStockUpdate: "2023-05-20T13:15:00Z",
-    createdAt: "2023-02-15T10:20:00Z",
-    updatedAt: "2023-05-20T13:15:00Z",
-  },
-  {
-    id: "inv-5",
-    name: "Resistance Bands",
-    sku: "EQP-RB-001",
-    category: "equipment",
-    description: "Set of 5 resistance bands with different strengths",
-    quantity: 0,
-    price: 29.99,
-    costPrice: 12.00,
-    supplier: "GymEquip",
-    reorderLevel: 5,
-    status: "out-of-stock",
-    lastStockUpdate: "2023-06-05T16:45:00Z",
-    createdAt: "2023-03-10T09:00:00Z",
-    updatedAt: "2023-06-05T16:45:00Z",
-  },
-];
+import { supabase } from '@/services/supabaseClient';
+import { useUserBranch } from '@/hooks/use-user-branch';
 
 const InventoryList = () => {
-  const [inventory, setInventory] = useState<InventoryItem[]>(mockInventoryItems);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { branchId } = useUserBranch();
+
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .select('*')
+          .eq('branch_id', branchId)
+          .order('name');
+
+        if (error) throw error;
+        setInventory(data || []);
+      } catch (error) {
+        console.error('Error fetching inventory:', error);
+        toast.error('Failed to load inventory');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, [branchId]);
+
+const InventoryList = () => {
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -143,24 +81,81 @@ const InventoryList = () => {
     setIsFormOpen(true);
   };
 
-  const handleSaveItem = (item: InventoryItem) => {
-    // In a real application, you would make an API call
-    if (item.id) {
-      setInventory(inventory.map(i => i.id === item.id ? item : i));
-      toast.success("Inventory item updated successfully");
-    } else {
-      const newItem: InventoryItem = {
-        ...item,
-        id: `inv-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastStockUpdate: new Date().toISOString(),
-      };
-      setInventory([...inventory, newItem]);
-      toast.success("Inventory item added successfully");
+  const handleSaveItem = async (item: InventoryItem) => {
+    try {
+      setIsLoading(true);
+      if (item.id) {
+        // Update existing item
+        const { error: updateError } = await supabase
+          .from('inventory_items')
+          .update(item)
+          .eq('id', item.id)
+          .eq('branch_id', branchId);
+
+        if (updateError) throw updateError;
+        toast.success("Inventory item updated successfully");
+      } else {
+        // Create new item
+        const { error: createError } = await supabase
+          .from('inventory_items')
+          .insert([{
+            ...item,
+            branch_id: branchId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_stock_update: new Date().toISOString()
+          }]);
+
+        if (createError) throw createError;
+        toast.success("Inventory item added successfully");
+      }
+
+      // Refresh the list
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('name');
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (error) {
+      console.error('Error saving inventory item:', error);
+      toast.error('Failed to save inventory item');
+    } finally {
+      setIsFormOpen(false);
+      setEditingItem(null);
+      setIsLoading(false);
     }
-    setIsFormOpen(false);
-    setEditingItem(null);
+  };
+
+  const handleDelete = async (item: InventoryItem) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('inventory_items')
+        .delete()
+        .eq('id', item.id)
+        .eq('branch_id', branchId);
+
+      if (error) throw error;
+
+      // Refresh the list
+      const { data, error: refreshError } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('name');
+
+      if (refreshError) throw refreshError;
+      setInventory(data || []);
+      toast.success('Inventory item deleted successfully');
+    } catch (error) {
+      console.error('Error deleting inventory item:', error);
+      toast.error('Failed to delete inventory item');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusBadge = (status: StockStatus) => {
@@ -298,6 +293,7 @@ const InventoryList = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Category</TableHead>
@@ -311,13 +307,22 @@ const InventoryList = () => {
               <TableBody>
                 {filteredInventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                       No inventory items found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredInventory.map((item) => (
                     <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="w-12 h-12 rounded-md overflow-hidden">
+                          <img 
+                            src={item.image || '/placeholder.svg'} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.sku}</TableCell>
                       <TableCell>{getCategoryBadge(item.category)}</TableCell>

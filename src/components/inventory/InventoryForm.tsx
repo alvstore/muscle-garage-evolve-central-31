@@ -1,5 +1,8 @@
 
 import { useState, useEffect } from "react";
+import { FileUpload } from "@/components/ui/file-upload";
+import { toast } from "sonner";
+import { useUploadImage } from "@/hooks/use-upload-image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,11 +34,22 @@ const defaultItem: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'lastS
   location: "",
   manufactureDate: "",
   expiryDate: "",
+  image: ""
 };
 
 const InventoryForm: React.FC<InventoryFormProps> = ({ item, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'lastStockUpdate'> & { id?: string }>(defaultItem);
   const [open, setOpen] = useState(true);
+  const { uploadImage } = useUploadImage();
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      const imageUrl = await uploadImage(file, 'products');
+      setFormData(prev => ({ ...prev, image: imageUrl }));
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+  };
 
   useEffect(() => {
     if (item) {
@@ -104,16 +118,35 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ item, onSave, onCancel })
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Item Name *</Label>
+            <div>
+              <Label>Product Image</Label>
+              <FileUpload
+                onUpload={handleImageUpload}
+                accept="image/*"
+                maxFileSize={5 * 1024 * 1024} // 5MB
+              />
+              {formData.image && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.image}
+                    alt={formData.name}
+                    className="w-32 h-32 object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                required
+                placeholder="Enter product name"
               />
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sku">SKU *</Label>
               <Input
