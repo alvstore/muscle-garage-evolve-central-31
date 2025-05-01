@@ -23,6 +23,8 @@ const AdminDashboard = () => {
   const [pendingPayments, setPendingPayments] = useState([]);
   const [upcomingRenewals, setUpcomingRenewals] = useState([]);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'info' | 'success' | 'error' | 'loading' | null>(null);
   
   const { isSuperAdmin } = usePermissions();
   const { currentBranch } = useBranch();
@@ -49,34 +51,50 @@ const AdminDashboard = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    toast.info(`Searching for: ${query}`);
+    setToastMessage(`Searching for: ${query}`);
+    setToastType('info');
   };
+
+  useEffect(() => {
+    if (toastMessage && toastType) {
+      if (toastType === 'loading') {
+        toast.loading(toastMessage, {
+          id: 'refresh-toast',
+          description: toastMessage
+        });
+      } else {
+        toast[toastType](toastMessage);
+      }
+      setToastMessage(null);
+      setToastType(null);
+    }
+  }, [toastMessage, toastType]);
 
   const handleDateRangeChange = (startDate: Date | undefined, endDate: Date | undefined) => {
     setStartDate(startDate);
     setEndDate(endDate);
-    toast.info(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
+    setToastMessage(`Date range selected: ${startDate?.toDateString()} - ${endDate?.toDateString()}`);
+    setToastType('info');
   };
 
   const handleExport = () => {
-    toast.success('Dashboard data exported successfully');
+    setToastMessage('Dashboard data exported successfully');
+    setToastType('success');
   };
 
   const handleRefresh = async () => {
     try {
-      toast.loading("Refreshing dashboard data", {
-        id: 'refresh-toast',
-        description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
-      });
+      setToastMessage("Refreshing dashboard data");
+      setToastType('loading');
       
       await refreshData();
       
-      toast.dismiss('refresh-toast');
-      toast.success("Dashboard data refreshed successfully");
+      setToastMessage("Dashboard data refreshed successfully");
+      setToastType('success');
     } catch (error) {
       console.error('Error refreshing dashboard:', error);
-      toast.dismiss('refresh-toast');
-      toast.error("Failed to refresh dashboard data");
+      setToastMessage("Failed to refresh dashboard data");
+      setToastType('error');
     }
   };
 
