@@ -57,22 +57,30 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
       setBranches(formattedBranches);
 
       if (formattedBranches.length > 0) {
-        const primaryBranch = formattedBranches.find(b => b.id === primaryBranchId) || formattedBranches[0];
+        // If primaryBranchId is not found, default to first branch
+        const primaryBranch = primaryBranchId 
+          ? formattedBranches.find(b => b.id === primaryBranchId) 
+          : formattedBranches[0];
         
-        // When initializing, don't show a notification
-        if (!currentBranch) {
-          setCurrentBranch(primaryBranch);
-          previousBranchIdRef.current = primaryBranch.id;
-        } else if (primaryBranchId && primaryBranchId !== previousBranchIdRef.current) {
-          setCurrentBranch(primaryBranch);
-          toast.success(`Switched to ${primaryBranch.name}`);
-          previousBranchIdRef.current = primaryBranch.id;
+        if (primaryBranch) {
+          // When initializing, don't show a notification
+          if (!currentBranch) {
+            setCurrentBranch(primaryBranch);
+            previousBranchIdRef.current = primaryBranch.id;
+          } else if (primaryBranchId && primaryBranchId !== previousBranchIdRef.current) {
+            setCurrentBranch(primaryBranch);
+            toast.success(`Switched to ${primaryBranch.name}`);
+            previousBranchIdRef.current = primaryBranch.id;
+          }
         }
       }
     } catch (err: any) {
       console.error('Error fetching branches:', err);
       setError('Failed to load branch data');
-      toast.error('Failed to load branch data');
+      // Only show toast if we have branches but failed to load them
+      if (formattedBranches.length > 0) {
+        toast.error('Failed to load branch data');
+      }
     } finally {
       setIsLoading(false);
     }
