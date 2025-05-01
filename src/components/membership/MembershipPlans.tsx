@@ -59,7 +59,7 @@ const MembershipPlans = () => {
             description: plan.description,
             duration_days: plan.durationDays,
             price: plan.price,
-            features: plan.benefits,
+            features: Array.isArray(plan.benefits) ? plan.benefits : [],
             is_active: plan.status === 'active',
             branch_id: plan.branchId
           })
@@ -75,7 +75,7 @@ const MembershipPlans = () => {
             description: plan.description,
             duration_days: plan.durationDays,
             price: plan.price,
-            features: plan.benefits,
+            features: Array.isArray(plan.benefits) ? plan.benefits : [],
             is_active: plan.status === 'active',
             branch_id: plan.branchId
           }]);

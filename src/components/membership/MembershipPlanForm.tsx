@@ -39,7 +39,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     price: 0,
     durationDays: 30,
     durationLabel: '1-month',
-    benefits: [],
+    benefits: [] as string[],
     allowedClasses: 'basic-only',
     status: 'active',
     createdAt: '',
@@ -48,7 +48,12 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
 
   useEffect(() => {
     if (plan) {
-      setFormData(plan);
+      // Ensure benefits is always an array
+      const benefitsArray = Array.isArray(plan.benefits) ? plan.benefits : [];
+      setFormData({
+        ...plan,
+        benefits: benefitsArray
+      });
     }
   }, [plan]);
 
@@ -76,8 +81,13 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
   };
 
   const handleBenefitsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const benefits = e.target.value.split('\n').filter(benefit => benefit.trim() !== '');
-    setFormData({ ...formData, benefits });
+    const benefits = e.target.value.split('\n')
+      .map(benefit => benefit.trim())
+      .filter(benefit => benefit !== '');
+    setFormData(prev => ({
+      ...prev,
+      benefits
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
