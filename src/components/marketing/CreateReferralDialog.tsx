@@ -83,60 +83,65 @@ const CreateReferralDialog = () => {
           </DialogDescription>
         </DialogHeader>
         
-        <DialogClose>
-          {(onClose) => (
-            <form onSubmit={(e) => handleSubmit(e, onClose)} className="space-y-4 pt-4">
-              <div className="grid gap-2">
-                <Label htmlFor="referred_email">Email Address*</Label>
-                <Input
-                  id="referred_email"
-                  name="referred_email"
-                  type="email"
-                  placeholder="friend@example.com"
-                  value={formData.referred_email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="referred_name">Friend's Name</Label>
-                <Input
-                  id="referred_name"
-                  name="referred_name"
-                  placeholder="John Smith"
-                  value={formData.referred_name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="promo_code">Promo Code (Optional)</Label>
-                <Input
-                  id="promo_code"
-                  name="promo_code"
-                  placeholder="REFER10"
-                  value={formData.promo_code}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <DialogFooter className="mt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => onClose()}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || !formData.referred_email}
-                >
-                  {isSubmitting ? 'Sending...' : 'Send Invitation'}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogClose>
+        {/* Fix: Instead of using DialogClose with a function as children, 
+            we'll use a form with a DialogClose button inside */}
+        <form onSubmit={(e) => {
+          const closeButton = document.querySelector('[data-dismiss]');
+          if (closeButton instanceof HTMLButtonElement) {
+            handleSubmit(e, () => closeButton.click());
+          }
+        }} className="space-y-4 pt-4">
+          <div className="grid gap-2">
+            <Label htmlFor="referred_email">Email Address*</Label>
+            <Input
+              id="referred_email"
+              name="referred_email"
+              type="email"
+              placeholder="friend@example.com"
+              value={formData.referred_email}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="referred_name">Friend's Name</Label>
+            <Input
+              id="referred_name"
+              name="referred_name"
+              placeholder="John Smith"
+              value={formData.referred_name}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="promo_code">Promo Code (Optional)</Label>
+            <Input
+              id="promo_code"
+              name="promo_code"
+              placeholder="REFER10"
+              value={formData.promo_code}
+              onChange={handleInputChange}
+            />
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button 
+                type="button" 
+                variant="outline"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !formData.referred_email}
+              data-dismiss
+            >
+              {isSubmitting ? 'Sending...' : 'Send Invitation'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
