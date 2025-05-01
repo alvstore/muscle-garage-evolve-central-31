@@ -159,28 +159,28 @@ const InventoryList = () => {
   const getStatusBadge = (status: StockStatus) => {
     switch(status) {
       case "in-stock":
-        return <Badge variant="success" className="text-xs">In Stock</Badge>;
+        return <Badge variant="success">In Stock</Badge>;
       case "low-stock":
-        return <Badge variant="warning" className="text-xs">Low Stock</Badge>;
+        return <Badge variant="warning">Low Stock</Badge>;
       case "out-of-stock":
-        return <Badge variant="destructive" className="text-xs">Out of Stock</Badge>;
+        return <Badge variant="destructive">Out of Stock</Badge>;
       case "expired":
-        return <Badge variant="destructive" className="text-xs">Expired</Badge>;
+        return <Badge variant="destructive">Expired</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">Unknown</Badge>;
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
   const getCategoryBadge = (category: InventoryCategory) => {
     switch(category) {
       case "supplement":
-        return <Badge variant="outline" className="text-xs">Supplement</Badge>;
+        return <Badge variant="outline">Supplement</Badge>;
       case "equipment":
-        return <Badge variant="outline" className="text-xs">Equipment</Badge>;
+        return <Badge variant="outline">Equipment</Badge>;
       case "merchandise":
-        return <Badge variant="outline" className="text-xs">Merchandise</Badge>;
+        return <Badge variant="outline">Merchandise</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs">Other</Badge>;
+        return <Badge variant="outline">Other</Badge>;
     }
   };
 

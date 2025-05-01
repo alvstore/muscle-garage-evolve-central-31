@@ -1,8 +1,21 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
 import { useAuth } from './use-auth';
+
+// Debounce function
+const debounce = (func: Function, wait: number) => {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 export interface DashboardSummary {
   totalMembers: number;
@@ -59,6 +72,7 @@ export const useDashboard = () => {
     revenueData: []
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { currentBranch } = useBranch();
   const { user } = useAuth();
 
@@ -66,8 +80,9 @@ export const useDashboard = () => {
   const fetchDashboardData = async () => {
     if (!user) return;
     
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+      
       // Prepare branch filter
       const branchFilter = currentBranch?.id;
       
@@ -81,6 +96,7 @@ export const useDashboard = () => {
       
       if (memberError) {
         console.error('Error fetching member count:', memberError);
+        throw memberError;
       }
       
       // Fetch active members (with active memberships)
@@ -469,12 +485,19 @@ export const useDashboard = () => {
     }
   };
 
-  // Effect to fetch dashboard data on component mount or when branch changes
-  useEffect(() => {
-    if (user) {
+  // Debounced fetch function
+  const debouncedFetch = useCallback(
+    debounce(() => {
       fetchDashboardData();
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    if (currentBranch) {
+      debouncedFetch();
     }
-  }, [currentBranch?.id, user]);
+  }, [currentBranch, debouncedFetch]);
 
   return {
     dashboardData,

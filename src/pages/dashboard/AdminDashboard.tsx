@@ -41,8 +41,10 @@ const AdminDashboard = () => {
   }, [dashboardData.revenueData]);
 
   useEffect(() => {
-    // This effect would load any additional data needed
-    // The main dashboard data is now loaded via the useDashboard hook
+    // Only refresh when branch actually changes
+    if (currentBranch?.id) {
+      refreshData();
+    }
   }, [currentBranch?.id]);
 
   const handleSearch = (query: string) => {
@@ -60,11 +62,22 @@ const AdminDashboard = () => {
     toast.success('Dashboard data exported successfully');
   };
 
-  const handleRefresh = () => {
-    toast("Refreshing dashboard data", {
-      description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
-    });
-    refreshData();
+  const handleRefresh = async () => {
+    try {
+      toast.loading("Refreshing dashboard data", {
+        id: 'refresh-toast',
+        description: `Fetching latest data for ${currentBranch?.name || 'all branches'}`
+      });
+      
+      await refreshData();
+      
+      toast.dismiss('refresh-toast');
+      toast.success("Dashboard data refreshed successfully");
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+      toast.dismiss('refresh-toast');
+      toast.error("Failed to refresh dashboard data");
+    }
   };
 
   const dashboardTitle = currentBranch ? `${currentBranch.name} Dashboard` : "All Branches Dashboard";
