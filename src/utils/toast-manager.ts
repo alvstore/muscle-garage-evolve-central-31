@@ -1,5 +1,19 @@
 
-import { toast as sonnerToast, ToastOptions } from 'sonner';
+import { toast as sonnerToast } from 'sonner';
+
+// Define our own ToastOptions type based on what sonner accepts
+type ToastOptions = {
+  id?: string;
+  duration?: number;
+  icon?: React.ReactNode;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  description?: React.ReactNode;
+  promise?: Promise<any>;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
+};
 
 // Track shown toasts to prevent duplicates in rapid succession
 const recentToasts: Record<string, number> = {};
