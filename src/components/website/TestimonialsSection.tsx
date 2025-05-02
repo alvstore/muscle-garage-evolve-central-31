@@ -96,7 +96,7 @@ const TestimonialsSection = () => {
                     <img src={testimonial.image} alt={testimonial.name} className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">{testimonial.name}</h4>
+                    <h4 className="font-bold text-lg text-white">{testimonial.name}</h4>
                     <p className="text-gym-yellow text-sm">{testimonial.role}</p>
                     <div className="flex items-center mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} size={16} fill={i < testimonial.stars ? "#FFD100" : "none"} className={i < testimonial.stars ? "text-gym-yellow" : "text-gray-500"} />)}
