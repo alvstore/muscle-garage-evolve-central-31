@@ -66,6 +66,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "announcements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       automation_rules: {
@@ -115,6 +122,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_rules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -222,6 +236,13 @@ export type Database = {
           weight?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "body_measurements_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
           {
             foreignKeyName: "body_measurements_member_id_fkey"
             columns: ["member_id"]
@@ -380,6 +401,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       class_types: {
@@ -417,6 +445,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_types_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -485,6 +520,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -599,6 +641,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "email_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       email_templates: {
@@ -645,6 +694,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -698,6 +754,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "essl_device_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -792,6 +855,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -889,6 +959,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "feedback_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "feedback_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
             foreignKeyName: "feedback_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
@@ -952,6 +1036,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fitness_progress_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "fitness_progress_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
             foreignKeyName: "fitness_progress_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
@@ -1012,6 +1110,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "follow_up_history_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
         ]
       }
       follow_up_templates: {
@@ -1043,6 +1148,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -1142,6 +1254,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "hikvision_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       income_categories: {
@@ -1179,6 +1298,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -1302,6 +1428,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       invoices: {
@@ -1372,6 +1505,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "invoices_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
           },
           {
             foreignKeyName: "invoices_member_id_fkey"
@@ -1454,6 +1601,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -1602,6 +1756,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "measurements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       member_attendance: {
@@ -1648,6 +1809,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -1704,6 +1872,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_memberships_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
           {
             foreignKeyName: "member_memberships_membership_id_fkey"
@@ -1831,6 +2006,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "members_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       memberships: {
@@ -1877,6 +2059,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -2025,6 +2214,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "orders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
             foreignKeyName: "orders_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
@@ -2044,6 +2247,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -2171,6 +2381,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
             foreignKeyName: "payments_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
@@ -2251,6 +2468,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       promo_codes: {
@@ -2323,11 +2547,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "promo_codes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
             foreignKeyName: "promo_codes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -2392,8 +2630,22 @@ export type Database = {
             foreignKeyName: "referrals_referred_id_fkey"
             columns: ["referred_id"]
             isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
           },
           {
             foreignKeyName: "referrals_referrer_id_fkey"
@@ -2491,6 +2743,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       sms_templates: {
@@ -2538,6 +2797,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sms_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       staff_attendance: {
@@ -2581,6 +2847,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -2654,6 +2927,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "store_products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "store_products_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_alerts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "store_products_inventory_id_fkey"
             columns: ["inventory_id"]
             isOneToOne: false
@@ -2704,6 +2991,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "trainer_assignments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       trainer_attendance: {
@@ -2750,6 +3044,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -2846,6 +3147,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       webhook_logs: {
@@ -2899,6 +3207,13 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "webhook_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
         ]
       }
       whatsapp_templates: {
@@ -2951,6 +3266,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
           },
         ]
       }
@@ -3039,9 +3361,189 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      analytics_dashboard_stats: {
+        Row: {
+          active_members: number | null
+          branch_id: string | null
+          cancelled_members_monthly: number | null
+          membership_revenue: number | null
+          merchandise_revenue: number | null
+          monthly_check_ins: number | null
+          new_members_daily: number | null
+          new_members_monthly: number | null
+          new_members_weekly: number | null
+          supplements_revenue: number | null
+          total_revenue: number | null
+          upcoming_renewals: number | null
+          weekly_check_ins: number | null
+        }
+        Relationships: []
+      }
+      class_performance: {
+        Row: {
+          actual_attendance: number | null
+          attendance_percentage: number | null
+          branch_id: string | null
+          capacity: number | null
+          class_id: string | null
+          class_name: string | null
+          class_type: string | null
+          enrolled: number | null
+          enrollment_percentage: number | null
+          performance_category: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      inventory_alerts: {
+        Row: {
+          branch_id: string | null
+          id: string | null
+          is_low_stock: boolean | null
+          name: string | null
+          quantity: number | null
+          reorder_level: number | null
+          stock_status: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          id?: string | null
+          is_low_stock?: never
+          name?: string | null
+          quantity?: number | null
+          reorder_level?: number | null
+          stock_status?: never
+        }
+        Update: {
+          branch_id?: string | null
+          id?: string | null
+          is_low_stock?: never
+          name?: string | null
+          quantity?: number | null
+          reorder_level?: number | null
+          stock_status?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      member_attendance_heatmap: {
+        Row: {
+          attendance_count: number | null
+          branch_id: string | null
+          day_of_week: number | null
+          hour_of_day: number | null
+        }
+        Relationships: []
+      }
+      member_churn_risk: {
+        Row: {
+          branch_id: string | null
+          churn_risk_score: number | null
+          days_since_last_visit: number | null
+          days_until_expiry: number | null
+          member_id: string | null
+          member_name: string | null
+          primary_risk_factor: string | null
+          status: string | null
+          visits_last_30_days: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "members_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      trainer_utilization: {
+        Row: {
+          branch_id: string | null
+          minutes_utilized: number | null
+          sessions_conducted: number | null
+          total_capacity_minutes: number | null
+          trainer_id: string | null
+          trainer_name: string | null
+          utilization_percentage: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_attendance_trend: {
+        Args: { branch_id_param: string; start_date: string; end_date: string }
+        Returns: {
+          date_point: string
+          attendance_count: number
+        }[]
+      }
+      get_membership_trend: {
+        Args: { branch_id_param: string; start_date: string; end_date: string }
+        Returns: {
+          date_point: string
+          new_members: number
+          cancelled_members: number
+          net_change: number
+        }[]
+      }
+      get_revenue_breakdown: {
+        Args: { branch_id_param: string; start_date: string; end_date: string }
+        Returns: {
+          category: string
+          amount: number
+        }[]
+      }
       get_user_role: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string

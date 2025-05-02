@@ -16,14 +16,16 @@ import {
 interface DateRangePickerProps {
   date: DateRange;
   onDateChange: (date: DateRange) => void;
+  className?: string;
 }
 
 export function DateRangePicker({
   date,
   onDateChange,
+  className,
 }: DateRangePickerProps) {
   return (
-    <div className="grid gap-2">
+    <div className={cn("grid gap-2", className)}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -55,7 +57,7 @@ export function DateRangePicker({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={(selectedDateRange) => onDateChange(selectedDateRange || { from: new Date(), to: new Date() })}
+            onSelect={onDateChange}
             numberOfMonths={2}
           />
         </PopoverContent>
