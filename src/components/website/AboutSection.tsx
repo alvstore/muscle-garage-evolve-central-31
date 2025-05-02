@@ -75,7 +75,7 @@ const AboutSection = () => {
               <div className="p-3 bg-gym-yellow rounded-full inline-block text-gym-black mb-4">
                 {facility.icon}
               </div>
-              <h3 className="text-xl font-bold mb-2">{facility.title}</h3>
+              <h3 className="text-xl font-bold mb-2 text-white">{facility.title}</h3>
               <p className="text-gray-400">{facility.description}</p>
             </div>)}
         </div>
