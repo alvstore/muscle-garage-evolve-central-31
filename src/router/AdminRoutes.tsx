@@ -7,6 +7,7 @@ import { settingsRoutes } from './routes/admin/settingsRoutes';
 import { websiteRoutes } from './routes/admin/websiteRoutes';
 import { adminMembershipRoutes } from './routes/admin/membershipRoutes';
 import AdminLayout from '@/layouts/AdminLayout';
+import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 
 const AdminRoutes: RouteObject = {
   path: '/',
@@ -18,6 +19,10 @@ const AdminRoutes: RouteObject = {
     ...settingsRoutes,
     ...websiteRoutes,
     ...adminMembershipRoutes,
+    {
+      path: '/system-backup',
+      element: <SystemBackupPage />
+    },
   ],
 };
 
