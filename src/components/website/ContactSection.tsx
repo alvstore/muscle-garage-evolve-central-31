@@ -199,7 +199,7 @@ const ContactSection = () => {
                     <Clock size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">Working Hours</h4>
+                    <h4 className="font-bold text-lg text-white">Working Hours</h4>
                     <p className="text-gray-300">Monday - Friday: 5:00 AM - 11:00 PM</p>
                     <p className="text-gray-300">Saturday - Sunday: 6:00 AM - 10:00 PM</p>
                   </div>
