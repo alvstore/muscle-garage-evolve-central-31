@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import WebsiteContentManager from './WebsiteContentManager';
 import SEOManager from './SEOManager';
 import WebsiteAnalytics from './WebsiteAnalytics';
+// Using updated WebsiteContentManager with real Supabase data integration
 
 const WebsiteManagementPage: React.FC = () => {
   const { section = 'pages' } = useParams<{ section?: string }>();
@@ -47,7 +48,7 @@ const WebsiteManagementPage: React.FC = () => {
       default:
         return (
           <div className="p-4">
-            <h3 className="text-lg font-medium mb-4">Website Management</h3>
+            <h3 className="text-lg font-medium mb-4">Content Management</h3>
             <p className="text-gray-500">Select a section to manage your website content.</p>
           </div>
         );

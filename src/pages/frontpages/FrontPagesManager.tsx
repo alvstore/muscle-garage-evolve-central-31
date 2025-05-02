@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,18 +7,137 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Globe, Home, Users, Dumbbell, CalendarDays, 
-  CreditCard, MessageSquare, Info, Phone, ExternalLink, Eye
+  CreditCard, MessageSquare, Info, Phone, ExternalLink, Eye, Loader2
 } from 'lucide-react';
 import WebsitePreview from '@/components/frontpages/WebsitePreview';
+import { useToast } from '@/components/ui/use-toast';
+import { websiteContentService, WebsiteContent } from '@/services/websiteContentService';
 
-const FrontPagesManager = () => {
+// Using WebsiteContent interface from websiteContentService
+
+interface FrontPagesManagerProps {
+  websiteContent?: Record<string, WebsiteContent[]>;
+  updateWebsiteContent?: (section: string, id: string, updates: Partial<WebsiteContent>) => Promise<void>;
+  isLoading?: boolean;
+}
+
+const FrontPagesManager: React.FC<FrontPagesManagerProps> = ({ 
+  websiteContent: propWebsiteContent,
+  updateWebsiteContent: propUpdateContent,
+  isLoading: propIsLoading
+}) => {
   const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(propIsLoading || false);
+  const [websiteContent, setWebsiteContent] = useState<Record<string, WebsiteContent[]>>(propWebsiteContent || {
+    hero: [],
+    about: [],
+    services: [],
+    classes: [],
+    trainers: [],
+    gallery: [],
+    testimonials: [],
+    pricing: [],
+    contact: []
+  });
+  const { toast } = useToast();
+  
+  // If props are not provided, fetch data directly
+  useEffect(() => {
+    if (!propWebsiteContent && !propIsLoading) {
+      fetchWebsiteContent();
+    }
+  }, [propWebsiteContent, propIsLoading]);
+  
+  // Update local state when props change
+  useEffect(() => {
+    if (propWebsiteContent) {
+      setWebsiteContent(propWebsiteContent);
+    }
+    if (propIsLoading !== undefined) {
+      setIsLoading(propIsLoading);
+    }
+  }, [propWebsiteContent, propIsLoading]);
+  
+  const fetchWebsiteContent = async () => {
+    try {
+      setIsLoading(true);
+      const contentBySection = await websiteContentService.getAllContent();
+      setWebsiteContent(contentBySection);
+    } catch (error) {
+      console.error('Error fetching website content:', error);
+      toast({
+        title: 'Error fetching content',
+        description: 'Could not load website content. Using default values.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const updateWebsiteContent = async (section: string, id: string, updates: Partial<WebsiteContent>) => {
+    if (propUpdateContent) {
+      return propUpdateContent(section, id, updates);
+    }
+    
+    try {
+      await websiteContentService.updateContent(id, updates);
 
+      // Update local state
+      setWebsiteContent(prev => {
+        const updatedContent = { ...prev };
+        const sectionItems = [...updatedContent[section]];
+        const itemIndex = sectionItems.findIndex(item => item.id === id);
+        
+        if (itemIndex !== -1) {
+          sectionItems[itemIndex] = { ...sectionItems[itemIndex], ...updates };
+          updatedContent[section] = sectionItems;
+        }
+        
+        return updatedContent;
+      });
+
+      toast({
+        title: 'Content updated',
+        description: 'Website content has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Error updating website content:', error);
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update website content.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Helper function to get content for a section
+  const getSectionContent = (section: string) => {
+    return websiteContent[section] || [];
+  };
+  
+  // Helper function to get a specific field from a section
+  const getContentField = (section: string, field: string, defaultValue: string = '') => {
+    const sectionContent = getSectionContent(section);
+    const item = sectionContent.find(item => item[field as keyof WebsiteContent] !== undefined);
+    return item ? (item[field as keyof WebsiteContent] as string) || defaultValue : defaultValue;
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading website content...</span>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Website Management</h1>
+        <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowPreview(!showPreview)}>
               <Eye className="mr-2 h-4 w-4" />
@@ -90,42 +209,96 @@ const FrontPagesManager = () => {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="hero-title">Hero Title</Label>
-                      <Input id="hero-title" defaultValue="SHAPE YOUR BODY PERFECT" />
+                      <Input 
+                        id="hero-title" 
+                        value={getContentField('hero', 'title', 'SHAPE YOUR BODY PERFECT')} 
+                        onChange={(e) => {
+                          const heroContent = getSectionContent('hero');
+                          if (heroContent.length > 0) {
+                            updateWebsiteContent('hero', heroContent[0].id, { title: e.target.value });
+                          }
+                        }}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
-                      <Input id="hero-subtitle" defaultValue="Transform your physique and improve your health with our professional trainers" />
+                      <Input 
+                        id="hero-subtitle" 
+                        value={getContentField('hero', 'subtitle', 'Transform your physique and improve your health with our professional trainers')} 
+                        onChange={(e) => {
+                          const heroContent = getSectionContent('hero');
+                          if (heroContent.length > 0) {
+                            updateWebsiteContent('hero', heroContent[0].id, { subtitle: e.target.value });
+                          }
+                        }}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="hero-cta">Call to Action Button</Label>
-                      <Input id="hero-cta" defaultValue="Get Started Today" />
+                      <Input 
+                        id="hero-cta" 
+                        value={getContentField('hero', 'cta_text', 'Get Started Today')} 
+                        onChange={(e) => {
+                          const heroContent = getSectionContent('hero');
+                          if (heroContent.length > 0) {
+                            updateWebsiteContent('hero', heroContent[0].id, { cta_text: e.target.value });
+                          }
+                        }}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="features-title">Features Section Title</Label>
-                      <Input id="features-title" defaultValue="WHY CHOOSE US" />
+                      <Input 
+                        id="features-title" 
+                        value={getContentField('services', 'title', 'WHY CHOOSE US')} 
+                        onChange={(e) => {
+                          const servicesContent = getSectionContent('services');
+                          if (servicesContent.length > 0) {
+                            updateWebsiteContent('services', servicesContent[0].id, { title: e.target.value });
+                          }
+                        }}
+                      />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="feature1-title">Feature 1 Title</Label>
-                        <Input id="feature1-title" defaultValue="Modern Equipment" />
+                    
+                    {/* Feature items - would be dynamically generated from Supabase data */}
+                    {getSectionContent('services').slice(0, 2).map((feature, index) => (
+                      <div key={feature.id} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`feature${index+1}-title`}>Feature {index+1} Title</Label>
+                          <Input 
+                            id={`feature${index+1}-title`} 
+                            value={feature.title || `Feature ${index+1}`} 
+                            onChange={(e) => updateWebsiteContent('services', feature.id, { title: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`feature${index+1}-desc`}>Feature {index+1} Description</Label>
+                          <Textarea 
+                            id={`feature${index+1}-desc`} 
+                            value={feature.content || ''} 
+                            onChange={(e) => updateWebsiteContent('services', feature.id, { content: e.target.value })}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="feature1-desc">Feature 1 Description</Label>
-                        <Textarea id="feature1-desc" defaultValue="State-of-the-art fitness equipment for effective workouts" />
+                    ))}
+                    
+                    {/* If we don't have enough features in the database, show placeholders */}
+                    {getSectionContent('services').length < 2 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="feature-placeholder">Feature Title</Label>
+                          <Input id="feature-placeholder" defaultValue="Professional Trainers" disabled />
+                          <p className="text-xs text-muted-foreground">Add features in Supabase to edit</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="feature-desc-placeholder">Feature Description</Label>
+                          <Textarea id="feature-desc-placeholder" defaultValue="Expert trainers to guide you through your fitness journey" disabled />
+                        </div>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="feature2-title">Feature 2 Title</Label>
-                        <Input id="feature2-title" defaultValue="Professional Trainers" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="feature2-desc">Feature 2 Description</Label>
-                        <Textarea id="feature2-desc" defaultValue="Expert trainers to guide you through your fitness journey" />
-                      </div>
-                    </div>
+                    )}
+                    
                     <div className="flex justify-end">
-                      <Button>Save Changes</Button>
+                      <Button onClick={fetchWebsiteContent}>Refresh Content</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -141,27 +314,54 @@ const FrontPagesManager = () => {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="about-title">Page Title</Label>
-                        <Input id="about-title" defaultValue="About Muscle Garage" />
+                        <Input 
+                          id="about-title" 
+                          value={getContentField('about', 'title', 'About Muscle Garage')} 
+                          onChange={(e) => {
+                            const aboutContent = getSectionContent('about');
+                            if (aboutContent.length > 0) {
+                              updateWebsiteContent('about', aboutContent[0].id, { title: e.target.value });
+                            }
+                          }}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="about-description">Description</Label>
                         <Textarea 
                           id="about-description" 
                           className="w-full h-32 min-h-[8rem]"
-                          defaultValue="Muscle Garage is a premier fitness facility dedicated to helping individuals achieve their fitness goals through personalized training programs, state-of-the-art equipment, and a supportive community environment."
+                          value={getContentField('about', 'content', 'Muscle Garage is a premier fitness facility dedicated to helping individuals achieve their fitness goals through personalized training programs, state-of-the-art equipment, and a supportive community environment.')}
+                          onChange={(e) => {
+                            const aboutContent = getSectionContent('about');
+                            if (aboutContent.length > 0) {
+                              updateWebsiteContent('about', aboutContent[0].id, { content: e.target.value });
+                            }
+                          }}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Features</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input defaultValue="Professional Trainers" />
-                          <Input defaultValue="Modern Equipment" />
-                          <Input defaultValue="Nutrition Guidance" />
-                          <Input defaultValue="Personalized Programs" />
+                          {getSectionContent('about').slice(1, 5).map((feature, index) => (
+                            <Input 
+                              key={feature.id}
+                              value={feature.title || `Feature ${index+1}`}
+                              onChange={(e) => updateWebsiteContent('about', feature.id, { title: e.target.value })}
+                            />
+                          ))}
+                          
+                          {/* If we don't have enough features in the database, show placeholders */}
+                          {Array.from({ length: Math.max(0, 4 - getSectionContent('about').slice(1).length) }).map((_, index) => (
+                            <Input 
+                              key={`placeholder-${index}`}
+                              defaultValue={["Professional Trainers", "Modern Equipment", "Nutrition Guidance", "Personalized Programs"][index]} 
+                              disabled
+                            />
+                          ))}
                         </div>
                       </div>
                       <div className="flex justify-end">
-                        <Button>Save Changes</Button>
+                        <Button onClick={fetchWebsiteContent}>Refresh Content</Button>
                       </div>
                     </div>
                   </CardContent>
