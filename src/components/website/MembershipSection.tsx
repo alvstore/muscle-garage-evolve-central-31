@@ -110,7 +110,7 @@ const MembershipSection = () => {
                 </div>}
               
               <div className="p-6 bg-gym-gray-800">
-                <h3 className="text-xl font-impact mb-2">{plan.name}</h3>
+                <h3 className="text-xl font-impact mb-2 text-white">{plan.name}</h3>
                 
                 <div className="flex items-end mb-4">
                   <span className="text-4xl font-bold text-white">₹{plan.price.toLocaleString()}</span>
