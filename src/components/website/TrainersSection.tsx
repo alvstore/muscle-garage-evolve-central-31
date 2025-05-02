@@ -171,7 +171,7 @@ const TrainersSection = () => {
         animationDelay: '0.6s'
       }}>
           <div className="text-center max-w-3xl mx-auto mb-8">
-            <h2 className="text-3xl md:text-5xl font-impact mb-4">
+            <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
               CLASS <span className="text-gym-yellow">SCHEDULE</span>
             </h2>
             <p className="text-gray-300 mb-8">

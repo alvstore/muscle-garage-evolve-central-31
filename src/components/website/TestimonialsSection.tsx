@@ -72,7 +72,7 @@ const TestimonialsSection = () => {
   return <section id="testimonials" ref={sectionRef} className="section-padding bg-gym-black">
       <div className="gym-container">
         <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
-          <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
+          <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white font-bold">
             WHAT OUR <span className="text-gym-yellow">MEMBERS SAY</span>
           </h2>
           <p className="text-gray-300">
