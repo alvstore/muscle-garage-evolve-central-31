@@ -158,7 +158,7 @@ const TrainersSection = () => {
                 <p className="text-gym-yellow">{trainer.role}</p>
                 <p className="text-gray-400 text-sm my-2">{trainer.experience}</p>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {trainer.specializations.map(spec => <span key={spec} className="text-xs bg-gym-gray-700 px-2 py-1 rounded-md">
+                  {trainer.specializations.map(spec => <span key={spec} className="text-xs bg-gym-gray-700 px-2 py-1 rounded-md text-white">
                       {spec}
                     </span>)}
                 </div>
