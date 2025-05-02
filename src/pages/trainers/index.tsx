@@ -26,7 +26,7 @@ const TrainerList = () => {
     if (trainers) {
       setFilteredTrainers(
         trainers.filter((trainer) =>
-          (trainer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (trainer.name || trainer.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (trainer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           ((trainer.specialization || trainer.specializations?.[0] || '')).toLowerCase().includes(searchTerm.toLowerCase())
         )
@@ -137,7 +137,7 @@ const TrainerList = () => {
                   <div className="absolute -top-10 left-6">
                     <Avatar className="h-16 w-16 border-4 border-background">
                       {trainer.avatar ? (
-                        <AvatarImage src={trainer.avatar} alt={trainer.name || 'Trainer'} />
+                        <AvatarImage src={trainer.avatar} alt={trainer.name || trainer.fullName || 'Trainer'} />
                       ) : (
                         <AvatarFallback className="text-lg font-medium">
                           {getInitials(trainer.name || trainer.fullName || 'Trainer')}

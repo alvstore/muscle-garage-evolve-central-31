@@ -35,16 +35,17 @@ export const useTrainers = () => {
         const formattedTrainers: Trainer[] = data.map(item => ({
           id: item.id,
           name: item.full_name || '',
+          fullName: item.full_name,
           email: item.email,
           phone: item.phone,
           specializations: item.department ? [item.department] : [],
           specialization: item.department, // For backwards compatibility
-          bio: '',
-          isAvailable: true,
+          bio: item.bio || '',
+          isAvailable: item.is_active || true,
           branchId: item.branch_id,
           avatar: item.avatar_url,
-          ratingValue: 0,
-          rating: 0
+          ratingValue: item.rating || 0,
+          rating: item.rating || 0
         }));
         
         setTrainers(formattedTrainers);
