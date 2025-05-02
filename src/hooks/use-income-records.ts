@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { financeService } from '@/services/financeService';
 import { useBranch } from '@/hooks/use-branch';
@@ -27,10 +28,10 @@ export const useIncomeRecords = () => {
   };
 
   // Create a new income record
-  const createRecord = async (record: Omit<IncomeRecord, 'id'>) => {
+  const createRecord = async (record: Partial<FinancialTransaction>) => {
     try {
       const newRecord = await financeService.createIncomeRecord(record);
-      setRecords(prev => [...prev, newRecord]);
+      setRecords(prev => [...prev, newRecord as FinancialTransaction]);
       return newRecord;
     } catch (error) {
       throw error;
@@ -38,11 +39,11 @@ export const useIncomeRecords = () => {
   };
 
   // Update an existing record
-  const updateRecord = async (id: string, updates: Partial<IncomeRecord>) => {
+  const updateRecord = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
       const updatedRecord = await financeService.updateIncomeRecord(id, updates);
       setRecords(prev => 
-        prev.map(record => record.id === id ? updatedRecord : record)
+        prev.map(record => record.id === id ? updatedRecord as FinancialTransaction : record)
       );
       return updatedRecord;
     } catch (error) {
@@ -82,7 +83,7 @@ export const useIncomeRecords = () => {
 
   // Initial data fetch
   useEffect(() => {
-    if (user) {
+    if (user && currentBranch?.id) {
       fetchRecords();
     }
   }, [user, currentBranch?.id]);

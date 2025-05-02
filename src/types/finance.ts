@@ -1,6 +1,7 @@
+
 export type TransactionType = 'income' | 'expense';
 
-export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'online' | 'card' | 'razorpay' | 'other';
+export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'check' | 'online' | 'card' | 'razorpay' | 'other' | 'credit' | 'debit' | 'cheque' | 'upi';
 
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | null;
 
@@ -16,10 +17,15 @@ export interface FinancialTransaction {
   recorded_by?: string;
   branch_id?: string;
   category_id?: string;
+  category?: string;
+  category_name?: string;
   reference_id: string | null;
+  reference?: string;
   recurring: boolean;
   recurring_period: RecurringPeriod;
   transaction_id: string | null;
+  source?: string;
+  attachment?: string;
 }
 
 export interface InvoiceItem {

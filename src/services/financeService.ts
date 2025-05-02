@@ -1,20 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface IncomeRecord {
-  id: string;
-  date: string;
-  amount: number;
-  category: string;
-  description: string;
-  source: string;
-  paymentMethod: string;
-  reference: string;
-  attachment?: string;
-  branch_id: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { FinancialTransaction } from '@/types/finance';
 
 export const financeService = {
   // Get all income records with optional filters
@@ -23,7 +10,7 @@ export const financeService = {
     startDate?: string,
     endDate?: string,
     category?: string
-  ): Promise<IncomeRecord[]> {
+  ): Promise<FinancialTransaction[]> {
     try {
       let query = supabase
         .from('income_records')
@@ -49,7 +36,26 @@ export const financeService = {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform to match FinancialTransaction
+      const records = data.map(record => ({
+        id: record.id,
+        type: 'income' as const,
+        amount: record.amount,
+        description: record.description || '',
+        transaction_date: record.date,
+        payment_method: record.payment_method,
+        source: record.source,
+        reference: record.reference,
+        reference_id: record.reference,
+        category: record.category,
+        recurring: false,
+        recurring_period: null,
+        transaction_id: null,
+        branch_id: record.branch_id
+      }));
+      
+      return records;
     } catch (error) {
       console.error('Error fetching income records:', error);
       toast.error('Failed to fetch income records');
@@ -58,16 +64,46 @@ export const financeService = {
   },
 
   // Create a new income record
-  async createIncomeRecord(record: Omit<IncomeRecord, 'id'>): Promise<IncomeRecord> {
+  async createIncomeRecord(record: Partial<FinancialTransaction>): Promise<Partial<FinancialTransaction>> {
     try {
+      // Transform from FinancialTransaction to income_records schema
+      const recordToInsert = {
+        date: record.transaction_date || new Date().toISOString(),
+        amount: record.amount,
+        description: record.description,
+        source: record.source,
+        payment_method: record.payment_method,
+        reference: record.reference || record.reference_id,
+        category: record.category,
+        branch_id: record.branch_id
+      };
+
       const { data, error } = await supabase
         .from('income_records')
-        .insert([record])
+        .insert([recordToInsert])
         .select()
         .single();
 
       if (error) throw error;
-      return data as IncomeRecord;
+      
+      // Transform back to FinancialTransaction format
+      const transformedRecord: Partial<FinancialTransaction> = {
+        id: data.id,
+        type: 'income',
+        amount: data.amount,
+        description: data.description,
+        transaction_date: data.date,
+        payment_method: data.payment_method,
+        source: data.source,
+        reference: data.reference,
+        reference_id: data.reference,
+        category: data.category,
+        recurring: false,
+        recurring_period: null,
+        branch_id: data.branch_id
+      };
+      
+      return transformedRecord;
     } catch (error) {
       console.error('Error creating income record:', error);
       toast.error('Failed to create income record');
@@ -76,17 +112,47 @@ export const financeService = {
   },
 
   // Update an existing income record
-  async updateIncomeRecord(id: string, updates: Partial<IncomeRecord>): Promise<IncomeRecord> {
+  async updateIncomeRecord(id: string, updates: Partial<FinancialTransaction>): Promise<Partial<FinancialTransaction>> {
     try {
+      // Transform from FinancialTransaction to income_records schema
+      const recordToUpdate = {
+        date: updates.transaction_date,
+        amount: updates.amount,
+        description: updates.description,
+        source: updates.source,
+        payment_method: updates.payment_method,
+        reference: updates.reference || updates.reference_id,
+        category: updates.category,
+        branch_id: updates.branch_id
+      };
+
       const { data, error } = await supabase
         .from('income_records')
-        .update(updates)
+        .update(recordToUpdate)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return data as IncomeRecord;
+      
+      // Transform back to FinancialTransaction format
+      const transformedRecord: Partial<FinancialTransaction> = {
+        id: data.id,
+        type: 'income',
+        amount: data.amount,
+        description: data.description,
+        transaction_date: data.date,
+        payment_method: data.payment_method,
+        source: data.source,
+        reference: data.reference,
+        reference_id: data.reference,
+        category: data.category,
+        recurring: false,
+        recurring_period: null,
+        branch_id: data.branch_id
+      };
+      
+      return transformedRecord;
     } catch (error) {
       console.error('Error updating income record:', error);
       toast.error('Failed to update income record');
@@ -159,7 +225,7 @@ export const financeService = {
       if (deleteError) throw deleteError;
 
       // Update the record to remove attachment reference
-      await financeService.updateIncomeRecord(recordId, { attachment: null });
+      await this.updateIncomeRecord(recordId, { attachment: undefined });
     } catch (error) {
       console.error('Error deleting attachment:', error);
       toast.error('Failed to delete attachment');

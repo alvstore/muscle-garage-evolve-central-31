@@ -10,24 +10,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash, Download, DollarSign, FileText } from "lucide-react";
+import { Plus, Edit, Trash, Download, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { format } from 'date-fns';
 import { useIncomeRecords } from '@/hooks/use-income-records';
 import { FinancialTransaction, PaymentMethod } from '@/types/finance';
 import { useBranch } from '@/hooks/use-branch';
 
-interface IncomeRecord extends FinancialTransaction {
-  id: string;
-  source: string;
-  attachment?: string;
-  category_name?: string;
-}
-
 const IncomeRecordsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<IncomeRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<FinancialTransaction | null>(null);
   const { currentBranch } = useBranch();
   
   // Form state
@@ -42,7 +35,8 @@ const IncomeRecordsPage = () => {
     reference_id: null,
     transaction_id: null,
     category_id: '',
-    category_name: ''
+    category: '',
+    reference: '',
   });
 
   const {
@@ -74,7 +68,7 @@ const IncomeRecordsPage = () => {
     { value: 'credit', label: 'Credit Card' },
     { value: 'debit', label: 'Debit Card' },
     { value: 'upi', label: 'UPI' },
-    { value: 'bank', label: 'Bank Transfer' },
+    { value: 'bank_transfer', label: 'Bank Transfer' },
     { value: 'cheque', label: 'Cheque' },
     { value: 'other', label: 'Other' }
   ];
@@ -100,7 +94,9 @@ const IncomeRecordsPage = () => {
       recurring: false,
       reference_id: null,
       transaction_id: null,
-      category_id: null
+      category_id: null,
+      category: '',
+      reference: '',
     });
     setShowCreateDialog(true);
   };
@@ -113,12 +109,14 @@ const IncomeRecordsPage = () => {
       description: record.description,
       payment_method: record.payment_method as PaymentMethod,
       branch_id: record.branch_id,
-      source: record.source,
+      source: record.source || '',
       recurring: record.recurring,
       reference_id: record.reference_id,
       transaction_id: record.transaction_id,
       category_id: record.category_id,
-      category_name: record.category_name
+      category_name: record.category_name,
+      category: record.category || '',
+      reference: record.reference || record.reference_id || '',
     });
     setShowEditDialog(true);
   };
@@ -136,7 +134,10 @@ const IncomeRecordsPage = () => {
         recurring: formData.recurring,
         reference_id: formData.reference_id,
         transaction_id: formData.transaction_id,
-        category_id: formData.category_id
+        category_id: formData.category_id,
+        category: formData.category,
+        reference: formData.reference,
+        transaction_date: formData.transaction_date || new Date().toISOString(),
       };
 
       await createRecord(newRecord);
@@ -163,7 +164,9 @@ const IncomeRecordsPage = () => {
         reference_id: formData.reference_id,
         transaction_id: formData.transaction_id,
         category_id: formData.category_id,
-        category_name: formData.category_name
+        category: formData.category,
+        category_name: formData.category_name,
+        reference: formData.reference,
       };
 
       await updateRecord(selectedRecord.id, updatedRecord);
@@ -182,30 +185,6 @@ const IncomeRecordsPage = () => {
     } catch (error) {
       console.error('Error deleting income record:', error);
       toast.error('Failed to delete income record');
-    }
-  };
-
-  // Handle update record action
-  const handleUpdateRecord = async () => {
-    if (!selectedRecord) return;
-    
-    try {
-      const updatedRecord: Partial<FinancialTransaction> = {
-        amount: formData.amount,
-        description: formData.description,
-        payment_method: formData.payment_method as PaymentMethod,
-        source: formData.source,
-        reference_id: formData.reference_id,
-        category_id: formData.category_id,
-        transaction_date: formData.transaction_date
-      };
-      
-      await updateRecord(selectedRecord.id, updatedRecord);
-      setShowEditDialog(false);
-      toast.success('Income record updated successfully');
-    } catch (error) {
-      console.error('Error updating income record:', error);
-      toast.error('Failed to update income record');
     }
   };
 
@@ -257,7 +236,7 @@ const IncomeRecordsPage = () => {
                 {records.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>
-                      {format(new Date(record.transaction_date), 'MMM d, yyyy')}
+                      {record.transaction_date && format(new Date(record.transaction_date), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -266,11 +245,11 @@ const IncomeRecordsPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{record.category}</Badge>
+                      <Badge variant="outline">{record.category || record.category_name || 'N/A'}</Badge>
                     </TableCell>
-                    <TableCell>{record.source}</TableCell>
+                    <TableCell>{record.source || 'N/A'}</TableCell>
                     <TableCell>{record.payment_method}</TableCell>
-                    <TableCell>{record.reference}</TableCell>
+                    <TableCell>{record.reference || record.reference_id || 'N/A'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
@@ -336,10 +315,9 @@ const IncomeRecordsPage = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Membership">Membership</SelectItem>
-                    <SelectItem value="PT Session">PT Session</SelectItem>
-                    <SelectItem value="Store">Store</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {incomeCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -354,27 +332,30 @@ const IncomeRecordsPage = () => {
               <div className="grid gap-2">
                 <Label htmlFor="payment_method">Payment Method</Label>
                 <Select
-                  value={formData.payment_method}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
+                  value={formData.payment_method as string}
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    payment_method: value as PaymentMethod 
+                  }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="credit">Credit Card</SelectItem>
-                    <SelectItem value="debit">Debit Card</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {paymentMethods.map(method => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="reference_id">Reference</Label>
+                <Label htmlFor="reference">Reference</Label>
                 <Input
-                  id="reference_id"
-                  value={formData.reference_id}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reference_id: e.target.value }))}
+                  id="reference"
+                  value={formData.reference}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value, reference_id: e.target.value }))}
                 />
               </div>
               <div className="grid gap-2">
@@ -426,8 +407,11 @@ const IncomeRecordsPage = () => {
               <div className="grid gap-2">
                 <Label htmlFor="edit_payment_method">Payment Method</Label>
                 <Select 
-                  value={formData.payment_method} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
+                  value={formData.payment_method as string} 
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    payment_method: value as PaymentMethod 
+                  }))}
                 >
                   <SelectTrigger id="edit_payment_method">
                     <SelectValue placeholder="Select payment method" />
@@ -465,8 +449,12 @@ const IncomeRecordsPage = () => {
                 <Label htmlFor="edit_reference">Reference/Invoice Number</Label>
                 <Input 
                   id="edit_reference" 
-                  value={formData.reference_id} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, reference_id: e.target.value }))}
+                  value={formData.reference} 
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    reference: e.target.value,
+                    reference_id: e.target.value
+                  }))}
                 />
               </div>
               

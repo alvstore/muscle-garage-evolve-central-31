@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './hooks/use-branch';
+import { BranchProvider } from './contexts/BranchContext';
 import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
