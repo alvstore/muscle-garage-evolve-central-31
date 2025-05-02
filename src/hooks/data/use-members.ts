@@ -25,15 +25,91 @@ export interface Member {
 
 export const useMembers = () => {
   const { currentBranch } = useBranch();
-  const { data: members, isLoading, error, refreshData, addItem, updateItem, deleteItem } = useSupabaseQuery<Member>({
+  
+  // Use custom query with proper typings
+  const queryResult = useSupabaseQuery<Member>({
     tableName: 'members',
-    filterBranch: true,
-    subscribeToChanges: true,
-    branchId: currentBranch?.id
+    select: '*',
+    orderBy: { column: 'name', ascending: true },
+    filters: currentBranch?.id ? [{ column: 'branch_id', operator: 'eq', value: currentBranch.id }] : [],
+    enabled: !!currentBranch?.id
   });
+  
+  // Extract properties with the correct names to match expected interface
+  const { 
+    data: members, 
+    isLoading, 
+    error, 
+    refetch 
+  } = queryResult;
 
-  const refetch = () => {
-    refreshData();
+  // Define missing methods to match the expected return type
+  const addMember = async (memberData: Omit<Member, 'id'>) => {
+    try {
+      if (!currentBranch?.id) {
+        throw new Error('No branch selected');
+      }
+      
+      // Ensure branch_id is set
+      const dataWithBranch = { 
+        ...memberData, 
+        branch_id: currentBranch.id 
+      };
+      
+      const { data, error } = await supabase
+        .from('members')
+        .insert([dataWithBranch])
+        .select();
+        
+      if (error) throw error;
+      
+      toast.success('Member added successfully');
+      refetch();
+      return data?.[0] as Member;
+    } catch (err: any) {
+      console.error('Error adding member:', err);
+      toast.error(err.message || 'Failed to add member');
+      return null;
+    }
+  };
+  
+  const updateMember = async (id: string, updates: Partial<Member>) => {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .update(updates)
+        .eq('id', id)
+        .select();
+        
+      if (error) throw error;
+      
+      toast.success('Member updated successfully');
+      refetch();
+      return data?.[0] as Member;
+    } catch (err: any) {
+      console.error('Error updating member:', err);
+      toast.error(err.message || 'Failed to update member');
+      return null;
+    }
+  };
+  
+  const deleteMember = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast.success('Member deleted successfully');
+      refetch();
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting member:', err);
+      toast.error(err.message || 'Failed to delete member');
+      return false;
+    }
   };
 
   return {
@@ -41,8 +117,8 @@ export const useMembers = () => {
     isLoading,
     error,
     refetch,
-    addMember: addItem,
-    updateMember: updateItem,
-    deleteMember: deleteItem
+    addMember,
+    updateMember,
+    deleteMember
   };
 };

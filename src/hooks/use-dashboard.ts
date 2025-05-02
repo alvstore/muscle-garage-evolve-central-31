@@ -22,9 +22,8 @@ export interface DashboardSummary {
   totalTrainers?: number;
   activeTrainers?: number;
   activeClasses?: number;
-  // Add missing properties
-  newMembers?: number;
-  expiringMemberships?: number;
+  newMembers: number;
+  expiringMemberships: number;
   classSessions?: number;
   inventoryAlerts?: number;
   attendanceTrend?: {
@@ -62,7 +61,14 @@ export const useDashboard = () => {
 
       // Fetch dashboard summary data
       const summary = await fetchDashboardSummary(currentBranch.id);
-      setDashboardData(summary);
+      
+      // Ensure totalIncome is always set even if the API doesn't return it
+      const updatedSummary = {
+        ...summary,
+        totalIncome: summary.totalIncome || summary.revenue?.monthly || 0
+      };
+      
+      setDashboardData(updatedSummary);
 
       // Fetch pending payments
       const payments = await fetchPendingPayments(currentBranch.id);

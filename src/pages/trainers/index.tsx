@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Star, Edit, Trash2, UserCheck, X } from 'lucide-react';
 import { useTrainers } from '@/hooks/use-trainers';
-import CreateTrainerDialog from '@/components/trainers/CreateTrainerDialog';
+import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trainer } from '@/types/trainer';
 
@@ -28,7 +28,7 @@ const TrainerList = () => {
         trainers.filter((trainer) =>
           trainer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           trainer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          trainer.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+          (trainer.specialization || '').toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     }
@@ -123,7 +123,7 @@ const TrainerList = () => {
                           <Star
                             key={star}
                             className={`h-4 w-4 ${
-                              (trainer.ratingValue || 0) >= star
+                              (trainer.ratingValue || trainer.rating || 0) >= star
                                 ? 'text-yellow-500 fill-yellow-500'
                                 : 'text-gray-300'
                             }`}
@@ -155,7 +155,7 @@ const TrainerList = () => {
                     </div>
 
                     <div>
-                      <Badge variant="secondary">{trainer.specialization}</Badge>
+                      <Badge variant="secondary">{trainer.specialization || (trainer.specializations && trainer.specializations[0])}</Badge>
                       {trainer.isAvailable && (
                         <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-300">
                           Available
@@ -187,7 +187,7 @@ const TrainerList = () => {
 
         <CreateTrainerDialog
           open={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
+          onOpenChange={setShowCreateDialog}
           onSuccess={() => {
             setShowCreateDialog(false);
             refetch();

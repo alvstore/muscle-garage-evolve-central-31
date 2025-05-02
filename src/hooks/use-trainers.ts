@@ -3,21 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/use-branch';
 import { toast } from 'sonner';
-
-export interface Trainer {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  user_id?: string;
-  branch_id?: string;
-  specializations?: string[];
-  bio?: string;
-  status?: string;
-  image_url?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Trainer } from '@/types/trainer';
 
 export const useTrainers = () => {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -51,13 +37,14 @@ export const useTrainers = () => {
           name: item.full_name || '',
           email: item.email,
           phone: item.phone,
-          user_id: item.id,
-          branch_id: item.branch_id,
           specializations: item.department ? [item.department] : [],
+          specialization: item.department, // For backwards compatibility
           bio: '',
-          status: 'active',
-          created_at: item.created_at,
-          updated_at: item.updated_at
+          isAvailable: true,
+          branchId: item.branch_id,
+          avatar: item.avatar_url,
+          ratingValue: 0,
+          rating: 0
         }));
         
         setTrainers(formattedTrainers);
@@ -77,10 +64,53 @@ export const useTrainers = () => {
     }
   }, [fetchTrainers, currentBranch?.id]);
 
+  // Add the missing methods
+  const refetch = fetchTrainers;
+
+  const deleteTrainer = async (id: string) => {
+    try {
+      setIsLoading(true);
+      
+      // First check if the trainer has any active assignments
+      const { data: assignments, error: checkError } = await supabase
+        .from('trainer_assignments')
+        .select('id')
+        .eq('trainer_id', id)
+        .eq('is_active', true);
+      
+      if (checkError) throw checkError;
+      
+      if (assignments && assignments.length > 0) {
+        toast.error('Cannot delete trainer with active member assignments');
+        return false;
+      }
+      
+      // Delete the trainer profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success('Trainer deleted successfully');
+      await fetchTrainers();
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting trainer:', err);
+      toast.error(err.message || 'Failed to delete trainer');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     trainers,
     isLoading,
     error,
-    fetchTrainers
+    fetchTrainers,
+    refetch,
+    deleteTrainer
   };
 };

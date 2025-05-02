@@ -86,10 +86,64 @@ export function useSupabaseQuery<T>({
     fetchData();
   }, [fetchData]);
 
+  // Add necessary methods for CRUD operations
+  const addItem = async (item: Omit<T, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .insert([item])
+        .select();
+
+      if (error) throw error;
+      await fetchData(); // Refresh data
+      return data[0];
+    } catch (err) {
+      console.error(`Error adding item to ${tableName}:`, err);
+      throw err;
+    }
+  };
+
+  const updateItem = async (id: string, updates: Partial<T>) => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .update(updates)
+        .eq('id', id)
+        .select();
+
+      if (error) throw error;
+      await fetchData(); // Refresh data
+      return data[0];
+    } catch (err) {
+      console.error(`Error updating item in ${tableName}:`, err);
+      throw err;
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchData(); // Refresh data
+      return true;
+    } catch (err) {
+      console.error(`Error deleting item from ${tableName}:`, err);
+      throw err;
+    }
+  };
+
   return {
     data,
     isLoading,
     error,
-    refetch: fetchData
+    refetch: fetchData,
+    refreshData: fetchData,  // Alias for consistency
+    addItem,
+    updateItem,
+    deleteItem
   };
 }
