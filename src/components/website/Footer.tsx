@@ -11,7 +11,7 @@ const Footer = () => {
             </p>
             <div className="bg-gym-gray-800 p-4 rounded-lg">
               <p className="font-bold mb-1">Emergency Contact:</p>
-              <p className="text-gym-yellow">+91 98765 43210</p>
+              <p className="text-gym-yellow">+91 88806 88828</p>
             </div>
           </div>
           
