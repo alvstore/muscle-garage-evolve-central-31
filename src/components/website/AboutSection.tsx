@@ -59,7 +59,7 @@ const AboutSection = () => {
           </p>
           
           <div className="mt-8 mb-8">
-            <h3 className="text-2xl font-impact mb-4">OUR <span className="text-gym-yellow">GOAL</span></h3>
+            <h3 className="text-2xl font-impact mb-4 text-white">OUR <span className="text-gym-yellow">GOAL</span></h3>
             <p className="text-gray-300">
               Our Mission is to provide a Dynamic Training Facility with state of the art equipments, Pro-instructors & High-level training.  
               All our members are trained by Pro-Trainers who have abundance of knowledge & skills in many aspects of Fitness.  
