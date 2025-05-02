@@ -113,7 +113,7 @@ const MembershipSection = () => {
                 <h3 className="text-xl font-impact mb-2">{plan.name}</h3>
                 
                 <div className="flex items-end mb-4">
-                  <span className="text-4xl font-bold">₹{plan.price.toLocaleString()}</span>
+                  <span className="text-4xl font-bold text-white">₹{plan.price.toLocaleString()}</span>
                   <span className="text-gray-400 ml-2">
                     /{plan.name.toLowerCase().includes('month') ? 'plan' : 'plan'}
                   </span>
