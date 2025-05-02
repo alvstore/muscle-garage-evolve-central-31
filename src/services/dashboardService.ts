@@ -1,4 +1,3 @@
-
 import { supabase } from '@/services/supabaseClient';
 import { DashboardSummary } from '@/hooks/use-dashboard';
 
@@ -20,110 +19,74 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
       },
       upcomingRenewals: 0,
       todayCheckIns: 0,
+      // Add missing properties with defaults
+      newMembers: 0,
+      expiringMemberships: 0,
+      membersByStatus: {
+        active: 0,
+        inactive: 0,
+        expired: 0
+      },
+      attendanceTrend: [],
+      revenueData: []
     };
 
     // Build our queries with branch filter if provided
     let branchFilter = branchId ? { branch_id: branchId } : {};
     
-    // Total members count
-    const { count: totalMembers } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Active members count
-    const { count: activeMembers } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Pending payments
-    const { data: pendingPayments } = await supabase
-      .from('invoices')
-      .select('id, amount')
-      .eq('status', 'pending')
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Today's check-ins
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const { count: todayCheckIns } = await supabase
-      .from('member_attendance')
-      .select('*', { count: 'exact', head: true })
-      .gte('check_in', today.toISOString())
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Upcoming membership renewals
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    const { count: upcomingRenewals } = await supabase
-      .from('member_memberships')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .lt('end_date', nextWeek.toISOString())
-      .gt('end_date', today.toISOString())
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Revenue calculations
-    // Daily revenue
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
-    
-    const { data: dailyPayments } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('status', 'completed')
-      .gte('payment_date', dayStart.toISOString())
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Weekly revenue
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 7);
-    
-    const { data: weeklyPayments } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('status', 'completed')
-      .gte('payment_date', weekStart.toISOString())
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Monthly revenue
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    
-    const { data: monthlyPayments } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('status', 'completed')
-      .gte('payment_date', monthStart.toISOString())
-      .eq(branchId ? 'branch_id' : 'id', branchId || '');
-    
-    // Calculate totals
-    const pendingPaymentsTotal = pendingPayments?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
-    const dailyRevenueTotal = dailyPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    const weeklyRevenueTotal = weeklyPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    const monthlyRevenueTotal = monthlyPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-    
-    // Assemble the summary object
-    summary = {
-      totalMembers: totalMembers || 0,
-      activeMembers: activeMembers || 0,
-      totalIncome: 0, // Set a default value
-      pendingPayments: { 
-        count: pendingPayments?.length || 0, 
-        total: pendingPaymentsTotal 
-      },
-      upcomingRenewals: upcomingRenewals || 0,
-      todayCheckIns: todayCheckIns || 0,
-      revenue: {
-        daily: dailyRevenueTotal,
-        weekly: weeklyRevenueTotal,
-        monthly: monthlyRevenueTotal
+    // Fetch analytics data from the new view
+    if (branchId) {
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('analytics_dashboard_stats')
+        .select('*')
+        .eq('branch_id', branchId)
+        .single();
+        
+      if (!analyticsError && analyticsData) {
+        summary = {
+          ...summary,
+          activeMembers: analyticsData.active_members || 0,
+          newMembers: analyticsData.new_members_daily || 0,
+          totalMembers: analyticsData.active_members || 0, // Assuming total = active for now
+          todayCheckIns: analyticsData.weekly_check_ins || 0,
+          upcomingRenewals: analyticsData.upcoming_renewals || 0,
+          revenue: {
+            daily: analyticsData.total_revenue / 30 || 0, // Approximation
+            weekly: analyticsData.total_revenue / 4 || 0, // Approximation
+            monthly: analyticsData.total_revenue || 0
+          }
+        };
       }
+    }
+    
+    // Create mock attendance trend (we'll replace later)
+    const mockAttendanceTrend = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      mockAttendanceTrend.push({
+        date: date.toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 50) + 10
+      });
+    }
+    
+    // Create mock revenue data (we'll replace later)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const mockRevenueData = months.map(month => ({
+      month,
+      revenue: Math.floor(Math.random() * 50000) + 10000,
+      expenses: Math.floor(Math.random() * 30000) + 5000,
+      profit: Math.floor(Math.random() * 20000) + 5000
+    }));
+    
+    // Add mock data (to be replaced with real data)
+    summary.attendanceTrend = mockAttendanceTrend.reverse();
+    summary.revenueData = mockRevenueData;
+    summary.membersByStatus = {
+      active: summary.activeMembers,
+      inactive: Math.floor(summary.activeMembers * 0.2),
+      expired: Math.floor(summary.activeMembers * 0.1)
     };
     
     return summary;

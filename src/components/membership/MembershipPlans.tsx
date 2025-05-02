@@ -10,18 +10,22 @@ import MembershipPlanForm from "./MembershipPlanForm";
 import { toast } from "sonner";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { supabase } from "@/services/supabaseClient";
+import { useBranch } from "@/hooks/use-branch";
 
 const MembershipPlans = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+  const { currentBranch } = useBranch();
 
-  const { data: plans, isLoading, error } = useSupabaseQuery<MembershipPlan[]>({
+  const { data: plans = [], isLoading, error, refetch } = useSupabaseQuery<MembershipPlan[]>({
     tableName: 'memberships',
     select: '*',
     orderBy: {
       column: 'created_at',
       ascending: false
-    }
+    },
+    filters: currentBranch ? [{ column: 'branch_id', operator: 'eq', value: currentBranch.id }] : [],
+    enabled: !!currentBranch
   });
 
   const handleAddPlan = () => {
@@ -43,6 +47,7 @@ const MembershipPlans = () => {
 
       if (error) throw error;
       toast.success("Membership plan deleted successfully");
+      refetch();
     } catch (err) {
       toast.error("Failed to delete membership plan");
       console.error("Error deleting plan:", err);
@@ -61,7 +66,7 @@ const MembershipPlans = () => {
             price: plan.price,
             features: Array.isArray(plan.benefits) ? plan.benefits : [],
             is_active: plan.status === 'active',
-            branch_id: plan.branchId
+            branch_id: currentBranch?.id
           })
           .eq('id', plan.id);
 
@@ -77,13 +82,14 @@ const MembershipPlans = () => {
             price: plan.price,
             features: Array.isArray(plan.benefits) ? plan.benefits : [],
             is_active: plan.status === 'active',
-            branch_id: plan.branchId
+            branch_id: currentBranch?.id
           }]);
 
         if (error) throw error;
         toast.success("Membership plan created successfully");
       }
       setIsFormOpen(false);
+      refetch();
     } catch (err) {
       toast.error("Failed to save membership plan");
       console.error("Error saving plan:", err);
@@ -101,6 +107,14 @@ const MembershipPlans = () => {
   const getStatusColor = (status: string) => {
     return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
+
+  if (isLoading) {
+    return <div>Loading membership plans...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading membership plans: {error.message}</div>;
+  }
 
   return (
     <>

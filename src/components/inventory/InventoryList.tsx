@@ -1,347 +1,301 @@
-
-import { useState } from "react";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table";
-import { 
-  Card, CardContent, CardHeader, CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select";
-import { SearchIcon, PlusIcon, MoreVerticalIcon, PackageIcon, AlertCircleIcon } from "lucide-react";
-import { InventoryItem, InventoryCategory, StockStatus } from "@/types/inventory";
-import { format } from "date-fns";
-import InventoryForm from "./InventoryForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PlusIcon, EditIcon, TrashIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from '@/services/supabaseClient';
-import { useUserBranch } from '@/hooks/use-user-branch';
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { supabase } from "@/services/supabaseClient";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import InventoryForm, { InventoryFormProps } from "./InventoryForm";
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  quantity: number;
+  reorder_level: number;
+  cost_price: number;
+  selling_price: number;
+  branch_id: string;
+  created_at?: string;
+}
+
+// The existing InventoryList component with fixes
 const InventoryList = () => {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { branchId } = useUserBranch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentItem, setCurrentItem] = useState<InventoryItem | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  const { data: items, isLoading, error, refetch } = useSupabaseQuery<InventoryItem[]>({
+    tableName: 'inventory',
+    select: '*',
+    orderBy: sortBy ? { column: sortBy, ascending: sortOrder === "asc" } : { column: 'created_at', ascending: false }
+  });
 
   useEffect(() => {
-    const fetchInventory = async () => {
+    const fetchCategories = async () => {
       try {
-        setIsLoading(true);
         const { data, error } = await supabase
-          .from('inventory_items')
-          .select('*')
-          .eq('branch_id', branchId)
-          .order('name');
+          .from('inventory')
+          .select('category')
+          .distinct()
+          .order('category', { ascending: true });
 
-        if (error) throw error;
-        setInventory(data || []);
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const categoryList = data.map(item => item.category);
+          setCategories(categoryList);
+        }
       } catch (error) {
-        console.error('Error fetching inventory:', error);
-        toast.error('Failed to load inventory');
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
       }
     };
 
-    fetchInventory();
-  }, [branchId]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const handleAddItem = () => {
-    setEditingItem(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEditItem = (item: InventoryItem) => {
-    setEditingItem(item);
-    setIsFormOpen(true);
-  };
+    fetchCategories();
+  }, []);
 
   const handleSaveItem = async (item: InventoryItem) => {
     try {
-      setIsLoading(true);
       if (item.id) {
-        // Update existing item
-        const { error: updateError } = await supabase
-          .from('inventory_items')
+        const { error } = await supabase
+          .from('inventory')
           .update(item)
-          .eq('id', item.id)
-          .eq('branch_id', branchId);
+          .eq('id', item.id);
 
-        if (updateError) throw updateError;
+        if (error) {
+          throw error;
+        }
         toast.success("Inventory item updated successfully");
       } else {
-        // Create new item
-        const { error: createError } = await supabase
-          .from('inventory_items')
-          .insert([{
-            ...item,
-            branch_id: branchId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            last_stock_update: new Date().toISOString()
-          }]);
+        const { error } = await supabase
+          .from('inventory')
+          .insert([item]);
 
-        if (createError) throw createError;
-        toast.success("Inventory item added successfully");
+        if (error) {
+          throw error;
+        }
+        toast.success("Inventory item created successfully");
       }
-
-      // Refresh the list
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('name');
-
-      if (error) throw error;
-      setInventory(data || []);
-    } catch (error) {
-      console.error('Error saving inventory item:', error);
-      toast.error('Failed to save inventory item');
+      refetch();
+    } catch (err) {
+      toast.error("Failed to save inventory item");
+      console.error("Error saving item:", err);
     } finally {
-      setIsFormOpen(false);
-      setEditingItem(null);
-      setIsLoading(false);
+      setShowAddModal(false);
+      setShowEditModal(false);
     }
   };
 
-  const handleDelete = async (item: InventoryItem) => {
+  const handleDeleteItem = async (id: string) => {
     try {
-      setIsLoading(true);
       const { error } = await supabase
-        .from('inventory_items')
+        .from('inventory')
         .delete()
-        .eq('id', item.id)
-        .eq('branch_id', branchId);
+        .eq('id', id);
 
-      if (error) throw error;
-
-      // Refresh the list
-      const { data, error: refreshError } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('name');
-
-      if (refreshError) throw refreshError;
-      setInventory(data || []);
-      toast.success('Inventory item deleted successfully');
-    } catch (error) {
-      console.error('Error deleting inventory item:', error);
-      toast.error('Failed to delete inventory item');
-    } finally {
-      setIsLoading(false);
+      if (error) {
+        throw error;
+      }
+      toast.success("Inventory item deleted successfully");
+      refetch();
+    } catch (err) {
+      toast.error("Failed to delete inventory item");
+      console.error("Error deleting item:", err);
     }
   };
 
-  const getStatusBadge = (status: StockStatus) => {
-    switch(status) {
-      case "in-stock":
-        return <Badge variant="success">In Stock</Badge>;
-      case "low-stock":
-        return <Badge variant="warning">Low Stock</Badge>;
-      case "out-of-stock":
-        return <Badge variant="destructive">Out of Stock</Badge>;
-      case "expired":
-        return <Badge variant="destructive">Expired</Badge>;
-      default:
-        return <Badge variant="secondary">Unknown</Badge>;
+  const filteredItems = items?.filter(item => {
+    const searchRegex = new RegExp(searchQuery, 'i');
+    const matchesSearch = searchRegex.test(item.name) || searchRegex.test(item.description);
+    const matchesCategory = filterCategory ? item.category === filterCategory : true;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
     }
   };
 
-  const getCategoryBadge = (category: InventoryCategory) => {
-    switch(category) {
-      case "supplement":
-        return <Badge variant="outline">Supplement</Badge>;
-      case "equipment":
-        return <Badge variant="outline">Equipment</Badge>;
-      case "merchandise":
-        return <Badge variant="outline">Merchandise</Badge>;
-      default:
-        return <Badge variant="outline">Other</Badge>;
+  const getSortIcon = (column: string) => {
+    if (sortBy === column) {
+      return sortOrder === "asc" ? "↑" : "↓";
     }
+    return null;
   };
-
-  const alertsCount = inventory.filter(item => 
-    item.status === "low-stock" || 
-    item.status === "out-of-stock" || 
-    (item.expiryDate && new Date(item.expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
-  ).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between space-x-4">
-        <h2 className="text-2xl font-semibold">Inventory Management</h2>
-        <Button
-          onClick={handleAddItem}
-          className="flex items-center space-x-2"
-        >
-          <PlusIcon className="h-4 w-4" />
-          <span>Add Item</span>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Inventory List</h2>
+        <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-1">
+          <PlusIcon className="h-4 w-4" /> Add Item
         </Button>
       </div>
 
-      <div className="flex flex-col space-y-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex-1 max-w-[200px]">
-            <Label htmlFor="search">Search</Label>
-            <Input
-              id="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name or SKU..."
-              className="w-full"
-            />
-          </div>
+      <div className="flex space-x-4 mb-4">
+        <Input
+          type="text"
+          placeholder="Search by name or description"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
 
-          <div className="flex-1 max-w-[200px]">
-            <Label htmlFor="category">Category</Label>
-            <Select
-              value={categoryFilter}
-              onValueChange={setCategoryFilter}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="supplement">Supplements</SelectItem>
-                <SelectItem value="equipment">Equipment</SelectItem>
-                <SelectItem value="merchandise">Merchandise</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex-1 max-w-[200px]">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="in-stock">In Stock</SelectItem>
-                <SelectItem value="low-stock">Low Stock</SelectItem>
-                <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="rounded-md border">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Inventory Items</h3>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={handleAddItem}
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Add Item
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">SKU</th>
-                  <th className="px-4 py-2">Category</th>
-                  <th className="px-4 py-2">Quantity</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Price</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInventory
-                  .map((item) => (
-                    <tr key={item.id} className="border-b">
-                      <td className="px-4 py-2">
-                        <div className="flex items-center space-x-3">
-                          <PackageIcon className="h-4 w-4 text-gray-500" />
-                          <span>{item.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2">{item.sku}</td>
-                      <td className="px-4 py-2">
-                        {getCategoryBadge(item.category)}
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{item.quantity}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2">
-                        {getStatusBadge(item.status)}
-                      </td>
-                      <td className="px-4 py-2">${item.price.toFixed(2)}</td>
-                      <td className="px-4 py-2">
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditItem(item)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(item)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {isFormOpen && (
-          <InventoryForm
-            item={editingItem}
-            onSave={handleSaveItem}
-            onClose={() => {
-              setIsFormOpen(false);
-              setEditingItem(null);
-            }}
-          />
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9">
+              Filter by Category
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuItem onClick={() => setFilterCategory(null)}>
+              All Categories
+            </DropdownMenuItem>
+            {categories.map(category => (
+              <DropdownMenuItem key={category} onClick={() => setFilterCategory(category)}>
+                {category}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      <ScrollArea>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
+                Name {getSortIcon('name')}
+              </TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead onClick={() => handleSort('category')} className="cursor-pointer">
+                Category {getSortIcon('category')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('quantity')} className="cursor-pointer">
+                Quantity {getSortIcon('quantity')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('reorder_level')} className="cursor-pointer">
+                Reorder Level {getSortIcon('reorder_level')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('cost_price')} className="cursor-pointer">
+                Cost Price {getSortIcon('cost_price')}
+              </TableHead>
+              <TableHead onClick={() => handleSort('selling_price')} className="cursor-pointer">
+                Selling Price {getSortIcon('selling_price')}
+              </TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center">Loading inventory items...</TableCell>
+              </TableRow>
+            )}
+            {error && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-destructive">Error: {error.message}</TableCell>
+              </TableRow>
+            )}
+            {filteredItems?.map(item => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell>{item.description}</TableCell>
+                <TableCell>{item.category}</TableCell>
+                <TableCell>{item.quantity}</TableCell>
+                <TableCell>{item.reorder_level}</TableCell>
+                <TableCell>{item.cost_price}</TableCell>
+                <TableCell>{item.selling_price}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <EditIcon className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setCurrentItem(item);
+                        setShowEditModal(true);
+                      }}>
+                        <EditIcon className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this item?")) {
+                          handleDeleteItem(item.id);
+                        }
+                      }}>
+                        <TrashIcon className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+
+      <Dialog open={showAddModal} onOpenChange={() => setShowAddModal(false)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Inventory Item</DialogTitle>
+          </DialogHeader>
+          <InventoryForm onSave={handleSaveItem} onClose={() => setShowAddModal(false)} />
+        </DialogContent>
+      </Dialog>
+
+    {showEditModal && currentItem && (
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Inventory Item</DialogTitle>
+          </DialogHeader>
+          <InventoryForm 
+            item={currentItem} 
+            onSave={handleSaveItem}
+            onClose={() => setShowEditModal(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    )}
     </div>
   );
 };

@@ -22,6 +22,26 @@ export interface DashboardSummary {
   totalTrainers?: number;
   activeTrainers?: number;
   activeClasses?: number;
+  // Add missing properties
+  newMembers?: number;
+  expiringMemberships?: number;
+  classSessions?: number;
+  inventoryAlerts?: number;
+  attendanceTrend?: {
+    date: string;
+    count: number;
+  }[];
+  membersByStatus?: {
+    active: number;
+    inactive: number;
+    expired: number;
+  };
+  revenueData?: {
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }[];
 }
 
 export const useDashboard = () => {

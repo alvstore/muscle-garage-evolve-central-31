@@ -1,311 +1,270 @@
-
-import { useState, useEffect } from "react";
-import { FileUpload } from "@/components/ui/file-upload";
-import { toast } from "sonner";
-import { useUploadImage } from "@/hooks/use-upload-image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription as DD,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { InventoryItem, InventoryCategory, StockStatus } from "@/types/inventory";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { InventoryItem } from "@/types/inventory";
 
-interface InventoryFormProps {
-  item: InventoryItem | null;
-  onSave: (item: InventoryItem) => void;
-  onCancel: () => void;
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Item name must be at least 2 characters.",
+  }),
+  description: z.string().optional(),
+  category: z.string().min(2, {
+    message: "Category must be at least 2 characters.",
+  }),
+  quantity: z.number().min(0, {
+    message: "Quantity must be zero or more.",
+  }),
+  reorder_level: z.number().min(0, {
+    message: "Reorder level must be zero or more.",
+  }),
+  cost_price: z.number().min(0, {
+    message: "Cost price must be zero or more.",
+  }),
+  selling_price: z.number().min(0, {
+    message: "Selling price must be zero or more.",
+  }),
+});
+
+// Update the InventoryFormProps to include onClose
+export interface InventoryFormProps {
+  item?: InventoryItem;
+  onSave: (item: InventoryItem) => Promise<void>;
+  onClose?: () => void;
 }
 
-const defaultItem: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'lastStockUpdate'> = {
-  name: "",
-  sku: "",
-  category: "supplement",
-  description: "",
-  quantity: 0,
-  price: 0,
-  costPrice: 0,
-  reorderLevel: 5,
-  status: "in-stock",
-  supplier: "",
-  supplierContact: "",
-  location: "",
-  manufactureDate: "",
-  expiryDate: "",
-  image: ""
-};
+const InventoryForm: React.FC<InventoryFormProps> = ({ 
+  item, 
+  onSave,
+  onClose 
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const InventoryForm: React.FC<InventoryFormProps> = ({ item, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'lastStockUpdate'> & { id?: string }>(defaultItem);
-  const [open, setOpen] = useState(true);
-  const { uploadImage } = useUploadImage();
-
-  const handleImageUpload = async (file: File) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: item?.name || "",
+      description: item?.description || "",
+      category: item?.category || "",
+      quantity: item?.quantity || 0,
+      reorder_level: item?.reorder_level || 0,
+      cost_price: item?.cost_price || 0,
+      selling_price: item?.selling_price || 0,
+    },
+  });
+  
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     try {
-      const imageUrl = await uploadImage(file, 'products');
-      setFormData(prev => ({ ...prev, image: imageUrl }));
+      // Convert form values to InventoryItem
+      const inventoryData: InventoryItem = {
+        id: item?.id || '',
+        name: values.name,
+        description: values.description,
+        category: values.category,
+        quantity: values.quantity,
+        reorder_level: values.reorder_level,
+        cost_price: values.cost_price,
+        selling_price: values.selling_price,
+        branch_id: item?.branch_id || '',
+      };
+      
+      await onSave(inventoryData);
+      // Use optional chaining for onClose
+      onClose?.();
     } catch (error) {
-      toast.error('Failed to upload image');
+      console.error("Error saving inventory item:", error);
+      toast.error("Failed to save inventory item");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (item) {
-      const { createdAt, updatedAt, lastStockUpdate, ...rest } = item;
-      setFormData(rest);
-    } else {
-      setFormData(defaultItem);
-    }
-  }, [item]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === "quantity" || name === "price" || name === "costPrice" || name === "reorderLevel") {
-      setFormData({ ...formData, [name]: parseFloat(value) || 0 });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Determine status based on quantity and reorder level
-    let calculatedStatus: StockStatus = formData.status;
-    if (formData.quantity <= 0) {
-      calculatedStatus = "out-of-stock";
-    } else if (formData.quantity <= formData.reorderLevel) {
-      calculatedStatus = "low-stock";
-    } else {
-      calculatedStatus = "in-stock";
-    }
-    
-    // Check if item is expired
-    if (formData.expiryDate && new Date(formData.expiryDate) < new Date()) {
-      calculatedStatus = "expired";
-    }
-    
-    const submissionData: InventoryItem = {
-      ...formData,
-      id: formData.id || `temp-${Date.now()}`,
-      status: calculatedStatus,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastStockUpdate: new Date().toISOString(),
-    };
-    
-    onSave(submissionData);
-    setOpen(false);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    onCancel();
-  };
-
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>{item ? "Edit Inventory Item" : "Add New Inventory Item"}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Product Image</Label>
-              <FileUpload
-                onUpload={handleImageUpload}
-                accept="image/*"
-                maxFileSize={5 * 1024 * 1024} // 5MB
-              />
-              {formData.image && (
-                <div className="mt-2">
-                  <img 
-                    src={formData.image}
-                    alt={formData.name}
-                    className="w-32 h-32 object-cover rounded-md"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Item Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter item name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter item description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter item category" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter quantity"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value))
+                    }
                   />
-                </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter product name"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sku">SKU *</Label>
-              <Input
-                id="sku"
-                name="sku"
-                value={formData.sku}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="supplement">Supplement</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="merchandise">Merchandise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Storage Location</Label>
-              <Input
-                id="location"
-                name="location"
-                value={formData.location || ""}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description || ""}
-              onChange={handleChange}
-              rows={3}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                name="quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={handleChange}
-                required
-                min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="price">Selling Price *</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="costPrice">Cost Price *</Label>
-              <Input
-                id="costPrice"
-                name="costPrice"
-                type="number"
-                value={formData.costPrice}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Supplier</Label>
-              <Input
-                id="supplier"
-                name="supplier"
-                value={formData.supplier || ""}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="supplierContact">Supplier Contact</Label>
-              <Input
-                id="supplierContact"
-                name="supplierContact"
-                value={formData.supplierContact || ""}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reorderLevel">Reorder Level *</Label>
-              <Input
-                id="reorderLevel"
-                name="reorderLevel"
-                type="number"
-                value={formData.reorderLevel}
-                onChange={handleChange}
-                required
-                min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manufactureDate">Manufacture Date</Label>
-              <Input
-                id="manufactureDate"
-                name="manufactureDate"
-                type="date"
-                value={formData.manufactureDate ? new Date(formData.manufactureDate).toISOString().split('T')[0] : ""}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expiryDate">Expiry Date</Label>
-              <Input
-                id="expiryDate"
-                name="expiryDate"
-                type="date"
-                value={formData.expiryDate ? new Date(formData.expiryDate).toISOString().split('T')[0] : ""}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" type="button" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {item ? "Update Item" : "Add Item"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="reorder_level"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Reorder Level</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter reorder level"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value))
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <FormField
+            control={form.control}
+            name="cost_price"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Cost Price</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter cost price"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value))
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="selling_price"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Selling Price</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter selling price"
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value))
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Item"}
+        </Button>
+      </form>
+    </Form>
   );
 };
 
