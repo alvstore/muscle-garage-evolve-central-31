@@ -192,7 +192,7 @@ const TrainersSection = () => {
                   <div className="space-y-4">
                     {classType.schedule.map((session, idx) => <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gym-gray-700 rounded-lg">
                         <div>
-                          <h4 className="font-bold">{session.day}</h4>
+                          <h4 className="font-bold text-white">{session.day}</h4>
                           <p className="text-gym-yellow">{session.time}</p>
                         </div>
                         <div className="mt-2 sm:mt-0">
