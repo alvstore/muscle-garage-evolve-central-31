@@ -189,7 +189,7 @@ const ContactSection = () => {
                     <Mail size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">Email</h4>
+                    <h4 className="font-bold text-lg text-white">Email</h4>
                     <p className="text-gray-300">info@musclegarage.com</p>
                   </div>
                 </div>
