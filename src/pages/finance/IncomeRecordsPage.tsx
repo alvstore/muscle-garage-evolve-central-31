@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -406,7 +407,7 @@ const IncomeRecordsPage = () => {
                   id="edit_amount"
                   type="number"
                   value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value }))}
                 />
               </div>
               
