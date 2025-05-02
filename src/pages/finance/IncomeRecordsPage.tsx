@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,6 +172,30 @@ const IncomeRecordsPage = () => {
     }
   };
 
+  // Handle update record action
+  const handleUpdateRecord = async () => {
+    if (!selectedRecord) return;
+    
+    try {
+      const updatedRecord: Partial<FinancialTransaction> = {
+        amount: formData.amount,
+        description: formData.description,
+        payment_method: formData.payment_method as PaymentMethod,
+        source: formData.source,
+        reference_id: formData.reference_id,
+        category_id: formData.category_id,
+        transaction_date: formData.transaction_date
+      };
+      
+      await updateRecord(selectedRecord.id, updatedRecord);
+      setShowEditDialog(false);
+      toast.success('Income record updated successfully');
+    } catch (error) {
+      console.error('Error updating income record:', error);
+      toast.error('Failed to update income record');
+    }
+  };
+
   return (
     <Container>
       <Card>
@@ -185,7 +208,7 @@ const IncomeRecordsPage = () => {
               </div>
             </CardTitle>
             <Button 
-              onClick={() => setShowCreateDialog(true)}
+              onClick={handleCreateRecord}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -240,20 +263,7 @@ const IncomeRecordsPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            setSelectedRecord(record);
-                            setFormData({
-                              transaction_date: record.transaction_date,
-                              amount: record.amount,
-                              category: record.category,
-                              description: record.description,
-                              source: record.source,
-                              payment_method: record.payment_method,
-                              reference: record.reference,
-                              branch_id: record.branch_id
-                            });
-                            setShowEditDialog(true);
-                          }}
+                          onClick={() => handleEditRecord(record)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -382,30 +392,31 @@ const IncomeRecordsPage = () => {
           <form onSubmit={handleEdit}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="edit_transaction_date">Date</Label>
                 <Input
-                  id="date"
+                  id="edit_transaction_date"
                   type="datetime-local"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  value={formData.transaction_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, transaction_date: e.target.value }))}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="amount">Amount</Label>
+                <Label htmlFor="edit_amount">Amount</Label>
                 <Input
-                  id="amount"
+                  id="edit_amount"
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="editPaymentMethod">Payment Method</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="edit_payment_method">Payment Method</Label>
                 <Select 
-                  value={formData.paymentMethod} 
-                  onValueChange={value => setFormData({...formData, paymentMethod: value})}
+                  value={formData.payment_method} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
                 >
-                  <SelectTrigger id="editPaymentMethod">
+                  <SelectTrigger id="edit_payment_method">
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -417,61 +428,61 @@ const IncomeRecordsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editIncomeSource">Source/Payer</Label>
-              <Input 
-                id="editIncomeSource" 
-                value={formData.source} 
-                onChange={e => setFormData({...formData, source: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editIncomeDescription">Description</Label>
-              <Textarea 
-                id="editIncomeDescription" 
-                value={formData.description} 
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                rows={2}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editIncomeReference">Reference/Invoice Number</Label>
-              <Input 
-                id="editIncomeReference" 
-                value={formData.reference} 
-                onChange={e => setFormData({...formData, reference: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editIncomeAttachment">Attachment</Label>
-              <div className="flex gap-2">
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit_source">Source/Payer</Label>
                 <Input 
-                  id="editIncomeAttachment" 
-                  type="file" 
-                  className="flex-1"
+                  id="edit_source" 
+                  value={formData.source} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
                 />
-                {formData.attachment && (
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => toast.info("Downloading attachment...")}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit_description">Description</Label>
+                <Textarea 
+                  id="edit_description" 
+                  value={formData.description} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit_reference">Reference/Invoice Number</Label>
+                <Input 
+                  id="edit_reference" 
+                  value={formData.reference_id} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, reference_id: e.target.value }))}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit_attachment">Attachment</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="edit_attachment" 
+                    type="file" 
+                    className="flex-1"
+                  />
+                  {formData.attachment && (
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => toast.info("Downloading attachment...")}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-            <Button onClick={handleUpdateRecord}>Update Record</Button>
-          </DialogFooter>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+              <Button type="submit">Update Record</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </Container>

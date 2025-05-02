@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       announcements: {
         Row: {
+          author: string | null
           author_id: string | null
           author_name: string | null
           branch_id: string | null
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author?: string | null
           author_id?: string | null
           author_name?: string | null
           branch_id?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author?: string | null
           author_id?: string | null
           author_name?: string | null
           branch_id?: string | null
@@ -424,13 +427,17 @@ export type Database = {
           created_at: string | null
           description: string | null
           end_time: string
+          enrolled: number | null
           id: string
           is_active: boolean | null
+          location: string | null
           name: string
           recurrence: string | null
           start_time: string
           status: Database["public"]["Enums"]["class_status"] | null
+          trainer: string | null
           trainer_id: string | null
+          type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -439,13 +446,17 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           end_time: string
+          enrolled?: number | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           name: string
           recurrence?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["class_status"] | null
+          trainer?: string | null
           trainer_id?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -454,13 +465,17 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           end_time?: string
+          enrolled?: number | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           name?: string
           recurrence?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["class_status"] | null
+          trainer?: string | null
           trainer_id?: string | null
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -779,6 +794,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      expense_records: {
+        Row: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          payment_method: string
+          reference: string
+          status: string
+          updated_at: string | null
+          vendor: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at?: string | null
+          date: string
+          description: string
+          id?: string
+          payment_method: string
+          reference: string
+          status: string
+          updated_at?: string | null
+          vendor: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          category?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          payment_method?: string
+          reference?: string
+          status?: string
+          updated_at?: string | null
+          vendor?: string
+        }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -1121,6 +1181,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      income_records: {
+        Row: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          payment_method: string
+          reference: string
+          source: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at?: string | null
+          date: string
+          description: string
+          id?: string
+          payment_method: string
+          reference: string
+          source: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          category?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          payment_method?: string
+          reference?: string
+          source?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       inventory_items: {
         Row: {
@@ -1811,6 +1913,36 @@ export type Database = {
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          read: boolean | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          read?: boolean | null
+          title?: string
+          type?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2621,6 +2753,45 @@ export type Database = {
           },
         ]
       }
+      trainers: {
+        Row: {
+          avatar: string | null
+          bio: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          rating: number | null
+          role: string | null
+          specialty: string | null
+          status: string | null
+        }
+        Insert: {
+          avatar?: string | null
+          bio?: string | null
+          email: string
+          id: string
+          name: string
+          phone?: string | null
+          rating?: number | null
+          role?: string | null
+          specialty?: string | null
+          status?: string | null
+        }
+        Update: {
+          avatar?: string | null
+          bio?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          rating?: number | null
+          role?: string | null
+          specialty?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -2872,8 +3043,12 @@ export type Database = {
     }
     Functions: {
       get_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       trainer_is_assigned_to_member: {
         Args: { trainer_uuid: string; member_uuid: string }
