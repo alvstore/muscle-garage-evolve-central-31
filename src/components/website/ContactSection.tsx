@@ -169,7 +169,7 @@ const ContactSection = () => {
                     <MapPin size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">Location</h4>
+                    <h4 className="font-bold text-lg text-white">Location</h4>
                     <p className="text-gray-300">FP 17 Opp. SBI Bank, Motera, Ahmedabad, Gujarat 380009</p>
                   </div>
                 </div>
