@@ -26,9 +26,9 @@ const TrainerList = () => {
     if (trainers) {
       setFilteredTrainers(
         trainers.filter((trainer) =>
-          trainer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          trainer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (trainer.specialization || '').toLowerCase().includes(searchTerm.toLowerCase())
+          (trainer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (trainer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          ((trainer.specialization || trainer.specializations?.[0] || '')).toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     }
@@ -137,10 +137,10 @@ const TrainerList = () => {
                   <div className="absolute -top-10 left-6">
                     <Avatar className="h-16 w-16 border-4 border-background">
                       {trainer.avatar ? (
-                        <AvatarImage src={trainer.avatar} alt={trainer.name} />
+                        <AvatarImage src={trainer.avatar} alt={trainer.name || 'Trainer'} />
                       ) : (
                         <AvatarFallback className="text-lg font-medium">
-                          {getInitials(trainer.name)}
+                          {getInitials(trainer.name || trainer.fullName || 'Trainer')}
                         </AvatarFallback>
                       )}
                     </Avatar>
@@ -148,7 +148,7 @@ const TrainerList = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{trainer.name}</h3>
+                      <h3 className="font-semibold text-lg">{trainer.name || trainer.fullName || 'Trainer'}</h3>
                       <p className="text-muted-foreground text-sm">
                         {trainer.email}
                       </p>

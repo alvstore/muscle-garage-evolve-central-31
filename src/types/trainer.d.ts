@@ -5,11 +5,12 @@ export interface Trainer {
   email: string;
   phone?: string;
   specializations?: string[];
-  specialization?: string; // Add for backwards compatibility
+  specialization?: string; // For backwards compatibility
   bio?: string;
   isAvailable?: boolean;
   avatar?: string;
   branchId: string;
   ratingValue?: number;
-  rating?: number; // Add for backwards compatibility
+  rating?: number; // For backwards compatibility
+  fullName?: string; // Alternative field name sometimes used
 }

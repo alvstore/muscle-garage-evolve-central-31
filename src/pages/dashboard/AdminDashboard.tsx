@@ -103,6 +103,19 @@ const AdminDashboard = () => {
     ? `Showing data for ${currentBranch.name}` 
     : isSuperAdmin() ? "Showing data for all branches" : "Please select a branch";
 
+  // Ensure we have a default dashboard data object that includes totalIncome
+  const defaultDashboardData = {
+    totalMembers: 0,
+    activeMembers: 0,
+    todayCheckIns: 0,
+    upcomingRenewals: 0,
+    revenue: { daily: 0, weekly: 0, monthly: 0 },
+    pendingPayments: { count: 0, total: 0 },
+    newMembers: 0,
+    expiringMemberships: 0,
+    totalIncome: 0
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -140,16 +153,7 @@ const AdminDashboard = () => {
             ))}
           </div>
         ) : (
-          <OverviewStats data={dashboardData || {
-            totalMembers: 0,
-            activeMembers: 0,
-            todayCheckIns: 0,
-            upcomingRenewals: 0,
-            revenue: { daily: 0, weekly: 0, monthly: 0 },
-            pendingPayments: { count: 0, total: 0 },
-            newMembers: 0,
-            expiringMemberships: 0
-          }} />
+          <OverviewStats data={dashboardData || defaultDashboardData} />
         )}
         
         <div className="grid gap-6 md:grid-cols-2">

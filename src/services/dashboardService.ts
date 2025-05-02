@@ -1,3 +1,4 @@
+
 import { supabase } from '@/services/supabaseClient';
 import { DashboardSummary } from '@/hooks/use-dashboard';
 
@@ -50,6 +51,7 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
           totalMembers: analyticsData.active_members || 0, // Assuming total = active for now
           todayCheckIns: analyticsData.weekly_check_ins || 0,
           upcomingRenewals: analyticsData.upcoming_renewals || 0,
+          totalIncome: analyticsData.total_revenue || 0,
           revenue: {
             daily: analyticsData.total_revenue / 30 || 0, // Approximation
             weekly: analyticsData.total_revenue / 4 || 0, // Approximation

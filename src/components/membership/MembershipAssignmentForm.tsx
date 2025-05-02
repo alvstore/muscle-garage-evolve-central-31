@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -192,7 +191,7 @@ const MembershipAssignmentForm = () => {
                     <SelectItem value="">No trainer</SelectItem>
                     {trainers?.map((trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id}>
-                        {trainer.name}
+                        {trainer.name || trainer.fullName || "Unnamed Trainer"}
                       </SelectItem>
                     ))}
                   </SelectContent>
