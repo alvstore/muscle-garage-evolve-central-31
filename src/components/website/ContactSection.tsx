@@ -179,7 +179,7 @@ const ContactSection = () => {
                     <Phone size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">Phone</h4>
+                    <h4 className="font-bold text-lg text-white">Phone</h4>
                     <p className="text-gray-300">+91 88806 88828</p>
                   </div>
                 </div>
