@@ -92,7 +92,7 @@ const WebsiteContentManager: React.FC = () => {
               <Eye className="mr-2 h-4 w-4" />
               {showPreview ? "Hide Preview" : "Show Preview"}
             </Button>
-            <Button onClick={() => window.open('https://muscle-garage-evolve.lovable.app', '_blank')}>
+            <Button onClick={() => window.open('https://musclegaraage.in', '_blank')}>
               <ExternalLink className="mr-2 h-4 w-4" />
               Visit Website
             </Button>
@@ -100,7 +100,7 @@ const WebsiteContentManager: React.FC = () => {
         </div>
 
         {showPreview && (
-          <WebsitePreview url="https://muscle-garage-evolve.lovable.app" />
+          <WebsitePreview url="https://musclegaraage.in" />
         )}
 
         <Card>
