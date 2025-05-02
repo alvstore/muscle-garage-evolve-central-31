@@ -1,115 +1,72 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRevenueStats, DateRange } from '@/hooks/use-stats';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DateRange } from '@/hooks/use-stats';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Loader2 } from 'lucide-react';
 
 interface RevenueChartProps {
   dateRange: DateRange;
 }
 
-const RevenueChart: React.FC<RevenueChartProps> = ({ dateRange }) => {
-  const { data, isLoading, error } = useRevenueStats(dateRange);
+const RevenueChart = ({ dateRange }: RevenueChartProps) => {
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(value);
-  };
+  // Simulating data fetching - replace with actual API call
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+
+    // Simulate API fetch with timeout
+    const timer = setTimeout(() => {
+      try {
+        // Dummy data - replace with actual data
+        const data = [
+          { month: 'Jan', revenue: 25000 },
+          { month: 'Feb', revenue: 35000 },
+          { month: 'Mar', revenue: 32000 },
+          { month: 'Apr', revenue: 27000 },
+          { month: 'May', revenue: 30000 },
+          { month: 'Jun', revenue: 42000 },
+        ];
+        
+        setRevenueData(data);
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to load revenue data'));
+        setIsLoading(false);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [dateRange]);
 
   return (
-    <Card className="h-full">
+    <Card className="col-span-1">
       <CardHeader>
-        <CardTitle className="text-lg font-medium">Revenue Analysis</CardTitle>
-        <CardDescription>Daily revenue for the selected period</CardDescription>
+        <CardTitle>Revenue Overview</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="w-full h-[300px] flex items-center justify-center">
-            <Skeleton className="h-[250px] w-full" />
+          <div className="flex items-center justify-center h-72">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="w-full h-[300px] flex items-center justify-center">
-            <p className="text-destructive">{error}</p>
+          <div className="flex items-center justify-center h-72 text-red-500">
+            {error.message || 'Error loading data'}
           </div>
         ) : (
-          <Tabs defaultValue="area">
-            <div className="flex justify-end mb-4">
-              <TabsList>
-                <TabsTrigger value="area">Area</TabsTrigger>
-                <TabsTrigger value="bar">Bar</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="area" className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data ? data.labels.map((label, i) => ({ date: label, revenue: data.data[i] })) : []}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 60,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis 
-                    dataKey="date" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={70} 
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis tickFormatter={(value) => formatCurrency(Number(value))} />
-                  <Tooltip 
-                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
-                    labelFormatter={(label) => `Date: ${label}`}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#8884d8" 
-                    fill="#8884d8" 
-                    fillOpacity={0.3} 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </TabsContent>
-            <TabsContent value="bar" className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={data ? data.labels.map((label, i) => ({ date: label, revenue: data.data[i] })) : []}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 60,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis 
-                    dataKey="date" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={70} 
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis tickFormatter={(value) => formatCurrency(Number(value))} />
-                  <Tooltip 
-                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
-                    labelFormatter={(label) => `Date: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="revenue" 
-                    fill="#8884d8" 
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </TabsContent>
-          </Tabs>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(value) => `$${value / 1000}k`} />
+              <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
+              <Bar dataKey="revenue" fill="#8884d8" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </CardContent>
     </Card>

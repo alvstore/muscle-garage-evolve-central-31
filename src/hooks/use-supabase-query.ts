@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { PostgrestFilterBuilder } from '@supabase/supabase-js';
 
 export interface UseSupabaseQueryOptions<T> {
   tableName: string;

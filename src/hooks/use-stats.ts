@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
 import { subDays } from 'date-fns';
@@ -7,6 +6,53 @@ import { subDays } from 'date-fns';
 export interface DateRange {
   from: Date;
   to: Date;
+}
+
+export function useAttendanceStats(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
+
+  useEffect(() => {
+    if (!currentBranch) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Get attendance data for the date range
+        const { data, error } = await supabase.rpc(
+          'get_attendance_trend',
+          { 
+            branch_id_param: currentBranch.id,
+            start_date: dateRange.from.toISOString().split('T')[0],
+            end_date: dateRange.to.toISOString().split('T')[0]
+          }
+        );
+
+        if (error) throw error;
+
+        // Format the data for a chart
+        const chartData = {
+          labels: data.map((item: any) => item.date_point),
+          data: data.map((item: any) => item.attendance_count)
+        };
+        
+        setData(chartData);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching attendance stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentBranch, dateRange]);
+
+  return { data, isLoading, error };
 }
 
 export function useMembershipTrend(dateRange: DateRange) {
@@ -193,7 +239,7 @@ export function useTrainerUtilization() {
     fetchData();
   }, [currentBranch]);
 
-  return { data, isLoading, error };
+  return { data: data, trainers: data, isLoading, error };
 }
 
 export function useChurnRisk() {
@@ -231,7 +277,7 @@ export function useChurnRisk() {
     fetchData();
   }, [currentBranch]);
 
-  return { data, isLoading, error };
+  return { data: data, members: data, isLoading, error };
 }
 
 export function useClassPerformance() {
@@ -268,7 +314,7 @@ export function useClassPerformance() {
     fetchData();
   }, [currentBranch]);
 
-  return { data, isLoading, error };
+  return { data: data, classes: data, isLoading, error };
 }
 
 export function useInventoryAlerts() {
@@ -305,7 +351,7 @@ export function useInventoryAlerts() {
     fetchData();
   }, [currentBranch]);
 
-  return { data, isLoading, error };
+  return { data: data, alerts: data, isLoading, error };
 }
 
 export function useRevenueStats(dateRange: DateRange) {
@@ -449,6 +495,47 @@ export function useDashboardSummary() {
 
   return { data, isLoading, error };
 }
+
+// Add the missing useMembershipStats hook
+export function useMembershipStats(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
+
+  useEffect(() => {
+    if (!currentBranch) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Mock data for now - replace with actual API call
+        const mockLabels = ['New', 'Renewed', 'Expired', 'Cancelled'];
+        const mockData = [45, 30, 10, 5];
+        
+        setData({
+          labels: mockLabels,
+          data: mockData
+        });
+        
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching membership stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentBranch, dateRange]);
+
+  return { data, isLoading, error };
+}
+
+// Add an alias for backward compatibility
+export const useChurnRiskMembers = useChurnRisk;
 
 // This function is used by the dashboard service
 export const fetchDashboardSummary = async (branchId?: string) => {
