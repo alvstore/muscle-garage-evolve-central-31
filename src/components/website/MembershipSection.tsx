@@ -126,7 +126,7 @@ const MembershipSection = () => {
                 <ul className="space-y-2">
                   {plan.features.map((feature, idx) => <li key={idx} className="flex items-center">
                       <Check className="text-gym-yellow mr-2 h-5 w-5 flex-shrink-0" />
-                      <span>{feature}</span>
+                      <span className="text-white">{feature}</span>
                     </li>)}
                 </ul>
               </div>
