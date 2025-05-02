@@ -127,7 +127,7 @@ const TrainersSection = () => {
   return <section id="trainers" ref={sectionRef} className="section-padding bg-gym-gray-900">
       <div className="gym-container">
         <div className={`text-center max-w-3xl mx-auto mb-16 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
-          <h2 className="text-3xl md:text-5xl font-impact mb-4">
+          <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
             OUR <span className="text-gym-yellow">EXPERT TRAINERS</span>
           </h2>
           <p className="text-gray-300">
