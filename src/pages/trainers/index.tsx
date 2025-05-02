@@ -28,7 +28,7 @@ const TrainerList = () => {
         trainers.filter((trainer) =>
           (trainer.name || trainer.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (trainer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ((trainer.specialization || trainer.specializations?.[0] || '')).toLowerCase().includes(searchTerm.toLowerCase())
+          ((trainer.specialization || (trainer.specializations && trainer.specializations[0]) || '')).toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     }
