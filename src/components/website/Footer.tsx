@@ -1,9 +1,6 @@
-
 import { ChevronRight } from "lucide-react";
-
 const Footer = () => {
-  return (
-    <footer className="bg-gym-black text-white">
+  return <footer className="bg-gym-black text-white">
       <div className="gym-container py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Column 1 - About */}
@@ -22,17 +19,12 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-bold mb-6">Quick Links</h3>
             <ul className="space-y-3">
-              {["Home", "About Us", "Gallery", "Membership", "Trainers", "Classes", "Contact Us"].map((link) => (
-                <li key={link}>
-                  <a 
-                    href={`#${link.toLowerCase().replace(/\s+/g, "-")}`} 
-                    className="text-gray-400 hover:text-gym-yellow transition-colors flex items-center"
-                  >
+              {["Home", "About Us", "Gallery", "Membership", "Trainers", "Classes", "Contact Us"].map(link => <li key={link}>
+                  <a href={`#${link.toLowerCase().replace(/\s+/g, "-")}`} className="text-gray-400 hover:text-gym-yellow transition-colors flex items-center">
                     <ChevronRight size={16} className="text-gym-yellow mr-2" />
                     {link}
                   </a>
-                </li>
-              ))}
+                </li>)}
             </ul>
           </div>
           
@@ -72,17 +64,9 @@ const Footer = () => {
             </p>
             <form className="space-y-3">
               <div>
-                <input
-                  type="email"
-                  placeholder="Your Email Address"
-                  className="w-full p-3 rounded-md bg-gym-gray-800 border border-gym-gray-700 text-white focus:border-gym-yellow focus:ring-1 focus:ring-gym-yellow"
-                  required
-                />
+                <input type="email" placeholder="Your Email Address" className="w-full p-3 rounded-md bg-gym-gray-800 border border-gym-gray-700 text-white focus:border-gym-yellow focus:ring-1 focus:ring-gym-yellow" required />
               </div>
-              <button
-                type="submit"
-                className="w-full btn btn-primary"
-              >
+              <button type="submit" className="w-full btn btn-primary">
                 Subscribe
               </button>
             </form>
@@ -107,8 +91,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
