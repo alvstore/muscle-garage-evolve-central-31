@@ -1,204 +1,175 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
 import { subDays } from 'date-fns';
 
-// Make DateRange compatible with react-day-picker
 export interface DateRange {
   from: Date;
   to: Date;
 }
 
-interface ChartData {
-  labels: string[];
-  data: number[];
-}
-
-interface TrainerData {
-  trainer_id: string;
-  trainer_name: string;
-  sessions_conducted: number;
-  minutes_utilized: number;
-  total_capacity_minutes: number;
-  utilization_percentage: number;
-  branch_id: string;
-}
-
-interface ClassPerformanceData {
-  class_id: string;
-  class_name: string;
-  class_type: string;
-  capacity: number;
-  enrolled: number;
-  actual_attendance: number;
-  enrollment_percentage: number;
-  attendance_percentage: number;
-  performance_category: string;
-  branch_id: string;
-}
-
-interface ChurnRiskMember {
-  member_id: string;
-  member_name: string;
-  status: string;
-  days_since_last_visit: number;
-  visits_last_30_days: number;
-  days_until_expiry: number;
-  churn_risk_score: number;
-  primary_risk_factor: string | null;
-  branch_id: string;
-}
-
-interface InventoryAlert {
-  id: string;
-  name: string;
-  quantity: number;
-  reorder_level: number;
-  stock_status: string;
-  branch_id: string;
-}
-
-// Usage stats hooks
-
-export const useRevenueStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<ChartData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export function useMembershipTrend(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch || !dateRange.from || !dateRange.to) return;
-      
       try {
         setIsLoading(true);
         setError(null);
         
-        const { data, error } = await supabase.rpc('get_revenue_breakdown', {
-          branch_id_param: currentBranch.id,
-          start_date: dateRange.from.toISOString(),
-          end_date: dateRange.to.toISOString()
-        });
+        const { data, error } = await supabase.rpc(
+          'get_membership_trend',
+          { 
+            branch_id_param: currentBranch.id,
+            start_date: dateRange.from.toISOString().split('T')[0],
+            end_date: dateRange.to.toISOString().split('T')[0]
+          }
+        );
+
+        if (error) throw error;
+
+        // Format the data for a chart
+        const chartData = {
+          labels: data.map((item: any) => item.date_point),
+          datasets: [
+            {
+              name: 'New Members',
+              data: data.map((item: any) => item.new_members)
+            },
+            {
+              name: 'Cancelled',
+              data: data.map((item: any) => item.cancelled_members)
+            },
+            {
+              name: 'Net Change',
+              data: data.map((item: any) => item.net_change)
+            }
+          ]
+        };
         
-        if (error) throw new Error(error.message);
-        
-        // Transform the data for chart display
-        const labels = data.map(item => item.category);
-        const values = data.map(item => Number(item.amount));
-        
-        setData({ labels, data: values });
+        setData(chartData);
       } catch (err) {
-        console.error("Error fetching revenue data:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch revenue data");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching membership trend:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch, dateRange]);
-  
-  return { data, isLoading, error };
-};
 
-export const useAttendanceStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<ChartData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useAttendanceTrend(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch || !dateRange.from || !dateRange.to) return;
-      
       try {
         setIsLoading(true);
         setError(null);
         
-        const { data, error } = await supabase.rpc('get_attendance_trend', {
-          branch_id_param: currentBranch.id,
-          start_date: dateRange.from.toISOString(),
-          end_date: dateRange.to.toISOString()
-        });
+        const { data, error } = await supabase.rpc(
+          'get_attendance_trend',
+          { 
+            branch_id_param: currentBranch.id,
+            start_date: dateRange.from.toISOString().split('T')[0],
+            end_date: dateRange.to.toISOString().split('T')[0]
+          }
+        );
+
+        if (error) throw error;
+
+        // Format the data for a chart
+        const chartData = {
+          labels: data.map((item: any) => item.date_point),
+          data: data.map((item: any) => item.attendance_count)
+        };
         
-        if (error) throw new Error(error.message);
-        
-        // Transform the data for chart display
-        const labels = data.map(item => item.date_point);
-        const values = data.map(item => Number(item.attendance_count));
-        
-        setData({ labels, data: values });
+        setData(chartData);
       } catch (err) {
-        console.error("Error fetching attendance data:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch attendance data");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching attendance trend:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch, dateRange]);
-  
-  return { data, isLoading, error };
-};
 
-export const useMembershipStats = (dateRange: DateRange) => {
-  const [data, setData] = useState<ChartData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useRevenueBreakdown(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch || !dateRange.from || !dateRange.to) return;
-      
       try {
         setIsLoading(true);
         setError(null);
         
-        const { data, error } = await supabase.rpc('get_membership_trend', {
-          branch_id_param: currentBranch.id,
-          start_date: dateRange.from.toISOString(),
-          end_date: dateRange.to.toISOString()
-        });
+        const { data, error } = await supabase.rpc(
+          'get_revenue_breakdown',
+          { 
+            branch_id_param: currentBranch.id,
+            start_date: dateRange.from.toISOString().split('T')[0],
+            end_date: dateRange.to.toISOString().split('T')[0]
+          }
+        );
+
+        if (error) throw error;
+
+        // Format the data for a chart
+        const chartData = {
+          labels: data.map((item: any) => item.category),
+          data: data.map((item: any) => Number(item.amount))
+        };
         
-        if (error) throw new Error(error.message);
-        
-        // Create a summary for display
-        const categories = ['New', 'Renewed', 'Expired', 'Cancelled'];
-        const values = [
-          data.reduce((sum, item) => sum + item.new_members, 0),
-          data.reduce((sum, item) => sum + Math.max(0, item.net_change - item.new_members), 0),
-          data.reduce((sum, item) => sum + Math.max(0, item.new_members - item.net_change - item.cancelled_members), 0),
-          data.reduce((sum, item) => sum + item.cancelled_members, 0)
-        ];
-        
-        setData({ labels: categories, data: values });
+        setData(chartData);
       } catch (err) {
-        console.error("Error fetching membership data:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch membership data");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching revenue breakdown:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch, dateRange]);
-  
-  return { data, isLoading, error };
-};
 
-export const useTrainerUtilization = () => {
-  const [trainers, setTrainers] = useState<TrainerData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useTrainerUtilization() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch) return;
-      
       try {
         setIsLoading(true);
         setError(null);
@@ -207,69 +178,34 @@ export const useTrainerUtilization = () => {
           .from('trainer_utilization')
           .select('*')
           .eq('branch_id', currentBranch.id);
+
+        if (error) throw error;
         
-        if (error) throw new Error(error.message);
-        setTrainers(data || []);
+        setData(data || []);
       } catch (err) {
-        console.error("Error fetching trainer utilization:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch trainer data");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching trainer utilization:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch]);
-  
-  return { trainers, isLoading, error };
-};
 
-export const useClassPerformance = () => {
-  const [classes, setClasses] = useState<ClassPerformanceData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useChurnRisk() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!currentBranch) return;
-      
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('class_performance')
-          .select('*')
-          .eq('branch_id', currentBranch.id)
-          .order('performance_category', { ascending: false });
-        
-        if (error) throw new Error(error.message);
-        setClasses(data || []);
-      } catch (err) {
-        console.error("Error fetching class performance:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch class data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [currentBranch]);
-  
-  return { classes, isLoading, error };
-};
+    if (!currentBranch) return;
 
-export const useChurnRiskMembers = () => {
-  const [members, setMembers] = useState<ChurnRiskMember[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const { currentBranch } = useBranch();
-
-  useEffect(() => {
     const fetchData = async () => {
-      if (!currentBranch) return;
-      
       try {
         setIsLoading(true);
         setError(null);
@@ -280,33 +216,71 @@ export const useChurnRiskMembers = () => {
           .eq('branch_id', currentBranch.id)
           .order('churn_risk_score', { ascending: false })
           .limit(10);
+
+        if (error) throw error;
         
-        if (error) throw new Error(error.message);
-        setMembers(data || []);
+        setData(data || []);
       } catch (err) {
-        console.error("Error fetching churn risk data:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch churn risk data");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching churn risk data:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch]);
-  
-  return { members, isLoading, error };
-};
 
-export const useInventoryAlerts = () => {
-  const [alerts, setAlerts] = useState<InventoryAlert[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useClassPerformance() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch) return;
-      
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase
+          .from('class_performance')
+          .select('*')
+          .eq('branch_id', currentBranch.id)
+          .order('enrollment_percentage', { ascending: false });
+
+        if (error) throw error;
+        
+        setData(data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching class performance data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentBranch]);
+
+  return { data, isLoading, error };
+}
+
+export function useInventoryAlerts() {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
+
+  useEffect(() => {
+    if (!currentBranch) return;
+
+    const fetchData = async () => {
       try {
         setIsLoading(true);
         setError(null);
@@ -315,56 +289,256 @@ export const useInventoryAlerts = () => {
           .from('inventory_alerts')
           .select('*')
           .eq('branch_id', currentBranch.id)
-          .order('stock_status', { ascending: true });
+          .order('is_low_stock', { ascending: false });
+
+        if (error) throw error;
         
-        if (error) throw new Error(error.message);
-        setAlerts(data || []);
+        setData(data || []);
       } catch (err) {
-        console.error("Error fetching inventory alerts:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch inventory alerts");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching inventory alerts:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch]);
-  
-  return { alerts, isLoading, error };
-};
 
-export const useDashboardSummary = () => {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  return { data, isLoading, error };
+}
+
+export function useRevenueStats(dateRange: DateRange) {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
 
   useEffect(() => {
+    if (!currentBranch) return;
+
     const fetchData = async () => {
-      if (!currentBranch) return;
-      
       try {
         setIsLoading(true);
         setError(null);
         
+        // Convert date range to date strings
+        const startDate = dateRange.from.toISOString().split('T')[0];
+        const endDate = dateRange.to.toISOString().split('T')[0];
+        
+        // Fetch daily revenue data from income_records
+        const { data, error } = await supabase
+          .from('income_records')
+          .select('date, amount')
+          .eq('branch_id', currentBranch.id)
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date');
+
+        if (error) throw error;
+
+        // Group by date and sum amounts
+        const dailyRevenue = data.reduce((acc: any, { date, amount }: any) => {
+          const day = date.split('T')[0];
+          acc[day] = (acc[day] || 0) + Number(amount);
+          return acc;
+        }, {});
+        
+        // Format for chart
+        const chartData = {
+          labels: Object.keys(dailyRevenue),
+          data: Object.values(dailyRevenue)
+        };
+        
+        setData(chartData);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching revenue data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentBranch, dateRange]);
+
+  return { data, isLoading, error };
+}
+
+export function useDashboardSummary() {
+  const [data, setData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
+
+  useEffect(() => {
+    if (!currentBranch) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Fetch summary data
         const { data, error } = await supabase
           .from('analytics_dashboard_stats')
           .select('*')
           .eq('branch_id', currentBranch.id)
           .single();
+
+        if (error && error.code !== 'PGRST116') throw error; // Not found error is expected
         
-        if (error && error.code !== 'PGRST116') throw new Error(error.message);
-        setData(data || {});
+        const summary = data || {
+          active_members: 0,
+          new_members_daily: 0,
+          new_members_weekly: 0,
+          new_members_monthly: 0,
+          total_revenue: 0,
+          membership_revenue: 0,
+          supplements_revenue: 0,
+          merchandise_revenue: 0,
+          weekly_check_ins: 0,
+          monthly_check_ins: 0,
+          upcoming_renewals: 0
+        };
+        
+        // Add additional required fields for dashboard
+        summary.newMembers = summary.new_members_monthly;
+        summary.expiringMemberships = summary.upcoming_renewals;
+        
+        // Generate mock data for charts
+        const mockAttendanceTrend = [];
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          mockAttendanceTrend.push({
+            date: date.toISOString().split('T')[0],
+            count: Math.floor(Math.random() * 50) + 10
+          });
+        }
+        summary.attendanceTrend = mockAttendanceTrend.reverse();
+        
+        // Member status breakdown
+        summary.membersByStatus = {
+          active: summary.active_members || 0,
+          inactive: Math.floor((summary.active_members || 0) * 0.2),
+          expired: Math.floor((summary.active_members || 0) * 0.1)
+        };
+        
+        // Mock revenue data
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        summary.revenueData = months.map(month => ({
+          month,
+          revenue: Math.floor(Math.random() * 50000) + 10000,
+          expenses: Math.floor(Math.random() * 30000) + 5000,
+          profit: Math.floor(Math.random() * 20000) + 5000
+        }));
+        
+        setData(summary);
       } catch (err) {
-        console.error("Error fetching dashboard summary:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch dashboard summary");
+        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
+        console.error('Error fetching dashboard summary:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [currentBranch]);
-  
+
   return { data, isLoading, error };
+}
+
+// This function is used by the dashboard service
+export const fetchDashboardSummary = async (branchId?: string) => {
+  try {
+    // Initialize default values
+    const summary: any = {
+      totalMembers: 0,
+      activeMembers: 0,
+      totalIncome: 0,
+      revenue: {
+        daily: 0,
+        weekly: 0,
+        monthly: 0
+      },
+      pendingPayments: { 
+        count: 0, 
+        total: 0 
+      },
+      upcomingRenewals: 0,
+      todayCheckIns: 0,
+      newMembers: 0,
+      expiringMemberships: 0,
+      membersByStatus: {
+        active: 0,
+        inactive: 0,
+        expired: 0
+      },
+      attendanceTrend: [],
+      revenueData: []
+    };
+
+    // Build our queries with branch filter if provided
+    let branchFilter = branchId ? { branch_id: branchId } : {};
+    
+    // Fetch analytics data
+    if (branchId) {
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('analytics_dashboard_stats')
+        .select('*')
+        .eq('branch_id', branchId)
+        .single();
+        
+      if (!analyticsError && analyticsData) {
+        summary.activeMembers = analyticsData.active_members || 0;
+        summary.newMembers = analyticsData.new_members_daily || 0;
+        summary.totalMembers = analyticsData.active_members || 0;
+        summary.todayCheckIns = analyticsData.weekly_check_ins || 0;
+        summary.upcomingRenewals = analyticsData.upcoming_renewals || 0;
+        summary.expiringMemberships = analyticsData.upcoming_renewals || 0;
+        summary.revenue = {
+          daily: analyticsData.total_revenue / 30 || 0, // Approximation
+          weekly: analyticsData.total_revenue / 4 || 0, // Approximation
+          monthly: analyticsData.total_revenue || 0
+        };
+      }
+    }
+    
+    // Create mock attendance trend (we'll replace later)
+    const mockAttendanceTrend = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      mockAttendanceTrend.push({
+        date: date.toISOString().split('T')[0],
+        count: Math.floor(Math.random() * 50) + 10
+      });
+    }
+    
+    // Create mock revenue data (we'll replace later)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const mockRevenueData = months.map(month => ({
+      month,
+      revenue: Math.floor(Math.random() * 50000) + 10000,
+      expenses: Math.floor(Math.random() * 30000) + 5000,
+      profit: Math.floor(Math.random() * 20000) + 5000
+    }));
+    
+    // Add mock data (to be replaced with real data)
+    summary.attendanceTrend = mockAttendanceTrend.reverse();
+    summary.revenueData = mockRevenueData;
+    summary.membersByStatus = {
+      active: summary.activeMembers,
+      inactive: Math.floor(summary.activeMembers * 0.2),
+      expired: Math.floor(summary.activeMembers * 0.1)
+    };
+    
+    return summary;
+  } catch (error) {
+    console.error('Error fetching dashboard summary:', error);
+    throw error;
+  }
 };

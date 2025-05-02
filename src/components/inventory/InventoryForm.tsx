@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +50,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { InventoryItem } from "@/types/inventory";
+import { InventoryItem, InventoryCategory } from "@/types/inventory";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -62,13 +63,13 @@ const formSchema = z.object({
   quantity: z.number().min(0, {
     message: "Quantity must be zero or more.",
   }),
-  reorder_level: z.number().min(0, {
+  reorderLevel: z.number().min(0, {
     message: "Reorder level must be zero or more.",
   }),
-  cost_price: z.number().min(0, {
+  costPrice: z.number().min(0, {
     message: "Cost price must be zero or more.",
   }),
-  selling_price: z.number().min(0, {
+  price: z.number().min(0, {
     message: "Selling price must be zero or more.",
   }),
 });
@@ -94,9 +95,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       description: item?.description || "",
       category: item?.category || "",
       quantity: item?.quantity || 0,
-      reorder_level: item?.reorder_level || 0,
-      cost_price: item?.cost_price || 0,
-      selling_price: item?.selling_price || 0,
+      reorderLevel: item?.reorderLevel || 0,
+      costPrice: item?.costPrice || 0,
+      price: item?.price || 0,
     },
   });
   
@@ -107,13 +108,24 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       const inventoryData: InventoryItem = {
         id: item?.id || '',
         name: values.name,
+        sku: item?.sku || `SKU-${Date.now()}`,
+        category: values.category as InventoryCategory,
         description: values.description,
-        category: values.category,
         quantity: values.quantity,
-        reorder_level: values.reorder_level,
-        cost_price: values.cost_price,
-        selling_price: values.selling_price,
-        branch_id: item?.branch_id || '',
+        reorderLevel: values.reorderLevel,
+        costPrice: values.costPrice,
+        price: values.price,
+        barcode: item?.barcode || '',
+        image: item?.image || '',
+        supplier: item?.supplier || '',
+        supplierContact: item?.supplierContact || '',
+        location: item?.location || '',
+        manufactureDate: item?.manufactureDate || undefined,
+        expiryDate: item?.expiryDate || undefined,
+        lastStockUpdate: new Date().toISOString(),
+        status: item?.status || 'in-stock',
+        createdAt: item?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       
       await onSave(inventoryData);
@@ -165,7 +177,19 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             <FormItem>
               <FormLabel>Category</FormLabel>
               <FormControl>
-                <Input placeholder="Enter item category" {...field} />
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="supplement">Supplement</SelectItem>
+                    <SelectItem value="equipment">Equipment</SelectItem>
+                    <SelectItem value="merchandise">Merchandise</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -196,7 +220,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
           <FormField
             control={form.control}
-            name="reorder_level"
+            name="reorderLevel"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel>Reorder Level</FormLabel>
@@ -219,7 +243,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         <div className="flex flex-col md:flex-row gap-4">
           <FormField
             control={form.control}
-            name="cost_price"
+            name="costPrice"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel>Cost Price</FormLabel>
@@ -240,7 +264,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 
           <FormField
             control={form.control}
-            name="selling_price"
+            name="price"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormLabel>Selling Price</FormLabel>

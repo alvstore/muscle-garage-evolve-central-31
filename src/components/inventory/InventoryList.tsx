@@ -1,49 +1,27 @@
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
+  Table, TableHeader, TableRow, TableHead,
+  TableBody, TableCell
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
-import { PlusIcon, EditIcon, TrashIcon, CopyIcon } from "lucide-react";
+import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { supabase } from "@/services/supabaseClient";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import InventoryForm, { InventoryFormProps } from "./InventoryForm";
+import { InventoryItem, InventoryCategory } from "@/types/inventory";
+import InventoryForm from "./InventoryForm";
+import { useBranch } from "@/hooks/use-branch";
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  quantity: number;
-  reorder_level: number;
-  cost_price: number;
-  selling_price: number;
-  branch_id: string;
-  created_at?: string;
-}
-
-// The existing InventoryList component with fixes
 const InventoryList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -53,29 +31,32 @@ const InventoryList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentItem, setCurrentItem] = useState<InventoryItem | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const { currentBranch } = useBranch();
 
   const { data: items, isLoading, error, refetch } = useSupabaseQuery<InventoryItem[]>({
-    tableName: 'inventory',
+    tableName: 'inventory_items',
     select: '*',
-    orderBy: sortBy ? { column: sortBy, ascending: sortOrder === "asc" } : { column: 'created_at', ascending: false }
+    orderBy: sortBy ? { column: sortBy, ascending: sortOrder === "asc" } : { column: 'created_at', ascending: false },
+    filters: currentBranch ? [{ column: 'branch_id', operator: 'eq', value: currentBranch.id }] : []
   });
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Get unique categories
         const { data, error } = await supabase
-          .from('inventory')
+          .from('inventory_items')
           .select('category')
-          .distinct()
-          .order('category', { ascending: true });
+          .order('category');
 
         if (error) {
           throw error;
         }
 
         if (data) {
-          const categoryList = data.map(item => item.category);
-          setCategories(categoryList);
+          // Extract unique categories
+          const uniqueCategories = [...new Set(data.map(item => item.category))];
+          setCategories(uniqueCategories);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -88,10 +69,16 @@ const InventoryList = () => {
 
   const handleSaveItem = async (item: InventoryItem) => {
     try {
+      // Add branch_id to the item
+      const itemWithBranchId = {
+        ...item,
+        branch_id: currentBranch?.id
+      };
+      
       if (item.id) {
         const { error } = await supabase
-          .from('inventory')
-          .update(item)
+          .from('inventory_items')
+          .update(itemWithBranchId)
           .eq('id', item.id);
 
         if (error) {
@@ -100,8 +87,8 @@ const InventoryList = () => {
         toast.success("Inventory item updated successfully");
       } else {
         const { error } = await supabase
-          .from('inventory')
-          .insert([item]);
+          .from('inventory_items')
+          .insert([itemWithBranchId]);
 
         if (error) {
           throw error;
@@ -110,7 +97,8 @@ const InventoryList = () => {
       }
       refetch();
     } catch (err) {
-      toast.error("Failed to save inventory item");
+      const errorMsg = err instanceof Error ? err.message : "Failed to save inventory item";
+      toast.error(errorMsg);
       console.error("Error saving item:", err);
     } finally {
       setShowAddModal(false);
@@ -121,7 +109,7 @@ const InventoryList = () => {
   const handleDeleteItem = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('inventory')
+        .from('inventory_items')
         .delete()
         .eq('id', id);
 
@@ -131,14 +119,15 @@ const InventoryList = () => {
       toast.success("Inventory item deleted successfully");
       refetch();
     } catch (err) {
-      toast.error("Failed to delete inventory item");
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete inventory item";
+      toast.error(errorMsg);
       console.error("Error deleting item:", err);
     }
   };
 
   const filteredItems = items?.filter(item => {
     const searchRegex = new RegExp(searchQuery, 'i');
-    const matchesSearch = searchRegex.test(item.name) || searchRegex.test(item.description);
+    const matchesSearch = searchRegex.test(item.name) || searchRegex.test(item.description || '');
     const matchesCategory = filterCategory ? item.category === filterCategory : true;
 
     return matchesSearch && matchesCategory;
@@ -210,14 +199,14 @@ const InventoryList = () => {
               <TableHead onClick={() => handleSort('quantity')} className="cursor-pointer">
                 Quantity {getSortIcon('quantity')}
               </TableHead>
-              <TableHead onClick={() => handleSort('reorder_level')} className="cursor-pointer">
-                Reorder Level {getSortIcon('reorder_level')}
+              <TableHead onClick={() => handleSort('reorderLevel')} className="cursor-pointer">
+                Reorder Level {getSortIcon('reorderLevel')}
               </TableHead>
-              <TableHead onClick={() => handleSort('cost_price')} className="cursor-pointer">
-                Cost Price {getSortIcon('cost_price')}
+              <TableHead onClick={() => handleSort('costPrice')} className="cursor-pointer">
+                Cost Price {getSortIcon('costPrice')}
               </TableHead>
-              <TableHead onClick={() => handleSort('selling_price')} className="cursor-pointer">
-                Selling Price {getSortIcon('selling_price')}
+              <TableHead onClick={() => handleSort('price')} className="cursor-pointer">
+                Selling Price {getSortIcon('price')}
               </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -233,69 +222,78 @@ const InventoryList = () => {
                 <TableCell colSpan={8} className="text-center text-destructive">Error: {error.message}</TableCell>
               </TableRow>
             )}
-            {filteredItems?.map(item => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
-                <TableCell>{item.reorder_level}</TableCell>
-                <TableCell>{item.cost_price}</TableCell>
-                <TableCell>{item.selling_price}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <EditIcon className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setCurrentItem(item);
-                        setShowEditModal(true);
-                      }}>
-                        <EditIcon className="mr-2 h-4 w-4" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        if (window.confirm("Are you sure you want to delete this item?")) {
-                          handleDeleteItem(item.id);
-                        }
-                      }}>
-                        <TrashIcon className="mr-2 h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+            {filteredItems?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center">No inventory items found</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredItems?.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.description}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>{item.reorderLevel}</TableCell>
+                  <TableCell>{item.costPrice}</TableCell>
+                  <TableCell>{item.price}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setCurrentItem(item);
+                          setShowEditModal(true);
+                        }}>
+                          <EditIcon className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          if (window.confirm("Are you sure you want to delete this item?")) {
+                            handleDeleteItem(item.id);
+                          }
+                        }}>
+                          <TrashIcon className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </ScrollArea>
 
-      <Dialog open={showAddModal} onOpenChange={() => setShowAddModal(false)}>
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add Inventory Item</DialogTitle>
           </DialogHeader>
-          <InventoryForm onSave={handleSaveItem} onClose={() => setShowAddModal(false)} />
-        </DialogContent>
-      </Dialog>
-
-    {showEditModal && currentItem && (
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Inventory Item</DialogTitle>
-          </DialogHeader>
           <InventoryForm 
-            item={currentItem} 
-            onSave={handleSaveItem}
-            onClose={() => setShowEditModal(false)}
+            onSave={handleSaveItem} 
+            onClose={() => setShowAddModal(false)}
           />
         </DialogContent>
       </Dialog>
-    )}
+
+      {showEditModal && currentItem && (
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Inventory Item</DialogTitle>
+            </DialogHeader>
+            <InventoryForm 
+              item={currentItem} 
+              onSave={handleSaveItem}
+              onClose={() => setShowEditModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

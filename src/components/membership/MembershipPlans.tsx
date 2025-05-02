@@ -49,13 +49,20 @@ const MembershipPlans = () => {
       toast.success("Membership plan deleted successfully");
       refetch();
     } catch (err) {
-      toast.error("Failed to delete membership plan");
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete membership plan";
+      toast.error(errorMsg);
       console.error("Error deleting plan:", err);
     }
   };
 
   const handleSavePlan = async (plan: MembershipPlan) => {
     try {
+      // Ensure branchId is set
+      const planWithBranchId = {
+        ...plan,
+        branch_id: currentBranch?.id
+      };
+      
       if (editingPlan) {
         const { error } = await supabase
           .from('memberships')
@@ -91,7 +98,8 @@ const MembershipPlans = () => {
       setIsFormOpen(false);
       refetch();
     } catch (err) {
-      toast.error("Failed to save membership plan");
+      const errorMsg = err instanceof Error ? err.message : "Failed to save membership plan";
+      toast.error(errorMsg);
       console.error("Error saving plan:", err);
     }
   };

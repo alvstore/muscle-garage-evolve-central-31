@@ -14,6 +14,7 @@ export interface BranchContextProps {
   createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
   updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
   deleteBranch: (id: string) => Promise<boolean>;
+  setCurrentBranch: (branch: Branch) => void;
 }
 
 const BranchContext = createContext<BranchContextProps>({
@@ -25,7 +26,8 @@ const BranchContext = createContext<BranchContextProps>({
   switchBranch: () => {},
   createBranch: async () => null,
   updateBranch: async () => null,
-  deleteBranch: async () => false
+  deleteBranch: async () => false,
+  setCurrentBranch: () => {}
 });
 
 interface BranchProviderProps {
@@ -204,7 +206,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       switchBranch,
       createBranch,
       updateBranch,
-      deleteBranch
+      deleteBranch,
+      setCurrentBranch
     }}>
       {children}
     </BranchContext.Provider>

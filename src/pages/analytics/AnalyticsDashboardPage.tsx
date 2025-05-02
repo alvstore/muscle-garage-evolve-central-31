@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { DateRange } from 'react-day-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Download, Users, Activity, TrendingUp, DollarSign, Calendar, FileText, BarChart } from 'lucide-react';
+import { Download, Users, Activity, TrendingUp, DollarSign, Calendar } from 'lucide-react';
 import { subDays } from 'date-fns';
 import { useBranch } from '@/hooks/use-branch';
-import { useDashboardSummary } from '@/hooks/use-stats';
+import { useDashboardSummary, DateRange } from '@/hooks/use-stats';
 import StatCard from '@/components/analytics/StatCard';
 import ChurnRiskList from '@/components/analytics/ChurnRiskList';
 import TrainerPerformance from '@/components/analytics/TrainerPerformance';
@@ -41,6 +40,15 @@ const AnalyticsDashboard = () => {
     // In a full implementation, this would generate and download a report
     // For now, we'll just display a message
     alert('Exporting analytics data...');
+  };
+
+  const handleDateRangeChange = (range: { from: Date; to?: Date }) => {
+    if (range.from && range.to) {
+      setDateRange({
+        from: range.from,
+        to: range.to
+      });
+    }
   };
 
   return (
@@ -84,7 +92,7 @@ const AnalyticsDashboard = () => {
         <div className="mb-6">
           <DateRangePicker 
             date={dateRange} 
-            onDateChange={setDateRange} 
+            onDateChange={handleDateRangeChange} 
           />
         </div>
 
