@@ -44,7 +44,6 @@ const ContactSection = () => {
     }));
   };
   const [submitting, setSubmitting] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -88,12 +87,10 @@ const ContactSection = () => {
       setSubmitting(false);
     }
   };
-
-  return (
-    <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
+  return <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
       <div className="gym-container">
         <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
-          <h2 className="text-3xl md:text-5xl font-impact mb-4">
+          <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
             GET IN <span className="text-gym-yellow">TOUCH</span>
           </h2>
           <p className="text-gray-300">
@@ -106,7 +103,7 @@ const ContactSection = () => {
           <div className={`bg-gym-gray-800 rounded-lg p-6 lg:p-8 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{
           animationDelay: '0.2s'
         }}>
-            <h3 className="text-2xl font-bold mb-6">Send us a Message</h3>
+            <h3 className="text-2xl font-bold mb-6 text-white">Send us a Message</h3>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -164,7 +161,7 @@ const ContactSection = () => {
           animationDelay: '0.4s'
         }}>
             <div className="bg-gym-gray-800 rounded-lg p-6 lg:p-8 mb-8">
-              <h3 className="text-2xl font-bold mb-6">Contact Information</h3>
+              <h3 className="text-2xl font-bold mb-6 text-white">Contact Information</h3>
               
               <div className="space-y-5">
                 <div className="flex items-start gap-4">
@@ -234,7 +231,6 @@ const ContactSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
 export default ContactSection;
