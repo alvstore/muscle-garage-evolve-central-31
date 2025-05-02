@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { format } from 'date-fns';
 import { useIncomeRecords } from '@/hooks/use-income-records';
 import { FinancialTransaction, PaymentMethod } from '@/types/finance';
+import { useBranch } from '@/hooks/use-branch';
 
 interface IncomeRecord extends FinancialTransaction {
   id: string;
@@ -27,6 +28,7 @@ const IncomeRecordsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IncomeRecord | null>(null);
+  const { currentBranch } = useBranch();
   
   // Form state
   const [formData, setFormData] = useState<Partial<FinancialTransaction>>({
@@ -34,7 +36,7 @@ const IncomeRecordsPage = () => {
     amount: 0,
     description: '',
     payment_method: 'cash' as PaymentMethod,
-    branch_id: 'branch1',
+    branch_id: currentBranch?.id || '',
     source: '',
     recurring: false,
     reference_id: null,
@@ -77,13 +79,23 @@ const IncomeRecordsPage = () => {
     { value: 'other', label: 'Other' }
   ];
 
+  // Update form data when currentBranch changes
+  useEffect(() => {
+    if (currentBranch?.id) {
+      setFormData(prev => ({
+        ...prev,
+        branch_id: currentBranch.id
+      }));
+    }
+  }, [currentBranch]);
+
   const handleCreateRecord = () => {
     setFormData({
       type: 'income' as const,
       amount: 0,
       description: '',
       payment_method: 'cash' as PaymentMethod,
-      branch_id: 'branch1',
+      branch_id: currentBranch?.id || '',
       source: '',
       recurring: false,
       reference_id: null,
@@ -407,7 +419,7 @@ const IncomeRecordsPage = () => {
                   id="edit_amount"
                   type="number"
                   value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                 />
               </div>
               
