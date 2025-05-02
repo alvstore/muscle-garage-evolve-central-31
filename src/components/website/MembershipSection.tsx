@@ -119,8 +119,8 @@ const MembershipSection = () => {
                   </span>
                 </div>
                 
-                <a href="#contact" className="btn btn-primary w-full mb-6">
-                  Get Your Pass
+                <a href="/membership" className="block w-full py-3 px-4 text-center font-bold bg-gym-yellow text-gym-black rounded-md hover:bg-yellow-400 transition-colors mb-6">
+                  Buy Now
                 </a>
 
                 <ul className="space-y-2">
