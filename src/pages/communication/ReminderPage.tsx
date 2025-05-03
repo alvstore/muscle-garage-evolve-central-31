@@ -14,7 +14,7 @@ const ReminderPage = () => {
   const [activeTab, setActiveTab] = useState<string>('list');
   const [openRuleDialog, setOpenRuleDialog] = useState(false);
   const [editRule, setEditRule] = useState<ReminderRule | null>(null);
-  const { reminderRules, isLoading, deleteReminderRule, toggleRuleStatus } = useReminderRules();
+  const { rules, isLoading, deleteRule, toggleRuleStatus } = useReminderRules();
 
   const handleCreateNew = () => {
     setEditRule(null);
@@ -27,7 +27,7 @@ const ReminderPage = () => {
   };
 
   const handleDeleteRule = async (id: string) => {
-    await deleteReminderRule(id);
+    await deleteRule(id);
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
@@ -66,7 +66,7 @@ const ReminderPage = () => {
           
           <TabsContent value="list" className="space-y-4">
             <ReminderRulesList 
-              rules={reminderRules} 
+              rules={rules} 
               isLoading={isLoading}
               onEdit={handleEditRule} 
               onDelete={handleDeleteRule}

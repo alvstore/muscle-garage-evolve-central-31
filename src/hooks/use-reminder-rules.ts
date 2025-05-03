@@ -15,6 +15,14 @@ export interface ReminderRule {
   send_via: string[];
   target_roles: string[];
   is_active: boolean;
+  // Backwards compatibility fields
+  name?: string;
+  triggerType?: string;
+  triggerValue?: number;
+  active?: boolean;
+  channels?: string[];
+  targetRoles?: string[];
+  targetType?: string;
 }
 
 export const useReminderRules = () => {

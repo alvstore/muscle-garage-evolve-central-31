@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEmailSettings, EmailSettings as IEmailSettings } from '@/hooks/use-email-settings';
+import { useEmailSettings } from '@/hooks/use-email-settings';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -54,12 +55,12 @@ const emailSchema = z.discriminatedUnion("provider", [
 type EmailFormValues = z.infer<typeof emailSchema>;
 
 const EmailSettings = ({ branchId }: { branchId?: string }) => {
-  const { settings, isLoading, fetchSettings, saveSettings, testEmailConnection } = useEmailSettings(branchId);
+  const { settings, isLoading, fetchSettings, saveSettings, testConnection } = useEmailSettings(branchId);
   const [showSecrets, setShowSecrets] = React.useState(false);
   const [testEmailAddress, setTestEmailAddress] = React.useState("");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
-  const form = useForm<IEmailSettings>({
+  const form = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
       provider: 'sendgrid',
@@ -91,16 +92,16 @@ const EmailSettings = ({ branchId }: { branchId?: string }) => {
 
     setIsSendingTest(true);
     const formValues = form.getValues();
-    const success = await testEmailConnection();
+    const result = await testConnection(testEmailAddress);
     
-    if (success) {
+    if (result.success) {
       await saveSettings(formValues);
     }
     
     setIsSendingTest(false);
   };
 
-  const onSubmit = async (data: IEmailSettings) => {
+  const onSubmit = async (data: EmailFormValues) => {
     await saveSettings(data);
   };
 

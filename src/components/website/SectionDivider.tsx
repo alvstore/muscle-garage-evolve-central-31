@@ -2,15 +2,19 @@
 import React from 'react';
 
 export interface SectionDividerProps {
-  equipmentType?: 'dumbbells' | 'barbell' | 'kettlebell' | 'none';
+  equipmentType?: 'dumbbells' | 'barbell' | 'kettlebell' | 'proteinShake' | 'dumbbell' | 'none';
+  className?: string;
 }
 
-const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType = 'dumbbells' }) => {
+const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType = 'dumbbells', className = '' }) => {
   return (
-    <div className="py-8 flex items-center justify-center">
+    <div className={`py-8 flex items-center justify-center ${className}`}>
       <div className="w-1/4 h-px bg-gym-yellow"></div>
       <div className="mx-4">
         {equipmentType === 'dumbbells' && (
+          <span className="text-4xl text-gym-yellow">🏋️‍♂️</span>
+        )}
+        {equipmentType === 'dumbbell' && (
           <span className="text-4xl text-gym-yellow">🏋️‍♂️</span>
         )}
         {equipmentType === 'barbell' && (
@@ -18,6 +22,9 @@ const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType = 'dumbbe
         )}
         {equipmentType === 'kettlebell' && (
           <span className="text-4xl text-gym-yellow">⚡</span>
+        )}
+        {equipmentType === 'proteinShake' && (
+          <span className="text-4xl text-gym-yellow">🥤</span>
         )}
         {equipmentType === 'none' && (
           <span className="text-4xl text-gym-yellow">•</span>

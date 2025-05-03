@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   editRule = null,
   onComplete
 }) => {
-  const { createReminderRule, updateReminderRule } = useReminderRules();
+  const { saveRule } = useReminderRules();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -36,13 +35,13 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
     if (editRule) {
       setName(editRule.name || editRule.title || '');
       setDescription(editRule.description || '');
-      setTriggerType(editRule.triggerType);
-      setTriggerValue(editRule.triggerValue || 7);
+      setTriggerType(editRule.triggerType || editRule.trigger_type || '');
+      setTriggerValue(editRule.triggerValue || editRule.trigger_value || 7);
       setMessage(editRule.message || '');
       setTargetType(editRule.targetType || 'all_members');
-      setActive(editRule.active || editRule.isActive || false);
-      setChannels(editRule.channels || editRule.sendVia || ['app']);
-      setTargetRoles(editRule.targetRoles || ['member']);
+      setActive(editRule.active || editRule.is_active || false);
+      setChannels(editRule.channels || editRule.send_via || ['app']);
+      setTargetRoles(editRule.targetRoles || editRule.target_roles || ['member']);
     }
   }, [editRule]);
   
@@ -74,37 +73,35 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      const ruleData = {
-        title: name, // Ensure we set the title property
-        name,
+      const ruleData: ReminderRule = {
+        title: name,
         description,
-        triggerType,
-        triggerValue,
+        trigger_type: triggerType,
+        trigger_value: triggerValue,
         message,
-        targetType,
-        active,
-        channels,
-        targetRoles,
-        sendVia: channels
+        conditions: {},
+        is_active: active,
+        target_roles: targetRoles,
+        send_via: channels
       };
       
       let success;
       
-      if (editRule) {
-        success = await updateReminderRule(editRule.id, ruleData);
-        if (success) {
-          toast.success('Reminder rule updated successfully');
-        }
+      if (editRule?.id) {
+        success = await saveRule({
+          ...ruleData,
+          id: editRule.id
+        });
       } else {
-        success = await createReminderRule(ruleData);
-        if (success) {
-          toast.success('Reminder rule created successfully');
-        }
+        success = await saveRule(ruleData);
       }
       
-      if (success && onComplete) {
-        onComplete();
-      } else if (!success) {
+      if (success) {
+        toast.success(editRule ? 'Reminder rule updated successfully' : 'Reminder rule created successfully');
+        if (onComplete) {
+          onComplete();
+        }
+      } else {
         toast.error('Failed to save reminder rule');
       }
     } catch (error) {
