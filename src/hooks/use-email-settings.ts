@@ -108,18 +108,25 @@ export const useEmailSettings = (branchId: string | null = null) => {
       setIsSaving(true);
       setError(null);
 
+      // Ensure notifications object has all required fields
+      if (newData.notifications) {
+        newData.notifications = {
+          sendOnRegistration: newData.notifications.sendOnRegistration ?? true,
+          sendOnInvoice: newData.notifications.sendOnInvoice ?? true,
+          sendClassUpdates: newData.notifications.sendClassUpdates ?? true
+        };
+      }
+
       if (!settings?.id) {
         // If settings don't exist yet, create them
         const fullSettings: EmailSettings = {
-          ...{
-            provider: 'sendgrid',
-            from_email: '',
-            is_active: false,
-            notifications: {
-              sendOnRegistration: true,
-              sendOnInvoice: true,
-              sendClassUpdates: true
-            }
+          provider: 'sendgrid',
+          from_email: '',
+          is_active: false,
+          notifications: {
+            sendOnRegistration: true,
+            sendOnInvoice: true,
+            sendClassUpdates: true
           },
           ...newData,
           branch_id: branchId

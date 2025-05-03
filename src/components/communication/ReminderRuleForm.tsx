@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,13 +36,13 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
     if (editRule) {
       setName(editRule.name || editRule.title || '');
       setDescription(editRule.description || '');
-      setTriggerType(editRule.triggerType || editRule.trigger_type || '');
-      setTriggerValue(editRule.triggerValue || editRule.trigger_value || 7);
+      setTriggerType(editRule.triggerType || '');
+      setTriggerValue(editRule.triggerValue || 7);
       setMessage(editRule.message || '');
       setTargetType(editRule.targetType || 'all_members');
-      setActive(editRule.active || editRule.is_active || false);
-      setChannels(editRule.channels || editRule.send_via || ['app']);
-      setTargetRoles(editRule.targetRoles || editRule.target_roles || ['member']);
+      setActive(editRule.active || editRule.isActive || false);
+      setChannels(editRule.channels || editRule.sendVia || ['app']);
+      setTargetRoles(editRule.targetRoles || ['member']);
     }
   }, [editRule]);
   
@@ -75,14 +76,23 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
     try {
       const ruleData: ReminderRule = {
         title: name,
+        name: name,
         description,
+        triggerType: triggerType,
         trigger_type: triggerType,
+        triggerValue: triggerValue,
         trigger_value: triggerValue,
         message,
         conditions: {},
+        isActive: active,
         is_active: active,
+        active: active,
+        targetRoles: targetRoles,
         target_roles: targetRoles,
-        send_via: channels
+        sendVia: channels,
+        send_via: channels,
+        channels: channels,
+        targetType: targetType
       };
       
       let success;

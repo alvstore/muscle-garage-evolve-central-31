@@ -2,28 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface ReminderRule {
-  id?: string;
-  title: string;
-  description?: string;
-  trigger_type: string;
-  trigger_value?: number;
-  conditions: Record<string, any>;
-  message?: string;
-  notification_channel?: string;
-  send_via: string[];
-  target_roles: string[];
-  is_active: boolean;
-  // Backwards compatibility fields
-  name?: string;
-  triggerType?: string;
-  triggerValue?: number;
-  active?: boolean;
-  channels?: string[];
-  targetRoles?: string[];
-  targetType?: string;
-}
+import { ReminderRule } from '@/types/notification';
 
 export const useReminderRules = () => {
   const [rules, setRules] = useState<ReminderRule[]>([]);
@@ -42,14 +21,40 @@ export const useReminderRules = () => {
 
       if (queryError) throw queryError;
 
-      setRules(data || []);
-      return data;
+      // Transform database fields to match our frontend type
+      const transformedRules: ReminderRule[] = (data || []).map(rule => ({
+        id: rule.id,
+        title: rule.title,
+        name: rule.title,
+        description: rule.description,
+        triggerType: rule.trigger_type,
+        trigger_type: rule.trigger_type,
+        triggerValue: rule.trigger_value,
+        trigger_value: rule.trigger_value,
+        conditions: rule.conditions,
+        message: rule.message,
+        notificationChannel: rule.notification_channel,
+        isActive: rule.is_active,
+        is_active: rule.is_active,
+        active: rule.is_active,
+        createdAt: rule.created_at,
+        updatedAt: rule.updated_at,
+        sendVia: rule.send_via || [],
+        send_via: rule.send_via || [],
+        targetRoles: rule.target_roles || [],
+        target_roles: rule.target_roles || [],
+        channels: rule.send_via || [],
+        targetType: 'all_members'
+      }));
+
+      setRules(transformedRules);
+      return transformedRules;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(err instanceof Error ? err : new Error(errorMessage));
       console.error('Error fetching reminder rules:', err);
       toast.error(`Failed to load reminder rules: ${errorMessage}`);
-      return null;
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -60,12 +65,26 @@ export const useReminderRules = () => {
       setIsSaving(true);
       setError(null);
 
+      // Transform frontend fields to match database schema
+      const dbRule = {
+        title: rule.title || rule.name,
+        description: rule.description,
+        trigger_type: rule.triggerType || rule.trigger_type,
+        trigger_value: rule.triggerValue || rule.trigger_value,
+        conditions: rule.conditions || {},
+        message: rule.message,
+        notification_channel: rule.notificationChannel,
+        is_active: rule.isActive ?? rule.active ?? rule.is_active ?? true,
+        send_via: rule.sendVia || rule.send_via || rule.channels || [],
+        target_roles: rule.targetRoles || rule.target_roles || []
+      };
+
       let response;
       if (rule.id) {
         // Update existing rule
         const { data, error: updateError } = await supabase
           .from('reminder_rules')
-          .update(rule)
+          .update(dbRule)
           .eq('id', rule.id)
           .select();
 
@@ -75,7 +94,7 @@ export const useReminderRules = () => {
         // Insert new rule
         const { data, error: insertError } = await supabase
           .from('reminder_rules')
-          .insert(rule)
+          .insert(dbRule)
           .select();
 
         if (insertError) throw insertError;
@@ -83,18 +102,44 @@ export const useReminderRules = () => {
       }
 
       if (response) {
+        // Transform the response back to our frontend type
+        const savedRule: ReminderRule = {
+          id: response.id,
+          title: response.title,
+          name: response.title,
+          description: response.description,
+          triggerType: response.trigger_type,
+          trigger_type: response.trigger_type,
+          triggerValue: response.trigger_value,
+          trigger_value: response.trigger_value,
+          conditions: response.conditions,
+          message: response.message,
+          notificationChannel: response.notification_channel,
+          isActive: response.is_active,
+          is_active: response.is_active,
+          active: response.is_active,
+          createdAt: response.created_at,
+          updatedAt: response.updated_at,
+          sendVia: response.send_via || [],
+          send_via: response.send_via || [],
+          targetRoles: response.target_roles || [],
+          target_roles: response.target_roles || [],
+          channels: response.send_via || [],
+          targetType: 'all_members'
+        };
+
         // Update rules array
         const updatedRules = [...rules];
-        const index = updatedRules.findIndex(r => r.id === response.id);
+        const index = updatedRules.findIndex(r => r.id === savedRule.id);
         
         if (index >= 0) {
-          updatedRules[index] = response;
+          updatedRules[index] = savedRule;
         } else {
-          updatedRules.push(response);
+          updatedRules.push(savedRule);
         }
         
         setRules(updatedRules);
-        toast.success(`Reminder rule "${rule.title}" saved successfully`);
+        toast.success(`Reminder rule "${rule.title || rule.name}" saved successfully`);
         return true;
       }
       
@@ -144,7 +189,7 @@ export const useReminderRules = () => {
 
       const { data, error: updateError } = await supabase
         .from('reminder_rules')
-        .update({ is_active: isActive })
+        .update({ is_active: !isActive })
         .eq('id', id)
         .select();
 
@@ -153,11 +198,16 @@ export const useReminderRules = () => {
       if (data && data[0]) {
         // Update rules array
         const updatedRules = rules.map(rule => 
-          rule.id === id ? { ...rule, is_active: isActive } : rule
+          rule.id === id ? { 
+            ...rule, 
+            isActive: data[0].is_active,
+            is_active: data[0].is_active,
+            active: data[0].is_active 
+          } : rule
         );
         
         setRules(updatedRules);
-        toast.success(`Reminder rule ${isActive ? 'activated' : 'deactivated'} successfully`);
+        toast.success(`Reminder rule ${data[0].is_active ? 'activated' : 'deactivated'} successfully`);
         return true;
       }
 
