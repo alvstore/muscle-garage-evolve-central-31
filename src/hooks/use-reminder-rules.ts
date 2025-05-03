@@ -1,27 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface ReminderRule {
-  id?: string;
-  title: string;
-  name: string;
-  description?: string;
-  triggerType: string;
-  triggerValue: number;
-  conditions: Record<string, any>;
-  message: string;
-  notificationChannel?: string;
-  isActive: boolean;
-  active: boolean;
-  sendVia: string[];
-  channels: string[];
-  targetRoles: string[];
-  targetType: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { ReminderRule } from '@/types/notification';
 
 export const useReminderRules = () => {
   const [rules, setRules] = useState<ReminderRule[]>([]);
@@ -44,12 +24,12 @@ export const useReminderRules = () => {
       const transformedRules: ReminderRule[] = (data || []).map(rule => ({
         id: rule.id,
         title: rule.title,
-        name: rule.title,
-        description: rule.description,
+        name: rule.title, // Ensure name is always set
+        description: rule.description || '',
         triggerType: rule.trigger_type,
         triggerValue: rule.trigger_value,
-        conditions: rule.conditions,
-        message: rule.message,
+        conditions: rule.conditions || {},
+        message: rule.message || '',
         notificationChannel: rule.notification_channel,
         isActive: rule.is_active,
         active: rule.is_active,
@@ -118,12 +98,12 @@ export const useReminderRules = () => {
         const savedRule: ReminderRule = {
           id: response.id,
           title: response.title,
-          name: response.title,
-          description: response.description,
+          name: response.title, // Ensure name is always set
+          description: response.description || '',
           triggerType: response.trigger_type,
           triggerValue: response.trigger_value,
-          conditions: response.conditions,
-          message: response.message,
+          conditions: response.conditions || {},
+          message: response.message || '',
           notificationChannel: response.notification_channel,
           isActive: response.is_active,
           active: response.is_active,

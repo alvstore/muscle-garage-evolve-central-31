@@ -66,7 +66,7 @@ const ReminderPage = () => {
           
           <TabsContent value="list" className="space-y-4">
             <ReminderRulesList 
-              rules={rules} 
+              rules={rules as ReminderRule[]} 
               isLoading={isLoading}
               onEdit={handleEditRule} 
               onDelete={handleDeleteRule}

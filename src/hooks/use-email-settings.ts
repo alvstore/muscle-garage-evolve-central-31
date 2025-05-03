@@ -108,16 +108,19 @@ export const useEmailSettings = (branchId: string | null = null) => {
       setIsSaving(true);
       setError(null);
 
-      // Ensure notifications object has all required fields
+      // Ensure notifications object always has all required fields with defaults
       if (newData.notifications) {
-        const notificationsWithDefaults = {
+        const currentNotifications = settings?.notifications || {
           sendOnRegistration: true,
           sendOnInvoice: true,
-          sendClassUpdates: true,
-          ...newData.notifications
+          sendClassUpdates: true
         };
         
-        newData.notifications = notificationsWithDefaults;
+        // Merge with current notifications to ensure all required fields are present
+        newData.notifications = {
+          ...currentNotifications,
+          ...newData.notifications
+        };
       }
 
       if (!settings?.id) {
@@ -182,13 +185,17 @@ export const useEmailSettings = (branchId: string | null = null) => {
     // Handle nested fields
     if (field.includes('.')) {
       const [parentField, childField] = field.split('.');
-      setSettings({
-        ...settings,
-        [parentField]: {
-          ...settings[parentField as keyof EmailSettings],
-          [childField]: value
-        }
-      });
+      const parentValue = settings[parentField as keyof EmailSettings];
+      
+      if (parentValue && typeof parentValue === 'object') {
+        setSettings({
+          ...settings,
+          [parentField]: {
+            ...parentValue,
+            [childField]: value
+          }
+        });
+      }
     } else {
       setSettings({
         ...settings,
