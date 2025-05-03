@@ -4,12 +4,13 @@ import { Container } from '@/components/ui/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusIcon, SearchIcon } from 'lucide-react';
+import { PlusIcon, SearchIcon, Star } from 'lucide-react';
 import { useStaff } from '@/hooks/use-staff';
 import CreateStaffDialog from '@/components/staff/CreateStaffDialog';
 import { useBranch } from '@/hooks/use-branch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const StaffListPage = () => {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -34,6 +35,15 @@ const StaffListPage = () => {
     }
   }, [searchQuery, staff]);
 
+  const getInitials = (name: string): string => {
+    if (!name) return "";
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
+
   const renderContent = () => {
     if (!currentBranch) {
       return (
@@ -47,13 +57,17 @@ const StaffListPage = () => {
     
     if (isLoading) {
       return (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-5 w-40" />
+            <Card key={i} className="animate-pulse overflow-hidden">
+              <CardHeader className="p-0">
+                <div className="bg-gradient-to-r from-primary/20 to-primary/10 h-24"></div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6 pt-14 relative">
+                <div className="absolute -top-10 left-6">
+                  <div className="h-16 w-16 rounded-full bg-muted"></div>
+                </div>
+                <Skeleton className="h-5 w-40 mb-2" />
                 <Skeleton className="h-4 w-full mb-2" />
                 <Skeleton className="h-4 w-3/4" />
               </CardContent>
@@ -68,43 +82,59 @@ const StaffListPage = () => {
     }
 
     return (
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {filteredStaff && filteredStaff.length > 0 ? (
           filteredStaff.map((staffMember) => (
-            <Card key={staffMember.id}>
-              <CardHeader>
-                <CardTitle>{staffMember.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Email:</span>
-                  <span>{staffMember.email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Role:</span>
+            <Card key={staffMember.id} className="overflow-hidden">
+              <CardHeader className="p-0">
+                <div className="bg-gradient-to-r from-primary/20 to-primary/10 h-24 flex items-center justify-center">
+                  {/* Role badge at the top */}
                   <Badge variant={
                     staffMember.role === 'admin' ? 'destructive' : 
                     staffMember.role === 'staff' ? 'default' : 'secondary'
-                  }>
+                  } className="absolute top-2 right-2">
                     {staffMember.role}
                   </Badge>
                 </div>
-                {staffMember.department && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Department:</span>
-                    <span>{staffMember.department}</span>
+              </CardHeader>
+              <CardContent className="p-6 pt-14 relative">
+                <div className="absolute -top-10 left-6">
+                  <Avatar className="h-16 w-16 border-4 border-background">
+                    {staffMember.avatar_url ? (
+                      <AvatarImage src={staffMember.avatar_url} alt={staffMember.name} />
+                    ) : (
+                      <AvatarFallback className="text-lg font-medium">
+                        {getInitials(staffMember.name || '')}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">{staffMember.name}</h3>
+                    <p className="text-muted-foreground text-sm">
+                      {staffMember.email}
+                    </p>
                   </div>
-                )}
-                {staffMember.is_branch_manager && (
-                  <div className="mt-2">
-                    <Badge variant="outline" className="bg-green-100">Branch Manager</Badge>
+
+                  <div className="flex flex-wrap gap-2">
+                    {staffMember.department && (
+                      <Badge variant="secondary">{staffMember.department}</Badge>
+                    )}
+                    {staffMember.is_branch_manager && (
+                      <Badge variant="outline" className="bg-green-100">Branch Manager</Badge>
+                    )}
+                    {currentBranch && (
+                      <Badge variant="outline">{currentBranch.name}</Badge>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           ))
         ) : (
-          <Card>
+          <Card className="col-span-3">
             <CardContent className="p-6 text-center">
               <p>No staff members found for this branch.</p>
             </CardContent>
