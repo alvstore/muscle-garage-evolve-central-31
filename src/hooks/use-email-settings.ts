@@ -110,11 +110,14 @@ export const useEmailSettings = (branchId: string | null = null) => {
 
       // Ensure notifications object has all required fields
       if (newData.notifications) {
-        newData.notifications = {
-          sendOnRegistration: newData.notifications.sendOnRegistration ?? true,
-          sendOnInvoice: newData.notifications.sendOnInvoice ?? true,
-          sendClassUpdates: newData.notifications.sendClassUpdates ?? true
+        const notificationsWithDefaults = {
+          sendOnRegistration: true,
+          sendOnInvoice: true,
+          sendClassUpdates: true,
+          ...newData.notifications
         };
+        
+        newData.notifications = notificationsWithDefaults;
       }
 
       if (!settings?.id) {

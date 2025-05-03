@@ -7,7 +7,7 @@ import { PlusIcon } from "lucide-react";
 import ReminderRulesList from "@/components/communication/ReminderRulesList";
 import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ReminderRule } from "@/types/notification";
+import { ReminderRule } from '@/types/notification';
 import { useReminderRules } from '@/hooks/use-reminder-rules';
 
 const ReminderPage = () => {

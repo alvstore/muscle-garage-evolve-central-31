@@ -2,7 +2,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ReminderRule } from '@/types/notification';
+
+export interface ReminderRule {
+  id?: string;
+  title: string;
+  name: string;
+  description?: string;
+  triggerType: string;
+  triggerValue: number;
+  conditions: Record<string, any>;
+  message: string;
+  notificationChannel?: string;
+  isActive: boolean;
+  active: boolean;
+  sendVia: string[];
+  channels: string[];
+  targetRoles: string[];
+  targetType: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export const useReminderRules = () => {
   const [rules, setRules] = useState<ReminderRule[]>([]);
@@ -28,22 +47,15 @@ export const useReminderRules = () => {
         name: rule.title,
         description: rule.description,
         triggerType: rule.trigger_type,
-        trigger_type: rule.trigger_type,
         triggerValue: rule.trigger_value,
-        trigger_value: rule.trigger_value,
         conditions: rule.conditions,
         message: rule.message,
         notificationChannel: rule.notification_channel,
         isActive: rule.is_active,
-        is_active: rule.is_active,
         active: rule.is_active,
-        createdAt: rule.created_at,
-        updatedAt: rule.updated_at,
         sendVia: rule.send_via || [],
-        send_via: rule.send_via || [],
-        targetRoles: rule.target_roles || [],
-        target_roles: rule.target_roles || [],
         channels: rule.send_via || [],
+        targetRoles: rule.target_roles || [],
         targetType: 'all_members'
       }));
 
@@ -69,14 +81,14 @@ export const useReminderRules = () => {
       const dbRule = {
         title: rule.title || rule.name,
         description: rule.description,
-        trigger_type: rule.triggerType || rule.trigger_type,
-        trigger_value: rule.triggerValue || rule.trigger_value,
+        trigger_type: rule.triggerType,
+        trigger_value: rule.triggerValue,
         conditions: rule.conditions || {},
         message: rule.message,
         notification_channel: rule.notificationChannel,
-        is_active: rule.isActive ?? rule.active ?? rule.is_active ?? true,
-        send_via: rule.sendVia || rule.send_via || rule.channels || [],
-        target_roles: rule.targetRoles || rule.target_roles || []
+        is_active: rule.isActive ?? rule.active ?? true,
+        send_via: rule.sendVia || rule.channels || [],
+        target_roles: rule.targetRoles || []
       };
 
       let response;
@@ -109,22 +121,15 @@ export const useReminderRules = () => {
           name: response.title,
           description: response.description,
           triggerType: response.trigger_type,
-          trigger_type: response.trigger_type,
           triggerValue: response.trigger_value,
-          trigger_value: response.trigger_value,
           conditions: response.conditions,
           message: response.message,
           notificationChannel: response.notification_channel,
           isActive: response.is_active,
-          is_active: response.is_active,
           active: response.is_active,
-          createdAt: response.created_at,
-          updatedAt: response.updated_at,
           sendVia: response.send_via || [],
-          send_via: response.send_via || [],
-          targetRoles: response.target_roles || [],
-          target_roles: response.target_roles || [],
           channels: response.send_via || [],
+          targetRoles: response.target_roles || [],
           targetType: 'all_members'
         };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,18 +78,13 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
         name: name,
         description,
         triggerType: triggerType,
-        trigger_type: triggerType,
         triggerValue: triggerValue,
-        trigger_value: triggerValue,
         message,
         conditions: {},
         isActive: active,
-        is_active: active,
         active: active,
         targetRoles: targetRoles,
-        target_roles: targetRoles,
         sendVia: channels,
-        send_via: channels,
         channels: channels,
         targetType: targetType
       };

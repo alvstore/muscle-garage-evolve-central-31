@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,7 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
         return <MailIcon className="h-4 w-4" />;
       case 'sms':
         return <PhoneCall className="h-4 w-4" />;
-      case 'in-app':
+      case 'app':
         return <MessagesSquare className="h-4 w-4" />;
       case 'whatsapp':
         return <MessagesSquare className="h-4 w-4" />;
@@ -68,8 +67,8 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
                   <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
                 </div>
                 <Switch 
-                  checked={rule.active || rule.isActive || false}
-                  onCheckedChange={() => onToggleActive(rule.id, rule.active || rule.isActive || false)}
+                  checked={rule.isActive || rule.active || false}
+                  onCheckedChange={() => onToggleActive(rule.id!, rule.isActive || rule.active || false)}
                 />
               </div>
               
@@ -97,7 +96,7 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
                 <Button variant="ghost" size="sm" onClick={() => onEdit(rule)}>
                   <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => onDelete(rule.id)}>
+                <Button variant="ghost" size="sm" onClick={() => onDelete(rule.id!)}>
                   <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </div>

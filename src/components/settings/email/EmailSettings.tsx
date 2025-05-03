@@ -1,9 +1,8 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEmailSettings } from '@/hooks/use-email-settings';
+import { useEmailSettings, EmailSettings as EmailSettingsType } from '@/hooks/use-email-settings';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -60,7 +59,7 @@ const EmailSettings = ({ branchId }: { branchId?: string }) => {
   const [testEmailAddress, setTestEmailAddress] = React.useState("");
   const [isSendingTest, setIsSendingTest] = React.useState(false);
 
-  const form = useForm<EmailFormValues>({
+  const form = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
       provider: 'sendgrid',
@@ -95,14 +94,36 @@ const EmailSettings = ({ branchId }: { branchId?: string }) => {
     const result = await testConnection(testEmailAddress);
     
     if (result.success) {
-      await saveSettings(formValues);
+      // Ensure notifications has required fields
+      const notifications = {
+        sendOnRegistration: true,
+        sendOnInvoice: true,
+        sendClassUpdates: true,
+        ...(formValues.notifications || {})
+      };
+      
+      await saveSettings({
+        ...formValues,
+        notifications
+      });
     }
     
     setIsSendingTest(false);
   };
 
-  const onSubmit = async (data: EmailFormValues) => {
-    await saveSettings(data);
+  const onSubmit = async (data: z.infer<typeof emailSchema>) => {
+    // Ensure notifications has required fields
+    const notifications = {
+      sendOnRegistration: true,
+      sendOnInvoice: true,
+      sendClassUpdates: true,
+      ...(data.notifications || {})
+    };
+    
+    await saveSettings({
+      ...data,
+      notifications
+    });
   };
 
   return (
