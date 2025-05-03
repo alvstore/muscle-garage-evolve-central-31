@@ -52,7 +52,8 @@ export default function DashboardSidebar({
   };
 
   return (
-    <Sidebar className={cn("transition-all duration-300", isSidebarOpen ? "w-64" : "w-0")}>
+    // Update the Sidebar component to not use conditional width
+    <Sidebar className="w-64"> {/* Remove the conditional width */}
       <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
           <SidebarHeader className="p-4">

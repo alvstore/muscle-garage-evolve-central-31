@@ -28,8 +28,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Fixed toggle function to properly toggle sidebar state
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setSidebarOpen(prevState => !prevState);
   };
 
   const closeSidebar = () => {
@@ -66,6 +67,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       setSidebarOpen(false);
     }
   }, [location.pathname, isMobile]);
+  
+  // Update sidebar state when mobile state changes
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
   
   if (isLoading) {
     return (
@@ -114,13 +122,26 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex min-h-screen w-full bg-gray-50 dark:bg-gray-900">
-        {/* Sidebar - always render but control visibility with classes */}
-        <div className={`fixed md:relative transition-all duration-300 h-full z-40 ${sidebarOpen ? 'translate-x-0 shadow-xl md:shadow-none' : '-translate-x-full'} md:translate-x-0`}>
-          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+        {/* Overlay for mobile sidebar */}
+        {isMobile && sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30" 
+            onClick={closeSidebar}
+            aria-hidden="true"
+          />
+        )}
+        
+        {/* Sidebar - improved mobile responsiveness */}
+        <div 
+          className={`fixed md:relative h-full z-40 transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:translate-x-0 md:transition-none`}
+        >
+          <SidebarComponent isSidebarOpen={true} closeSidebar={closeSidebar} />
         </div>
         
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           <DashboardHeader 
             toggleSidebar={toggleSidebar} 
             toggleTheme={toggleTheme} 
