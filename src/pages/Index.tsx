@@ -43,19 +43,19 @@ const Index = () => {
       <HighlightsSection />
       <SectionDivider equipmentType="barbell" className="bg-gym-black" />
       <AboutSection />
-      <SectionDivider equipmentType="dumbbell" className="bg-gym-gray-900" />
+      <SectionDivider equipmentType="dumbbells" className="bg-gym-gray-900" />
       <GallerySection />
       <SectionDivider equipmentType="kettlebell" className="bg-gym-gray-900" />
       <MembershipSection />
-      <SectionDivider equipmentType="proteinShake" className="bg-gym-black" />
+      <SectionDivider equipmentType="kettlebell" className="bg-gym-black" />
       <TrainersSection />
       <SectionDivider equipmentType="barbell" className="bg-gym-gray-900" />
       <TestimonialsSection />
-      <SectionDivider equipmentType="dumbbell" className="bg-gym-black" />
+      <SectionDivider equipmentType="dumbbells" className="bg-gym-black" />
       <ContactSection />
       <Footer />
-</div>
-);
+    </div>
+  );
 };
 
 export default Index;

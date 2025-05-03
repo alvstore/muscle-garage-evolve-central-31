@@ -75,6 +75,51 @@ export type Database = {
           },
         ]
       }
+      attendance_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          device_config: Json | null
+          hikvision_enabled: boolean | null
+          id: string
+          qr_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_config?: Json | null
+          hikvision_enabled?: boolean | null
+          id?: string
+          qr_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_config?: Json | null
+          hikvision_enabled?: boolean | null
+          id?: string
+          qr_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       automation_rules: {
         Row: {
           actions: Json
@@ -529,6 +574,48 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      company_settings: {
+        Row: {
+          business_hours_end: string | null
+          business_hours_start: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          currency: string
+          currency_symbol: string
+          gym_name: string
+          id: string
+          tax_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_hours_end?: string | null
+          business_hours_start?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          gym_name: string
+          id?: string
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_hours_end?: string | null
+          business_hours_start?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          gym_name?: string
+          id?: string
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       diet_plans: {
         Row: {
@@ -1350,6 +1437,60 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_statuses: {
+        Row: {
+          branch_id: string | null
+          config: Json | null
+          created_at: string | null
+          description: string
+          icon: string | null
+          id: string
+          integration_key: string
+          name: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description: string
+          icon?: string | null
+          id?: string
+          integration_key: string
+          name: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string
+          icon?: string | null
+          id?: string
+          integration_key?: string
+          name?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_statuses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_statuses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           barcode: string | null
@@ -2015,6 +2156,73 @@ export type Database = {
           },
         ]
       }
+      membership_subscriptions: {
+        Row: {
+          amount_paid: number
+          branch_id: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          invoice_id: string | null
+          payment_id: string | null
+          plan_id: string
+          start_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          branch_id?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          plan_id: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          branch_id?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_subscriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           branch_id: string | null
@@ -2025,6 +2233,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          plan_name: string | null
           price: number
           updated_at: string | null
         }
@@ -2037,6 +2246,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          plan_name?: string | null
           price: number
           updated_at?: string | null
         }
@@ -2049,6 +2259,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          plan_name?: string | null
           price?: number
           updated_at?: string | null
         }
@@ -2752,6 +2963,72 @@ export type Database = {
           },
         ]
       }
+      sms_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          custom_api_headers: string | null
+          custom_api_params: string | null
+          custom_api_url: string | null
+          id: string
+          is_active: boolean
+          msg91_auth_key: string | null
+          provider: string
+          sender_id: string
+          templates: Json
+          twilio_account_sid: string | null
+          twilio_auth_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          custom_api_headers?: string | null
+          custom_api_params?: string | null
+          custom_api_url?: string | null
+          id?: string
+          is_active?: boolean
+          msg91_auth_key?: string | null
+          provider: string
+          sender_id: string
+          templates?: Json
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          custom_api_headers?: string | null
+          custom_api_params?: string | null
+          custom_api_url?: string | null
+          id?: string
+          is_active?: boolean
+          msg91_auth_key?: string | null
+          provider?: string
+          sender_id?: string
+          templates?: Json
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       sms_templates: {
         Row: {
           branch_id: string | null
@@ -3216,6 +3493,57 @@ export type Database = {
           },
         ]
       }
+      whatsapp_settings: {
+        Row: {
+          api_token: string
+          branch_id: string | null
+          business_account_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notifications: Json
+          phone_number_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token: string
+          branch_id?: string | null
+          business_account_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notifications?: Json
+          phone_number_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_token?: string
+          branch_id?: string | null
+          business_account_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notifications?: Json
+          phone_number_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       whatsapp_templates: {
         Row: {
           branch_id: string | null
@@ -3521,6 +3849,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_book_class: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       get_attendance_trend: {
         Args: { branch_id_param: string; start_date: string; end_date: string }
         Returns: {
@@ -3562,6 +3894,10 @@ export type Database = {
       }
       user_belongs_to_branch: {
         Args: { branch_id: string }
+        Returns: boolean
+      }
+      user_has_active_membership: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       user_has_branch_access: {

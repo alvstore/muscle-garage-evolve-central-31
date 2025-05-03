@@ -1,25 +1,36 @@
 
-import GymEquipment3D from "./GymEquipment3D";
+import React from 'react';
 
-interface SectionDividerProps {
-  equipmentType: "dumbbell" | "barbell" | "kettlebell" | "proteinShake";
+export interface SectionDividerProps {
+  equipmentType?: 'dumbbells' | 'barbell' | 'kettlebell' | 'proteinShake' | 'dumbbell' | 'none';
   className?: string;
 }
 
-const SectionDivider = ({ equipmentType, className = "" }: SectionDividerProps) => {
+const SectionDivider: React.FC<SectionDividerProps> = ({ equipmentType = 'dumbbells', className = '' }) => {
   return (
-    <div className={`relative py-12 ${className}`}>
-      {/* Center equipment */}
-      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10">
-        <GymEquipment3D type={equipmentType} rotationSpeed={1} />
+    <div className={`py-8 flex items-center justify-center ${className}`}>
+      <div className="w-1/4 h-px bg-gym-yellow"></div>
+      <div className="mx-4">
+        {equipmentType === 'dumbbells' && (
+          <span className="text-4xl text-gym-yellow">🏋️‍♂️</span>
+        )}
+        {equipmentType === 'dumbbell' && (
+          <span className="text-4xl text-gym-yellow">🏋️‍♂️</span>
+        )}
+        {equipmentType === 'barbell' && (
+          <span className="text-4xl text-gym-yellow">🏋️‍♀️</span>
+        )}
+        {equipmentType === 'kettlebell' && (
+          <span className="text-4xl text-gym-yellow">⚡</span>
+        )}
+        {equipmentType === 'proteinShake' && (
+          <span className="text-4xl text-gym-yellow">🥤</span>
+        )}
+        {equipmentType === 'none' && (
+          <span className="text-4xl text-gym-yellow">•</span>
+        )}
       </div>
-      
-      {/* Divider lines */}
-      <div className="flex items-center justify-center max-w-7xl mx-auto px-4">
-        <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent to-gym-yellow/70"></div>
-        <div className="w-44 h-20"></div>
-        <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent to-gym-yellow/70"></div>
-      </div>
+      <div className="w-1/4 h-px bg-gym-yellow"></div>
     </div>
   );
 };

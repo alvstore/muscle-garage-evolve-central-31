@@ -2,6 +2,15 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
+import UnifiedSettingsPage from '@/pages/settings/UnifiedSettingsPage';
 
-// This will be replaced with actual settings routes
-export const settingsRoutes: RouteObject[] = [];
+export const settingsRoutes: RouteObject[] = [
+  {
+    path: '/settings',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <UnifiedSettingsPage />
+      </PrivateRoute>
+    )
+  }
+];
