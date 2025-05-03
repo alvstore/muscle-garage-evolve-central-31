@@ -2015,6 +2015,73 @@ export type Database = {
           },
         ]
       }
+      membership_subscriptions: {
+        Row: {
+          amount_paid: number
+          branch_id: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          invoice_id: string | null
+          payment_id: string | null
+          plan_id: string
+          start_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          branch_id?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          plan_id: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          branch_id?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          invoice_id?: string | null
+          payment_id?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_subscriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           branch_id: string | null
@@ -2025,6 +2092,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          plan_name: string | null
           price: number
           updated_at: string | null
         }
@@ -2037,6 +2105,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          plan_name?: string | null
           price: number
           updated_at?: string | null
         }
@@ -2049,6 +2118,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          plan_name?: string | null
           price?: number
           updated_at?: string | null
         }
@@ -3521,6 +3591,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_book_class: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       get_attendance_trend: {
         Args: { branch_id_param: string; start_date: string; end_date: string }
         Returns: {
@@ -3562,6 +3636,10 @@ export type Database = {
       }
       user_belongs_to_branch: {
         Args: { branch_id: string }
+        Returns: boolean
+      }
+      user_has_active_membership: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       user_has_branch_access: {
