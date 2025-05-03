@@ -75,6 +75,51 @@ export type Database = {
           },
         ]
       }
+      attendance_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          device_config: Json | null
+          hikvision_enabled: boolean | null
+          id: string
+          qr_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_config?: Json | null
+          hikvision_enabled?: boolean | null
+          id?: string
+          qr_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_config?: Json | null
+          hikvision_enabled?: boolean | null
+          id?: string
+          qr_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       automation_rules: {
         Row: {
           actions: Json
@@ -529,6 +574,48 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      company_settings: {
+        Row: {
+          business_hours_end: string | null
+          business_hours_start: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          currency: string
+          currency_symbol: string
+          gym_name: string
+          id: string
+          tax_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_hours_end?: string | null
+          business_hours_start?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          gym_name: string
+          id?: string
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_hours_end?: string | null
+          business_hours_start?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          currency?: string
+          currency_symbol?: string
+          gym_name?: string
+          id?: string
+          tax_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       diet_plans: {
         Row: {
@@ -1349,6 +1436,60 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      integration_statuses: {
+        Row: {
+          branch_id: string | null
+          config: Json | null
+          created_at: string | null
+          description: string
+          icon: string | null
+          id: string
+          integration_key: string
+          name: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description: string
+          icon?: string | null
+          id?: string
+          integration_key: string
+          name: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string
+          icon?: string | null
+          id?: string
+          integration_key?: string
+          name?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_statuses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_statuses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
       }
       inventory_items: {
         Row: {
