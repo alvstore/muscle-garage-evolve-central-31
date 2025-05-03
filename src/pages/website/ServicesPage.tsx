@@ -17,7 +17,7 @@ const ServicesPage: React.FC = () => {
         </p>
       </div>
       <ServicesSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="kettlebell" />
       <GallerySection />
     </div>
   );

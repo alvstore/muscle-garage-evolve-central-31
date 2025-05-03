@@ -6,20 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { EyeOff, Eye, Send, Loader2 } from "lucide-react";
-import { IntegrationConfig } from '@/services/integrationService';
 
 interface SmsProviderSettingsProps {
-  config: Partial<IntegrationConfig>;
-  onUpdateConfig: (config: Partial<IntegrationConfig>) => void;
+  config: any;
+  onUpdateConfig: (config: any) => void;
   onTest: () => Promise<void>;
   onSave: () => void;
+  isLoading?: boolean;
+  isSaving?: boolean;
 }
 
 export const SmsProviderSettings: React.FC<SmsProviderSettingsProps> = ({
   config,
   onUpdateConfig,
   onTest,
-  onSave
+  onSave,
+  isLoading = false,
+  isSaving = false
 }) => {
   const [showSecrets, setShowSecrets] = useState(false);
   const [testPhone, setTestPhone] = useState("");
@@ -34,6 +37,16 @@ export const SmsProviderSettings: React.FC<SmsProviderSettingsProps> = ({
       setIsSendingTest(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 flex justify-center items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

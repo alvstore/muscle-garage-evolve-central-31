@@ -14,9 +14,9 @@ const AboutPage: React.FC = () => {
         </h1>
       </div>
       <AboutSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbells" />
       <TrainersSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="kettlebell" />
       <TestimonialsSection />
     </div>
   );

@@ -17,15 +17,15 @@ const HomePage: React.FC = () => {
       <HeroSection />
       <ServicesBar />
       <AboutSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbells" />
       <ServicesSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="barbell" />
       <TrainersSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="kettlebell" />
       <MembershipSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbells" />
       <TestimonialsSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="barbell" />
       <GallerySection />
       <ContactSection />
     </div>

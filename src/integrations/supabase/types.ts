@@ -2822,6 +2822,72 @@ export type Database = {
           },
         ]
       }
+      sms_settings: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          custom_api_headers: string | null
+          custom_api_params: string | null
+          custom_api_url: string | null
+          id: string
+          is_active: boolean
+          msg91_auth_key: string | null
+          provider: string
+          sender_id: string
+          templates: Json
+          twilio_account_sid: string | null
+          twilio_auth_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          custom_api_headers?: string | null
+          custom_api_params?: string | null
+          custom_api_url?: string | null
+          id?: string
+          is_active?: boolean
+          msg91_auth_key?: string | null
+          provider: string
+          sender_id: string
+          templates?: Json
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          custom_api_headers?: string | null
+          custom_api_params?: string | null
+          custom_api_url?: string | null
+          id?: string
+          is_active?: boolean
+          msg91_auth_key?: string | null
+          provider?: string
+          sender_id?: string
+          templates?: Json
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       sms_templates: {
         Row: {
           branch_id: string | null
@@ -3279,6 +3345,57 @@ export type Database = {
           },
           {
             foreignKeyName: "webhook_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      whatsapp_settings: {
+        Row: {
+          api_token: string
+          branch_id: string | null
+          business_account_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notifications: Json
+          phone_number_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token: string
+          branch_id?: string | null
+          business_account_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notifications?: Json
+          phone_number_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_token?: string
+          branch_id?: string | null
+          business_account_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notifications?: Json
+          phone_number_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_settings_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"

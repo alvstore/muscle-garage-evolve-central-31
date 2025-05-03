@@ -1,9 +1,9 @@
 
 import { useSettingsManagement } from './use-settings-management';
 import { supabase } from '@/integrations/supabase/client';
-import { EmailSettings } from '@/services/settingsService';
+import { WhatsAppSettings } from '@/services/settingsService';
 
-export const useEmailSettings = (branchId: string | null = null) => {
+export const useWhatsAppSettings = (branchId: string | null = null) => {
   const {
     data,
     isLoading,
@@ -12,23 +12,25 @@ export const useEmailSettings = (branchId: string | null = null) => {
     fetchSettings,
     saveSettings,
     updateField
-  } = useSettingsManagement<EmailSettings>({
-    tableName: 'email_settings',
+  } = useSettingsManagement<WhatsAppSettings>({
+    tableName: 'whatsapp_settings',
     defaultBranchId: branchId,
     initialData: {
-      provider: 'sendgrid',
-      from_email: '',
+      api_token: '',
+      phone_number_id: '',
+      business_account_id: '',
       is_active: false,
       notifications: {
-        sendOnRegistration: true,
-        sendOnInvoice: true,
-        sendClassUpdates: true
+        sendWelcomeMessages: true,
+        sendClassReminders: true,
+        sendRenewalReminders: true,
+        sendBirthdayGreetings: false
       }
     }
   });
 
-  // Test email connection
-  const testConnection = async (testEmail: string): Promise<{ success: boolean, message: string }> => {
+  // Test WhatsApp connection
+  const testConnection = async (testPhone: string): Promise<{ success: boolean, message: string }> => {
     try {
       // In a real implementation, this would call a Supabase edge function
       // For now, we'll simulate a successful test
@@ -36,10 +38,10 @@ export const useEmailSettings = (branchId: string | null = null) => {
       
       return {
         success: true,
-        message: 'Test email sent successfully!'
+        message: 'Test WhatsApp message sent successfully!'
       };
     } catch (error) {
-      console.error('Email test failed:', error);
+      console.error('WhatsApp test failed:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Test failed'

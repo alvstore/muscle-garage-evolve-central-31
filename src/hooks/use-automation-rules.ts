@@ -3,22 +3,23 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface ReminderRule {
+export interface AutomationRule {
   id?: string;
-  title: string;
+  name: string;
   description?: string;
   trigger_type: string;
-  trigger_value?: number;
-  conditions: Record<string, any>;
-  message?: string;
-  notification_channel?: string;
-  send_via: string[];
-  target_roles: string[];
+  trigger_condition: Record<string, any>;
+  actions: {
+    type: string;
+    config: Record<string, any>;
+  }[];
   is_active: boolean;
+  branch_id?: string | null;
+  created_by?: string;
 }
 
-export const useReminderRules = () => {
-  const [rules, setRules] = useState<ReminderRule[]>([]);
+export const useAutomationRules = (branchId: string | null = null) => {
+  const [rules, setRules] = useState<AutomationRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -28,9 +29,14 @@ export const useReminderRules = () => {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: queryError } = await supabase
-        .from('reminder_rules')
-        .select('*');
+      let query = supabase.from('automation_rules').select('*');
+
+      // Filter by branch if provided
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+
+      const { data, error: queryError } = await query;
 
       if (queryError) throw queryError;
 
@@ -39,15 +45,15 @@ export const useReminderRules = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(err instanceof Error ? err : new Error(errorMessage));
-      console.error('Error fetching reminder rules:', err);
-      toast.error(`Failed to load reminder rules: ${errorMessage}`);
+      console.error('Error fetching automation rules:', err);
+      toast.error(`Failed to load automation rules: ${errorMessage}`);
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveRule = async (rule: ReminderRule): Promise<boolean> => {
+  const saveRule = async (rule: AutomationRule): Promise<boolean> => {
     try {
       setIsSaving(true);
       setError(null);
@@ -56,7 +62,7 @@ export const useReminderRules = () => {
       if (rule.id) {
         // Update existing rule
         const { data, error: updateError } = await supabase
-          .from('reminder_rules')
+          .from('automation_rules')
           .update(rule)
           .eq('id', rule.id)
           .select();
@@ -64,10 +70,15 @@ export const useReminderRules = () => {
         if (updateError) throw updateError;
         response = data?.[0];
       } else {
-        // Insert new rule
+        // Insert new rule with branch_id if provided
+        const newRule = {
+          ...rule,
+          branch_id: branchId || null
+        };
+
         const { data, error: insertError } = await supabase
-          .from('reminder_rules')
-          .insert(rule)
+          .from('automation_rules')
+          .insert(newRule)
           .select();
 
         if (insertError) throw insertError;
@@ -86,7 +97,7 @@ export const useReminderRules = () => {
         }
         
         setRules(updatedRules);
-        toast.success(`Reminder rule "${rule.title}" saved successfully`);
+        toast.success(`Rule "${rule.name}" saved successfully`);
         return true;
       }
       
@@ -94,8 +105,8 @@ export const useReminderRules = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(err instanceof Error ? err : new Error(errorMessage));
-      console.error('Error saving reminder rule:', err);
-      toast.error(`Failed to save reminder rule: ${errorMessage}`);
+      console.error('Error saving automation rule:', err);
+      toast.error(`Failed to save rule: ${errorMessage}`);
       return false;
     } finally {
       setIsSaving(false);
@@ -108,7 +119,7 @@ export const useReminderRules = () => {
       setError(null);
 
       const { error: deleteError } = await supabase
-        .from('reminder_rules')
+        .from('automation_rules')
         .delete()
         .eq('id', id);
 
@@ -116,13 +127,13 @@ export const useReminderRules = () => {
 
       // Update rules array
       setRules(rules.filter(rule => rule.id !== id));
-      toast.success('Reminder rule deleted successfully');
+      toast.success('Rule deleted successfully');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(err instanceof Error ? err : new Error(errorMessage));
-      console.error('Error deleting reminder rule:', err);
-      toast.error(`Failed to delete reminder rule: ${errorMessage}`);
+      console.error('Error deleting automation rule:', err);
+      toast.error(`Failed to delete rule: ${errorMessage}`);
       return false;
     } finally {
       setIsSaving(false);
@@ -135,7 +146,7 @@ export const useReminderRules = () => {
       setError(null);
 
       const { data, error: updateError } = await supabase
-        .from('reminder_rules')
+        .from('automation_rules')
         .update({ is_active: isActive })
         .eq('id', id)
         .select();
@@ -149,7 +160,7 @@ export const useReminderRules = () => {
         );
         
         setRules(updatedRules);
-        toast.success(`Reminder rule ${isActive ? 'activated' : 'deactivated'} successfully`);
+        toast.success(`Rule ${isActive ? 'activated' : 'deactivated'} successfully`);
         return true;
       }
 
@@ -157,8 +168,8 @@ export const useReminderRules = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(err instanceof Error ? err : new Error(errorMessage));
-      console.error('Error toggling reminder rule status:', err);
-      toast.error(`Failed to update reminder rule status: ${errorMessage}`);
+      console.error('Error toggling automation rule status:', err);
+      toast.error(`Failed to update rule status: ${errorMessage}`);
       return false;
     } finally {
       setIsSaving(false);
@@ -168,7 +179,7 @@ export const useReminderRules = () => {
   // Initial fetch of rules
   useEffect(() => {
     fetchRules();
-  }, []);
+  }, [branchId]);
 
   return {
     rules,

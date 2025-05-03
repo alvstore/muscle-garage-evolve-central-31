@@ -17,7 +17,7 @@ const WebsiteMembershipPage: React.FC = () => {
         </p>
       </div>
       <MembershipSection />
-      <SectionDivider />
+      <SectionDivider equipmentType="dumbbells" />
       <TestimonialsSection />
     </div>
   );
