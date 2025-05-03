@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { TabsList, TabsTrigger, TabsContent, Tabs } from "@/components/ui/tabs";
 import { Instagram, Facebook } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/utils/stringUtils";
+
 const TrainersSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -141,7 +144,18 @@ const TrainersSection = () => {
           animationDelay: `${index * 0.15}s`
         }}>
               <div className="relative overflow-hidden h-64">
-                <img src={trainer.image} alt={trainer.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                {trainer.image ? (
+                  <img src={trainer.image} alt={trainer.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gym-gray-700">
+                    <Avatar className="h-48 w-48">
+                      <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(trainer.name)}&background=FFD100&color=121212&size=256&bold=true`} alt={trainer.name} />
+                      <AvatarFallback className="text-6xl bg-gym-yellow text-gym-black">
+                        {getInitials(trainer.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gym-black to-transparent p-4">
                   <div className="flex gap-2">
                     <a href={trainer.social.instagram} className="bg-gym-yellow text-gym-black p-2 rounded-full hover:bg-white transition-colors">

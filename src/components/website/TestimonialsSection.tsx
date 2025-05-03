@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/utils/stringUtils";
+
 const TestimonialsSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -92,9 +95,19 @@ const TestimonialsSection = () => {
         }}>
             {testimonials.map((testimonial, index) => <div key={index} className="min-w-[300px] md:min-w-[400px] bg-gym-gray-800 rounded-lg p-6 shadow-lg snap-start">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="h-16 w-16 rounded-full overflow-hidden">
-                    <img src={testimonial.image} alt={testimonial.name} className="h-full w-full object-cover" />
-                  </div>
+                  <Avatar className="h-16 w-16">
+                    {testimonial.image ? (
+                      <AvatarImage src={testimonial.image} alt={testimonial.name} />
+                    ) : (
+                      <AvatarImage 
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(testimonial.name)}&background=FFD100&color=121212&size=128&bold=true`} 
+                        alt={testimonial.name} 
+                      />
+                    )}
+                    <AvatarFallback className="bg-gym-yellow text-gym-black">
+                      {getInitials(testimonial.name)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h4 className="font-bold text-lg text-white">{testimonial.name}</h4>
                     <p className="text-gym-yellow text-sm">{testimonial.role}</p>
