@@ -39,91 +39,12 @@ import {
   Clock, 
   Download, 
   RefreshCw,
-  BarChart 
+  BarChart, 
+  Loader2 
 } from "lucide-react";
 import { Lead, LeadStatus, FunnelStage, LeadSource } from "@/types/crm";
 import { toast } from "sonner";
-
-// Mock data for leads
-const mockLeads: Lead[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    phone: "+1234567890",
-    source: "website",
-    status: "new",
-    funnelStage: "cold",
-    assignedTo: "Staff 1",
-    notes: "Interested in membership plans",
-    createdAt: "2023-04-15T10:30:00Z",
-    updatedAt: "2023-04-15T10:30:00Z",
-    followUpDate: "2023-04-20T10:30:00Z",
-    interests: ["weight loss", "personal training"],
-  },
-  {
-    id: "2",
-    name: "Jane Doe",
-    email: "jane.doe@example.com",
-    phone: "+1987654321",
-    source: "referral",
-    status: "contacted",
-    funnelStage: "warm",
-    assignedTo: "Staff 2",
-    createdAt: "2023-04-14T14:20:00Z",
-    updatedAt: "2023-04-16T09:15:00Z",
-    lastContactDate: "2023-04-16T09:15:00Z",
-    followUpDate: "2023-04-22T10:00:00Z",
-    interests: ["group classes", "nutrition consulting"],
-  },
-  {
-    id: "3",
-    name: "Michael Johnson",
-    email: "michael.j@example.com",
-    phone: "+1122334455",
-    source: "walk-in",
-    status: "qualified",
-    funnelStage: "hot",
-    assignedTo: "Staff 1",
-    notes: "Ready to sign up, waiting for spouse approval",
-    createdAt: "2023-04-10T11:45:00Z",
-    updatedAt: "2023-04-17T13:20:00Z",
-    lastContactDate: "2023-04-17T13:20:00Z",
-    followUpDate: "2023-04-19T15:00:00Z",
-    interests: ["premium membership", "personal training"],
-  },
-  {
-    id: "4",
-    name: "Emily Wilson",
-    email: "emily.w@example.com",
-    phone: "+1566778899",
-    source: "social-media",
-    status: "converted",
-    funnelStage: "hot",
-    assignedTo: "Staff 3",
-    createdAt: "2023-04-05T09:10:00Z",
-    updatedAt: "2023-04-18T10:30:00Z",
-    lastContactDate: "2023-04-18T10:30:00Z",
-    conversionDate: "2023-04-18T10:30:00Z",
-    conversionValue: 299.99,
-    interests: ["yoga", "nutrition consulting"],
-  },
-  {
-    id: "5",
-    name: "Robert Brown",
-    email: "rob.brown@example.com",
-    phone: "+1112223344",
-    source: "event",
-    status: "lost",
-    funnelStage: "cold",
-    assignedTo: "Staff 2",
-    notes: "Price too high",
-    createdAt: "2023-04-01T15:20:00Z",
-    updatedAt: "2023-04-15T16:45:00Z",
-    lastContactDate: "2023-04-15T16:45:00Z",
-    interests: ["weight loss"],
-  }
-];
+import { crmService } from "@/services/crmService";
 
 interface LeadsListProps {
   onEdit: (lead: Lead) => void;
@@ -139,13 +60,23 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
   const [funnelFilter, setFunnelFilter] = useState<FunnelStage | "all">("all");
   const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setLeads(mockLeads);
-      setFilteredLeads(mockLeads);
+  // Fetch leads from API
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const fetchedLeads = await crmService.getLeads();
+      setLeads(fetchedLeads);
+      setFilteredLeads(fetchedLeads);
+    } catch (error) {
+      console.error("Failed to fetch leads:", error);
+      toast.error("Failed to load leads. Please try again later.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
   }, []);
 
   // Apply filters when any filter changes
@@ -179,11 +110,17 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
     setFilteredLeads(result);
   }, [leads, searchTerm, statusFilter, funnelFilter, sourceFilter]);
 
-  const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
-    setLeads(leads.filter(lead => lead.id !== id));
-    setFilteredLeads(filteredLeads.filter(lead => lead.id !== id));
-    toast.success("Lead deleted successfully");
+  const handleDelete = async (id: string) => {
+    try {
+      const success = await crmService.deleteLead(id);
+      if (success) {
+        setLeads(leads.filter(lead => lead.id !== id));
+        setFilteredLeads(filteredLeads.filter(lead => lead.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete lead:", error);
+      toast.error("Failed to delete lead. Please try again later.");
+    }
   };
 
   const handleScheduleFollowUp = (lead: Lead) => {
@@ -235,7 +172,7 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle>Lead Management</CardTitle>
@@ -256,7 +193,7 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
                 className="w-full"
               />
             </div>
-            <div className="flex flex-1 gap-2">
+            <div className="flex flex-col sm:flex-row flex-1 gap-2">
               <Select
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value as LeadStatus | "all")}
@@ -310,7 +247,7 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
             </div>
           </div>
           
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
             <p className="text-sm text-muted-foreground">
               Showing {filteredLeads.length} leads
             </p>
@@ -322,15 +259,10 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setLeads(mockLeads);
-                    setLoading(false);
-                  }, 1000);
-                }}
+                onClick={fetchLeads}
+                disabled={loading}
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                 Refresh
               </Button>
               <Button variant="outline" size="sm">
@@ -377,7 +309,7 @@ const LeadsList = ({ onEdit, onAddNew }: LeadsListProps) => {
             )}
           </div>
         ) : (
-          <div className="rounded-md border overflow-hidden">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>

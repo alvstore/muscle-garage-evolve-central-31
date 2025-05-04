@@ -1,3 +1,12 @@
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  type?: string;
+}
+
 export interface ReminderRule {
   id: string;
   name: string;
@@ -68,7 +77,7 @@ export interface Announcement {
   channels?: string[];
 }
 
-// Adapter function to convert database object to frontend model
+// Adapter functions
 export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
   return {
     id: dbAnnouncement.id,
@@ -86,7 +95,6 @@ export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
   };
 };
 
-// You should also add the other adapter functions that are being imported
 export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
   return {
     id: dbFeedback.id,
@@ -137,7 +145,6 @@ export const adaptMotivationalMessageFromDB = (dbMessage: any): MotivationalMess
   };
 };
 
-// You'll also need to define the Feedback and MotivationalMessage interfaces
 export interface Feedback {
   id: string;
   title: string;
@@ -164,7 +171,6 @@ export interface MotivationalMessage {
   updated_at?: string;
 }
 
-// Add missing types for BackupLogEntry
 export interface BackupLogEntry {
   id: string;
   action: string;
@@ -180,7 +186,6 @@ export interface BackupLogEntry {
   updated_at: string;
 }
 
-// Add missing types for Invoice
 export interface Invoice {
   id: string;
   member_id?: string;
@@ -202,13 +207,11 @@ export interface Invoice {
   membership_plan_id?: string;
 }
 
-// Add missing types for enums
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft';
 export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment';
 export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
 
-// Add missing EmailSettings interface
 export interface EmailSettings {
   id?: string;
   provider: string;

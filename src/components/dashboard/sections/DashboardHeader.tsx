@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -50,7 +51,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [notifications] = React.useState<Notification[]>(fakeNotifications);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
   
   const handleLogout = async () => {
     try {
@@ -60,14 +61,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       console.error('Logout failed:', error);
     }
   };
+
+  const markAllAsRead = () => {
+    // In a real app, this would call an API to mark notifications as read
+    setUnreadCount(0);
+  };
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Button 
           variant="ghost" 
-          size="icon" 
-          className="md:flex" 
+          size="icon"
+          className="flex md:flex" 
           onClick={toggleSidebar}
         >
           {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -100,7 +106,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <div className="flex items-center justify-between py-2 px-3">
               <h3 className="font-semibold">Notifications</h3>
               {unreadCount > 0 && (
-                <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-auto py-1 px-2 text-xs"
+                  onClick={markAllAsRead}
+                >
                   Mark all as read
                 </Button>
               )}
