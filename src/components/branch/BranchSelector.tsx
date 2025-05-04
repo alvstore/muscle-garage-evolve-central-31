@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, ChevronDown, Building2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,8 @@ const BranchSelector = () => {
     updateUserBranch
   } = useAuth();
 
-  // Fetch branches on component mount
-  useState(() => {
+  // Fetch branches on component mount - using useEffect instead of useState incorrectly
+  useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);
 

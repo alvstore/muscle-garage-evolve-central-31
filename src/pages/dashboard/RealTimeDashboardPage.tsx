@@ -67,6 +67,7 @@ const RealTimeDashboardPage = () => {
         name: record.members?.name || 'Unknown Member',
         membershipPlan: 'Active Member', // This could be enhanced with more data
         checkInTime: record.check_in,
+        checkOut: record.check_out, // Add this property to match what's being accessed
         status: record.members?.membership_status || 'active',
         // Check if membership is expiring within 7 days
         expiryDate: record.members?.membership_end_date || null,
@@ -76,7 +77,7 @@ const RealTimeDashboardPage = () => {
       setActiveMembers(formattedAttendance.length);
       
       // Calculate current occupancy (members who checked in but not out)
-      const currentlyInGym = formattedAttendance.filter(m => !m.checkOutTime).length;
+      const currentlyInGym = formattedAttendance.filter(m => !m.checkOut).length;
       setCurrentOccupancy(currentlyInGym > 0 ? currentlyInGym : Math.floor(formattedAttendance.length / 2));
       
       // Fetch expiring memberships (within next 7 days)
