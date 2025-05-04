@@ -21,9 +21,9 @@ export default function MotivationalPage() {
     toggleActive 
   } = useMotivationalMessages();
   
-  const handleFormSubmit = async (message: MotivationalMessage) => {
+  const handleFormSubmit = async (message: Partial<MotivationalMessage>) => {
     if (editMessage) {
-      await updateMessage(message.id, message);
+      await updateMessage(message.id!, message);
     } else {
       await addMessage(message);
     }
@@ -48,7 +48,6 @@ export default function MotivationalPage() {
 
   const handleDelete = async (id: string) => {
     await deleteMessage(id);
-    return;
   };
 
   return (
@@ -64,13 +63,13 @@ export default function MotivationalPage() {
         
         {showForm ? (
           <MotivationalMessageForm 
-            initialMessage={editMessage}
-            onSave={handleFormSubmit}
+            initialMessage={editMessage || undefined}
+            onSubmit={handleFormSubmit}
             onCancel={cancelForm}
           />
         ) : (
           <MotivationalMessagesList 
-            messagesList={messages}
+            messages={messages}
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}

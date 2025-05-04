@@ -12,13 +12,17 @@ import { Loader2 } from 'lucide-react';
 
 interface MotivationalMessageFormProps {
   initialMessage?: MotivationalMessage;
-  onSubmit: (message: Partial<MotivationalMessage>) => Promise<void>;
+  onSubmit?: (message: Partial<MotivationalMessage>) => Promise<void>;
   isSubmitting?: boolean;
+  onSave?: (message: Partial<MotivationalMessage>) => Promise<void>;
+  onCancel?: () => void;
 }
 
 const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({ 
   initialMessage, 
   onSubmit,
+  onSave,
+  onCancel,
   isSubmitting = false
 }) => {
   const [title, setTitle] = useState(initialMessage?.title || '');
@@ -33,13 +37,19 @@ const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit({
+    const messageData = {
       title,
       content,
       author,
       category,
       active: isActive,
-    });
+    };
+    
+    if (onSubmit) {
+      await onSubmit(messageData);
+    } else if (onSave) {
+      await onSave(messageData);
+    }
   };
 
   return (
@@ -113,7 +123,12 @@ const MotivationalMessageForm: React.FC<MotivationalMessageFormProps> = ({
             <Label htmlFor="active">Active</Label>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-end space-x-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
               <>

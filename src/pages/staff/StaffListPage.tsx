@@ -18,7 +18,7 @@ interface StaffMember {
   role: string;
   department?: string;
   branch_id?: string;
-  avatar?: string;
+  avatar_url?: string;
 }
 
 const StaffListPage: React.FC = () => {
@@ -82,7 +82,7 @@ const StaffListPage: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
-                <CreateStaffForm handleSubmit={handleCreateStaff} />
+                <CreateStaffForm onSuccess={handleCreateStaff} onCancel={() => setIsDialogOpen(false)} staff={[]} refetch={fetchStaff} />
               </DialogContent>
             </Dialog>
           </div>
@@ -99,8 +99,8 @@ const StaffListPage: React.FC = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      {staffMember.avatar ? (
-                        <AvatarImage src={staffMember.avatar} alt={staffMember.name} />
+                      {staffMember.avatar_url ? (
+                        <AvatarImage src={staffMember.avatar_url} alt={staffMember.name} />
                       ) : (
                         <AvatarFallback>{getInitials(staffMember.name)}</AvatarFallback>
                       )}

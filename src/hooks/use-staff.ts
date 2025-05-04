@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
@@ -17,6 +16,7 @@ export interface StaffMember {
   created_at?: string;
   updated_at?: string;
   is_branch_manager?: boolean;
+  avatar_url?: string;
 }
 
 export const useStaff = () => {
@@ -57,7 +57,8 @@ export const useStaff = () => {
           user_id: item.id,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          is_branch_manager: item.is_branch_manager || false
+          is_branch_manager: item.is_branch_manager || false,
+          avatar_url: item.avatar_url
         }));
         
         setStaff(formattedStaff);

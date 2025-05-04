@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -57,16 +56,18 @@ export interface StaffMember {
 }
 
 interface CreateStaffFormProps {
-  onSuccess: () => void;
-  onCancel: () => void;
+  onSuccess?: (data: any) => void;
+  onCancel?: () => void;
   staff: StaffMember[];
   refetch: () => Promise<void>;
+  handleSubmit?: (staffData: any) => Promise<void>;
 }
 
 const CreateStaffForm: React.FC<CreateStaffFormProps> = ({
   onSuccess,
   onCancel,
-  refetch
+  refetch,
+  handleSubmit
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>();
@@ -169,6 +170,11 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({
     
     setIsLoading(true);
     try {
+      if (handleSubmit) {
+        await handleSubmit(data);
+        return;
+      }
+      
       // First create the auth user
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: data.email,
@@ -210,7 +216,7 @@ const CreateStaffForm: React.FC<CreateStaffFormProps> = ({
       
       toast.success('Staff member created successfully');
       await refetch();
-      onSuccess();
+      if (onSuccess) onSuccess(data);
     } catch (error: any) {
       console.error('Error creating staff member:', error);
       toast.error(error.message || 'Failed to create staff member');

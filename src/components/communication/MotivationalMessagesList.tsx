@@ -11,27 +11,45 @@ import MotivationalMessageForm from './MotivationalMessageForm';
 import { motivationalMessageService } from '@/services/communicationService';
 import { toast } from 'sonner';
 
-const MotivationalMessagesList: React.FC = () => {
-  const [messages, setMessages] = useState<MotivationalMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface MotivationalMessagesListProps {
+  messagesList?: MotivationalMessage[];
+  messages?: MotivationalMessage[];
+  isLoading?: boolean;
+  onEdit?: (message: MotivationalMessage) => void;
+  onDelete?: (id: string) => Promise<void>;
+  onToggleActive?: (id: string, isActive: boolean) => Promise<boolean>;
+}
+
+const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
+  messagesList,
+  messages,
+  isLoading = true,
+  onEdit,
+  onDelete,
+  onToggleActive
+}) => {
+  const [displayMessages, setDisplayMessages] = useState<MotivationalMessage[]>([]);
   const [activeCategory, setActiveCategory] = useState<MotivationalCategory | 'all'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    if (messagesList) {
+      setDisplayMessages(messagesList);
+    } else if (messages) {
+      setDisplayMessages(messages);
+    } else {
+      fetchMessages();
+    }
+  }, [messagesList, messages]);
   
   const fetchMessages = async () => {
-    setIsLoading(true);
     try {
       const fetchedMessages = await motivationalMessageService.getMotivationalMessages();
-      setMessages(fetchedMessages);
+      setDisplayMessages(fetchedMessages);
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
       toast.error('Failed to load motivational messages');
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -40,7 +58,7 @@ const MotivationalMessagesList: React.FC = () => {
     try {
       const newMessage = await motivationalMessageService.createMotivationalMessage(message as Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>);
       if (newMessage) {
-        setMessages(prev => [newMessage, ...prev]);
+        setDisplayMessages(prev => [newMessage, ...prev]);
         setIsDialogOpen(false);
         toast.success('Motivational message created successfully!');
       }
@@ -51,10 +69,42 @@ const MotivationalMessagesList: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleDeleteMessage = async (id: string) => {
+    if (onDelete) {
+      await onDelete(id);
+    } else {
+      try {
+        await motivationalMessageService.deleteMotivationalMessage(id);
+        setDisplayMessages(prev => prev.filter(msg => msg.id !== id));
+        toast.success('Message deleted successfully');
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        toast.error('Failed to delete message');
+      }
+    }
+  };
+
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    if (onToggleActive) {
+      await onToggleActive(id, isActive);
+    } else {
+      try {
+        await motivationalMessageService.updateMotivationalMessage(id, { active: isActive });
+        setDisplayMessages(prev => 
+          prev.map(msg => msg.id === id ? { ...msg, active: isActive } : msg)
+        );
+        toast.success(`Message ${isActive ? 'activated' : 'deactivated'} successfully`);
+      } catch (error) {
+        console.error('Error updating message:', error);
+        toast.error('Failed to update message status');
+      }
+    }
+  };
   
   const filteredMessages = activeCategory === 'all' 
-    ? messages 
-    : messages.filter(msg => msg.category === activeCategory);
+    ? displayMessages 
+    : displayMessages.filter(msg => msg.category === activeCategory);
   
   if (isLoading) {
     return (
@@ -134,6 +184,37 @@ const MotivationalMessagesList: React.FC = () => {
                       <span>By {message.author || 'Unknown'} • Category: <span className="capitalize">{message.category}</span></span>
                       <span>{message.created_at && formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
                     </div>
+                    {(onEdit || onDelete || onToggleActive) && (
+                      <div className="flex justify-end gap-2 mt-4">
+                        {onToggleActive && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleToggleActive(message.id, !message.active)}
+                          >
+                            {message.active ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        )}
+                        {onEdit && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => onEdit(message)}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteMessage(message.id)}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
