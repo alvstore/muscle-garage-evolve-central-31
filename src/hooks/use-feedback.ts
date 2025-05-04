@@ -1,96 +1,93 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/services/supabaseClient';
-import { Feedback, adaptFeedbackFromDB } from '@/types/notification';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Feedback, FeedbackType } from '@/types/notification';
 import { toast } from 'sonner';
+import { adaptFeedbackFromDB } from '@/services/communicationService';
 import { useBranch } from './use-branch';
 
 export const useFeedback = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const { currentBranch } = useBranch();
-
-  const fetchFeedbacks = useCallback(async () => {
+  
+  useEffect(() => {
+    fetchFeedback();
+  }, [currentBranch?.id]);
+  
+  const fetchFeedback = async (type?: FeedbackType) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      
       let query = supabase
         .from('feedback')
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Filter by branch if a branch is selected
       if (currentBranch?.id) {
         query = query.eq('branch_id', currentBranch.id);
       }
       
+      if (type) {
+        query = query.eq('type', type);
+      }
+      
       const { data, error } = await query;
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      if (data) {
-        const adaptedFeedbacks = data.map(feedback => adaptFeedbackFromDB(feedback));
-        setFeedbacks(adaptedFeedbacks);
-      }
-    } catch (error) {
-      console.error('Error fetching feedback:', error);
-      toast.error('Failed to load feedback');
+      setFeedbacks(data.map(adaptFeedbackFromDB));
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('An unknown error occurred');
+      setError(error);
+      toast.error(`Failed to fetch feedback: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch?.id]);
-
-  const submitFeedback = async (feedbackData: Partial<Feedback>): Promise<boolean> => {
+  };
+  
+  const submitFeedback = async (feedback: Partial<Feedback>) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('feedback')
         .insert({
-          title: feedbackData.title,
-          comments: feedbackData.comments || feedbackData.content,
-          rating: feedbackData.rating,
-          type: feedbackData.type,
-          member_id: feedbackData.member_id || feedbackData.memberId,
-          member_name: feedbackData.member_name || feedbackData.memberName,
-          anonymous: feedbackData.anonymous,
-          branch_id: feedbackData.branch_id || feedbackData.branchId,
-          related_id: feedbackData.related_id || feedbackData.relatedId
-        });
+          title: feedback.title,
+          comments: feedback.comments,
+          rating: feedback.rating,
+          member_id: feedback.member_id,
+          member_name: feedback.member_name,
+          type: feedback.type,
+          branch_id: feedback.branch_id,
+          related_id: feedback.related_id,
+          anonymous: feedback.anonymous
+        })
+        .select()
+        .single();
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      await fetchFeedbacks();
-      return true;
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast.error('Failed to submit feedback');
-      return false;
+      const newFeedback = adaptFeedbackFromDB(data);
+      setFeedbacks(prev => [newFeedback, ...prev]);
+      toast.success('Feedback submitted successfully!');
+      return newFeedback;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('An unknown error occurred');
+      setError(error);
+      toast.error(`Failed to submit feedback: ${error.message}`);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const markAsRead = async (id: string): Promise<boolean> => {
-    try {
-      // This is a placeholder - you might want to implement this according to your requirements
-      // e.g., by adding a 'read' column to your feedback table
-      return true;
-    } catch (error) {
-      console.error('Error marking feedback as read:', error);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    fetchFeedbacks();
-  }, [fetchFeedbacks]);
-
+  
   return {
     feedbacks,
     isLoading,
-    fetchFeedbacks,
-    submitFeedback,
-    markAsRead
+    error,
+    fetchFeedback,
+    submitFeedback
   };
 };

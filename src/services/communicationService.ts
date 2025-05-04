@@ -1,15 +1,80 @@
-import { supabase } from './supabaseClient';
+
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Announcement, 
   Feedback, 
   MotivationalMessage, 
   ReminderRule, 
   FeedbackType,
-  adaptAnnouncementFromDB,
-  adaptFeedbackFromDB,
-  adaptReminderRuleFromDB,
-  adaptMotivationalMessageFromDB
 } from '@/types/notification';
+
+// Add the adapter functions that are imported but missing
+export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
+  return {
+    id: dbAnnouncement.id,
+    title: dbAnnouncement.title,
+    content: dbAnnouncement.content,
+    priority: dbAnnouncement.priority || 'medium',
+    authorName: dbAnnouncement.author_name,
+    authorId: dbAnnouncement.author_id,
+    createdAt: dbAnnouncement.created_at,
+    expiresAt: dbAnnouncement.expires_at,
+    channel: dbAnnouncement.channel,
+    branchId: dbAnnouncement.branch_id,
+    targetRoles: dbAnnouncement.target_roles,
+    channels: dbAnnouncement.channels
+  };
+};
+
+export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
+  return {
+    id: dbFeedback.id,
+    title: dbFeedback.title,
+    rating: dbFeedback.rating,
+    comments: dbFeedback.comments,
+    member_id: dbFeedback.member_id,
+    member_name: dbFeedback.member_name,
+    branch_id: dbFeedback.branch_id,
+    type: dbFeedback.type,
+    anonymous: dbFeedback.anonymous || false,
+    created_at: dbFeedback.created_at,
+    related_id: dbFeedback.related_id
+  };
+};
+
+export const adaptReminderRuleFromDB = (dbRule: any): ReminderRule => {
+  return {
+    id: dbRule.id,
+    title: dbRule.title,
+    name: dbRule.name || dbRule.title,
+    description: dbRule.description,
+    triggerType: dbRule.trigger_type,
+    triggerValue: dbRule.trigger_value,
+    message: dbRule.message,
+    notificationChannel: dbRule.notification_channel,
+    conditions: dbRule.conditions || {},
+    isActive: dbRule.is_active,
+    active: dbRule.is_active, // For backward compatibility
+    targetRoles: dbRule.target_roles || [],
+    sendVia: dbRule.send_via || [],
+    channels: dbRule.channels || [],
+    targetType: dbRule.target_type || 'all'
+  };
+};
+
+export const adaptMotivationalMessageFromDB = (dbMessage: any): MotivationalMessage => {
+  return {
+    id: dbMessage.id,
+    title: dbMessage.title,
+    content: dbMessage.content,
+    author: dbMessage.author,
+    category: dbMessage.category,
+    tags: dbMessage.tags || [],
+    active: dbMessage.active,
+    created_at: dbMessage.created_at,
+    updated_at: dbMessage.updated_at
+  };
+};
 
 // Announcement Service
 export const announcementService = {
@@ -176,7 +241,7 @@ export const reminderRuleService = {
           trigger_type: rule.triggerType,
           notification_channel: rule.notificationChannel,
           conditions: rule.conditions || {},
-          is_active: rule.active || rule.isActive || rule.enabled || false,
+          is_active: rule.active || rule.isActive || false,
           trigger_value: rule.triggerValue,
           message: rule.message,
           send_via: rule.sendVia || rule.channels || [],
@@ -220,10 +285,12 @@ export const reminderRuleService = {
         dbRule.is_active = rule.active;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reminder_rules')
         .update(dbRule)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
       return adaptReminderRuleFromDB(data);

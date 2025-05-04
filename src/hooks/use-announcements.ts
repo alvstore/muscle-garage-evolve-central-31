@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
+import { Announcement } from '@/types/notification';
 import { toast } from 'sonner';
 import { useBranch } from './use-branch';
+import { adaptAnnouncementFromDB } from '@/services/communicationService';
 
 interface UseAnnouncementsProps {
   initialAnnouncements?: Announcement[];

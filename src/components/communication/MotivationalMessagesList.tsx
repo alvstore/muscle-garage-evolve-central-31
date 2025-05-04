@@ -1,152 +1,146 @@
 
-import React from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Edit, 
-  Trash2,
-  MoreHorizontal 
-} from "lucide-react";
-import { MotivationalMessage, MotivationalCategory } from "@/types/notification";
-import { formatDistanceToNow } from "date-fns";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { MotivationalMessage, MotivationalCategory } from '@/types/notification';
+import { PlusCircle, Loader2, Check, X } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import MotivationalMessageForm from './MotivationalMessageForm';
+import { motivationalMessageService } from '@/services/communicationService';
+import { toast } from 'sonner';
 
-interface MotivationalMessagesListProps {
-  messages: MotivationalMessage[];
-  isLoading: boolean;
-  onEdit: (message: MotivationalMessage) => void;
-  onDelete: (id: string) => void;
-  onToggleActive: (id: string, isActive: boolean) => void;
-}
-
-const getCategoryColor = (category: MotivationalCategory) => {
-  switch (category) {
-    case 'motivation':
-      return "bg-blue-100 text-blue-800";
-    case 'fitness':
-      return "bg-green-100 text-green-800";
-    case 'nutrition':
-      return "bg-orange-100 text-orange-800";
-    case 'wellness':
-      return "bg-purple-100 text-purple-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const MotivationalMessageCard = ({ 
-  message, 
-  onEdit, 
-  onDelete, 
-  onToggleActive 
-}: { 
-  message: MotivationalMessage; 
-  onEdit: (message: MotivationalMessage) => void;
-  onDelete: (id: string) => void;
-  onToggleActive: (id: string, isActive: boolean) => void;
-}) => {
-  const active = message.active || message.isActive || false;
-  const createdDate = message.created_at || message.createdAt || '';
+const MotivationalMessagesList: React.FC = () => {
+  const [messages, setMessages] = useState<MotivationalMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<MotivationalCategory | 'all'>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  return (
-    <Card className="mb-4">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <h3 className="text-lg font-bold">{message.title}</h3>
-          <div className="flex items-center space-x-2">
-            <Badge variant={active ? "success" : "secondary"}>
-              {active ? "Active" : "Inactive"}
-            </Badge>
-            <Switch
-              checked={active}
-              onCheckedChange={() => onToggleActive(message.id, active)}
-            />
-          </div>
-        </div>
-        
-        <p className="mt-2 text-gray-600">{message.content}</p>
-        
-        <div className="mt-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className={getCategoryColor(message.category)}>
-              {message.category}
-            </Badge>
-            {message.tags && message.tags.length > 0 && (
-              <div className="text-sm text-gray-500">
-                Tags: {message.tags.join(', ')}
-              </div>
-            )}
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            By {message.author || 'Unknown'} • {createdDate && formatDistanceToNow(new Date(createdDate), { addSuffix: true })}
-          </div>
-        </div>
-        
-        <div className="mt-4 flex justify-end space-x-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(message)}>
-            <Edit className="h-4 w-4 mr-1" /> Edit
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onDelete(message.id)}>
-            <Trash2 className="h-4 w-4 mr-1" /> Delete
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
-  messages,
-  isLoading,
-  onEdit,
-  onDelete,
-  onToggleActive
-}) => {
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+  
+  const fetchMessages = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedMessages = await motivationalMessageService.getMotivationalMessages();
+      setMessages(fetchedMessages);
+    } catch (error) {
+      console.error('Error fetching motivational messages:', error);
+      toast.error('Failed to load motivational messages');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleCreateMessage = async (message: Partial<MotivationalMessage>) => {
+    setIsSubmitting(true);
+    try {
+      const newMessage = await motivationalMessageService.createMotivationalMessage(message as Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>);
+      if (newMessage) {
+        setMessages(prev => [newMessage, ...prev]);
+        setIsDialogOpen(false);
+        toast.success('Motivational message created successfully!');
+      }
+    } catch (error) {
+      console.error('Error creating motivational message:', error);
+      toast.error('Failed to create motivational message');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const filteredMessages = activeCategory === 'all' 
+    ? messages 
+    : messages.filter(msg => msg.category === activeCategory);
+  
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (!messages || messages.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-10">
-          <p className="text-lg font-medium">No motivational messages found</p>
-          <p className="text-muted-foreground">Create your first message to get started</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  
   return (
-    <div>
-      {messages.map((message) => (
-        <MotivationalMessageCard
-          key={message.id}
-          message={message}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onToggleActive={onToggleActive}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Motivational Messages</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Message
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <MotivationalMessageForm 
+              onSubmit={handleCreateMessage}
+              isSubmitting={isSubmitting}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <Tabs 
+        defaultValue={activeCategory} 
+        onValueChange={(value) => setActiveCategory(value as MotivationalCategory | 'all')}
+      >
+        <TabsList className="grid grid-cols-8">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="fitness">Fitness</TabsTrigger>
+          <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+          <TabsTrigger value="mindfulness">Mindfulness</TabsTrigger>
+          <TabsTrigger value="recovery">Recovery</TabsTrigger>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="motivation">Motivation</TabsTrigger>
+          <TabsTrigger value="wellness">Wellness</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value={activeCategory} className="mt-6">
+          {filteredMessages.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-6">
+                <p className="text-gray-500 mb-4">No messages found in this category.</p>
+                <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+                  Create New Message
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredMessages.map((message) => (
+                <Card key={message.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>{message.title}</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-sm ${message.active ? 'text-green-600' : 'text-red-600'}`}>
+                          {message.active ? (
+                            <Check className="h-4 w-4 inline-block mr-1" />
+                          ) : (
+                            <X className="h-4 w-4 inline-block mr-1" />
+                          )}
+                          {message.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 dark:text-gray-300 mb-4">{message.content}</p>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>By {message.author || 'Unknown'} • Category: <span className="capitalize">{message.category}</span></span>
+                      <span>{message.created_at && formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

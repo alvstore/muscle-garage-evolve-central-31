@@ -205,5 +205,30 @@ export interface Invoice {
 // Add missing types for enums
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft';
 export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment';
-export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general';
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
+
+// Add missing EmailSettings interface
+export interface EmailSettings {
+  id?: string;
+  provider: string;
+  from_email: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  smtp_secure?: boolean;
+  sendgrid_api_key?: string;
+  mailgun_api_key?: string;
+  mailgun_domain?: string;
+  is_active: boolean;
+  branch_id?: string | null;
+  notifications: {
+    sendOnInvoice?: boolean;
+    sendClassUpdates?: boolean;
+    sendOnRegistration?: boolean;
+    [key: string]: boolean | undefined;
+  };
+  created_at?: string;
+  updated_at?: string;
+}

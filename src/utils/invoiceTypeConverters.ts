@@ -1,5 +1,6 @@
 // Update imports
 import { Invoice } from '@/types/notification';
+import { Invoice as FinanceInvoice } from '@/types/finance';
 
 export const convertInvoiceStatusToText = (status: string): string => {
   switch (status) {
@@ -33,4 +34,28 @@ export const convertInvoiceStatusToColor = (status: string): string => {
     default:
       return 'zinc';
   }
+};
+
+// Add the missing function
+export const notificationToFinanceInvoice = (invoice: Invoice): FinanceInvoice => {
+  return {
+    id: invoice.id,
+    member_id: invoice.member_id,
+    amount: invoice.amount,
+    status: invoice.status,
+    due_date: invoice.due_date,
+    issued_date: invoice.issued_date,
+    paid_date: invoice.paid_date,
+    payment_method: invoice.payment_method,
+    razorpay_payment_id: invoice.razorpay_payment_id,
+    razorpay_order_id: invoice.razorpay_order_id,
+    branch_id: invoice.branch_id,
+    items: invoice.items,
+    description: invoice.description,
+    notes: invoice.notes,
+    created_at: invoice.created_at,
+    updated_at: invoice.updated_at,
+    created_by: invoice.created_by,
+    membership_plan_id: invoice.membership_plan_id
+  };
 };
