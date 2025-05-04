@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
@@ -418,7 +419,11 @@ export function useDashboardSummary() {
   const { currentBranch } = useBranch();
 
   useEffect(() => {
-    if (!currentBranch) return;
+    // Don't fetch if no branch is selected
+    if (!currentBranch) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       try {

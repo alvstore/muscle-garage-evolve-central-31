@@ -1,83 +1,81 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cva } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
-
-type StatCardVariant = 'default' | 'increase' | 'decrease' | 'neutral' | 'info' | 'warning';
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowUpIcon, ArrowDownIcon, Loader2 } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   description?: string;
-  icon?: React.ReactNode;
-  variant?: StatCardVariant;
-  isLoading?: boolean;
-  className?: string;
   trend?: number;
+  icon?: React.ReactNode;
+  variant?: "neutral" | "increase" | "decrease" | "warning" | "info";
+  isLoading?: boolean;
 }
 
-const cardVariants = cva(
-  "relative overflow-hidden",
-  {
-    variants: {
-      variant: {
-        default: "border-gray-200",
-        increase: "border-l-4 border-l-green-500",
-        decrease: "border-l-4 border-l-red-500",
-        neutral: "border-l-4 border-l-blue-500",
-        info: "border-l-4 border-l-indigo-500",
-        warning: "border-l-4 border-l-amber-500",
-      }
-    },
-    defaultVariants: {
-      variant: "default"
+const StatCard = ({ 
+  title, 
+  value, 
+  description, 
+  trend, 
+  icon, 
+  variant = "neutral",
+  isLoading = false
+}: StatCardProps) => {
+  
+  // Determine color based on variant
+  const getColorClasses = () => {
+    switch(variant) {
+      case "increase":
+        return "text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400";
+      case "decrease":
+        return "text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400";
+      case "warning":
+        return "text-amber-600 bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400";
+      case "info":
+        return "text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400";
+      default:
+        return "text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400";
     }
-  }
-);
+  };
 
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  description,
-  icon,
-  variant = "default",
-  isLoading = false,
-  className,
-  trend,
-}) => {
   return (
-    <Card className={cn(cardVariants({ variant }), className)}>
-      {isLoading ? (
-        <div className="p-6 space-y-2">
-          <Skeleton className="h-4 w-[100px]" />
-          <Skeleton className="h-8 w-[120px]" />
-          {description && <Skeleton className="h-4 w-full" />}
-        </div>
-      ) : (
-        <>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            {icon && <div className="text-muted-foreground">{icon}</div>}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-            {trend !== undefined && (
-              <div className={cn(
-                "flex items-center text-xs mt-2",
-                trend > 0 ? "text-green-500" : trend < 0 ? "text-red-500" : "text-blue-500"
-              )}>
-                {trend > 0 ? '↑' : trend < 0 ? '↓' : '→'} 
-                <span className="ml-1">
-                  {Math.abs(trend)}% {trend > 0 ? 'increase' : trend < 0 ? 'decrease' : 'no change'} from previous period
-                </span>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            {isLoading ? (
+              <div className="h-8 flex items-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
+            ) : (
+              <p className="text-2xl font-bold">{value}</p>
             )}
-          </CardContent>
-        </>
-      )}
+            {description && (
+              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+            )}
+          </div>
+          {icon && (
+            <div className={`p-2 rounded-full ${getColorClasses()}`}>
+              {icon}
+            </div>
+          )}
+        </div>
+        
+        {trend !== undefined && !isLoading && (
+          <div className="flex items-center mt-2">
+            {trend > 0 ? (
+              <ArrowUpIcon className="h-4 w-4 text-green-600 mr-1" />
+            ) : trend < 0 ? (
+              <ArrowDownIcon className="h-4 w-4 text-red-600 mr-1" />
+            ) : null}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : ''}`}>
+              {Math.abs(trend)}% from last period
+            </span>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };
