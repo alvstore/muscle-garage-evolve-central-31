@@ -1,4 +1,3 @@
-
 import { supabase } from './supabaseClient';
 import { 
   Announcement, 
@@ -195,35 +194,42 @@ export const reminderRuleService = {
     }
   },
 
-  async updateReminderRule(id: string, rule: Partial<ReminderRule>): Promise<boolean> {
+  async updateReminderRule(id: string, rule: Partial<ReminderRule>): Promise<ReminderRule | null> {
     try {
-      const updateData: any = {};
+      // Convert our frontend model to the database column names
+      const dbRule = {
+        ...(rule.id && { id: rule.id }),
+        ...(rule.title && { title: rule.title }),
+        ...(rule.name && { name: rule.name }),
+        ...(rule.description && { description: rule.description }),
+        ...(rule.triggerType && { trigger_type: rule.triggerType }),
+        ...(rule.triggerValue && { trigger_value: rule.triggerValue }),
+        ...(rule.message && { message: rule.message }),
+        ...(rule.notificationChannel && { notification_channel: rule.notificationChannel }),
+        ...(rule.conditions && { conditions: rule.conditions }),
+        // Fix here: use isActive instead of enabled
+        ...(rule.isActive !== undefined && { is_active: rule.isActive }),
+        ...(rule.targetRoles && { target_roles: rule.targetRoles }),
+        ...(rule.sendVia && { send_via: rule.sendVia }),
+        ...(rule.channels && { channels: rule.channels }),
+        ...(rule.targetType && { target_type: rule.targetType })
+      };
 
-      if (rule.title) updateData.title = rule.title;
-      if (rule.name) updateData.title = rule.name;
-      if (rule.description !== undefined) updateData.description = rule.description;
-      if (rule.triggerType) updateData.trigger_type = rule.triggerType;
-      if (rule.notificationChannel) updateData.notification_channel = rule.notificationChannel;
-      if (rule.conditions) updateData.conditions = rule.conditions;
-      if (rule.active !== undefined) updateData.is_active = rule.active;
-      if (rule.isActive !== undefined) updateData.is_active = rule.isActive;
-      if (rule.enabled !== undefined) updateData.is_active = rule.enabled;
-      if (rule.triggerValue !== undefined) updateData.trigger_value = rule.triggerValue;
-      if (rule.message) updateData.message = rule.message;
-      if (rule.sendVia) updateData.send_via = rule.sendVia;
-      if (rule.channels) updateData.send_via = rule.channels;
-      if (rule.targetRoles) updateData.target_roles = rule.targetRoles;
-      
+      // Another fix: if we have active but not isActive, use active
+      if (rule.active !== undefined && rule.isActive === undefined) {
+        dbRule.is_active = rule.active;
+      }
+
       const { error } = await supabase
         .from('reminder_rules')
-        .update(updateData)
+        .update(dbRule)
         .eq('id', id);
 
       if (error) throw error;
-      return true;
+      return adaptReminderRuleFromDB(data);
     } catch (error) {
-      console.error('Error updating reminder rule:', error);
-      return false;
+      console.error("Error updating reminder rule:", error);
+      return null;
     }
   }
 };

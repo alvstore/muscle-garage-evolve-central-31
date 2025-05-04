@@ -3,6 +3,7 @@ import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { appRoutes } from './appRoutes';
 import { supabase } from '@/integrations/supabase/client';
+import { PermissionsProvider } from '@/hooks/permissions/use-permissions-manager';
 
 // Create the router with all defined routes
 const router = createBrowserRouter(appRoutes);
@@ -22,6 +23,10 @@ export default function AppRouter() {
     checkSession();
   }, []);
   
-  // Provide access to the router throughout the application
-  return <RouterProvider router={router} />;
+  // Provide access to the router throughout the application, wrapped with PermissionsProvider
+  return (
+    <PermissionsProvider>
+      <RouterProvider router={router} />
+    </PermissionsProvider>
+  );
 }
