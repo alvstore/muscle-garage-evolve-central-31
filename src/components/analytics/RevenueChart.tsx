@@ -7,23 +7,31 @@ import { Loader2 } from 'lucide-react';
 
 interface RevenueChartProps {
   dateRange: DateRange;
+  data?: {
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }[];
 }
 
-const RevenueChart = ({ dateRange }: RevenueChartProps) => {
+const RevenueChart = ({ dateRange, data = [] }: RevenueChartProps) => {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Simulating data fetching - replace with actual API call
+  // Use provided data or simulate data fetching
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
-    // Simulate API fetch with timeout
-    const timer = setTimeout(() => {
-      try {
-        // Dummy data - replace with actual data
-        const data = [
+    try {
+      // Use provided data if available, otherwise use sample data
+      if (data && data.length > 0) {
+        setRevenueData(data);
+      } else {
+        // Simulate API fetch with sample data
+        const sampleData = [
           { month: 'Jan', revenue: 25000 },
           { month: 'Feb', revenue: 35000 },
           { month: 'Mar', revenue: 32000 },
@@ -32,16 +40,14 @@ const RevenueChart = ({ dateRange }: RevenueChartProps) => {
           { month: 'Jun', revenue: 42000 },
         ];
         
-        setRevenueData(data);
-        setIsLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load revenue data'));
-        setIsLoading(false);
+        setRevenueData(sampleData);
       }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [dateRange]);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load revenue data'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dateRange, data]);
 
   return (
     <Card className="col-span-1">

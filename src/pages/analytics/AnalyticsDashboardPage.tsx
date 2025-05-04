@@ -177,7 +177,7 @@ const AnalyticsDashboard = () => {
 
         {/* Revenue Chart */}
         <div className="mb-6">
-          <RevenueChart data={sampleRevenueData} />
+          <RevenueChart dateRange={dateRange} data={sampleRevenueData} />
         </div>
 
         {/* Churn & Trainers */}
