@@ -82,7 +82,15 @@ const StaffListPage: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
-                <CreateStaffForm onSuccess={handleCreateStaff} onCancel={() => setIsDialogOpen(false)} staff={[]} refetch={fetchStaff} />
+                <CreateStaffForm 
+                  onSuccess={() => {
+                    fetchStaff();
+                    setIsDialogOpen(false);
+                  }}
+                  onCancel={() => setIsDialogOpen(false)} 
+                  staff={[]} 
+                  refetch={fetchStaff} 
+                />
               </DialogContent>
             </Dialog>
           </div>

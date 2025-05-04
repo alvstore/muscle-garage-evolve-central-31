@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
-import { Notification } from '@/types';
+import { Notification } from '@/types/notification';
 import NotificationItem from '@/components/notification/NotificationItem';
 import { Badge } from '@/components/ui/badge';
 
@@ -131,7 +131,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar_url} alt={user?.name || 'User'} />
+                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
                 <AvatarFallback>
                   {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
@@ -141,7 +141,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <DropdownMenuContent align="end">
             <div className="flex items-center justify-start gap-2 p-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar_url} alt={user?.name || 'User'} />
+                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
                 <AvatarFallback>
                   {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>

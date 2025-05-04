@@ -60,7 +60,7 @@ const UnifiedSettingsPage = () => {
                 <TabsTrigger value="communication">Communication</TabsTrigger>
                 <TabsTrigger value="payment">Payment</TabsTrigger>
                 <TabsTrigger value="access">Access Control</TabsTrigger>
-                <PermissionGuard permission="manage_branch">
+                <PermissionGuard permission="manage_branches">
                   <TabsTrigger value="branch">Branch</TabsTrigger>
                 </PermissionGuard>
                 <PermissionGuard permission="manage_settings">
@@ -147,7 +147,7 @@ const UnifiedSettingsPage = () => {
             </TabsContent>
 
             <TabsContent value="branch">
-              <PermissionGuard permission="manage_branch">
+              <PermissionGuard permission="manage_branches">
                 <Card>
                   <CardHeader>
                     <CardTitle>Branch Settings</CardTitle>
