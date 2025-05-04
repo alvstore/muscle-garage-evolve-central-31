@@ -16,7 +16,7 @@ interface MotivationalMessagesListProps {
   messages?: MotivationalMessage[];
   isLoading?: boolean;
   onEdit?: (message: MotivationalMessage) => void;
-  onDelete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<boolean>;
   onToggleActive?: (id: string, isActive: boolean) => Promise<boolean>;
 }
 
@@ -53,10 +53,10 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
     }
   };
   
-  const handleCreateMessage = async (message: Partial<MotivationalMessage>) => {
+  const handleCreateMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
     setIsSubmitting(true);
     try {
-      const newMessage = await motivationalMessageService.createMotivationalMessage(message as Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>);
+      const newMessage = await motivationalMessageService.createMotivationalMessage(message);
       if (newMessage) {
         setDisplayMessages(prev => [newMessage, ...prev]);
         setIsDialogOpen(false);
@@ -72,32 +72,41 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
 
   const handleDeleteMessage = async (id: string) => {
     if (onDelete) {
-      await onDelete(id);
+      return await onDelete(id);
     } else {
       try {
-        await motivationalMessageService.deleteMotivationalMessage(id);
-        setDisplayMessages(prev => prev.filter(msg => msg.id !== id));
-        toast.success('Message deleted successfully');
+        const result = await motivationalMessageService.deleteMotivationalMessage(id);
+        if (result) {
+          setDisplayMessages(prev => prev.filter(msg => msg.id !== id));
+          toast.success('Message deleted successfully');
+        }
+        return result;
       } catch (error) {
         console.error('Error deleting message:', error);
         toast.error('Failed to delete message');
+        return false;
       }
     }
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     if (onToggleActive) {
-      await onToggleActive(id, isActive);
+      return await onToggleActive(id, isActive);
     } else {
       try {
-        await motivationalMessageService.updateMotivationalMessage(id, { active: isActive });
-        setDisplayMessages(prev => 
-          prev.map(msg => msg.id === id ? { ...msg, active: isActive } : msg)
-        );
-        toast.success(`Message ${isActive ? 'activated' : 'deactivated'} successfully`);
+        const result = await motivationalMessageService.updateMotivationalMessage(id, { active: isActive });
+        if (result) {
+          setDisplayMessages(prev => 
+            prev.map(msg => msg.id === id ? { ...msg, active: isActive } : msg)
+          );
+          toast.success(`Message ${isActive ? 'activated' : 'deactivated'} successfully`);
+          return true;
+        }
+        return false;
       } catch (error) {
         console.error('Error updating message:', error);
         toast.error('Failed to update message status');
+        return false;
       }
     }
   };

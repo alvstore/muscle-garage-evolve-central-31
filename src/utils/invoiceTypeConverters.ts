@@ -55,8 +55,7 @@ export const notificationToFinanceInvoice = (invoice: Invoice): FinanceInvoice =
     description: invoice.description,
     notes: invoice.notes,
     created_at: invoice.created_at,
-    updated_at: invoice.updated_at,
-    // Fix the duplicate property issue
-    created_by: invoice.created_by
+    updated_at: invoice.updated_at
+    // Removed the duplicate created_by property
   };
 };

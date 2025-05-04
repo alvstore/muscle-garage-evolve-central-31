@@ -21,9 +21,9 @@ export default function MotivationalPage() {
     toggleActive 
   } = useMotivationalMessages();
   
-  const handleFormSubmit = async (message: Partial<MotivationalMessage>) => {
+  const handleFormSubmit = async (message: Omit<MotivationalMessage, "id" | "created_at" | "updated_at">) => {
     if (editMessage) {
-      await updateMessage(message.id!, message);
+      await updateMessage(editMessage.id, message);
     } else {
       await addMessage(message);
     }
@@ -43,11 +43,11 @@ export default function MotivationalPage() {
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
-    await toggleActive(id, isActive);
+    return await toggleActive(id, isActive);
   };
 
   const handleDelete = async (id: string) => {
-    await deleteMessage(id);
+    return await deleteMessage(id);
   };
 
   return (

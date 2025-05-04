@@ -330,7 +330,7 @@ export const motivationalMessageService = {
           author: message.author,
           category: message.category,
           tags: message.tags,
-          active: message.active // Changed from message.isActive
+          active: message.active
         })
         .select()
         .single();
@@ -341,6 +341,49 @@ export const motivationalMessageService = {
     } catch (error) {
       console.error('Error creating motivational message:', error);
       return null;
+    }
+  },
+  
+  async updateMotivationalMessage(
+    id: string, 
+    updates: Partial<MotivationalMessage>
+  ): Promise<MotivationalMessage | null> {
+    try {
+      const { data, error } = await supabase
+        .from('motivational_messages')
+        .update({
+          ...(updates.title && { title: updates.title }),
+          ...(updates.content && { content: updates.content }),
+          ...(updates.author && { author: updates.author }),
+          ...(updates.category && { category: updates.category }),
+          ...(updates.tags && { tags: updates.tags }),
+          ...(updates.active !== undefined && { active: updates.active })
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return adaptMotivationalMessageFromDB(data);
+    } catch (error) {
+      console.error('Error updating motivational message:', error);
+      return null;
+    }
+  },
+  
+  async deleteMotivationalMessage(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('motivational_messages')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting motivational message:', error);
+      return false;
     }
   }
 };
