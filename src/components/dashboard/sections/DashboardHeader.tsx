@@ -1,163 +1,167 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Menu, Moon, Search, Sun } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branch";
+import React from 'react';
+import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { toast } from "sonner";
-import NotificationsPanel from "@/components/notifications/NotificationsPanel";
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/use-auth';
+import { useNavigate } from 'react-router-dom';
+import { Notification } from '@/types';
+import NotificationItem from '@/components/notification/NotificationItem';
+import { Badge } from '@/components/ui/badge';
 
 interface DashboardHeaderProps {
   toggleSidebar: () => void;
   toggleTheme: () => void;
   isDarkMode: boolean;
-  sidebarOpen: boolean;
+  sidebarOpen?: boolean;
 }
 
-const DashboardHeader = ({
+const fakeNotifications: Notification[] = [
+  {
+    id: '1',
+    title: 'New Member Joined',
+    message: 'John Doe has joined as a new member.',
+    timestamp: new Date().toISOString(),
+    read: false,
+    type: 'member'
+  },
+  {
+    id: '2',
+    title: 'Membership Expiring',
+    message: 'Sarah Smith\'s membership expires in 3 days.',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    read: false,
+    type: 'alert'
+  }
+];
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   toggleSidebar,
   toggleTheme,
   isDarkMode,
   sidebarOpen
-}: DashboardHeaderProps) => {
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
+}) => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Enhanced search functionality for staff
-      const lowerQuery = searchQuery.toLowerCase();
-      if (lowerQuery.includes('member') || lowerQuery.includes('customer')) {
-        navigate('/members');
-        toast.info(`Searching for members with query: ${searchQuery}`);
-      } else if (lowerQuery.includes('diet')) {
-        navigate('/fitness/diet-plans');
-        toast.info(`Searching for diet plans with query: ${searchQuery}`);
-      } else if (lowerQuery.includes('workout')) {
-        navigate('/fitness/workout-plans');
-        toast.info(`Searching for workout plans with query: ${searchQuery}`);
-      } else if (lowerQuery.includes('invoice')) {
-        navigate('/finance/invoices');
-        toast.info(`Searching for invoices with query: ${searchQuery}`);
-      } else {
-        toast.info(`Searching for: ${searchQuery}`);
-      }
+  const [notifications] = React.useState<Notification[]>(fakeNotifications);
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
-
-  // Check if user is a member or staff
-  const isMember = user?.role === 'member';
-  const isStaff = user?.role === 'staff';
-
+  
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4">
+    <header className="sticky top-0 z-30 flex h-16 items-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 shadow-sm">
       <div className="flex items-center gap-2">
-        // In the DashboardHeader component, ensure the toggle button is implemented correctly
         <Button 
           variant="ghost" 
           size="icon" 
+          className="md:flex" 
           onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
-          className="relative z-50" // Add z-index to ensure it's clickable
         >
-          <Menu className="h-5 w-5" />
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Toggle Menu</span>
         </Button>
-        <div className="hidden md:flex items-center">
-          <span className="text-lg font-semibold max-w-[200px] truncate">
-            {currentBranch?.name || "Muscle Garage"}
-          </span>
-        </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        {/* Only show search for non-member users */}
-        {!isMember && (
-          <>
-            <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
-              <Input
-                type="search"
-                placeholder="Search members, plans, invoices..."
-                className="w-64 pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
-            </form>
-            
-            <Sheet open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Search className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="top" className="pt-10">
-                <form onSubmit={handleSearch} className="flex items-center relative">
-                  <Input
-                    type="search"
-                    placeholder="Search members, plans, invoices..."
-                    className="w-full pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                  />
-                  <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
-                </form>
-              </SheetContent>
-            </Sheet>
-          </>
-        )}
-        
+      <div className="ml-auto flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          <span className="sr-only">Toggle Theme</span>
         </Button>
-        
-        <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <NotificationsPanel />
-          </SheetContent>
-        </Sheet>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs p-0"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[300px]">
+            <div className="flex items-center justify-between py-2 px-3">
+              <h3 className="font-semibold">Notifications</h3>
+              {unreadCount > 0 && (
+                <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs">
+                  Mark all as read
+                </Button>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <div className="max-h-[300px] overflow-auto">
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <NotificationItem key={notification.id} notification={notification} />
+                ))
+              ) : (
+                <div className="py-4 px-3 text-center text-muted-foreground">
+                  No notifications
+                </div>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a className="w-full text-center cursor-pointer" href="/notifications">
+                View all notifications
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar || ""} alt={user?.name || "User"} />
+                <AvatarImage src={user?.avatar_url} alt={user?.name || 'User'} />
                 <AvatarFallback>
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate("/profile")}>
-              Profile
+            <div className="flex items-center justify-start gap-2 p-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.avatar_url} alt={user?.name || 'User'} />
+                <AvatarFallback>
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-0.5">
+                <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              Profile Settings
             </DropdownMenuItem>
-            {/* Only show settings for admin users, not staff or members */}
-            {user?.role === 'admin' && (
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                Settings
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Account Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              Log Out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

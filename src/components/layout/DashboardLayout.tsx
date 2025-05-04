@@ -70,9 +70,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   
   // Update sidebar state when mobile state changes
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
+    setSidebarOpen(!isMobile);
   }, [isMobile]);
   
   if (isLoading) {
@@ -137,7 +135,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } md:translate-x-0 md:transition-none`}
         >
-          <SidebarComponent isSidebarOpen={true} closeSidebar={closeSidebar} />
+          <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
         </div>
         
         {/* Main Content */}

@@ -1,110 +1,210 @@
 
-import React, { useState } from "react";
-import { Container } from "@/components/ui/container";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Building2, 
-  Shield, 
-  Settings as SettingsIcon, 
-  Users, 
-  Layers, 
-  LayoutTemplate, 
-  Zap, 
-  Smartphone 
-} from "lucide-react";
+import { Container } from "@/components/ui/container";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import GeneralSettings from "@/components/settings/GeneralSettings";
+import NotificationSettings from "@/components/settings/NotificationSettings";
+import IntegrationSettings from "@/components/settings/IntegrationSettings";
+import BranchSettings from "@/components/settings/BranchSettings";
+import PaymentSettings from "@/components/settings/PaymentSettings";
+import AccessControlSettings from "@/components/settings/AccessControlSettings";
+import CommunicationSettings from "@/components/settings/CommunicationSettings";
 import { usePermissions } from "@/hooks/use-permissions";
-import CompanySettings from "@/components/settings/CompanySettings";
-import BranchesSettings from "@/components/settings/BranchesSettings";
-import UsersPermissionsSettings from "@/components/settings/UsersPermissionsSettings";
-import IntegrationsSettings from "@/components/settings/IntegrationsSettings";
-import TemplatesSettings from "@/components/settings/TemplatesSettings";
-import AutomationSettings from "@/components/settings/AutomationSettings";
-import AttendanceSettings from "@/components/settings/AttendanceSettings";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { useBranch } from "@/hooks/use-branch";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const UnifiedSettingsPage = () => {
+  const [activeTab, setActiveTab] = useState("general");
   const { can } = usePermissions();
-  const [activeTab, setActiveTab] = useState("company");
+  const { currentBranch } = useBranch();
+  
+  const isAdmin = can('manage_settings');
+  const isGlobalAdmin = can('view_all_branches');
 
   return (
     <Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">System Settings</h1>
-            <p className="text-muted-foreground">Unified configuration center</p>
-          </div>
+      <div className="py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">
+            {isGlobalAdmin 
+              ? "Global configuration settings for your entire organization" 
+              : "Configuration settings for your branch"}
+          </p>
         </div>
-        
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+
+        {!currentBranch?.id && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Warning</AlertTitle>
+            <AlertDescription>
+              Please select a branch first to view and modify branch-specific settings.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Tabs 
+          defaultValue="general" 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
           <Card>
-            <CardContent className="p-6">
-              <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-2">
-                <TabsTrigger value="company" className="flex items-center gap-2">
-                  <SettingsIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">Company</span>
-                </TabsTrigger>
-                
-                <TabsTrigger value="branches" className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Branches</span>
-                </TabsTrigger>
-                
-                <TabsTrigger value="users" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Users</span>
-                </TabsTrigger>
-
-                <TabsTrigger value="integrations" className="flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
-                  <span className="hidden sm:inline">Integrations</span>
-                </TabsTrigger>
-
-                <TabsTrigger value="templates" className="flex items-center gap-2">
-                  <LayoutTemplate className="h-4 w-4" />
-                  <span className="hidden sm:inline">Templates</span>
-                </TabsTrigger>
-
-                <TabsTrigger value="automation" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  <span className="hidden sm:inline">Automation</span>
-                </TabsTrigger>
-                
-                <TabsTrigger value="attendance" className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" />
-                  <span className="hidden sm:inline">Attendance</span>
-                </TabsTrigger>
+            <CardContent className="pt-6 pb-4 px-4">
+              <TabsList className="grid grid-cols-1 md:grid-cols-8 lg:grid-cols-8 w-full">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger value="communication">Communication</TabsTrigger>
+                <TabsTrigger value="payment">Payment</TabsTrigger>
+                <TabsTrigger value="access">Access Control</TabsTrigger>
+                <PermissionGuard permission="manage_branch">
+                  <TabsTrigger value="branch">Branch</TabsTrigger>
+                </PermissionGuard>
+                <PermissionGuard permission="manage_settings">
+                  <TabsTrigger value="integrations">Integrations</TabsTrigger>
+                </PermissionGuard>
+                <PermissionGuard permission="manage_settings">
+                  <TabsTrigger value="global" disabled={!isGlobalAdmin}>
+                    Global
+                  </TabsTrigger>
+                </PermissionGuard>
               </TabsList>
             </CardContent>
           </Card>
 
-          <TabsContent value="company">
-            <CompanySettings />
-          </TabsContent>
-          
-          <TabsContent value="branches">
-            <BranchesSettings />
-          </TabsContent>
-          
-          <TabsContent value="users">
-            <UsersPermissionsSettings />
-          </TabsContent>
-          
-          <TabsContent value="integrations">
-            <IntegrationsSettings />
-          </TabsContent>
-          
-          <TabsContent value="templates">
-            <TemplatesSettings />
-          </TabsContent>
-          
-          <TabsContent value="automation">
-            <AutomationSettings />
-          </TabsContent>
-          
-          <TabsContent value="attendance">
-            <AttendanceSettings />
-          </TabsContent>
+          <div className="space-y-4">
+            <TabsContent value="general">
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Settings</CardTitle>
+                  <CardDescription>
+                    Configure your basic gym settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <GeneralSettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="notifications">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Settings</CardTitle>
+                  <CardDescription>
+                    Configure notification preferences and alerts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <NotificationSettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="communication">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Communication Settings</CardTitle>
+                  <CardDescription>
+                    Configure your email, SMS, and WhatsApp settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <CommunicationSettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="payment">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment Settings</CardTitle>
+                  <CardDescription>
+                    Configure payment gateways and methods
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <PaymentSettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="access">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Access Control Settings</CardTitle>
+                  <CardDescription>
+                    Configure door access and attendance devices
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <AccessControlSettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="branch">
+              <PermissionGuard permission="manage_branch">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Branch Settings</CardTitle>
+                    <CardDescription>
+                      Manage branch-specific configurations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <BranchSettings />
+                  </CardContent>
+                </Card>
+              </PermissionGuard>
+            </TabsContent>
+
+            <TabsContent value="integrations">
+              <PermissionGuard permission="manage_settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Integration Settings</CardTitle>
+                    <CardDescription>
+                      Connect with third-party services and APIs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <IntegrationSettings />
+                  </CardContent>
+                </Card>
+              </PermissionGuard>
+            </TabsContent>
+
+            <TabsContent value="global">
+              <PermissionGuard permission="manage_settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Global Settings</CardTitle>
+                    <CardDescription>
+                      Company-wide settings that apply to all branches
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {!isGlobalAdmin ? (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Access Restricted</AlertTitle>
+                        <AlertDescription>
+                          You need super-admin privileges to modify global settings.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      // Global settings form will go here
+                      <p>Global settings configuration will be available here.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </PermissionGuard>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </Container>
