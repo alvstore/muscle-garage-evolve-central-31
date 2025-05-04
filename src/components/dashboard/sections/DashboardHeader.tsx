@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
-import { Notification } from '@/types/notification.d';
+import { Notification } from '@/types/notification';
 import NotificationItem from '@/components/notification/NotificationItem';
 import { Badge } from '@/components/ui/badge';
 

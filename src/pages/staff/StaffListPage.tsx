@@ -30,15 +30,6 @@ const StaffListPage: React.FC = () => {
     fetchStaff();
   }, []);
   
-  const handleCreateStaff = async (staffData: any) => {
-    try {
-      await createStaffMember(staffData);
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating staff:', error);
-    }
-  };
-  
   const filteredStaff = staff.filter((staffMember) => 
     staffMember.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     staffMember.email.toLowerCase().includes(searchTerm.toLowerCase())
