@@ -64,15 +64,13 @@ export default function MotivationalPage() {
         
         {showForm ? (
           <MotivationalMessageForm 
-            message={editMessage}
-            onComplete={() => {
-              setShowForm(false);
-              setEditMessage(null);
-            }}
+            initialMessage={editMessage}
+            onSave={handleFormSubmit}
+            onCancel={cancelForm}
           />
         ) : (
           <MotivationalMessagesList 
-            messages={messages}
+            messagesList={messages}
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}

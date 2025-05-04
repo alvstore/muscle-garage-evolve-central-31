@@ -18,13 +18,13 @@ interface StaffMember {
   role: string;
   department?: string;
   branch_id?: string;
-  avatarUrl?: string; // Add this property for avatar URL
+  avatar?: string;
 }
 
 const StaffListPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { staff, isLoading, fetchStaff, createStaff } = useStaff();
+  const { staff, isLoading, fetchStaff, createStaffMember } = useStaff();
   
   useEffect(() => {
     fetchStaff();
@@ -32,7 +32,7 @@ const StaffListPage: React.FC = () => {
   
   const handleCreateStaff = async (staffData: any) => {
     try {
-      await createStaff(staffData);
+      await createStaffMember(staffData);
       setIsDialogOpen(false);
     } catch (error) {
       console.error('Error creating staff:', error);
@@ -82,7 +82,7 @@ const StaffListPage: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
-                <CreateStaffForm onSubmit={handleCreateStaff} />
+                <CreateStaffForm handleSubmit={handleCreateStaff} />
               </DialogContent>
             </Dialog>
           </div>
@@ -99,8 +99,8 @@ const StaffListPage: React.FC = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      {staffMember.avatarUrl ? (
-                        <AvatarImage src={staffMember.avatarUrl} alt={staffMember.name} />
+                      {staffMember.avatar ? (
+                        <AvatarImage src={staffMember.avatar} alt={staffMember.name} />
                       ) : (
                         <AvatarFallback>{getInitials(staffMember.name)}</AvatarFallback>
                       )}

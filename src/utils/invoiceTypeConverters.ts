@@ -1,3 +1,4 @@
+
 // Update imports
 import { Invoice } from '@/types/notification';
 import { Invoice as FinanceInvoice } from '@/types/finance';
@@ -36,7 +37,7 @@ export const convertInvoiceStatusToColor = (status: string): string => {
   }
 };
 
-// Add the missing function
+// Fix the property mapping
 export const notificationToFinanceInvoice = (invoice: Invoice): FinanceInvoice => {
   return {
     id: invoice.id,
@@ -55,7 +56,7 @@ export const notificationToFinanceInvoice = (invoice: Invoice): FinanceInvoice =
     notes: invoice.notes,
     created_at: invoice.created_at,
     updated_at: invoice.updated_at,
-    created_by: invoice.created_by,
-    membership_plan_id: invoice.membership_plan_id
+    // Match the property name in Invoice type
+    created_at: invoice.created_by // changed from created_by
   };
 };

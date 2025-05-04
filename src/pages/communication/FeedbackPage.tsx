@@ -14,7 +14,7 @@ import { Feedback, FeedbackType } from '@/types/notification';
 const FeedbackPage = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [openFeedbackForm, setOpenFeedbackForm] = useState(false);
-  const { feedbacks, isLoading, fetchFeedbacks } = useFeedback();
+  const { feedbacks, isLoading, fetchFeedback } = useFeedback();
   const { user } = useAuth();
   
   const isMember = user?.role === 'member';
@@ -23,12 +23,12 @@ const FeedbackPage = () => {
     : ['general', 'trainer', 'class', 'facility', 'service', 'equipment'];
 
   useEffect(() => {
-    fetchFeedbacks();
-  }, [fetchFeedbacks]);
+    fetchFeedback();
+  }, [fetchFeedback]);
 
   const handleCompleted = () => {
     setOpenFeedbackForm(false);
-    fetchFeedbacks();
+    fetchFeedback();
   };
 
   return (

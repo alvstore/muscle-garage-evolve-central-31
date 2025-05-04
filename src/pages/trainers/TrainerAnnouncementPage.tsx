@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/use-announcements';
-import AnnouncementsList from '@/components/communication/AnnouncementsList';
+import { AnnouncementsList } from '@/components/communication/AnnouncementsList';
 import TrainerAnnouncementForm from '@/components/communication/TrainerAnnouncementForm';
 import { toast } from 'sonner';
 
@@ -65,7 +65,6 @@ const TrainerAnnouncementPage: React.FC = () => {
             <DialogContent className="sm:max-w-[600px]">
               <TrainerAnnouncementForm 
                 onSubmit={handleCreateAnnouncement}
-                isSubmitting={isSubmitting}
               />
             </DialogContent>
           </Dialog>
@@ -78,10 +77,7 @@ const TrainerAnnouncementPage: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <AnnouncementsList 
-            announcements={announcements}
-            showActions={true}
-          />
+          <AnnouncementsList />
         )}
       </div>
     </Container>

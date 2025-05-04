@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -120,18 +119,16 @@ export const TrainerAnnouncementForm: React.FC<TrainerAnnouncementFormProps> = (
     
     setIsSending(true);
     
-    // In a real app, this would be an API call
-    setTimeout(() => {
+    onSubmit({
+      title,
+      content,
+      priority,
+      selectedMembers,
+      channels
+    }).finally(() => {
       setIsSending(false);
-      toast.success("Announcement sent successfully to " + selectedMembers.length + " members");
-      
-      // Reset form
-      setTitle('');
-      setContent('');
-      setPriority('medium');
-      setSelectedMembers([]);
-      setChannels(['in-app']);
-    }, 1500);
+      // Reset form on success is handled by the parent component
+    });
   };
   
   return (

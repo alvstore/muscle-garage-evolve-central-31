@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Announcement, 
@@ -331,7 +330,7 @@ export const motivationalMessageService = {
           author: message.author,
           category: message.category,
           tags: message.tags,
-          active: message.active || message.isActive
+          active: message.active // Changed from message.isActive
         })
         .select()
         .single();

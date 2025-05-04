@@ -47,6 +47,9 @@ export const useFeedback = () => {
     }
   };
   
+  // Add this as an alias for fetchFeedback to match the usage in FeedbackPage
+  const fetchFeedbacks = fetchFeedback;
+  
   const submitFeedback = async (feedback: Partial<Feedback>) => {
     setIsLoading(true);
     setError(null);
@@ -60,19 +63,21 @@ export const useFeedback = () => {
           member_id: feedback.member_id,
           member_name: feedback.member_name,
           type: feedback.type,
-          branch_id: feedback.branch_id,
+          branch_id: feedback.branch_id || currentBranch?.id,
           related_id: feedback.related_id,
           anonymous: feedback.anonymous
         })
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
       
-      const newFeedback = adaptFeedbackFromDB(data);
-      setFeedbacks(prev => [newFeedback, ...prev]);
-      toast.success('Feedback submitted successfully!');
-      return newFeedback;
+      if (data && data.length > 0) {
+        const newFeedback = adaptFeedbackFromDB(data[0]);
+        setFeedbacks(prev => [newFeedback, ...prev]);
+        toast.success('Feedback submitted successfully!');
+        return newFeedback;
+      }
+      return null;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
       setError(error);
@@ -88,6 +93,7 @@ export const useFeedback = () => {
     isLoading,
     error,
     fetchFeedback,
+    fetchFeedbacks,
     submitFeedback
   };
 };

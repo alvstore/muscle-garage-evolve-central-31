@@ -21,12 +21,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     member_id: invoice?.member_id || '',
-    member_name: invoice?.memberName || '',
+    member_name: '',  // This field may need to come from another source
     description: invoice?.description || '',
     amount: invoice?.amount || 0,
-    status: invoice?.status || 'pending',
-    due_date: invoice?.due_date || invoice?.dueDate || new Date().toISOString().split('T')[0],
-    payment_method: invoice?.payment_method || invoice?.paymentMethod || 'online',
+    status: invoice?.status || 'pending' as InvoiceStatus,
+    due_date: invoice?.due_date || new Date().toISOString().split('T')[0],
+    payment_method: invoice?.payment_method || 'online',
     notes: invoice?.notes || '',
   });
 
@@ -75,6 +75,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      status: value as InvoiceStatus
+    }));
   };
 
   return (
@@ -137,12 +144,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
               <Select 
                 name="status" 
                 value={formData.status} 
-                onValueChange={(value) => {
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    status: value 
-                  }));
-                }}
+                onValueChange={handleStatusChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />

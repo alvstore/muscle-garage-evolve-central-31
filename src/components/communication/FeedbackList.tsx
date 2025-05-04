@@ -8,17 +8,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 
-const FeedbackList: React.FC = () => {
+interface FeedbackListProps {
+  feedbacks?: Feedback[];
+  isLoading?: boolean;
+  hideHeader?: boolean;
+}
+
+const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks: propFeedbacks, isLoading: propIsLoading, hideHeader = false }) => {
   const [activeTab, setActiveTab] = React.useState<FeedbackType | 'all'>('all');
-  const { feedbacks, isLoading, error, fetchFeedback } = useFeedback();
+  const hookResult = useFeedback();
+  
+  // Use props if provided, otherwise use hook data
+  const feedbacks = propFeedbacks || hookResult.feedbacks;
+  const isLoading = propIsLoading !== undefined ? propIsLoading : hookResult.isLoading;
   
   React.useEffect(() => {
-    if (activeTab === 'all') {
-      fetchFeedback();
-    } else {
-      fetchFeedback(activeTab as FeedbackType);
+    if (!propFeedbacks) {
+      if (activeTab === 'all') {
+        hookResult.fetchFeedback();
+      } else {
+        hookResult.fetchFeedback(activeTab as FeedbackType);
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, propFeedbacks]);
   
   if (isLoading) {
     return (
@@ -28,10 +40,10 @@ const FeedbackList: React.FC = () => {
     );
   }
   
-  if (error) {
+  if (hookResult.error && !propFeedbacks) {
     return (
       <div className="p-4 text-red-500">
-        Error loading feedback: {error.message}
+        Error loading feedback: {hookResult.error.message}
       </div>
     );
   }
@@ -70,29 +82,31 @@ const FeedbackList: React.FC = () => {
   
   return (
     <div className="space-y-4">
-      <Tabs 
-        defaultValue={activeTab} 
-        onValueChange={(value) => setActiveTab(value as FeedbackType | 'all')}
-      >
-        <TabsList className="grid grid-cols-6">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="trainer">Trainer</TabsTrigger>
-          <TabsTrigger value="facility">Facility</TabsTrigger>
-          <TabsTrigger value="class">Classes</TabsTrigger>
-          <TabsTrigger value="equipment">Equipment</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeTab} className="mt-6">
-          {feedbacks.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">
-              No feedback available in this category.
-            </div>
-          ) : (
-            feedbacks.map(renderFeedbackCard)
-          )}
-        </TabsContent>
-      </Tabs>
+      {!hideHeader && (
+        <Tabs 
+          defaultValue={activeTab} 
+          onValueChange={(value) => setActiveTab(value as FeedbackType | 'all')}
+        >
+          <TabsList className="grid grid-cols-6">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="trainer">Trainer</TabsTrigger>
+            <TabsTrigger value="facility">Facility</TabsTrigger>
+            <TabsTrigger value="class">Classes</TabsTrigger>
+            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+      
+      <div className="mt-6">
+        {feedbacks && feedbacks.length === 0 ? (
+          <div className="text-center p-8 text-gray-500">
+            No feedback available in this category.
+          </div>
+        ) : (
+          feedbacks?.map(renderFeedbackCard)
+        )}
+      </div>
     </div>
   );
 };
