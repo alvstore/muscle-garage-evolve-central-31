@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Notification } from '@/types/notification';
+import { Notification } from '@/types/notification.d';
 import { format } from 'date-fns';
 
 interface NotificationItemProps {
