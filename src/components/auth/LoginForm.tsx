@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import GymEquipment3D from "@/components/website/GymEquipment3D";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -97,26 +98,63 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-yellow-300 to-yellow-400 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      {/* 3D Gym Equipment Background */}
+      <div className="absolute top-20 right-10 w-40 h-40 opacity-30 hidden md:block">
+        <GymEquipment3D type="dumbbell" rotationSpeed={0.5} />
+      </div>
+      <div className="absolute bottom-40 left-10 w-32 h-32 opacity-30 hidden md:block">
+        <GymEquipment3D type="kettlebell" rotationSpeed={0.3} />
+      </div>
+      <div className="absolute top-1/3 left-1/4 w-24 h-24 opacity-20 hidden lg:block">
+        <GymEquipment3D type="barbell" rotationSpeed={0.2} />
+      </div>
+      <div className="absolute bottom-1/4 right-1/4 w-28 h-28 opacity-20 hidden lg:block">
+        <GymEquipment3D type="proteinShake" rotationSpeed={0.4} />
+      </div>
+      
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-radial from-transparent to-black opacity-80"></div>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
-        <Card className="overflow-hidden shadow-xl rounded-xl border-0">
-          <div className="relative bg-white dark:bg-gray-800 p-6 sm:p-8">
+        <Card className="overflow-hidden shadow-2xl rounded-xl border-0 backdrop-blur-sm bg-white/10 dark:bg-gray-900/50">
+          <div className="relative p-6 sm:p-8">
             {/* Logo or Brand */}
             <div className="mb-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mb-4 shadow-md">
-                <span className="text-2xl font-bold text-white">MG</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <motion.div 
+                className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-300 rounded-full flex items-center justify-center mb-4 shadow-lg"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 260, 
+                  damping: 20,
+                  delay: 0.2 
+                }}
+              >
+                <span className="text-3xl font-bold text-white">MG</span>
+              </motion.div>
+              <motion.h2 
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-white dark:text-white"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
                 Welcome Back
-              </h2>
-              <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              </motion.h2>
+              <motion.p 
+                className="mt-2 text-center text-sm text-gray-300 dark:text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
                 Sign in to access your account
-              </p>
+              </motion.p>
             </div>
 
             {error && (
@@ -125,7 +163,7 @@ const LoginForm = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 transition={{ duration: 0.3 }}
               >
-                <Alert variant="destructive" className="mb-6">
+                <Alert variant="destructive" className="mb-6 bg-red-500/10 border-red-500/20 text-red-200">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -135,7 +173,7 @@ const LoginForm = () => {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-200 dark:text-gray-300 mb-1">
                     Email address
                   </label>
                   <div className="relative">
@@ -150,7 +188,7 @@ const LoginForm = () => {
                       required 
                       value={email} 
                       onChange={e => setEmail(e.target.value)} 
-                      className={`pl-10 ${validationErrors.email ? 'border-red-500 focus:ring-red-500' : ''}`} 
+                      className={`pl-10 bg-white/10 border-gray-700 text-white placeholder:text-gray-500 ${validationErrors.email ? 'border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500'}`} 
                       placeholder="you@example.com" 
                     />
                   </div>
@@ -158,7 +196,7 @@ const LoginForm = () => {
                     <motion.p 
                       initial={{ opacity: 0 }} 
                       animate={{ opacity: 1 }} 
-                      className="mt-1 text-sm text-red-500"
+                      className="mt-1 text-sm text-red-400"
                     >
                       {validationErrors.email}
                     </motion.p>
@@ -167,12 +205,12 @@ const LoginForm = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-200 dark:text-gray-300">
                       Password
                     </label>
                     <Link 
                       to="/forgot-password" 
-                      className="text-xs font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 transition-colors"
+                      className="text-xs font-medium text-yellow-400 hover:text-yellow-300 dark:text-yellow-400 transition-colors"
                     >
                       Forgot password?
                     </Link>
@@ -189,7 +227,7 @@ const LoginForm = () => {
                       required 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
-                      className={`pl-10 ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : ''}`} 
+                      className={`pl-10 bg-white/10 border-gray-700 text-white placeholder:text-gray-500 ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500'}`} 
                       placeholder="••••••••" 
                     />
                   </div>
@@ -197,7 +235,7 @@ const LoginForm = () => {
                     <motion.p 
                       initial={{ opacity: 0 }} 
                       animate={{ opacity: 1 }} 
-                      className="mt-1 text-sm text-red-500"
+                      className="mt-1 text-sm text-red-400"
                     >
                       {validationErrors.password}
                     </motion.p>
@@ -208,7 +246,7 @@ const LoginForm = () => {
               <div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -229,7 +267,7 @@ const LoginForm = () => {
             <div className="mt-6 text-center">
               <Link 
                 to="/" 
-                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                className="inline-flex items-center text-sm font-medium text-gray-300 hover:text-white dark:text-gray-400 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back to home

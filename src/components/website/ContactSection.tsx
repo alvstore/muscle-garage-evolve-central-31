@@ -208,10 +208,10 @@ const ContactSection = () => {
                 <div className="pt-4">
                   <h4 className="font-bold text-lg mb-3">Follow Us</h4>
                   <div className="flex gap-4">
-                    <a href="#" className="p-3 bg-gym-yellow text-gym-black rounded-full hover:bg-white transition-colors">
+                    <a href="https://www.instagram.com/musclegaraage/" className="p-3 bg-gym-yellow text-gym-black rounded-full hover:bg-white transition-colors">
                       <Instagram size={20} />
                     </a>
-                    <a href="#" className="p-3 bg-gym-yellow text-gym-black rounded-full hover:bg-white transition-colors">
+                    <a href="https://www.facebook.com/musclegaraage/" className="p-3 bg-gym-yellow text-gym-black rounded-full hover:bg-white transition-colors">
                       <Facebook size={20} />
                     </a>
                     <a href="#" className="p-3 bg-gym-yellow text-gym-black rounded-full hover:bg-white transition-colors">
@@ -224,9 +224,18 @@ const ContactSection = () => {
             
             {/* Google Map Embed */}
             <div className="bg-gym-gray-800 rounded-lg overflow-hidden h-[300px]">
-              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d117494.35139554477!2d72.46773550437931!3d23.020497841501823!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e848aba5bd449%3A0x4fcedd11614f6516!2sAhmedabad%2C%20Gujarat!5e0!3m2!1sen!2sin!4v1712536161124!5m2!1sen!2sin" width="100%" height="100%" style={{
-              border: 0
-            }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Muscle Garage Location"></iframe>
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3669.0290000000003!2d72.60956146230112!3d23.104899655204125!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e83ca44214e2d%3A0xfef7383e1a10e0a7!2sMuscle%20Garage!5e0!3m2!1sen!2sin!4v1712536161124!5m2!1sen!2sin" 
+                width="100%" 
+                height="100%" 
+                style={{
+                  border: 0
+                }} 
+                allowFullScreen 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade" 
+                title="Muscle Garage Location">
+              </iframe>
             </div>
           </div>
         </div>
