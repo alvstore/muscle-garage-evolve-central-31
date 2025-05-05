@@ -1,81 +1,66 @@
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRange } from '@/hooks/use-stats';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subDays } from 'date-fns';
 
 interface RevenueChartProps {
-  dateRange: DateRange;
-  data?: {
-    month: string;
-    revenue: number;
-    expenses: number;
-    profit: number;
-  }[];
+  dateRange: {
+    from: Date;
+    to: Date;
+  };
 }
 
-const RevenueChart = ({ dateRange, data = [] }: RevenueChartProps) => {
-  const [revenueData, setRevenueData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+const RevenueChart: React.FC<RevenueChartProps> = ({ dateRange }) => {
+  // Generate data based on the date range
+  const generateData = () => {
+    const data = [];
+    const totalDays = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 3600 * 24));
+    const daysToShow = Math.min(totalDays, 30); // Limit to 30 days
 
-  // Use provided data or simulate data fetching
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Use provided data if available, otherwise use sample data
-      if (data && data.length > 0) {
-        setRevenueData(data);
-      } else {
-        // Simulate API fetch with sample data
-        const sampleData = [
-          { month: 'Jan', revenue: 25000 },
-          { month: 'Feb', revenue: 35000 },
-          { month: 'Mar', revenue: 32000 },
-          { month: 'Apr', revenue: 27000 },
-          { month: 'May', revenue: 30000 },
-          { month: 'Jun', revenue: 42000 },
-        ];
-        
-        setRevenueData(sampleData);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load revenue data'));
-    } finally {
-      setIsLoading(false);
+    for (let i = 0; i < daysToShow; i++) {
+      const date = subDays(dateRange.to, i);
+      data.unshift({
+        date: format(date, 'MMM dd'),
+        revenue: Math.floor(Math.random() * 5000) + 2000,
+      });
     }
-  }, [dateRange, data]);
+    return data;
+  };
+
+  const data = generateData();
 
   return (
-    <Card className="col-span-1">
-      <CardHeader>
-        <CardTitle>Revenue Overview</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center h-72">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-72 text-red-500">
-            {error.message || 'Error loading data'}
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis tickFormatter={(value) => `$${value / 1000}k`} />
-              <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
-              <Bar dataKey="revenue" fill="#8884d8" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+    <ResponsiveContainer width="100%" height={100}>
+      <LineChart
+        data={data}
+        margin={{
+          top: 5,
+          right: 10,
+          left: 10,
+          bottom: 0,
+        }}
+      >
+        <XAxis 
+          dataKey="date" 
+          tick={false} 
+          hide 
+        />
+        <YAxis 
+          hide 
+        />
+        <Tooltip 
+          formatter={(value: number) => [`₹${value}`, 'Revenue']}
+          labelFormatter={(label: string) => `${label}`}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="revenue" 
+          stroke="#10b981" 
+          strokeWidth={2} 
+          dot={false} 
+        />
+      </LineChart>
+    </ResponsiveContainer>
   );
 };
 

@@ -1,223 +1,216 @@
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
 import { Container } from '@/components/ui/container';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
-import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Users, UserPlus, MoreVertical, Search, FilterX } from 'lucide-react';
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight, Search, Plus, Filter, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Contact {
   id: string;
   name: string;
-  email?: string;
-  phone?: string;
-  company?: string;
+  email: string;
+  phone: string;
   status: string;
-  created_at: string;
+  tags?: string[];
+  last_contact?: string;
+  source?: string;
 }
 
-const ContactsPage = () => {
+const ContactsPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
-
+  
   useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        setIsLoading(true);
+        
+        // For now, using mock data since we're just setting up the UI structure
+        // In reality, this would fetch from Supabase like:
+        // const { data, error } = await supabase.from('contacts').select('*');
+        
+        // Mock data for demonstration
+        const mockContacts: Contact[] = [
+          {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            phone: '+91 98765 43210',
+            status: 'active',
+            tags: ['member', 'premium'],
+            last_contact: '2023-05-01',
+            source: 'website'
+          },
+          {
+            id: '2',
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            phone: '+91 98765 12345',
+            status: 'lead',
+            tags: ['potential', 'interested'],
+            last_contact: '2023-05-10',
+            source: 'referral'
+          },
+          {
+            id: '3',
+            name: 'Mike Johnson',
+            email: 'mike@example.com',
+            phone: '+91 87654 32109',
+            status: 'inactive',
+            tags: ['former', 'cancelled'],
+            last_contact: '2023-04-15',
+            source: 'walk-in'
+          }
+        ];
+        
+        setContacts(mockContacts);
+        
+        toast({
+          title: 'Coming Soon',
+          description: 'Contact management will be connected to real data in an upcoming update.',
+        });
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load contacts.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     fetchContacts();
-  }, []);
-
-  const fetchContacts = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('members')
-        .select('id, name, email, phone, created_at, status')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedContacts = data.map(member => ({
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        phone: member.phone,
-        company: '-',
-        status: member.status || 'active',
-        created_at: member.created_at
-      }));
-
-      setContacts(formattedContacts);
-    } catch (error) {
-      console.error("Error fetching contacts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load contacts",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  }, [toast]);
+  
   const filteredContacts = contacts.filter(contact => 
-    contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.phone?.includes(searchTerm)
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.phone.includes(searchQuery)
   );
-
-  const columns: ColumnDef<Contact>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.name}</div>
-          <div className="text-sm text-muted-foreground">{row.original.email}</div>
-        </div>
-      )
-    },
-    {
-      accessorKey: "phone",
-      header: "Phone",
-      cell: ({ row }) => row.original.phone || "-"
-    },
-    {
-      accessorKey: "company",
-      header: "Company",
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.original.status;
-        let badgeClass = "bg-gray-100 text-gray-800";
-        
-        if (status === "active") badgeClass = "bg-green-100 text-green-800";
-        if (status === "inactive") badgeClass = "bg-red-100 text-red-800";
-        
-        return <Badge className={badgeClass}>{status}</Badge>;
-      }
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created",
-      cell: ({ row }) => {
-        return new Date(row.original.created_at).toLocaleDateString();
-      }
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>View details</DropdownMenuItem>
-              <DropdownMenuItem>Edit contact</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      }
-    }
-  ];
-
+  
   return (
     <Container>
-      <Breadcrumb className="mb-4">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <ChevronRight className="h-4 w-4" />
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/crm">CRM</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <ChevronRight className="h-4 w-4" />
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/crm/contacts" isCurrentPage>Contacts</BreadcrumbLink>
-        </BreadcrumbItem>
-      </Breadcrumb>
-
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
-          <p className="text-muted-foreground">Manage your gym contacts and members</p>
-        </div>
-        <Button className="w-full sm:w-auto">
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Contact
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span>All Contacts</span>
-              </CardTitle>
-              <CardDescription>
-                View and manage all contacts in your system
-              </CardDescription>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contacts..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-                <FilterX className="h-4 w-4" />
-              </Button>
-            </div>
+      <div className="py-6">
+        <Breadcrumb className="mb-4">
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/crm">CRM</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/crm/contacts" isCurrentPage>Contacts</BreadcrumbLink>
+          </BreadcrumbItem>
+        </Breadcrumb>
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
+            <p className="text-muted-foreground">
+              Manage your customer and lead contacts
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Contact
+          </Button>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row gap-4 justify-between">
+              <div>
+                <CardTitle>All Contacts</CardTitle>
+                <CardDescription>View and manage your contact database</CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search contacts..."
+                    className="pl-8 w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={filteredContacts}
-            />
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Last Contact</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredContacts.map((contact) => (
+                  <TableRow key={contact.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{contact.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{contact.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{contact.email}</TableCell>
+                    <TableCell>{contact.phone}</TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        contact.status === 'active' ? 'default' :
+                        contact.status === 'lead' ? 'outline' : 'secondary'
+                      }>
+                        {contact.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{contact.source}</TableCell>
+                    <TableCell>{contact.last_contact && new Date(contact.last_contact).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredContacts.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      {searchQuery ? 'No contacts match your search.' : 'No contacts found.'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </Container>
   );
 };

@@ -9,6 +9,7 @@ import AnnouncementPage from '@/pages/communication/AnnouncementPage';
 import ReminderPage from '@/pages/communication/ReminderPage';
 import MotivationalPage from '@/pages/communication/MotivationalPage';
 import TrainerNotificationsPage from '@/pages/communication/TrainerNotificationsPage';
+import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const communicationRoutes: RouteObject[] = [
   {
@@ -48,6 +49,14 @@ export const communicationRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <TrainerNotificationsPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/communication/tasks',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <TaskManagerPage />
       </PrivateRoute>
     )
   }

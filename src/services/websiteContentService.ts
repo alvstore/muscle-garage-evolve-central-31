@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 // Interface for website content data
 export interface WebsiteContent {
@@ -8,9 +9,8 @@ export interface WebsiteContent {
   title?: string;
   subtitle?: string;
   content?: string;
-  cta_text?: string;
   image_url?: string;
-  order?: number;
+  order_index?: number;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -24,7 +24,7 @@ export const websiteContentService = {
       const { data, error } = await supabase
         .from('website_content')
         .select('*')
-        .order('order', { ascending: true });
+        .order('order_index', { ascending: true });
 
       if (error) throw error;
 
@@ -45,6 +45,8 @@ export const websiteContentService = {
         data.forEach((item: WebsiteContent) => {
           if (contentBySection[item.section]) {
             contentBySection[item.section].push(item);
+          } else {
+            contentBySection[item.section] = [item];
           }
         });
       }
@@ -63,7 +65,7 @@ export const websiteContentService = {
         .from('website_content')
         .select('*')
         .eq('section', section)
-        .order('order', { ascending: true });
+        .order('order_index', { ascending: true });
 
       if (error) throw error;
       return data || [];

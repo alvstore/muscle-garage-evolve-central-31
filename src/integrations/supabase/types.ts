@@ -575,6 +575,63 @@ export type Database = {
           },
         ]
       }
+      communication_tasks: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_tasks_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_tasks_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           business_hours_end: string | null
@@ -3496,6 +3553,45 @@ export type Database = {
           },
         ]
       }
+      website_content: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          order_index: number | null
+          section: string
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          order_index?: number | null
+          section: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          order_index?: number | null
+          section?: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_settings: {
         Row: {
           api_token: string
@@ -3856,6 +3952,13 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      get_all_website_content: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          section: string
+          content: Json
+        }[]
+      }
       get_attendance_trend: {
         Args: { branch_id_param: string; start_date: string; end_date: string }
         Returns: {
@@ -3882,6 +3985,21 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string
+      }
+      get_website_section_content: {
+        Args: { section_name: string }
+        Returns: {
+          content: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          order_index: number | null
+          section: string
+          subtitle: string | null
+          title: string | null
+          updated_at: string | null
+        }[]
       }
       is_admin: {
         Args: Record<PropertyKey, never>
