@@ -2,8 +2,8 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-// Update the import path to the correct location
-import ClassesPage from '@/pages/classes/ClassesListPage'; // or whatever the correct path is
+// Update the import path to use the existing ClassPage component
+import ClassPage from '@/pages/classes/ClassPage';
 import ClassSchedulePage from '@/pages/classes/ClassSchedulePage';
 import ClassDetailsPage from '@/pages/classes/ClassDetailsPage';
 import ClassAttendancePage from '@/pages/classes/ClassAttendancePage';
@@ -15,7 +15,7 @@ export const classRoutes: RouteObject[] = [
     path: '/classes',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <ClassesPage />
+        <ClassPage />
       </PrivateRoute>
     )
   },
