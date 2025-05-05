@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Filter } from 'lucide-react';
 
-// Import necessary chart components and data
-import { RevenueChart } from '@/components/analytics/RevenueChart';
-import { MembershipChart } from '@/components/analytics/MembershipChart';
-import { AttendanceChart } from '@/components/analytics/AttendanceChart';
-import { ClassPerformanceTable } from '@/components/analytics/ClassPerformanceTable';
-import { TrainerPerformanceTable } from '@/components/analytics/TrainerPerformanceTable';
+// Import necessary chart components and data - corrected imports
+import RevenueChart from '@/components/analytics/RevenueChart';
+import MembershipChart from '@/components/analytics/MembershipChart';
+import AttendanceChart from '@/components/analytics/AttendanceChart';
+import ClassPerformanceTable from '@/components/analytics/ClassPerformanceTable';
+import TrainerPerformanceTable from '@/components/analytics/TrainerPerformanceTable';
 
 const AnalyticsDashboardPage = () => {
   const [date, setDate] = useState({

@@ -69,8 +69,8 @@ const PromoCodeForm = ({ promoCode, onSubmit, onCancel }: PromoCodeFormProps) =>
         applicable_products: promoCode.applicable_products || ['all'],
         applicable_memberships: promoCode.applicable_memberships || ['all'],
         status: promoCode.status || 'active',
-        min_purchase_amount: promoCode.min_purchase_amount?.toString() || '',
-        max_discount_amount: promoCode.max_discount_amount?.toString() || '',
+        min_purchase_amount: promoCode.minPurchaseAmount?.toString() || '',
+        max_discount_amount: promoCode.maxDiscountAmount?.toString() || '',
       });
     }
   }, [promoCode]);
@@ -100,8 +100,8 @@ const PromoCodeForm = ({ promoCode, onSubmit, onCancel }: PromoCodeFormProps) =>
         applicable_products: formData.applicable_products,
         applicable_memberships: formData.applicable_memberships,
         status: formData.status,
-        min_purchase_amount: formData.min_purchase_amount ? parseFloat(formData.min_purchase_amount) : null,
-        max_discount_amount: formData.max_discount_amount ? parseFloat(formData.max_discount_amount) : null,
+        minPurchaseAmount: formData.min_purchase_amount ? parseFloat(formData.min_purchase_amount) : null,
+        maxDiscountAmount: formData.max_discount_amount ? parseFloat(formData.max_discount_amount) : null,
         createdBy: user?.id || null,
         branch_id: currentBranch?.id || null
       };

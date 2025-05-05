@@ -49,23 +49,9 @@ const PromoCodesPage = () => {
     }
   };
   
-  const handleFormSubmit = async (promoCode: PromoCode) => {
-    let success;
-    
-    if (editingPromoCode) {
-      // Update existing promo code
-      const result = await promoCodeService.updatePromoCode(editingPromoCode.id, promoCode);
-      success = !!result;
-    } else {
-      // Create new promo code
-      const result = await promoCodeService.createPromoCode(promoCode);
-      success = !!result;
-    }
-    
-    if (success) {
-      setIsFormOpen(false);
-      fetchPromoCodes();
-    }
+  const handleFormSubmit = () => {
+    setIsFormOpen(false);
+    fetchPromoCodes();
   };
   
   return (
