@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
@@ -422,7 +421,6 @@ const ExpensesPage = () => {
               <DataTable
                 columns={columns}
                 data={filteredExpenses}
-                searchKey="description"
               />
             </div>
           )}

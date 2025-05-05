@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Container } from '@/components/ui/container';
@@ -214,7 +213,6 @@ const ContactsPage = () => {
             <DataTable
               columns={columns}
               data={filteredContacts}
-              searchKey="name"
             />
           )}
         </CardContent>

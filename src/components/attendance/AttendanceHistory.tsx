@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { addDays } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,7 @@ interface AttendanceHistoryProps {
 }
 
 const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ memberId }) => {
-  const [date, setDate] = useState<{
-    from: Date;
-    to: Date;
-  }>({
+  const [date, setDate] = useState<DateRange>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
@@ -59,8 +56,9 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ memberId }) => {
             <CardDescription>View detailed attendance records</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
-            <DateRangePicker
+            <DatePickerWithRange
               date={date}
+              setDate={setDate}
               onDateChange={handleDateChange}
             />
             <Button size="sm">

@@ -15,12 +15,21 @@ import { Calendar } from "@/components/ui/calendar";
 interface DatePickerWithRangeProps {
   date: DateRange | undefined;
   setDate: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  onDateChange?: (date: DateRange) => void;
 }
 
 export function DatePickerWithRange({
   date,
   setDate,
+  onDateChange,
 }: DatePickerWithRangeProps) {
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+    if (onDateChange && newDate) {
+      onDateChange(newDate);
+    }
+  };
+
   return (
     <div className="w-full">
       <Popover>
@@ -54,11 +63,15 @@ export function DatePickerWithRange({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateChange}
             numberOfMonths={2}
+            className="pointer-events-auto" 
           />
         </PopoverContent>
       </Popover>
     </div>
   );
 }
+
+// Export the DatePickerWithRange as DateRangePicker for backwards compatibility
+export const DateRangePicker = DatePickerWithRange;

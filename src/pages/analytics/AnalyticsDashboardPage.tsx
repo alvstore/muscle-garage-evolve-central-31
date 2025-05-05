@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download, Users, Activity, TrendingUp, DollarSign, Calendar } from 'lucide-react';
@@ -43,11 +42,11 @@ const AnalyticsDashboard = () => {
     alert('Exporting analytics data...');
   };
 
-  const handleDateRangeChange = (range: { from: Date; to?: Date }) => {
-    if (range.from && range.to) {
+  const handleDateRangeChange = (range: DateRange) => {
+    if (range.from) {
       setDateRange({
         from: range.from,
-        to: range.to
+        to: range.to || range.from
       });
     }
   };
@@ -126,8 +125,9 @@ const AnalyticsDashboard = () => {
         </div>
 
         <div className="mb-6">
-          <DateRangePicker 
+          <DatePickerWithRange 
             date={dateRange} 
+            setDate={setDateRange} 
             onDateChange={handleDateRangeChange} 
           />
         </div>

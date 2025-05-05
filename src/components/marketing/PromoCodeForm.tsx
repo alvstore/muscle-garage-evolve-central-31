@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -74,7 +73,7 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onSubmit, onCa
       current_usage: promoCode?.current_usage || 0,
       applicable_products: values.applicableToAll ? ["all"] : promoCode?.applicable_products || [],
       applicable_memberships: promoCode?.applicable_memberships || ["all"],
-      created_by: promoCode?.created_by,
+      createdBy: promoCode?.createdBy,
       createdAt: promoCode?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       // UI properties
