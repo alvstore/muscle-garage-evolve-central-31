@@ -28,6 +28,7 @@ import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
+import { classRoutes } from './routes/classRoutes'; // Add this import
 
 export const appRoutes: RouteObject[] = [
   // Public routes
@@ -85,6 +86,7 @@ export const appRoutes: RouteObject[] = [
           ...staffRoutes,
           ...adminRoutes,
           ...branchRoutes,
+          ...classRoutes,
           ...analyticsRoutes,
         ]
       }

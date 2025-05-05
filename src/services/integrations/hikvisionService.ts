@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 
 export interface HikvisionCredentials {
   apiUrl: string;
-  username: string;
-  password: string;
+  clientId: string;  // Changed from username
+  clientSecret: string;  // Changed from password
 }
 
 export interface HikvisionEvent {
@@ -143,3 +143,187 @@ export const hikvisionService = {
     }
   }
 };
+
+/**
+ * Authenticate with Hikvision API and get access token
+ * @param credentials Hikvision API credentials
+ */
+/**
+ * Get stored API credentials
+ */
+async getStoredCredentials(): Promise<HikvisionCredentials | null> {
+  // In a real app, this would get from secure storage or API
+  const credentials = localStorage.getItem('hikvision_credentials');
+  return credentials ? JSON.parse(credentials) : null;
+},
+
+/**
+ * Authenticate with Hikvision API and get access token
+ * @param credentials Hikvision API credentials
+ */
+async authenticate(credentials?: HikvisionCredentials): Promise<{accessToken: string, expiresIn: number} | null> {
+  try {
+    // Use provided credentials or get stored ones
+    const creds = credentials || await this.getStoredCredentials();
+    if (!creds) {
+      throw new Error('No credentials found');
+    }
+    
+    // Using the Partner Cloud Gateway endpoint
+    const response = await fetch(`${creds.apiUrl}/api/hpcgw/v1/token/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        clientId: creds.clientId,
+        clientSecret: creds.clientSecret
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Authentication failed:', errorData);
+      return null;
+    }
+    
+    const data = await response.json();
+    return {
+      accessToken: data.accessToken || data.access_token,
+      expiresIn: data.expiresIn || data.expires_in || 7200
+    };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+}
+
+/**
+ * Register a person in Hikvision
+ * @param memberId Member ID
+ * @param memberName Member name
+ * @param gender Member gender
+ */
+async registerPerson(memberId: string, memberName: string, gender: string = 'unknown'): Promise<boolean> {
+  try {
+    const credentials = await this.getStoredCredentials();
+    if (!credentials) {
+      throw new Error('No credentials found');
+    }
+    
+    const authResult = await this.authenticate(credentials);
+    if (!authResult) {
+      throw new Error('Authentication failed');
+    }
+    
+    const response = await fetch(`${credentials.apiUrl}/api/hpcgw/v1/person/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authResult.accessToken}`
+      },
+      body: JSON.stringify({
+        personId: memberId,
+        personName: memberName,
+        gender: gender
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to register person: ${JSON.stringify(errorData)}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to register person:', error);
+    return false;
+  }
+}
+
+/**
+ * Configure access privileges for a person
+ * @param personId Person ID
+ * @param deviceIds Array of device IDs to grant access to
+ * @param startTime Start time for access privilege (ISO format)
+ * @param endTime End time for access privilege (ISO format)
+ */
+async configureAccessPrivileges(personId: string, deviceIds: string[], startTime?: string, endTime?: string): Promise<boolean> {
+  try {
+    const credentials = await this.getStoredCredentials();
+    if (!credentials) {
+      throw new Error('No credentials found');
+    }
+    
+    const authResult = await this.authenticate(credentials);
+    if (!authResult) {
+      throw new Error('Authentication failed');
+    }
+    
+    const response = await fetch(`${credentials.apiUrl}/api/hpcgw/v1/acs/privilege/config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authResult.accessToken}`
+      },
+      body: JSON.stringify({
+        personId: personId,
+        deviceIds: deviceIds,
+        startTime: startTime || new Date().toISOString(),
+        endTime: endTime || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // Default 1 year
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to configure access privileges: ${JSON.stringify(errorData)}`);
+    }
+    
+    // Synchronize the person data to devices
+    await this.synchronizePerson(personId);
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to configure access privileges:', error);
+    return false;
+  }
+}
+
+/**
+ * Synchronize person data to devices
+ * @param personId Person ID to synchronize
+ */
+async synchronizePerson(personId: string): Promise<boolean> {
+  try {
+    const credentials = await this.getStoredCredentials();
+    if (!credentials) {
+      throw new Error('No credentials found');
+    }
+    
+    const authResult = await this.authenticate(credentials);
+    if (!authResult) {
+      throw new Error('Authentication failed');
+    }
+    
+    const response = await fetch(`${credentials.apiUrl}/api/hpcgw/v1/person/synchronize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authResult.accessToken}`
+      },
+      body: JSON.stringify({
+        personId: personId
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to synchronize person: ${JSON.stringify(errorData)}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to synchronize person:', error);
+    return false;
+  }
+}

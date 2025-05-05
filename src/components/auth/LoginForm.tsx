@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,10 +48,35 @@ const LoginForm = () => {
       return false;
     }
   };
+  // Add this near your other state variables
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Add this effect to monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+  
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+  
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
+  // Then in your handleSubmit function, add this check
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!validateForm()) return;
+  
+    if (!isOnline) {
+      setError('You are currently offline. Please check your internet connection and try again.');
+      toast.error('No internet connection');
+      return;
+    }
+  
     try {
       const result = await login(email, password);
       if (result.success) {

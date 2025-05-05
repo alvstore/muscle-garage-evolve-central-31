@@ -36,8 +36,7 @@ interface BranchContextProps {
   isLoading: boolean;
   error: string | null;
   refetchBranches: () => void;
-  // Add these missing methods
-  fetchBranches: () => Promise<Branch[]>;
+  fetchBranches: () => Promise<Branch[]>;  // Uncomment this line
   switchBranch: (branchId: string) => void;
   createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
   updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
@@ -66,19 +65,29 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
   const { user } = useAuth();
 
   const fetchBranches = async () => {
-    if (!user) return;
+    if (!user || !user.id) {
+      setError('User not authenticated');
+      setIsLoading(false);
+      return [];
+    }
     
     try {
       setIsLoading(true);
       setError(null);
-
+  
+      // Check if session is valid
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session found');
+      }
+      
       // Get user's branch and accessible branches
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('branch_id, accessible_branch_ids, role')
         .eq('id', user.id)
         .single();
-
+  
       if (profileError) throw profileError;
 
       // Admin fetches all branches
@@ -115,7 +124,16 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       }
     } catch (err) {
       console.error('Error fetching branches:', err);
-      setError('Failed to load branches');
+      
+      // More specific error messages
+      if (err.message?.includes('fetch')) {
+        setError('Network error: Unable to connect to database');
+      } else if (err.code === 'PGRST301') {
+        setError('Authentication error: Please log in again');
+      } else {
+        setError(err.message || 'Failed to load branches');
+      }
+      
       toast.error('Failed to load branch information');
     } finally {
       setIsLoading(false);
@@ -142,6 +160,15 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         isLoading,
         error,
         refetchBranches: fetchBranches,
+        fetchBranches, // Add this line
+        // You also need to implement these methods or remove them from the interface
+        switchBranch: (branchId) => {
+          const branch = branches.find(b => b.id === branchId);
+          if (branch) handleSetCurrentBranch(branch);
+        },
+        createBranch: async () => null, // Implement or remove from interface
+        updateBranch: async () => null, // Implement or remove from interface
+        deleteBranch: async () => false, // Implement or remove from interface
       }}
     >
       {children}

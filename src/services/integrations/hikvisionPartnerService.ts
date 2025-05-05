@@ -10,8 +10,9 @@ export interface HikvisionDeviceStatus {
 
 // Interface for the Hikvision API credentials
 export interface HikvisionCredentials {
-  appKey: string;
-  secretKey: string;
+  apiUrl: string;
+  clientId: string;  // Changed from appKey
+  clientSecret: string;  // Changed from secretKey
 }
 
 // Interface for the device object with status
@@ -69,50 +70,167 @@ class HikvisionPartnerService {
   /**
    * List all registered devices
    */
+  /**
+   * List all registered devices
+   */
   async listDevices(): Promise<HikvisionDeviceWithStatus[]> {
-    // Mock implementation - in a real app this would make an API call
-    const mockDevices: HikvisionDeviceWithStatus[] = [
-      {
-        deviceId: '1',
-        deviceSerial: 'DS-7608NI-E2/8P-12345',
-        deviceName: 'Main Entrance NVR',
-        status: 'online',
-        deviceType: 'NVR',
-        channelNos: '1,2,3,4',
-        userName: 'admin',
-        isVideoSupported: true
-      },
-      {
-        deviceId: '2',
-        deviceSerial: 'DS-2CD2185FWD-I-67890',
-        deviceName: 'Gym Area Camera',
-        status: 'offline',
-        deviceType: 'IPC',
-        channelNos: '1',
-        userName: 'admin',
-        isVideoSupported: true
+    try {
+      const credentials = await this.getCredentials();
+      if (!credentials) {
+        throw new Error('No credentials found');
       }
-    ];
-    
-    return mockDevices;
+      
+      const authResult = await this.authenticate(credentials);
+      if (!authResult) {
+        throw new Error('Authentication failed');
+      }
+      
+      const response = await fetch(`${credentials.apiUrl}/api/hpcgw/v1/device/list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authResult.accessToken}`
+        },
+        body: JSON.stringify({
+          pageNo: 1,
+          pageSize: 100
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to list devices: ${JSON.stringify(errorData)}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the API response to match our HikvisionDeviceWithStatus interface
+      return data.devices.map((device: any) => ({
+        deviceId: device.deviceId,
+        deviceSerial: device.deviceSerial || device.serialNumber,
+        deviceName: device.deviceName,
+        status: device.online ? 'online' : 'offline',
+        deviceType: device.deviceType,
+        userName: device.userName,
+        isVideoSupported: device.isVideoSupported || false
+      }));
+    } catch (error) {
+      console.error('Failed to list devices:', error);
+      return [];
+    }
   }
 
   /**
    * Add a new device
    */
   async addDevice(deviceData: any): Promise<ApiResponse> {
-    // Mock implementation - in a real app this would make an API call
-    console.log('Adding device:', deviceData);
-    return { success: true };
+    try {
+      const credentials = await this.getCredentials();
+      if (!credentials) {
+        throw new Error('No credentials found');
+      }
+      
+      const authResult = await this.authenticate(credentials);
+      if (!authResult) {
+        throw new Error('Authentication failed');
+      }
+      
+      const response = await fetch(`${credentials.apiUrl}/api/hpcgw/v1/device/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authResult.accessToken}`
+        },
+        body: JSON.stringify({
+          deviceSerial: deviceData.deviceSerial,
+          deviceName: deviceData.deviceName,
+          deviceType: deviceData.deviceType || 'ACS',
+          userName: deviceData.userName || 'admin',
+          password: deviceData.password
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to add device: ${JSON.stringify(errorData)}`);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to add device:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Update device information
+   */
+  async updateDevice(deviceData: any): Promise<ApiResponse> {
+    try {
+      const authResult = await this.authenticate();
+      if (!authResult) {
+        throw new Error('Authentication failed');
+      }
+      
+      const areaDomain = await this.getAreaDomain();
+      
+      const response = await fetch(`${areaDomain}/api/hpcgw/v1/device/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authResult.accessToken}`
+        },
+        body: JSON.stringify({
+          deviceSerial: deviceData.deviceSerial,
+          deviceName: deviceData.deviceName
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to update device: ${JSON.stringify(errorData)}`);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to update device:', error);
+      return { success: false, message: error.message };
+    }
   }
 
   /**
    * Delete a device
    */
   async deleteDevice(deviceSerial: string): Promise<ApiResponse> {
-    // Mock implementation - in a real app this would make an API call
-    console.log('Deleting device:', deviceSerial);
-    return { success: true };
+    try {
+      const authResult = await this.authenticate();
+      if (!authResult) {
+        throw new Error('Authentication failed');
+      }
+      
+      const areaDomain = await this.getAreaDomain();
+      
+      const response = await fetch(`${areaDomain}/api/hpcgw/v1/device/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authResult.accessToken}`
+        },
+        body: JSON.stringify({
+          deviceSerial: deviceSerial
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to delete device: ${JSON.stringify(errorData)}`);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete device:', error);
+      return { success: false, message: error.message };
+    }
   }
 
   /**
@@ -122,6 +240,87 @@ class HikvisionPartnerService {
     // Mock implementation - in a real app this would make an API call
     const devices = await this.listDevices();
     return devices.find(d => d.deviceSerial === deviceSerial) || null;
+  }
+
+  /**
+   * Register a member with the access control system
+   */
+  async registerMember(member: any, accessPlan: string): Promise<ApiResponse> {
+    try {
+      // 1. Add the person to Hikvision
+      const personResult = await this.addPerson({
+        personName: member.name,
+        organization: member.branch?.name || 'Default',
+        credentialType: 'card',
+        credentialNo: member.access_card_number || ''
+      });
+      
+      if (!personResult.success) {
+        throw new Error(`Failed to add person: ${personResult.message}`);
+      }
+      
+      const personId = personResult.data?.personId;
+      if (!personId) {
+        throw new Error('Person ID not returned from API');
+      }
+      
+      // 2. Determine which devices to grant access to based on the plan
+      const devices = await this.getDevicesForPlan(accessPlan);
+      
+      if (devices.length === 0) {
+        throw new Error('No devices found for the access plan');
+      }
+      
+      // 3. Configure access privileges
+      const now = new Date();
+      const endDate = new Date(member.membership_end_date || '');
+      const validEndDate = isNaN(endDate.getTime()) ? 
+        new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) : // Default to 1 year
+        endDate;
+      
+      const deviceList = devices.map(device => ({
+        deviceSerial: device.deviceSerial,
+        doorIndexCode: '1', // Default door index
+        startTime: now.toISOString(),
+        endTime: validEndDate.toISOString()
+      }));
+      
+      const privilegeResult = await this.configureAccessPrivileges(personId, deviceList);
+      
+      if (!privilegeResult.success) {
+        throw new Error(`Failed to configure access privileges: ${privilegeResult.message}`);
+      }
+      
+      // 4. Update the member record with the access control ID
+      await api.patch(`/members/${member.id}`, {
+        access_control_id: personId
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to register member with access control:', error);
+      return { success: false, message: error.message };
+    }
+  }
+  
+  /**
+   * Get devices for a specific access plan
+   */
+  async getDevicesForPlan(accessPlan: string): Promise<HikvisionDeviceWithStatus[]> {
+    // Get all devices
+    const allDevices = await this.listDevices();
+    
+    // Filter based on the access plan
+    switch (accessPlan) {
+      case 'gym_only':
+        return allDevices.filter(d => !d.deviceName.toLowerCase().includes('swimming'));
+      case 'swimming_only':
+        return allDevices.filter(d => d.deviceName.toLowerCase().includes('swimming'));
+      case 'full_access':
+        return allDevices;
+      default:
+        return [];
+    }
   }
 }
 
