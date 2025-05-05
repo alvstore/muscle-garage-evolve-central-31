@@ -5,7 +5,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const AdminLayout = () => {
   return (
-    <DashboardLayout />
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
   );
 };
 

@@ -69,12 +69,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
   
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block`}>
-        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={toggleSidebar} />
+    <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <div className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+           onClick={() => setSidebarOpen(false)}></div>
+           
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 lg:relative lg:z-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
       </div>
       
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
           toggleSidebar={toggleSidebar}
           toggleTheme={toggleTheme}

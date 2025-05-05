@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -31,139 +32,44 @@ import {
   RefreshCw,
   PlusCircle
 } from "lucide-react";
-import { PromoCode, PromoCodeStatus } from "@/types/marketing";
-import { stringToDate, formatDate } from "@/utils/date-utils";
+import { PromoCode } from "@/types/marketing";
+import { formatDate } from "@/utils/date-utils";
 import { toast } from "sonner";
 
-// Mock data for promo codes with proper date handling
-const mockPromoCodes: PromoCode[] = [
-  {
-    id: "1",
-    code: "SUMMER25",
-    description: "Summer discount 25% off all memberships",
-    type: "percentage",
-    value: 25,
-    minPurchaseAmount: 0,
-    start_date: "2023-06-01T00:00:00Z",
-    end_date: "2023-08-31T23:59:59Z",
-    status: "active",
-    usage_limit: 100,
-    current_usage: 43,
-    applicable_memberships: ["all"],
-    createdBy: "Admin",
-    createdAt: "2023-05-15T10:00:00Z",
-    // UI properties
-    startDate: new Date("2023-06-01T00:00:00Z"),
-    endDate: new Date("2023-08-31T23:59:59Z")
-  },
-  {
-    id: "2",
-    code: "NEWMEMBER",
-    description: "New member first month 50% off",
-    type: "percentage",
-    value: 50,
-    minPurchaseAmount: 0,
-    start_date: "2023-01-01T00:00:00Z",
-    end_date: "2023-12-31T23:59:59Z",
-    status: "active",
-    usage_limit: 0, // unlimited
-    current_usage: 124,
-    applicable_memberships: ["basic", "premium"],
-    createdBy: "Admin",
-    createdAt: "2023-01-01T00:00:00Z"
-  },
-  {
-    id: "3",
-    code: "REFER10",
-    description: "$10 off for referrals",
-    type: "fixed",
-    value: 10,
-    minPurchaseAmount: 50,
-    start_date: "2023-01-01T00:00:00Z",
-    end_date: "2023-12-31T23:59:59Z",
-    status: "active",
-    usage_limit: 0,
-    current_usage: 78,
-    applicable_memberships: ["all"],
-    createdBy: "Admin",
-    createdAt: "2023-01-01T00:00:00Z"
-  },
-  {
-    id: "4",
-    code: "SPRING2023",
-    description: "Spring promotion 15% off",
-    type: "percentage",
-    value: 15,
-    minPurchaseAmount: 0,
-    maxDiscountAmount: 50,
-    start_date: "2023-03-01T00:00:00Z",
-    end_date: "2023-05-31T23:59:59Z",
-    status: "expired",
-    usage_limit: 200,
-    current_usage: 189,
-    applicable_memberships: ["all"],
-    createdBy: "Admin",
-    createdAt: "2023-02-15T00:00:00Z"
-  },
-  {
-    id: "5",
-    code: "BLACKFRIDAY",
-    description: "Black Friday 30% off all memberships",
-    type: "percentage",
-    value: 30,
-    minPurchaseAmount: 0,
-    maxDiscountAmount: 100,
-    start_date: "2023-11-24T00:00:00Z",
-    end_date: "2023-11-27T23:59:59Z",
-    status: "scheduled",
-    usage_limit: 500,
-    current_usage: 0,
-    applicable_memberships: ["all"],
-    createdBy: "Admin",
-    createdAt: "2023-10-15T00:00:00Z"
-  }
-];
-
 interface PromoCodeListProps {
+  promoCodes: PromoCode[];
+  isLoading: boolean;
   onEdit: (promo: PromoCode) => void;
+  onDelete: (id: string) => void;
+  onRefresh: () => void;
   onAddNew: () => void;
 }
 
-const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate API call and transform string dates to Date objects
-    setTimeout(() => {
-      const processedCodes = mockPromoCodes.map(code => ({
-        ...code,
-        startDate: stringToDate(code.start_date),
-        endDate: stringToDate(code.end_date)
-      }));
-      setPromoCodes(processedCodes);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleDelete = (id: string) => {
-    // In a real app, this would be an API call
-    setPromoCodes(promoCodes.filter(promo => promo.id !== id));
-    toast.success("Promo code deleted successfully");
-  };
+const PromoCodeList = ({ 
+  promoCodes, 
+  isLoading, 
+  onEdit, 
+  onDelete, 
+  onRefresh, 
+  onAddNew 
+}: PromoCodeListProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast.success("Promo code copied to clipboard");
   };
 
-  // Format date to readable format
-  const formatDateDisplay = (dateString: string | Date) => {
-    return formatDate(dateString);
-  };
+  // Filter promo codes by search term
+  const filteredPromoCodes = searchTerm
+    ? promoCodes.filter(promo => 
+        promo.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        promo.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : promoCodes;
 
   // Promo code status badge color mapping
-  const getStatusBadge = (status: PromoCodeStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
         return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Active</Badge>;
@@ -187,6 +93,8 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
         return `$${promo.value}`;
       case "free-product":
         return "Free product";
+      case "membership_extension":
+        return `${promo.value} days`;
       default:
         return `${promo.value}`;
     }
@@ -206,7 +114,7 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
       <CardContent>
         <div className="mb-6 flex justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            Showing {promoCodes.length} promo codes
+            Showing {filteredPromoCodes.length} promo codes
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -216,28 +124,23 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => {
-                setLoading(true);
-                setTimeout(() => {
-                  setPromoCodes(mockPromoCodes);
-                  setLoading(false);
-                }, 1000);
-              }}
+              onClick={onRefresh}
+              disabled={isLoading}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <div className="h-6 w-6 rounded-full border-2 border-t-primary animate-spin"></div>
               <p className="text-sm text-muted-foreground">Loading promo codes...</p>
             </div>
           </div>
-        ) : promoCodes.length === 0 ? (
+        ) : filteredPromoCodes.length === 0 ? (
           <div className="text-center py-10">
             <Tag className="h-10 w-10 mx-auto text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">No promo codes found</h3>
@@ -264,7 +167,7 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {promoCodes.map((promo) => (
+                {filteredPromoCodes.map((promo) => (
                   <TableRow key={promo.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
@@ -285,9 +188,9 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
                     <TableCell>{getDiscountText(promo)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-xs">{formatDateDisplay(promo.start_date)}</span>
+                        <span className="text-xs">{formatDate(promo.start_date)}</span>
                         <span className="text-xs">to</span>
-                        <span className="text-xs">{formatDateDisplay(promo.end_date)}</span>
+                        <span className="text-xs">{formatDate(promo.end_date)}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(promo.status)}</TableCell>
@@ -316,7 +219,7 @@ const PromoCodeList = ({ onEdit, onAddNew }: PromoCodeListProps) => {
                             Copy Code
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => handleDelete(promo.id)}
+                            onClick={() => onDelete(promo.id)}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />

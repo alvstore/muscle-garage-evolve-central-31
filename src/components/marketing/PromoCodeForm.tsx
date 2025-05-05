@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,14 +15,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PromoCode, PromoCodeType, PromoCodeStatus } from "@/types/marketing";
+import { PromoCode } from "@/types/marketing";
 import { stringToDate, dateToString } from "@/utils/date-utils";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
 
 interface PromoCodeFormProps {
   promoCode?: PromoCode;
-  onComplete: () => void;
+  onSubmit: (promoCode: PromoCode) => void;
+  onCancel: () => void;
 }
 
 const promoCodeSchema = z.object({
@@ -39,7 +38,7 @@ const promoCodeSchema = z.object({
   applicableToAll: z.boolean().default(true),
 });
 
-const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) => {
+const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onSubmit, onCancel }) => {
   const form = useForm<z.infer<typeof promoCodeSchema>>({
     resolver: zodResolver(promoCodeSchema),
     defaultValues: {
@@ -59,50 +58,42 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
     },
   });
 
-  const onSubmit = (values: z.infer<typeof promoCodeSchema>) => {
-    try {
-      const newPromoCode: PromoCode = {
-        id: promoCode?.id || uuidv4(),
-        code: values.code.toUpperCase(),
-        description: values.description,
-        type: values.type as PromoCodeType,
-        value: values.value,
-        minPurchaseAmount: values.minPurchaseAmount && values.minPurchaseAmount > 0 ? values.minPurchaseAmount : undefined,
-        maxDiscountAmount: values.maxDiscountAmount && values.maxDiscountAmount > 0 ? values.maxDiscountAmount : undefined,
-        start_date: dateToString(values.startDate) || new Date().toISOString(),
-        end_date: dateToString(values.endDate) || new Date().toISOString(),
-        status: values.status as PromoCodeStatus,
-        usage_limit: values.usageLimit && values.usageLimit > 0 ? values.usageLimit : undefined,
-        current_usage: promoCode?.current_usage || 0,
-        applicable_products: values.applicableToAll ? ["all"] : promoCode?.applicable_products || [],
-        applicable_memberships: promoCode?.applicable_memberships || ["all"],
-        createdBy: promoCode?.createdBy || "current-user-id",
-        createdAt: promoCode?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        // UI properties
-        startDate: values.startDate,
-        endDate: values.endDate,
-        usageLimit: values.usageLimit
-      };
-      
-      // In a real app, this would be an API call
-      console.log("Promo code data:", newPromoCode);
-      toast.success(`Promo code ${promoCode ? "updated" : "created"} successfully`);
-      onComplete();
-    } catch (error) {
-      console.error("Error saving promo code:", error);
-      toast.error("Error saving promo code");
-    }
+  const handleSubmit = (values: z.infer<typeof promoCodeSchema>) => {
+    const formattedPromoCode: PromoCode = {
+      id: promoCode?.id || crypto.randomUUID(),
+      code: values.code.toUpperCase(),
+      description: values.description,
+      type: values.type,
+      value: values.value,
+      minPurchaseAmount: values.minPurchaseAmount && values.minPurchaseAmount > 0 ? values.minPurchaseAmount : undefined,
+      maxDiscountAmount: values.maxDiscountAmount && values.maxDiscountAmount > 0 ? values.maxDiscountAmount : undefined,
+      start_date: dateToString(values.startDate) || new Date().toISOString(),
+      end_date: dateToString(values.endDate) || new Date().toISOString(),
+      status: values.status,
+      usage_limit: values.usageLimit && values.usageLimit > 0 ? values.usageLimit : 0,
+      current_usage: promoCode?.current_usage || 0,
+      applicable_products: values.applicableToAll ? ["all"] : promoCode?.applicable_products || [],
+      applicable_memberships: promoCode?.applicable_memberships || ["all"],
+      created_by: promoCode?.created_by,
+      createdAt: promoCode?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // UI properties
+      startDate: values.startDate,
+      endDate: values.endDate,
+      usageLimit: values.usageLimit
+    };
+    
+    onSubmit(formattedPromoCode);
   };
 
   return (
-    <Card>
+    <>
       <CardHeader>
         <CardTitle>{promoCode ? "Edit" : "Create"} Promo Code</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -134,6 +125,7 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
                         <SelectItem value="percentage">Percentage</SelectItem>
                         <SelectItem value="fixed">Fixed Amount</SelectItem>
                         <SelectItem value="free-product">Free Product</SelectItem>
+                        <SelectItem value="membership_extension">Membership Extension</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -147,7 +139,9 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {form.watch("type") === "percentage" ? "Percentage Value" : "Discount Amount"}
+                      {form.watch("type") === "percentage" ? "Percentage Value" : 
+                       form.watch("type") === "membership_extension" ? "Days to Extend" : 
+                       "Discount Amount"}
                     </FormLabel>
                     <FormControl>
                       <Input 
@@ -364,19 +358,18 @@ const PromoCodeForm: React.FC<PromoCodeFormProps> = ({ promoCode, onComplete }) 
                 </FormItem>
               )}
             />
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" type="button" onClick={onComplete}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {promoCode ? "Update" : "Create"} Promo Code
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-3">
+            <Button variant="outline" type="button" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {promoCode ? "Update" : "Create"} Promo Code
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+    </>
   );
 };
 
