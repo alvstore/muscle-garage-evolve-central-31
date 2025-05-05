@@ -5,7 +5,7 @@ import AdminDashboard from '@/pages/dashboard/AdminDashboard';
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
 import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 import UserManagementPage from '@/pages/admin/UserManagementPage';
-import RolePermissionsPage from '@/pages/admin/RolePermissionsPage';
+import RolePermissionsPage from '@/components/settings/permissions/pages/RolePermissionsPage';
 import TrainerPage from '@/pages/trainers/TrainerPage';
 import WebsiteManagementPage from '@/pages/website/WebsiteManagementPage';
 
