@@ -70,7 +70,8 @@ const AnalyticsDashboardPage = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">₹42,350</div>
                   <p className="text-xs text-muted-foreground">+18% from last month</p>
-                  <RevenueChart />
+                  {/* Pass date as dateRange to RevenueChart */}
+                  <RevenueChart dateRange={date} />
                 </CardContent>
               </Card>
               <Card>
