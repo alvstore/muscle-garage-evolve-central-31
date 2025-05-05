@@ -1,9 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './contexts/BranchContext';
-import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
 import { createInitialAdmin } from './utils/initAdmin';
@@ -20,7 +19,7 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  useEffect(() => {
+  React.useEffect(() => {
     const initializeApp = async () => {
       try {
         // Initialize admin account if needed
@@ -40,10 +39,8 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BranchProvider>
-            <PermissionsProvider>
-              <AppRouter />
-              <RouteChecker />
-            </PermissionsProvider>
+            <AppRouter />
+            <RouteChecker />
           </BranchProvider>
         </AuthProvider>
       </QueryClientProvider>

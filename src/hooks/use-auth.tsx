@@ -66,6 +66,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     const fetchUserProfile = async () => {
       if (user) {
         try {
+          setIsLoadingProfile(true);
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -83,6 +84,8 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
           }
         } catch (err) {
           console.error('Profile fetch error:', err);
+        } finally {
+          setIsLoadingProfile(false);
         }
       } else {
         setProfile(null);

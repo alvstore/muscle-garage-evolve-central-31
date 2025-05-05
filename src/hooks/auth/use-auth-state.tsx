@@ -1,10 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { createContext, useContext, ReactNode } from 'react';
-import { UserRole } from '@/types';
 
 interface AuthStateContextType {
   user: User | null;
