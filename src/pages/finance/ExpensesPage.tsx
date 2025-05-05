@@ -1,275 +1,319 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
-import { ChevronRight, FilterX, Plus, Filter, FileText, Download, Calendar, RefreshCw } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+import { 
+  Dialog, 
+  DialogTrigger, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter 
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Select, 
+  SelectTrigger, 
+  SelectValue, 
+  SelectContent, 
+  SelectItem 
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from '@/hooks/use-branch';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, Download, Filter, MoreHorizontal, PlusCircle, Search, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Expense, ExpenseCategory, expenseService } from '@/services/expenseService';
-import ExpenseForm from '@/components/finance/ExpenseForm';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import ExpenseSummaryCard from '@/components/finance/ExpenseSummaryCard';
-import { Input } from '@/components/ui/input';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 
-type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'cheque' | 'other';
-type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'paid';
+// Define the expense types
+interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  payment_method: string;
+  vendor: string;
+  reference: string;
+  status: string;
+  created_at: string;
+  branch_id: string;
+}
+
+interface ExpenseCategory {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 const ExpensesPage = () => {
+  // State
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const { currentBranch } = useBranch();
+  
+  // Form state
+  const [newExpense, setNewExpense] = useState({
+    description: '',
+    amount: '',
+    category: '',
+    date: new Date(),
+    payment_method: 'cash',
+    vendor: '',
+    reference: '',
+    status: 'completed',
   });
-
+  
+  // Fetch expenses
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setIsLoading(true);
+    if (currentBranch?.id) {
+      fetchExpenses();
+      fetchCategories();
+    }
+  }, [currentBranch?.id]);
+  
+  const fetchExpenses = async () => {
     try {
-      const [expenseData, categoryData] = await Promise.all([
-        expenseService.getExpenses(),
-        expenseService.getExpenseCategories()
-      ]);
+      setIsLoading(true);
       
-      setExpenses(expenseData);
-      setCategories(categoryData);
+      let query = supabase
+        .from('expense_records')
+        .select('*')
+        .order('date', { ascending: false });
+        
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setExpenses(data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching expenses:', error);
+      toast.error('Failed to load expense data');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleAddNew = () => {
-    setEditingExpense(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEdit = (expense: Expense) => {
-    setEditingExpense(expense);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this expense?")) {
-      const success = await expenseService.deleteExpense(id);
-      if (success) {
-        fetchData(); // Refresh the list
-      }
-    }
-  };
-
-  const handleFormSubmit = async (expense: Expense) => {
-    let success;
-    
-    if (editingExpense) {
-      // Update existing expense
-      const result = await expenseService.updateExpense(editingExpense.id, expense);
-      success = !!result;
-    } else {
-      // Create new expense
-      const result = await expenseService.createExpense(expense);
-      success = !!result;
-    }
-    
-    if (success) {
-      setIsFormOpen(false);
-      fetchData(); // Refresh the list
-    }
-  };
-
-  const handleApplyFilters = async () => {
-    setIsLoading(true);
+  
+  const fetchCategories = async () => {
     try {
-      const filters: any = {};
-      
-      if (categoryFilter) {
-        filters.category = categoryFilter;
+      let query = supabase
+        .from('expense_categories')
+        .select('id, name, description')
+        .eq('is_active', true);
+        
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
       }
       
-      if (dateRange.from && dateRange.to) {
-        filters.startDate = dateRange.from.toISOString();
-        filters.endDate = dateRange.to.toISOString();
-      }
+      const { data, error } = await query;
       
-      const data = await expenseService.getExpenses(filters);
-      setExpenses(data);
+      if (error) throw error;
+      
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error applying filters:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching expense categories:', error);
+      toast.error('Failed to load expense categories');
     }
   };
-
-  const handleResetFilters = () => {
-    setCategoryFilter('');
-    setDateRange({ from: undefined, to: undefined });
-    fetchData();
+  
+  // Handler for adding a new expense
+  const handleAddExpense = async () => {
+    try {
+      if (!newExpense.description || !newExpense.amount || !newExpense.category) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('expense_records')
+        .insert({
+          description: newExpense.description,
+          amount: parseFloat(newExpense.amount),
+          category: newExpense.category,
+          date: newExpense.date.toISOString(),
+          payment_method: newExpense.payment_method,
+          vendor: newExpense.vendor,
+          reference: newExpense.reference || `EXP-${Date.now()}`,
+          status: newExpense.status,
+          branch_id: currentBranch?.id,
+        });
+        
+      if (error) throw error;
+      
+      toast.success('Expense added successfully');
+      setIsAddDialogOpen(false);
+      resetForm();
+      fetchExpenses();
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      toast.error('Failed to add expense');
+    }
   };
-
+  
+  // Handler for deleting an expense
+  const handleDeleteExpense = async () => {
+    try {
+      if (!selectedExpense) return;
+      
+      const { error } = await supabase
+        .from('expense_records')
+        .delete()
+        .eq('id', selectedExpense.id);
+        
+      if (error) throw error;
+      
+      toast.success('Expense deleted successfully');
+      setIsDeleteDialogOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Failed to delete expense');
+    }
+  };
+  
+  const resetForm = () => {
+    setNewExpense({
+      description: '',
+      amount: '',
+      category: '',
+      date: new Date(),
+      payment_method: 'cash',
+      vendor: '',
+      reference: '',
+      status: 'completed',
+    });
+  };
+  
+  // Filter expenses based on search term and category
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = 
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.reference.toLowerCase().includes(searchTerm.toLowerCase());
+      
+    const matchesCategory = 
+      selectedCategory === 'all' || expense.category === selectedCategory;
+      
+    return matchesSearch && matchesCategory;
+  });
+  
+  // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { 
-      style: 'currency', 
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
     }).format(amount);
   };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>;
-      case 'paid':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Paid</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  // Filter expenses by search term
-  const filteredExpenses = searchTerm
-    ? expenses.filter(expense =>
-        expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.reference.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : expenses;
-
-  // Calculate totals
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const paidExpenses = filteredExpenses
-    .filter(expense => expense.status === 'paid')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const pendingExpenses = filteredExpenses
-    .filter(expense => expense.status === 'pending')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-
-  // By category
-  const expensesByCategory = filteredExpenses.reduce((acc: Record<string, number>, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-    return acc;
-  }, {});
-
+  
+  // Define columns for data table
   const columns: ColumnDef<Expense>[] = [
     {
-      accessorKey: "date",
-      header: "Date",
+      accessorKey: 'date',
+      header: 'Date',
       cell: ({ row }) => {
-        const date = new Date(row.original.date);
-        return date.toLocaleDateString();
-      }
+        return format(new Date(row.original.date), 'dd MMM yyyy');
+      },
     },
     {
-      accessorKey: "description",
-      header: "Description",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">{row.original.description}</div>
-          <div className="text-sm text-muted-foreground">{row.original.vendor}</div>
-        </div>
-      )
+      accessorKey: 'description',
+      header: 'Description',
     },
     {
-      accessorKey: "category",
-      header: "Category",
-    },
-    {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => formatCurrency(row.original.amount),
-    },
-    {
-      accessorKey: "payment_method",
-      header: "Payment Method",
+      accessorKey: 'amount',
+      header: 'Amount',
       cell: ({ row }) => {
-        const method = row.original.payment_method;
-        return method.charAt(0).toUpperCase() + method.slice(1).replace('_', ' ');
-      }
+        return formatCurrency(row.original.amount);
+      },
     },
     {
-      accessorKey: "reference",
-      header: "Reference",
+      accessorKey: 'category',
+      header: 'Category',
     },
     {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => getStatusBadge(row.original.status),
+      accessorKey: 'vendor',
+      header: 'Vendor',
     },
     {
-      id: "actions",
+      accessorKey: 'payment_method',
+      header: 'Payment Method',
       cell: ({ row }) => {
-        const expense = row.original;
+        return (
+          <span className="capitalize">{row.original.payment_method}</span>
+        );
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        let badgeClass = "";
         
+        switch(status) {
+          case 'completed':
+            badgeClass = "bg-green-100 text-green-800";
+            break;
+          case 'pending':
+            badgeClass = "bg-yellow-100 text-yellow-800";
+            break;
+          case 'cancelled':
+            badgeClass = "bg-red-100 text-red-800";
+            break;
+          default:
+            badgeClass = "bg-gray-100 text-gray-800";
+        }
+        
+        return <Badge className={badgeClass}>{status}</Badge>;
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="12" cy="5" r="1" />
-                  <circle cx="12" cy="19" r="1" />
-                </svg>
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleEdit(expense)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem>View details</DropdownMenuItem>
+              <DropdownMenuItem>Edit expense</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
-                onClick={() => handleDelete(expense.id)}
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => {
+                  setSelectedExpense(row.original);
+                  setIsDeleteDialogOpen(true);
+                }}
               >
                 Delete
               </DropdownMenuItem>
@@ -282,164 +326,242 @@ const ExpensesPage = () => {
 
   return (
     <Container>
-      <Breadcrumb className="mb-4">
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <ChevronRight className="h-4 w-4" />
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/finance">Finance</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <ChevronRight className="h-4 w-4" />
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/finance/expenses" isCurrentPage>Expenses</BreadcrumbLink>
-        </BreadcrumbItem>
-      </Breadcrumb>
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Expense Management</h1>
-          <p className="text-muted-foreground">Track and manage all your business expenses</p>
-        </div>
-        <Button onClick={handleAddNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Expense
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
-        <ExpenseSummaryCard 
-          title="Total Expenses" 
-          amount={totalExpenses} 
-          icon="total" 
-        />
-        <ExpenseSummaryCard 
-          title="Paid Expenses" 
-          amount={paidExpenses} 
-          icon="paid" 
-        />
-        <ExpenseSummaryCard 
-          title="Pending Expenses" 
-          amount={pendingExpenses}
-          icon="pending" 
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                <span>Expenses</span>
-              </CardTitle>
-              <CardDescription>
-                View and manage all expense records
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={fetchData}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
+      <div className="py-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Expenses</h1>
+            <p className="text-muted-foreground">Track and manage all your expenses</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Input
-                  placeholder="Search expenses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-                <div className="absolute left-2 top-2.5 text-muted-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                </div>
-              </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Expense
+          </Button>
+        </div>
 
-              <div className="flex flex-wrap gap-2">
-                <div className="relative flex items-center flex-1 min-w-[200px]">
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="pl-8">
-                      <SelectValue placeholder="Filter by category" />
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div>
+                <CardTitle>All Expenses</CardTitle>
+                <CardDescription>
+                  {filteredExpenses.length} expense records found
+                </CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search expenses..."
+                    className="pl-8 w-full sm:w-[200px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <div className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="All Categories" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : (
+              <DataTable 
+                columns={columns} 
+                data={filteredExpenses} 
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Add Expense Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Add New Expense</DialogTitle>
+              <DialogDescription>
+                Enter expense details to add a new record to the system.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="required">Description</Label>
+                  <Input
+                    id="description"
+                    value={newExpense.description}
+                    onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+                    placeholder="Enter expense description"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount" className="required">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={newExpense.amount}
+                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="required">Category</Label>
+                  <Select
+                    value={newExpense.category}
+                    onValueChange={(value) => setNewExpense({...newExpense, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
-                      {categories.map(category => (
+                      {categories.map((category) => (
                         <SelectItem key={category.id} value={category.name}>
                           {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Filter className="absolute left-2 h-4 w-4 text-muted-foreground" />
                 </div>
-                
-                <div className="relative flex items-center flex-1 min-w-[240px]">
-                  <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-                  <Calendar className="absolute left-2 h-4 w-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <Label htmlFor="date" className="required">Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newExpense.date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newExpense.date ? format(newExpense.date, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={newExpense.date}
+                        onSelect={(date) => date && setNewExpense({...newExpense, date})}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                
-                <Button variant="secondary" onClick={handleApplyFilters}>
-                  Apply Filters
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleResetFilters}>
-                  <FilterX className="h-4 w-4" />
-                </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="vendor">Vendor</Label>
+                  <Input
+                    id="vendor"
+                    value={newExpense.vendor}
+                    onChange={(e) => setNewExpense({...newExpense, vendor: e.target.value})}
+                    placeholder="Enter vendor name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment_method">Payment Method</Label>
+                  <Select
+                    value={newExpense.payment_method}
+                    onValueChange={(value) => setNewExpense({...newExpense, payment_method: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reference">Reference #</Label>
+                  <Input
+                    id="reference"
+                    value={newExpense.reference}
+                    onChange={(e) => setNewExpense({...newExpense, reference: e.target.value})}
+                    placeholder="Optional reference code"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={newExpense.status}
+                    onValueChange={(value) => setNewExpense({...newExpense, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-          </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setIsAddDialogOpen(false);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddExpense}>Add Expense</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this expense? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="p-4 border rounded-md bg-red-50">
+              <div className="flex items-center gap-2 text-red-600">
+                <XCircle className="h-5 w-5" />
+                <p className="font-medium">This will permanently delete the expense record.</p>
+              </div>
             </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <DataTable
-                columns={columns}
-                data={filteredExpenses}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
-          </DialogHeader>
-          <ExpenseForm
-            expense={editingExpense}
-            categories={categories}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsFormOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteExpense}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Container>
   );
 };

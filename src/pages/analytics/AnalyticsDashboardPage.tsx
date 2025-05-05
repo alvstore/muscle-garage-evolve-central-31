@@ -1,205 +1,156 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Container } from '@/components/ui/container';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Download, Users, Activity, TrendingUp, DollarSign, Calendar } from 'lucide-react';
-import { subDays } from 'date-fns';
-import { useBranch } from '@/hooks/use-branch';
-import { DateRange, useDashboardSummary } from '@/hooks/use-stats';
-import StatCard from '@/components/analytics/StatCard';
-import ChurnRiskList from '@/components/analytics/ChurnRiskList';
-import TrainerPerformance from '@/components/analytics/TrainerPerformance';
-import ClassPerformanceTable from '@/components/analytics/ClassPerformanceTable';
-import InventoryAlertsList from '@/components/analytics/InventoryAlertsList';
-import MembershipTrendChart from '@/components/analytics/MembershipTrendChart';
-import RevenueChart from '@/components/analytics/RevenueChart';
-import RevenueBreakdownChart from '@/components/analytics/RevenueBreakdownChart';
-import AttendanceChart from '@/components/dashboard/AttendanceChart';
 
-const AnalyticsDashboard = () => {
-  const { branches, currentBranch, setCurrentBranch } = useBranch();
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: subDays(new Date(), 30),
+import React, { useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Download, Filter } from 'lucide-react';
+
+// Import necessary chart components and data
+import { RevenueChart } from '@/components/analytics/RevenueChart';
+import { MembershipChart } from '@/components/analytics/MembershipChart';
+import { AttendanceChart } from '@/components/analytics/AttendanceChart';
+import { ClassPerformanceTable } from '@/components/analytics/ClassPerformanceTable';
+import { TrainerPerformanceTable } from '@/components/analytics/TrainerPerformanceTable';
+
+const AnalyticsDashboardPage = () => {
+  const [date, setDate] = useState({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
   });
-  const { data: dashboardData, isLoading } = useDashboardSummary();
 
-  const formatCurrency = (value: number | undefined): string => {
-    if (value === undefined) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const handleExportData = () => {
-    // In a full implementation, this would generate and download a report
-    // For now, we'll just display a message
-    alert('Exporting analytics data...');
-  };
-
-  const handleDateRangeChange = (range: DateRange) => {
-    if (range.from) {
-      setDateRange({
-        from: range.from,
-        to: range.to || range.from
-      });
-    }
-  };
-
-  // Create sample data for charts if no data is available
-  const sampleAttendanceData = React.useMemo(() => {
-    if (dashboardData?.attendanceTrend && dashboardData.attendanceTrend.length > 0) {
-      return dashboardData.attendanceTrend;
-    }
-    
-    // Create sample data
-    const result = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      result.push({
-        date: date.toISOString().split('T')[0],
-        count: Math.floor(Math.random() * 50) + 10
-      });
-    }
-    return result.reverse();
-  }, [dashboardData]);
-
-  const sampleRevenueData = React.useMemo(() => {
-    if (dashboardData?.revenueData && dashboardData.revenueData.length > 0) {
-      return dashboardData.revenueData;
-    }
-    
-    // Create sample data
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      revenue: Math.floor(Math.random() * 50000) + 10000,
-      expenses: Math.floor(Math.random() * 30000) + 5000,
-      profit: Math.floor(Math.random() * 20000) + 5000
-    }));
-  }, [dashboardData]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [branch, setBranch] = useState('all');
 
   return (
     <Container>
       <div className="py-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 mb-6">
+        <div className="flex flex-col md:flex-row justify-between md:items-center space-y-4 md:space-y-0 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
-            <p className="text-muted-foreground">
-              Comprehensive insights for your fitness business
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">Detailed insights and performance metrics</p>
           </div>
-          
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button variant="outline" onClick={handleExportData} className="flex items-center">
-              <Download className="h-4 w-4 mr-2" />
-              <span>Export</span>
-            </Button>
-            
-            <Select 
-              value={currentBranch?.id || ''}
-              onValueChange={(value) => {
-                const branch = branches.find(b => b.id === value);
-                if (branch) setCurrentBranch(branch);
-              }}
-            >
+
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <DatePickerWithRange date={date} setDate={setDate} />
+            <Select value={branch} onValueChange={setBranch}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select branch" />
+                <SelectValue placeholder="Select Branch" />
               </SelectTrigger>
               <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">All Branches</SelectItem>
+                <SelectItem value="branch1">Main Branch</SelectItem>
+                <SelectItem value="branch2">Downtown</SelectItem>
+                <SelectItem value="branch3">Westside</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
           </div>
         </div>
 
-        <div className="mb-6">
-          <DatePickerWithRange 
-            date={dateRange} 
-            setDate={setDateRange} 
-            onDateChange={handleDateRangeChange} 
-          />
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid grid-cols-4 md:w-[600px]">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="classes">Classes</TabsTrigger>
+            <TabsTrigger value="trainers">Trainers</TabsTrigger>
+          </TabsList>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            title="Active Members"
-            value={dashboardData?.active_members || 0}
-            description="Currently active"
-            icon={<Users className="h-4 w-4" />}
-            variant="neutral"
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="New Members"
-            value={dashboardData?.new_members_monthly || 0}
-            description="In the last 30 days"
-            icon={<TrendingUp className="h-4 w-4" />}
-            variant="increase"
-            isLoading={isLoading}
-            trend={5}
-          />
-          <StatCard
-            title="Monthly Revenue"
-            value={formatCurrency(dashboardData?.total_revenue || 0)}
-            description="In the last 30 days"
-            icon={<DollarSign className="h-4 w-4" />}
-            variant="info"
-            isLoading={isLoading}
-            trend={8}
-          />
-          <StatCard
-            title="Upcoming Renewals"
-            value={dashboardData?.upcoming_renewals || 0}
-            description="In the next 15 days"
-            icon={<Calendar className="h-4 w-4" />}
-            variant="warning"
-            isLoading={isLoading}
-          />
-        </div>
+          <TabsContent value="overview">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₹42,350</div>
+                  <p className="text-xs text-muted-foreground">+18% from last month</p>
+                  <RevenueChart />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">New Memberships</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">+24</div>
+                  <p className="text-xs text-muted-foreground">+12% from last month</p>
+                  <MembershipChart />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">68%</div>
+                  <p className="text-xs text-muted-foreground">+5% from last month</p>
+                  <AttendanceChart />
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Attendance Chart */}
-        <div className="mb-6">
-          <AttendanceChart data={sampleAttendanceData} />
-        </div>
+            <div className="grid gap-4 md:grid-cols-2 mt-4">
+              <Card className="col-span-2 md:col-span-1">
+                <CardHeader>
+                  <CardTitle>Top Performing Classes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ClassPerformanceTable />
+                </CardContent>
+              </Card>
+              <Card className="col-span-2 md:col-span-1">
+                <CardHeader>
+                  <CardTitle>Trainer Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TrainerPerformanceTable />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-        {/* Revenue Chart */}
-        <div className="mb-6">
-          <RevenueChart dateRange={dateRange} data={sampleRevenueData} />
-        </div>
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <CardTitle>Member Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Member analytics content coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Churn & Trainers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <div className="lg:col-span-2">
-            <ChurnRiskList />
-          </div>
-          <TrainerPerformance />
-        </div>
+          <TabsContent value="classes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Class Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Class analytics content coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Class Performance */}
-        <div className="mb-6">
-          <ClassPerformanceTable />
-        </div>
-
-        {/* Inventory Alerts */}
-        <div className="mb-6">
-          <InventoryAlertsList />
-        </div>
+          <TabsContent value="trainers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Trainer Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Trainer analytics content coming soon...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );
 };
 
-export default AnalyticsDashboard;
+export default AnalyticsDashboardPage;

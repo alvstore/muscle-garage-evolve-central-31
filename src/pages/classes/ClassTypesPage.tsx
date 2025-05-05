@@ -1,286 +1,268 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { useBranch } from '@/hooks/use-branch';
-import { ClassType } from '@/types/classes';
-import { classTypesService } from '@/services/class-types-service';
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Class type name must be at least 2 characters.",
-  }),
-  description: z.string().optional(),
-  is_active: z.boolean().default(true),
-});
+import React, { useEffect, useState } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
+import { Plus, Loader2, RefreshCcw, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from '@/hooks/use-branch';
+
+interface ClassType {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  branch_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 const ClassTypesPage = () => {
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedClassTypeId, setSelectedClassTypeId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { currentBranch } = useBranch();
+  const [editingType, setEditingType] = useState<ClassType | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      is_active: true,
-    },
-  });
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchClassTypes();
+    }
+  }, [currentBranch?.id]);
 
-  const fetchClassTypes = useCallback(async () => {
-    setIsLoading(true);
+  const fetchClassTypes = async () => {
     try {
-      // Use the service instead of direct Supabase calls
-      const classTypes = await classTypesService.fetchClassTypes();
-      setClassTypes(classTypes);
+      setIsLoading(true);
+      
+      let query = supabase
+        .from('class_types')
+        .select('*');
+      
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      setClassTypes(data || []);
     } catch (error) {
-      console.error("Error fetching class types:", error);
-      toast.error("Could not load class types");
+      console.error('Error fetching class types:', error);
+      toast.error('Failed to load class types');
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchClassTypes();
-  }, [fetchClassTypes]);
-
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setSelectedClassTypeId(null);
-    form.reset();
-  };
-
-  const handleCreateClassType = async (data: {
-    name: string;
-    description: string;
-    is_active: boolean;
-  }) => {
+  const handleStatusChange = async (id: string, isActive: boolean) => {
     try {
-      setIsCreating(true);
-      // Use the service instead of direct Supabase calls
-      const newClassType = await classTypesService.createClassType({
-        ...data,
-        branch_id: currentBranch?.id
-      });
-      
-      setClassTypes([...classTypes, newClassType]);
-      toast.success("Class type created successfully");
-      setIsDialogOpen(false);
-      form.reset();
-    } catch (error) {
-      console.error("Error creating class type:", error);
-      toast.error("Failed to create class type");
-    } finally {
-      setIsCreating(false);
-    }
-  };
+      const { error } = await supabase
+        .from('class_types')
+        .update({ is_active: isActive })
+        .eq('id', id);
 
-  const handleUpdateClassType = async (id: string, data: Partial<ClassType>) => {
-    try {
-      setIsUpdating(true);
-      // Use the service instead of direct Supabase calls
-      const updatedClassType = await classTypesService.updateClassType(id, data);
-      
-      setClassTypes(
-        classTypes.map((type) =>
-          type.id === id ? updatedClassType : type
+      if (error) throw error;
+
+      setClassTypes(prev => 
+        prev.map(type => 
+          type.id === id ? { ...type, is_active: isActive } : type
         )
       );
-      toast.success("Class type updated successfully");
-      return true;
+      
+      toast.success(`Class type ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
-      console.error("Error updating class type:", error);
-      toast.error("Failed to update class type");
-      return false;
-    } finally {
-      setIsUpdating(false);
+      console.error('Error updating class type status:', error);
+      toast.error('Failed to update class type status');
     }
   };
 
-  const handleDeleteClassType = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      setIsDeleting(true);
-      // Use the service instead of direct Supabase calls
-      await classTypesService.deleteClassType(id);
-      
-      setClassTypes(classTypes.filter((type) => type.id !== id));
-      toast.success("Class type deleted successfully");
+      // Check if this class type is used in any classes
+      const { data: classes, error: checkError } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('type', id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (classes && classes.length > 0) {
+        toast.error('Cannot delete class type that is in use');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('class_types')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setClassTypes(prev => prev.filter(type => type.id !== id));
+      toast.success('Class type deleted successfully');
     } catch (error) {
-      console.error("Error deleting class type:", error);
-      toast.error("Failed to delete class type");
-    } finally {
-      setIsDeleting(false);
+      console.error('Error deleting class type:', error);
+      toast.error('Failed to delete class type');
     }
   };
+
+  const filteredClassTypes = classTypes.filter(type => 
+    type.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    type.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const columns: ColumnDef<ClassType>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => row.original.description || "-",
+    },
+    {
+      accessorKey: "is_active",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = row.original.is_active;
+        return (
+          <div className="flex items-center">
+            <Switch 
+              checked={isActive} 
+              onCheckedChange={(checked) => handleStatusChange(row.original.id, checked)}
+            />
+            <Badge className={`ml-2 ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {isActive ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
+        );
+      }
+    },
+    {
+      accessorKey: "created_at",
+      header: "Created",
+      cell: ({ row }) => {
+        return new Date(row.original.created_at).toLocaleDateString();
+      }
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setEditingType(row.original)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-red-600" 
+                onClick={() => handleDelete(row.original.id)}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      }
+    }
+  ];
 
   return (
-    <div className="container py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Class Types</h1>
-        <Button onClick={handleOpenDialog}>Add Class Type</Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Class Types</CardTitle>
-          <CardDescription>
-            Manage and view different types of classes offered.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center">Loading class types...</TableCell>
-                  </TableRow>
-                ) : classTypes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center">No class types found.</TableCell>
-                  </TableRow>
-                ) : (
-                  classTypes.map((classType) => (
-                    <TableRow key={classType.id}>
-                      <TableCell className="font-medium">{classType.name}</TableCell>
-                      <TableCell>{classType.description}</TableCell>
-                      <TableCell>{classType.is_active ? "Active" : "Inactive"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClassTypeId(classType.id);
-                            form.setValue("name", classType.name);
-                            form.setValue("description", classType.description || "");
-                            form.setValue("is_active", classType.is_active);
-                            setIsDialogOpen(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteClassType(classType.id)}
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? "Deleting..." : "Delete"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+    <Container>
+      <div className="py-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Class Types</h1>
+            <p className="text-muted-foreground">Manage your class types</p>
           </div>
-        </CardContent>
-      </Card>
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Class Type
+          </Button>
+        </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>{selectedClassTypeId ? "Edit Class Type" : "Create Class Type"}</DialogTitle>
-            <DialogDescription>
-              {selectedClassTypeId ? "Update class type details." : "Create a new class type."}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(selectedClassTypeId ? (data) => handleUpdateClassType(selectedClassTypeId, data) : handleCreateClassType)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Class Type Name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Class Type Description" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="is_active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active</FormLabel>
-                      <FormDescription>
-                        Set class type as active or inactive
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                  Cancel
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <CardTitle>All Class Types</CardTitle>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search class types..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button variant="outline" size="icon" onClick={fetchClassTypes} disabled={isLoading}>
+                  <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
-                <Button type="submit" disabled={isCreating || isUpdating}>
-                  {isCreating ? "Creating..." : isUpdating ? "Updating..." : "Save changes"}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <DataTable 
+                columns={columns} 
+                data={filteredClassTypes} 
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Modal components would go here */}
+        {/* For now we'll just show a message that this feature is coming soon */}
+        {(isAddModalOpen || editingType) && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-96 max-w-full">
+              <h2 className="text-xl font-bold mb-4">
+                {editingType ? 'Edit Class Type' : 'Add Class Type'}
+              </h2>
+              <p>Form implementation coming soon!</p>
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" className="mr-2" onClick={() => {
+                  setIsAddModalOpen(false);
+                  setEditingType(null);
+                }}>
+                  Close
                 </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Container>
   );
 };
 

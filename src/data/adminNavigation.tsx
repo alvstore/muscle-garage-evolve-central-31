@@ -20,7 +20,13 @@ import {
   ArrowDownUp,
   Wallet,
   Calculator,
-  Archive
+  Archive,
+  Building2,
+  Phone,
+  UserPlus,
+  ClipboardList,
+  GitMerge,
+  PhoneCall
 } from "lucide-react";
 
 export const adminNavSections: NavSection[] = [

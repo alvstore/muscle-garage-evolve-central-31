@@ -2625,6 +2625,7 @@ export type Database = {
           is_active: boolean | null
           is_branch_manager: boolean | null
           phone: string | null
+          rating: number | null
           role: string
           state: string | null
           updated_at: string | null
@@ -2646,6 +2647,7 @@ export type Database = {
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
+          rating?: number | null
           role?: string
           state?: string | null
           updated_at?: string | null
@@ -2667,6 +2669,7 @@ export type Database = {
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
+          rating?: number | null
           role?: string
           state?: string | null
           updated_at?: string | null

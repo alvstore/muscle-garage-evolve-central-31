@@ -7,6 +7,7 @@ import PromoCodeForm from '@/components/marketing/PromoCodeForm';
 import PromoCodeStats from '@/components/marketing/PromoCodeStats';
 import { PromoCode } from '@/types/marketing';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const PromoPage = () => {
   const [activeTab, setActiveTab] = useState('list');
@@ -16,42 +17,31 @@ const PromoPage = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // In a real implementation, this would fetch data from your API
-    const fetchPromoCodes = async () => {
-      try {
-        // Mocked data for now
-        setPromoCodes([
-          {
-            id: '1',
-            code: 'SUMMER20',
-            description: '20% off summer promotion',
-            type: 'percentage',
-            value: 20,
-            status: 'active',
-            start_date: '2023-05-01T00:00:00Z',
-            end_date: '2023-08-31T23:59:59Z',
-            usage_limit: 100,
-            current_usage: 45,
-            applicable_products: ['all'],
-            applicable_memberships: ['all'],
-            createdAt: '2023-04-15T10:30:00Z',
-            updatedAt: '2023-04-15T10:30:00Z',
-          }
-        ]);
-      } catch (err) {
-        console.error('Error fetching promo codes:', err);
-        toast({
-          title: 'Error',
-          description: 'Failed to load promotional codes',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchPromoCodes();
-  }, [toast]);
+  }, []);
+  
+  const fetchPromoCodes = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setPromoCodes(data || []);
+    } catch (err) {
+      console.error('Error fetching promo codes:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load promotional codes',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleEditPromo = (promo: PromoCode) => {
     setEditingPromo(promo);
@@ -66,27 +56,36 @@ const PromoPage = () => {
   const handleComplete = () => {
     setActiveTab('list');
     setEditingPromo(null);
+    fetchPromoCodes();
   };
   
   const handleDelete = async (id: string) => {
-    // In a real implementation, this would delete from your API
-    setPromoCodes(promoCodes.filter(code => code.id !== id));
-    toast({
-      title: 'Success',
-      description: 'Promo code deleted successfully',
-    });
+    try {
+      const { error } = await supabase
+        .from('promo_codes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setPromoCodes(promoCodes.filter(code => code.id !== id));
+      toast({
+        title: 'Success',
+        description: 'Promo code deleted successfully',
+      });
+    } catch (err) {
+      console.error('Error deleting promo code:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete promo code',
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleRefresh = () => {
     setIsLoading(true);
-    // In a real implementation, this would re-fetch from your API
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: 'Success',
-        description: 'Promo codes refreshed',
-      });
-    }, 500);
+    fetchPromoCodes();
   };
 
   return (

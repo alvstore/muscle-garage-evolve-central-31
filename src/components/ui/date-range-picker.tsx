@@ -73,5 +73,5 @@ export function DatePickerWithRange({
   );
 }
 
-// Export the DatePickerWithRange as DateRangePicker for backwards compatibility
-export const DateRangePicker = DatePickerWithRange;
+// Export both names for compatibility
+export { DatePickerWithRange as DateRangePicker };
