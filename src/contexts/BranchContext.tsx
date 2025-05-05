@@ -10,7 +10,23 @@ interface Branch {
   address?: string;
   city?: string;
   state?: string;
-  isActive?: boolean;
+  country?: string;
+  managerId?: string;
+  isActive: boolean; // Make this required, not optional
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // Additional properties needed by components
+  phone?: string;
+  email?: string;
+  manager?: string;
+  maxCapacity?: number;
+  openingHours?: string;
+  closingHours?: string;
+  region?: string;
+  branchCode?: string;
+  taxRate?: number;
+  timezone?: string;
 }
 
 interface BranchContextProps {
@@ -20,6 +36,12 @@ interface BranchContextProps {
   isLoading: boolean;
   error: string | null;
   refetchBranches: () => void;
+  // Add these missing methods
+  fetchBranches: () => Promise<Branch[]>;
+  switchBranch: (branchId: string) => void;
+  createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
+  updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
+  deleteBranch: (id: string) => Promise<boolean>;
 }
 
 export const BranchContext = createContext<BranchContextProps>({

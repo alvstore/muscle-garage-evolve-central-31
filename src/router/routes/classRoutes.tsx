@@ -2,7 +2,8 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import ClassesPage from '@/pages/classes/ClassesPage';
+// Update the import path to the correct location
+import ClassesPage from '@/pages/classes/ClassesListPage'; // or whatever the correct path is
 import ClassSchedulePage from '@/pages/classes/ClassSchedulePage';
 import ClassDetailsPage from '@/pages/classes/ClassDetailsPage';
 import ClassAttendancePage from '@/pages/classes/ClassAttendancePage';
