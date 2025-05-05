@@ -42,15 +42,13 @@ import { AddRoleDialog } from '@/components/settings/permissions/AddRoleDialog';
 import { PermissionHeader } from '@/components/settings/permissions/PermissionHeader';
 import { PermissionFooter } from '@/components/settings/permissions/PermissionFooter';
 
-// Then replace the corresponding sections in your component
-// For example, replace your custom dialog with the reusable one:
-
-{/* Replace this */}
+/* 
+// Example of how to use the components:
 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-  {/* Dialog content */}
+  // Dialog content
 </Dialog>
 
-{/* With this */}
+// Can be replaced with:
 <AddRoleDialog
   isOpen={isAddDialogOpen}
   onOpenChange={setIsAddDialogOpen}
@@ -60,6 +58,7 @@ import { PermissionFooter } from '@/components/settings/permissions/PermissionFo
   onRoleDescriptionChange={setNewRoleDescription}
   onAddRole={handleAddRole}
 />
+*/
 
 const RolePermissionsPage = () => {
   // State

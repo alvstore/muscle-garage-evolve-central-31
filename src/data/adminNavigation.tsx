@@ -26,7 +26,8 @@ import {
   UserPlus,
   ClipboardList,
   GitMerge,
-  PhoneCall
+  PhoneCall,
+  Clock
 } from "lucide-react";
 
 export const adminNavSections: NavSection[] = [
@@ -95,6 +96,31 @@ export const adminNavSections: NavSection[] = [
         label: "Trainers",
         permission: "manage_trainers",
         icon: <UserRound className="h-5 w-5" />
+      }
+    ]
+  },
+  
+  // Add CRM section here (between Staff and Marketing)
+  {
+    name: "CRM",
+    items: [
+      {
+        href: "/crm/leads",
+        label: "Lead Management",
+        permission: "access_crm",
+        icon: <UserPlus className="h-5 w-5" />
+      },
+      {
+        href: "/crm/funnel",
+        label: "Sales Funnel",
+        permission: "access_crm",
+        icon: <BarChart className="h-5 w-5" />
+      },
+      {
+        href: "/crm/follow-up",
+        label: "Follow-Up Management",
+        permission: "access_crm",
+        icon: <Clock className="h-5 w-5" />
       }
     ]
   },

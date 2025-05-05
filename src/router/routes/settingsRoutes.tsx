@@ -13,6 +13,7 @@ import TemplatesPage from '@/pages/settings/TemplatesPage';
 import EmailTemplatesPage from '@/pages/settings/EmailTemplatesPage';
 import SmsTemplatesPage from '@/pages/settings/SmsTemplatesPage';
 import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
+import RolePermissionsPage from '@/components/settings/permissions/pages/RolePermissionsPage';
 
 export const settingsRoutes: RouteObject[] = [
   {
@@ -74,5 +75,10 @@ export const settingsRoutes: RouteObject[] = [
   {
     path: '/settings/notifications',
     element: <UnifiedSettingsPage /> // Replace with your actual notifications page component if available
+  },
+  // Add role permissions route
+  {
+    path: '/settings/roles',
+    element: <RolePermissionsPage />
   },
 ];
