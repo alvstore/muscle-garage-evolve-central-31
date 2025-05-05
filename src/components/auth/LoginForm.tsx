@@ -4,20 +4,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters")
 });
+
 const LoginForm = () => {
   const navigate = useNavigate();
-  const {
-    login,
-    isLoading
-  } = useAuth();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +25,24 @@ const LoginForm = () => {
     email?: string;
     password?: string;
   }>({});
+
+  // Add this near your other state variables
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Add this effect to monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+  
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+  
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const validateForm = () => {
     try {
       loginSchema.parse({
@@ -48,22 +66,6 @@ const LoginForm = () => {
       return false;
     }
   };
-  // Add this near your other state variables
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
-  // Add this effect to monitor online status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-  
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-  
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
   
   // Then in your handleSubmit function, add this check
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,56 +95,151 @@ const LoginForm = () => {
       toast.error("Login error: " + (error.message || "Unknown error"));
     }
   };
-  return <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-yellow-300">
-      <Card className="w-full max-w-md space-y-8 p-6 bg-white dark:bg-gray-800">
-        <div>
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            <Link to="/" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-              ← Back to home
-            </Link>
-          </p>
-        </div>
 
-        {error && <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>}
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-yellow-300 to-yellow-400 dark:from-gray-900 dark:to-gray-800">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <Card className="overflow-hidden shadow-xl rounded-xl border-0">
+          <div className="relative bg-white dark:bg-gray-800 p-6 sm:p-8">
+            {/* Logo or Brand */}
+            <div className="mb-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mb-4 shadow-md">
+                <span className="text-2xl font-bold text-white">MG</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Welcome Back
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                Sign in to access your account
+              </p>
+            </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email address
-            </label>
-            <Input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} className={`mt-1 ${validationErrors.email ? 'border-red-500' : ''}`} placeholder="Enter your email" />
-            {validationErrors.email && <p className="mt-1 text-sm text-red-500">{validationErrors.email}</p>}
-          </div>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.3 }}
+              >
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <Input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className={`mt-1 ${validationErrors.password ? 'border-red-500' : ''}`} placeholder="Enter your password" />
-            {validationErrors.password && <p className="mt-1 text-sm text-red-500">{validationErrors.password}</p>}
-          </div>
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      autoComplete="email" 
+                      required 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      className={`pl-10 ${validationErrors.email ? 'border-red-500 focus:ring-red-500' : ''}`} 
+                      placeholder="you@example.com" 
+                    />
+                  </div>
+                  {validationErrors.email && (
+                    <motion.p 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      className="mt-1 text-sm text-red-500"
+                    >
+                      {validationErrors.email}
+                    </motion.p>
+                  )}
+                </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-                Forgot your password?
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Password
+                    </label>
+                    <Link 
+                      to="/forgot-password" 
+                      className="text-xs font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <Input 
+                      id="password" 
+                      name="password" 
+                      type="password" 
+                      autoComplete="current-password" 
+                      required 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)} 
+                      className={`pl-10 ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : ''}`} 
+                      placeholder="••••••••" 
+                    />
+                  </div>
+                  {validationErrors.password && (
+                    <motion.p 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      className="mt-1 text-sm text-red-500"
+                    >
+                      {validationErrors.password}
+                    </motion.p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign in"
+                  )}
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-6 text-center">
+              <Link 
+                to="/" 
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to home
               </Link>
             </div>
           </div>
-
-          <div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </div>;
+        </Card>
+      </motion.div>
+    </div>
+  );
 };
+
 export default LoginForm;
