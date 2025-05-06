@@ -71,6 +71,7 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       return [];
     }
     
+    // In your fetchBranches function, replace this:
     try {
       setIsLoading(true);
       setError(null);
@@ -134,7 +135,76 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         setError(err.message || 'Failed to load branches');
       }
       
-      toast.error('Failed to load branch information');
+      toast.error('Failed to load branch information'); // This is causing the issue
+    } finally {
+      setIsLoading(false);
+    }
+    
+    // With this:
+    try {
+      setIsLoading(true);
+      setError(null);
+  
+      // Check if session is valid
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session found');
+      }
+      
+      // Get user's branch and accessible branches
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('branch_id, accessible_branch_ids, role')
+        .eq('id', user.id)
+        .single();
+  
+      if (profileError) throw profileError;
+
+      // Admin fetches all branches
+      // Regular staff fetch only their assigned branch and accessible branches
+      let branchQuery = supabase.from('branches').select('*');
+      
+      if (profileData.role !== 'admin') {
+        const accessibleIds = [profileData.branch_id];
+        if (profileData.accessible_branch_ids && profileData.accessible_branch_ids.length > 0) {
+          accessibleIds.push(...profileData.accessible_branch_ids);
+        }
+        branchQuery = branchQuery.in('id', accessibleIds);
+      }
+      
+      const { data: branchesData, error: branchesError } = await branchQuery
+        .eq('is_active', true)
+        .order('name');
+
+      if (branchesError) throw branchesError;
+
+      setBranches(branchesData || []);
+
+      // Set current branch
+      if (branchesData && branchesData.length > 0) {
+        // Try to get from local storage first
+        const savedBranchId = localStorage.getItem('currentBranchId');
+        const savedBranch = savedBranchId 
+          ? branchesData.find(b => b.id === savedBranchId)
+          : null;
+        
+        // Default to user's primary branch if no saved branch or saved branch not found
+        const defaultBranch = savedBranch || branchesData.find(b => b.id === profileData.branch_id) || branchesData[0];
+        setCurrentBranch(defaultBranch);
+      }
+    } catch (err) {
+      console.error('Error fetching branches:', err);
+      
+      // More specific error messages
+      if (err.message?.includes('fetch')) {
+        setError('Network error: Unable to connect to database');
+      } else if (err.code === 'PGRST301') {
+        setError('Authentication error: Please log in again');
+      } else {
+        setError(err.message || 'Failed to load branches');
+      }
+      
+      // Don't call toast here - we'll do it in an effect
     } finally {
       setIsLoading(false);
     }

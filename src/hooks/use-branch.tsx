@@ -51,6 +51,10 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       
       console.log('Current user:', user);
       
+      // Add debug logs for user
+      console.log('User ID:', user?.id);
+      console.log('User email:', user?.email);
+      
       if (!user) {
         console.error('No authenticated user found');
         return [];
@@ -106,7 +110,14 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       // Only get active branches
       query = query.eq('is_active', true).order('name');
       
+      // Add debug log for SQL query
+      console.log('SQL Query:', query.toString());
+      
       const { data, error } = await query;
+      
+      // Add debug logs for results
+      console.log('Raw branches data:', data);
+      console.log('Supabase URL:', supabase.supabaseUrl);
       
       console.log('Fetched branches query result:', { data, error });
       
