@@ -75,6 +75,42 @@ export type Database = {
           },
         ]
       }
+      attendance: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string | null
+          device_id: string | null
+          event_id: string | null
+          id: string
+          member_id: string | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          event_id?: string | null
+          id?: string
+          member_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          event_id?: string | null
+          id?: string
+          member_id?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_settings: {
         Row: {
           branch_id: string | null
@@ -1406,6 +1442,60 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      hikvision_event: {
+        Row: {
+          card_no: string | null
+          created_at: string | null
+          device_id: string | null
+          device_name: string | null
+          door_id: string | null
+          door_name: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          face_id: string | null
+          id: string
+          person_id: string | null
+          person_name: string | null
+          processed: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_no?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          device_name?: string | null
+          door_id?: string | null
+          door_name?: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          face_id?: string | null
+          id?: string
+          person_id?: string | null
+          person_name?: string | null
+          processed?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_no?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          device_name?: string | null
+          door_id?: string | null
+          door_name?: string | null
+          event_id?: string
+          event_time?: string
+          event_type?: string
+          face_id?: string | null
+          id?: string
+          person_id?: string | null
+          person_name?: string | null
+          processed?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       income_categories: {
         Row: {

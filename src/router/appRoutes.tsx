@@ -28,7 +28,7 @@ import { staffRoutes } from './routes/staffRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
-import { classRoutes } from './routes/classRoutes'; // Add this import
+import { classRoutes } from './routes/classRoutes';
 
 export const appRoutes: RouteObject[] = [
   // Public routes
@@ -53,17 +53,20 @@ export const appRoutes: RouteObject[] = [
     element: <Unauthorized />
   },
   
-  // Protected routes
+  // Dashboard route with redirect
   {
     path: '/dashboard',
     element: <Navigate to="/dashboard/overview" replace />
   },
+  
+  // Protected routes
   {
     element: <PrivateRoute />,
     children: [
       {
         element: <DashboardLayout />,
         children: [
+          // Dashboard routes
           {
             path: '/dashboard/overview',
             element: <Dashboard />
@@ -73,7 +76,7 @@ export const appRoutes: RouteObject[] = [
             element: <RealTimeDashboardPage />
           },
           
-          // Include route groups
+          // Include all route groups - these should be organized by feature domain
           ...memberRoutes,
           ...fitnessRoutes,
           ...trainerRoutes,
@@ -86,12 +89,14 @@ export const appRoutes: RouteObject[] = [
           ...staffRoutes,
           ...adminRoutes,
           ...branchRoutes,
-          ...classRoutes,
           ...analyticsRoutes,
+          ...classRoutes,
         ]
       }
     ]
   },
+  
+  // 404 route
   {
     path: '*',
     element: <NotFound />

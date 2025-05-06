@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RouteObject } from 'react-router-dom';
+import { AppRoute } from '@/types/route';
 import UnifiedSettingsPage from '@/pages/settings/UnifiedSettingsPage';
 import IntegrationsPage from '@/pages/settings/IntegrationsPage';
 import AccessControlIntegrationPage from '@/pages/settings/AccessControlIntegrationPage';
@@ -14,71 +14,182 @@ import EmailTemplatesPage from '@/pages/settings/EmailTemplatesPage';
 import SmsTemplatesPage from '@/pages/settings/SmsTemplatesPage';
 import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
 import RolePermissionsPage from '@/components/settings/permissions/pages/RolePermissionsPage';
+import GlobalSettingsPage from '@/pages/settings/GlobalSettingsPage';
+import BranchManagementPage from '@/pages/settings/BranchManagementPage';
+import { 
+  Settings, 
+  Webhook, 
+  Lock, 
+  CreditCard, 
+  BellRing, 
+  Mail, 
+  MessageSquare, 
+  Globe, 
+  FileText, 
+  UserCog, 
+  Store
+} from 'lucide-react';
 
-export const settingsRoutes: RouteObject[] = [
+export const settingsRoutes: AppRoute[] = [
   {
     path: '/settings',
-    element: <UnifiedSettingsPage />
+    element: <UnifiedSettingsPage />,
+    meta: {
+      title: 'System Settings',
+      breadcrumb: 'Settings',
+      permission: 'access_settings',
+      icon: <Settings className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/settings/global',
+    element: <GlobalSettingsPage />,
+    meta: {
+      title: 'Global Settings',
+      breadcrumb: 'Global Settings',
+      permission: 'manage_settings',
+      hideInNav: true,
+      icon: <Globe className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/settings/branches',
+    element: <BranchManagementPage />,
+    meta: {
+      title: 'Branch Management',
+      breadcrumb: 'Branch Management',
+      permission: 'manage_branches',
+      icon: <Store className="h-5 w-5" />
+    }
   },
   {
     path: '/settings/integrations',
-    element: <IntegrationsPage />
+    element: <IntegrationsPage />,
+    meta: {
+      title: 'Integration Settings',
+      breadcrumb: 'Integrations',
+      permission: 'manage_integrations',
+      icon: <Webhook className="h-5 w-5" />
+    }
   },
   {
     path: '/settings/integrations/access-control',
-    element: <AccessControlIntegrationPage />
+    element: <AccessControlIntegrationPage />,
+    meta: {
+      title: 'Access Control Integration',
+      breadcrumb: 'Access Control',
+      permission: 'manage_integrations',
+      hideInNav: true
+    }
   },
   {
     path: '/settings/integrations/payment',
-    element: <PaymentGatewaySettingsPage />
+    element: <PaymentGatewaySettingsPage />,
+    meta: {
+      title: 'Payment Gateway Settings',
+      breadcrumb: 'Payment Gateway',
+      permission: 'manage_integrations',
+      icon: <CreditCard className="h-5 w-5" />
+    }
   },
   {
     path: '/settings/integrations/push',
-    element: <PushNotificationSettingsPage />
+    element: <PushNotificationSettingsPage />,
+    meta: {
+      title: 'Push Notification Settings',
+      breadcrumb: 'Push Notifications',
+      permission: 'manage_integrations',
+      icon: <BellRing className="h-5 w-5" />
+    }
   },
-  // Add email settings route
   {
     path: '/settings/email',
-    element: <EmailIntegrationPage />
+    element: <EmailIntegrationPage />,
+    meta: {
+      title: 'Email Settings',
+      breadcrumb: 'Email Settings',
+      permission: 'manage_integrations',
+      icon: <Mail className="h-5 w-5" />
+    }
   },
-  // Add SMS settings route
   {
     path: '/settings/sms',
-    element: <SmsIntegrationPage />
+    element: <SmsIntegrationPage />,
+    meta: {
+      title: 'SMS Settings',
+      breadcrumb: 'SMS Settings',
+      permission: 'manage_integrations',
+      icon: <MessageSquare className="h-5 w-5" />
+    }
   },
-  // Add WhatsApp settings route
   {
     path: '/settings/whatsapp',
-    element: <MessagingSettingsPage />
+    element: <MessagingSettingsPage />,
+    meta: {
+      title: 'WhatsApp Settings',
+      breadcrumb: 'WhatsApp Settings',
+      permission: 'manage_integrations',
+      icon: <MessageSquare className="h-5 w-5" />
+    }
   },
-  // Add templates parent route
   {
     path: '/settings/templates',
-    element: <TemplatesPage />
+    element: <TemplatesPage />,
+    meta: {
+      title: 'Templates',
+      breadcrumb: 'Templates',
+      permission: 'manage_templates',
+      icon: <FileText className="h-5 w-5" />
+    }
   },
-  // Add email templates route
   {
     path: '/settings/templates/email',
-    element: <EmailTemplatesPage />
+    element: <EmailTemplatesPage />,
+    meta: {
+      title: 'Email Templates',
+      breadcrumb: 'Email Templates',
+      permission: 'manage_templates',
+      hideInNav: true
+    }
   },
-  // Add SMS templates route
   {
     path: '/settings/templates/sms',
-    element: <SmsTemplatesPage />
+    element: <SmsTemplatesPage />,
+    meta: {
+      title: 'SMS Templates',
+      breadcrumb: 'SMS Templates',
+      permission: 'manage_templates',
+      hideInNav: true
+    }
   },
-  // Add WhatsApp templates route
   {
     path: '/settings/templates/whatsapp',
-    element: <WhatsAppTemplatesPage />
+    element: <WhatsAppTemplatesPage />,
+    meta: {
+      title: 'WhatsApp Templates',
+      breadcrumb: 'WhatsApp Templates',
+      permission: 'manage_templates',
+      hideInNav: true
+    }
   },
-  // Add notifications settings route
   {
     path: '/settings/notifications',
-    element: <UnifiedSettingsPage /> // Replace with your actual notifications page component if available
+    element: <UnifiedSettingsPage />,
+    meta: {
+      title: 'Notification Settings',
+      breadcrumb: 'Notification Settings',
+      permission: 'manage_settings',
+      icon: <BellRing className="h-5 w-5" />
+    }
   },
-  // Add role permissions route
   {
     path: '/settings/roles',
-    element: <RolePermissionsPage />
+    element: <RolePermissionsPage />,
+    meta: {
+      title: 'Role & Permissions',
+      breadcrumb: 'Role & Permissions',
+      permission: 'manage_roles',
+      icon: <UserCog className="h-5 w-5" />
+    }
   },
 ];

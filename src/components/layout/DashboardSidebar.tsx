@@ -1,17 +1,16 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import { LogOut, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
-import { adminNavSections } from "@/data/adminNavigation";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import NavigationManager from "@/components/navigation/NavigationManager";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -23,17 +22,8 @@ export default function DashboardSidebar({
   closeSidebar
 }: DashboardSidebarProps) {
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { logout, user } = useAuth();
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
-
-  const toggleSection = (sectionName: string) => {
-    if (expandedSections.includes(sectionName)) {
-      setExpandedSections(expandedSections.filter(name => name !== sectionName));
-    } else {
-      setExpandedSections([...expandedSections, sectionName]);
-    }
-  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -81,12 +71,16 @@ export default function DashboardSidebar({
       </div>
       
       <ScrollArea className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
-        <NavigationSections 
-          sections={adminNavSections} 
-          expandedSections={expandedSections} 
-          toggleSection={toggleSection} 
-          onLinkClick={closeSidebar} 
-        />
+        <NavigationManager>
+          {({ sections, expandedSections, toggleSection }) => (
+            <NavigationSections 
+              sections={sections} 
+              expandedSections={expandedSections} 
+              toggleSection={toggleSection}
+              onLinkClick={closeSidebar}
+            />
+          )}
+        </NavigationManager>
       </ScrollArea>
       
       <div className="mt-auto p-4">

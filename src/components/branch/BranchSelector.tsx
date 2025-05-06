@@ -1,119 +1,74 @@
 
-import { useEffect, useState } from 'react';
-import { Check, ChevronDown, Building2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Building2 } from 'lucide-react';
 import { useBranch } from '@/hooks/use-branch';
-import { useAuth } from '@/hooks/use-auth';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { toast } from "sonner";
-import CreateBranchDialog from './CreateBranchDialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '../ui/skeleton';
 
-const BranchSelector = () => {
-  const {
-    branches,
-    currentBranch,
-    switchBranch,
-    isLoading,
-    fetchBranches
-  } = useBranch();
-  const {
-    updateUserBranch
-  } = useAuth();
+const BranchSelector: React.FC = () => {
+  const { branches, currentBranch, switchBranch, isLoading, fetchBranches } = useBranch();
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch branches on component mount - using useEffect instead of useState incorrectly
-  useEffect(() => {
-    fetchBranches();
-  }, [fetchBranches]);
+  const handleValueChange = (value: string) => {
+    switchBranch(value);
+    setIsOpen(false);
+  };
 
-  const handleChangeBranch = async (branchId: string) => {
-    // Don't proceed if selecting the same branch
-    if (currentBranch?.id === branchId) return;
-    const branch = branches.find(b => b.id === branchId);
-    if (branch) {
-      try {
-        await updateUserBranch(branch.id);
-        switchBranch(branch.id);
-        toast.success(`Switched to ${branch.name}`);
-      } catch (error) {
-        console.error("Error switching branch:", error);
-        toast.error("Failed to switch branch");
-      }
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      // Refresh branches list when opening selector
+      fetchBranches();
     }
+    setIsOpen(open);
   };
 
   if (isLoading) {
-    return <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
-          <Building2 className="mr-2 h-4 w-4" />
-          <span>Loading branches...</span>
-        </Button>
-      </div>;
+    return (
+      <Skeleton className="w-full h-10 rounded" />
+    );
   }
-  
-  // If no branches are found
-  if (branches.length === 0) {
-    return <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" disabled className="w-[200px] justify-start">
-        <Building2 className="mr-2 h-4 w-4" />
-        <span>No branches found</span>
-      </Button>
-      <PermissionGuard permission="manage_branches">
-        <CreateBranchDialog onComplete={fetchBranches} />
-      </PermissionGuard>
-    </div>;
+
+  if (!branches || branches.length === 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-secondary/50 rounded-md">
+        <Building2 className="h-4 w-4" />
+        <span>No branches available</span>
+      </div>
+    );
   }
 
   return (
-    <PermissionGuard permission="view_branch_data" fallback={
-      <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium">
-        <Building2 className="h-4 w-4 text-indigo-200" />
-        <span className="text-indigo-100">{currentBranch?.name || 'No branch selected'}</span>
-      </div>
-    }>
-      <div className="flex items-center gap-2 my-0 px-0 mx-0">
-        <Select 
-          value={currentBranch?.id} 
-          onValueChange={handleChangeBranch}
-        >
-          <SelectTrigger className="w-[200px] bg-indigo-900/50 border-indigo-700 text-indigo-100 hover:bg-indigo-800/70 focus:ring-indigo-500">
-            <Building2 className="mr-2 h-4 w-4 text-indigo-300" />
-            <SelectValue placeholder="Select branch" />
-          </SelectTrigger>
-          <SelectContent className="bg-indigo-950 border-indigo-800 text-indigo-100">
-            {branches.map(branch => (
-              <SelectItem 
-                key={branch.id} 
-                value={branch.id} 
-                className="flex items-center justify-between hover:bg-indigo-900 focus:bg-indigo-900"
-              >
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-indigo-300" />
-                  <span>{branch.name}</span>
-                </div>
-                {currentBranch?.id === branch.id && <Check className="ml-2 h-4 w-4 text-green-400" />}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <PermissionGuard permission="manage_branches">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <CreateBranchDialog onComplete={fetchBranches} />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="bg-indigo-950 text-indigo-100 border-indigo-800">
-                <p>Create a new branch</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </PermissionGuard>
-      </div>
-    </PermissionGuard>
+    <Select
+      value={currentBranch?.id || ''}
+      onValueChange={handleValueChange}
+      onOpenChange={handleOpenChange}
+      open={isOpen}
+    >
+      <SelectTrigger className="bg-secondary/50 border-0 focus:ring-0 text-white text-opacity-90">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4" />
+          <SelectValue placeholder="Select Branch" />
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          <SelectLabel>Branches</SelectLabel>
+          {branches.map((branch) => (
+            <SelectItem key={branch.id} value={branch.id}>
+              {branch.name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 };
 
