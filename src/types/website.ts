@@ -1,4 +1,14 @@
+
 export interface WebsiteContent {
-  // existing properties
-  cta_text?: string; // Add this property
+  id?: string;
+  section: string;
+  title?: string;
+  subtitle?: string;
+  content?: string;
+  image_url?: string;
+  order_index?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  cta_text?: string;
 }

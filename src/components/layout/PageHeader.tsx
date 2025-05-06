@@ -34,8 +34,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   // Get title from route metadata if not provided
   const routeTitle = title || (() => {
     const path = location.pathname;
-    const matchingRoute = combinedRoutes.find(r => r.path === path);
-    return matchingRoute?.meta?.title || 'Dashboard';
+    // Look for route with matching path property instead of directly using path
+    const matchingRoute = combinedRoutes.find(r => r && typeof r === 'object' && 'path' in r && r.path === path);
+    return matchingRoute && matchingRoute.meta?.title || 'Dashboard';
   })();
 
   return (

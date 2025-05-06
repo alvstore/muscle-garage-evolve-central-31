@@ -1,10 +1,10 @@
 
 import { ReactNode } from 'react';
+import { Permission } from '@/hooks/use-permissions';
 import { RouteObject } from 'react-router-dom';
-import { Permission } from './navigation';
 
-export interface AppRouteMetadata {
-  title: string;
+export interface AppRouteMeta {
+  title?: string;
   breadcrumb?: string;
   permission?: Permission;
   hideInNav?: boolean;
@@ -12,11 +12,17 @@ export interface AppRouteMetadata {
   children?: AppRoute[];
 }
 
-export interface AppRoute extends RouteObject {
-  meta?: AppRouteMetadata;
-}
-
-export interface BreadcrumbItem {
-  label: string;
-  href: string;
+// Make sure AppRoute doesn't extend RouteObject but includes all needed properties
+export interface AppRoute {
+  path: string;
+  element?: React.ReactNode;
+  children?: AppRoute[];
+  meta?: AppRouteMeta;
+  loader?: any;
+  action?: any;
+  errorElement?: React.ReactNode;
+  handle?: any;
+  index?: boolean;
+  id?: string;
+  caseSensitive?: boolean;
 }

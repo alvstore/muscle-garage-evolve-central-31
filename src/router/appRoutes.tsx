@@ -30,6 +30,22 @@ import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 import { classRoutes } from './routes/classRoutes';
 
+// Ensure all route groups are properly typed as RouteObject arrays
+const typedMemberRoutes = memberRoutes as RouteObject[];
+const typedFitnessRoutes = fitnessRoutes as RouteObject[];
+const typedTrainerRoutes = trainerRoutes as RouteObject[];
+const typedCommunicationRoutes = communicationRoutes as RouteObject[];
+const typedCrmRoutes = crmRoutes as RouteObject[];
+const typedMarketingRoutes = marketingRoutes as RouteObject[];
+const typedFinanceRoutes = financeRoutes as RouteObject[];
+const typedSettingsRoutes = settingsRoutes as RouteObject[];
+const typedMiscRoutes = miscRoutes as RouteObject[];
+const typedStaffRoutes = staffRoutes as RouteObject[];
+const typedAdminRoutes = adminRoutes as RouteObject[];
+const typedBranchRoutes = branchRoutes as RouteObject[];
+const typedAnalyticsRoutes = analyticsRoutes as RouteObject[];
+const typedClassRoutes = classRoutes as RouteObject[];
+
 export const appRoutes: RouteObject[] = [
   // Public routes
   {
@@ -77,20 +93,20 @@ export const appRoutes: RouteObject[] = [
           },
           
           // Include all route groups - these should be organized by feature domain
-          ...memberRoutes,
-          ...fitnessRoutes,
-          ...trainerRoutes,
-          ...communicationRoutes,
-          ...crmRoutes,
-          ...marketingRoutes,
-          ...financeRoutes,
-          ...settingsRoutes,
-          ...miscRoutes,
-          ...staffRoutes,
-          ...adminRoutes,
-          ...branchRoutes,
-          ...analyticsRoutes,
-          ...classRoutes,
+          ...typedMemberRoutes,
+          ...typedFitnessRoutes,
+          ...typedTrainerRoutes,
+          ...typedCommunicationRoutes,
+          ...typedCrmRoutes,
+          ...typedMarketingRoutes,
+          ...typedFinanceRoutes,
+          ...typedSettingsRoutes,
+          ...typedMiscRoutes,
+          ...typedStaffRoutes,
+          ...typedAdminRoutes,
+          ...typedBranchRoutes,
+          ...typedAnalyticsRoutes,
+          ...typedClassRoutes,
         ]
       }
     ]

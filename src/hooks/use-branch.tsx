@@ -117,7 +117,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       
       // Add debug logs for results
       console.log('Raw branches data:', data);
-      console.log('Supabase URL:', supabase.supabaseUrl);
+      // Fix the protected property access - use URL property of the client instead of getUrl()
+      console.log('Supabase URL:', supabase.restUrl);
       
       console.log('Fetched branches query result:', { data, error });
       
