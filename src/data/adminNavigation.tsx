@@ -192,7 +192,7 @@ export const adminNavSections: NavSection[] = [
         href: "/communication/announcements",
         label: "Announcements",
         permission: "access_communication",
-        icon: <MessageSquare className="h-5 w-5" />
+        icon: <Megaphone className="h-5 w-5" />
       },
       {
         href: "/communication/feedback",
@@ -204,19 +204,19 @@ export const adminNavSections: NavSection[] = [
         href: "/communication/reminders",
         label: "Reminder Rules",
         permission: "access_communication",
-        icon: <MessageSquare className="h-5 w-5" />
+        icon: <Clock className="h-5 w-5" />
       },
       {
         href: "/communication/motivational",
         label: "Motivational Messages",
         permission: "access_communication",
-        icon: <MessageSquare className="h-5 w-5" />
+        icon: <Users className="h-5 w-5" />
       },
       {
         href: "/communication/notifications",
         label: "Notifications",
         permission: "access_communication",
-        icon: <MessageSquare className="h-5 w-5" />
+        icon: <PhoneCall className="h-5 w-5" />
       },
       {
         href: "/communication/tasks",
@@ -251,6 +251,12 @@ export const adminNavSections: NavSection[] = [
         label: "Reports",
         permission: "view_reports",
         icon: <FileText className="h-5 w-5" />
+      },
+      {
+        href: "/attendance",
+        label: "Attendance Tracking",
+        permission: "view_attendance",
+        icon: <Clock className="h-5 w-5" />
       }
     ]
   },
@@ -309,28 +315,12 @@ export const adminNavSections: NavSection[] = [
         label: "System Backup & Restore",
         permission: "manage_settings",
         icon: <Archive className="h-5 w-5" />
-      }
-    ]
-  },
-  {
-    name: "Branches",
-    items: [
+      },
       {
         href: "/branches",
         label: "Branch Management",
         permission: "manage_branches",
         icon: <Building2 className="h-5 w-5" />
-      }
-    ]
-  },
-  {
-    name: "Attendance",
-    items: [
-      {
-        href: "/attendance",
-        label: "Attendance Tracking",
-        permission: "view_attendance",
-        icon: <Clock className="h-5 w-5" />
       }
     ]
   }
