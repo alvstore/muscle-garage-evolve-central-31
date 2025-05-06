@@ -1,7 +1,10 @@
 import { NavSection, NavItem } from '@/types/navigation';
 import { adminNavSections } from '@/data/adminNavigation';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
-import { adminRoutes, crmRoutes, settingsRoutes, classRoutes } from '@/router/routes';
+import { adminRoutes } from '@/router/routes/adminRoutes';
+import { crmRoutes } from '@/router/routes/crmRoutes';
+import { settingsRoutes } from '@/router/routes/settingsRoutes';
+import { classRoutes } from '@/router/routes/classRoutes';
 
 // Section mapping for route-based navigation
 const sectionMap = {
