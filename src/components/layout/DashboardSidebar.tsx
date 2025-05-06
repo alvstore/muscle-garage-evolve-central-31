@@ -10,7 +10,7 @@ import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
-import NavigationManager from "@/components/navigation/NavigationManager";
+import { adminNavSections } from "@/data/adminNavigation";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -24,6 +24,15 @@ export default function DashboardSidebar({
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { logout, user } = useAuth();
+  const [expandedSections, setExpandedSections] = React.useState<string[]>(['Dashboard']);
+
+  const toggleSection = (sectionName: string) => {
+    if (expandedSections.includes(sectionName)) {
+      setExpandedSections(expandedSections.filter(name => name !== sectionName));
+    } else {
+      setExpandedSections([...expandedSections, sectionName]);
+    }
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -71,16 +80,12 @@ export default function DashboardSidebar({
       </div>
       
       <ScrollArea className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
-        <NavigationManager>
-          {({ sections, expandedSections, toggleSection }) => (
-            <NavigationSections 
-              sections={sections} 
-              expandedSections={expandedSections} 
-              toggleSection={toggleSection}
-              onLinkClick={closeSidebar}
-            />
-          )}
-        </NavigationManager>
+        <NavigationSections 
+          sections={adminNavSections} 
+          expandedSections={expandedSections} 
+          toggleSection={toggleSection} 
+          onLinkClick={closeSidebar}
+        />
       </ScrollArea>
       
       <div className="mt-auto p-4">

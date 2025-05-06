@@ -35,7 +35,7 @@ export const adminNavSections: NavSection[] = [
     name: "Dashboard",
     items: [
       {
-        href: "/dashboard/overview",
+        href: "/dashboard",
         label: "Analytics Dashboard",
         permission: "view_dashboard",
         icon: <LayoutDashboard className="h-5 w-5" />
@@ -99,8 +99,6 @@ export const adminNavSections: NavSection[] = [
       }
     ]
   },
-  
-  // Add CRM section here (between Staff and Marketing)
   {
     name: "CRM",
     items: [
@@ -130,13 +128,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/marketing/promo",
         label: "Promotions",
-        permission: "manage_members",
+        permission: "manage_marketing",
         icon: <Megaphone className="h-5 w-5" />
       },
       {
         href: "/marketing/referral",
         label: "Referral Programs",
-        permission: "manage_members",
+        permission: "manage_marketing",
         icon: <Users className="h-5 w-5" />
       }
     ]
@@ -224,7 +222,7 @@ export const adminNavSections: NavSection[] = [
         href: "/communication/tasks",
         label: "Task Manager",
         permission: "access_communication",
-        icon: <MessageSquare className="h-5 w-5" />
+        icon: <ClipboardList className="h-5 w-5" />
       }
     ]
   },
@@ -304,13 +302,35 @@ export const adminNavSections: NavSection[] = [
         href: "/settings/integrations",
         label: "Integration Settings",
         permission: "manage_settings",
-        icon: <Settings className="h-5 w-5" />
+        icon: <GitMerge className="h-5 w-5" />
       },
       {
         href: "/system-backup",
         label: "System Backup & Restore",
         permission: "manage_settings",
         icon: <Archive className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Branches",
+    items: [
+      {
+        href: "/branches",
+        label: "Branch Management",
+        permission: "manage_branches",
+        icon: <Building2 className="h-5 w-5" />
+      }
+    ]
+  },
+  {
+    name: "Attendance",
+    items: [
+      {
+        href: "/attendance",
+        label: "Attendance Tracking",
+        permission: "view_attendance",
+        icon: <Clock className="h-5 w-5" />
       }
     ]
   }
