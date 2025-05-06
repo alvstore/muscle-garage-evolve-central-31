@@ -19,7 +19,7 @@ const ClassAttendancePage = () => {
   const fetchedData = []; // Replace with actual data fetch
   const attendanceData = transformAttendanceData(fetchedData);
 
-  // Now we can safely access properties
+  // Now we can safely access properties on individual items, not on the array itself
   const displayData = () => {
     return attendanceData.map(member => (
       <div key={member.id}>

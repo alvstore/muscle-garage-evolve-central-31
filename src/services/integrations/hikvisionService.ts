@@ -1,11 +1,14 @@
-
 import api from '../api';
 import { toast } from 'sonner';
 
 export interface HikvisionCredentials {
   apiUrl: string;
-  clientId: string;  // Changed from username
-  clientSecret: string;  // Changed from password
+  username?: string;  // Add username for backwards compatibility
+  password?: string;  // Add password for backwards compatibility
+  clientId: string;
+  clientSecret: string;
+  appKey?: string;   // Add for backward compatibility
+  secretKey?: string; // Add for backward compatibility
 }
 
 export interface HikvisionEvent {

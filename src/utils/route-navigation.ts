@@ -79,6 +79,7 @@ export function generateBreadcrumbs(path: string, routes: AppRoute[]): { label: 
       });
     }
     
+    // Update children access to use route.children
     if (matchingRoute?.children) {
       currentRoutes = matchingRoute.children;
     }

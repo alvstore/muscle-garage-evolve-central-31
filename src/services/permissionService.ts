@@ -1,4 +1,3 @@
-
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -66,6 +65,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   
   // Attendance Management
   'view_all_attendance': { roles: ['admin', 'staff', 'trainer'] },
+  'view_attendance': { roles: ['admin', 'staff', 'trainer'] },
   'log_attendance': { roles: ['admin', 'staff'] },
   
   // Assignment Management
@@ -79,6 +79,32 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'trainer_edit_fitness': { roles: ['admin', 'trainer'] },
   'trainer_view_attendance': { roles: ['admin', 'trainer'] },
   'feature_trainer_dashboard': { roles: ['admin', 'trainer'] },
+  
+  // Dashboard
+  'view_dashboard': { roles: ['admin', 'staff', 'trainer', 'member'] },
+  
+  // Analytics
+  'view_analytics': { roles: ['admin', 'staff'] },
+  'view_reports': { roles: ['admin', 'staff'] },
+  'view_finance_dashboard': { roles: ['admin', 'staff'] },
+  
+  // Manager
+  'manage_branch': { roles: ['admin', 'staff'] },
+  'manage_trainers': { roles: ['admin'] },
+  'manage_memberships': { roles: ['admin', 'staff'] },
+  
+  // Marketing
+  'manage_marketing': { roles: ['admin', 'staff'] },
+  'manage_inventory': { roles: ['admin', 'staff'] },
+  
+  // Member dashboard
+  'feature_member_dashboard': { roles: ['admin', 'member'] },
+  'member_view_profile': { roles: ['admin', 'member'] },
+  'member_book_classes': { roles: ['admin', 'member'] },
+  'member_view_attendance': { roles: ['admin', 'member'] },
+  'member_view_invoices': { roles: ['admin', 'member'] },
+  
+  // Email campaigns
   'feature_email_campaigns': { roles: ['admin', 'staff'] }
 };
 

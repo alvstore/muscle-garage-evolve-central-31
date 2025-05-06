@@ -59,6 +59,7 @@ export type Permission =
   | 'member_book_classes'
   | 'member_view_attendance'
   | 'member_view_invoices'
+  | 'feature_email_campaigns'
   | 'full_system_access';
 
 export const usePermissions = () => {

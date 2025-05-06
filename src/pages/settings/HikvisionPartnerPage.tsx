@@ -16,7 +16,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 const HikvisionPartnerPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const [appKey, setAppKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [isKeyConfigured, setIsKeyConfigured] = useState(false);
   const [devices, setDevices] = useState<HikvisionDeviceWithStatus[]>([]);
@@ -34,21 +34,24 @@ const HikvisionPartnerPage = () => {
   const { can } = usePermissions();
 
   useEffect(() => {
-    const checkApiKey = async () => {
+    const loadSettings = async () => {
       try {
+        setIsLoading(true);
         const credentials = await hikvisionPartnerService.getCredentials();
-        if (credentials?.appKey) {
-          setApiKey(credentials.appKey);
-          setSecretKey(credentials.secretKey || '');
-          setIsKeyConfigured(true);
-          fetchDevices();
+        if (credentials) {
+          // Update to use the correct property names
+          setAppKey(credentials.clientId || credentials.appKey || '');
+          setSecretKey(credentials.clientSecret || credentials.secretKey || '');
         }
       } catch (error) {
-        console.error('Error fetching API credentials:', error);
+        console.error("Error loading Hikvision settings:", error);
+        toast.error("Failed to load settings");
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    checkApiKey();
+    
+    loadSettings();
   }, []);
 
   const fetchDevices = async () => {
@@ -65,14 +68,14 @@ const HikvisionPartnerPage = () => {
   };
 
   const saveApiCredentials = async () => {
-    if (!apiKey || !secretKey) {
+    if (!appKey || !secretKey) {
       toast.error('API Key and Secret Key are required');
       return;
     }
 
     setIsLoading(true);
     try {
-      await hikvisionPartnerService.saveCredentials(apiKey, secretKey);
+      await hikvisionPartnerService.saveCredentials(appKey, secretKey);
       setIsKeyConfigured(true);
       toast.success('API credentials saved successfully', {
         description: 'Your Hikvision Partner API credentials have been saved securely.',
@@ -613,8 +616,8 @@ const HikvisionPartnerPage = () => {
                 <Label htmlFor="apiKey">API Key (appKey)</Label>
                 <Input 
                   id="apiKey" 
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  value={appKey}
+                  onChange={(e) => setAppKey(e.target.value)}
                   placeholder="Enter your Hikvision Partner API Key"
                   disabled={isLoading}
                 />
@@ -658,7 +661,7 @@ const HikvisionPartnerPage = () => {
               </Button>
               <Button 
                 onClick={saveApiCredentials}
-                disabled={isLoading || !apiKey || !secretKey}
+                disabled={isLoading || !appKey || !secretKey}
               >
                 {isLoading ? (
                   <>

@@ -20,8 +20,8 @@ import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookH
 
 const hikvisionCredentialsSchema = z.object({
   apiUrl: z.string().url({ message: "Please enter a valid API URL" }),
-  username: z.string().min(1, { message: "Username is required" }),
-  password: z.string().min(1, { message: "Password is required" }),
+  clientId: z.string().min(1, { message: "Client ID is required" }),
+  clientSecret: z.string().min(1, { message: "Client Secret is required" }),
 });
 
 const HikvisionIntegrationPage = () => {
@@ -39,8 +39,8 @@ const HikvisionIntegrationPage = () => {
     resolver: zodResolver(hikvisionCredentialsSchema),
     defaultValues: {
       apiUrl: '',
-      username: '',
-      password: '',
+      clientId: '',
+      clientSecret: '',
     },
   });
 
@@ -216,12 +216,12 @@ const HikvisionIntegrationPage = () => {
 
                     <FormField
                       control={form.control}
-                      name="username"
+                      name="clientId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Client ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="admin" {...field} />
+                            <Input placeholder="client-id" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -230,10 +230,10 @@ const HikvisionIntegrationPage = () => {
 
                     <FormField
                       control={form.control}
-                      name="password"
+                      name="clientSecret"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Client Secret</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>

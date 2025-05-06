@@ -12,8 +12,17 @@ export interface AppRouteMeta {
   children?: AppRoute[];
 }
 
-export interface AppRoute extends RouteObject {
+// Make sure AppRoute doesn't extend RouteObject but includes all needed properties
+export interface AppRoute {
   path: string;
   element?: React.ReactNode;
+  children?: AppRoute[];
   meta?: AppRouteMeta;
+  loader?: any;
+  action?: any;
+  errorElement?: React.ReactNode;
+  handle?: any;
+  index?: boolean;
+  id?: string;
+  caseSensitive?: boolean;
 }

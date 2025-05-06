@@ -1,15 +1,14 @@
 
 export interface WebsiteContent {
-  id: string;
+  id?: string;
   section: string;
-  title: string;
+  title?: string;
   subtitle?: string;
   content?: string;
   image_url?: string;
-  order_index: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  cta_text?: string;
-  cta_link?: string;
+  order_index?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  cta_text?: string; // Add the missing property
 }
