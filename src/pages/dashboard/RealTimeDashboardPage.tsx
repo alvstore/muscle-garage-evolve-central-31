@@ -20,7 +20,7 @@ const RealTimeDashboardPage = () => {
   const [currentOccupancy, setCurrentOccupancy] = useState(0);
   const [expiringMemberships, setExpiringMemberships] = useState(0);
   const [overduePayments, setOverduePayments] = useState(0);
-  const { currentBranch } = useBranch();
+  const { currentBranch, branches, switchBranch } = useBranch(); // ✅ Call hook at the top level
   
   const fetchDashboardData = async () => {
     try {
@@ -123,8 +123,14 @@ const RealTimeDashboardPage = () => {
   useEffect(() => {
     if (currentBranch?.id) {
       fetchDashboardData();
+    } else {
+      // If no branch is selected but branches are available, select the first one
+      if (branches && branches.length > 0 && !isLoading) {
+        console.log('No branch selected, defaulting to first branch');
+        switchBranch(branches[0].id);
+      }
     }
-  }, [currentBranch?.id]);
+  }, [currentBranch, branches, fetchDashboardData, isLoading, switchBranch]);
 
   const refreshData = () => {
     setIsLoading(true);
