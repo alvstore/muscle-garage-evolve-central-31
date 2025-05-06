@@ -1,48 +1,26 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { Branch } from '@/types/branch';
 
-interface Branch {
-  id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  managerId?: string;
-  isActive: boolean; // Make this required, not optional
-  createdAt?: string;
-  updatedAt?: string;
-  
-  // Additional properties needed by components
-  phone?: string;
-  email?: string;
-  manager?: string;
-  maxCapacity?: number;
-  openingHours?: string;
-  closingHours?: string;
-  region?: string;
-  branchCode?: string;
-  taxRate?: number;
-  timezone?: string;
-}
+// Rename the imported type to avoid conflict
+import { Branch as BranchType } from '@/types/branch';
 
 interface BranchContextProps {
-  branches: Branch[];
-  currentBranch: Branch | null;
-  setCurrentBranch: (branch: Branch) => void;
+  branches: BranchType[];
+  currentBranch: BranchType | null;
+  setCurrentBranch: (branch: BranchType) => void;
   isLoading: boolean;
   error: string | null;
   refetchBranches: () => void;
-  fetchBranches: () => Promise<Branch[]>;
+  fetchBranches: () => Promise<BranchType[]>;
   switchBranch: (branchId: string) => void;
-  createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
-  updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
+  createBranch: (branchData: Partial<BranchType>) => Promise<BranchType | null>;
+  updateBranch: (id: string, branchData: Partial<BranchType>) => Promise<BranchType | null>;
   deleteBranch: (id: string) => Promise<boolean>;
 }
 
+// Create the context with default values
 export const BranchContext = createContext<BranchContextProps>({
   branches: [],
   currentBranch: null,
@@ -62,8 +40,8 @@ interface BranchProviderProps {
 }
 
 export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+  const [branches, setBranches] = useState<BranchType[]>([]);
+  const [currentBranch, setCurrentBranch] = useState<BranchType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -158,7 +136,7 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
     }
   }, [error]);
 
-  const handleSetCurrentBranch = (branch: Branch) => {
+  const handleSetCurrentBranch = (branch: BranchType) => {
     console.log('Setting current branch:', branch); // Add this line
     setCurrentBranch(branch);
     localStorage.setItem('currentBranchId', branch.id);

@@ -117,7 +117,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       // Add debug logs for results
       console.log('Raw branches data:', data);
       // Remove the protected property access
-      console.log('Supabase URL:', 'https://your-project.supabase.co'); // Static placeholder instead of accessing protected property
+      const url = new URL(supabase.getUrl());
+      console.log('Supabase URL:', url); // Static placeholder instead of accessing protected property
       
       console.log('Fetched branches query result:', { data, error });
       

@@ -16,3 +16,6 @@ export interface NavSection {
   items: NavItem[];
   icon?: ReactNode;
 }
+
+// Re-export Permission type from use-permissions
+export type { Permission } from '@/hooks/use-permissions';

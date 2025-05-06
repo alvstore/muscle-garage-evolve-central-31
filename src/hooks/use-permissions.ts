@@ -26,6 +26,7 @@ export type Permission =
   | 'manage_marketing'
   | 'access_marketing'
   | 'access_inventory'
+  | 'manage_inventory'
   | 'access_store'
   | 'access_communication'
   | 'access_reports'
@@ -48,7 +49,16 @@ export type Permission =
   | 'manage_roles'
   | 'manage_staff'
   | 'feature_trainer_dashboard'
-  | 'feature_email_campaigns'
+  | 'view_analytics'
+  | 'view_reports'
+  | 'view_finance_dashboard'
+  | 'manage_trainers'
+  | 'manage_memberships'
+  | 'feature_member_dashboard'
+  | 'member_view_profile'
+  | 'member_book_classes'
+  | 'member_view_attendance'
+  | 'member_view_invoices'
   | 'full_system_access';
 
 export const usePermissions = () => {

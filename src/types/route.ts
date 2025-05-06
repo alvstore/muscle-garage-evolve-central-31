@@ -1,10 +1,10 @@
 
 import { ReactNode } from 'react';
+import { Permission } from '@/hooks/use-permissions';
 import { RouteObject } from 'react-router-dom';
-import { Permission } from './navigation';
 
-export interface AppRouteMetadata {
-  title: string;
+export interface AppRouteMeta {
+  title?: string;
   breadcrumb?: string;
   permission?: Permission;
   hideInNav?: boolean;
@@ -13,10 +13,7 @@ export interface AppRouteMetadata {
 }
 
 export interface AppRoute extends RouteObject {
-  meta?: AppRouteMetadata;
-}
-
-export interface BreadcrumbItem {
-  label: string;
-  href: string;
+  path: string;
+  element?: React.ReactNode;
+  meta?: AppRouteMeta;
 }
