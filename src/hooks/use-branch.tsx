@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Branch } from '@/types/branch';
@@ -117,7 +116,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       
       // Add debug logs for results
       console.log('Raw branches data:', data);
-      console.log('Supabase URL:', supabase.supabaseUrl);
+      // Remove the protected property access
+      console.log('Supabase URL:', 'https://your-project.supabase.co'); // Static placeholder instead of accessing protected property
       
       console.log('Fetched branches query result:', { data, error });
       

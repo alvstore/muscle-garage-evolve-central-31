@@ -1,8 +1,8 @@
-
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { Branch } from '@/types/branch';
 
 interface Branch {
   id: string;
@@ -50,6 +50,11 @@ export const BranchContext = createContext<BranchContextProps>({
   isLoading: false,
   error: null,
   refetchBranches: () => {},
+  fetchBranches: async () => [],
+  switchBranch: () => {},
+  createBranch: async () => null,
+  updateBranch: async () => null,
+  deleteBranch: async () => false,
 });
 
 interface BranchProviderProps {
@@ -161,6 +166,16 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
     console.log('Saved to localStorage:', localStorage.getItem('currentBranchId')); // Add this line
   };
 
+  const switchBranch = useCallback((branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    if (branch) {
+      handleSetCurrentBranch(branch);
+    } else {
+      console.error(`Branch with ID ${branchId} not found`);
+      toast.error('Selected branch not found');
+    }
+  }, [branches]);
+
   useEffect(() => {
     if (user) {
       console.log('User authenticated, fetching branches...'); // Add this line
@@ -182,10 +197,7 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         error,
         refetchBranches: fetchBranches,
         fetchBranches,
-        switchBranch: (branchId) => {
-          const branch = branches.find(b => b.id === branchId);
-          if (branch) handleSetCurrentBranch(branch);
-        },
+        switchBranch,
         createBranch: async () => null, // Implement or remove from interface
         updateBranch: async () => null, // Implement or remove from interface
         deleteBranch: async () => false, // Implement or remove from interface
@@ -194,4 +206,13 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       {children}
     </BranchContext.Provider>
   );
+};
+
+// Custom hook to use branch context
+export const useBranch = () => {
+  const context = React.useContext(BranchContext);
+  if (context === undefined) {
+    throw new Error('useBranch must be used within a BranchProvider');
+  }
+  return context;
 };

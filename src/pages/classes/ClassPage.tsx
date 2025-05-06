@@ -2,19 +2,23 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+  Card, CardContent, CardDescription, CardHeader, CardTitle 
+} from "@/components/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { Plus } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import ClassSchedulePage from "./ClassSchedulePage";
 import ClassTypesPage from "./ClassTypesPage";
 import PageHeader from "@/components/layout/PageHeader";
+
+interface ClassSchedulePageProps {
+  hideHeader?: boolean;
+}
+
+interface ClassTypesPageProps {
+  hideHeader?: boolean;
+}
 
 const ClassPage: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState("schedule");
