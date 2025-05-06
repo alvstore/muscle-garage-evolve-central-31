@@ -5,16 +5,19 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { getEnhancedNavigation } from '@/services/navigationService';
 
 export function useNavigation() {
-  const { permissions } = usePermissions();
+  // Use the can function from usePermissions instead of trying to destructure permissions
+  const { can, userRole } = usePermissions();
   const location = useLocation();
   const [sections, setSections] = useState<NavSection[]>([]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
   
   // Get navigation sections based on permissions
   useEffect(() => {
-    const enhancedNavigation = getEnhancedNavigation(permissions);
+    // Instead of passing permissions array, pass the userRole
+    // The navigationService will need to be updated to handle this
+    const enhancedNavigation = getEnhancedNavigation(userRole);
     setSections(enhancedNavigation);
-  }, [permissions]);
+  }, [userRole]);
   
   // Auto-expand section based on current path
   useEffect(() => {
@@ -22,7 +25,7 @@ export function useNavigation() {
     if (currentSection && !expandedSections.includes(currentSection)) {
       setExpandedSections(prev => [...prev, currentSection]);
     }
-  }, [location.pathname]);
+  }, [location.pathname, expandedSections]);
   
   const toggleSection = (sectionName: string) => {
     setExpandedSections(prev => 

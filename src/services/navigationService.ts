@@ -18,21 +18,36 @@ const sectionMap = {
  * Enhances static navigation with dynamic route data
  * This preserves the structure of adminNavSections while adding any missing routes
  */
-export function getEnhancedNavigation(userPermissions: string[]): NavSection[] {
+export function getEnhancedNavigation(userRole?: string): NavSection[] {
   // Get static navigation
   const staticNavigation = [...adminNavSections];
   
   // Generate dynamic navigation from routes
   const allRoutes = [...adminRoutes, ...crmRoutes, ...settingsRoutes, ...classRoutes];
   const navItems = routesToNavItems(allRoutes);
-  const filteredItems = navItems.filter(item => 
-    userPermissions.includes(item.permission)
-  );
+  
+  // Filter items based on role instead of permissions array
+  const filteredItems = navItems.filter(item => {
+    // If no role, show nothing
+    if (!userRole) return false;
+    
+    // Admin sees everything
+    if (userRole === 'admin') return true;
+    
+    // For other roles, you'll need to implement role-based permission checking
+    // This is a simplified example - you should adapt it to your permission system
+    const rolePermissions = {
+      'staff': ['access_dashboards', 'manage_members', 'view_classes'],
+      'trainer': ['access_dashboards', 'view_classes', 'trainer_view_classes'],
+      'member': ['member_view_plans']
+    };
+    
+    return rolePermissions[userRole as keyof typeof rolePermissions]?.includes(item.permission) || false;
+  });
+  
   const dynamicSections = groupNavItemsBySection(filteredItems, sectionMap);
   
   // Merge static and dynamic navigation
-  // This keeps the structure and order of static navigation
-  // but adds any missing items from dynamic navigation
   return mergeNavigations(staticNavigation, dynamicSections);
 }
 
