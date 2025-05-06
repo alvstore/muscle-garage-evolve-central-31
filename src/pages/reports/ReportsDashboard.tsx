@@ -46,7 +46,7 @@ const ReportsDashboard = () => {
                 <SelectValue placeholder="Select Branch" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Branches</SelectItem>
+                <SelectItem value="all-branches">All Branches</SelectItem>
                 {branches.map(branch => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
