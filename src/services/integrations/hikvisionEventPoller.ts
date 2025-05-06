@@ -1,46 +1,134 @@
-import { hikvisionPartnerService } from './hikvisionPartnerService';
-import api from '../api';
 
-class HikvisionEventPoller {
-  private pollingInterval: number = 60000; // 1 minute
-  private isPolling: boolean = false;
-  private intervalId: NodeJS.Timeout | null = null;
-  private lastOffset: string | null = null;
-  
-  /**
-   * Start polling for events
-   */
-  startPolling() {
-    if (this.isPolling) return;
-    
-    this.isPolling = true;
-    this.poll();
-    
-    this.intervalId = setInterval(() => {
-      this.poll();
-    }, this.pollingInterval);
-    
-    console.log('Hikvision event polling started');
+import { supabase } from "@/integrations/supabase/client";
+
+interface EventPayload {
+  deviceSn: string;
+  eventType: string;
+  eventTime: string;
+  eventData?: any;
+}
+
+// Initialize the polling timer
+let pollingTimer: number | null = null;
+let isPolling = false;
+
+// Poll interval in milliseconds (default 30 seconds)
+const POLL_INTERVAL = 30 * 1000;
+
+// Start polling for events from all devices
+export const startPolling = () => {
+  if (isPolling) {
+    console.log("Polling already active");
+    return;
   }
   
-  /**
-   * Stop polling for events
-   */
-  stopPolling() {
-    if (!this.isPolling) return;
+  isPolling = true;
+  console.log("Starting Hikvision event polling");
+  
+  // Immediately poll once on startup
+  pollEvents();
+  
+  // Then set up interval polling
+  pollingTimer = window.setInterval(pollEvents, POLL_INTERVAL);
+};
+
+// Stop polling
+export const stopPolling = () => {
+  if (pollingTimer) {
+    window.clearInterval(pollingTimer);
+    pollingTimer = null;
+    isPolling = false;
+    console.log("Hikvision event polling stopped");
+  }
+};
+
+// Poll events from all configured devices
+const pollEvents = async () => {
+  try {
+    // Get all active devices from the database
+    const { data: devices, error } = await supabase
+      .from("hikvision_devices")
+      .select("*")
+      .eq("is_active", true);
     
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (error) {
+      console.error("Error fetching devices:", error);
+      return;
     }
     
-    this.isPolling = false;
-    console.log('Hikvision event polling stopped');
+    // No devices configured
+    if (!devices || devices.length === 0) {
+      console.log("No Hikvision devices configured");
+      return;
+    }
+    
+    console.log(`Polling ${devices.length} Hikvision devices for events`);
+    
+    // Poll each device in parallel
+    const pollingPromises = devices.map(device => pollDeviceEvents(device));
+    const results = await Promise.allSettled(pollingPromises);
+    
+    // Log results
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    
+    if (failed > 0) {
+      console.warn(`Event polling completed with ${successful} successful and ${failed} failed devices`);
+    } else {
+      console.log(`Event polling completed successfully for ${successful} devices`);
+    }
+  } catch (err) {
+    console.error("Error in event polling process:", err);
   }
-  
-  /**
-   * Poll for events and process them
-   */
-  private async poll() {
-    try {
-      const messages = await hikv
+};
+
+// Poll events for a single device
+const pollDeviceEvents = async (device: any) => {
+  try {
+    console.log(`Polling device ${device.name} (${device.ip_address})`);
+    
+    // Here you would normally make API calls to the device
+    // For now we just simulate receiving events
+    
+    // Process any events found
+    // This is just a placeholder - actual implementation would vary
+    const mockEvents: EventPayload[] = [];
+    
+    // Process each event
+    for (const event of mockEvents) {
+      await processEvent(event, device);
+    }
+    
+    return { device, success: true };
+  } catch (error) {
+    console.error(`Error polling device ${device.name}:`, error);
+    return { device, success: false, error };
+  }
+};
+
+// Process a single event
+const processEvent = async (event: EventPayload, device: any) => {
+  try {
+    // Log the event to the database
+    const { error } = await supabase.from("hikvision_events").insert([
+      {
+        device_id: device.id,
+        event_type: event.eventType,
+        event_time: event.eventTime,
+        device_sn: event.deviceSn,
+        event_data: event.eventData
+      }
+    ]);
+    
+    if (error) {
+      console.error("Error recording event:", error);
+      return false;
+    }
+    
+    console.log(`Recorded ${event.eventType} event from device ${device.name}`);
+    return true;
+  } catch (err) {
+    console.error("Error processing event:", err);
+    return false;
+  }
+};

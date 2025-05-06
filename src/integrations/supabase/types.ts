@@ -2224,13 +2224,19 @@ export type Database = {
       }
       members: {
         Row: {
+          address: string | null
+          avatar: string | null
           blood_group: string | null
           branch_id: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           gender: string | null
           goal: string | null
+          govt_id_number: string | null
+          govt_id_type: string | null
           id: string
           membership_end_date: string | null
           membership_id: string | null
@@ -2239,19 +2245,27 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
+          state: string | null
           status: string | null
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
+          zipCode: string | null
         }
         Insert: {
+          address?: string | null
+          avatar?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
+          govt_id_number?: string | null
+          govt_id_type?: string | null
           id?: string
           membership_end_date?: string | null
           membership_id?: string | null
@@ -2260,19 +2274,27 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zipCode?: string | null
         }
         Update: {
+          address?: string | null
+          avatar?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
+          govt_id_number?: string | null
+          govt_id_type?: string | null
           id?: string
           membership_end_date?: string | null
           membership_id?: string | null
@@ -2281,10 +2303,12 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zipCode?: string | null
         }
         Relationships: [
           {

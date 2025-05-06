@@ -2,10 +2,9 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './contexts/BranchContext';
+import { BranchProvider } from './hooks/use-branch';
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
-// Remove this import: import { createInitialAdmin } from './utils/initAdmin';
 import { toast, Toaster } from 'sonner';
 import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
 
@@ -30,14 +29,14 @@ function App() {
     // Move initialization here
     const initializeApp = async () => {
       try {
-        // Remove this line: await createInitialAdmin();
+        // Removed the createInitialAdmin call
       } catch (error) {
         console.error("Error during app initialization:", error);
         toast.error("Error initializing application");
       }
     };
     
-    initializeApp(); // This is called on every render!
+    initializeApp();
     
     // Cleanup on unmount
     return () => {
