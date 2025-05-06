@@ -28,13 +28,17 @@ export const useMemberships = () => {
       setIsLoading(true);
       setError(null);
       
-      let query = supabase.from('memberships').select('*');
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
+      // Only proceed if a branch is selected
+      if (!currentBranch?.id) {
+        setMemberships([]);
+        setIsLoading(false);
+        return;
       }
       
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('branch_id', currentBranch.id);
       
       if (error) {
         throw error;

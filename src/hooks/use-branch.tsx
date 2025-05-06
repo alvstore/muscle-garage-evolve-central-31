@@ -46,10 +46,69 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .order('name');
+      // First get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      console.log('Current user:', user);
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return [];
+      }
+      
+      // Get user's profile to check role and branch access
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, branch_id, accessible_branch_ids')
+        .eq('id', user.id)
+        .single();
+      
+      console.log('User profile:', profile, 'Profile error:', profileError);
+      
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        throw profileError;
+      }
+      
+      // Check if profile exists and has necessary fields
+      if (!profile) {
+        console.error('User profile not found');
+        return [];
+      }
+      
+      let query = supabase.from('branches').select('*');
+      
+      // If not admin, filter branches by access
+      // Admins can see all branches regardless of their assigned branch_id
+      // Comment out the branch filtering logic temporarily for testing
+      /*
+      if (profile.role !== 'admin') {
+        const accessibleIds = [];
+        
+        if (profile.branch_id) {
+          accessibleIds.push(profile.branch_id);
+        }
+        
+        if (profile.accessible_branch_ids && profile.accessible_branch_ids.length > 0) {
+          accessibleIds.push(...profile.accessible_branch_ids);
+        }
+        
+        console.log('Accessible branch IDs:', accessibleIds);
+        
+        if (accessibleIds.length > 0) {
+          query = query.in('id', accessibleIds);
+        } else {
+          console.warn('User has no accessible branches');
+        }
+      }
+      */
+      
+      // Only get active branches
+      query = query.eq('is_active', true).order('name');
+      
+      const { data, error } = await query;
+      
+      console.log('Fetched branches query result:', { data, error });
       
       if (error) throw error;
       

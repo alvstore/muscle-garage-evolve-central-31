@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -17,7 +17,16 @@ const BranchSelector: React.FC = () => {
   const { branches, currentBranch, switchBranch, isLoading, fetchBranches } = useBranch();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Add this useEffect to fetch branches on component mount
+  useEffect(() => {
+    console.log('BranchSelector mounted, fetching branches...');
+    fetchBranches().then(fetchedBranches => {
+      console.log('Fetched branches:', fetchedBranches);
+    });
+  }, [fetchBranches]);
+
   const handleValueChange = (value: string) => {
+    console.log('Switching to branch:', value);
     switchBranch(value);
     setIsOpen(false);
   };
@@ -25,10 +34,13 @@ const BranchSelector: React.FC = () => {
   const handleOpenChange = (open: boolean) => {
     if (open) {
       // Refresh branches list when opening selector
+      console.log('Selector opened, refreshing branches...');
       fetchBranches();
     }
     setIsOpen(open);
   };
+
+  console.log('BranchSelector render state:', { branches, currentBranch, isLoading });
 
   if (isLoading) {
     return (
