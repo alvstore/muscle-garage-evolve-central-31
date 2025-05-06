@@ -174,7 +174,7 @@ export const fetchUpcomingClasses = async (branchId?: string) => {
     tomorrow.setHours(23, 59, 59);
     
     const query = supabase
-      .from('class_schedules')
+      .from('class_schedules_with_trainers')
       .select(`
         id,
         name,
@@ -184,7 +184,8 @@ export const fetchUpcomingClasses = async (branchId?: string) => {
         capacity,
         enrolled,
         trainer_id,
-        profiles(full_name)
+        trainer_name,
+        trainer_avatar_url
       `)
       .gte('start_time', now.toISOString())
       .lte('start_time', tomorrow.toISOString())
@@ -201,6 +202,6 @@ export const fetchUpcomingClasses = async (branchId?: string) => {
     return data || [];
   } catch (error) {
     console.error('Error fetching upcoming classes:', error);
-    return [];
+    throw error;
   }
 };
