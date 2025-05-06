@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -36,7 +36,7 @@ interface BranchContextProps {
   isLoading: boolean;
   error: string | null;
   refetchBranches: () => void;
-  fetchBranches: () => Promise<Branch[]>;  // Uncomment this line
+  fetchBranches: () => Promise<Branch[]>;
   switchBranch: (branchId: string) => void;
   createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
   updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
@@ -64,14 +64,13 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
   
   const { user } = useAuth();
 
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     if (!user || !user.id) {
       setError('User not authenticated');
       setIsLoading(false);
       return [];
     }
     
-    // In your fetchBranches function, replace this:
     try {
       setIsLoading(true);
       setError(null);
@@ -109,6 +108,9 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
 
       if (branchesError) throw branchesError;
 
+      // Remove this debug logging line
+      // console.log('Fetched branches:', branchesData);
+      
       setBranches(branchesData || []);
 
       // Set current branch
@@ -123,6 +125,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         const defaultBranch = savedBranch || branchesData.find(b => b.id === profileData.branch_id) || branchesData[0];
         setCurrentBranch(defaultBranch);
       }
+      
+      return branchesData || [];
     } catch (err) {
       console.error('Error fetching branches:', err);
       
@@ -135,91 +139,38 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         setError(err.message || 'Failed to load branches');
       }
       
-      toast.error('Failed to load branch information'); // This is causing the issue
+      // Move toast to useEffect to avoid React state updates during render
+      return [];
     } finally {
       setIsLoading(false);
     }
-    
-    // With this:
-    try {
-      setIsLoading(true);
-      setError(null);
-  
-      // Check if session is valid
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session found');
-      }
-      
-      // Get user's branch and accessible branches
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('branch_id, accessible_branch_ids, role')
-        .eq('id', user.id)
-        .single();
-  
-      if (profileError) throw profileError;
+  }, [user]); // <-- Added comma and dependency array here
 
-      // Admin fetches all branches
-      // Regular staff fetch only their assigned branch and accessible branches
-      let branchQuery = supabase.from('branches').select('*');
-      
-      if (profileData.role !== 'admin') {
-        const accessibleIds = [profileData.branch_id];
-        if (profileData.accessible_branch_ids && profileData.accessible_branch_ids.length > 0) {
-          accessibleIds.push(...profileData.accessible_branch_ids);
-        }
-        branchQuery = branchQuery.in('id', accessibleIds);
-      }
-      
-      const { data: branchesData, error: branchesError } = await branchQuery
-        .eq('is_active', true)
-        .order('name');
-
-      if (branchesError) throw branchesError;
-
-      setBranches(branchesData || []);
-
-      // Set current branch
-      if (branchesData && branchesData.length > 0) {
-        // Try to get from local storage first
-        const savedBranchId = localStorage.getItem('currentBranchId');
-        const savedBranch = savedBranchId 
-          ? branchesData.find(b => b.id === savedBranchId)
-          : null;
-        
-        // Default to user's primary branch if no saved branch or saved branch not found
-        const defaultBranch = savedBranch || branchesData.find(b => b.id === profileData.branch_id) || branchesData[0];
-        setCurrentBranch(defaultBranch);
-      }
-    } catch (err) {
-      console.error('Error fetching branches:', err);
-      
-      // More specific error messages
-      if (err.message?.includes('fetch')) {
-        setError('Network error: Unable to connect to database');
-      } else if (err.code === 'PGRST301') {
-        setError('Authentication error: Please log in again');
-      } else {
-        setError(err.message || 'Failed to load branches');
-      }
-      
-      // Don't call toast here - we'll do it in an effect
-    } finally {
-      setIsLoading(false);
+  // Use an effect to show toast notifications when error state changes
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load branch information');
     }
-  };
+  }, [error]);
 
   const handleSetCurrentBranch = (branch: Branch) => {
+    console.log('Setting current branch:', branch); // Add this line
     setCurrentBranch(branch);
     localStorage.setItem('currentBranchId', branch.id);
+    // Verify it was saved
+    console.log('Saved to localStorage:', localStorage.getItem('currentBranchId')); // Add this line
   };
 
   useEffect(() => {
     if (user) {
-      fetchBranches();
+      console.log('User authenticated, fetching branches...'); // Add this line
+      fetchBranches().then(branchesData => {
+        console.log('Branches fetched:', branchesData?.length || 0); // Add this line
+        // Log the current branch after fetching
+        console.log('Current branch after fetch:', currentBranch); // Add this line
+      });
     }
-  }, [user]);
+  }, [user, fetchBranches]); // Add fetchBranches to dependencies
 
   return (
     <BranchContext.Provider
@@ -230,8 +181,7 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         isLoading,
         error,
         refetchBranches: fetchBranches,
-        fetchBranches, // Add this line
-        // You also need to implement these methods or remove them from the interface
+        fetchBranches,
         switchBranch: (branchId) => {
           const branch = branches.find(b => b.id === branchId);
           if (branch) handleSetCurrentBranch(branch);

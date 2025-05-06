@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Select,
   SelectContent,
@@ -9,78 +9,195 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2 } from 'lucide-react';
-import { useBranch } from '@/hooks/use-branch';
+import { Building2, RefreshCw, Search, Plus } from 'lucide-react';
+import { BranchContext } from '@/contexts/BranchContext';
+import { useContext } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
+import { toast } from 'sonner';
+import { Input } from '../ui/input';
 
 const BranchSelector: React.FC = () => {
-  const { branches, currentBranch, switchBranch, isLoading, fetchBranches } = useBranch();
+  const { branches, currentBranch, switchBranch, isLoading, fetchBranches, error } = useContext(BranchContext);
   const [isOpen, setIsOpen] = useState(false);
-
-  // Add this useEffect to fetch branches on component mount
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const initialFetchRef = useRef(false);
+  
+  // Fetch branches only once on mount
   useEffect(() => {
-    console.log('BranchSelector mounted, fetching branches...');
-    fetchBranches().then(fetchedBranches => {
-      console.log('Fetched branches:', fetchedBranches);
-    });
-  }, [fetchBranches]);
+    if (!initialFetchRef.current) {
+      // Remove this console.log line
+      // console.log('BranchSelector mounted, fetching branches...');
+      fetchBranches();
+      initialFetchRef.current = true;
+    }
+  }, []); // Empty dependency array - KEEP ONLY THIS useEffect
 
-  const handleValueChange = (value: string) => {
-    console.log('Switching to branch:', value);
+  // Filter branches based on search query
+  const filteredBranches = branches.filter(branch => 
+    branch.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // REMOVE the second useEffect that calls fetchBranches
+
+  // Show toast notification when error occurs
+  useEffect(() => {
+    if (error) {
+      toast.error(`Branch error: ${error}`);
+    }
+  }, [error]);
+
+  // Handle branch selection
+  const handleValueChange = useCallback((value: string) => {
+    console.log('Branch selected:', value); // Add this line
     switchBranch(value);
     setIsOpen(false);
-  };
+    
+    const selectedBranch = branches.find(b => b.id === value);
+    if (selectedBranch) {
+      console.log('Setting branch:', selectedBranch); // Add this line
+      toast.success(`Switched to ${selectedBranch.name}`);
+    }
+  }, [branches, switchBranch]);
 
-  const handleOpenChange = (open: boolean) => {
+  // Handle dropdown open/close
+  const handleOpenChange = useCallback((open: boolean) => {
     if (open) {
-      // Refresh branches list when opening selector
-      console.log('Selector opened, refreshing branches...');
       fetchBranches();
+      setSearchQuery('');
     }
     setIsOpen(open);
-  };
+  }, [fetchBranches]);
 
-  console.log('BranchSelector render state:', { branches, currentBranch, isLoading });
+  // Handle refresh button click
+  const handleRefresh = useCallback(async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation(); // Prevent triggering select open/close
+    }
+    
+    setRefreshing(true);
+    try {
+      await fetchBranches();
+      toast.success('Branches refreshed');
+      setSearchQuery('');
+    } catch (err) {
+      toast.error('Failed to refresh branches');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchBranches]);
 
-  if (isLoading) {
-    return (
-      <Skeleton className="w-full h-10 rounded" />
-    );
+  // Handle search input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  // Render loading state
+  if (isLoading && !refreshing) {
+    return <Skeleton className="w-full h-10 rounded" />;
   }
 
+  // Render empty state
   if (!branches || branches.length === 0) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-secondary/50 rounded-md">
-        <Building2 className="h-4 w-4" />
-        <span>No branches available</span>
+      <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-muted-foreground bg-secondary/50 rounded-md">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4" />
+          <span>No branches available</span>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleRefresh} 
+          disabled={refreshing}
+          className="h-6 w-6 p-0"
+          aria-label="Refresh branches"
+        >
+          <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
     );
   }
 
   return (
-    <Select
-      value={currentBranch?.id || ''}
-      onValueChange={handleValueChange}
-      onOpenChange={handleOpenChange}
-      open={isOpen}
-    >
-      <SelectTrigger className="bg-secondary/50 border-0 focus:ring-0 text-white text-opacity-90">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4" />
-          <SelectValue placeholder="Select Branch" />
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          <SelectLabel>Branches</SelectLabel>
-          {branches.map((branch) => (
-            <SelectItem key={branch.id} value={branch.id}>
-              {branch.name}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <div className="relative">
+      <Select
+        value={currentBranch?.id || ''}
+        onValueChange={handleValueChange}
+        onOpenChange={handleOpenChange}
+        open={isOpen}
+      >
+        <SelectTrigger 
+          className="bg-secondary/50 border-0 focus:ring-0 text-white text-opacity-90"
+          aria-label="Select branch"
+        >
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <SelectValue placeholder="Select Branch" />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="max-h-[300px]">
+          <div className="p-2 border-b">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search branches..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRefresh} 
+                disabled={refreshing}
+                className="h-8 w-8 p-0"
+                aria-label="Refresh branches"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+          
+          <SelectGroup>
+            <div className="px-2 py-1.5 flex justify-between items-center">
+              <SelectLabel>Branches ({filteredBranches.length})</SelectLabel>
+            </div>
+            
+            {filteredBranches.length > 0 ? (
+              filteredBranches.map((branch) => (
+                <SelectItem 
+                  key={branch.id} 
+                  value={branch.id}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col">
+                      <span>{branch.name}</span>
+                      {branch.address && (
+                        <span className="text-xs text-muted-foreground">{branch.address}</span>
+                      )}
+                    </div>
+                    {branch.id === currentBranch?.id && (
+                      <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full ml-2">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))
+            ) : (
+              <div className="py-2 px-2 text-sm text-muted-foreground text-center">
+                No branches found matching "{searchQuery}"
+              </div>
+            )}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
 

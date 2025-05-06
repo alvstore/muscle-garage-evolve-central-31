@@ -5,7 +5,7 @@ import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './contexts/BranchContext';
 import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
-import { createInitialAdmin } from './utils/initAdmin';
+// Remove this import: import { createInitialAdmin } from './utils/initAdmin';
 import { toast, Toaster } from 'sonner';
 import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
 
@@ -27,31 +27,31 @@ function App() {
       hikvisionPollingService.startPolling();
     }
     
+    // Move initialization here
+    const initializeApp = async () => {
+      try {
+        // Remove this line: await createInitialAdmin();
+      } catch (error) {
+        console.error("Error during app initialization:", error);
+        toast.error("Error initializing application");
+      }
+    };
+    
+    initializeApp(); // This is called on every render!
+    
     // Cleanup on unmount
     return () => {
       hikvisionPollingService.stopPolling();
     };
   }, []);
   
-  const initializeApp = async () => {
-    try {
-      // Initialize admin account if needed
-      await createInitialAdmin();
-    } catch (error) {
-      console.error("Error during app initialization:", error);
-      toast.error("Error initializing application");
-    }
-  };
-  
-  initializeApp();
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BranchProvider>
-          <AppRouter />
-          <RouteChecker />
           <Toaster position="top-right" />
+          <AppRouter />
+          {process.env.NODE_ENV === 'development' && <RouteChecker />}
         </BranchProvider>
       </AuthProvider>
     </QueryClientProvider>
