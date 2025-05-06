@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Branch } from '@/types/branch';
@@ -116,8 +117,8 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
       
       // Add debug logs for results
       console.log('Raw branches data:', data);
-      // Fix the protected property access
-      console.log('Supabase URL:', supabase.url); // Using public url property instead of getUrl()
+      // Fix the protected property access - use URL property of the client instead of getUrl()
+      console.log('Supabase URL:', supabase.restUrl);
       
       console.log('Fetched branches query result:', { data, error });
       

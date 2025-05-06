@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -34,6 +35,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   // Class Management
   'view_classes': { roles: ['admin', 'staff', 'trainer', 'member'] },
   'trainer_view_classes': { roles: ['admin', 'trainer'] },
+  'manage_classes': { roles: ['admin', 'staff'] },
   
   // Finance Management
   'manage_invoices': { roles: ['admin', 'staff'] },

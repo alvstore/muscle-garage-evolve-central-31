@@ -10,5 +10,5 @@ export interface WebsiteContent {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
-  cta_text?: string; // Add the missing property
+  cta_text?: string;
 }
