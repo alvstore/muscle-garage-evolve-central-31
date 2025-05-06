@@ -11,4 +11,23 @@ export interface Member {
   membershipEndDate: Date | null;
   role: 'member' | 'trainer' | 'staff' | 'admin';
   branchId?: string;
+  gender?: string;
+  bloodGroup?: string;
+  occupation?: string;
+  dateOfBirth?: Date | string | null;
+  goal?: string;
+  
+  // Address Fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  
+  // ID Fields
+  idType?: string;
+  idNumber?: string;
+  
+  // Profile Picture
+  profilePicture?: string;
 }
