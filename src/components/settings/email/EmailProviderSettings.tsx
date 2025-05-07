@@ -11,13 +11,15 @@ interface EmailProviderSettingsProps {
   onUpdateConfig: (config: Partial<IntegrationConfig>) => void;
   onTest: () => Promise<void>;
   onSave: () => Promise<void>;
+  isLoading?: boolean; // Added isLoading prop
 }
 
 export const EmailProviderSettings = ({ 
   config, 
   onUpdateConfig, 
   onTest, 
-  onSave 
+  onSave,
+  isLoading 
 }: EmailProviderSettingsProps) => {
   return (
     <Card>
@@ -33,6 +35,7 @@ export const EmailProviderSettings = ({
             className="w-full p-2 border rounded-md"
             value={config.provider || 'sendgrid'}
             onChange={(e) => onUpdateConfig({ provider: e.target.value })}
+            disabled={isLoading}
           >
             <option value="sendgrid">SendGrid</option>
             <option value="mailgun">Mailgun</option>
@@ -47,6 +50,7 @@ export const EmailProviderSettings = ({
             placeholder="noreply@yourgym.com"
             value={config.fromEmail || ''}
             onChange={(e) => onUpdateConfig({ fromEmail: e.target.value })}
+            disabled={isLoading}
           />
         </div>
         
@@ -59,13 +63,14 @@ export const EmailProviderSettings = ({
               placeholder="SG.xxxxxxxxxxxxxxxxxxxxxxxx"
               value={config.apiKey || ''}
               onChange={(e) => onUpdateConfig({ apiKey: e.target.value })}
+              disabled={isLoading}
             />
           </div>
         )}
         
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onTest}>Test Connection</Button>
-          <Button onClick={onSave}>Save Settings</Button>
+          <Button variant="outline" onClick={onTest} disabled={isLoading}>Test Connection</Button>
+          <Button onClick={onSave} disabled={isLoading}>Save Settings</Button>
         </div>
       </CardContent>
     </Card>

@@ -69,7 +69,17 @@ const ChurnPredictionSection = () => {
         
         // Transform the data to ChurnMember format
         const formattedChurnMembers: ChurnMember[] = churnData.map(churn => {
-          const member = membersData?.find(m => m.id === churn.member_id) || { name: 'Unknown Member' };
+          // Find the corresponding member data
+          const member = membersData?.find(m => m.id === churn.member_id);
+          
+          // Create a default member object if no match is found
+          const memberInfo = member || { 
+            id: churn.member_id,
+            name: churn.member_name || 'Unknown Member',
+            email: undefined,
+            phone: undefined,
+            avatar: undefined
+          };
           
           // Find last visit date
           const lastAttendance = attendanceData?.find(a => a.member_id === churn.member_id);
@@ -108,16 +118,16 @@ const ChurnPredictionSection = () => {
           
           return {
             id: churn.member_id,
-            name: member.name,
-            avatar: member.avatar,
+            name: memberInfo.name,
+            avatar: memberInfo.avatar,
             churnRisk: churn.churn_risk_score,
             lastVisit,
             subscriptionEnd: churn.days_until_expiry ? 
               new Date(Date.now() + churn.days_until_expiry * 24 * 60 * 60 * 1000).toLocaleDateString() : 
               undefined,
             contactInfo: {
-              phone: member.phone,
-              email: member.email
+              phone: memberInfo.phone,
+              email: memberInfo.email
             },
             factors: factors.length > 0 ? factors : [{ name: 'Multiple Factors', impact: 'medium' }]
           };

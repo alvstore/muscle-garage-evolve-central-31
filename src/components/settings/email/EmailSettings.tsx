@@ -61,8 +61,10 @@ const EmailSettings = () => {
     
     try {
       await testConnection("test@example.com");
+      return Promise.resolve();
     } catch (error) {
       console.error('Test connection failed:', error);
+      return Promise.reject(error);
     }
   };
 
@@ -71,6 +73,7 @@ const EmailSettings = () => {
       <EmailSettingsHeader 
         enabled={settings?.is_active || false} 
         onEnableChange={handleToggle}
+        isLoading={isLoading}
       />
       
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -95,12 +98,11 @@ const EmailSettings = () => {
                 sendClassUpdates: false
               }
             }}
-            isLoading={isLoading}
-            isSaving={isSaving}
+            isLoading={isLoading || isSaving}
             onUpdateConfig={handleConfigUpdate}
             onSave={() => {
               if (settings) {
-                return Promise.resolve(void saveSettings(settings));
+                return Promise.resolve(saveSettings(settings));
               }
               return Promise.resolve();
             }}
@@ -122,7 +124,7 @@ const EmailSettings = () => {
             onUpdateConfig={handleNotificationSettingsChange}
             onSave={() => {
               if (settings) {
-                return Promise.resolve(void saveSettings(settings));
+                return Promise.resolve(saveSettings(settings));
               }
               return Promise.resolve();
             }}
