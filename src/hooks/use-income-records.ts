@@ -66,6 +66,7 @@ export const useIncomeRecords = () => {
     try {
       await financeService.deleteTransaction(id);
       setRecords(prev => prev.filter(record => record.id !== id));
+      return true;
     } catch (error) {
       throw error;
     }
@@ -92,6 +93,7 @@ export const useIncomeRecords = () => {
   const deleteAttachment = async (recordId: string) => {
     try {
       await updateRecord(recordId, { attachment: undefined });
+      return true;
     } catch (error) {
       throw error;
     }

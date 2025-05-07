@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { 
@@ -35,10 +36,10 @@ import {
   Download,
   Eye
 } from 'lucide-react';
-import { FollowUpHistory as FollowUpRecord, FollowUpType } from '@/types/crm';
+import { FollowUpHistory, FollowUpType } from '@/types/crm';
 
 // Mock follow-up history data
-const mockFollowUpHistory: FollowUpRecord[] = [
+const mockFollowUpHistory: FollowUpHistory[] = [
   {
     id: "1",
     lead_id: "lead1",

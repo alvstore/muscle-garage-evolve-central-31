@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { useEmailSettings } from '@/hooks/use-email-settings';
-import EmailProviderSettings from './EmailProviderSettings';
-import EmailSettingsHeader from './EmailSettingsHeader';
-import NotificationSettings from './NotificationSettings';
+import { EmailProviderSettings } from './EmailProviderSettings';
+import { EmailSettingsHeader } from './EmailSettingsHeader';
+import { NotificationSettings } from './NotificationSettings';
 
 const EmailSettings = () => {
   const { settings, isLoading, error, isSaving, saveSettings, updateField, fetchSettings, testConnection } = useEmailSettings();
@@ -15,7 +15,11 @@ const EmailSettings = () => {
     });
   };
 
-  const handleNotificationSettingsChange = (notificationSettings: Record<string, boolean>) => {
+  const handleNotificationSettingsChange = (notificationSettings: {
+    sendOnRegistration: boolean;
+    sendOnInvoice: boolean;
+    sendClassUpdates: boolean;
+  }) => {
     if (!settings) return;
     
     saveSettings({

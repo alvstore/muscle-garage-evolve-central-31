@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,8 +80,6 @@ const mockLeadOptions: Lead[] = [
     updated_at: "2023-06-05T14:15:00Z",
     // Add camelCase aliases
     funnelStage: "qualified",
-    createdAt: "2023-05-15T08:30:00Z",
-    updatedAt: "2023-06-05T14:15:00Z"
   },
   {
     id: "lead-2",
@@ -96,8 +93,6 @@ const mockLeadOptions: Lead[] = [
     updated_at: "2023-06-01T11:45:00Z",
     // Add camelCase aliases
     funnelStage: "warm",
-    createdAt: "2023-06-01T11:45:00Z",
-    updatedAt: "2023-06-01T11:45:00Z"
   },
   {
     id: "lead-3",
@@ -111,8 +106,6 @@ const mockLeadOptions: Lead[] = [
     updated_at: "2023-06-07T16:30:00Z",
     // Add camelCase aliases
     funnelStage: "hot",
-    createdAt: "2023-05-20T09:15:00Z",
-    updatedAt: "2023-06-07T16:30:00Z"
   }
 ];
 

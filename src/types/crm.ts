@@ -4,6 +4,7 @@
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'lost' | 'converted' | string;
 export type LeadSource = 'website' | 'referral' | 'walk-in' | 'phone' | 'social-media' | 'event' | 'other' | string;
 export type FunnelStage = 'cold' | 'warm' | 'hot' | 'new' | string;
+export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
 
 export interface Lead {
   id: string;
@@ -35,13 +36,59 @@ export interface FollowUpTemplate {
   id: string;
   name: string;
   title?: string;
-  type: 'email' | 'sms' | 'whatsapp';
+  type: FollowUpType;
   content: string;
   variables?: string[];
   created_by?: string;
   created_at?: string;
   createdBy?: string;
   createdAt?: string;
+  isDefault?: boolean;
+  updated_at?: string;
+  updatedAt?: string;
+}
+
+export interface FollowUpScheduled {
+  id: string;
+  lead_id: string;
+  leadId?: string; // Alias
+  lead_name?: string;
+  leadName?: string; // Alias
+  type: FollowUpType;
+  scheduled_for: string;
+  scheduledFor?: string; // Alias
+  subject: string;
+  content: string;
+  status: 'scheduled' | 'sent' | 'failed' | 'cancelled';
+}
+
+export interface ScheduledFollowUp {
+  id: string;
+  leadId: string;
+  leadName: string;
+  type: FollowUpType;
+  scheduledFor: string;
+  subject: string;
+  content: string;
+  status: 'scheduled' | 'sent' | 'failed' | 'cancelled';
+}
+
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  leadId?: string; // Alias
+  template_id?: string;
+  templateId?: string; // Alias
+  type: FollowUpType;
+  content: string;
+  sent_by: string;
+  sentBy?: string; // Alias
+  sent_at: string;
+  sentAt?: string; // Alias
+  status: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+  response?: string;
+  response_at?: string;
+  responseAt?: string; // Alias
 }
 
 export interface Task {

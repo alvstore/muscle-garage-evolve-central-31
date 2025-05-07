@@ -58,7 +58,7 @@ export interface Invoice {
   
   // Adding camelCase aliases for UI component compatibility
   memberId?: string;
-  memberName?: string; // Added for compatibility with components
+  memberName?: string;
   dueDate?: string | Date;
   issuedDate?: string | Date;
   paidDate?: string | Date;

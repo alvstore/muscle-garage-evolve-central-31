@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -55,10 +56,11 @@ const mockTemplates: FollowUpTemplate[] = [
     type: "email",
     content: "Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}",
     variables: ["name", "trialDate", "staffName"],
-    createdBy: "Admin",
     created_by: "Admin",
+    createdBy: "Admin",
     created_at: "2023-05-16T11:30:00Z",
-    createdAt: "2023-05-16T11:30:00Z"
+    createdAt: "2023-05-16T11:30:00Z",
+    isDefault: false
   },
   {
     id: "3",
@@ -67,10 +69,11 @@ const mockTemplates: FollowUpTemplate[] = [
     type: "sms",
     content: "Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.",
     variables: ["name", "gymPhone"],
-    createdBy: "Admin",
     created_by: "Admin",
+    createdBy: "Admin",
     created_at: "2023-05-17T09:15:00Z",
-    createdAt: "2023-05-17T09:15:00Z"
+    createdAt: "2023-05-17T09:15:00Z",
+    isDefault: false
   },
   {
     id: "4",
@@ -79,10 +82,11 @@ const mockTemplates: FollowUpTemplate[] = [
     type: "whatsapp",
     content: "Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.",
     variables: ["name", "staffName"],
-    createdBy: "Admin",
     created_by: "Admin",
+    createdBy: "Admin",
     created_at: "2023-05-20T14:20:00Z",
-    createdAt: "2023-05-20T14:20:00Z"
+    createdAt: "2023-05-20T14:20:00Z",
+    isDefault: false
   },
   {
     id: "5",
@@ -91,10 +95,11 @@ const mockTemplates: FollowUpTemplate[] = [
     type: "email",
     content: "Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}",
     variables: ["name", "discountAmount", "expiryDate", "staffName"],
-    createdBy: "Admin",
     created_by: "Admin",
+    createdBy: "Admin",
     created_at: "2023-05-22T13:40:00Z",
-    createdAt: "2023-05-22T13:40:00Z"
+    createdAt: "2023-05-22T13:40:00Z",
+    isDefault: false
   }
 ];
 

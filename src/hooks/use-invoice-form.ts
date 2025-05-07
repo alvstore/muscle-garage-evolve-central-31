@@ -67,6 +67,14 @@ export const useInvoiceForm = (
         issued_date: invoice?.issued_date || invoice?.issuedDate || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         items: invoice?.items || [],
+        // Include all the required fields
+        updatedAt: new Date().toISOString(),
+        // Map to camelCase aliases
+        memberId: formData.member_id,
+        memberName: formData.member_name,
+        dueDate: formData.due_date,
+        paymentMethod: formData.payment_method,
+        branchId: currentBranch.id,
       };
       
       if (invoice?.id) {
