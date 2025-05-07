@@ -1,233 +1,272 @@
-import api from "./api";
 
-// Settings interfaces
-export interface GeneralSettings {
-  gymName: string;
-  contactEmail: string;
-  contactPhone: string;
-  businessHoursStart: string;
-  businessHoursEnd: string;
-  timezone: string;
-  currency: string;
-  taxRate: number;
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+// Generic interface for settings objects
+export interface Settings {
+  id?: string;
+  branch_id?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: any; // Allow any additional properties
 }
 
-export interface AccessControlSettings {
-  appKey: string;
-  secretKey: string;
-  siteId: string;
-  deviceSerials: {
-    entryDevice1: string;
-    entryDevice2: string;
-    entryDevice3: string;
-    swimmingDevice: string;
-  };
-  planBasedAccess: {
-    gymOnlyAccess: boolean;
-    swimmingOnlyAccess: boolean;
-    bothAccess: boolean;
-  };
-}
-
-export interface WhatsAppSettings {
-  apiToken: string;
-  phoneNumberId: string;
-  businessAccountId: string;
-  notifications: {
-    sendWelcomeMessages: boolean;
-    sendClassReminders: boolean;
-    sendRenewalReminders: boolean;
-    sendBirthdayGreetings: boolean;
-  };
-}
-
-export interface EmailSettings {
-  provider: "sendgrid" | "mailgun" | "smtp";
-  senderEmail: string;
-  notifications: {
-    sendOnRegistration: boolean;
-    sendOnInvoice: boolean;
-    sendClassUpdates: boolean;
-  };
-  sendgridApiKey?: string;
-  mailgunApiKey?: string;
-  mailgunDomain?: string;
-  smtpHost?: string;
-  smtpPort?: number;
-  smtpUsername?: string;
-  smtpPassword?: string;
-  smtpSecure?: boolean;
-}
-
-export interface SmsSettings {
-  provider: "msg91" | "twilio" | "custom";
-  senderId: string;
-  templates: {
-    membershipAlert: boolean;
-    renewalReminder: boolean;
-    otpVerification: boolean;
-    attendanceConfirmation: boolean;
-  };
-  msg91AuthKey?: string;
-  twilioAccountSid?: string;
-  twilioAuthToken?: string;
-  customApiUrl?: string;
-  customApiHeaders?: string;
-  customApiBody?: string;
-}
-
-export interface NotificationSettings {
-  inAppNotificationsEnabled: boolean;
-  pushNotificationsEnabled: boolean;
-  pushProvider?: "firebase" | "onesignal";
-  firebaseConfig?: {
-    apiKey: string;
-    authDomain: string;
-    projectId: string;
-    appId: string;
-  };
-  oneSignalConfig?: {
-    appId: string;
-    apiKey: string;
-  };
-  notificationTypes: {
-    attendanceReminders: boolean;
-    paymentDueAlerts: boolean;
-    classAlerts: boolean;
-    birthdayPings: boolean;
-  };
-}
-
-export interface AutomationSettings {
-  membershipRules: {
-    expiryReminderEnabled: boolean;
-    expiryReminderDays: number;
-    autoRenewalFollowupEnabled: boolean;
-    autoRenewalFollowupDays: number;
-  };
-  leadRules: {
-    autoAssignmentEnabled: boolean;
-    assignmentStrategy: string;
-    followupRemindersEnabled: boolean;
-  };
-  schedulingFrequency: string;
-}
-
-export interface PermissionSettings {
-  roles: {
-    id: string;
-    name: string;
-    description: string;
-    isSystem: boolean;
-    permissions: Record<string, boolean>;
-  }[];
-}
-
-// Settings service methods
 const settingsService = {
-  // General settings
-  getGeneralSettings: async (): Promise<GeneralSettings> => {
-    const response = await api.get('/settings/general');
-    return response.data;
+  // Generic function to get settings from a specific table
+  async getSettings<T extends Settings>(tableName: string, branchId?: string): Promise<T | null> {
+    try {
+      let query = supabase.from(tableName).select('*');
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query.maybeSingle();
+      
+      if (error) throw error;
+      return data as T;
+    } catch (error: any) {
+      console.error(`Error fetching ${tableName} settings:`, error);
+      toast.error(`Failed to load settings: ${error.message}`);
+      return null;
+    }
   },
   
-  updateGeneralSettings: async (settings: GeneralSettings): Promise<GeneralSettings> => {
-    const response = await api.put('/settings/general', settings);
-    return response.data;
+  // Generic function to save settings to a specific table
+  async saveSettings<T extends Settings>(tableName: string, settings: T): Promise<T | null> {
+    try {
+      let response;
+      
+      if (settings.id) {
+        // Update existing settings
+        const { data, error } = await supabase
+          .from(tableName)
+          .update({ 
+            ...settings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', settings.id)
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      } else {
+        // Insert new settings
+        const { data, error } = await supabase
+          .from(tableName)
+          .insert({ 
+            ...settings,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      }
+      
+      toast.success('Settings saved successfully');
+      return response;
+    } catch (error: any) {
+      console.error(`Error saving ${tableName} settings:`, error);
+      toast.error(`Failed to save settings: ${error.message}`);
+      return null;
+    }
   },
   
-  // Access control settings
-  getAccessControlSettings: async (): Promise<AccessControlSettings> => {
-    const response = await api.get('/settings/access-control');
-    return response.data;
+  // Get SMS settings for a specific branch
+  async getSmsSettings(branchId?: string) {
+    return this.getSettings('sms_settings', branchId);
   },
   
-  updateAccessControlSettings: async (settings: AccessControlSettings): Promise<AccessControlSettings> => {
-    const response = await api.put('/settings/access-control', settings);
-    return response.data;
+  // Save SMS settings
+  async saveSmsSettings(settings: any) {
+    return this.saveSettings('sms_settings', settings);
   },
   
-  // WhatsApp settings
-  getWhatsAppSettings: async (): Promise<WhatsAppSettings> => {
-    const response = await api.get('/settings/whatsapp');
-    return response.data;
+  // Get Email settings for a specific branch
+  async getEmailSettings(branchId?: string) {
+    return this.getSettings('email_settings', branchId);
   },
   
-  updateWhatsAppSettings: async (settings: WhatsAppSettings): Promise<WhatsAppSettings> => {
-    const response = await api.put('/settings/whatsapp', settings);
-    return response.data;
+  // Save Email settings
+  async saveEmailSettings(settings: any) {
+    return this.saveSettings('email_settings', settings);
   },
   
-  // Email settings
-  getEmailSettings: async (): Promise<EmailSettings> => {
-    const response = await api.get('/settings/email');
-    return response.data;
+  // Get WhatsApp settings for a specific branch
+  async getWhatsAppSettings(branchId?: string) {
+    return this.getSettings('whatsapp_settings', branchId);
   },
   
-  updateEmailSettings: async (settings: EmailSettings): Promise<EmailSettings> => {
-    const response = await api.put('/settings/email', settings);
-    return response.data;
+  // Save WhatsApp settings
+  async saveWhatsAppSettings(settings: any) {
+    return this.saveSettings('whatsapp_settings', settings);
   },
   
-  sendTestEmail: async (email: string): Promise<void> => {
-    await api.post('/settings/email/test', { email });
+  // Get automation rules
+  async getAutomationRules(branchId?: string): Promise<any[]> {
+    try {
+      let query = supabase.from('automation_rules').select('*');
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching automation rules:', error);
+      toast.error(`Failed to load automation rules: ${error.message}`);
+      return [];
+    }
   },
   
-  // SMS settings
-  getSmsSettings: async (): Promise<SmsSettings> => {
-    const response = await api.get('/settings/sms');
-    return response.data;
+  // Save an automation rule
+  async saveAutomationRule(rule: any): Promise<any | null> {
+    try {
+      let response;
+      
+      if (rule.id) {
+        // Update existing rule
+        const { data, error } = await supabase
+          .from('automation_rules')
+          .update({ 
+            ...rule,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', rule.id)
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      } else {
+        // Insert new rule
+        const { data, error } = await supabase
+          .from('automation_rules')
+          .insert({ 
+            ...rule,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      }
+      
+      toast.success('Automation rule saved successfully');
+      return response;
+    } catch (error: any) {
+      console.error('Error saving automation rule:', error);
+      toast.error(`Failed to save automation rule: ${error.message}`);
+      return null;
+    }
   },
   
-  updateSmsSettings: async (settings: SmsSettings): Promise<SmsSettings> => {
-    const response = await api.put('/settings/sms', settings);
-    return response.data;
+  // Delete an automation rule
+  async deleteAutomationRule(ruleId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('automation_rules')
+        .delete()
+        .eq('id', ruleId);
+        
+      if (error) throw error;
+      toast.success('Automation rule deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting automation rule:', error);
+      toast.error(`Failed to delete automation rule: ${error.message}`);
+      return false;
+    }
   },
   
-  sendTestSms: async (phoneNumber: string): Promise<void> => {
-    await api.post('/settings/sms/test', { phoneNumber });
+  // Get templates by type (sms, email, whatsapp)
+  async getTemplates(type: 'sms' | 'email' | 'whatsapp', branchId?: string): Promise<any[]> {
+    try {
+      let tableName = `${type}_templates`;
+      let query = supabase.from(tableName).select('*');
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error(`Error fetching ${type} templates:`, error);
+      toast.error(`Failed to load templates: ${error.message}`);
+      return [];
+    }
   },
   
-  // Notification settings
-  getNotificationSettings: async (): Promise<NotificationSettings> => {
-    const response = await api.get('/settings/notifications');
-    return response.data;
+  // Save a template
+  async saveTemplate(type: 'sms' | 'email' | 'whatsapp', template: any): Promise<any | null> {
+    try {
+      let tableName = `${type}_templates`;
+      let response;
+      
+      if (template.id) {
+        // Update existing template
+        const { data, error } = await supabase
+          .from(tableName)
+          .update({ 
+            ...template,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', template.id)
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      } else {
+        // Insert new template
+        const { data, error } = await supabase
+          .from(tableName)
+          .insert({ 
+            ...template,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select();
+          
+        if (error) throw error;
+        response = data?.[0];
+      }
+      
+      toast.success('Template saved successfully');
+      return response;
+    } catch (error: any) {
+      console.error(`Error saving ${type} template:`, error);
+      toast.error(`Failed to save template: ${error.message}`);
+      return null;
+    }
   },
   
-  updateNotificationSettings: async (settings: NotificationSettings): Promise<NotificationSettings> => {
-    const response = await api.put('/settings/notifications', settings);
-    return response.data;
-  },
-  
-  sendTestNotification: async (): Promise<void> => {
-    await api.post('/settings/notifications/test');
-  },
-  
-  // Automation settings
-  getAutomationSettings: async (): Promise<AutomationSettings> => {
-    const response = await api.get('/settings/automation');
-    return response.data;
-  },
-  
-  updateAutomationSettings: async (settings: AutomationSettings): Promise<AutomationSettings> => {
-    const response = await api.put('/settings/automation', settings);
-    return response.data;
-  },
-  
-  runAutomationTasks: async (): Promise<void> => {
-    await api.post('/settings/automation/run');
-  },
-  
-  // Permission settings
-  getPermissionSettings: async (): Promise<PermissionSettings> => {
-    const response = await api.get('/settings/permissions');
-    return response.data;
-  },
-  
-  updatePermissionSettings: async (settings: PermissionSettings): Promise<PermissionSettings> => {
-    const response = await api.put('/settings/permissions', settings);
-    return response.data;
-  },
+  // Delete a template
+  async deleteTemplate(type: 'sms' | 'email' | 'whatsapp', templateId: string): Promise<boolean> {
+    try {
+      let tableName = `${type}_templates`;
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', templateId);
+        
+      if (error) throw error;
+      toast.success('Template deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error(`Error deleting ${type} template:`, error);
+      toast.error(`Failed to delete template: ${error.message}`);
+      return false;
+    }
+  }
 };
 
 export default settingsService;

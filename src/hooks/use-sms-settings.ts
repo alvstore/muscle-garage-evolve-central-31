@@ -1,55 +1,102 @@
 
-import { useSettingsManagement } from './use-settings-management';
-import { supabase } from '@/integrations/supabase/client';
-import { SmsSettings } from '@/services/settingsService';
+import { useState, useEffect } from 'react';
+import settingsService from '@/services/settingsService';
+import { useBranch } from './use-branch';
 
-export const useSmsSettings = (branchId: string | null = null) => {
-  const {
-    data,
-    isLoading,
-    error,
-    isSaving,
-    fetchSettings,
-    saveSettings,
-    updateField
-  } = useSettingsManagement<SmsSettings>({
-    tableName: 'sms_settings',
-    defaultBranchId: branchId,
-    initialData: {
-      provider: 'msg91',
-      sender_id: '',
-      is_active: false,
-      templates: {
-        membershipAlert: false,
-        renewalReminder: false,
-        otpVerification: false,
-        attendanceConfirmation: false
-      }
-    }
-  });
+export interface SmsSettings {
+  id?: string;
+  provider: string;
+  sender_id: string;
+  msg91_auth_key?: string;
+  twilio_account_sid?: string;
+  twilio_auth_token?: string;
+  custom_api_url?: string;
+  custom_api_headers?: string;
+  custom_api_params?: string;
+  is_active: boolean;
+  branch_id?: string;
+  templates?: {
+    membershipAlert: boolean;
+    renewalReminder: boolean;
+    otpVerification: boolean;
+    attendanceConfirmation: boolean;
+  };
+}
 
-  // Test SMS connection
-  const testConnection = async (testPhone: string): Promise<{ success: boolean, message: string }> => {
+export const useSmsSettings = () => {
+  const [settings, setSettings] = useState<SmsSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { currentBranch } = useBranch();
+
+  const fetchSettings = async () => {
+    setIsLoading(true);
     try {
-      // In a real implementation, this would call a Supabase edge function
-      // For now, we'll simulate a successful test
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return {
-        success: true,
-        message: 'Test SMS sent successfully!'
-      };
-    } catch (error) {
-      console.error('SMS test failed:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Test failed'
-      };
+      const data = await settingsService.getSmsSettings(currentBranch?.id);
+      setSettings(data || {
+        provider: 'msg91',
+        sender_id: 'GYMAPP',
+        is_active: false,
+        templates: {
+          membershipAlert: false,
+          renewalReminder: false,
+          otpVerification: false,
+          attendanceConfirmation: false
+        }
+      });
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const saveSettings = async (updatedSettings: SmsSettings) => {
+    setIsSaving(true);
+    try {
+      // Ensure the branch_id is set
+      const settingsToSave = {
+        ...updatedSettings,
+        branch_id: currentBranch?.id
+      };
+      
+      const result = await settingsService.saveSmsSettings(settingsToSave);
+      if (result) {
+        setSettings(result);
+      }
+      return !!result;
+    } catch (err: any) {
+      setError(err);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateField = (field: string, value: any) => {
+    if (!settings) return;
+    setSettings({ ...settings, [field]: value });
+  };
+
+  const testConnection = async (phoneNumber: string) => {
+    // In a real implementation, this would call an API endpoint
+    // For now, just simulate a successful test
+    return new Promise<boolean>(resolve => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    });
+  };
+
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchSettings();
+    }
+  }, [currentBranch?.id]);
+
   return {
-    settings: data,
+    settings,
     isLoading,
     error,
     isSaving,

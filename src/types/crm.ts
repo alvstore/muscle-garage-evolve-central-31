@@ -33,6 +33,10 @@ export interface Lead {
 
 export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'cold' | 'warm' | 'hot';
 
+export type LeadSource = 'website' | 'referral' | 'walk-in' | 'social-media' | 'event' | 'phone' | 'other';
+
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'lost' | 'converted';
+
 export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
 
 export interface FollowUpTemplate {
@@ -75,7 +79,7 @@ export interface FollowUpHistory {
   responseAt?: string;
 }
 
-// Add interfaces for schedules
+// Redefining the interface for scheduled follow-ups
 export interface FollowUpScheduled {
   id: string;
   lead_id: string;
@@ -91,3 +95,15 @@ export interface FollowUpScheduled {
   leadName?: string;
   scheduledFor?: string;
 }
+
+// Define a type alias for the format used in ScheduledFollowUp components
+export type ScheduledFollowUp = {
+  id: string;
+  leadId: string;
+  leadName: string;
+  type: FollowUpType;
+  scheduledFor: string;
+  subject: string;
+  content: string;
+  status: "scheduled" | "sent" | "cancelled";
+};

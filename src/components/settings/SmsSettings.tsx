@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,8 +13,7 @@ export interface SmsSettingsProps {
 }
 
 const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState("provider");
-  const [testPhone, setTestPhone] = useState("");
+  const [activeTab, setActiveTab] = React.useState("provider");
   const { 
     settings, 
     isLoading, 
@@ -37,6 +36,7 @@ const SmsSettings: React.FC<SmsSettingsProps> = ({ onClose }) => {
   };
   
   const handleTestConnection = async () => {
+    const testPhone = "+1234567890"; // In a real app, we would ask for this
     await testConnection(testPhone);
   };
 

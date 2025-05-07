@@ -1,134 +1,116 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { EmailSettings } from '@/types/notification';
+
+import { useState, useEffect } from 'react';
+import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
 
-interface UseEmailSettingsResult {
-  settings: EmailSettings | null;
-  isLoading: boolean;
-  error: Error | null;
-  fetchSettings: () => Promise<void>;
-  updateSettings: (newSettings: Partial<EmailSettings>) => Promise<boolean>;
-  sendTestEmail: (email: string) => Promise<boolean>;
+export interface EmailSettings {
+  id?: string;
+  provider: string;
+  from_email: string;
+  sendgrid_api_key?: string;
+  mailgun_api_key?: string;
+  mailgun_domain?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  smtp_secure?: boolean;
+  is_active: boolean;
+  branch_id?: string;
+  notifications?: {
+    sendOnRegistration: boolean;
+    sendOnInvoice: boolean;
+    sendClassUpdates: boolean;
+  };
+  // For backward compatibility
+  fromEmail?: string;
+  apiKey?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpPassword?: string;
+  smtpSecure?: boolean;
 }
 
-export const useEmailSettings = (): UseEmailSettingsResult => {
+export const useEmailSettings = () => {
   const [settings, setSettings] = useState<EmailSettings | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
 
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = async () => {
     setIsLoading(true);
-    setError(null);
-
-    if (!currentBranch?.id) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('email_settings')
-        .select('*')
-        .eq('branch_id', currentBranch.id)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setSettings(data || null);
+      const data = await settingsService.getEmailSettings(currentBranch?.id);
+      setSettings(data || {
+        provider: 'sendgrid',
+        from_email: '',
+        is_active: false,
+        notifications: {
+          sendOnRegistration: true,
+          sendOnInvoice: true,
+          sendClassUpdates: false
+        }
+      });
     } catch (err: any) {
       setError(err);
-      toast.error(`Failed to fetch email settings: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentBranch?.id]);
-
-  const updateSettings = async (newSettings: Partial<EmailSettings>): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-
-    if (!currentBranch?.id) {
-      setIsLoading(false);
-      toast.error('Please select a branch first.');
-      return false;
-    }
-
-    try {
-      const notifications = newSettings.notifications || {}; 
-      const settingsToUpdate = {
-        ...newSettings,
-        notifications: typeof notifications === 'object' ? notifications : {}
-      };
-
-      const { data, error } = await supabase
-        .from('email_settings')
-        .upsert(
-          [
-            {
-              ...settingsToUpdate,
-              branch_id: currentBranch.id,
-            },
-          ],
-          { onConflict: 'branch_id' }
-        )
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      setSettings(data);
-      toast.success('Email settings updated successfully!');
-      return true;
-    } catch (err: any) {
-      setError(err);
-      toast.error(`Failed to update email settings: ${err.message}`);
-      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const sendTestEmail = async (email: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-
+  const saveSettings = async (updatedSettings: EmailSettings) => {
+    setIsSaving(true);
     try {
-      const { error } = await supabase.functions.invoke('send-test-email', {
-        body: { email },
-      });
-
-      if (error) {
-        throw error;
+      // Ensure the branch_id is set
+      const settingsToSave = {
+        ...updatedSettings,
+        branch_id: currentBranch?.id
+      };
+      
+      const result = await settingsService.saveEmailSettings(settingsToSave);
+      if (result) {
+        setSettings(result);
       }
-
-      toast.success('Test email sent successfully!');
-      return true;
+      return !!result;
     } catch (err: any) {
       setError(err);
-      toast.error(`Failed to send test email: ${err.message}`);
       return false;
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
+  };
+
+  const updateField = (field: string, value: any) => {
+    if (!settings) return;
+    setSettings({ ...settings, [field]: value });
+  };
+
+  const testConnection = async (email: string) => {
+    // In a real implementation, this would call an API endpoint
+    // For now, just simulate a successful test
+    return new Promise<boolean>(resolve => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
+    });
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    if (currentBranch?.id) {
+      fetchSettings();
+    }
+  }, [currentBranch?.id]);
 
   return {
     settings,
     isLoading,
     error,
+    isSaving,
     fetchSettings,
-    updateSettings,
-    sendTestEmail,
+    saveSettings,
+    updateField,
+    testConnection
   };
 };

@@ -1,475 +1,236 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { format, addDays } from 'date-fns';
-import { 
-  Calendar, 
-  Clock, 
-  Send, 
-  User, 
-  Mail, 
-  MessageCircle,
-  Phone,
-  Plus,
-  Calendar as CalendarIcon
-} from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarPicker } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { Lead, FollowUpType, FollowUpScheduled } from '@/types/crm';
 
-// Mock scheduled follow-ups data
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Lead, FollowUpType, FollowUpScheduled, ScheduledFollowUp } from '@/types/crm';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Convert the database model to the component model
+const convertToScheduledFollowUp = (item: FollowUpScheduled): ScheduledFollowUp => {
+  return {
+    id: item.id,
+    leadId: item.lead_id,
+    leadName: item.lead_name || "Unknown Lead",
+    type: item.type,
+    scheduledFor: item.scheduled_for,
+    subject: item.subject,
+    content: item.content,
+    status: item.status,
+  };
+};
+
+// Mock data for scheduled follow-ups
 const mockScheduledFollowUps: FollowUpScheduled[] = [
   {
     id: "1",
-    lead_id: "lead1",
-    leadId: "lead1",
-    lead_name: "John Doe",
-    leadName: "John Doe",
-    type: "email" as FollowUpType,
-    scheduled_for: addDays(new Date(), 1).toISOString(),
-    scheduledFor: addDays(new Date(), 1).toISOString(),
-    subject: "Membership Plan Inquiry",
-    content: "Follow up about the Gold Membership plan discussion",
-    status: "scheduled" as const
+    lead_id: "lead-1",
+    lead_name: "John Smith",
+    type: "email",
+    scheduled_for: "2023-06-10T10:00:00Z",
+    subject: "Follow up on membership options",
+    content: "Hi John,\n\nI wanted to follow up on our conversation about membership options. Let me know if you have any questions.\n\nBest,\nJane",
+    status: "scheduled",
+    // Add camelCase aliases
+    leadId: "lead-1",
+    leadName: "John Smith",
+    scheduledFor: "2023-06-10T10:00:00Z"
   },
   {
     id: "2",
-    leadId: "lead2",
+    lead_id: "lead-2",
+    lead_name: "Sarah Johnson",
+    type: "sms",
+    scheduled_for: "2023-06-12T14:30:00Z",
+    subject: "PT session reminder",
+    content: "Hi Sarah, just a reminder about your free PT trial session tomorrow at 3pm. Looking forward to meeting you! - Fitness Gym",
+    status: "scheduled",
+    // Add camelCase aliases
+    leadId: "lead-2",
     leadName: "Sarah Johnson",
-    type: "call" as FollowUpType,
-    scheduledFor: addDays(new Date(), 2).toISOString(),
-    subject: "Personal Training Interest",
-    content: "Call to discuss personal training options",
-    status: "scheduled" as const
+    scheduledFor: "2023-06-12T14:30:00Z"
   },
   {
     id: "3",
-    leadId: "lead3",
-    leadName: "Mike Williams",
-    type: "sms" as FollowUpType,
-    scheduledFor: addDays(new Date(), 3).toISOString(),
-    subject: "Gym Tour Reminder",
-    content: "Reminder about the scheduled gym tour on Friday",
-    status: "scheduled" as const
+    lead_id: "lead-3",
+    lead_name: "David Lee",
+    type: "call",
+    scheduled_for: "2023-06-09T16:00:00Z",
+    subject: "Membership renewal discussion",
+    content: "Call to discuss membership renewal options and current promotions.",
+    status: "sent",
+    // Add camelCase aliases
+    leadId: "lead-3",
+    leadName: "David Lee",
+    scheduledFor: "2023-06-09T16:00:00Z"
   }
 ];
 
-// Mock lead data for dropdown
-const mockLeads: Lead[] = [
+// Mock data for lead options
+const mockLeadOptions: Lead[] = [
   {
-    id: "lead1",
-    name: "John Doe",
-    email: "john@example.com",
+    id: "lead-1",
+    name: "John Smith",
+    email: "john.smith@example.com",
     phone: "555-1234",
+    status: "contacted",
+    funnel_stage: "qualified",
     source: "website",
-    status: "contacted",
-    funnel_stage: "warm",
-    funnelStage: "warm",
-    created_at: "2023-06-15T10:30:00Z",
-    createdAt: "2023-06-15T10:30:00Z",
-    notes: "Interested in Gold Membership",
+    created_at: "2023-05-15T08:30:00Z",
+    updated_at: "2023-06-05T14:15:00Z",
+    // Add camelCase aliases
+    funnelStage: "qualified",
+    createdAt: "2023-05-15T08:30:00Z",
+    updatedAt: "2023-06-05T14:15:00Z"
   },
   {
-    id: "lead2",
+    id: "lead-2",
     name: "Sarah Johnson",
-    email: "sarah@example.com",
+    email: "sarah.j@example.com",
     phone: "555-5678",
+    status: "new",
+    funnel_stage: "warm",
     source: "referral",
-    status: "qualified",
-    funnel_stage: "hot",
-    funnelStage: "hot",
-    created_at: "2023-06-10T14:45:00Z",
-    createdAt: "2023-06-10T14:45:00Z",
-    notes: "Looking for personal training options",
+    created_at: "2023-06-01T11:45:00Z",
+    updated_at: "2023-06-01T11:45:00Z",
+    // Add camelCase aliases
+    funnelStage: "warm",
+    createdAt: "2023-06-01T11:45:00Z",
+    updatedAt: "2023-06-01T11:45:00Z"
   },
   {
-    id: "lead3",
-    name: "Mike Williams",
-    email: "mike@example.com",
+    id: "lead-3",
+    name: "David Lee",
+    email: "david.lee@example.com",
     phone: "555-9012",
-    source: "walk-in",
     status: "contacted",
-    funnel_stage: "warm",
-    funnelStage: "warm",
-    created_at: "2023-06-12T09:15:00Z",
-    createdAt: "2023-06-12T09:15:00Z",
-    notes: "Scheduled for a gym tour",
+    funnel_stage: "hot",
+    source: "walk-in",
+    created_at: "2023-05-20T09:15:00Z",
+    updated_at: "2023-06-07T16:30:00Z",
+    // Add camelCase aliases
+    funnelStage: "hot",
+    createdAt: "2023-05-20T09:15:00Z",
+    updatedAt: "2023-06-07T16:30:00Z"
   }
 ];
 
-const scheduleSchema = z.object({
-  leadId: z.string().min(1, { message: "Lead is required" }),
-  type: z.enum(["email", "sms", "whatsapp", "call", "meeting"]),
-  scheduledDate: z.date(),
-  subject: z.string().min(3, { message: "Subject is required" }),
-  content: z.string().min(10, { message: "Content must be at least 10 characters" }),
-});
-
-interface ScheduledFollowUp {
-  id: string;
-  leadId: string;
-  leadName: string;
-  type: FollowUpType;
-  scheduledFor: string;
-  subject: string;
-  content: string;
-  status: "scheduled" | "sent" | "cancelled";
+interface FollowUpScheduleProps {
+  isLoading?: boolean;
 }
 
-const FollowUpSchedule: React.FC = () => {
-  const [scheduledFollowUps, setScheduledFollowUps] = useState<ScheduledFollowUp[]>(mockScheduledFollowUps);
+const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading = false }) => {
+  const [scheduledFollowUps, setScheduledFollowUps] = React.useState<ScheduledFollowUp[]>([]);
   
-  const form = useForm<z.infer<typeof scheduleSchema>>({
-    resolver: zodResolver(scheduleSchema),
-    defaultValues: {
-      leadId: "",
-      type: "email",
-      scheduledDate: new Date(),
-      subject: "",
-      content: "",
-    },
-  });
+  React.useEffect(() => {
+    // In a real app, we would fetch from API
+    // For now, use mock data but convert to the component model
+    setScheduledFollowUps(mockScheduledFollowUps.map(convertToScheduledFollowUp));
+  }, []);
   
-  const onSubmit = (values: z.infer<typeof scheduleSchema>) => {
-    const lead = mockLeads.find(l => l.id === values.leadId);
-    if (!lead) return;
-    
-    const newFollowUp: ScheduledFollowUp = {
-      id: `followup-${Date.now()}`,
-      leadId: values.leadId,
-      leadName: lead.name,
-      type: values.type as FollowUpType,
-      scheduledFor: values.scheduledDate.toISOString(),
-      subject: values.subject,
-      content: values.content,
-      status: "scheduled"
-    };
-    
-    setScheduledFollowUps([...scheduledFollowUps, newFollowUp]);
-    form.reset();
-    toast.success("Follow-up scheduled successfully");
+  // Format date to readable format
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+  
+  // Format time to readable format
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const getTypeIcon = (type: FollowUpType) => {
+  // Get badge for follow-up type
+  const getTypeBadge = (type: FollowUpType) => {
     switch (type) {
       case "email":
-        return <Mail className="h-4 w-4" />;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Email</Badge>;
       case "sms":
-        return <MessageCircle className="h-4 w-4" />;
+        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">SMS</Badge>;
       case "whatsapp":
-        return <MessageCircle className="h-4 w-4" />;
+        return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">WhatsApp</Badge>;
       case "call":
-        return <Phone className="h-4 w-4" />;
+        return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Call</Badge>;
       case "meeting":
-        return <Calendar className="h-4 w-4" />;
+        return <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">Meeting</Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
     }
-  };
-  
-  const cancelFollowUp = (id: string) => {
-    setScheduledFollowUps(scheduledFollowUps.map(f => 
-      f.id === id ? { ...f, status: "cancelled" } : f
-    ));
-    toast.success("Follow-up cancelled");
-  };
-  
-  const sendNow = (id: string) => {
-    setScheduledFollowUps(scheduledFollowUps.map(f => 
-      f.id === id ? { ...f, status: "sent" } : f
-    ));
-    toast.success("Follow-up sent successfully");
   };
 
   return (
-    <Tabs defaultValue="scheduled">
-      <TabsList className="mb-4">
-        <TabsTrigger value="scheduled">Scheduled Follow-ups</TabsTrigger>
-        <TabsTrigger value="create">Create New</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="scheduled">
-        <Card>
-          <CardHeader>
-            <CardTitle>Scheduled Follow-ups</CardTitle>
-            <CardDescription>
-              View and manage upcoming follow-ups with leads
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {scheduledFollowUps.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Lead</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Scheduled For</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {scheduledFollowUps.map((followUp) => (
-                    <TableRow key={followUp.id}>
-                      <TableCell className="font-medium">{followUp.leadName}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          {getTypeIcon(followUp.type)}
-                          <span className="ml-2 capitalize">{followUp.type}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(followUp.scheduledFor), "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell>{followUp.subject}</TableCell>
-                      <TableCell>
-                        {followUp.status === "scheduled" && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            Scheduled
-                          </Badge>
-                        )}
-                        {followUp.status === "sent" && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            Sent
-                          </Badge>
-                        )}
-                        {followUp.status === "cancelled" && (
-                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                            Cancelled
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {followUp.status === "scheduled" && (
-                          <div className="flex justify-end space-x-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => sendNow(followUp.id)}
-                            >
-                              <Send className="h-4 w-4 mr-1" />
-                              Send Now
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => cancelFollowUp(followUp.id)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-10">
-                <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">No scheduled follow-ups</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-4"
-                  onClick={() => form.reset()}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create Follow-up
-                </Button>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle>Scheduled Follow-ups</CardTitle>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="create">
-        <Card>
-          <CardHeader>
-            <CardTitle>Schedule New Follow-up</CardTitle>
-            <CardDescription>
-              Create a scheduled follow-up for a lead
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="leadId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lead</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select lead" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {mockLeads.map(lead => (
-                              <SelectItem key={lead.id} value={lead.id}>
-                                <div className="flex items-center">
-                                  <User className="h-4 w-4 mr-2" />
-                                  {lead.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+            ))}
+          </div>
+        ) : scheduledFollowUps.length === 0 ? (
+          <div className="text-center py-6">
+            <MessageCircle className="h-12 w-12 mx-auto text-gray-400" />
+            <h3 className="mt-2 text-lg font-medium">No scheduled follow-ups</h3>
+            <p className="text-sm text-gray-500 mt-1">Create a follow-up task to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {scheduledFollowUps.map((followUp) => (
+              <div key={followUp.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">{followUp.subject}</div>
+                    <div className="text-sm text-muted-foreground">For: {followUp.leadName}</div>
+                  </div>
+                  <div className="flex space-x-1">
+                    {getTypeBadge(followUp.type)}
+                    {followUp.status === "sent" && (
+                      <Badge variant="secondary">Sent</Badge>
                     )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Follow-up Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="email">
-                              <div className="flex items-center">
-                                <Mail className="h-4 w-4 mr-2" />
-                                Email
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="sms">
-                              <div className="flex items-center">
-                                <MessageCircle className="h-4 w-4 mr-2" />
-                                SMS
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="whatsapp">
-                              <div className="flex items-center">
-                                <MessageCircle className="h-4 w-4 mr-2" />
-                                WhatsApp
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="call">
-                              <div className="flex items-center">
-                                <Phone className="h-4 w-4 mr-2" />
-                                Call
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="meeting">
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Meeting
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="scheduledDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Schedule Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarPicker
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                              disabled={(date) => date < new Date()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter subject" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="mt-2">
+                  <div className="text-sm text-muted-foreground line-clamp-2">{followUp.content}</div>
                 </div>
-                
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Content</FormLabel>
-                      <FormControl>
-                        <textarea
-                          className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          placeholder="Enter follow-up message content"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex justify-end">
-                  <Button type="submit">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Schedule Follow-up
-                  </Button>
+                <div className="mt-3 flex justify-between items-center">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>{formatDate(followUp.scheduledFor)}</span>
+                    <Clock className="h-4 w-4 ml-3 mr-1" />
+                    <span>{formatTime(followUp.scheduledFor)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    {followUp.type === "call" && (
+                      <Button size="sm" variant="outline">
+                        <Phone className="h-4 w-4 mr-1" />
+                        Call
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

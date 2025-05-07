@@ -1,45 +1,66 @@
 
+// Add missing types for inventory
+
 export interface InventoryItem {
   id: string;
   name: string;
   description?: string;
+  category?: string;
   sku: string;
   barcode?: string;
-  category?: string;
-  supplier?: string;
-  supplier_contact?: string;
   quantity: number;
-  reorderLevel: number;
   price: number;
   cost_price: number;
-  status: 'in-stock' | 'low-stock' | 'out-of-stock';
-  location?: string;
+  status: InventoryStatus;
+  supplier?: string;
+  supplier_contact?: string;
+  reorder_level: number;
+  manufacture_date?: string | Date;
+  expiry_date?: string | Date;
   image?: string;
-  manufacture_date?: string;
-  expiry_date?: string;
-  last_stock_update?: string;
+  location?: string;
+  last_stock_update?: string | Date;
   branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+  
+  // Adding camelCase aliases for compatibility
+  costPrice?: number;
+  supplierContact?: string;
+  manufactureDate?: string | Date;
+  expiryDate?: string | Date;
+  lastStockUpdate?: string | Date;
+  branchId?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
-export interface InventoryCategory {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  branch_id?: string;
-}
+export type InventoryStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'discontinued';
 
-export interface InventoryTransaction {
+export type InventoryCategory = 'equipment' | 'supplements' | 'apparel' | 'accessories' | 'other';
+
+export type StockTransactionType = 'purchase' | 'sale' | 'adjustment' | 'return' | 'stock-in' | 'stock-out' | 'damaged';
+
+export interface StockTransaction {
   id: string;
   item_id: string;
-  type: 'purchase' | 'sale' | 'adjustment' | 'return';
+  item_name?: string;
   quantity: number;
-  total_price: number;
-  transaction_date: string;
-  reference?: string;
+  type: StockTransactionType;
   notes?: string;
-  staff_id?: string;
+  reference_id?: string;
+  date: string | Date;
+  created_by?: string;
   branch_id?: string;
+  created_at?: string | Date;
+}
+
+export interface InventoryAlert {
+  id: string;
+  name: string;
+  branch_id?: string;
+  quantity: number;
+  reorder_level: number;
+  is_low_stock: boolean;
+  stock_status: string;
 }
