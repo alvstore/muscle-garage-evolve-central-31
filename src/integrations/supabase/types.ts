@@ -2105,6 +2105,20 @@ export type Database = {
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
           },
+          {
+            foreignKeyName: "member_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "member_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
         ]
       }
       member_memberships: {
@@ -2167,6 +2181,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "member_memberships_member_fk"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "member_memberships_member_fk"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "member_memberships_membership_id_fkey"
@@ -2324,6 +2352,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "members_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3542,7 +3577,22 @@ export type Database = {
           specialty?: string | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trainers_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainers_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -3932,6 +3982,45 @@ export type Database = {
           enrolled: number | null
           enrollment_percentage: number | null
           performance_category: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      class_schedules_with_trainers: {
+        Row: {
+          branch_id: string | null
+          capacity: number | null
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          end_time: string | null
+          enrolled: number | null
+          id: string | null
+          location: string | null
+          name: string | null
+          recurring: boolean | null
+          recurring_pattern: string | null
+          start_time: string | null
+          status: string | null
+          trainer_avatar_url: string | null
+          trainer_id: string | null
+          trainer_name: string | null
+          type: string | null
+          updated_at: string | null
         }
         Relationships: [
           {
