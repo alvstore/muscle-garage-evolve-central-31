@@ -241,7 +241,7 @@ const FrontPagesManager: React.FC<FrontPagesManagerProps> = ({
                         onChange={(e) => {
                           const heroContent = getSectionContent('hero');
                           if (heroContent.length > 0) {
-                            updateWebsiteContent('hero', heroContent[0].id, { ctaText: e.target.value });
+                            updateWebsiteContent('hero', heroContent[0].id, { cta_text: e.target.value });
                           }
                         }}
                       />

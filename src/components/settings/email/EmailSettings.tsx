@@ -76,7 +76,7 @@ const EmailSettings = () => {
             isLoading={isLoading}
             isSaving={isSaving}
             onUpdateConfig={handleConfigUpdate}
-            onSave={() => { saveSettings(settings!); }}
+            onSave={() => Promise.resolve(saveSettings(settings!))}
             onTest={handleTest}
           />
         </div>
@@ -93,7 +93,7 @@ const EmailSettings = () => {
               }
             }}
             onUpdateConfig={handleConfigUpdate}
-            onSave={() => { saveSettings(settings!); }}
+            onSave={() => Promise.resolve(saveSettings(settings!))}
           />
         </div>
       </div>
