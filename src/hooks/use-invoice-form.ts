@@ -29,7 +29,7 @@ export const useInvoiceForm = (
     description: invoice?.description || '',
     amount: invoice?.amount || 0,
     status: invoice?.status || 'pending' as InvoiceStatus,
-    due_date: invoice?.due_date || invoice?.dueDate || new Date().toISOString().split('T')[0],
+    due_date: invoice?.due_date?.toString() || invoice?.dueDate?.toString() || new Date().toISOString().split('T')[0],
     payment_method: invoice?.payment_method || '',
     notes: invoice?.notes || '',
   });
@@ -58,13 +58,13 @@ export const useInvoiceForm = (
     setIsSubmitting(true);
     
     try {
+      // Prepare invoice data for saving
       const submittedInvoice: Invoice = {
         ...(invoice || {}),
         ...formData,
         id: invoice?.id || `temp-${Date.now()}`,
         branch_id: currentBranch.id,
         issued_date: invoice?.issued_date || invoice?.issuedDate || new Date().toISOString(),
-        created_at: invoice?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         items: invoice?.items || [],
       };

@@ -19,6 +19,12 @@ export interface FinancialTransaction {
   updated_at?: string;
   attachment?: string;
   
+  // Financial transaction aliases used in components
+  category?: string;
+  category_name?: string;
+  reference?: string;
+  source?: string;
+  
   // Adding camelCase aliases
   transactionDate?: string;
   paymentMethod?: string;
@@ -46,6 +52,9 @@ export interface Invoice {
   items: InvoiceItem[];
   description?: string;
   notes?: string;
+  razorpay_order_id?: string;
+  created_at?: string;
+  updated_at?: string;
   
   // Adding camelCase aliases for UI component compatibility
   memberId?: string;
@@ -55,8 +64,11 @@ export interface Invoice {
   paidDate?: string | Date;
   paymentMethod?: string;
   razorpayPaymentId?: string;
+  razorpayOrderId?: string;
   branchId?: string;
   membershipPlanId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface InvoiceItem {

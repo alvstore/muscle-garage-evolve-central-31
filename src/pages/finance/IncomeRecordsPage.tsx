@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,20 +22,18 @@ const IncomeRecordsPage = () => {
   const [selectedRecord, setSelectedRecord] = useState<FinancialTransaction | null>(null);
   const { currentBranch } = useBranch();
   
-  // Form state
+  // Form state with all properties needed
   const [formData, setFormData] = useState<Partial<FinancialTransaction>>({
     type: 'income' as const,
     amount: 0,
     description: '',
     payment_method: 'cash' as PaymentMethod,
     branch_id: currentBranch?.id || '',
-    source: '',
-    recurring: false,
+    category_id: '',
     reference_id: null,
     transaction_id: null,
-    category_id: '',
-    category: '',
-    reference: '',
+    category: '', // Used by some components
+    reference: '', // Used by some components
   });
 
   const {
@@ -90,13 +87,11 @@ const IncomeRecordsPage = () => {
       description: '',
       payment_method: 'cash' as PaymentMethod,
       branch_id: currentBranch?.id || '',
-      source: '',
-      recurring: false,
       reference_id: null,
       transaction_id: null,
       category_id: null,
-      category: '',
-      reference: '',
+      category: '', // Used by UI
+      reference: '', // Used by UI
     });
     setShowCreateDialog(true);
   };
@@ -109,14 +104,11 @@ const IncomeRecordsPage = () => {
       description: record.description,
       payment_method: record.payment_method as PaymentMethod,
       branch_id: record.branch_id,
-      source: record.source || '',
-      recurring: record.recurring,
       reference_id: record.reference_id,
       transaction_id: record.transaction_id,
       category_id: record.category_id,
-      category_name: record.category_name,
-      category: record.category || '',
-      reference: record.reference || record.reference_id || '',
+      category: record.category, // Used by UI
+      reference: record.reference || record.reference_id || '', // Used by UI
     });
     setShowEditDialog(true);
   };
@@ -130,13 +122,11 @@ const IncomeRecordsPage = () => {
         description: formData.description,
         payment_method: formData.payment_method as PaymentMethod,
         branch_id: formData.branch_id,
-        source: formData.source,
-        recurring: formData.recurring,
         reference_id: formData.reference_id,
         transaction_id: formData.transaction_id,
         category_id: formData.category_id,
-        category: formData.category,
-        reference: formData.reference,
+        category: formData.category, // Keep for UI
+        reference: formData.reference, // Keep for UI
         transaction_date: formData.transaction_date || new Date().toISOString(),
       };
 
@@ -159,14 +149,11 @@ const IncomeRecordsPage = () => {
         description: formData.description,
         payment_method: formData.payment_method as PaymentMethod,
         branch_id: formData.branch_id,
-        source: formData.source,
-        recurring: formData.recurring,
         reference_id: formData.reference_id,
         transaction_id: formData.transaction_id,
         category_id: formData.category_id,
-        category: formData.category,
-        category_name: formData.category_name,
-        reference: formData.reference,
+        category: formData.category, // Keep for UI
+        reference: formData.reference, // Keep for UI
       };
 
       await updateRecord(selectedRecord.id, updatedRecord);
@@ -245,9 +232,9 @@ const IncomeRecordsPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{record.category || record.category_name || 'N/A'}</Badge>
+                      <Badge variant="outline">{record.category || 'N/A'}</Badge>
                     </TableCell>
-                    <TableCell>{record.source || 'N/A'}</TableCell>
+                    <TableCell>N/A</TableCell>
                     <TableCell>{record.payment_method}</TableCell>
                     <TableCell>{record.reference || record.reference_id || 'N/A'}</TableCell>
                     <TableCell>
@@ -309,7 +296,11 @@ const IncomeRecordsPage = () => {
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                  onValueChange={(value) => setFormData(prev => ({ 
+                    ...prev, 
+                    category: value,
+                    category_id: value // Also set category_id
+                  }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -320,14 +311,6 @@ const IncomeRecordsPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="source">Source</Label>
-                <Input
-                  id="source"
-                  value={formData.source}
-                  onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="payment_method">Payment Method</Label>
@@ -355,7 +338,11 @@ const IncomeRecordsPage = () => {
                 <Input
                   id="reference"
                   value={formData.reference}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value, reference_id: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    reference: e.target.value,
+                    reference_id: e.target.value
+                  }))}
                 />
               </div>
               <div className="grid gap-2">
@@ -424,15 +411,6 @@ const IncomeRecordsPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="edit_source">Source/Payer</Label>
-                <Input 
-                  id="edit_source" 
-                  value={formData.source} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                />
               </div>
               
               <div className="grid gap-2">

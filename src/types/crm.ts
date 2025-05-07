@@ -1,114 +1,84 @@
 
+// CRM types
+
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'lost' | 'converted' | string;
+export type LeadSource = 'website' | 'referral' | 'walk-in' | 'phone' | 'social-media' | 'event' | 'other' | string;
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'new' | string;
+
 export interface Lead {
   id: string;
   name: string;
   email?: string;
   phone?: string;
-  source: LeadSource; 
+  source: LeadSource;
   status: LeadStatus;
   funnel_stage: FunnelStage;
+  funnelStage?: FunnelStage; // Alias for UI components
   assigned_to?: string;
-  tags?: string[];
-  interests?: string[];
+  assignedTo?: string; // Alias for UI components
   notes?: string;
-  follow_up_date?: string;
-  last_contact_date?: string;
-  conversion_date?: string;
-  conversion_value?: number;
   created_at?: string;
   updated_at?: string;
-  branch_id?: string;
-  
-  // Adding camelCase aliases for compatibility with existing components
-  funnelStage?: FunnelStage;
-  assignedTo?: string;
-  followUpDate?: string;
-  lastContactDate?: string;
-  conversionDate?: string;
-  conversionValue?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  branchId?: string;
+  follow_up_date?: string;
+  followUpDate?: string; // Alias for UI components
+  last_contact_date?: string;
+  lastContactDate?: string; // Alias for UI components
+  conversion_date?: string;
+  conversionDate?: string; // Alias for UI components
+  conversion_value?: number;
+  conversionValue?: number; // Alias for UI components
+  tags?: string[];
+  interests?: string[];
 }
-
-export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'cold' | 'warm' | 'hot';
-
-export type LeadSource = 'website' | 'referral' | 'walk-in' | 'social-media' | 'event' | 'phone' | 'other';
-
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'lost' | 'converted';
-
-export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
 
 export interface FollowUpTemplate {
   id: string;
   name: string;
+  title?: string;
+  type: 'email' | 'sms' | 'whatsapp';
   content: string;
+  variables?: string[];
+  created_by?: string;
+  created_at?: string;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  due_date?: string;
+  priority?: 'low' | 'medium' | 'high';
+  status: 'todo' | 'in-progress' | 'completed';
+  assigned_to?: string;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
-  
-  // Adding properties needed by components
-  title?: string;
-  type?: FollowUpType;
-  variables?: string[] | any;
-  isDefault?: boolean;
-  
-  // Add camelCase aliases
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-export interface FollowUpHistory {
+export interface Deal {
   id: string;
-  lead_id: string;
-  template_id?: string;
-  content: string;
-  type: FollowUpType;
-  status: 'sent' | 'delivered' | 'read' | 'failed';
-  sent_at: string;
-  sent_by?: string;
-  response?: string;
-  response_at?: string;
-  
-  // Adding camelCase aliases for compatibility
-  leadId?: string;
-  templateId?: string;
-  sentAt?: string;
-  sentBy?: string;
-  responseAt?: string;
+  name: string;
+  value: number;
+  status: 'new' | 'negotiation' | 'won' | 'lost';
+  lead_id?: string;
+  assigned_to?: string;
+  created_at?: string;
+  updated_at?: string;
+  close_date?: string;
 }
 
-// Redefining the interface for scheduled follow-ups
-export interface FollowUpScheduled {
-  id: string;
-  lead_id: string;
-  lead_name?: string;
-  type: FollowUpType;
-  scheduled_for: string;
-  subject: string;
-  content: string;
-  status: "scheduled" | "sent" | "cancelled";
-  
-  // Add camelCase aliases
-  leadId?: string;
-  leadName?: string;
-  scheduledFor?: string;
+export interface AutomationTrigger {
+  type: string;
+  conditions: any;
 }
 
-// Define a type alias for the format used in ScheduledFollowUp components
-export type ScheduledFollowUp = {
-  id: string;
-  leadId: string;
-  leadName: string;
-  type: FollowUpType;
-  scheduledFor: string;
-  subject: string;
-  content: string;
-  status: "scheduled" | "sent" | "cancelled";
-};
+export interface AutomationAction {
+  type: string;
+  params: any;
+}
 
-// Define the AutomationRule interface
 export interface AutomationRule {
   id: string;
   name: string;
@@ -120,14 +90,4 @@ export interface AutomationRule {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
-  created_by?: string;
-  
-  // Add camelCase aliases
-  triggerType?: string;
-  triggerCondition?: any;
-  isActive?: boolean;
-  branchId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
 }

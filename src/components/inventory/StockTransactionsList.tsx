@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchIcon, PlusIcon, ArrowUpIcon, ArrowDownIcon } from "lucide-react";
-import { InventoryTransaction } from "@/types/inventory";
+import { InventoryTransaction, StockTransactionType } from "@/types/inventory";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -26,73 +25,112 @@ const mockTransactions: InventoryTransaction[] = [
   {
     id: "tx-1",
     itemId: "inv-1",
+    item_id: "inv-1",
     itemName: "Whey Protein",
+    item_name: "Whey Protein",
     type: "stock-in",
     quantity: 10,
     previousQuantity: 15,
+    previous_quantity: 15,
     newQuantity: 25,
+    new_quantity: 25,
     notes: "Regular monthly restock",
     conductedBy: "staff-1",
+    conducted_by: "staff-1",
     conductedAt: "2023-06-01T10:00:00Z",
+    conducted_at: "2023-06-01T10:00:00Z",
     batchNumber: "WP-B123",
+    batch_number: "WP-B123",
+    date: "2023-06-01T10:00:00Z"
   },
   {
     id: "tx-2",
     itemId: "inv-4",
+    item_id: "inv-4",
     itemName: "Pre-Workout Mix",
+    item_name: "Pre-Workout Mix",
     type: "stock-out",
     quantity: 2,
     previousQuantity: 10,
+    previous_quantity: 10,
     newQuantity: 8,
+    new_quantity: 8,
     notes: "Sold to customer",
     conductedBy: "staff-2",
+    conducted_by: "staff-2",
     conductedAt: "2023-05-20T13:15:00Z",
+    conducted_at: "2023-05-20T13:15:00Z",
     relatedInvoiceId: "inv-124",
+    related_invoice_id: "inv-124",
+    date: "2023-05-20T13:15:00Z"
   },
   {
     id: "tx-3",
     itemId: "inv-2",
+    item_id: "inv-2",
     itemName: "Dumbbell Set (5-30kg)",
+    item_name: "Dumbbell Set (5-30kg)",
     type: "damaged",
     quantity: 1,
     previousQuantity: 4,
+    previous_quantity: 4,
     newQuantity: 3,
+    new_quantity: 3,
     notes: "One set damaged during delivery",
     conductedBy: "staff-1",
+    conducted_by: "staff-1",
     conductedAt: "2023-05-15T14:00:00Z",
+    conducted_at: "2023-05-15T14:00:00Z",
+    date: "2023-05-15T14:00:00Z"
   },
   {
     id: "tx-4",
     itemId: "inv-5",
+    item_id: "inv-5",
     itemName: "Resistance Bands",
+    item_name: "Resistance Bands",
     type: "stock-out",
     quantity: 5,
     previousQuantity: 5,
+    previous_quantity: 5,
     newQuantity: 0,
+    new_quantity: 0,
     notes: "Last items sold",
     conductedBy: "staff-3",
+    conducted_by: "staff-3",
     conductedAt: "2023-06-05T16:45:00Z",
+    conducted_at: "2023-06-05T16:45:00Z",
     relatedInvoiceId: "inv-126",
+    related_invoice_id: "inv-126",
+    date: "2023-06-05T16:45:00Z"
   },
   {
     id: "tx-5",
     itemId: "inv-1",
+    item_id: "inv-1",
     itemName: "Whey Protein",
+    item_name: "Whey Protein",
     type: "return",
     quantity: 1,
     previousQuantity: 24,
+    previous_quantity: 24,
     newQuantity: 25,
+    new_quantity: 25,
     notes: "Customer return - unopened",
     conductedBy: "staff-2",
+    conducted_by: "staff-2",
     conductedAt: "2023-06-03T11:30:00Z",
+    conducted_at: "2023-06-03T11:30:00Z",
     relatedInvoiceId: "inv-123",
+    related_invoice_id: "inv-123",
+    date: "2023-06-03T11:30:00Z"
   }
 ];
 
 interface TransactionFormData {
   itemId: string;
   itemName: string;
-  type: "stock-in" | "stock-out" | "adjustment" | "return" | "damaged";
+  type: StockTransactionType;
   quantity: number;
   notes?: string;
   batchNumber?: string;
@@ -113,7 +151,7 @@ const StockTransactionsList = () => {
   });
 
   const filteredTransactions = transactions.filter(tx => {
-    const matchesSearch = tx.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (tx.itemName || tx.item_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === "all" || tx.type === typeFilter;
     return matchesSearch && matchesType;
   });
@@ -143,17 +181,26 @@ const StockTransactionsList = () => {
     
     const newTransaction: InventoryTransaction = {
       id: `tx-${Date.now()}`,
+      item_id: formData.itemId || `item-${Date.now()}`,
       itemId: formData.itemId || `item-${Date.now()}`,
+      item_name: formData.itemName,
       itemName: formData.itemName,
       type: formData.type,
       quantity: formData.quantity,
-      previousQuantity,
-      newQuantity,
+      previous_quantity: previousQuantity,
+      previousQuantity: previousQuantity,
+      new_quantity: newQuantity,
+      newQuantity: newQuantity,
       notes: formData.notes,
+      batch_number: formData.batchNumber,
       batchNumber: formData.batchNumber,
+      related_invoice_id: formData.relatedInvoiceId,
       relatedInvoiceId: formData.relatedInvoiceId,
-      conductedBy: "current-user", // In a real app, this would be the logged-in user
+      conducted_by: "current-user", // In a real app, this would be the logged-in user
+      conductedBy: "current-user",
+      conducted_at: new Date().toISOString(),
       conductedAt: new Date().toISOString(),
+      date: new Date().toISOString(), // Required by type
     };
     
     setTransactions([newTransaction, ...transactions]);
@@ -265,8 +312,8 @@ const StockTransactionsList = () => {
                 ) : (
                   filteredTransactions.map((tx) => (
                     <TableRow key={tx.id}>
-                      <TableCell>{format(new Date(tx.conductedAt), "MMM d, yyyy h:mm a")}</TableCell>
-                      <TableCell className="font-medium">{tx.itemName}</TableCell>
+                      <TableCell>{format(new Date(tx.conductedAt || tx.conducted_at || tx.date), "MMM d, yyyy h:mm a")}</TableCell>
+                      <TableCell className="font-medium">{tx.itemName || tx.item_name}</TableCell>
                       <TableCell>
                         <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeBadgeColor(tx.type)}`}>
                           {getTypeIcon(tx.type)}
@@ -276,19 +323,19 @@ const StockTransactionsList = () => {
                         </div>
                       </TableCell>
                       <TableCell>{tx.quantity}</TableCell>
-                      <TableCell>{tx.previousQuantity}</TableCell>
-                      <TableCell>{tx.newQuantity}</TableCell>
-                      <TableCell>Staff #{tx.conductedBy.split('-')[1]}</TableCell>
+                      <TableCell>{tx.previousQuantity || tx.previous_quantity}</TableCell>
+                      <TableCell>{tx.newQuantity || tx.new_quantity}</TableCell>
+                      <TableCell>Staff #{(tx.conductedBy || tx.conducted_by || "").split('-')[1]}</TableCell>
                       <TableCell>
                         <span className="line-clamp-1">{tx.notes || '-'}</span>
-                        {tx.relatedInvoiceId && (
+                        {(tx.relatedInvoiceId || tx.related_invoice_id) && (
                           <div className="text-xs text-blue-600">
-                            Invoice: {tx.relatedInvoiceId}
+                            Invoice: {tx.relatedInvoiceId || tx.related_invoice_id}
                           </div>
                         )}
-                        {tx.batchNumber && (
+                        {(tx.batchNumber || tx.batch_number) && (
                           <div className="text-xs text-gray-500">
-                            Batch: {tx.batchNumber}
+                            Batch: {tx.batchNumber || tx.batch_number}
                           </div>
                         )}
                       </TableCell>
@@ -328,7 +375,7 @@ const StockTransactionsList = () => {
               <Select 
                 name="type" 
                 value={formData.type} 
-                onValueChange={(value) => handleSelectChange("type", value)}
+                onValueChange={(value) => handleSelectChange("type", value as StockTransactionType)}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select type" />

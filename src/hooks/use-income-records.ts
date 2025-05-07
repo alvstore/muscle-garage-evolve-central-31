@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { financeService } from '@/services/financeService';
 import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
-import { FinancialTransaction, PaymentMethod } from '@/types/finance';
+import { FinancialTransaction, TransactionType } from '@/types/finance';
 
 export const useIncomeRecords = () => {
   const [records, setRecords] = useState<FinancialTransaction[]>([]);
@@ -37,7 +37,9 @@ export const useIncomeRecords = () => {
       };
       
       const newRecord = await financeService.createTransaction(incomeRecord as any);
-      setRecords(prev => [...prev, newRecord as FinancialTransaction]);
+      if (newRecord) {
+        setRecords(prev => [...prev, newRecord as FinancialTransaction]);
+      }
       return newRecord;
     } catch (error) {
       throw error;
@@ -48,9 +50,11 @@ export const useIncomeRecords = () => {
   const updateRecord = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
       const updatedRecord = await financeService.updateTransaction(id, updates);
-      setRecords(prev => 
-        prev.map(record => record.id === id ? updatedRecord as FinancialTransaction : record)
-      );
+      if (updatedRecord) {
+        setRecords(prev => 
+          prev.map(record => record.id === id ? updatedRecord as FinancialTransaction : record)
+        );
+      }
       return updatedRecord;
     } catch (error) {
       throw error;

@@ -1,69 +1,81 @@
+
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { useEmailSettings } from '@/hooks/use-email-settings';
+import EmailProviderSettings from './EmailProviderSettings';
+import EmailSettingsHeader from './EmailSettingsHeader';
+import NotificationSettings from './NotificationSettings';
 
 const EmailSettings = () => {
-  const { settings, isLoading, updateSettings, sendTestEmail } = useEmailSettings();
-  const [testEmail, setTestEmail] = React.useState('');
+  const { settings, isLoading, error, isSaving, saveSettings, updateField, fetchSettings, testConnection } = useEmailSettings();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-6">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="ml-2">Loading email settings...</span>
-      </div>
-    );
-  }
-
-  const handleTestEmail = async () => {
-    if (!testEmail) {
-      return;
-    }
-    await sendTestEmail(testEmail);
-  };
-
-  const handleSaveSettings = async () => {
-    // Example implementation - in a real app you would have a form
-    await updateSettings({
-      provider: 'smtp', // Just an example, you would get this from a form
-      from_email: 'example@yourgym.com',
-      is_active: true,
-      notifications: {
-        sendOnInvoice: true,
-        sendClassUpdates: true,
-        sendOnRegistration: true
-      }
+  const handleToggle = (checked: boolean) => {
+    saveSettings({
+      ...settings!,
+      is_active: checked
     });
   };
 
+  const handleNotificationSettingsChange = (notificationSettings: Record<string, boolean>) => {
+    if (!settings) return;
+    
+    saveSettings({
+      ...settings,
+      notifications: notificationSettings
+    });
+  };
+
+  const handleConfigUpdate = (newConfig: any) => {
+    if (!settings) return;
+    
+    saveSettings({
+      ...settings,
+      ...newConfig
+    });
+  };
+
+  const handleTest = async () => {
+    if (!settings) return false;
+    
+    try {
+      const result = await testConnection("test@example.com");
+      return result;
+    } catch (error) {
+      return false;
+    }
+  };
+
   return (
-    <Card>
-      <CardContent className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Email Settings</h3>
-        
-        {/* This would be where your actual email settings form would go */}
-        <div className="space-y-4">
-          {/* Example test email functionality */}
-          <div className="flex items-center gap-2">
-            <input
-              type="email"
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="Enter email for test"
-              className="border p-2 rounded"
-            />
-            <Button onClick={handleTestEmail}>
-              Send Test
-            </Button>
-            <Button onClick={handleSaveSettings}>
-              Save Settings
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <EmailSettingsHeader 
+        enabled={settings?.is_active || false} 
+        onEnableChange={handleToggle}
+        isLoading={isLoading}
+      />
+      
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="md:col-span-3">
+          <EmailProviderSettings 
+            config={settings || {}}
+            isLoading={isLoading}
+            isSaving={isSaving}
+            onUpdateConfig={handleConfigUpdate}
+            onSave={() => saveSettings(settings!)}
+            onTest={handleTest}
+          />
         </div>
-      </CardContent>
-    </Card>
+        
+        <div className="md:col-span-2">
+          <NotificationSettings 
+            templates={settings?.notifications || {
+              sendOnRegistration: true,
+              sendOnInvoice: true,
+              sendClassUpdates: false
+            }}
+            onChange={handleNotificationSettingsChange}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 
