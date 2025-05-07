@@ -1,3 +1,4 @@
+
 export type TransactionType = 'income' | 'expense';
 
 export interface FinancialTransaction {
@@ -16,6 +17,18 @@ export interface FinancialTransaction {
   transaction_id?: string;
   created_at?: string;
   updated_at?: string;
+  
+  // Adding camelCase aliases
+  transactionDate?: string;
+  paymentMethod?: string;
+  recordedBy?: string;
+  branchId?: string;
+  categoryId?: string;
+  referenceId?: string;
+  recurringPeriod?: string | null;
+  transactionId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Invoice {
@@ -31,9 +44,11 @@ export interface Invoice {
   branch_id?: string;
   items: InvoiceItem[];
   description?: string;
+  notes?: string;
   
   // Adding camelCase aliases for UI component compatibility
   memberId?: string;
+  memberName?: string; // Added for compatibility with components
   dueDate?: string | Date;
   issuedDate?: string | Date;
   paidDate?: string | Date;
@@ -56,6 +71,6 @@ export interface InvoiceItem {
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'partially_paid';
 
-export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'cheque' | 'online' | 'other';
+export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'cheque' | 'online' | 'razorpay' | 'other';
 
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';

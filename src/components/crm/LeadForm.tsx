@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -40,16 +39,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Save, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Lead, LeadStatus, FunnelStage, LeadSource } from "@/types/crm";
+import { Lead, LeadSource, LeadStatus, FunnelStage } from "@/types/crm";
 
 // Define the validation schema
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address.").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  source: z.enum(["website", "referral", "walk-in", "phone", "social-media", "event", "other"]),
-  status: z.enum(["new", "contacted", "qualified", "lost", "converted"]),
-  funnelStage: z.enum(["cold", "warm", "hot"]),
+  source: z.enum(["website", "referral", "walk-in", "phone", "social-media", "event", "other"] as const),
+  status: z.enum(["new", "contacted", "qualified", "lost", "converted"] as const),
+  funnelStage: z.enum(["cold", "warm", "hot"] as const),
   assignedTo: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
   followUpDate: z.date().optional(),

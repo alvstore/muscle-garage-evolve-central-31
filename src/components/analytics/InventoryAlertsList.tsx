@@ -39,9 +39,9 @@ const InventoryAlertsList = () => {
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity <= 0) {
       return { label: 'Out of Stock', variant: 'destructive' };
-    } else if (item.quantity <= item.reorderLevel / 2) {
+    } else if (item.quantity <= item.reorder_level / 2) {
       return { label: 'Critical', variant: 'destructive' };
-    } else if (item.quantity <= item.reorderLevel) {
+    } else if (item.quantity <= item.reorder_level) {
       return { label: 'Low', variant: 'warning' };
     } else {
       return { label: 'OK', variant: 'outline' };
@@ -87,7 +87,7 @@ const InventoryAlertsList = () => {
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell className="text-center">{item.quantity}</TableCell>
-                    <TableCell className="text-center">{item.reorderLevel}</TableCell>
+                    <TableCell className="text-center">{item.reorder_level}</TableCell>
                     <TableCell className="text-right">
                       <Badge variant={status.variant as any}>{status.label}</Badge>
                     </TableCell>

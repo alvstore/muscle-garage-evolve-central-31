@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -95,8 +94,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       description: item?.description || "",
       category: item?.category || "",
       quantity: item?.quantity || 0,
-      reorderLevel: item?.reorderLevel || 0,
-      costPrice: item?.costPrice || 0,
+      reorderLevel: item?.reorder_level || 0,
+      costPrice: item?.cost_price || 0,
       price: item?.price || 0,
     },
   });
@@ -112,19 +111,26 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         category: values.category as InventoryCategory,
         description: values.description,
         quantity: values.quantity,
-        reorderLevel: values.reorderLevel,
+        reorder_level: values.reorderLevel,
         costPrice: values.costPrice,
+        cost_price: values.costPrice,
         price: values.price,
         barcode: item?.barcode || '',
         image: item?.image || '',
         supplier: item?.supplier || '',
+        supplier_contact: item?.supplierContact || '',
         supplierContact: item?.supplierContact || '',
         location: item?.location || '',
+        manufacture_date: item?.manufactureDate || undefined,
         manufactureDate: item?.manufactureDate || undefined,
+        expiry_date: item?.expiryDate || undefined,
         expiryDate: item?.expiryDate || undefined,
+        last_stock_update: new Date().toISOString(),
         lastStockUpdate: new Date().toISOString(),
         status: item?.status || 'in-stock',
+        created_at: item?.createdAt || new Date().toISOString(),
         createdAt: item?.createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       

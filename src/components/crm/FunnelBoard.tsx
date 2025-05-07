@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import {
@@ -68,12 +67,18 @@ const mockLeads: Lead[] = [
     phone: "+1122334455",
     source: "walk-in",
     status: "qualified",
+    funnel_stage: "hot",
     funnelStage: "hot",
+    assigned_to: "Staff 1",
     assignedTo: "Staff 1",
     notes: "Ready to sign up, waiting for spouse approval",
+    created_at: "2023-04-10T11:45:00Z",
     createdAt: "2023-04-10T11:45:00Z",
+    updated_at: "2023-04-17T13:20:00Z",
     updatedAt: "2023-04-17T13:20:00Z",
+    last_contact_date: "2023-04-17T13:20:00Z",
     lastContactDate: "2023-04-17T13:20:00Z",
+    follow_up_date: "2023-04-19T15:00:00Z",
     followUpDate: "2023-04-19T15:00:00Z",
   },
   {
@@ -83,12 +88,19 @@ const mockLeads: Lead[] = [
     phone: "+1566778899",
     source: "social-media",
     status: "converted",
+    funnel_stage: "hot",
     funnelStage: "hot",
+    assigned_to: "Staff 3",
     assignedTo: "Staff 3",
+    created_at: "2023-04-05T09:10:00Z",
     createdAt: "2023-04-05T09:10:00Z",
+    updated_at: "2023-04-18T10:30:00Z",
     updatedAt: "2023-04-18T10:30:00Z",
+    last_contact_date: "2023-04-18T10:30:00Z",
     lastContactDate: "2023-04-18T10:30:00Z",
+    conversion_date: "2023-04-18T10:30:00Z",
     conversionDate: "2023-04-18T10:30:00Z",
+    conversion_value: 299.99,
     conversionValue: 299.99,
   },
   {
@@ -98,9 +110,13 @@ const mockLeads: Lead[] = [
     phone: "+1112223344",
     source: "event",
     status: "new",
+    funnel_stage: "cold",
     funnelStage: "cold",
+    assigned_to: "Staff 2",
     assignedTo: "Staff 2",
+    created_at: "2023-04-01T15:20:00Z",
     createdAt: "2023-04-01T15:20:00Z",
+    updated_at: "2023-04-15T16:45:00Z",
     updatedAt: "2023-04-15T16:45:00Z",
   },
   {
@@ -110,11 +126,17 @@ const mockLeads: Lead[] = [
     phone: "+1234567999",
     source: "website",
     status: "contacted",
+    funnel_stage: "warm",
     funnelStage: "warm",
+    assigned_to: "Staff 1",
     assignedTo: "Staff 1",
+    created_at: "2023-04-12T10:30:00Z",
     createdAt: "2023-04-12T10:30:00Z",
+    updated_at: "2023-04-16T11:20:00Z",
     updatedAt: "2023-04-16T11:20:00Z",
+    last_contact_date: "2023-04-16T11:20:00Z",
     lastContactDate: "2023-04-16T11:20:00Z",
+    follow_up_date: "2023-04-23T14:00:00Z",
     followUpDate: "2023-04-23T14:00:00Z",
   },
   {
@@ -124,12 +146,18 @@ const mockLeads: Lead[] = [
     phone: "+1444555666",
     source: "referral",
     status: "qualified",
+    funnel_stage: "hot",
     funnelStage: "hot",
+    assigned_to: "Staff 3",
     assignedTo: "Staff 3",
     notes: "Very interested in personal training",
+    created_at: "2023-04-08T09:15:00Z",
     createdAt: "2023-04-08T09:15:00Z",
+    updated_at: "2023-04-17T15:30:00Z",
     updatedAt: "2023-04-17T15:30:00Z",
+    last_contact_date: "2023-04-17T15:30:00Z",
     lastContactDate: "2023-04-17T15:30:00Z",
+    follow_up_date: "2023-04-20T10:00:00Z",
     followUpDate: "2023-04-20T10:00:00Z",
   }
 ];
@@ -145,19 +173,19 @@ interface FunnelColumn {
 const FunnelBoard = () => {
   const [columns, setColumns] = useState<FunnelColumn[]>([
     {
-      id: "cold" as FunnelStage,
+      id: "cold",
       title: "Cold Leads",
       description: "New and unqualified leads",
       leads: []
     },
     {
-      id: "warm" as FunnelStage,
+      id: "warm",
       title: "Warm Leads",
       description: "Contacted and showing interest",
       leads: []
     },
     {
-      id: "hot" as FunnelStage,
+      id: "hot",
       title: "Hot Leads",
       description: "Ready to convert",
       leads: []

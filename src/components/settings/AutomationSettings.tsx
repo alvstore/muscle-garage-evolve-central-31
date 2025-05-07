@@ -1,332 +1,511 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useAutomationRules, AutomationRule } from "@/hooks/use-automation-rules";
-import { Loader2, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
+import { useBranch } from "@/hooks/use-branch";
+import { 
+  Select, SelectContent, 
+  SelectItem, SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import settingsService from "@/services/settingsService";
+import { AutomationRule } from "@/types/crm";
 
-// Form schema for automation rule
-const automationRuleSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  description: z.string().optional(),
-  trigger_type: z.string().min(1, "Please select a trigger type"),
-  is_active: z.boolean().default(true),
-  // We'll handle these complex objects separately
-  // trigger_condition: z.record(z.any()),
-  // actions: z.array(z.record(z.any()))
-});
+const AutomationSettings = () => {
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { currentBranch } = useBranch();
 
-type AutomationRuleFormValues = z.infer<typeof automationRuleSchema>;
-
-const AutomationSettings: React.FC = () => {
-  const { rules, isLoading, saveRule, deleteRule, toggleRuleStatus } = useAutomationRules();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentRule, setCurrentRule] = useState<AutomationRule | null>(null);
-  const [ruleToDelete, setRuleToDelete] = useState<string | null>(null);
-
-  const form = useForm<AutomationRuleFormValues>({
-    resolver: zodResolver(automationRuleSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      trigger_type: "",
-      is_active: true
-    }
-  });
-  
-  // Reset form when dialog opens/closes
   useEffect(() => {
-    if (isDialogOpen && currentRule) {
-      form.reset({
-        name: currentRule.name,
-        description: currentRule.description || "",
-        trigger_type: currentRule.trigger_type,
-        is_active: currentRule.is_active
-      });
-    } else if (isDialogOpen) {
-      form.reset({
-        name: "",
-        description: "",
-        trigger_type: "",
-        is_active: true
-      });
+    if (currentBranch?.id) {
+      loadRules();
     }
-  }, [isDialogOpen, currentRule, form]);
+  }, [currentBranch?.id]);
+
+  const loadRules = async () => {
+    setIsLoading(true);
+    try {
+      const rules = await settingsService.getAutomationRules(currentBranch?.id);
+      setAutomationRules(rules);
+    } catch (error) {
+      console.error("Failed to load automation rules:", error);
+      toast.error("Failed to load automation rules");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateRule = () => {
-    setCurrentRule(null);
-    setIsDialogOpen(true);
+    setEditingRule({
+      id: "",
+      name: "New Rule",
+      description: "",
+      trigger_type: "membership_expiry",
+      trigger_condition: { days: 7 },
+      actions: [{ type: "notification", channel: "email", template_id: "" }],
+      is_active: true,
+    });
   };
 
   const handleEditRule = (rule: AutomationRule) => {
-    setCurrentRule(rule);
-    setIsDialogOpen(true);
+    setEditingRule({ ...rule });
   };
 
-  const handleDeleteRule = (ruleId: string) => {
-    setRuleToDelete(ruleId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteRule = async () => {
-    if (ruleToDelete) {
-      const success = await deleteRule(ruleToDelete);
+  const handleDeleteRule = async (ruleId: string) => {
+    try {
+      const success = await settingsService.deleteAutomationRule(ruleId);
       if (success) {
-        toast.success("Rule deleted successfully");
+        setAutomationRules((prev) => prev.filter((rule) => rule.id !== ruleId));
+        toast.success("Automation rule deleted");
+      } else {
+        throw new Error("Failed to delete rule");
       }
-      setIsDeleteDialogOpen(false);
-      setRuleToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete rule:", error);
+      toast.error("Failed to delete rule");
     }
   };
 
-  const onSubmit = async (data: AutomationRuleFormValues) => {
-    // Default values for trigger condition and actions
-    const defaultTriggerCondition = {
-      type: data.trigger_type,
-      value: 1
-    };
-
-    const defaultAction = {
-      type: "notification",
-      message: `This is a system notification triggered by ${data.name}`,
-      channels: ["email"]
-    };
-
-    const ruleData: AutomationRule = {
-      ...data,
-      trigger_condition: currentRule?.trigger_condition || defaultTriggerCondition,
-      actions: currentRule?.actions || [defaultAction],
-      id: currentRule?.id
-    };
-
-    const success = await saveRule(ruleData);
-    if (success) {
-      setIsDialogOpen(false);
-      toast.success(currentRule ? "Rule updated successfully" : "Rule created successfully");
+  const handleSaveRule = async () => {
+    if (!editingRule) return;
+    
+    setIsSaving(true);
+    try {
+      // Make sure rule has all required properties
+      const ruleToSave: AutomationRule = {
+        trigger_condition: editingRule.trigger_condition,
+        actions: editingRule.actions,
+        id: editingRule.id || "",
+        name: editingRule.name,
+        is_active: editingRule.is_active !== undefined ? editingRule.is_active : true,
+        description: editingRule.description,
+        trigger_type: editingRule.trigger_type,
+        branch_id: currentBranch?.id
+      };
+      
+      const savedRule = await settingsService.saveAutomationRule(ruleToSave);
+      
+      if (savedRule) {
+        if (editingRule.id) {
+          // Update existing rule
+          setAutomationRules(prev =>
+            prev.map(rule => rule.id === savedRule.id ? savedRule : rule)
+          );
+        } else {
+          // Add new rule
+          setAutomationRules(prev => [...prev, savedRule]);
+        }
+        setEditingRule(null);
+        toast.success("Automation rule saved successfully");
+      } else {
+        throw new Error("Failed to save rule");
+      }
+    } catch (error) {
+      console.error("Failed to save rule:", error);
+      toast.error("Failed to save automation rule");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleToggleStatus = async (ruleId: string, isActive: boolean) => {
-    const success = await toggleRuleStatus(ruleId, isActive);
-    if (success) {
-      toast.success(`Rule ${isActive ? 'enabled' : 'disabled'} successfully`);
+  const handleCancelEdit = () => {
+    setEditingRule(null);
+  };
+
+  const updateEditingRule = (field: string, value: any) => {
+    if (!editingRule) return;
+    setEditingRule(prev => ({
+      ...prev!,
+      [field]: value,
+    }));
+  };
+
+  const getTriggerDescription = (rule: AutomationRule): string => {
+    switch (rule.trigger_type) {
+      case "membership_expiry":
+        return `${rule.trigger_condition?.days || 0} days before membership expires`;
+      case "birthday":
+        return `${rule.trigger_condition?.days || 0} days before member birthday`;
+      case "inactivity":
+        return `After ${rule.trigger_condition?.days || 0} days of inactivity`;
+      case "new_member":
+        return "When a new member joins";
+      default:
+        return "Unknown trigger";
     }
   };
 
-  return (
-    <>
+  const getActionDescription = (rule: AutomationRule): string => {
+    const actionTypes = rule.actions.map(action => {
+      switch (action.type) {
+        case "notification":
+          return `Send ${action.channel} notification`;
+        case "task":
+          return "Create task for staff";
+        default:
+          return "Unknown action";
+      }
+    });
+
+    return actionTypes.join(", ");
+  };
+
+  if (isLoading) {
+    return (
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Automation Rules</CardTitle>
-            <CardDescription>Configure rules that trigger automated actions</CardDescription>
-          </div>
-          <Button onClick={handleCreateRule}>
-            <Plus className="h-4 w-4 mr-2" /> Add Rule
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center p-6">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="ml-2">Loading rules...</span>
-            </div>
-          ) : rules.length === 0 ? (
-            <div className="text-center p-6 border rounded-lg bg-muted/10">
-              <h3 className="text-lg font-medium">No automation rules found</h3>
-              <p className="text-muted-foreground my-2">
-                Create your first automation rule to start automating repetitive tasks.
-              </p>
-              <Button onClick={handleCreateRule} className="mt-2">
-                <Plus className="h-4 w-4 mr-2" /> Create Rule
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {rules.map(rule => (
-                <div
-                  key={rule.id}
-                  className="p-4 border rounded-lg hover:bg-accent/5 transition-colors flex justify-between items-center"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium flex items-center">
-                      {rule.name}
-                      {!rule.is_active && (
-                        <Badge variant="outline" className="ml-2 text-muted-foreground">
-                          Disabled
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {rule.description || "No description provided"}
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center mt-1">
-                      <Badge variant="secondary" className="mr-2">
-                        {rule.trigger_type}
-                      </Badge>
-                      <span>{rule.actions?.length || 0} actions</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={rule.is_active}
-                      onCheckedChange={(checked) => handleToggleStatus(rule.id!, checked)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditRule(rule)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteRule(rule.id!)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <CardContent className="pt-6 flex items-center justify-center min-h-[300px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
+    );
+  }
 
-      {/* Rule Form Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{currentRule ? "Edit" : "Create"} Automation Rule</DialogTitle>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rule Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="E.g., Send welcome email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+  if (editingRule) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {editingRule.id ? "Edit Automation Rule" : "Create Automation Rule"}
+          </CardTitle>
+          <CardDescription>
+            Configure when and how this automation should run
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="rule-name">Rule Name</Label>
+            <Input
+              id="rule-name"
+              value={editingRule.name}
+              onChange={(e) => updateEditingRule("name", e.target.value)}
+              placeholder="Enter rule name"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="rule-description">Description (Optional)</Label>
+            <Textarea
+              id="rule-description"
+              value={editingRule.description || ""}
+              onChange={(e) => updateEditingRule("description", e.target.value)}
+              placeholder="Describe what this rule does"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="trigger-type">Trigger</Label>
+            <Select
+              value={editingRule.trigger_type}
+              onValueChange={(value) =>
+                updateEditingRule("trigger_type", value)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a trigger" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="membership_expiry">
+                  Membership Expiry
+                </SelectItem>
+                <SelectItem value="birthday">Member Birthday</SelectItem>
+                <SelectItem value="inactivity">Member Inactivity</SelectItem>
+                <SelectItem value="new_member">New Member Joined</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(editingRule.trigger_type === "membership_expiry" ||
+            editingRule.trigger_type === "birthday" ||
+            editingRule.trigger_type === "inactivity") && (
+            <div>
+              <Label htmlFor="days-before">
+                {editingRule.trigger_type === "inactivity"
+                  ? "Days of inactivity"
+                  : "Days before"}
+              </Label>
+              <Input
+                id="days-before"
+                type="number"
+                value={editingRule.trigger_condition?.days || 0}
+                onChange={(e) =>
+                  updateEditingRule("trigger_condition", {
+                    ...editingRule.trigger_condition,
+                    days: parseInt(e.target.value),
+                  })
+                }
               />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Describe what this rule does"
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="trigger_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trigger Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <Label>Actions</Label>
+
+            {editingRule.actions.map((action, index) => (
+              <div key={index} className="border p-4 rounded-md space-y-3">
+                <div>
+                  <Label>Action Type</Label>
+                  <Select
+                    value={action.type}
+                    onValueChange={(value) => {
+                      const newActions = [...editingRule.actions];
+                      newActions[index].type = value;
+                      updateEditingRule("actions", newActions);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select action type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="notification">
+                        Send Notification
+                      </SelectItem>
+                      <SelectItem value="task">
+                        Create Task for Staff
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {action.type === "notification" && (
+                  <>
+                    <div>
+                      <Label>Channel</Label>
+                      <Select
+                        value={action.channel || "email"}
+                        onValueChange={(value) => {
+                          const newActions = [...editingRule.actions];
+                          newActions[index].channel = value;
+                          updateEditingRule("actions", newActions);
+                        }}
+                      >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select when this rule should trigger" />
+                          <SelectValue placeholder="Select channel" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="membership_expiry">Membership Expiry</SelectItem>
-                        <SelectItem value="new_member">New Member Registration</SelectItem>
-                        <SelectItem value="birthday">Member Birthday</SelectItem>
-                        <SelectItem value="missed_classes">Missed Classes</SelectItem>
-                        <SelectItem value="inactive_member">Inactive Member</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="is_active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Rule Status</FormLabel>
+                        <SelectContent>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="sms">SMS</SelectItem>
+                          <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                          <SelectItem value="in_app">
+                            In-app Notification
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
+                    {/* Template selection would go here in a real implementation */}
+                  </>
                 )}
-              />
 
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
+                {action.type === "task" && (
+                  <>
+                    <div>
+                      <Label>Task Title</Label>
+                      <Input
+                        value={action.title || ""}
+                        onChange={(e) => {
+                          const newActions = [...editingRule.actions];
+                          newActions[index].title = e.target.value;
+                          updateEditingRule("actions", newActions);
+                        }}
+                        placeholder="Task title"
+                      />
+                    </div>
+                    <div>
+                      <Label>Assign To</Label>
+                      <Select
+                        value={action.assignRole || "manager"}
+                        onValueChange={(value) => {
+                          const newActions = [...editingRule.actions];
+                          newActions[index].assignRole = value;
+                          updateEditingRule("actions", newActions);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manager">Branch Manager</SelectItem>
+                          <SelectItem value="trainer">
+                            Member's Trainer
+                          </SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => {
+                    const newActions = editingRule.actions.filter(
+                      (_, i) => i !== index
+                    );
+                    updateEditingRule("actions", newActions);
+                  }}
                 >
-                  Cancel
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Remove Action
                 </Button>
-                <Button type="submit">
-                  {currentRule ? "Update" : "Create"} Rule
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+              </div>
+            ))}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this automation rule. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteRule} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+            <Button
+              variant="outline"
+              onClick={() => {
+                updateEditingRule("actions", [
+                  ...editingRule.actions,
+                  {
+                    type: "notification",
+                    channel: "email",
+                    template_id: "",
+                  },
+                ]);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Action
+            </Button>
+          </div>
+
+          <div className="flex justify-between items-center border-t pt-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="is-active">Active</Label>
+              <p className="text-sm text-muted-foreground">
+                Enable or disable this automation rule
+              </p>
+            </div>
+            <Switch
+              id="is-active"
+              checked={editingRule.is_active}
+              onCheckedChange={(checked) =>
+                updateEditingRule("is_active", checked)
+              }
+            />
+          </div>
+        </CardContent>
+        <div className="flex justify-end p-6 pt-0 gap-2">
+          <Button variant="outline" onClick={handleCancelEdit}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveRule} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Rule"
+            )}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <div className="space-y-1">
+          <CardTitle>Automation Rules</CardTitle>
+          <CardDescription>
+            Configure automated actions based on triggers
+          </CardDescription>
+        </div>
+        <Button onClick={handleCreateRule}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Rule
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {automationRules.length === 0 ? (
+          <div className="text-center py-8 border rounded-lg bg-muted/30">
+            <p className="text-muted-foreground">
+              No automation rules configured yet
+            </p>
+            <Button
+              variant="link"
+              className="mt-2"
+              onClick={handleCreateRule}
+            >
+              Create your first automation rule
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {automationRules.map((rule) => (
+              <div
+                key={rule.id}
+                className={`border rounded-md p-4 ${
+                  rule.is_active ? "" : "bg-muted/30 text-muted-foreground"
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{rule.name}</h4>
+                    {rule.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {rule.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center">
+                    {!rule.is_active && (
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded mr-2">
+                        Disabled
+                      </span>
+                    )}
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditRule(rule)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteRule(rule.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <p className="text-xs uppercase text-muted-foreground font-medium">
+                      Trigger
+                    </p>
+                    <p className="text-sm mt-1">
+                      {getTriggerDescription(rule)}
+                    </p>
+                  </div>
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <p className="text-xs uppercase text-muted-foreground font-medium">
+                      Actions
+                    </p>
+                    <p className="text-sm mt-1">{getActionDescription(rule)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

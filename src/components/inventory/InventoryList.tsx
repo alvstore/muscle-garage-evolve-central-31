@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,7 +66,7 @@ const InventoryList = () => {
     fetchCategories();
   }, []);
 
-  const handleSaveItem = async (item: InventoryItem) => {
+const handleSaveItem = async (item: InventoryItem) => {
     try {
       // Add branch_id to the item
       const itemWithBranchId = {
@@ -233,8 +232,8 @@ const InventoryList = () => {
                   <TableCell>{item.description}</TableCell>
                   <TableCell>{item.category}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.reorderLevel}</TableCell>
-                  <TableCell>{item.costPrice}</TableCell>
+                  <TableCell>{item.reorder_level}</TableCell>
+                  <TableCell>{item.cost_price}</TableCell>
                   <TableCell>{item.price}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

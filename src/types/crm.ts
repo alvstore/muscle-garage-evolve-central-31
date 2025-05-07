@@ -4,8 +4,8 @@ export interface Lead {
   name: string;
   email?: string;
   phone?: string;
-  source: string;
-  status: string;
+  source: LeadSource; 
+  status: LeadStatus;
   funnel_stage: FunnelStage;
   assigned_to?: string;
   tags?: string[];
@@ -50,7 +50,7 @@ export interface FollowUpTemplate {
   // Adding properties needed by components
   title?: string;
   type?: FollowUpType;
-  variables?: string[];
+  variables?: string[] | any;
   isDefault?: boolean;
   
   // Add camelCase aliases
@@ -107,3 +107,27 @@ export type ScheduledFollowUp = {
   content: string;
   status: "scheduled" | "sent" | "cancelled";
 };
+
+// Define the AutomationRule interface
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description?: string;
+  trigger_type: string;
+  trigger_condition: any;
+  actions: any[];
+  is_active: boolean;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  
+  // Add camelCase aliases
+  triggerType?: string;
+  triggerCondition?: any;
+  isActive?: boolean;
+  branchId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
