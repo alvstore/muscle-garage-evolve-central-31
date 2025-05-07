@@ -96,6 +96,11 @@ export const useMembers = () => {
   const updateMember = async (id: string, updates: Partial<Member>): Promise<Member | null> => {
     setIsLoading(true);
     try {
+      // Ensure branch_id is not changed
+      if (updates.branch_id && updates.branch_id !== currentBranch?.id) {
+        delete updates.branch_id;
+      }
+      
       const { data, error } = await supabase
         .from('members')
         .update(updates)
@@ -142,6 +147,9 @@ export const useMembers = () => {
   useEffect(() => {
     if (currentBranch?.id) {
       fetchMembers();
+    } else {
+      // Clear members if no branch selected
+      setMembers([]);
     }
   }, [fetchMembers, currentBranch?.id]);
 

@@ -10,36 +10,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Building2, RefreshCw, Search, Plus } from 'lucide-react';
-import { BranchContext } from '@/contexts/BranchContext';
-import { useContext } from 'react';
+import { useBranch } from '@/hooks/use-branch';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { Input } from '../ui/input';
 
 const BranchSelector: React.FC = () => {
-  const { branches, currentBranch, switchBranch, isLoading, fetchBranches, error } = useContext(BranchContext);
+  const { branches, currentBranch, switchBranch, isLoading, fetchBranches, error } = useBranch();
   const [isOpen, setIsOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const initialFetchRef = useRef(false);
   
-  // Fetch branches only once on mount
-  useEffect(() => {
-    if (!initialFetchRef.current) {
-      // Remove this console.log line
-      // console.log('BranchSelector mounted, fetching branches...');
-      fetchBranches();
-      initialFetchRef.current = true;
-    }
-  }, []); // Empty dependency array - KEEP ONLY THIS useEffect
-
   // Filter branches based on search query
   const filteredBranches = branches.filter(branch => 
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // REMOVE the second useEffect that calls fetchBranches
+  useEffect(() => {
+    // Only fetch on first mount
+    if (!initialFetchRef.current) {
+      console.log('BranchSelector fetching branches on mount');
+      fetchBranches().then(() => {
+        console.log('Initial branches fetch complete');
+      });
+      initialFetchRef.current = true;
+    }
+  }, [fetchBranches]); 
 
   // Show toast notification when error occurs
   useEffect(() => {
@@ -50,13 +48,13 @@ const BranchSelector: React.FC = () => {
 
   // Handle branch selection
   const handleValueChange = useCallback((value: string) => {
-    console.log('Branch selected:', value); // Add this line
+    console.log('Branch selected:', value); 
     switchBranch(value);
     setIsOpen(false);
     
     const selectedBranch = branches.find(b => b.id === value);
     if (selectedBranch) {
-      console.log('Setting branch:', selectedBranch); // Add this line
+      console.log('Setting branch:', selectedBranch);
       toast.success(`Switched to ${selectedBranch.name}`);
     }
   }, [branches, switchBranch]);
@@ -73,7 +71,7 @@ const BranchSelector: React.FC = () => {
   // Handle refresh button click
   const handleRefresh = useCallback(async (e?: React.MouseEvent) => {
     if (e) {
-      e.stopPropagation(); // Prevent triggering select open/close
+      e.stopPropagation();
     }
     
     setRefreshing(true);

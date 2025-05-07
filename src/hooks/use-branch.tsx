@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, createContext, ReactNode, useContext } from 'react';
-import { supabase, getCurrentUserBranch } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Branch } from '@/types/branch';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
@@ -31,69 +31,130 @@ const useBranchData = () => {
 
   // Fetch branches
   const fetchBranches = useCallback(async () => {
+    console.log('Fetching branches from database');
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      if (!user) {
+        console.log('No user, cannot fetch branches');
+        setIsLoading(false);
+        return [];
+      }
+      
+      console.log('User found, getting user profile for branches');
+      
+      // First get the user's profile to check their role and accessible branches
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, branch_id, accessible_branch_ids')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('Error getting user profile:', profileError);
+        setError('Failed to get user profile');
+        return [];
+      }
+      
+      console.log('User profile:', profile);
+      
+      // Set up query for branches
+      let query = supabase
         .from('branches')
         .select('*')
         .order('name');
+      
+      // Filter branches based on user role and permissions
+      if (profile?.role !== 'admin') {
+        console.log('User is not admin, filtering branches');
+        const accessibleIds = [profile?.branch_id];
+        if (profile?.accessible_branch_ids && profile.accessible_branch_ids.length > 0) {
+          accessibleIds.push(...profile.accessible_branch_ids);
+        }
+        
+        if (accessibleIds.length > 0 && accessibleIds[0] !== null) {
+          console.log('Filtering by branch IDs:', accessibleIds);
+          query = query.in('id', accessibleIds);
+        }
+      }
+      
+      const { data: branchesData, error: branchesError } = await query;
 
-      if (error) {
-        console.error('Error fetching branches:', error);
+      if (branchesError) {
+        console.error('Error fetching branches:', branchesError);
         setError('Failed to load branches');
-        toast.error('Failed to load branches');
         return [];
       }
 
-      setBranches(data);
-      return data;
-    } catch (err) {
-      console.error('Error fetching branches:', err);
-      setError('Failed to load branches');
-      toast.error('Failed to load branches');
+      if (!branchesData || branchesData.length === 0) {
+        console.log('No branches found');
+      } else {
+        console.log(`Found ${branchesData.length} branches`);
+      }
+      
+      setBranches(branchesData || []);
+      
+      // Try to set current branch if we don't have one yet
+      if (!currentBranch && branchesData && branchesData.length > 0) {
+        // Try to get from local storage first
+        const savedBranchId = localStorage.getItem('currentBranchId');
+        const savedBranch = savedBranchId 
+          ? branchesData.find(b => b.id === savedBranchId)
+          : null;
+        
+        // Default to primary branch or first branch
+        const defaultBranch = savedBranch || 
+          (profile?.branch_id ? branchesData.find(b => b.id === profile.branch_id) : null) || 
+          branchesData[0];
+          
+        if (defaultBranch) {
+          console.log('Setting current branch to:', defaultBranch.name);
+          setCurrentBranch(defaultBranch);
+          localStorage.setItem('currentBranchId', defaultBranch.id);
+        }
+      }
+      
+      return branchesData || [];
+    } catch (err: any) {
+      console.error('Error in fetchBranches:', err);
+      setError('Error fetching branches');
       return [];
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user, currentBranch]);
 
-  // Fetch current branch
+  // Fetch current branch details
   const fetchCurrentBranch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
+    if (!user) return;
+    
+    const savedBranchId = localStorage.getItem('currentBranchId');
+    if (!savedBranchId) return;
+    
     try {
-      const branchId = await getCurrentUserBranch();
-
-      if (!branchId) {
-        setCurrentBranch(null);
-        return;
-      }
-
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('branches')
         .select('*')
-        .eq('id', branchId)
+        .eq('id', savedBranchId)
         .single();
-
+        
       if (error) {
         console.error('Error fetching current branch:', error);
-        setError('Failed to load current branch');
-        toast.error('Failed to load current branch');
         return;
       }
-
-      setCurrentBranch(data);
+      
+      if (data) {
+        setCurrentBranch(data);
+      }
     } catch (err) {
-      console.error('Error fetching current branch:', err);
-      setError('Failed to load current branch');
-      toast.error('Failed to load current branch');
+      console.error('Error in fetchCurrentBranch:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   // Create a new branch
   const createBranch = async (branch: Omit<Branch, 'id'>) => {
@@ -180,6 +241,10 @@ const useBranchData = () => {
       }
 
       setBranches(prev => prev.filter(branch => branch.id !== id));
+      if (currentBranch?.id === id) {
+        setCurrentBranch(branches[0] || null);
+        localStorage.removeItem('currentBranchId');
+      }
       toast.success('Branch deleted successfully');
       return true;
     } catch (err) {
@@ -198,8 +263,9 @@ const useBranchData = () => {
     if (branch) {
       setCurrentBranch(branch);
       localStorage.setItem('currentBranchId', branchId);
-      toast.success(`Switched to branch: ${branch.name}`);
+      console.log('Switched to branch:', branch.name);
     } else {
+      console.error('Branch not found:', branchId);
       toast.error('Branch not found');
     }
   };
@@ -212,15 +278,20 @@ const useBranchData = () => {
     return data?.publicUrl || '';
   };
 
-  useEffect(() => {
-    fetchBranches();
-  }, [fetchBranches]);
-
+  // Fetch branches on mount if user is available
   useEffect(() => {
     if (user) {
+      console.log('User authenticated, fetching branches');
+      fetchBranches();
+    }
+  }, [user, fetchBranches]);
+
+  // Check for saved branch in localStorage
+  useEffect(() => {
+    if (user && !currentBranch) {
       fetchCurrentBranch();
     }
-  }, [user, fetchCurrentBranch]);
+  }, [user, currentBranch, fetchCurrentBranch]);
 
   return {
     branches,

@@ -5,21 +5,40 @@ import { EmailProviderSettings } from './EmailProviderSettings';
 import { EmailSettingsHeader } from './EmailSettingsHeader';
 import { NotificationSettings } from './NotificationSettings';
 
+interface EmailNotifications {
+  sendOnRegistration: boolean;
+  sendOnInvoice: boolean;
+  sendClassUpdates: boolean;
+}
+
+interface EmailSettingsData {
+  is_active: boolean;
+  provider: string;
+  from_email: string;
+  sendgrid_api_key?: string;
+  mailgun_api_key?: string;
+  mailgun_domain?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  smtp_secure?: boolean;
+  notifications: EmailNotifications;
+}
+
 const EmailSettings = () => {
   const { settings, isLoading, error, isSaving, saveSettings, updateField, fetchSettings, testConnection } = useEmailSettings();
 
   const handleToggle = (checked: boolean) => {
+    if (!settings) return;
+    
     saveSettings({
-      ...settings!,
+      ...settings,
       is_active: checked
     });
   };
 
-  const handleNotificationSettingsChange = (notificationSettings: {
-    sendOnRegistration: boolean;
-    sendOnInvoice: boolean;
-    sendClassUpdates: boolean;
-  }) => {
+  const handleNotificationSettingsChange = (notificationSettings: EmailNotifications) => {
     if (!settings) return;
     
     saveSettings({
@@ -42,9 +61,8 @@ const EmailSettings = () => {
     
     try {
       await testConnection("test@example.com");
-      return;
     } catch (error) {
-      return;
+      console.error('Test connection failed:', error);
     }
   };
 
@@ -71,12 +89,21 @@ const EmailSettings = () => {
               smtp_username: settings?.smtp_username,
               smtp_password: settings?.smtp_password,
               smtp_secure: settings?.smtp_secure,
-              notifications: settings?.notifications
+              notifications: settings?.notifications || {
+                sendOnRegistration: true,
+                sendOnInvoice: true,
+                sendClassUpdates: false
+              }
             }}
             isLoading={isLoading}
             isSaving={isSaving}
             onUpdateConfig={handleConfigUpdate}
-            onSave={() => Promise.resolve(saveSettings(settings!))}
+            onSave={() => {
+              if (settings) {
+                return Promise.resolve(void saveSettings(settings));
+              }
+              return Promise.resolve();
+            }}
             onTest={handleTest}
           />
         </div>
@@ -92,8 +119,13 @@ const EmailSettings = () => {
                 sendClassUpdates: false
               }
             }}
-            onUpdateConfig={handleConfigUpdate}
-            onSave={() => Promise.resolve(saveSettings(settings!))}
+            onUpdateConfig={handleNotificationSettingsChange}
+            onSave={() => {
+              if (settings) {
+                return Promise.resolve(void saveSettings(settings));
+              }
+              return Promise.resolve();
+            }}
           />
         </div>
       </div>

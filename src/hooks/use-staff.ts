@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
@@ -28,6 +29,7 @@ export const useStaff = () => {
   const fetchStaff = useCallback(async () => {
     if (!currentBranch?.id) {
       console.log('No branch selected, cannot fetch staff');
+      setStaff([]);
       return;
     }
     
@@ -53,7 +55,7 @@ export const useStaff = () => {
           branch_id: item.branch_id,
           phone: item.phone,
           department: item.department,
-          is_active: true,
+          is_active: item.is_active !== false,
           user_id: item.id,
           created_at: item.created_at,
           updated_at: item.updated_at,
@@ -75,10 +77,20 @@ export const useStaff = () => {
   useEffect(() => {
     if (currentBranch?.id) {
       fetchStaff();
+    } else {
+      // Clear staff if no branch selected
+      setStaff([]);
     }
   }, [fetchStaff, currentBranch?.id]);
 
-  const createStaffMember = async (userData: { email: string, password: string, name: string, role: string }): Promise<{ error?: string, success?: boolean }> => {
+  const createStaffMember = async (userData: { 
+    email: string;
+    password: string;
+    name: string;
+    role: string;
+    phone?: string;
+    department?: string;
+  }): Promise<{ error?: string, success?: boolean }> => {
     try {
       setIsLoading(true);
       
@@ -112,7 +124,10 @@ export const useStaff = () => {
         .update({
           full_name: userData.name,
           role: userData.role,
-          branch_id: currentBranch.id
+          branch_id: currentBranch.id,
+          phone: userData.phone,
+          department: userData.department,
+          is_active: true
         })
         .eq('id', authData.user.id);
       
@@ -133,11 +148,93 @@ export const useStaff = () => {
     }
   };
 
+  const updateStaffMember = async (id: string, updates: Partial<StaffMember>): Promise<StaffMember | null> => {
+    try {
+      setIsLoading(true);
+      
+      // Prepare profile data updates
+      const profileUpdates: any = {};
+      if (updates.name) profileUpdates.full_name = updates.name;
+      if (updates.email) profileUpdates.email = updates.email;
+      if (updates.role) profileUpdates.role = updates.role;
+      if (updates.phone) profileUpdates.phone = updates.phone;
+      if (updates.department) profileUpdates.department = updates.department;
+      if (updates.is_active !== undefined) profileUpdates.is_active = updates.is_active;
+      if (updates.is_branch_manager !== undefined) profileUpdates.is_branch_manager = updates.is_branch_manager;
+      
+      // Ensure staff stays in their branch
+      delete profileUpdates.branch_id;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Update local state
+      setStaff(prev => prev.map(staff => 
+        staff.id === id 
+          ? {
+              ...staff,
+              name: data.full_name || staff.name,
+              email: data.email || staff.email,
+              role: data.role || staff.role,
+              phone: data.phone,
+              department: data.department,
+              is_active: data.is_active !== false,
+              is_branch_manager: data.is_branch_manager || false,
+              updated_at: data.updated_at
+            } 
+          : staff
+      ));
+      
+      toast.success('Staff member updated successfully');
+      return data as unknown as StaffMember;
+    } catch (err: any) {
+      console.error('Error updating staff member:', err);
+      toast.error(err.message || 'Failed to update staff member');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteStaffMember = async (id: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      
+      // Instead of actually deleting, deactivate the staff member
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setStaff(prev => prev.filter(staff => staff.id !== id));
+      
+      toast.success('Staff member deleted successfully');
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting staff member:', err);
+      toast.error(err.message || 'Failed to delete staff member');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     staff,
     isLoading,
     error,
     fetchStaff,
-    createStaffMember
+    createStaffMember,
+    updateStaffMember,
+    deleteStaffMember
   };
 };

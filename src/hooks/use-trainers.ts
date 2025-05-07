@@ -14,6 +14,8 @@ export const useTrainers = () => {
   const fetchTrainers = useCallback(async () => {
     if (!currentBranch?.id) {
       console.log('No branch selected, cannot fetch trainers');
+      setTrainers([]);
+      setIsLoading(false);
       return;
     }
 
@@ -41,7 +43,7 @@ export const useTrainers = () => {
           specializations: item.department ? [item.department] : [],
           specialization: item.department, // For backwards compatibility
           bio: item.bio || '',
-          isAvailable: item.is_active || true,
+          isAvailable: item.is_active !== false,
           branchId: item.branch_id,
           avatar: item.avatar_url,
           ratingValue: item.rating || 0,
@@ -62,11 +64,91 @@ export const useTrainers = () => {
   useEffect(() => {
     if (currentBranch?.id) {
       fetchTrainers();
+    } else {
+      // Clear trainers if no branch selected
+      setTrainers([]);
+      setIsLoading(false);
     }
   }, [fetchTrainers, currentBranch?.id]);
 
-  // Add the missing methods
-  const refetch = fetchTrainers;
+  // Create new trainer (this actually creates a profile with trainer role)
+  const createTrainer = async (trainerData: { 
+    email: string;
+    password: string;
+    name: string;
+    phone?: string;
+    specialization?: string;
+    bio?: string;
+  }): Promise<Trainer | null> => {
+    try {
+      setIsLoading(true);
+      
+      if (!currentBranch?.id) {
+        toast.error('No branch selected');
+        return null;
+      }
+      
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: trainerData.email,
+        password: trainerData.password,
+        options: {
+          data: {
+            full_name: trainerData.name,
+            role: 'trainer'
+          }
+        }
+      });
+      
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user');
+      
+      // Update profile with additional information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: trainerData.name,
+          role: 'trainer',
+          branch_id: currentBranch.id,
+          phone: trainerData.phone,
+          department: trainerData.specialization,
+          bio: trainerData.bio,
+          is_active: true
+        })
+        .eq('id', authData.user.id);
+      
+      if (profileError) throw profileError;
+      
+      // Format the new trainer
+      const newTrainer: Trainer = {
+        id: authData.user.id,
+        name: trainerData.name,
+        fullName: trainerData.name,
+        email: trainerData.email,
+        phone: trainerData.phone,
+        specializations: trainerData.specialization ? [trainerData.specialization] : [],
+        specialization: trainerData.specialization,
+        bio: trainerData.bio || '',
+        isAvailable: true,
+        branchId: currentBranch.id,
+        avatar: null,
+        ratingValue: 0,
+        rating: 0
+      };
+      
+      // Update local state
+      setTrainers(prev => [...prev, newTrainer]);
+      
+      toast.success('Trainer created successfully');
+      return newTrainer;
+    } catch (err: any) {
+      console.error('Error creating trainer:', err);
+      toast.error('Failed to create trainer');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const deleteTrainer = async (id: string) => {
     try {
@@ -94,8 +176,10 @@ export const useTrainers = () => {
       
       if (error) throw error;
       
+      // Update local state
+      setTrainers(prev => prev.filter(t => t.id !== id));
+      
       toast.success('Trainer deleted successfully');
-      await fetchTrainers();
       return true;
     } catch (err: any) {
       console.error('Error deleting trainer:', err);
@@ -106,12 +190,63 @@ export const useTrainers = () => {
     }
   };
 
+  const updateTrainer = async (id: string, updates: Partial<Trainer>): Promise<Trainer | null> => {
+    try {
+      setIsLoading(true);
+      
+      // Prepare profile updates
+      const profileUpdates: any = {};
+      if (updates.name) profileUpdates.full_name = updates.name;
+      if (updates.email) profileUpdates.email = updates.email;
+      if (updates.phone) profileUpdates.phone = updates.phone;
+      if (updates.specialization) profileUpdates.department = updates.specialization;
+      if (updates.bio) profileUpdates.bio = updates.bio;
+      if (updates.isAvailable !== undefined) profileUpdates.is_active = updates.isAvailable;
+      if (updates.rating !== undefined) profileUpdates.rating = updates.rating;
+      
+      // Don't allow branch ID changes to prevent cross-branch issues
+      delete profileUpdates.branch_id;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Update local state
+      const updatedTrainer = {
+        ...trainers.find(t => t.id === id),
+        ...updates,
+        fullName: updates.name || trainers.find(t => t.id === id)?.fullName || '',
+        specializations: updates.specialization 
+          ? [updates.specialization] 
+          : trainers.find(t => t.id === id)?.specializations || []
+      } as Trainer;
+      
+      setTrainers(prev => prev.map(t => t.id === id ? updatedTrainer : t));
+      
+      toast.success('Trainer updated successfully');
+      return updatedTrainer;
+    } catch (err: any) {
+      console.error('Error updating trainer:', err);
+      toast.error(err.message || 'Failed to update trainer');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     trainers,
     isLoading,
     error,
     fetchTrainers,
-    refetch,
-    deleteTrainer
+    refetch: fetchTrainers,
+    deleteTrainer,
+    createTrainer,
+    updateTrainer
   };
 };
