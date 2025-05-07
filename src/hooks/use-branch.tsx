@@ -1,10 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect, useCallback, createContext, ReactNode, useContext } from 'react';
 import { supabase, getCurrentUserBranch } from '@/integrations/supabase/client';
 import { Branch } from '@/types/branch';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 
-export const useBranch = () => {
+// Create a context for branch data
+export const BranchContext = createContext<ReturnType<typeof useBranchData>>({
+  branches: [],
+  currentBranch: null,
+  setCurrentBranch: () => {},
+  isLoading: true,
+  error: null,
+  fetchBranches: async () => [],
+  fetchCurrentBranch: async () => {},
+  createBranch: async () => null,
+  updateBranch: async () => null,
+  deleteBranch: async () => false,
+  switchBranch: () => {},
+  getImageUrl: () => ''
+});
+
+// Create the actual hook functionality
+const useBranchData = () => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,14 +44,16 @@ export const useBranch = () => {
         console.error('Error fetching branches:', error);
         setError('Failed to load branches');
         toast.error('Failed to load branches');
-        return;
+        return [];
       }
 
       setBranches(data);
+      return data;
     } catch (err) {
       console.error('Error fetching branches:', err);
       setError('Failed to load branches');
       toast.error('Failed to load branches');
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -172,11 +192,24 @@ export const useBranch = () => {
     }
   };
   
+  // Switch branch
+  const switchBranch = (branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    if (branch) {
+      setCurrentBranch(branch);
+      localStorage.setItem('currentBranchId', branchId);
+      toast.success(`Switched to branch: ${branch.name}`);
+    } else {
+      toast.error('Branch not found');
+    }
+  };
+  
   const getImageUrl = (bucket: string, path: string) => {
     if (!supabase) return '';
     
-    // Using the correct way to access Supabase storage URLs
-    return `${supabase.storageClient.url}/object/public/${bucket}/${path}`;
+    // Fix the way we access the Supabase storage URL
+    const storageUrl = `${supabase.getStorageUrl()}/${bucket}/${path}`;
+    return storageUrl;
   };
 
   useEffect(() => {
@@ -200,6 +233,27 @@ export const useBranch = () => {
     createBranch,
     updateBranch,
     deleteBranch,
-	getImageUrl
+    switchBranch,
+    getImageUrl
   };
+};
+
+// Create a provider component
+export const BranchProvider = ({ children }: { children: ReactNode }) => {
+  const branchData = useBranchData();
+  
+  return (
+    <BranchContext.Provider value={branchData}>
+      {children}
+    </BranchContext.Provider>
+  );
+};
+
+// Export the hook that uses the context
+export const useBranch = () => {
+  const context = useContext(BranchContext);
+  if (!context) {
+    throw new Error('useBranch must be used within a BranchProvider');
+  }
+  return context;
 };

@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +19,7 @@ const RealTimeDashboardPage = () => {
   const [currentOccupancy, setCurrentOccupancy] = useState(0);
   const [expiringMemberships, setExpiringMemberships] = useState(0);
   const [overduePayments, setOverduePayments] = useState(0);
-  const { currentBranch, branches, switchBranch } = useBranch(); // ✅ Call hook at the top level
+  const { currentBranch, branches, switchBranch } = useBranch();
   
   const fetchDashboardData = async () => {
     try {
@@ -130,7 +129,7 @@ const RealTimeDashboardPage = () => {
         switchBranch(branches[0].id);
       }
     }
-  }, [currentBranch, branches, fetchDashboardData, isLoading, switchBranch]);
+  }, [currentBranch, branches, isLoading, switchBranch]);
 
   const refreshData = () => {
     setIsLoading(true);
