@@ -1,113 +1,157 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
-import { useBranch } from './use-branch';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useBranch } from './use-branch';
 
 export interface Member {
   id: string;
-  user_id?: string;
   name: string;
   email?: string;
   phone?: string;
-  date_of_birth?: string;
-  gender?: string;
-  goal?: string;
-  status?: 'active' | 'inactive' | 'pending';
-  branch_id?: string;
-  membership_status?: 'active' | 'expired' | 'none';
-  membership_id?: string;
-  membership_start_date?: string;
+  membership_status?: string;
+  status?: string;
   membership_end_date?: string;
+  membership_id?: string;
+  branch_id?: string;
   trainer_id?: string;
+  avatar?: string;
+  goal?: string;
+  date_of_birth?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useMembers = () => {
   const [members, setMembers] = useState<Member[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentBranch } = useBranch();
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Only fetch if we have a branch
       if (!currentBranch?.id) {
         setMembers([]);
         return;
       }
-
-      const { data, error: fetchError } = await supabase
+      
+      const { data, error } = await supabase
         .from('members')
         .select(`
-          id,
-          user_id,
-          name,
-          email,
-          phone,
-          date_of_birth,
-          gender,
-          goal,
-          status,
-          branch_id,
-          membership_status,
-          membership_id,
-          membership_start_date,
-          membership_end_date,
-          trainer_id
+          *,
+          memberships:membership_id (
+            name
+          )
         `)
         .eq('branch_id', currentBranch.id);
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
       
-      setMembers(data || []);
-    } catch (err) {
+      setMembers(data);
+    } catch (err: any) {
       console.error('Error fetching members:', err);
-      setError('Failed to load members');
+      setError(err.message || 'Failed to load members');
       toast.error('Failed to load members');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentBranch?.id]);
+
+  const createMember = async (member: Omit<Member, 'id'>): Promise<Member | null> => {
+    setIsLoading(true);
+    try {
+      if (!currentBranch?.id) {
+        toast.error('No branch selected');
+        return null;
+      }
+      
+      const memberWithBranch = {
+        ...member,
+        branch_id: currentBranch.id
+      };
+      
+      const { data, error } = await supabase
+        .from('members')
+        .insert([memberWithBranch])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setMembers(prev => [...prev, data as Member]);
+      toast.success('Member created successfully');
+      return data as Member;
+    } catch (err: any) {
+      console.error('Error creating member:', err);
+      toast.error(err.message || 'Failed to create member');
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!currentBranch?.id) {
-      setMembers([]);
-      setIsLoading(false);
-      return;
-    }
-    
-    fetchMembers();
-    
-    // Set up real-time subscription for members table
-    const channel = supabase
-      .channel('members_realtime')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'members',
-          filter: `branch_id=eq.${currentBranch.id}`
-        }, 
-        (payload) => {
-          console.log('Members data changed:', payload);
-          fetchMembers();
-        }
-      )
-      .subscribe();
+  const updateMember = async (id: string, updates: Partial<Member>): Promise<Member | null> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentBranch]);
+      if (error) throw error;
+      
+      setMembers(prev => prev.map(member => member.id === id ? {...member, ...data} : member));
+      toast.success('Member updated successfully');
+      return data as Member;
+    } catch (err: any) {
+      console.error('Error updating member:', err);
+      toast.error(err.message || 'Failed to update member');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteMember = async (id: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setMembers(prev => prev.filter(member => member.id !== id));
+      toast.success('Member deleted successfully');
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting member:', err);
+      toast.error(err.message || 'Failed to delete member');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchMembers();
+    }
+  }, [fetchMembers, currentBranch?.id]);
 
   return {
     members,
     isLoading,
     error,
-    refetch: fetchMembers
+    fetchMembers,
+    createMember,
+    updateMember,
+    deleteMember
   };
 };

@@ -1,50 +1,45 @@
 
-export type LeadStatus = "new" | "contacted" | "qualified" | "lost" | "converted";
-export type LeadSource = "website" | "referral" | "walk-in" | "phone" | "social-media" | "event" | "other";
-export type FollowUpType = "email" | "sms" | "whatsapp" | "call" | "meeting";
-export type FunnelStage = "cold" | "warm" | "hot";
-
 export interface Lead {
   id: string;
   name: string;
   email?: string;
   phone?: string;
-  source: LeadSource;
-  status: LeadStatus;
-  funnelStage: FunnelStage;
-  assignedTo?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt?: string;
-  followUpDate?: string;
-  lastContactDate?: string;
-  conversionDate?: string;
-  conversionValue?: number;
-  interests?: string[];
+  source: string;
+  status: string;
+  funnel_stage: FunnelStage;
+  assigned_to?: string;
   tags?: string[];
+  interests?: string[];
+  notes?: string;
+  follow_up_date?: string;
+  last_contact_date?: string;
+  conversion_date?: string;
+  conversion_value?: number;
+  created_at?: string;
+  updated_at?: string;
+  branch_id?: string;
 }
+
+export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
 
 export interface FollowUpTemplate {
   id: string;
-  title: string;
-  type: FollowUpType;
+  name: string;
   content: string;
-  variables: string[];
-  createdBy: string;
-  createdAt: string;
-  updatedAt?: string;
-  isDefault?: boolean;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FollowUpHistory {
   id: string;
-  leadId: string;
-  templateId?: string;
-  type: FollowUpType;
+  lead_id: string;
+  template_id?: string;
   content: string;
-  sentBy: string;
-  sentAt: string;
-  status: "sent" | "delivered" | "read" | "failed";
+  type: 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  sent_at: string;
+  sent_by?: string;
   response?: string;
-  responseAt?: string;
+  response_at?: string;
 }

@@ -1,68 +1,45 @@
 
-export type InventoryCategory = "supplement" | "equipment" | "merchandise";
-export type StockStatus = "in-stock" | "low-stock" | "out-of-stock" | "expired";
-
 export interface InventoryItem {
   id: string;
   name: string;
-  sku: string;
-  category: InventoryCategory;
   description?: string;
-  quantity: number;
-  price: number;
-  costPrice: number;
+  sku: string;
+  barcode?: string;
+  category?: string;
   supplier?: string;
-  supplierContact?: string;
-  manufactureDate?: string;
-  expiryDate?: string;
+  supplier_contact?: string;
+  quantity: number;
   reorderLevel: number;
+  price: number;
+  cost_price: number;
+  status: 'in-stock' | 'low-stock' | 'out-of-stock';
   location?: string;
   image?: string;
-  barcode?: string;
-  status: StockStatus;
-  lastStockUpdate: string;
-  createdAt: string;
-  updatedAt: string;
+  manufacture_date?: string;
+  expiry_date?: string;
+  last_stock_update?: string;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InventoryCategory {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  branch_id?: string;
 }
 
 export interface InventoryTransaction {
   id: string;
-  itemId: string;
-  itemName: string;
-  type: "stock-in" | "stock-out" | "adjustment" | "return" | "damaged";
+  item_id: string;
+  type: 'purchase' | 'sale' | 'adjustment' | 'return';
   quantity: number;
-  previousQuantity: number;
-  newQuantity: number;
+  total_price: number;
+  transaction_date: string;
+  reference?: string;
   notes?: string;
-  conductedBy: string;
-  conductedAt: string;
-  relatedInvoiceId?: string;
-  batchNumber?: string;
-}
-
-export interface InventoryAlert {
-  id: string;
-  itemId: string;
-  itemName: string;
-  type: "low-stock" | "expiring-soon" | "expired" | "out-of-stock"; // Added out-of-stock
-  message: string;
-  status: "active" | "acknowledged" | "resolved";
-  createdAt: string;
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
-  resolvedBy?: string;
-  resolvedAt?: string;
-}
-
-export interface Supplier {
-  id: string;
-  name: string;
-  contactPerson: string;
-  email?: string;
-  phone: string;
-  address?: string;
-  items: string[]; // Array of itemIds
-  paymentTerms?: string;
-  status: "active" | "inactive";
-  notes?: string;
+  staff_id?: string;
+  branch_id?: string;
 }

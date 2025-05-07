@@ -207,9 +207,9 @@ const useBranchData = () => {
   const getImageUrl = (bucket: string, path: string) => {
     if (!supabase) return '';
     
-    // Fix the way we access the Supabase storage URL
-    const storageUrl = `${supabase.getStorageUrl()}/${bucket}/${path}`;
-    return storageUrl;
+    // Use the proper supabase URL construction for files
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl || '';
   };
 
   useEffect(() => {
