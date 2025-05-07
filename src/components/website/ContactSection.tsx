@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+
 const ContactSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -54,7 +55,7 @@ const ContactSection = () => {
         phone: formData.phone,
         source: 'website' as LeadSource,
         status: 'new' as LeadStatus,
-        funnelStage: 'cold' as FunnelStage,
+        funnel_stage: 'cold' as FunnelStage, // Using snake_case to match the backend
         notes: `${formData.inquiryType}: ${formData.message}`
       };
       const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));

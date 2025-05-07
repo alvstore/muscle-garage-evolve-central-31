@@ -3,19 +3,7 @@ import { useState, useEffect } from 'react';
 import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
 import { toast } from 'sonner';
-
-export interface AutomationRule {
-  id?: string;
-  name: string;
-  description?: string;
-  trigger_type: string;
-  trigger_condition: any;
-  actions: any[];
-  is_active: boolean;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { AutomationRule } from '@/types/crm';
 
 export const useAutomationRules = () => {
   const [rules, setRules] = useState<AutomationRule[]>([]);
@@ -36,16 +24,16 @@ export const useAutomationRules = () => {
     }
   };
 
-  const saveRule = async (rule: AutomationRule) => {
+  const saveRule = async (rule: Omit<AutomationRule, 'id'> & { id?: string }) => {
     setIsSaving(true);
     try {
       // Ensure the branch_id is set
       const ruleToSave = {
         ...rule,
-        branch_id: currentBranch?.id
+        branch_id: currentBranch?.id,
       };
       
-      const result = await settingsService.saveAutomationRule(ruleToSave);
+      const result = await settingsService.saveAutomationRule(ruleToSave as AutomationRule);
       if (result) {
         await fetchRules(); // Refresh the rules list
         return true;

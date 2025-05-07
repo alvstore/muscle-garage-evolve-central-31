@@ -17,6 +17,7 @@ export interface FinancialTransaction {
   transaction_id?: string;
   created_at?: string;
   updated_at?: string;
+  attachment?: string;
   
   // Adding camelCase aliases
   transactionDate?: string;

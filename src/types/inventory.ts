@@ -106,6 +106,12 @@ export interface InventoryTransaction {
   reference_id?: string;
   branch_id?: string;
   created_by?: string;
+  previous_quantity?: number;
+  new_quantity?: number;
+  conducted_at?: string | Date;
+  conducted_by?: string;
+  batch_number?: string;
+  related_invoice_id?: string;
   
   // Adding camelCase aliases
   itemId?: string;
@@ -113,6 +119,12 @@ export interface InventoryTransaction {
   referenceId?: string;
   branchId?: string;
   createdBy?: string;
+  previousQuantity?: number;
+  newQuantity?: number;
+  conductedAt?: string | Date;
+  conductedBy?: string;
+  batchNumber?: string;
+  relatedInvoiceId?: string;
 }
 
 export interface Supplier {
@@ -124,9 +136,16 @@ export interface Supplier {
   address?: string;
   created_at?: string | Date;
   updated_at?: string | Date;
+  contact_person?: string;
+  payment_terms?: string;
+  status?: 'active' | 'inactive';
+  notes?: string;
+  items?: string[];
   
   // Adding camelCase aliases
   contactName?: string;
+  contactPerson?: string;
+  paymentTerms?: string;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

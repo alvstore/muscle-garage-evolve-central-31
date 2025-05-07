@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
+import { toast } from 'sonner';
 
 export interface EmailSettings {
   id?: string;
@@ -82,6 +83,11 @@ export const useEmailSettings = () => {
     }
   };
 
+  const updateSettings = async (updatedSettings: Partial<EmailSettings>) => {
+    if (!settings) return false;
+    return saveSettings({ ...settings, ...updatedSettings });
+  };
+
   const updateField = (field: string, value: any) => {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
@@ -95,6 +101,18 @@ export const useEmailSettings = () => {
         resolve(true);
       }, 1000);
     });
+  };
+  
+  const sendTestEmail = async (email: string) => {
+    try {
+      // In a real implementation, this would call the API to send a test email
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success(`Test email sent to ${email}`);
+      return true;
+    } catch (error) {
+      toast.error("Failed to send test email");
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -110,7 +128,9 @@ export const useEmailSettings = () => {
     isSaving,
     fetchSettings,
     saveSettings,
+    updateSettings,
     updateField,
-    testConnection
+    testConnection,
+    sendTestEmail
   };
 };

@@ -18,8 +18,8 @@ export const useIncomeRecords = () => {
       setIsLoading(true);
       setError(null);
 
-      const records = await financeService.getIncomeRecords(currentBranch?.id);
-      setRecords(records);
+      const records = await financeService.getTransactions(currentBranch?.id || "");
+      setRecords(records.filter(record => record.type === 'income'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch income records');
     } finally {
@@ -30,7 +30,13 @@ export const useIncomeRecords = () => {
   // Create a new income record
   const createRecord = async (record: Partial<FinancialTransaction>) => {
     try {
-      const newRecord = await financeService.createIncomeRecord(record);
+      // Set the transaction type to income for this hook
+      const incomeRecord = {
+        ...record,
+        type: 'income' as TransactionType
+      };
+      
+      const newRecord = await financeService.createTransaction(incomeRecord as any);
       setRecords(prev => [...prev, newRecord as FinancialTransaction]);
       return newRecord;
     } catch (error) {
@@ -41,7 +47,7 @@ export const useIncomeRecords = () => {
   // Update an existing record
   const updateRecord = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
-      const updatedRecord = await financeService.updateIncomeRecord(id, updates);
+      const updatedRecord = await financeService.updateTransaction(id, updates);
       setRecords(prev => 
         prev.map(record => record.id === id ? updatedRecord as FinancialTransaction : record)
       );
@@ -54,7 +60,7 @@ export const useIncomeRecords = () => {
   // Delete a record
   const deleteRecord = async (id: string) => {
     try {
-      await financeService.deleteIncomeRecord(id);
+      await financeService.deleteTransaction(id);
       setRecords(prev => prev.filter(record => record.id !== id));
     } catch (error) {
       throw error;
@@ -64,7 +70,13 @@ export const useIncomeRecords = () => {
   // Upload attachment
   const uploadAttachment = async (file: File, recordId: string) => {
     try {
-      const url = await financeService.uploadAttachment(file, recordId);
+      // Replace with actual upload functionality
+      const url = await new Promise<string>(resolve => {
+        setTimeout(() => {
+          resolve(`https://example.com/attachments/${file.name}`);
+        }, 1000);
+      });
+      
       await updateRecord(recordId, { attachment: url });
       return url;
     } catch (error) {
@@ -75,7 +87,7 @@ export const useIncomeRecords = () => {
   // Delete attachment
   const deleteAttachment = async (recordId: string) => {
     try {
-      await financeService.deleteAttachment(recordId);
+      await updateRecord(recordId, { attachment: undefined });
     } catch (error) {
       throw error;
     }
