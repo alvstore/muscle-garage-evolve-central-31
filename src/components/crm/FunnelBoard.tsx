@@ -4,9 +4,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +29,16 @@ const mockLeads: Lead[] = [
     phone: "+1234567890",
     source: "website",
     status: "new",
+    funnel_stage: "cold",
     funnelStage: "cold",
+    assigned_to: "Staff 1",
     assignedTo: "Staff 1",
     notes: "Interested in membership plans",
+    created_at: "2023-04-15T10:30:00Z",
     createdAt: "2023-04-15T10:30:00Z",
+    updated_at: "2023-04-15T10:30:00Z",
     updatedAt: "2023-04-15T10:30:00Z",
+    follow_up_date: "2023-04-20T10:30:00Z",
     followUpDate: "2023-04-20T10:30:00Z",
   },
   {
@@ -43,11 +48,17 @@ const mockLeads: Lead[] = [
     phone: "+1987654321",
     source: "referral",
     status: "contacted",
+    funnel_stage: "warm",
     funnelStage: "warm",
+    assigned_to: "Staff 2",
     assignedTo: "Staff 2",
+    created_at: "2023-04-14T14:20:00Z",
     createdAt: "2023-04-14T14:20:00Z",
+    updated_at: "2023-04-16T09:15:00Z",
     updatedAt: "2023-04-16T09:15:00Z",
+    last_contact_date: "2023-04-16T09:15:00Z",
     lastContactDate: "2023-04-16T09:15:00Z",
+    follow_up_date: "2023-04-22T10:00:00Z",
     followUpDate: "2023-04-22T10:00:00Z",
   },
   {
@@ -134,19 +145,19 @@ interface FunnelColumn {
 const FunnelBoard = () => {
   const [columns, setColumns] = useState<FunnelColumn[]>([
     {
-      id: "cold",
+      id: "cold" as FunnelStage,
       title: "Cold Leads",
       description: "New and unqualified leads",
       leads: []
     },
     {
-      id: "warm",
+      id: "warm" as FunnelStage,
       title: "Warm Leads",
       description: "Contacted and showing interest",
       leads: []
     },
     {
-      id: "hot",
+      id: "hot" as FunnelStage,
       title: "Hot Leads",
       description: "Ready to convert",
       leads: []
@@ -161,7 +172,7 @@ const FunnelBoard = () => {
       const organizedColumns = columns.map(column => {
         return {
           ...column,
-          leads: mockLeads.filter(lead => lead.funnelStage === column.id)
+          leads: mockLeads.filter(lead => lead.funnel_stage === column.id)
         };
       });
       
@@ -196,6 +207,7 @@ const FunnelBoard = () => {
     
     // Update the lead's funnel stage if moved to a different column
     if (source.droppableId !== destination.droppableId) {
+      movedLead.funnel_stage = destination.droppableId as FunnelStage;
       movedLead.funnelStage = destination.droppableId as FunnelStage;
       toast.success(`Moved ${movedLead.name} to ${destCol.title}`);
     }
@@ -235,7 +247,7 @@ const FunnelBoard = () => {
               const organizedColumns = columns.map(column => {
                 return {
                   ...column,
-                  leads: mockLeads.filter(lead => lead.funnelStage === column.id)
+                  leads: mockLeads.filter(lead => lead.funnel_stage === column.id)
                 };
               });
               

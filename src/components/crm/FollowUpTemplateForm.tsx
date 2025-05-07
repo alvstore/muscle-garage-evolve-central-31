@@ -90,12 +90,16 @@ const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, o
     try {
       const newTemplate: FollowUpTemplate = {
         id: template?.id || uuidv4(),
+        name: values.title, // Map title to name for backend compatibility
         title: values.title,
-        type: values.type as FollowUpType,
         content: values.content,
+        type: values.type as FollowUpType,
         variables: selectedVariables,
-        createdBy: template?.createdBy || "current-user-id",
-        createdAt: template?.createdAt || new Date().toISOString(),
+        created_by: template?.created_by || "current-user-id",
+        createdBy: template?.created_by || "current-user-id",
+        created_at: template?.created_at || new Date().toISOString(),
+        createdAt: template?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isDefault: values.isDefault,
       };

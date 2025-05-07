@@ -38,11 +38,14 @@ import { toast } from "sonner";
 const mockTemplates: FollowUpTemplate[] = [
   {
     id: "1",
+    name: "Initial Follow-up",
     title: "Initial Follow-up",
     type: "email",
     content: "Hello {{name}},\n\nThank you for your interest in our gym. We would love to have you visit us for a free trial session.\n\nPlease let me know when would be a convenient time for you.\n\nBest regards,\n{{staffName}}",
     variables: ["name", "staffName"],
+    created_by: "Admin",
     createdBy: "Admin",
+    created_at: "2023-05-15T10:00:00Z",
     createdAt: "2023-05-15T10:00:00Z",
     isDefault: true
   },
@@ -119,7 +122,9 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
     const newTemplate: FollowUpTemplate = {
       ...template,
       id: `copy-${template.id}`,
+      name: `Copy of ${template.name}`,
       title: `Copy of ${template.title}`,
+      created_at: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       isDefault: false
     };

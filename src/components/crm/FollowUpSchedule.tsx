@@ -26,15 +26,18 @@ import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Lead, FollowUpType } from '@/types/crm';
+import { Lead, FollowUpType, FollowUpScheduled } from '@/types/crm';
 
 // Mock scheduled follow-ups data
-const mockScheduledFollowUps = [
+const mockScheduledFollowUps: FollowUpScheduled[] = [
   {
     id: "1",
+    lead_id: "lead1",
     leadId: "lead1",
+    lead_name: "John Doe",
     leadName: "John Doe",
     type: "email" as FollowUpType,
+    scheduled_for: addDays(new Date(), 1).toISOString(),
     scheduledFor: addDays(new Date(), 1).toISOString(),
     subject: "Membership Plan Inquiry",
     content: "Follow up about the Gold Membership plan discussion",
@@ -71,7 +74,9 @@ const mockLeads: Lead[] = [
     phone: "555-1234",
     source: "website",
     status: "contacted",
+    funnel_stage: "warm",
     funnelStage: "warm",
+    created_at: "2023-06-15T10:30:00Z",
     createdAt: "2023-06-15T10:30:00Z",
     notes: "Interested in Gold Membership",
   },
@@ -82,7 +87,9 @@ const mockLeads: Lead[] = [
     phone: "555-5678",
     source: "referral",
     status: "qualified",
+    funnel_stage: "hot",
     funnelStage: "hot",
+    created_at: "2023-06-10T14:45:00Z",
     createdAt: "2023-06-10T14:45:00Z",
     notes: "Looking for personal training options",
   },
@@ -93,7 +100,9 @@ const mockLeads: Lead[] = [
     phone: "555-9012",
     source: "walk-in",
     status: "contacted",
+    funnel_stage: "warm",
     funnelStage: "warm",
+    created_at: "2023-06-12T09:15:00Z",
     createdAt: "2023-06-12T09:15:00Z",
     notes: "Scheduled for a gym tour",
   }

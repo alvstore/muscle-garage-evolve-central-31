@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { 
@@ -42,52 +41,71 @@ import { FollowUpHistory as FollowUpRecord, FollowUpType } from '@/types/crm';
 const mockFollowUpHistory: FollowUpRecord[] = [
   {
     id: "1",
-    leadId: "lead1",
+    lead_id: "lead1",
+    leadId: "lead1", // Adding the alias property
     type: "email",
     content: "Hello John, I'm following up on our conversation about our gym membership options. Would you like to schedule a tour of our facilities?",
-    sentBy: "user1",
-    sentAt: "2023-07-01T10:30:00Z",
+    sent_by: "user1",
+    sentBy: "user1", // Adding the alias property
+    sent_at: "2023-07-01T10:30:00Z",
+    sentAt: "2023-07-01T10:30:00Z", // Adding the alias property
     status: "delivered",
     response: "Yes, I would like to schedule a tour for tomorrow afternoon if possible.",
-    responseAt: "2023-07-01T14:15:00Z"
+    response_at: "2023-07-01T14:15:00Z",
+    responseAt: "2023-07-01T14:15:00Z", // Adding the alias property
   },
   {
     id: "2",
+    lead_id: "lead2",
     leadId: "lead2",
+    template_id: "template1",
     templateId: "template1",
     type: "sms",
     content: "Hi Sarah, just a reminder about your free trial session scheduled for tomorrow at 10 AM. Looking forward to seeing you!",
+    sent_by: "user1",
     sentBy: "user1",
+    sent_at: "2023-07-02T09:00:00Z",
     sentAt: "2023-07-02T09:00:00Z",
     status: "delivered",
   },
   {
     id: "3",
+    lead_id: "lead3",
     leadId: "lead3",
     type: "call",
     content: "Called to discuss membership options, particularly the annual plan with personal training sessions.",
+    sent_by: "user2",
     sentBy: "user2",
+    sent_at: "2023-07-03T11:45:00Z",
     sentAt: "2023-07-03T11:45:00Z",
     status: "delivered",
     response: "Lead was interested in the Gold plan, requested email with detailed pricing.",
-    responseAt: "2023-07-03T11:55:00Z"
+    response_at: "2023-07-03T11:55:00Z",
+    responseAt: "2023-07-03T11:55:00Z",
   },
   {
     id: "4",
+    lead_id: "lead4",
     leadId: "lead4",
+    template_id: "template2",
     templateId: "template2",
     type: "whatsapp",
     content: "Hi Emily, here's the digital brochure for our gym as requested. Let me know if you have any questions!",
+    sent_by: "user1",
     sentBy: "user1",
+    sent_at: "2023-07-04T15:20:00Z",
     sentAt: "2023-07-04T15:20:00Z",
     status: "read",
   },
   {
     id: "5",
+    lead_id: "lead2",
     leadId: "lead2",
     type: "email",
     content: "Follow-up after your trial session yesterday. How was your experience? Would you be interested in joining our gym?",
+    sent_by: "user2",
     sentBy: "user2",
+    sent_at: "2023-07-05T14:00:00Z",
     sentAt: "2023-07-05T14:00:00Z",
     status: "failed",
   }
@@ -144,7 +162,7 @@ const FollowUpHistoryComponent: React.FC = () => {
   const filteredHistory = mockFollowUpHistory.filter(history => {
     // Filter by search term
     const searchMatch = 
-      leadNames[history.leadId as keyof typeof leadNames]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      leadNames[history.lead_id as keyof typeof leadNames]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       history.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (history.response?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     
@@ -240,7 +258,7 @@ const FollowUpHistoryComponent: React.FC = () => {
                 {filteredHistory.map((history) => (
                   <TableRow key={history.id}>
                     <TableCell className="font-medium">
-                      {leadNames[history.leadId as keyof typeof leadNames] || history.leadId}
+                      {leadNames[history.lead_id as keyof typeof leadNames] || history.lead_id}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
