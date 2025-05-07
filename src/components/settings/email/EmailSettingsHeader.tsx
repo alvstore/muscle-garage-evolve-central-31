@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 interface EmailSettingsHeaderProps {
   enabled: boolean;
   onEnableChange: (checked: boolean) => void;
+  isLoading?: boolean;
 }
 
-export const EmailSettingsHeader = ({ enabled, onEnableChange }: EmailSettingsHeaderProps) => {
+export const EmailSettingsHeader = ({ enabled, onEnableChange, isLoading }: EmailSettingsHeaderProps) => {
   return (
     <div className="flex justify-between items-center mb-6">
       <div>
@@ -23,6 +24,7 @@ export const EmailSettingsHeader = ({ enabled, onEnableChange }: EmailSettingsHe
             onEnableChange(checked);
             toast.success(`Email integration ${checked ? 'enabled' : 'disabled'}`);
           }}
+          disabled={isLoading}
         />
         <Label>{enabled ? 'Enabled' : 'Disabled'}</Label>
       </div>

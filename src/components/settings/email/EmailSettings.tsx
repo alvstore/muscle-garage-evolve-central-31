@@ -38,13 +38,13 @@ const EmailSettings = () => {
   };
 
   const handleTest = async () => {
-    if (!settings) return false;
+    if (!settings) return;
     
     try {
-      const result = await testConnection("test@example.com");
-      return result;
+      await testConnection("test@example.com");
+      return;
     } catch (error) {
-      return false;
+      return;
     }
   };
 
@@ -53,29 +53,47 @@ const EmailSettings = () => {
       <EmailSettingsHeader 
         enabled={settings?.is_active || false} 
         onEnableChange={handleToggle}
-        isLoading={isLoading}
       />
       
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="md:col-span-3">
           <EmailProviderSettings 
-            config={settings || {}}
+            config={{
+              enabled: settings?.is_active || false,
+              provider: settings?.provider || 'sendgrid',
+              fromEmail: settings?.from_email || '',
+              apiKey: settings?.sendgrid_api_key || '',
+              sendgrid_api_key: settings?.sendgrid_api_key,
+              mailgun_api_key: settings?.mailgun_api_key,
+              mailgun_domain: settings?.mailgun_domain,
+              smtp_host: settings?.smtp_host,
+              smtp_port: settings?.smtp_port,
+              smtp_username: settings?.smtp_username,
+              smtp_password: settings?.smtp_password,
+              smtp_secure: settings?.smtp_secure,
+              notifications: settings?.notifications
+            }}
             isLoading={isLoading}
             isSaving={isSaving}
             onUpdateConfig={handleConfigUpdate}
-            onSave={() => saveSettings(settings!)}
+            onSave={() => { saveSettings(settings!); }}
             onTest={handleTest}
           />
         </div>
         
         <div className="md:col-span-2">
           <NotificationSettings 
-            templates={settings?.notifications || {
-              sendOnRegistration: true,
-              sendOnInvoice: true,
-              sendClassUpdates: false
+            config={{
+              enabled: settings?.is_active || false,
+              provider: settings?.provider || 'sendgrid',
+              notifications: settings?.notifications || {
+                sendOnRegistration: true,
+                sendOnInvoice: true,
+                sendClassUpdates: false
+              }
             }}
-            onChange={handleNotificationSettingsChange}
+            onUpdateConfig={handleConfigUpdate}
+            onSave={() => { saveSettings(settings!); }}
           />
         </div>
       </div>

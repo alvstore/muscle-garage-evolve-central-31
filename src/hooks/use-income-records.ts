@@ -49,13 +49,13 @@ export const useIncomeRecords = () => {
   // Update an existing record
   const updateRecord = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
-      const updatedRecord = await financeService.updateTransaction(id, updates);
-      if (updatedRecord) {
+      const updated = await financeService.updateTransaction(id, updates);
+      if (updated) {
         setRecords(prev => 
-          prev.map(record => record.id === id ? updatedRecord as FinancialTransaction : record)
+          prev.map(record => record.id === id ? { ...record, ...updates } : record)
         );
       }
-      return updatedRecord;
+      return updated;
     } catch (error) {
       throw error;
     }
