@@ -57,7 +57,7 @@ const EmailSettings = () => {
   };
 
   const handleTest = async () => {
-    if (!settings) return;
+    if (!settings) return Promise.resolve();
     
     try {
       await testConnection("test@example.com");
@@ -66,6 +66,13 @@ const EmailSettings = () => {
       console.error('Test connection failed:', error);
       return Promise.reject(error);
     }
+  };
+
+  const handleSaveSettings = async (): Promise<void> => {
+    if (settings) {
+      await saveSettings(settings);
+    }
+    return Promise.resolve();
   };
 
   return (
@@ -100,12 +107,7 @@ const EmailSettings = () => {
             }}
             isLoading={isLoading || isSaving}
             onUpdateConfig={handleConfigUpdate}
-            onSave={() => {
-              if (settings) {
-                return Promise.resolve(saveSettings(settings));
-              }
-              return Promise.resolve();
-            }}
+            onSave={handleSaveSettings}
             onTest={handleTest}
           />
         </div>
@@ -122,12 +124,7 @@ const EmailSettings = () => {
               }
             }}
             onUpdateConfig={handleNotificationSettingsChange}
-            onSave={() => {
-              if (settings) {
-                return Promise.resolve(saveSettings(settings));
-              }
-              return Promise.resolve();
-            }}
+            onSave={handleSaveSettings}
           />
         </div>
       </div>

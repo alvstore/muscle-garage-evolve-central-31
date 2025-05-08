@@ -5,7 +5,7 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 
 // Miscellaneous pages
 import InventoryPage from '@/pages/inventory/InventoryPage';
-import FrontPagesManager from '@/pages/frontpages/FrontPagesManager';
+import FrontPagesWrapper from '@/pages/frontpages/FrontPagesWrapper';
 import BranchesPage from '@/pages/branches/BranchesPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
 
@@ -22,7 +22,7 @@ export const miscRoutes: RouteObject[] = [
     path: '/frontpages',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
-        <FrontPagesManager />
+        <FrontPagesWrapper />
       </PrivateRoute>
     )
   },
