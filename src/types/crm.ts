@@ -1,4 +1,3 @@
-
 // CRM types
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'lost' | 'converted' | string;
@@ -30,6 +29,7 @@ export interface Lead {
   conversionValue?: number; // Alias for UI components
   tags?: string[];
   interests?: string[];
+  branch_id: string; // Added branch_id field
 }
 
 export interface FollowUpTemplate {
