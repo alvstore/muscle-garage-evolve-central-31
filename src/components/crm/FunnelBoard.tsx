@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import {
@@ -37,6 +38,7 @@ const mockLeads: Lead[] = [
     funnelStage: "cold",
     assignedTo: "Staff 1",
     followUpDate: "2023-04-20T10:30:00Z",
+    branch_id: "default-branch-id",
   },
   {
     id: "2",
@@ -55,6 +57,7 @@ const mockLeads: Lead[] = [
     assignedTo: "Staff 2",
     lastContactDate: "2023-04-16T09:15:00Z",
     followUpDate: "2023-04-22T10:00:00Z",
+    branch_id: "default-branch-id",
   },
   {
     id: "3",
@@ -74,6 +77,7 @@ const mockLeads: Lead[] = [
     assignedTo: "Staff 1",
     lastContactDate: "2023-04-17T13:20:00Z",
     followUpDate: "2023-04-19T15:00:00Z",
+    branch_id: "default-branch-id",
   },
   {
     id: "4",
@@ -94,6 +98,7 @@ const mockLeads: Lead[] = [
     lastContactDate: "2023-04-18T10:30:00Z",
     conversionDate: "2023-04-18T10:30:00Z",
     conversionValue: 299.99,
+    branch_id: "default-branch-id",
   },
   {
     id: "5",
@@ -108,6 +113,7 @@ const mockLeads: Lead[] = [
     updated_at: "2023-04-15T16:45:00Z",
     funnelStage: "cold",
     assignedTo: "Staff 2",
+    branch_id: "default-branch-id",
   },
   {
     id: "6",
@@ -126,6 +132,7 @@ const mockLeads: Lead[] = [
     assignedTo: "Staff 1",
     lastContactDate: "2023-04-16T11:20:00Z",
     followUpDate: "2023-04-23T14:00:00Z",
+    branch_id: "default-branch-id",
   },
   {
     id: "7",
@@ -145,6 +152,7 @@ const mockLeads: Lead[] = [
     assignedTo: "Staff 3",
     lastContactDate: "2023-04-17T15:30:00Z",
     followUpDate: "2023-04-20T10:00:00Z",
+    branch_id: "default-branch-id",
   }
 ];
 

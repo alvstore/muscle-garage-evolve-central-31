@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ const mockLeadOptions: Lead[] = [
     source: "website",
     created_at: "2023-05-15T08:30:00Z",
     updated_at: "2023-06-05T14:15:00Z",
+    branch_id: "default-branch-id", // Added branch_id field
     // Add camelCase aliases
     funnelStage: "qualified",
   },
@@ -91,6 +93,7 @@ const mockLeadOptions: Lead[] = [
     source: "referral",
     created_at: "2023-06-01T11:45:00Z",
     updated_at: "2023-06-01T11:45:00Z",
+    branch_id: "default-branch-id", // Added branch_id field
     // Add camelCase aliases
     funnelStage: "warm",
   },
@@ -104,6 +107,7 @@ const mockLeadOptions: Lead[] = [
     source: "walk-in",
     created_at: "2023-05-20T09:15:00Z",
     updated_at: "2023-06-07T16:30:00Z",
+    branch_id: "default-branch-id", // Added branch_id field
     // Add camelCase aliases
     funnelStage: "hot",
   }

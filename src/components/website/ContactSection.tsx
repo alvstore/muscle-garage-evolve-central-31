@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { getCurrentUserBranch } from '@/services/supabaseClient';
 
 const ContactSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const [branchId, setBranchId] = useState<string | null>(null);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,6 +16,17 @@ const ContactSection = () => {
     inquiryType: "membership",
     message: ""
   });
+
+  useEffect(() => {
+    const fetchBranchId = async () => {
+      // Try to get branch ID, fallback to a default branch ID
+      const userBranchId = await getCurrentUserBranch();
+      setBranchId(userBranchId || "default-branch-id");
+    };
+
+    fetchBranchId();
+  }, []);
+
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
@@ -34,6 +45,7 @@ const ContactSection = () => {
       }
     };
   }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const {
       name,
@@ -44,6 +56,7 @@ const ContactSection = () => {
       [name]: value
     }));
   };
+
   const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +69,10 @@ const ContactSection = () => {
         source: 'website' as LeadSource,
         status: 'new' as LeadStatus,
         funnel_stage: 'cold' as FunnelStage, // Using snake_case to match the backend
-        notes: `${formData.inquiryType}: ${formData.message}`
+        notes: `${formData.inquiryType}: ${formData.message}`,
+        branch_id: branchId || "default-branch-id" // Use fetched branch ID or fall back to default
       };
+      
       const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));
       if (result) {
         toast({
@@ -88,6 +103,7 @@ const ContactSection = () => {
       setSubmitting(false);
     }
   };
+
   return <section id="contact" ref={sectionRef} className="section-padding bg-gym-gray-900">
       <div className="gym-container">
         <div className={`text-center max-w-3xl mx-auto mb-12 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
