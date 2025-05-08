@@ -29,13 +29,12 @@ function App() {
     // Tab visibility management
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        // Prevent refresh when tab is hidden
-        document.body.style.display = 'none';
-        // Prevent any pending refresh
-        window.stop();
+        // You can add code here to pause certain activities when tab is hidden
+        // For example, pause animations, timers, or non-critical background tasks
+        console.log('Tab hidden, pausing non-critical operations');
       } else {
-        // Restore display when tab becomes visible
-        document.body.style.display = '';
+        // Resume activities when tab becomes visible
+        console.log('Tab visible, resuming operations');
       }
     };
 
