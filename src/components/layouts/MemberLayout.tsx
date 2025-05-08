@@ -1,13 +1,23 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import MemberSidebar from "@/components/layout/MemberSidebar";
 
 const MemberLayout: React.FC = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   return (
-    <DashboardLayout>
-      <Outlet />
-    </DashboardLayout>
+    <div className="flex h-screen">
+      <MemberSidebar isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+      <div className="flex-1 overflow-y-auto">
+        <Outlet />
+      </div>
+    </div>
   );
 };
 
