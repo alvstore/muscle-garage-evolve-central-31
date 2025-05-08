@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/use-branch';
@@ -12,22 +11,21 @@ export const useTrainers = () => {
   const { currentBranch } = useBranch();
 
   const fetchTrainers = useCallback(async () => {
-    if (!currentBranch?.id) {
-      console.log('No branch selected, cannot fetch trainers');
-      setTrainers([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'trainer')
-        .eq('branch_id', currentBranch.id);
+        .eq('role', 'trainer');
+      
+      // Only filter by branch ID if one is selected
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         throw error;
@@ -62,14 +60,8 @@ export const useTrainers = () => {
   }, [currentBranch?.id]);
 
   useEffect(() => {
-    if (currentBranch?.id) {
-      fetchTrainers();
-    } else {
-      // Clear trainers if no branch selected
-      setTrainers([]);
-      setIsLoading(false);
-    }
-  }, [fetchTrainers, currentBranch?.id]);
+    fetchTrainers();
+  }, [fetchTrainers]);
 
   // Create new trainer (this actually creates a profile with trainer role)
   const createTrainer = async (trainerData: { 

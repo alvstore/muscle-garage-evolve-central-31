@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
@@ -70,7 +71,7 @@ const ContactSection = () => {
         status: 'new' as LeadStatus,
         funnel_stage: 'cold' as FunnelStage, // Using snake_case to match the backend
         notes: `${formData.inquiryType}: ${formData.message}`,
-        branch_id: branchId || "default-branch-id" // Use fetched branch ID or fall back to default
+        branch_id: branchId || undefined // Use fetched branch ID or undefined for NULL
       };
       
       const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));

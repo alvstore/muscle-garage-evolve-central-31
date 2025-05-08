@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -30,11 +29,7 @@ export default function LeadsList({ onEdit, onAddNew }: LeadsListProps) {
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      if (!currentBranch?.id) {
-        setLeads([]);
-        return;
-      }
-      
+      // Get leads for current branch or all leads if no branch selected
       const fetchedLeads = await crmService.getLeads(currentBranch?.id);
       setLeads(fetchedLeads);
     } catch (error) {
