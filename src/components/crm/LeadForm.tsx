@@ -49,7 +49,7 @@ const leadFormSchema = z.object({
   source: z.enum(["website", "referral", "walk-in", "phone", "social-media", "event", "other"] as const),
   status: z.enum(["new", "contacted", "qualified", "lost", "converted"] as const),
   funnelStage: z.enum(["cold", "warm", "hot"] as const),
-  assignedTo: z.string().optional().or(z.literal("")),
+  assignedTo: z.string().optional().or(z.literal("unassigned")),
   notes: z.string().optional().or(z.literal("")),
   followUpDate: z.date().optional(),
   interests: z.array(z.string()).optional(),
@@ -83,6 +83,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
   // Initialize form with default values or lead data if editing
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
+    // In your useForm hook's defaultValues
     defaultValues: {
       name: lead?.name || "",
       email: lead?.email || "",
@@ -90,7 +91,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
       source: (lead?.source || "website") as "website" | "referral" | "walk-in" | "phone" | "social-media" | "event" | "other",
       status: (lead?.status || "new") as "new" | "contacted" | "qualified" | "lost" | "converted",
       funnelStage: (lead?.funnelStage || "cold") as "cold" | "warm" | "hot",
-      assignedTo: lead?.assignedTo || "",
+      assignedTo: lead?.assignedTo || "unassigned",
       notes: lead?.notes || "",
       followUpDate: lead?.followUpDate ? new Date(lead.followUpDate) : undefined,
       interests: lead?.interests || [],
@@ -297,7 +298,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {staffMembers.map(staff => (
                           <SelectItem key={staff.id} value={staff.name}>
                             {staff.name}
