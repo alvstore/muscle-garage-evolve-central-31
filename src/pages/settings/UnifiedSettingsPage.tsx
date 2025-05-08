@@ -188,7 +188,7 @@ const UnifiedSettingsPage = () => {
               title="User Management"
               description="Manage user accounts and permissions"
               icon={<Users className="h-4 w-4 text-primary" />}
-              to="/settings/users"
+              to="/admin/user-management"
             />
             <SettingCard
               title="Role Management"

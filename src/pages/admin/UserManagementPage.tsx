@@ -6,7 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/services/supabaseClient";
 import {
   Table,
   TableBody,
@@ -16,38 +18,70 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Mock user data
-const mockUsers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'admin', status: 'active' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'staff', status: 'active' },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'trainer', status: 'inactive' },
-  { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'member', status: 'active' },
-  { id: '5', name: 'Mike Wilson', email: 'mike@example.com', role: 'member', status: 'inactive' },
-];
+// Define user interface
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+}
 
 const UserManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Query profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, status');
+      
+      if (error) throw error;
+      
+      // Map the data to match our User interface
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: user.full_name || 'Unnamed User',
+        email: user.email || '',
+        role: user.role || 'member',
+        status: user.status || 'active'
+      }));
+      
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Filter users based on search term and active tab
-  useEffect(() => {
-    const filtered = mockUsers.filter(user => {
-      const matchesSearch = 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesTab = 
-        activeTab === 'all' || 
-        user.role === activeTab ||
-        (activeTab === 'active' && user.status === 'active') ||
-        (activeTab === 'inactive' && user.status === 'inactive');
-      
-      return matchesSearch && matchesTab;
-    });
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    setUsers(filtered);
-  }, [searchTerm, activeTab]);
+    const matchesTab = 
+      activeTab === 'all' || 
+      user.role === activeTab ||
+      (activeTab === 'active' && user.status === 'active') ||
+      (activeTab === 'inactive' && user.status === 'inactive');
+    
+    return matchesSearch && matchesTab;
+  });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -93,44 +127,59 @@ const UserManagementPage = () => {
                 </Tabs>
               </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map(user => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            user.role === 'admin' ? 'default' :
-                            user.role === 'staff' ? 'secondary' :
-                            user.role === 'trainer' ? 'outline' : 'secondary'
-                          }>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">Edit</Button>
-                        </TableCell>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading users...</span>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-4">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredUsers.map(user => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                user.role === 'admin' ? 'default' :
+                                user.role === 'staff' ? 'secondary' :
+                                user.role === 'trainer' ? 'outline' : 'secondary'
+                              }>
+                                {user.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={user.status === 'active' ? 'success' : 'destructive'}>
+                                {user.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm">Edit</Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
