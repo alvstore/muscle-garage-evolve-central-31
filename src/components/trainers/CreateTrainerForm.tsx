@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -65,14 +64,18 @@ export const CreateTrainerForm = ({ onSuccess }: CreateTrainerFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // First create auth user
+      // Generate a secure random password (at least 8 characters with numbers and letters)
+      const tempPassword = `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`.substring(0, 12) + "A1!";
+      
+      // First create auth user with required metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
-        password: `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`, // Generate random secure password
+        password: tempPassword,
         options: {
           data: {
             full_name: values.name,
             role: 'trainer',
+            phone: values.phone || null
           },
         },
       });
@@ -93,7 +96,7 @@ export const CreateTrainerForm = ({ onSuccess }: CreateTrainerFormProps) => {
         .from('profiles')
         .update({
           full_name: values.name,
-          phone: values.phone,
+          phone: values.phone || null,
           department: values.specialization,
           bio: values.bio,
           role: 'trainer',

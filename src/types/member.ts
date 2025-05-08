@@ -17,17 +17,18 @@ export interface Member {
   dateOfBirth?: Date | string | null;
   goal?: string;
   
-  // Address Fields
+  // Address Fields - updated to match the DB schema
   address?: string;
   city?: string;
   state?: string;
   zipCode?: string;
   country?: string;
   
-  // ID Fields
-  idType?: string;
-  idNumber?: string;
+  // ID Fields - updated to match the DB schema
+  id_type?: string;
+  id_number?: string;
   
-  // Profile Picture
-  profilePicture?: string;
+  // Profile Picture - updated to match the DB schema
+  profile_picture?: string;
+  avatar?: string; // Keep for backward compatibility
 }

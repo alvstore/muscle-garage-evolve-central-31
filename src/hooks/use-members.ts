@@ -20,6 +20,15 @@ export interface Member {
   date_of_birth?: string;
   created_at?: string;
   updated_at?: string;
+  // Added missing fields to match the database schema
+  id_type?: string;
+  id_number?: string;
+  profile_picture?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
 }
 
 export const useMembers = () => {
@@ -34,6 +43,7 @@ export const useMembers = () => {
     
     try {
       if (!currentBranch?.id) {
+        console.warn("No branch selected, cannot fetch members");
         setMembers([]);
         return;
       }
@@ -48,7 +58,10 @@ export const useMembers = () => {
         `)
         .eq('branch_id', currentBranch.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching members:', error);
+        throw error;
+      }
       
       setMembers(data);
     } catch (err: any) {
@@ -68,9 +81,14 @@ export const useMembers = () => {
         return null;
       }
       
+      // Ensure all required fields are present and correctly named
       const memberWithBranch = {
         ...member,
-        branch_id: currentBranch.id
+        branch_id: currentBranch.id,
+        // Ensure these fields exist with correct names
+        id_type: member.id_type || null,
+        id_number: member.id_number || null,
+        profile_picture: member.profile_picture || member.avatar || null
       };
       
       const { data, error } = await supabase
@@ -79,7 +97,10 @@ export const useMembers = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating member:', error);
+        throw error;
+      }
       
       setMembers(prev => [...prev, data as Member]);
       toast.success('Member created successfully');
@@ -108,7 +129,10 @@ export const useMembers = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error updating member:', error);
+        throw error;
+      }
       
       setMembers(prev => prev.map(member => member.id === id ? {...member, ...data} : member));
       toast.success('Member updated successfully');
@@ -130,7 +154,10 @@ export const useMembers = () => {
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error deleting member:', error);
+        throw error;
+      }
       
       setMembers(prev => prev.filter(member => member.id !== id));
       toast.success('Member deleted successfully');
@@ -144,13 +171,21 @@ export const useMembers = () => {
     }
   };
 
+  // Fix window auto-refresh by using an effect cleanup approach
   useEffect(() => {
-    if (currentBranch?.id) {
+    let isMounted = true;
+    
+    if (currentBranch?.id && isMounted) {
       fetchMembers();
     } else {
       // Clear members if no branch selected
       setMembers([]);
     }
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [fetchMembers, currentBranch?.id]);
 
   return {

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
@@ -9,20 +10,26 @@ interface UploadImageProps {
 export const useUploadImage = () => {
   const uploadImage = async ({ file, folder }: UploadImageProps) => {
     try {
+      if (!file) {
+        throw new Error('No file selected');
+      }
+
       // Generate a unique filename
-      const fileName = `${Date.now()}-${file.name}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
       const filePath = `${folder}/${fileName}`;
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with explicit content type
       const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, file, {
           cacheControl: '3600',
+          contentType: file.type, // Ensure content-type is set correctly
           upsert: false
         });
 
       if (uploadError) {
-        throw new Error('Failed to upload image');
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Failed to upload image: ${uploadError.message}`);
       }
 
       // Get the public URL

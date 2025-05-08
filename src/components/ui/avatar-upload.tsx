@@ -26,24 +26,29 @@ export function AvatarUpload({ onImageUploaded, currentImageUrl }: AvatarUploadP
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const filePath = `${Math.random()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
 
       // Upload image to Supabase storage
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          contentType: file.type // Explicitly set content type
+        });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       setPreview(publicUrl);
       onImageUploaded(publicUrl);
+      toast.success('Profile picture uploaded successfully');
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Error uploading avatar:', error);
+      toast.error(error.message || 'Error uploading image');
     } finally {
       setUploading(false);
     }
@@ -52,7 +57,7 @@ export function AvatarUpload({ onImageUploaded, currentImageUrl }: AvatarUploadP
   return (
     <div className="flex flex-col items-center gap-4">
       <Avatar className="h-24 w-24">
-        <AvatarImage src={preview} />
+        <AvatarImage src={preview} alt="Profile" />
         <AvatarFallback>
           <Upload className="h-8 w-8 text-muted-foreground" />
         </AvatarFallback>

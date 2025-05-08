@@ -2263,9 +2263,9 @@ export type Database = {
           email: string | null
           gender: string | null
           goal: string | null
-          govt_id_number: string | null
-          govt_id_type: string | null
           id: string
+          id_number: string | null
+          id_type: string | null
           membership_end_date: string | null
           membership_id: string | null
           membership_start_date: string | null
@@ -2273,6 +2273,7 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
+          profile_picture: string | null
           state: string | null
           status: string | null
           trainer_id: string | null
@@ -2292,9 +2293,9 @@ export type Database = {
           email?: string | null
           gender?: string | null
           goal?: string | null
-          govt_id_number?: string | null
-          govt_id_type?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -2302,6 +2303,7 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
+          profile_picture?: string | null
           state?: string | null
           status?: string | null
           trainer_id?: string | null
@@ -2321,9 +2323,9 @@ export type Database = {
           email?: string | null
           gender?: string | null
           goal?: string | null
-          govt_id_number?: string | null
-          govt_id_type?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -2331,6 +2333,7 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
+          profile_picture?: string | null
           state?: string | null
           status?: string | null
           trainer_id?: string | null

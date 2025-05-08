@@ -9,6 +9,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: false, // Prevent URL detection causing refreshes
+  },
+  // Add global headers to ensure API key is sent with every request
+  global: {
+    headers: {
+      'apikey': supabaseAnonKey
+    }
   }
 });
 

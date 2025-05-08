@@ -6,7 +6,10 @@ import { Lead } from '@/types/crm';
 export const crmService = {
   async getLeads(branchId: string | undefined): Promise<Lead[]> {
     try {
-      if (!branchId) return [];
+      if (!branchId) {
+        console.warn('No branch ID provided for getLeads');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('leads')
@@ -14,7 +17,11 @@ export const crmService = {
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching leads:', error);
+        throw error;
+      }
+      
       return data as Lead[];
     } catch (error: any) {
       console.error('Error fetching leads:', error);
@@ -25,9 +32,19 @@ export const crmService = {
 
   async createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>): Promise<Lead | null> {
     try {
+      if (!lead.branch_id) {
+        toast.error('Branch ID is required to create a lead');
+        return null;
+      }
+      
+      const leadWithTimestamps = {
+        ...lead,
+        updated_at: new Date().toISOString()
+      };
+      
       const { data, error } = await supabase
         .from('leads')
-        .insert([lead])
+        .insert([leadWithTimestamps])
         .select()
         .single();
 
