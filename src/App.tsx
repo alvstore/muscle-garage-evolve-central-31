@@ -25,7 +25,24 @@ function App() {
     if (pollingEnabled === 'true') {
       hikvisionPollingService.startPolling();
     }
-    
+
+    // Tab focus management
+    const handleBlur = () => {
+      // Prevent default refresh behavior
+      document.body.style.display = 'none';
+    };
+
+    const handleFocus = () => {
+      // Restore display
+      document.body.style.display = '';
+      // Prevent any pending refresh
+      window.stop();
+    };
+
+    // Add event listeners
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
     // Move initialization here
     const initializeApp = async () => {
       try {
@@ -40,6 +57,8 @@ function App() {
     
     // Cleanup on unmount
     return () => {
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
       hikvisionPollingService.stopPolling();
     };
   }, []);
