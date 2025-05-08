@@ -11,7 +11,7 @@ import { miscRoutes } from './router/routes/miscRoutes';
 import { communicationRoutes } from './router/routes/communicationRoutes';
 import { analyticsRoutes } from './router/routes/analyticsRoutes';
 import { adminRoutes } from './router/routes/adminRoutes';
-import { settingsRoutes } from './router/routes/admin/settingsRoutes';
+import { settingsRoutes } from './router/routes/settingsRoutes';
 import { staffRoutes } from './router/routes/staffRoutes';
 import { fitnessRoutes } from './router/routes/fitnessRoutes';
 import { branchRoutes } from './router/routes/branchRoutes';
@@ -20,6 +20,7 @@ import { marketingRoutes } from './router/routes/marketingRoutes';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
 import { BranchProvider } from '@/contexts/BranchContext';
+import { PermissionsProvider } from '@/hooks/permissions/use-permissions-manager';
 import VisibilityHandler from './components/layout/VisibilityHandler';
 import './App.css';
 
@@ -46,87 +47,89 @@ function App() {
     <BrowserRouter>
       <VisibilityHandler>
         <AuthProvider>
-          <BranchProvider>
-            <Suspense fallback={<LoadingScreen />}>
-              <Routes>
-                {/* Public auth routes */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <PermissionsProvider>
+            <BranchProvider>
+              <Suspense fallback={<LoadingScreen />}>
+                <Routes>
+                  {/* Public auth routes */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  {adminRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {settingsRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {staffRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                </Route>
+                  {/* Admin routes */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    {adminRoutes.map((route) => (
+                      <Route
+                        key={route.path}
+                        path={route.path.replace(/^\//, '/admin/')}
+                        element={route.element}
+                      />
+                    ))}
+                    {settingsRoutes.map((route) => (
+                      <Route
+                        key={route.path}
+                        path={route.path.replace(/^\//, '/admin/')}
+                        element={route.element}
+                      />
+                    ))}
+                    {staffRoutes.map((route) => (
+                      <Route
+                        key={route.path}
+                        path={route.path.replace(/^\//, '/admin/')}
+                        element={route.element}
+                      />
+                    ))}
+                  </Route>
 
-                {/* Regular dashboard routes */}
-                <Route path="/" element={<DashboardLayout />}>
-                  {crmRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {memberRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {trainerRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {classRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {financeRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {miscRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {communicationRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {analyticsRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {fitnessRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {branchRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                  {marketingRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                </Route>
+                  {/* Regular dashboard routes */}
+                  <Route path="/" element={<DashboardLayout />}>
+                    {crmRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {memberRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {trainerRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {classRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {financeRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {miscRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {communicationRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {analyticsRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {fitnessRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {branchRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    {marketingRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                  </Route>
 
-                {/* Website routes */}
-                <Route path="/" element={<WebsiteLayout />}>
-                  {websiteRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                </Route>
-              </Routes>
-            </Suspense>
-            <Toaster />
-          </BranchProvider>
+                  {/* Website routes */}
+                  <Route path="/" element={<WebsiteLayout />}>
+                    {websiteRoutes.map((route) => (
+                      <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                  </Route>
+                </Routes>
+              </Suspense>
+              <Toaster />
+            </BranchProvider>
+          </PermissionsProvider>
         </AuthProvider>
       </VisibilityHandler>
     </BrowserRouter>
