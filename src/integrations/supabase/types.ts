@@ -1827,7 +1827,6 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
-          branch_id: string | null
           conversion_date: string | null
           conversion_value: number | null
           created_at: string | null
@@ -1847,7 +1846,6 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -1867,7 +1865,6 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
-          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -2282,7 +2279,6 @@ export type Database = {
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
-          zip_code: string | null
           zipCode: string | null
         }
         Insert: {
@@ -2313,7 +2309,6 @@ export type Database = {
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zip_code?: string | null
           zipCode?: string | null
         }
         Update: {
@@ -2344,7 +2339,6 @@ export type Database = {
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zip_code?: string | null
           zipCode?: string | null
         }
         Relationships: [

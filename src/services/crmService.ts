@@ -5,17 +5,16 @@ import { Lead } from '@/types/crm';
 export const crmService = {
   async getLeads(branchId: string | undefined): Promise<Lead[]> {
     try {
-      let query = supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      // Only filter by branch if a branchId is provided
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
+      if (!branchId) {
+        console.warn('No branch ID provided for getLeads');
+        return [];
       }
       
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Supabase error fetching leads:', error);
@@ -32,6 +31,11 @@ export const crmService = {
 
   async createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>): Promise<Lead | null> {
     try {
+      if (!lead.branch_id) {
+        toast.error('Branch ID is required to create a lead');
+        return null;
+      }
+      
       const leadWithTimestamps = {
         ...lead,
         updated_at: new Date().toISOString()

@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from './use-branch';
@@ -26,21 +27,20 @@ export const useStaff = () => {
   const { currentBranch } = useBranch();
 
   const fetchStaff = useCallback(async () => {
+    if (!currentBranch?.id) {
+      console.log('No branch selected, cannot fetch staff');
+      setStaff([]);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
-      // If no branch selected, fetch all staff for admin users
-      let query = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('role', ['admin', 'staff', 'trainer']);
-        
-      // If branch is selected, filter by branch
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
+        .in('role', ['admin', 'staff', 'trainer'])
+        .eq('branch_id', currentBranch.id);
       
       if (error) {
         throw error;
@@ -75,8 +75,13 @@ export const useStaff = () => {
   }, [currentBranch?.id]);
 
   useEffect(() => {
-    fetchStaff();
-  }, [fetchStaff]);
+    if (currentBranch?.id) {
+      fetchStaff();
+    } else {
+      // Clear staff if no branch selected
+      setStaff([]);
+    }
+  }, [fetchStaff, currentBranch?.id]);
 
   const createStaffMember = async (userData: { 
     email: string;

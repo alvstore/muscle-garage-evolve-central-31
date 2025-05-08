@@ -1,167 +1,59 @@
 
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { adminCrmRoutes } from './router/routes/admin/crmRoutes';
-import { adminMembersRoutes } from './router/routes/admin/membersRoutes';
-import { settingsRoutes } from './router/routes/admin/settingsRoutes';
-import { adminTrainersRoutes } from './router/routes/admin/trainersRoutes';
-import { adminClassesRoutes } from './router/routes/admin/classesRoutes';
-import { adminPaymentsRoutes } from './router/routes/admin/paymentsRoutes';
-import { adminInventoryRoutes } from './router/routes/admin/inventoryRoutes';
-import { adminCommunicationRoutes } from './router/routes/admin/communicationRoutes';
-import { adminReportsRoutes } from './router/routes/admin/reportsRoutes';
-import { adminDashboardRoutes } from './router/routes/admin/dashboardRoutes';
-import { memberRoutes } from './router/routes/memberRoutes';
-import { trainerRoutes } from './router/routes/trainerRoutes';
-import { publicRoutes } from './router/routes/publicRoutes';
-import { Toaster } from '@/components/ui/toaster';
-import VisibilityHandler from './components/layout/VisibilityHandler';
-import { BranchProvider } from './contexts/BranchContext';
-import { PermissionsProvider } from '@/hooks/permissions/use-permissions-manager';
-import './App.css';
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './hooks/use-auth';
+import { BranchProvider } from './hooks/use-branch';
+import AppRouter from './router/AppRouter';
+import RouteChecker from './components/debug/RouteChecker';
+import { toast, Toaster } from 'sonner';
+import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
 
-// Lazy load the layout components
-const AdminLayout = lazy(() => import('./components/layouts/AdminLayout'));
-const WebsiteLayout = lazy(() => import('./components/layouts/WebsiteLayout'));
-const MemberLayout = lazy(() => import('./components/layouts/MemberLayout'));
-const TrainerLayout = lazy(() => import('./components/layouts/TrainerLayout'));
-
-// Lazy load the auth pages
-const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'));
-
-// Create LoadingScreen component
-const LoadingScreen = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="h-10 w-10 rounded-full border-4 border-t-blue-600 border-blue-200 animate-spin"></div>
-  </div>
-);
+// Create a query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      retry: 1,
+    },
+  },
+});
 
 function App() {
+  useEffect(() => {
+    // Start Hikvision polling if enabled
+    const pollingEnabled = localStorage.getItem('hikvision_polling_enabled');
+    if (pollingEnabled === 'true') {
+      hikvisionPollingService.startPolling();
+    }
+    
+    // Move initialization here
+    const initializeApp = async () => {
+      try {
+        // Removed the createInitialAdmin call
+      } catch (error) {
+        console.error("Error during app initialization:", error);
+        toast.error("Error initializing application");
+      }
+    };
+    
+    initializeApp();
+    
+    // Cleanup on unmount
+    return () => {
+      hikvisionPollingService.stopPolling();
+    };
+  }, []);
+  
   return (
-    <BrowserRouter>
-      <VisibilityHandler>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <BranchProvider>
-          <PermissionsProvider>
-            <Suspense fallback={<LoadingScreen />}>
-              <Routes>
-                {/* Public auth routes */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  {adminDashboardRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminCrmRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminMembersRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminTrainersRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminClassesRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminPaymentsRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminInventoryRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminCommunicationRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {adminReportsRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                  {settingsRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/admin/')}
-                      element={route.element}
-                    />
-                  ))}
-                </Route>
-
-                {/* Member routes */}
-                <Route path="/member" element={<MemberLayout />}>
-                  {memberRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/member/')}
-                      element={route.element}
-                    />
-                  ))}
-                </Route>
-
-                {/* Trainer routes */}
-                <Route path="/trainer" element={<TrainerLayout />}>
-                  {trainerRoutes.map((route) => (
-                    <Route
-                      key={route.path}
-                      path={route.path.replace(/^\//, '/trainer/')}
-                      element={route.element}
-                    />
-                  ))}
-                </Route>
-
-                {/* Public website routes */}
-                <Route element={<WebsiteLayout />}>
-                  {publicRoutes.map((route) => (
-                    <Route key={route.path} path={route.path} element={route.element} />
-                  ))}
-                </Route>
-              </Routes>
-            </Suspense>
-            <Toaster />
-          </PermissionsProvider>
+          <Toaster position="top-right" />
+          <AppRouter />
+          {process.env.NODE_ENV === 'development' && <RouteChecker />}
         </BranchProvider>
-      </VisibilityHandler>
-    </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
