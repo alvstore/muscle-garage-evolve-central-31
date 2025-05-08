@@ -17,6 +17,7 @@ import { supabase } from "@/services/supabaseClient";
 import { useBranch } from "@/hooks/use-branch";
 import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { registerMemberInBiometricDevice } from "@/services/biometricService";
 
 const NewMemberPage = () => {
   const navigate = useNavigate();
@@ -52,6 +53,10 @@ const NewMemberPage = () => {
     // Membership Information
     membershipId: "",
     membershipStatus: "active",
+
+    // Payment Information
+    amountPaid: 0,
+    paymentMethod: "cash",
   });
   
   const [initialMeasurements, setInitialMeasurements] = useState<Partial<BodyMeasurement> | null>(null);
@@ -93,6 +98,12 @@ const NewMemberPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = parseFloat(value) || 0;
+    setFormData(prev => ({ ...prev, [name]: numValue }));
+  };
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -105,6 +116,55 @@ const NewMemberPage = () => {
   const handleSaveMeasurements = (measurements: Partial<BodyMeasurement>) => {
     setInitialMeasurements(measurements);
     toast.success("Initial measurements saved. They will be recorded when the member is created.");
+  };
+
+  const createInvoice = async (memberId: string, membershipData: any, amountPaid: number) => {
+    try {
+      // Calculate payment status
+      const totalAmount = membershipData.price;
+      let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+      
+      if (amountPaid >= totalAmount) {
+        paymentStatus = 'paid';
+      } else if (amountPaid > 0) {
+        paymentStatus = 'partial';
+      }
+      
+      // Create invoice items
+      const invoiceItem = {
+        id: crypto.randomUUID(),
+        name: membershipData.name,
+        description: `Membership for ${membershipData.duration_days} days`,
+        quantity: 1,
+        price: membershipData.price
+      };
+
+      // Create the invoice record
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          member_id: memberId,
+          amount: totalAmount,
+          status: paymentStatus,
+          issued_date: new Date().toISOString(),
+          due_date: new Date().toISOString(),
+          paid_date: paymentStatus === 'paid' ? new Date().toISOString() : null,
+          payment_method: formData.paymentMethod,
+          branch_id: currentBranch?.id,
+          items: [invoiceItem],
+          description: `Invoice for ${membershipData.name} membership`,
+          membership_plan_id: membershipData.id
+        })
+        .select()
+        .single();
+        
+      if (invoiceError) throw invoiceError;
+      
+      return invoiceData;
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,15 +227,21 @@ const NewMemberPage = () => {
         }
       }
       
-      // 3. Create membership assignment
+      // 3. Get selected membership details
+      let selectedMembership = null;
+      let invoiceData = null;
+      let membershipAssignmentData = null;
+      
       if (formData.membershipId) {
-        const selectedMembership = memberships.find(m => m.id === formData.membershipId);
+        selectedMembership = memberships.find(m => m.id === formData.membershipId);
         if (selectedMembership) {
+          // 4. Auto-calculate membership dates
           const startDate = new Date();
           const endDate = new Date();
           endDate.setDate(endDate.getDate() + selectedMembership.duration_days);
           
-          const { error: assignmentError } = await supabase
+          // 5. Create membership assignment
+          const { data: assignmentData, error: assignmentError } = await supabase
             .from('member_memberships')
             .insert({
               member_id: memberData.id,
@@ -183,20 +249,73 @@ const NewMemberPage = () => {
               start_date: startDate.toISOString().split('T')[0],
               end_date: endDate.toISOString().split('T')[0],
               total_amount: selectedMembership.price,
-              amount_paid: 0,
-              payment_status: 'pending',
+              amount_paid: formData.amountPaid,
+              payment_status: formData.amountPaid >= selectedMembership.price ? 'paid' : 
+                             formData.amountPaid > 0 ? 'partial' : 'pending',
               branch_id: currentBranch.id
-            });
+            })
+            .select()
+            .single();
             
           if (assignmentError) {
             console.error("Error assigning membership:", assignmentError);
             toast.error("Member created but failed to assign membership");
+          } else {
+            membershipAssignmentData = assignmentData;
+            
+            // 6. Auto-generate invoice for the membership
+            try {
+              invoiceData = await createInvoice(
+                memberData.id, 
+                selectedMembership, 
+                formData.amountPaid
+              );
+            } catch (invoiceError) {
+              console.error("Error creating invoice:", invoiceError);
+              toast.error("Member created but failed to generate invoice");
+            }
           }
         }
       }
       
+      // 7. Register member in biometric device if applicable
+      try {
+        const { data: settings } = await supabase
+          .from('attendance_settings')
+          .select('*')
+          .eq('branch_id', currentBranch.id)
+          .single();
+        
+        if (settings && (settings.hikvision_enabled || settings.essl_enabled)) {
+          const result = await registerMemberInBiometricDevice({
+            memberId: memberData.id,
+            name: formData.name,
+            phone: formData.phone || '',
+            branchId: currentBranch.id,
+            deviceType: settings.hikvision_enabled ? 'hikvision' : 'essl'
+          });
+          
+          if (!result.success) {
+            console.warn("Biometric registration warning:", result.message);
+            toast.warning(`Note: ${result.message}`);
+          } else {
+            toast.success("Member registered in biometric system");
+          }
+        }
+      } catch (biometricError) {
+        console.error("Biometric registration error:", biometricError);
+        toast.error("Member created but could not register in biometric system");
+      }
+      
       toast.success("Member created successfully");
-      navigate(`/members/${memberData.id}`);
+      
+      // 8. Redirect to the invoice page if we have one, otherwise to the member profile
+      if (invoiceData) {
+        navigate(`/admin/invoices/${invoiceData.id}`);
+      } else {
+        navigate(`/admin/members/${memberData.id}`);
+      }
+      
     } catch (error: any) {
       console.error("Error creating member:", error);
       toast.error(`Failed to create member: ${error.message}`);
@@ -247,11 +366,12 @@ const NewMemberPage = () => {
                 </div>
                 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="personal">Personal</TabsTrigger>
                     <TabsTrigger value="address">Address</TabsTrigger>
                     <TabsTrigger value="identification">Identification</TabsTrigger>
                     <TabsTrigger value="membership">Membership</TabsTrigger>
+                    <TabsTrigger value="payment">Payment</TabsTrigger>
                   </TabsList>
                 
                   {/* Personal Information Tab */}
@@ -514,6 +634,91 @@ const NewMemberPage = () => {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {formData.membershipId && (
+                        <div className="col-span-2">
+                          <div className="border rounded-lg p-4 bg-muted/50">
+                            <h4 className="font-medium mb-2">Selected Membership Details</h4>
+                            {(() => {
+                              const selectedMembership = memberships.find(m => m.id === formData.membershipId);
+                              return selectedMembership ? (
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div>Membership:</div>
+                                  <div className="font-medium">{selectedMembership.name}</div>
+                                  <div>Price:</div>
+                                  <div className="font-medium">{formatCurrency(selectedMembership.price)}</div>
+                                  <div>Duration:</div>
+                                  <div className="font-medium">{selectedMembership.duration_days} days</div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No membership selected</p>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Payment Tab */}
+                  <TabsContent value="payment" className="space-y-4 pt-4">
+                    <h3 className="text-lg font-medium">Payment Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="amountPaid">Amount Paid</Label>
+                        <Input 
+                          id="amountPaid" 
+                          name="amountPaid" 
+                          type="number"
+                          min="0" 
+                          step="0.01"
+                          value={formData.amountPaid} 
+                          onChange={handleNumericChange} 
+                        />
+                        {formData.membershipId && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(() => {
+                              const selectedMembership = memberships.find(m => m.id === formData.membershipId);
+                              if (selectedMembership) {
+                                const remaining = selectedMembership.price - formData.amountPaid;
+                                return remaining > 0 
+                                  ? `Remaining: ${formatCurrency(remaining)}` 
+                                  : remaining < 0
+                                    ? `Overpaid: ${formatCurrency(Math.abs(remaining))}`
+                                    : "Fully paid";
+                              }
+                              return "";
+                            })()}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="paymentMethod">Payment Method</Label>
+                        <Select 
+                          value={formData.paymentMethod} 
+                          onValueChange={(value) => handleSelectChange("paymentMethod", value)}
+                        >
+                          <SelectTrigger id="paymentMethod">
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="card">Card</SelectItem>
+                            <SelectItem value="upi">UPI</SelectItem>
+                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="cheque">Cheque</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="p-4 border rounded bg-yellow-50 border-yellow-200">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Note:</strong> After creating the member, you'll be redirected to the invoice page where you can complete the payment process.
+                      </p>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -522,7 +727,7 @@ const NewMemberPage = () => {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => navigate("/members")}
+                    onClick={() => navigate("/admin/members")}
                   >
                     Cancel
                   </Button>
