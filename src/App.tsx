@@ -26,22 +26,21 @@ function App() {
       hikvisionPollingService.startPolling();
     }
 
-    // Tab focus management
-    const handleBlur = () => {
-      // Prevent default refresh behavior
-      document.body.style.display = 'none';
+    // Tab visibility management
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Prevent refresh when tab is hidden
+        document.body.style.display = 'none';
+        // Prevent any pending refresh
+        window.stop();
+      } else {
+        // Restore display when tab becomes visible
+        document.body.style.display = '';
+      }
     };
 
-    const handleFocus = () => {
-      // Restore display
-      document.body.style.display = '';
-      // Prevent any pending refresh
-      window.stop();
-    };
-
-    // Add event listeners
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('focus', handleFocus);
+    // Add event listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Move initialization here
     const initializeApp = async () => {
@@ -57,8 +56,7 @@ function App() {
     
     // Cleanup on unmount
     return () => {
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       hikvisionPollingService.stopPolling();
     };
   }, []);
