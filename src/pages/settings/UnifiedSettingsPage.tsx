@@ -126,7 +126,7 @@ const UnifiedSettingsPage = () => {
               title="Reminder Rules"
               description="Set up automated reminders and alerts"
               icon={<Bell className="h-4 w-4 text-primary" />}
-              to="/settings/reminders"
+              to="/communication/reminders"
             />
           </div>
         </TabsContent>
@@ -154,19 +154,19 @@ const UnifiedSettingsPage = () => {
               title="Payment Gateways"
               description="Configure Razorpay and other payment methods"
               icon={<CreditCard className="h-4 w-4 text-primary" />}
-              to="/settings/payment-gateways"
+              to="/settings/integrations/payment"
             />
             <SettingCard
               title="Invoice Settings"
               description="Customize invoice templates and settings"
               icon={<CreditCard className="h-4 w-4 text-primary" />}
-              to="/settings/invoice-settings"
+              to="/finance/invoices"
             />
             <SettingCard
               title="Store Settings"
               description="Configure online store and product settings"
               icon={<Store className="h-4 w-4 text-primary" />}
-              to="/settings/store"
+              to="/store"
             />
           </div>
         </TabsContent>
