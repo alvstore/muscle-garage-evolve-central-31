@@ -1,105 +1,287 @@
+import { useState, useEffect, useRef } from "react";
+import { TabsList, TabsTrigger, TabsContent, Tabs } from "@/components/ui/tabs";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
 import { Instagram, Facebook } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from '@/utils/stringUtils';
+import { getInitials } from "@/utils/stringUtils";
 
-const trainers = [
-  {
-    name: "Rahul Singh",
-    specialty: "Strength Training",
-    bio: "Certified personal trainer with 10+ years of experience in strength and conditioning. Specializes in powerlifting and bodybuilding preparation.",
-    avatar: "",
-    instagram: "https://instagram.com",
-    facebook: "https://facebook.com"
-  },
-  {
-    name: "Priya Kapoor",
-    specialty: "Yoga & Flexibility",
-    bio: "Yoga instructor with expertise in Hatha, Vinyasa, and Restorative practices. Helps clients improve flexibility and mental wellbeing.",
-    avatar: "",
-    instagram: "https://instagram.com",
-    facebook: "https://facebook.com"
-  },
-  {
-    name: "Ajay Patel",
-    specialty: "Weight Loss",
-    bio: "Nutrition specialist and personal trainer focusing on sustainable weight loss programs. Creator of the 'Transform in 60 Days' program.",
-    avatar: "",
-    instagram: "https://instagram.com",
-    facebook: "https://facebook.com"
-  },
-  {
-    name: "Meera Sharma",
-    specialty: "Functional Training",
-    bio: "CrossFit Level 3 trainer specializing in functional movement and athletic performance. Former national-level athlete.",
-    avatar: "",
-    instagram: "https://instagram.com",
-    facebook: "https://facebook.com"
-  }
-];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const TrainersSection = () => {
-  return (
-    <section className="py-16">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Expert Trainers</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Our certified fitness professionals will guide you through your fitness journey with personalized coaching and motivation.
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      }
+    }, {
+      threshold: 0.1
+    });
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+  const trainers = [{
+    name: "Rahul Sharma",
+    role: "Head Strength Coach",
+    experience: "10+ years experience",
+    image: "/trainer-1.jpg",
+    specializations: ["Bodybuilding", "Strength Training", "Powerlifting"],
+    social: {
+      instagram: "#",
+      facebook: "#"
+    }
+  }, {
+    name: "Priya Patel",
+    role: "Yoga & Pilates Instructor",
+    experience: "8+ years experience",
+    image: "/trainer-2.jpg",
+    specializations: ["Hatha Yoga", "Pilates", "Meditation"],
+    social: {
+      instagram: "#",
+      facebook: "#"
+    }
+  }, {
+    name: "Vikram Singh",
+    role: "Functional Training Specialist",
+    experience: "7+ years experience",
+    image: "/trainer-3.jpg",
+    specializations: ["HIIT", "Crossfit", "Mobility Training"],
+    social: {
+      instagram: "#",
+      facebook: "#"
+    }
+  }, {
+    name: "Anjali Kapoor",
+    role: "Zumba & Dance Instructor",
+    experience: "5+ years experience",
+    image: "/trainer-4.jpg",
+    specializations: ["Zumba", "Dance Fitness", "Aerobics"],
+    social: {
+      instagram: "#",
+      facebook: "#"
+    }
+  }];
+  const classes = [{
+    type: "Zumba",
+    schedule: [{
+      day: "Monday",
+      time: "6:30 AM - 7:30 AM",
+      trainer: "Anjali Kapoor"
+    }, {
+      day: "Wednesday",
+      time: "6:30 PM - 7:30 PM",
+      trainer: "Anjali Kapoor"
+    }, {
+      day: "Saturday",
+      time: "10:00 AM - 11:00 AM",
+      trainer: "Anjali Kapoor"
+    }]
+  }, {
+    type: "Yoga",
+    schedule: [{
+      day: "Tuesday",
+      time: "7:00 AM - 8:00 AM",
+      trainer: "Priya Patel"
+    }, {
+      day: "Thursday",
+      time: "7:00 AM - 8:00 AM",
+      trainer: "Priya Patel"
+    }, {
+      day: "Sunday",
+      time: "9:00 AM - 10:00 AM",
+      trainer: "Priya Patel"
+    }]
+  }, {
+    type: "HIIT",
+    schedule: [{
+      day: "Monday",
+      time: "7:00 PM - 8:00 PM",
+      trainer: "Vikram Singh"
+    }, {
+      day: "Thursday",
+      time: "7:00 PM - 8:00 PM",
+      trainer: "Vikram Singh"
+    }, {
+      day: "Saturday",
+      time: "8:00 AM - 9:00 AM",
+      trainer: "Vikram Singh"
+    }]
+  }, {
+    type: "Strength",
+    schedule: [{
+      day: "Tuesday",
+      time: "6:00 PM - 7:00 PM",
+      trainer: "Rahul Sharma"
+    }, {
+      day: "Friday",
+      time: "6:00 PM - 7:00 PM",
+      trainer: "Rahul Sharma"
+    }, {
+      day: "Sunday",
+      time: "5:00 PM - 6:00 PM",
+      trainer: "Rahul Sharma"
+    }]
+  }];
+  return <section id="trainers" ref={sectionRef} className="section-padding bg-gym-gray-900">
+      <div className="gym-container">
+        <div className={`text-center max-w-3xl mx-auto mb-16 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}>
+          <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
+            OUR <span className="text-gym-yellow">EXPERT TRAINERS</span>
+          </h2>
+          <p className="text-gray-300">
+            Meet our team of certified fitness professionals dedicated to helping you achieve your goals.
           </p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {trainers.map((trainer, index) => (
-            <Card key={index} className="h-full flex flex-col overflow-hidden">
-              <div className="relative pt-[100%] bg-muted">
-                <Avatar className="absolute inset-0 h-full w-full rounded-none">
-                  <AvatarImage 
-                    src={trainer.avatar} 
-                    alt={trainer.name} 
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="rounded-none text-4xl">
-                    {getInitials(trainer.name)}
-                  </AvatarFallback>
-                </Avatar>
+
+        {/* Trainers */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+          {trainers.map((trainer, index) => <div key={trainer.name} className={`bg-gym-gray-800 rounded-lg overflow-hidden group transition-all duration-500 ${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{
+          animationDelay: `${index * 0.15}s`
+        }}>
+              <div className="relative overflow-hidden h-64">
+                {trainer.image ? (
+                  <img src={trainer.image} alt={trainer.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gym-gray-700">
+                    <Avatar className="h-48 w-48">
+                      <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(trainer.name)}&background=FFD100&color=121212&size=256&bold=true`} alt={trainer.name} />
+                      <AvatarFallback className="text-6xl bg-gym-yellow text-gym-black">
+                        {getInitials(trainer.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gym-black to-transparent p-4">
+                  <div className="flex gap-2">
+                    <a href={trainer.social.instagram} className="bg-gym-yellow text-gym-black p-2 rounded-full hover:bg-white transition-colors">
+                      <Instagram size={18} />
+                    </a>
+                    <a href={trainer.social.facebook} className="bg-gym-yellow text-gym-black p-2 rounded-full hover:bg-white transition-colors">
+                      <Facebook size={18} />
+                    </a>
+                  </div>
+                </div>
               </div>
-              <CardHeader className="p-4 pb-0">
-                <h3 className="text-xl font-bold">{trainer.name}</h3>
-                <p className="text-primary font-medium">{trainer.specialty}</p>
-              </CardHeader>
-              <CardContent className="p-4 flex-grow">
-                <p className="text-gray-600">{trainer.bio}</p>
-              </CardContent>
-              <CardFooter className="p-4 pt-0 flex justify-start gap-2">
-                <Button size="icon" variant="outline" asChild>
-                  <a href={trainer.instagram} target="_blank" rel="noopener noreferrer">
-                    <Instagram className="h-4 w-4" />
-                    <span className="sr-only">Instagram</span>
-                  </a>
-                </Button>
-                <Button size="icon" variant="outline" asChild>
-                  <a href={trainer.facebook} target="_blank" rel="noopener noreferrer">
-                    <Facebook className="h-4 w-4" />
-                    <span className="sr-only">Facebook</span>
-                  </a>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+              <div className="p-4">
+                <h3 className="text-xl font-bold text-white">{trainer.name}</h3>
+                <p className="text-gym-yellow">{trainer.role}</p>
+                <p className="text-gray-400 text-sm my-2">{trainer.experience}</p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {trainer.specializations.map(spec => <span key={spec} className="text-xs bg-gym-gray-700 px-2 py-1 rounded-md text-white">
+                      {spec}
+                    </span>)}
+                </div>
+              </div>
+            </div>)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
-        
-        <div className="mt-12 text-center">
-          <Button size="lg">
-            Book a Session
-          </Button>
+
+        {/* Classes Schedule */}
+        <div className={`${isVisible ? 'animate-fade-in' : 'opacity-0'}`} style={{
+        animationDelay: '0.6s'
+      }}>
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <h2 className="text-3xl md:text-5xl font-impact mb-4 text-white">
+              CLASS <span className="text-gym-yellow">SCHEDULE</span>
+            </h2>
+            <p className="text-gray-300 mb-8">
+              Join our specialized classes led by expert trainers to enhance your fitness journey.
+            </p>
+          </div>
+
+          <Tabs defaultValue="Zumba">
+            <TabsList className="mb-8 w-full flex overflow-x-auto">
+              {classes.map(classType => <TabsTrigger key={classType.type} value={classType.type} className="flex-1 data-[state=active]:bg-gym-yellow data-[state=active]:text-gym-black">
+                  {classType.type}
+                </TabsTrigger>)}
+            </TabsList>
+            
+            {classes.map(classType => <TabsContent key={classType.type} value={classType.type}>
+                <div className="bg-gym-gray-800 rounded-lg p-6">
+                  <h3 className="text-2xl font-bold mb-6 text-gym-yellow">{classType.type} Classes</h3>
+                  <div className="space-y-4">
+                    {classType.schedule.map((session, idx) => <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gym-gray-700 rounded-lg">
+                        <div>
+                          <h4 className="font-bold text-white">{session.day}</h4>
+                          <p className="text-gym-yellow">{session.time}</p>
+                        </div>
+                        <div className="mt-2 sm:mt-0">
+                          <p className="text-gray-300">Instructor: {session.trainer}</p>
+                        </div>
+                        <button className="mt-3 sm:mt-0 btn btn-outline text-sm py-2 px-4">
+                          Book Class
+                        </button>
+                      </div>)}
+                  </div>
+                </div>
+              </TabsContent>)}
+          </Tabs>
         </div>
       </div>
-    </section>
-  );
-};
+    </section>;
 
+};
 export default TrainersSection;
