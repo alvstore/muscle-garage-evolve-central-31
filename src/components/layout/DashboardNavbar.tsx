@@ -1,211 +1,144 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { 
   Bell, 
-  Settings, 
   Menu, 
-  UserCircle, 
   Search, 
+  Settings,
   LogOut,
-  LayoutDashboard,
-  Users,
-  Calendar,
-  Dumbbell,
-  CreditCard,
-  HardHat,
-  Store,
-  AlertCircle,
-  BarChart
+  User,
+  HelpCircle,
+  Mail,
+  Plus
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from 'react-router-dom';
 import { getInitials } from '@/utils/stringUtils';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth-context';
 
-interface NavbarProps {
-  user?: {
-    name: string;
-    avatar?: string;
-  };
-  onMenuToggle: () => void;
+interface DashboardNavbarProps {
+  onMobileMenuToggle: () => void;
 }
 
-export function DashboardNavbar({ user, onMenuToggle }: NavbarProps) {
-  const { user: authUser, signOut } = useAuth();
-  
-  const displayName = user?.name || authUser?.displayName || 'User';
+const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ 
+  onMobileMenuToggle 
+}) => {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { user, signOut } = useAuth();
   
   const handleLogout = async () => {
     try {
       await signOut();
-      // Will be redirected by the auth listener
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Error logging out:", error);
     }
   };
   
-  // Mobile navigation items
-  const mobileNavItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', href: '/dashboard' },
-    { icon: <Users size={20} />, label: 'Members', href: '/members' },
-    { icon: <Calendar size={20} />, label: 'Classes', href: '/classes' },
-    { icon: <Dumbbell size={20} />, label: 'Trainers', href: '/trainers' },
-    { icon: <CreditCard size={20} />, label: 'Billing', href: '/finance/invoices' },
-    { icon: <HardHat size={20} />, label: 'Staff', href: '/staff' },
-    { icon: <Store size={20} />, label: 'Inventory', href: '/inventory' },
-    { icon: <AlertCircle size={20} />, label: 'Notifications', href: '/notifications' },
-    { icon: <BarChart size={20} />, label: 'Reports', href: '/reports' }
-  ];
+  const userName = user?.user_metadata?.full_name || 'User';
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
-      <div className="container flex h-16 items-center justify-between py-4">
-        <div className="flex items-center gap-2 md:gap-4">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuToggle}>
-            <Menu />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-
-          <div className="hidden md:flex">
-            {/* Logo/branding can go here */}
-          </div>
-
-          <div className="flex-1 md:grow-0">
-            <form>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="w-full rounded-lg border border-input bg-background pl-8 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:w-[200px] lg:w-[300px]"
-                />
-              </div>
-            </form>
-          </div>
+    <div className="flex h-16 items-center px-4 border-b bg-background sticky top-0 z-30">
+      {/* Mobile menu toggle */}
+      <Button variant="outline" size="icon" className="md:hidden mr-2" onClick={onMobileMenuToggle}>
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle menu</span>
+      </Button>
+      
+      <div className="flex-1 flex items-center justify-between">
+        {/* Search */}
+        <div className="relative w-full max-w-xs mr-4 hidden md:flex">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            type="search"
+            placeholder="Search..."
+            className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
         </div>
-
-        <nav className="hidden md:flex items-center gap-2">
-          {/* Desktop navigation items */}
+        
+        {/* Quick Actions */}
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="icon" className="hidden md:flex">
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">New item</span>
+          </Button>
+          
+          {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Bell />
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
+                <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                No new notifications
+              {/* Notification items would go here */}
+              <div className="py-6 text-center text-muted-foreground">
+                <Mail className="h-8 w-8 mx-auto mb-2" />
+                <p>No new notifications</p>
+              </div>
+              <DropdownMenuItem className="cursor-pointer justify-center">
+                View all notifications
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Settings</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/settings/general">General Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/settings/company">Company Settings</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative h-8 rounded-full">
+              <Button variant="ghost" size="icon" className="relative ml-1">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                  <AvatarImage src="/placeholder-avatar.jpg" />
+                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
+              <DropdownMenuGroup>
                 <Link to="/profile">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <Link to="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
                 </Link>
-              </DropdownMenuItem>
+                <Link to="/help">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    Help
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </nav>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="sm" className="relative h-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60 md:hidden">
-            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            
-            {/* Mobile navigation */}
-            {mobileNavItems.map((item, index) => (
-              <DropdownMenuItem key={index} asChild>
-                <Link to={item.href} className="flex items-center">
-                  <span className="mr-2">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="flex items-center">
-                <UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="flex items-center">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Logout</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
       </div>
-    </header>
+    </div>
   );
-}
+};
 
 export default DashboardNavbar;

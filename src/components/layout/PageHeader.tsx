@@ -1,6 +1,12 @@
 
 import React from 'react';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { 
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbList,
+  BreadcrumbSeparator
+} from '@/components/ui/breadcrumb';
 import { useLocation } from 'react-router-dom';
 import { adminRoutes } from '@/router/routes/adminRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';

@@ -1,7 +1,7 @@
 
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'inactive';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'inactive' | 'converted';
 export type LeadSource = 'website' | 'referral' | 'cold_call' | 'walk_in' | 'social_media' | 'event' | 'advertisement' | 'other';
-export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'cold' | 'warm' | 'hot';
 
 export interface Lead {
   id: string;
@@ -24,25 +24,79 @@ export interface Lead {
   conversion_date?: string;
 }
 
+export type FollowUpType = 'email' | 'sms' | 'call' | 'meeting' | 'whatsapp';
+export type FollowUpStatus = 'pending' | 'sent' | 'failed' | 'responded';
+
 export interface FollowUp {
   id: string;
   lead_id: string;
   template_id?: string;
   sent_by?: string;
-  type: 'email' | 'sms' | 'call' | 'meeting' | 'whatsapp';
+  type: FollowUpType;
   content: string;
   sent_at?: string;
   response?: string;
   response_at?: string;
-  status: 'pending' | 'sent' | 'failed' | 'responded';
+  status: FollowUpStatus;
+}
+
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  leadId: string;
+  template_id?: string;
+  templateId?: string;
+  type: FollowUpType;
+  content: string;
+  sent_by: string;
+  sentBy: string;
+  sent_at: string;
+  sentAt: string;
+  status: string;
+  response?: string;
+  response_at?: string;
+  responseAt?: string;
+}
+
+export interface FollowUpScheduled {
+  id: string;
+  lead_id: string;
+  leadId: string;
+  lead_name?: string;
+  leadName?: string;
+  type: FollowUpType;
+  scheduled_for: string;
+  scheduledFor: string;
+  subject: string;
+  content: string;
+  status: string;
+}
+
+export interface ScheduledFollowUp {
+  id: string;
+  leadId: string;
+  leadName: string;
+  type: FollowUpType;
+  scheduledFor: string;
+  subject: string;
+  content: string;
+  status: string;
 }
 
 export interface FollowUpTemplate {
   id: string;
   name: string;
+  title?: string;
   content: string;
   created_at?: string;
+  createdAt?: string;
   created_by?: string;
+  createdBy?: string;
+  updated_at?: string;
+  updatedAt?: string;
+  type?: FollowUpType;
+  variables?: string[];
+  isDefault?: boolean;
 }
 
 export interface Contact {
@@ -88,4 +142,18 @@ export interface Task {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description?: string;
+  trigger_type: string;
+  trigger_condition: Record<string, any>;
+  actions: Record<string, any>;
+  is_active: boolean;
+  branch_id?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
 }

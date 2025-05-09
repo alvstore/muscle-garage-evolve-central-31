@@ -22,6 +22,14 @@ export interface BreadcrumbLinkProps {
   isCurrentPage?: boolean;
 }
 
+export interface BreadcrumbListProps extends React.ComponentProps<"ol"> {
+  children: React.ReactNode;
+}
+
+export interface BreadcrumbSeparatorProps extends React.ComponentProps<"li"> {
+  children?: React.ReactNode;
+}
+
 // Breadcrumb component
 export function Breadcrumb({
   children,
@@ -104,8 +112,39 @@ export function BreadcrumbLink({
   );
 }
 
-// Here we update the default exports for the Breadcrumb component
-Breadcrumb.Item = BreadcrumbItem;
-Breadcrumb.Link = BreadcrumbLink;
+// BreadcrumbList component
+export function BreadcrumbList({
+  children,
+  className,
+  ...props
+}: BreadcrumbListProps) {
+  return (
+    <ol
+      className={cn("flex items-center space-x-2", className)}
+      {...props}
+    >
+      {children}
+    </ol>
+  );
+}
 
+// BreadcrumbSeparator component
+export function BreadcrumbSeparator({
+  children,
+  className,
+  ...props
+}: BreadcrumbSeparatorProps) {
+  return (
+    <li
+      role="presentation"
+      aria-hidden="true"
+      className={cn("mx-2 text-muted-foreground", className)}
+      {...props}
+    >
+      {children || <ChevronRight className="h-4 w-4" />}
+    </li>
+  );
+}
+
+// Add these exports to make the components available
 export { Breadcrumb as Breadcrumb2 };

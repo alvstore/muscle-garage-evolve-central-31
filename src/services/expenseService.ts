@@ -1,8 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-export interface ExpenseRecord {
+export interface Expense {
   id: string;
   reference: string;
   date: string;
@@ -17,133 +16,89 @@ export interface ExpenseRecord {
   updated_at?: string;
 }
 
-export const expenseService = {
-  async getExpenseRecords(branchId: string | undefined): Promise<ExpenseRecord[]> {
-    try {
-      if (!branchId) {
-        console.warn('No branch ID provided for getExpenseRecords');
-        return [];
-      }
-      
-      const { data, error } = await supabase
-        .from('expense_records')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('date', { ascending: false });
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
-      if (error) {
-        console.error('Supabase error fetching expense records:', error);
-        toast.error('Failed to load expense records');
-        return [];
-      }
-      
-      return data as ExpenseRecord[];
-    } catch (error: any) {
-      console.error('Error fetching expense records:', error);
-      toast.error('Failed to load expense records');
-      return [];
-    }
-  },
+export const fetchExpenses = async (branchId?: string): Promise<Expense[]> => {
+  let query = supabase.from('expense_records').select('*');
   
-  async createExpenseRecord(expense: Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>): Promise<ExpenseRecord | null> {
-    try {
-      if (!expense.branch_id) {
-        toast.error('Branch ID is required to create an expense record');
-        return null;
-      }
-      
-      const { data, error } = await supabase
-        .from('expense_records')
-        .insert([expense])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating expense record:', error);
-        toast.error(`Failed to create expense record: ${error.message}`);
-        return null;
-      }
-      
-      toast.success('Expense record created successfully');
-      return data as ExpenseRecord;
-    } catch (error: any) {
-      console.error('Error creating expense record:', error);
-      toast.error(`Failed to create expense record: ${error.message}`);
-      return null;
-    }
-  },
+  if (branchId) {
+    query = query.eq('branch_id', branchId);
+  }
   
-  async updateExpenseRecord(id: string, updates: Partial<ExpenseRecord>): Promise<ExpenseRecord | null> {
-    try {
-      const { data, error } = await supabase
-        .from('expense_records')
-        .update({...updates, updated_at: new Date().toISOString()})
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating expense record:', error);
-        toast.error(`Failed to update expense record: ${error.message}`);
-        return null;
-      }
-      
-      toast.success('Expense record updated successfully');
-      return data as ExpenseRecord;
-    } catch (error: any) {
-      console.error('Error updating expense record:', error);
-      toast.error(`Failed to update expense record: ${error.message}`);
-      return null;
-    }
-  },
+  const { data, error } = await query.order('date', { ascending: false });
   
-  async deleteExpenseRecord(id: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('expense_records')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting expense record:', error);
-        toast.error(`Failed to delete expense record: ${error.message}`);
-        return false;
-      }
-      
-      toast.success('Expense record deleted successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting expense record:', error);
-      toast.error(`Failed to delete expense record: ${error.message}`);
-      return false;
-    }
-  },
+  if (error) {
+    console.error('Error fetching expenses:', error);
+    throw error;
+  }
   
-  async getExpenseCategories(branchId: string | undefined): Promise<{id: string, name: string}[]> {
-    try {
-      if (!branchId) {
-        console.warn('No branch ID provided for getExpenseCategories');
-        return [];
-      }
-      
-      const { data, error } = await supabase
-        .from('expense_categories')
-        .select('id, name')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .order('name');
+  return data || [];
+};
 
-      if (error) {
-        console.error('Supabase error fetching expense categories:', error);
-        toast.error('Failed to load expense categories');
-        return [];
-      }
-      
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching expense categories:', error);
-      toast.error('Failed to load expense categories');
-      return [];
-    }
+export const fetchExpenseCategories = async (branchId?: string): Promise<ExpenseCategory[]> => {
+  let query = supabase.from('expense_categories').select('*');
+  
+  if (branchId) {
+    query = query.eq('branch_id', branchId);
+  }
+  
+  const { data, error } = await query.order('name');
+  
+  if (error) {
+    console.error('Error fetching expense categories:', error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const createExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<Expense> => {
+  const { data, error } = await supabase
+    .from('expense_records')
+    .insert([expense])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating expense:', error);
+    throw error;
+  }
+  
+  return data;
+};
+
+export const updateExpense = async (id: string, updates: Partial<Expense>): Promise<Expense> => {
+  const { data, error } = await supabase
+    .from('expense_records')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error updating expense:', error);
+    throw error;
+  }
+  
+  return data;
+};
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('expense_records')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting expense:', error);
+    throw error;
   }
 };

@@ -13,5 +13,11 @@ export { Calendar } from './calendar';
 export { Container } from './container';
 export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './table';
 export { Progress } from './progress';
-export { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from './breadcrumb';
+export { 
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator
+} from './breadcrumb';
 export { Badge } from './badge';
