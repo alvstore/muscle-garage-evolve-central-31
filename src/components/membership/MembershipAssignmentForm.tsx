@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,14 +16,17 @@ import { useToast } from '@/components/ui/use-toast';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { addDays, format } from 'date-fns';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemberships } from '@/hooks/use-memberships';
 import { useMembers } from '@/hooks/use-members';
 import { useTrainers } from '@/hooks/use-trainers';
-import { InvoiceService } from '@/services/invoice-service';
-import { useBranches } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/use-branch';
+import { membershipService } from '@/services/membershipService';
+import { useNavigate } from 'react-router-dom';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   memberId: z.string({ required_error: 'Member is required' }),
@@ -31,26 +35,38 @@ const formSchema = z.object({
   startDate: z.date({ required_error: 'Start date is required' }),
   endDate: z.date({ required_error: 'End date is required' }),
   branchId: z.string().optional(),
-  paymentStatus: z.enum(['pending', 'paid', 'partially_paid']),
+  paymentStatus: z.enum(['pending', 'paid', 'partial']),
+  paymentMethod: z.string().optional(),
+  amountPaid: z.number().min(0, 'Amount paid must be positive').optional(),
+  notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const MembershipAssignmentForm = () => {
+interface MembershipAssignmentFormProps {
+  memberId?: string;
+  onSuccess?: (data: any) => void;
+}
+
+const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({ memberId, onSuccess }) => {
   const { toast } = useToast();
   const { members, isLoading: isLoadingMembers } = useMembers();
   const { memberships, isLoading: isLoadingMemberships } = useMemberships();
   const { trainers, isLoading: isLoadingTrainers } = useTrainers();
-  const { branches, isLoading: isLoadingBranches } = useBranches();
+  const { currentBranch } = useBranch();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      memberId: memberId || '',
       startDate: new Date(),
       endDate: addDays(new Date(), 30),
       paymentStatus: 'pending',
+      amountPaid: 0,
     },
   });
 
@@ -61,8 +77,9 @@ const MembershipAssignmentForm = () => {
       const membership = memberships.find(m => m.id === membershipId);
       if (membership) {
         setSelectedMembership(membership);
+        setTotalAmount(membership.price);
         const startDate = form.watch('startDate') || new Date();
-        const endDate = addDays(startDate, membership.duration_days);
+        const endDate = membershipService.calculateEndDate(startDate, membership.duration_days);
         form.setValue('endDate', endDate);
       }
     }
@@ -72,38 +89,95 @@ const MembershipAssignmentForm = () => {
   useEffect(() => {
     const startDate = form.watch('startDate');
     if (startDate && selectedMembership) {
-      const endDate = addDays(startDate, selectedMembership.duration_days);
+      const endDate = membershipService.calculateEndDate(startDate, selectedMembership.duration_days);
       form.setValue('endDate', endDate);
     }
   }, [form.watch('startDate'), selectedMembership, form]);
+
+  // When payment status changes, update form requirements
+  useEffect(() => {
+    const paymentStatus = form.watch('paymentStatus');
+    if (paymentStatus === 'paid' || paymentStatus === 'partial') {
+      form.register('paymentMethod', { required: 'Payment method is required' });
+    }
+    
+    if (paymentStatus === 'paid') {
+      form.setValue('amountPaid', totalAmount);
+    } else if (paymentStatus === 'pending') {
+      form.setValue('amountPaid', 0);
+    }
+  }, [form.watch('paymentStatus'), totalAmount, form]);
+  
+  // Validation and helper functions
+  const validatePartialPayment = (value: number) => {
+    const paymentStatus = form.watch('paymentStatus');
+    if (paymentStatus === 'partial') {
+      if (!value || value <= 0) return 'Amount must be greater than 0';
+      if (value >= totalAmount) return 'For full payment, select "Paid" status';
+    }
+    return true;
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
       
-      // In a real implementation, this would create the membership in the database
-      // and potentially generate an invoice
-      
-      // Mock implementation - simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate invoice if needed
-      if (data.paymentStatus !== 'paid' && selectedMembership) {
-        // This would create an actual invoice in a real implementation
-        console.log('Generate invoice for membership:', {
-          memberId: data.memberId,
-          amount: selectedMembership.price,
-          dueDate: data.startDate,
-          description: `Membership: ${selectedMembership.name}`,
+      // Validate payment data
+      if ((data.paymentStatus === 'paid' || data.paymentStatus === 'partial') && !data.paymentMethod) {
+        toast({
+          title: "Payment method required",
+          description: "Please select a payment method",
+          variant: "destructive",
         });
+        return;
       }
       
-      toast({
-        title: "Membership assigned successfully",
-        description: `Membership has been assigned to the member`,
+      if (data.paymentStatus === 'partial' && (!data.amountPaid || data.amountPaid <= 0)) {
+        toast({
+          title: "Amount paid required",
+          description: "Please enter amount paid",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use our service to assign membership
+      const result = await membershipService.assignMembership({
+        memberId: data.memberId,
+        membershipId: data.membershipId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        amount: totalAmount,
+        amountPaid: data.amountPaid || 0,
+        paymentStatus: data.paymentStatus,
+        paymentMethod: data.paymentMethod,
+        branchId: data.branchId || currentBranch?.id || '',
+        trainerId: data.trainerId,
+        notes: data.notes
       });
-      
-      form.reset();
+
+      if (result.success) {
+        toast({
+          title: "Membership assigned successfully",
+          description: `Membership has been assigned to the member`,
+        });
+        
+        if (onSuccess) {
+          onSuccess(result.data);
+        } else if (result.invoiceId) {
+          // Navigate to invoice page
+          navigate(`/finance/invoices/${result.invoiceId}`);
+        } else {
+          // Reset form
+          form.reset();
+        }
+      } else {
+        toast({
+          title: "Error assigning membership",
+          description: result.error || "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error assigning membership",
@@ -115,36 +189,38 @@ const MembershipAssignmentForm = () => {
     }
   };
   
-  const isLoading = isLoadingMembers || isLoadingMemberships || isLoadingTrainers || isLoadingBranches;
+  const isLoading = isLoadingMembers || isLoadingMemberships || isLoadingTrainers || !currentBranch;
 
   return (
     <div className="max-w-2xl mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="memberId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Member</FormLabel>
-                <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a member" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {members?.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!memberId && (
+            <FormField
+              control={form.control}
+              name="memberId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Member</FormLabel>
+                  <Select disabled={isLoading} onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a member" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {members?.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           
           <FormField
             control={form.control}
@@ -192,36 +268,6 @@ const MembershipAssignmentForm = () => {
                     {trainers?.map((trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id}>
                         {trainer.name || trainer.fullName || "Unnamed Trainer"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="branchId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Branch (Optional)</FormLabel>
-                <Select 
-                  disabled={isLoading} 
-                  onValueChange={field.onChange} 
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a branch" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">Default Branch</SelectItem>
-                    {branches?.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -319,18 +365,103 @@ const MembershipAssignmentForm = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Payment Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="paid" />
+                    </FormControl>
+                    <FormLabel className="font-normal cursor-pointer">
+                      Paid (Full payment: {selectedMembership ? selectedMembership.price : 0})
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="partial" />
+                    </FormControl>
+                    <FormLabel className="font-normal cursor-pointer">
+                      Partial Payment
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="pending" />
+                    </FormControl>
+                    <FormLabel className="font-normal cursor-pointer">
+                      Pending (No payment now)
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {(form.watch('paymentStatus') === 'paid' || form.watch('paymentStatus') === 'partial') && (
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          {form.watch('paymentStatus') === 'partial' && (
+            <FormField
+              control={form.control}
+              name="amountPaid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount Paid</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment status" />
-                    </SelectTrigger>
+                    <Input
+                      type="number"
+                      placeholder="Enter amount paid"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes (Optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Add any additional notes"
+                    {...field}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
