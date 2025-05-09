@@ -48,8 +48,11 @@ export default function DashboardSidebar({
       };
       
       // Find the position to insert the staff section (after "Members" section)
-      const membersSectionIndex = sections.findIndex(section => 
-        section.title === 'Members' || section.title.includes('Member'));
+      const membersSectionIndex = sections.findIndex(section => {
+        // Check for both name and title properties to be safe
+        const sectionTitle = section.title || section.name;
+        return sectionTitle === 'Members' || (sectionTitle && sectionTitle.includes('Member'));
+      });
       
       if (membersSectionIndex !== -1) {
         const updatedSections = [...sections];
