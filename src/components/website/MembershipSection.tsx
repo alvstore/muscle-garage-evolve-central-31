@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,11 @@ interface CheckoutFormData {
   name: string;
   email: string;
   phone: string;
+  address: string;
+  city: string;
+  pincode: string;
+  referralCode: string;
+  promoCode: string;
 }
 
 const MembershipSection = () => {
@@ -25,8 +29,60 @@ const MembershipSection = () => {
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    address: '',
+    city: '',
+    pincode: '',
+    referralCode: '',
+    promoCode: ''
   });
+  const [formErrors, setFormErrors] = useState<Partial<CheckoutFormData>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Partial<CheckoutFormData> = {};
+    
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Please enter a valid email';
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone is required';
+    } else if (!phoneRegex.test(formData.phone)) {
+      errors.phone = 'Please enter a valid 10-digit phone number';
+    }
+
+    // Address validation
+    if (!formData.address.trim()) {
+      errors.address = 'Address is required';
+    }
+
+    // City validation
+    if (!formData.city.trim()) {
+      errors.city = 'City is required';
+    }
+
+    // Pincode validation
+    const pincodeRegex = /^[0-9]{6}$/;
+    if (!formData.pincode.trim()) {
+      errors.pincode = 'Pincode is required';
+    } else if (!pincodeRegex.test(formData.pincode)) {
+      errors.pincode = 'Please enter a valid 6-digit pincode';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
   const { toast } = useToast();
 
   // Initialize Razorpay and Stripe objects
@@ -61,11 +117,13 @@ const MembershipSection = () => {
     };
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (formErrors[name as keyof CheckoutFormData]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleBuyNow = (plan: any) => {
@@ -74,28 +132,16 @@ const MembershipSection = () => {
   };
 
   const handleCheckout = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Form Validation Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // Form validation
-      if (!formData.name || !formData.email) {
-        toast({
-          title: "Missing information",
-          description: "Please fill in all required fields.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        toast({
-          title: "Invalid email",
-          description: "Please enter a valid email address.",
-          variant: "destructive"
-        });
-        return;
-      }
-
       setIsProcessing(true);
 
       // Call the payment-checkout function
@@ -299,8 +345,12 @@ const MembershipSection = () => {
 
       {/* Checkout Dialog */}
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-        <DialogContent className="sm:max-w-md">
-          <div className="space-y-4 py-2 pb-4">
+        <DialogContent className="bg-gym-black text-white max-w-md w-full">
+          <DialogTitle className="sr-only">Membership Checkout</DialogTitle>
+          <DialogDescription className="sr-only">
+            Complete your membership purchase by filling in your details and proceeding with payment.
+          </DialogDescription>
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Complete Your Purchase</h2>
               <p className="text-sm text-muted-foreground">
@@ -309,64 +359,154 @@ const MembershipSection = () => {
             </div>
             
             <div className="space-y-4 pt-4">
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  placeholder="Your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="phone">Phone (optional)</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  placeholder="Your phone number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsCheckoutOpen(false)}
-                disabled={isProcessing}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCheckout}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  `Pay ₹${selectedPlan?.price?.toLocaleString() || 0}`
-                )}
-              </Button>
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <div>
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow ${formErrors.name ? 'border-red-500' : ''}`}
+                  />
+                  {formErrors.name && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
+                    className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow ${formErrors.email ? 'border-red-500' : ''}`}
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Enter your 10-digit phone number"
+                    className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow ${formErrors.phone ? 'border-red-500' : ''}`}
+                  />
+                  {formErrors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="address">Address *</Label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter your complete address"
+                    className={`w-full px-3 py-2 bg-gray-800 border rounded-md text-white border-gray-700 focus:outline-none focus:ring-2 focus:ring-gym-yellow focus:border-transparent ${
+                      formErrors.address ? 'border-red-500' : 'border-gray-700'
+                    }`}
+                    rows={3}
+                  />
+                  {formErrors.address && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      placeholder="Enter your city"
+                      className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow ${formErrors.city ? 'border-red-500' : ''}`}
+                    />
+                    {formErrors.city && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pincode">Pincode *</Label>
+                    <Input
+                      id="pincode"
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleChange}
+                      placeholder="Enter 6-digit pincode"
+                      className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow ${formErrors.pincode ? 'border-red-500' : ''}`}
+                    />
+                    {formErrors.pincode && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="referralCode">Referral Code</Label>
+                    <Input
+                      id="referralCode"
+                      name="referralCode"
+                      value={formData.referralCode}
+                      onChange={handleChange}
+                      placeholder="Enter referral code"
+                      className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow`}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="promoCode">Promotional Code</Label>
+                    <Input
+                      id="promoCode"
+                      name="promoCode"
+                      value={formData.promoCode}
+                      onChange={handleChange}
+                      placeholder="Enter promo code"
+                      className={`bg-gray-800 text-white border-gray-700 focus:border-gym-yellow`}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsCheckoutOpen(false)}
+                    disabled={isProcessing}
+                    className="bg-gray-800 text-white hover:bg-gray-700 border-gray-600"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCheckout}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Pay ₹${selectedPlan?.price?.toLocaleString() || 0}`
+                    )}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </DialogContent>
