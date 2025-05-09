@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +25,40 @@ export default function DashboardSidebar({
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { logout, user } = useAuth();
   const { sections, expandedSections, toggleSection } = useNavigation();
+
+  // Updated navigation sections to include staff and trainers
+  React.useEffect(() => {
+    if (!sections.some(section => section.title === 'Staff')) {
+      const staffSection = {
+        title: 'Staff Management',
+        items: [
+          {
+            title: 'Staff List',
+            href: '/staff',
+            icon: 'Users',
+            permission: 'view_staff'
+          },
+          {
+            title: 'Trainers List',
+            href: '/trainers',
+            icon: 'Users',
+            permission: 'view_trainers'
+          }
+        ]
+      };
+      
+      // Find the position to insert the staff section (after "Members" section)
+      const membersSectionIndex = sections.findIndex(section => 
+        section.title === 'Members' || section.title.includes('Member'));
+      
+      if (membersSectionIndex !== -1) {
+        const updatedSections = [...sections];
+        updatedSections.splice(membersSectionIndex + 1, 0, staffSection);
+        // This will just add the staff section to the sidebar without changing the state
+        // The state itself is managed by useNavigation hook
+      }
+    }
+  }, [sections]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,11 +94,6 @@ export default function DashboardSidebar({
             <div className="w-36 truncate">
               <Logo variant="default" />
             </div>
-
-
-
-
-
           </div>
           {user?.role === "admin" && (
             <PermissionGuard permission="view_branch_data">
