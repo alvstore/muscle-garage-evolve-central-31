@@ -1,7 +1,9 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActivityItem } from "@/types/dashboard";
+import { getInitials } from "@/utils/stringUtils";
 
 interface RecentActivityProps {
   activities: ActivityItem[];
@@ -21,14 +23,6 @@ const RecentActivity = ({ activities }: RecentActivityProps) => {
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   return (

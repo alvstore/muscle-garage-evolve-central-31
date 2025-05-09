@@ -250,7 +250,7 @@ const NewMemberPage = () => {
         
         {biometricStatus && (
           <Alert 
-            variant={biometricStatus.success ? "default" : "warning"} 
+            variant={biometricStatus.success ? "default" : "destructive"} 
             className="mb-6"
           >
             <AlertTitle>Biometric Registration</AlertTitle>
@@ -488,7 +488,12 @@ const NewMemberPage = () => {
                     <Button variant="outline" onClick={() => navigate("/members")}>
                       Cancel
                     </Button>
-                    <Button type="button" onClick={() => form.getValues("name") ? document.querySelector('[data-value="address"]')?.click() : null}>
+                    <Button type="button" onClick={() => {
+                      if (form.getValues("name")) {
+                        const tabButton = document.querySelector('[data-value="address"]');
+                        if (tabButton instanceof HTMLElement) tabButton.click();
+                      }
+                    }}>
                       Next
                     </Button>
                   </CardFooter>
@@ -618,10 +623,16 @@ const NewMemberPage = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={() => document.querySelector('[data-value="personal"]')?.click()}>
+                    <Button variant="outline" onClick={() => {
+                      const tabButton = document.querySelector('[data-value="personal"]');
+                      if (tabButton instanceof HTMLElement) tabButton.click();
+                    }}>
                       Previous
                     </Button>
-                    <Button type="button" onClick={() => document.querySelector('[data-value="membership"]')?.click()}>
+                    <Button type="button" onClick={() => {
+                      const tabButton = document.querySelector('[data-value="membership"]');
+                      if (tabButton instanceof HTMLElement) tabButton.click();
+                    }}>
                       Next
                     </Button>
                   </CardFooter>
@@ -890,7 +901,10 @@ const NewMemberPage = () => {
                     )}
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={() => document.querySelector('[data-value="address"]')?.click()}>
+                    <Button variant="outline" onClick={() => {
+                      const tabButton = document.querySelector('[data-value="address"]');
+                      if (tabButton instanceof HTMLElement) tabButton.click();
+                    }}>
                       Previous
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
