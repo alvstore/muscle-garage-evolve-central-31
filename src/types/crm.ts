@@ -1,4 +1,3 @@
-
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'inactive' | 'converted';
 export type LeadSource = 'website' | 'referral' | 'cold_call' | 'walk_in' | 'social_media' | 'event' | 'advertisement' | 'other';
 export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'cold' | 'warm' | 'hot';
@@ -43,30 +42,22 @@ export interface FollowUp {
 export interface FollowUpHistory {
   id: string;
   lead_id: string;
-  leadId: string;
   template_id?: string;
-  templateId?: string;
   type: FollowUpType;
   content: string;
   sent_by: string;
-  sentBy: string;
   sent_at: string;
-  sentAt: string;
   status: string;
   response?: string;
   response_at?: string;
-  responseAt?: string;
 }
 
 export interface FollowUpScheduled {
   id: string;
   lead_id: string;
-  leadId: string;
   lead_name?: string;
-  leadName?: string;
   type: FollowUpType;
   scheduled_for: string;
-  scheduledFor: string;
   subject: string;
   content: string;
   status: string;
@@ -89,11 +80,8 @@ export interface FollowUpTemplate {
   title?: string;
   content: string;
   created_at?: string;
-  createdAt?: string;
   created_by?: string;
-  createdBy?: string;
   updated_at?: string;
-  updatedAt?: string;
   type?: FollowUpType;
   variables?: string[];
   isDefault?: boolean;
@@ -150,7 +138,7 @@ export interface AutomationRule {
   description?: string;
   trigger_type: string;
   trigger_condition: Record<string, any>;
-  actions: Record<string, any>;
+  actions: Record<string, any>[];
   is_active: boolean;
   branch_id?: string;
   created_by?: string;

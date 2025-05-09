@@ -31,11 +31,7 @@ const mockScheduledFollowUps: FollowUpScheduled[] = [
     scheduled_for: "2023-06-10T10:00:00Z",
     subject: "Follow up on membership options",
     content: "Hi John,\n\nI wanted to follow up on our conversation about membership options. Let me know if you have any questions.\n\nBest,\nJane",
-    status: "scheduled",
-    // Add camelCase aliases
-    leadId: "lead-1",
-    leadName: "John Smith",
-    scheduledFor: "2023-06-10T10:00:00Z"
+    status: "scheduled"
   },
   {
     id: "2",
@@ -45,11 +41,7 @@ const mockScheduledFollowUps: FollowUpScheduled[] = [
     scheduled_for: "2023-06-12T14:30:00Z",
     subject: "PT session reminder",
     content: "Hi Sarah, just a reminder about your free PT trial session tomorrow at 3pm. Looking forward to meeting you! - Fitness Gym",
-    status: "scheduled",
-    // Add camelCase aliases
-    leadId: "lead-2",
-    leadName: "Sarah Johnson",
-    scheduledFor: "2023-06-12T14:30:00Z"
+    status: "scheduled"
   },
   {
     id: "3",
@@ -59,11 +51,7 @@ const mockScheduledFollowUps: FollowUpScheduled[] = [
     scheduled_for: "2023-06-09T16:00:00Z",
     subject: "Membership renewal discussion",
     content: "Call to discuss membership renewal options and current promotions.",
-    status: "sent",
-    // Add camelCase aliases
-    leadId: "lead-3",
-    leadName: "David Lee",
-    scheduledFor: "2023-06-09T16:00:00Z"
+    status: "sent"
   }
 ];
 
@@ -79,9 +67,7 @@ const mockLeadOptions: Lead[] = [
     source: "website",
     created_at: "2023-05-15T08:30:00Z",
     updated_at: "2023-06-05T14:15:00Z",
-    branch_id: "default-branch-id", // Added branch_id field
-    // Add camelCase aliases
-    funnelStage: "qualified",
+    branch_id: "default-branch-id"
   },
   {
     id: "lead-2",
@@ -93,9 +79,7 @@ const mockLeadOptions: Lead[] = [
     source: "referral",
     created_at: "2023-06-01T11:45:00Z",
     updated_at: "2023-06-01T11:45:00Z",
-    branch_id: "default-branch-id", // Added branch_id field
-    // Add camelCase aliases
-    funnelStage: "warm",
+    branch_id: "default-branch-id"
   },
   {
     id: "lead-3",
@@ -104,12 +88,10 @@ const mockLeadOptions: Lead[] = [
     phone: "555-9012",
     status: "contacted",
     funnel_stage: "hot",
-    source: "walk-in",
+    source: "walk_in",
     created_at: "2023-05-20T09:15:00Z",
     updated_at: "2023-06-07T16:30:00Z",
-    branch_id: "default-branch-id", // Added branch_id field
-    // Add camelCase aliases
-    funnelStage: "hot",
+    branch_id: "default-branch-id"
   }
 ];
 

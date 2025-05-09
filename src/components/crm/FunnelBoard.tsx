@@ -35,9 +35,6 @@ const mockLeads: Lead[] = [
     created_at: "2023-04-15T10:30:00Z",
     updated_at: "2023-04-15T10:30:00Z",
     follow_up_date: "2023-04-20T10:30:00Z",
-    funnelStage: "cold",
-    assignedTo: "Staff 1",
-    followUpDate: "2023-04-20T10:30:00Z",
     branch_id: "default-branch-id",
   },
   {
@@ -53,10 +50,6 @@ const mockLeads: Lead[] = [
     updated_at: "2023-04-16T09:15:00Z",
     last_contact_date: "2023-04-16T09:15:00Z",
     follow_up_date: "2023-04-22T10:00:00Z",
-    funnelStage: "warm",
-    assignedTo: "Staff 2",
-    lastContactDate: "2023-04-16T09:15:00Z",
-    followUpDate: "2023-04-22T10:00:00Z",
     branch_id: "default-branch-id",
   },
   {
@@ -64,7 +57,7 @@ const mockLeads: Lead[] = [
     name: "Michael Johnson",
     email: "michael.j@example.com",
     phone: "+1122334455",
-    source: "walk-in",
+    source: "walk_in",
     status: "qualified",
     funnel_stage: "hot",
     assigned_to: "Staff 1",
@@ -73,10 +66,6 @@ const mockLeads: Lead[] = [
     updated_at: "2023-04-17T13:20:00Z",
     last_contact_date: "2023-04-17T13:20:00Z",
     follow_up_date: "2023-04-19T15:00:00Z",
-    funnelStage: "hot",
-    assignedTo: "Staff 1",
-    lastContactDate: "2023-04-17T13:20:00Z",
-    followUpDate: "2023-04-19T15:00:00Z",
     branch_id: "default-branch-id",
   },
   {
@@ -84,8 +73,8 @@ const mockLeads: Lead[] = [
     name: "Emily Wilson",
     email: "emily.w@example.com",
     phone: "+1566778899",
-    source: "social-media",
-    status: "converted",
+    source: "social_media",
+    status: "qualified",
     funnel_stage: "hot",
     assigned_to: "Staff 3",
     created_at: "2023-04-05T09:10:00Z",
@@ -93,11 +82,6 @@ const mockLeads: Lead[] = [
     last_contact_date: "2023-04-18T10:30:00Z",
     conversion_date: "2023-04-18T10:30:00Z",
     conversion_value: 299.99,
-    funnelStage: "hot",
-    assignedTo: "Staff 3",
-    lastContactDate: "2023-04-18T10:30:00Z",
-    conversionDate: "2023-04-18T10:30:00Z",
-    conversionValue: 299.99,
     branch_id: "default-branch-id",
   },
   {
@@ -111,8 +95,6 @@ const mockLeads: Lead[] = [
     assigned_to: "Staff 2",
     created_at: "2023-04-01T15:20:00Z",
     updated_at: "2023-04-15T16:45:00Z",
-    funnelStage: "cold",
-    assignedTo: "Staff 2",
     branch_id: "default-branch-id",
   },
   {
@@ -128,10 +110,6 @@ const mockLeads: Lead[] = [
     updated_at: "2023-04-16T11:20:00Z",
     last_contact_date: "2023-04-16T11:20:00Z",
     follow_up_date: "2023-04-23T14:00:00Z",
-    funnelStage: "warm",
-    assignedTo: "Staff 1",
-    lastContactDate: "2023-04-16T11:20:00Z",
-    followUpDate: "2023-04-23T14:00:00Z",
     branch_id: "default-branch-id",
   },
   {
@@ -148,10 +126,6 @@ const mockLeads: Lead[] = [
     updated_at: "2023-04-17T15:30:00Z",
     last_contact_date: "2023-04-17T15:30:00Z",
     follow_up_date: "2023-04-20T10:00:00Z",
-    funnelStage: "hot",
-    assignedTo: "Staff 3",
-    lastContactDate: "2023-04-17T15:30:00Z",
-    followUpDate: "2023-04-20T10:00:00Z",
     branch_id: "default-branch-id",
   }
 ];
@@ -230,7 +204,6 @@ const FunnelBoard = () => {
     // Update the lead's funnel stage if moved to a different column
     if (source.droppableId !== destination.droppableId) {
       movedLead.funnel_stage = destination.droppableId as FunnelStage;
-      movedLead.funnelStage = destination.droppableId as FunnelStage;
       toast.success(`Moved ${movedLead.name} to ${destCol.title}`);
     }
     
@@ -368,7 +341,7 @@ const FunnelBoard = () => {
                                       {lead.status}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
-                                      {lead.assignedTo || "Unassigned"}
+                                      {lead.assigned_to || "Unassigned"}
                                     </span>
                                   </div>
                                   

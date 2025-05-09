@@ -46,12 +46,12 @@ const leadFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address.").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  source: z.enum(["website", "referral", "walk-in", "phone", "social-media", "event", "other"] as const),
-  status: z.enum(["new", "contacted", "qualified", "lost", "converted"] as const),
-  funnelStage: z.enum(["cold", "warm", "hot"] as const),
-  assignedTo: z.string().optional().or(z.literal("unassigned")),
+  source: z.enum(["website", "referral", "walk_in", "cold_call", "social_media", "event", "advertisement", "other"] as const),
+  status: z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost", "inactive"] as const),
+  funnel_stage: z.enum(["cold", "warm", "hot"] as const),
+  assigned_to: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
-  followUpDate: z.date().optional(),
+  follow_up_date: z.date().optional(),
   interests: z.array(z.string()).optional(),
 });
 
@@ -83,17 +83,16 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
   // Initialize form with default values or lead data if editing
   const form = useForm<z.infer<typeof leadFormSchema>>({
     resolver: zodResolver(leadFormSchema),
-    // In your useForm hook's defaultValues
     defaultValues: {
       name: lead?.name || "",
       email: lead?.email || "",
       phone: lead?.phone || "",
-      source: (lead?.source || "website") as "website" | "referral" | "walk-in" | "phone" | "social-media" | "event" | "other",
-      status: (lead?.status || "new") as "new" | "contacted" | "qualified" | "lost" | "converted",
-      funnelStage: (lead?.funnelStage || "cold") as "cold" | "warm" | "hot",
-      assignedTo: lead?.assignedTo || "unassigned",
+      source: (lead?.source || "website") as "website" | "referral" | "walk_in" | "cold_call" | "social_media" | "event" | "advertisement" | "other",
+      status: (lead?.status || "new") as "new" | "contacted" | "qualified" | "proposal" | "negotiation" | "won" | "lost" | "inactive",
+      funnel_stage: (lead?.funnel_stage || "cold") as "cold" | "warm" | "hot",
+      assigned_to: lead?.assigned_to || "",
       notes: lead?.notes || "",
-      followUpDate: lead?.followUpDate ? new Date(lead.followUpDate) : undefined,
+      follow_up_date: lead?.follow_up_date ? new Date(lead.follow_up_date) : undefined,
       interests: lead?.interests || [],
     },
   });
@@ -216,10 +215,11 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
                       <SelectContent>
                         <SelectItem value="website">Website</SelectItem>
                         <SelectItem value="referral">Referral</SelectItem>
-                        <SelectItem value="walk-in">Walk-in</SelectItem>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="social-media">Social Media</SelectItem>
+                        <SelectItem value="walk_in">Walk-in</SelectItem>
+                        <SelectItem value="cold_call">Cold Call</SelectItem>
+                        <SelectItem value="social_media">Social Media</SelectItem>
                         <SelectItem value="event">Event</SelectItem>
+                        <SelectItem value="advertisement">Advertisement</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -247,8 +247,11 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
                         <SelectItem value="new">New</SelectItem>
                         <SelectItem value="contacted">Contacted</SelectItem>
                         <SelectItem value="qualified">Qualified</SelectItem>
-                        <SelectItem value="converted">Converted</SelectItem>
+                        <SelectItem value="proposal">Proposal</SelectItem>
+                        <SelectItem value="negotiation">Negotiation</SelectItem>
+                        <SelectItem value="won">Won</SelectItem>
                         <SelectItem value="lost">Lost</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -258,7 +261,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
               
               <FormField
                 control={form.control}
-                name="funnelStage"
+                name="funnel_stage"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Funnel Stage *</FormLabel>
@@ -284,7 +287,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
               
               <FormField
                 control={form.control}
-                name="assignedTo"
+                name="assigned_to"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
@@ -313,7 +316,7 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
               
               <FormField
                 control={form.control}
-                name="followUpDate"
+                name="follow_up_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Next Follow-up</FormLabel>

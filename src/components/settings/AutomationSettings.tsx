@@ -44,7 +44,7 @@ const AutomationSettings = () => {
   };
 
   const handleCreateRule = () => {
-    setEditingRule({
+    const newRule: AutomationRule = {
       id: "",
       name: "New Rule",
       description: "",
@@ -52,7 +52,10 @@ const AutomationSettings = () => {
       trigger_condition: { days: 7 },
       actions: [{ type: "notification", channel: "email", template_id: "" }],
       is_active: true,
-    });
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setEditingRule(newRule);
   };
 
   const handleEditRule = (rule: AutomationRule) => {
@@ -81,14 +84,9 @@ const AutomationSettings = () => {
     try {
       // Make sure rule has all required properties
       const ruleToSave: AutomationRule = {
-        trigger_condition: editingRule.trigger_condition,
-        actions: editingRule.actions,
-        id: editingRule.id || "",
-        name: editingRule.name,
-        is_active: editingRule.is_active !== undefined ? editingRule.is_active : true,
-        description: editingRule.description,
-        trigger_type: editingRule.trigger_type,
-        branch_id: currentBranch?.id
+        ...editingRule,
+        branch_id: currentBranch?.id,
+        updated_at: new Date().toISOString()
       };
       
       const savedRule = await settingsService.saveAutomationRule(ruleToSave);
@@ -129,13 +127,15 @@ const AutomationSettings = () => {
   };
 
   const getTriggerDescription = (rule: AutomationRule): string => {
+    const condition = rule.trigger_condition as { days?: number };
+    
     switch (rule.trigger_type) {
       case "membership_expiry":
-        return `${rule.trigger_condition?.days || 0} days before membership expires`;
+        return `${condition.days || 0} days before membership expires`;
       case "birthday":
-        return `${rule.trigger_condition?.days || 0} days before member birthday`;
+        return `${condition.days || 0} days before member birthday`;
       case "inactivity":
-        return `After ${rule.trigger_condition?.days || 0} days of inactivity`;
+        return `After ${condition.days || 0} days of inactivity`;
       case "new_member":
         return "When a new member joins";
       default:
@@ -235,7 +235,7 @@ const AutomationSettings = () => {
               <Input
                 id="days-before"
                 type="number"
-                value={editingRule.trigger_condition?.days || 0}
+                value={(editingRule.trigger_condition as {days?: number})?.days || 0}
                 onChange={(e) =>
                   updateEditingRule("trigger_condition", {
                     ...editingRule.trigger_condition,
@@ -257,7 +257,7 @@ const AutomationSettings = () => {
                     value={action.type}
                     onValueChange={(value) => {
                       const newActions = [...editingRule.actions];
-                      newActions[index].type = value;
+                      newActions[index] = { ...newActions[index], type: value };
                       updateEditingRule("actions", newActions);
                     }}
                   >
@@ -283,7 +283,7 @@ const AutomationSettings = () => {
                         value={action.channel || "email"}
                         onValueChange={(value) => {
                           const newActions = [...editingRule.actions];
-                          newActions[index].channel = value;
+                          newActions[index] = { ...newActions[index], channel: value };
                           updateEditingRule("actions", newActions);
                         }}
                       >
@@ -312,7 +312,7 @@ const AutomationSettings = () => {
                         value={action.title || ""}
                         onChange={(e) => {
                           const newActions = [...editingRule.actions];
-                          newActions[index].title = e.target.value;
+                          newActions[index] = { ...newActions[index], title: e.target.value };
                           updateEditingRule("actions", newActions);
                         }}
                         placeholder="Task title"
@@ -324,7 +324,7 @@ const AutomationSettings = () => {
                         value={action.assignRole || "manager"}
                         onValueChange={(value) => {
                           const newActions = [...editingRule.actions];
-                          newActions[index].assignRole = value;
+                          newActions[index] = { ...newActions[index], assignRole: value };
                           updateEditingRule("actions", newActions);
                         }}
                       >
