@@ -258,6 +258,77 @@ export type Database = {
         }
         Relationships: []
       }
+      biometric_logs: {
+        Row: {
+          action: string
+          branch_id: string | null
+          completed_at: string | null
+          created_at: string
+          details: Json | null
+          device_type: string
+          error_message: string | null
+          id: string
+          member_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          branch_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          details?: Json | null
+          device_type: string
+          error_message?: string | null
+          id?: string
+          member_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          branch_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          details?: Json | null
+          device_type?: string
+          error_message?: string | null
+          id?: string
+          member_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biometric_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biometric_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "biometric_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_churn_risk"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "biometric_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       body_measurements: {
         Row: {
           arms: number | null
