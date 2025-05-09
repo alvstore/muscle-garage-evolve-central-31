@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { MembershipAssignment } from '@/types/membership-assignment';
 import { registerMemberInBiometricDevice } from './biometricService';
 import { Member } from '@/types/member';
-import { useAuth } from '@/hooks/use-auth';
 
 interface AssignMembershipParams {
   memberId: string;
@@ -52,6 +51,17 @@ export const membershipService = {
 
       // Get user info for recording transactions
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Verify that the member exists before proceeding
+      const { data: memberExists, error: memberCheckError } = await supabase
+        .from('members')
+        .select('id')
+        .eq('id', memberId)
+        .single();
+
+      if (memberCheckError || !memberExists) {
+        throw new Error(`Member with ID ${memberId} does not exist. Please ensure the member is created first.`);
+      }
 
       // Get membership details
       const { data: membershipData, error: membershipError } = await supabase
@@ -203,7 +213,7 @@ export const membershipService = {
       };
     }
   },
-  
+
   /**
    * Registers a member in biometric devices if available for the branch
    */
@@ -218,14 +228,14 @@ export const membershipService = {
         .select('*')
         .eq('branch_id', branchId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       const { data: esslSettings } = await supabase
         .from('essl_device_settings')
         .select('*')
         .eq('branch_id', branchId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       let registrationResult = { success: false, message: 'No biometric devices configured' };
 
@@ -326,6 +336,29 @@ export const membershipService = {
     } catch (error) {
       console.error('Error fetching member invoice history:', error);
       return [];
+    }
+  },
+
+  /**
+   * Gets attendance settings for a branch
+   */
+  async getAttendanceSettings(branchId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('attendance_settings')
+        .select('*')
+        .eq('branch_id', branchId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching attendance settings:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getAttendanceSettings:', error);
+      return null;
     }
   }
 };

@@ -1,231 +1,197 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertCircle, Check, Loader2 } from 'lucide-react';
-import { MembershipPlan } from '@/types/membership';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 import { membershipService } from '@/services/membershipService';
-import { toast } from 'sonner';
+import { paymentService } from '@/services/paymentService';
+import { useBranch } from '@/hooks/use-branch';
 
-interface RazorpayCheckoutProps {
-  plan: MembershipPlan;
-  memberId: string;
-  onSuccess: (subscriptionData: any) => void;
-  onCancel: () => void;
-}
-
+// Define the window interface with Razorpay
 declare global {
   interface Window {
     Razorpay: any;
   }
 }
 
-const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({ plan, memberId, onSuccess, onCancel }) => {
-  const [loading, setLoading] = useState(false);
+interface RazorpayCheckoutProps {
+  amount: number;
+  membershipId: string;
+  memberId: string;
+  memberName: string;
+  memberEmail?: string;
+  memberPhone?: string;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+}
+
+const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({
+  amount,
+  membershipId,
+  memberId,
+  memberName,
+  memberEmail,
+  memberPhone,
+  onSuccess,
+  onError
+}) => {
+  const { toast } = useToast();
+  const { currentBranch } = useBranch();
+  const [isLoading, setIsLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [finalAmount, setFinalAmount] = useState(plan.price);
-  
+
   // Load Razorpay script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => {
-      setScriptLoaded(true);
-    };
+    script.onload = () => setScriptLoaded(true);
+    
     document.body.appendChild(script);
     
     return () => {
       document.body.removeChild(script);
     };
   }, []);
-  
-  const handleApplyPromo = async () => {
-    if (!promoCode.trim()) {
-      toast.error('Please enter a promo code');
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // In a real app, this would call an API to validate the promo code
-      // For demo purposes, we'll simulate a valid promo code "WELCOME10" that gives 10% off
-      if (promoCode.toUpperCase() === 'WELCOME10') {
-        const discount = plan.price * 0.1; // 10% discount
-        setDiscountAmount(discount);
-        setFinalAmount(plan.price - discount);
-        setPromoApplied(true);
-        toast.success('Promo code applied successfully!');
-      } else {
-        toast.error('Invalid promo code');
-      }
-    } catch (error) {
-      toast.error('Failed to apply promo code');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleInitiatePayment = async () => {
-    setLoading(true);
-    
-    try {
-      // Get payment link from server
-      const paymentLink = await membershipService.getPaymentLink(
-        plan.id, 
-        memberId,
-        promoApplied ? promoCode : undefined
-      );
-      
-      if (!paymentLink) {
-        throw new Error('Failed to generate payment link');
-      }
-      
-      // For demo purposes, we'll simulate Razorpay instead of using actual payment link
-      // In production, you'd redirect to paymentLink or use Razorpay checkout
-      openRazorpayCheckout();
-    } catch (error) {
-      toast.error('Failed to initiate payment');
-      setLoading(false);
-    }
-  };
-  
-  const openRazorpayCheckout = () => {
+
+  const handlePayment = async () => {
     if (!scriptLoaded) {
-      toast.error('Payment system is not ready yet. Please try again.');
-      setLoading(false);
+      toast({
+        title: "Razorpay not loaded",
+        description: "Please wait for the payment system to load",
+        variant: "destructive",
+      });
       return;
     }
     
-    const options = {
-      key: 'rzp_test_YourKeyHere', // Replace with your Razorpay key
-      amount: finalAmount * 100, // Razorpay expects amount in paise
-      currency: 'INR',
-      name: 'Muscle Garage Evolve',
-      description: `${plan.name} Membership`,
-      image: '/placeholder.svg', // Replace with your logo
-      handler: function(response: any) {
-        // Handle successful payment
-        const subscriptionData = {
-          planId: plan.id,
-          memberId: memberId,
-          paymentId: response.razorpay_payment_id,
-          amount: finalAmount,
-          appliedPromo: promoApplied ? promoCode : null
-        };
-        
-        // In a real app, you'd verify the payment on server
-        membershipService.verifyPayment(
-          response.razorpay_payment_id,
-          response.razorpay_order_id,
-          response.razorpay_signature,
-          subscriptionData
-        ).then(() => {
-          onSuccess(subscriptionData);
-        });
-      },
-      prefill: {
-        name: 'Member Name', // In a real app, get from user context
-        email: 'member@example.com', // In a real app, get from user context
-        contact: '9999999999' // In a real app, get from user context
-      },
-      theme: {
-        color: '#3B82F6'
-      },
-      modal: {
-        ondismiss: function() {
-          setLoading(false);
-          toast.info('Payment cancelled');
-          onCancel();
-        }
-      }
-    };
+    if (!currentBranch?.id) {
+      toast({
+        title: "Branch not selected",
+        description: "Please select a branch before proceeding",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
+    setIsLoading(true);
+    
+    try {
+      // Create payment link
+      const result = await paymentService.getPaymentLink({
+        amount,
+        name: memberName,
+        email: memberEmail,
+        phone: memberPhone,
+        description: `Membership payment for ${memberName}`,
+        notes: {
+          memberId,
+          membershipId,
+          branchId: currentBranch.id
+        }
+      });
+      
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to create payment link');
+      }
+      
+      const orderId = result.data.id;
+      
+      // Initialize Razorpay options
+      const options = {
+        key: process.env.RAZORPAY_KEY_ID, // Replace with actual key from env
+        amount: amount * 100, // Amount in smallest currency unit
+        currency: 'INR',
+        name: 'Gym CRM',
+        description: `Membership payment for ${memberName}`,
+        order_id: orderId,
+        prefill: {
+          name: memberName,
+          email: memberEmail || '',
+          contact: memberPhone || ''
+        },
+        handler: async function(response: any) {
+          try {
+            // Verify payment
+            const verifyResult = await paymentService.verifyPayment({
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              membershipId,
+              memberId,
+              amount,
+              branchId: currentBranch.id
+            });
+            
+            if (verifyResult.success) {
+              toast({
+                title: "Payment successful",
+                description: "Your payment has been processed successfully",
+              });
+              
+              if (onSuccess) {
+                onSuccess();
+              }
+            } else {
+              throw new Error(verifyResult.error || 'Payment verification failed');
+            }
+          } catch (error: any) {
+            console.error('Error in payment verification:', error);
+            toast({
+              title: "Payment verification failed",
+              description: error.message || 'There was an issue verifying your payment',
+              variant: "destructive",
+            });
+            
+            if (onError) {
+              onError(error.message || 'Payment verification failed');
+            }
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            toast({
+              title: "Payment cancelled",
+              description: "You have cancelled the payment process",
+            });
+          }
+        }
+      };
+      
+      // Initialize Razorpay checkout
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
+    } catch (error: any) {
+      console.error('Error in payment process:', error);
+      toast({
+        title: "Payment initialization failed",
+        description: error.message || 'There was an issue setting up the payment',
+        variant: "destructive",
+      });
+      
+      if (onError) {
+        onError(error.message || 'Payment initialization failed');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
+
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Checkout</CardTitle>
-        <CardDescription>Complete your membership purchase</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <div className="font-medium mb-2">Selected Plan</div>
-          <div className="bg-muted rounded-md p-3">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold">{plan.name}</span>
-              <span>₹{plan.price.toFixed(2)}</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {plan.durationLabel} membership
-            </div>
-          </div>
-        </div>
-        
-        <div className="border-t pt-4">
-          <Label htmlFor="promo-code">Promo Code</Label>
-          <div className="flex space-x-2 mt-1">
-            <Input
-              id="promo-code"
-              placeholder="Enter promo code"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              disabled={promoApplied || loading}
-            />
-            <Button 
-              onClick={handleApplyPromo} 
-              disabled={promoApplied || loading || !promoCode}
-              variant="secondary"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              {promoApplied ? <Check className="h-4 w-4 mr-1" /> : null}
-              {promoApplied ? 'Applied' : 'Apply'}
-            </Button>
-          </div>
-          {promoApplied && (
-            <div className="text-sm text-green-600 mt-1 flex items-center">
-              <Check className="h-4 w-4 mr-1" />
-              Discount of ₹{discountAmount.toFixed(2)} applied!
-            </div>
-          )}
-        </div>
-        
-        <div className="border-t pt-4">
-          <div className="flex justify-between mb-2">
-            <span>Subtotal</span>
-            <span>₹{plan.price.toFixed(2)}</span>
-          </div>
-          {promoApplied && (
-            <div className="flex justify-between mb-2 text-green-600">
-              <span>Discount</span>
-              <span>-₹{discountAmount.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>₹{finalAmount.toFixed(2)}</span>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel} disabled={loading}>
-          Cancel
-        </Button>
-        <Button onClick={handleInitiatePayment} disabled={loading || !scriptLoaded}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-          Pay Now ₹{finalAmount.toFixed(2)}
-        </Button>
-      </CardFooter>
-    </Card>
+    <Button 
+      onClick={handlePayment} 
+      disabled={isLoading || !scriptLoaded}
+      className="w-full"
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        'Pay Now'
+      )}
+    </Button>
   );
 };
 

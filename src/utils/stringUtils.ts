@@ -129,3 +129,18 @@ export const formatMembershipDuration = (days: number): string => {
   
   return `${days} ${days === 1 ? 'Day' : 'Days'}`;
 };
+
+/**
+ * Get initials from a name (e.g., "John Doe" -> "JD")
+ * @param name - Full name
+ * @returns Initials (uppercase)
+ */
+export const getInitials = (name: string): string => {
+  if (!name) return '';
+  
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
+};

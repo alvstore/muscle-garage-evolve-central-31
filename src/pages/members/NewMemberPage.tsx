@@ -1,38 +1,54 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Container } from '@/components/ui/container';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate } from "react-router-dom";
+import { Container } from "@/components/ui/container";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { format, isValid } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CalendarIcon } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { useMemberships } from '@/hooks/use-memberships';
-import { useTrainers } from '@/hooks/use-trainers';
-import { useBranch } from '@/hooks/use-branch';
-import { membershipService } from '@/services/membershipService';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
+import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useBranch } from "@/hooks/use-branch";
+import { useMemberships } from "@/hooks/use-memberships";
+import { membershipService } from "@/services/membershipService";
+import { CalendarIcon, Loader2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Form schema for the member form
+// Form schema for member creation
 const memberFormSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email.' }).optional().or(z.literal('')),
-  phone: z.string().min(10, { message: 'Please enter a valid phone number.' }).optional().or(z.literal('')),
+  name: z.string().min(1, { message: "Name is required" }),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().optional(),
   gender: z.string().optional(),
-  date_of_birth: z.date().optional(),
+  dateOfBirth: z.date().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -40,276 +56,182 @@ const memberFormSchema = z.object({
   country: z.string().optional(),
   goal: z.string().optional(),
   occupation: z.string().optional(),
-  blood_group: z.string().optional(),
-  // ID fields for biometric registration
-  id_type: z.string().optional(),
-  id_number: z.string().optional(),
+  bloodGroup: z.string().optional(),
+  idType: z.string().optional(),
+  idNumber: z.string().optional(),
   
-  // Membership fields
-  assign_membership: z.boolean().default(false),
-  membership_id: z.string().optional(),
-  trainer_id: z.string().optional(),
-  payment_status: z.enum(['pending', 'paid', 'partial']).optional(),
-  payment_method: z.string().optional(),
-  amount_paid: z.number().optional(),
-  start_date: z.date().optional(),
+  // Membership related fields
+  createWithMembership: z.boolean().default(false),
+  membershipId: z.string().optional(),
+  startDate: z.date().optional(),
+  membershipStatus: z.string().default("active"),
+  paymentStatus: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  amountPaid: z.number().optional(),
+  membershipNotes: z.string().optional(),
 });
 
 type MemberFormValues = z.infer<typeof memberFormSchema>;
 
-const NewMemberPage: React.FC = () => {
-  const { toast } = useToast();
+const NewMemberPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { currentBranch } = useBranch();
   const { memberships, isLoading: isLoadingMemberships } = useMemberships();
-  const { trainers, isLoading: isLoadingTrainers } = useTrainers();
-  const [activeTab, setActiveTab] = useState('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
   const [totalAmount, setTotalAmount] = useState<number>(0);
-  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
-
-  // Check if biometric devices are configured
-  useEffect(() => {
-    const checkBiometricStatus = async () => {
-      if (currentBranch?.id) {
-        try {
-          const { data: hikvisionData } = await supabase
-            .from('hikvision_api_settings')
-            .select('is_active')
-            .eq('branch_id', currentBranch.id)
-            .single();
-            
-          const { data: esslData } = await supabase
-            .from('essl_device_settings')
-            .select('is_active')
-            .eq('branch_id', currentBranch.id)
-            .single();
-            
-          setBiometricEnabled(
-            (hikvisionData && hikvisionData.is_active) || 
-            (esslData && esslData.is_active)
-          );
-        } catch (error) {
-          console.error('Error checking biometric status:', error);
-        }
-      }
-    };
-    
-    checkBiometricStatus();
-  }, [currentBranch?.id]);
-
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const [biometricStatus, setBiometricStatus] = useState<{ success: boolean; message: string } | null>(null);
+  
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      gender: 'male',
-      address: '',
-      goal: '',
-      assign_membership: false,
-      payment_status: 'pending',
-      start_date: new Date(),
+      name: "",
+      email: "",
+      phone: "",
+      gender: "male",
+      createWithMembership: false,
+      membershipStatus: "active",
+      paymentStatus: "pending",
+      startDate: new Date(),
     },
   });
-
-  // Watch for membership selection changes
-  const watchAssignMembership = form.watch('assign_membership');
-  const watchMembershipId = form.watch('membership_id');
-  const watchPaymentStatus = form.watch('payment_status');
   
-  // Get membership details when selected
-  useEffect(() => {
-    if (watchMembershipId && memberships) {
-      const membership = memberships.find(m => m.id === watchMembershipId);
+  // Update membership details when selected
+  React.useEffect(() => {
+    const membershipId = form.watch("membershipId");
+    if (membershipId && memberships) {
+      const membership = memberships.find((m) => m.id === membershipId);
       if (membership) {
         setSelectedMembership(membership);
         setTotalAmount(membership.price);
         
-        // Set default start date to today
-        const startDate = new Date();
-        form.setValue('start_date', startDate);
+        // Calculate end date based on membership duration
+        const startDate = form.watch("startDate") || new Date();
+        if (startDate) {
+          const endDate = membershipService.calculateEndDate(startDate, membership.duration_days);
+          // We don't set endDate in the form as it's calculated value
+        }
       }
     }
-  }, [watchMembershipId, memberships, form]);
-  
-  // Update amount paid based on payment status
-  useEffect(() => {
-    if (watchPaymentStatus === 'paid') {
-      form.setValue('amount_paid', totalAmount);
-    } else if (watchPaymentStatus === 'pending') {
-      form.setValue('amount_paid', 0);
-    }
-  }, [watchPaymentStatus, totalAmount, form]);
-  
-  // Conditionally require membership fields
-  useEffect(() => {
-    const { assign_membership, payment_status } = form.getValues();
+  }, [form.watch("membershipId"), form.watch("startDate"), memberships]);
+
+  // Handle payment status changes
+  React.useEffect(() => {
+    const paymentStatus = form.watch("paymentStatus");
+    const createWithMembership = form.watch("createWithMembership");
     
-    if (assign_membership) {
-      form.register('membership_id', { required: 'Membership plan is required' });
-      form.register('start_date', { required: 'Start date is required' });
-      
-      if (payment_status === 'paid' || payment_status === 'partial') {
-        form.register('payment_method', { required: 'Payment method is required' });
-      }
-      
-      if (payment_status === 'partial') {
-        form.register('amount_paid', { 
-          required: 'Amount paid is required',
-          validate: (value) => {
-            if (!value || value <= 0) return 'Amount must be greater than 0';
-            if (value >= totalAmount) return 'For full payment, select "Paid" status';
-            return true;
-          }
-        });
+    if (createWithMembership) {
+      if (paymentStatus === "paid") {
+        form.setValue("amountPaid", totalAmount);
+      } else if (paymentStatus === "pending") {
+        form.setValue("amountPaid", 0);
       }
     }
-  }, [form, watchAssignMembership, watchPaymentStatus, totalAmount]);
+  }, [form.watch("paymentStatus"), form.watch("createWithMembership"), totalAmount]);
 
   const onSubmit = async (values: MemberFormValues) => {
     if (!currentBranch?.id) {
       toast({
-        title: "Error",
-        description: "No branch selected",
+        title: "Branch not selected",
+        description: "Please select a branch to add a member",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsSubmitting(true);
+    setRegistrationError(null);
+    setBiometricStatus(null);
     
     try {
-      // 1. Create the member
-      const { data: memberData, error: memberError } = await supabase
-        .from('members')
-        .insert({
-          name: values.name,
-          email: values.email || null,
-          phone: values.phone || null,
-          gender: values.gender || null,
-          date_of_birth: values.date_of_birth ? values.date_of_birth.toISOString().split('T')[0] : null,
-          address: values.address || null,
-          city: values.city || null,
-          state: values.state || null,
-          zipCode: values.zipCode || null,
-          country: values.country || 'India',
-          goal: values.goal || null,
-          occupation: values.occupation || null,
-          blood_group: values.blood_group || null,
-          id_type: values.id_type || null,
-          id_number: values.id_number || null,
-          branch_id: currentBranch.id,
-          status: 'active',
-          membership_status: values.assign_membership ? 'active' : 'none',
-        })
-        .select()
-        .single();
+      // 1. Create member record first
+      const { data: newMember, error: memberError } = await supabase.from("members").insert({
+        name: values.name,
+        email: values.email || null,
+        phone: values.phone || null,
+        gender: values.gender || null,
+        date_of_birth: values.dateOfBirth?.toISOString() || null,
+        address: values.address || null,
+        city: values.city || null,
+        state: values.state || null,
+        country: values.country || null,
+        zip_code: values.zipCode || null,
+        goal: values.goal || null,
+        occupation: values.occupation || null,
+        blood_group: values.bloodGroup || null,
+        id_type: values.idType || null,
+        id_number: values.idNumber || null,
+        branch_id: currentBranch.id,
+        status: "active",
+        membership_status: values.createWithMembership ? "active" : "none",
+      }).select().single();
 
       if (memberError) {
-        throw new Error(`Failed to create member: ${memberError.message}`);
+        throw new Error(`Error creating member: ${memberError.message}`);
       }
 
-      // 2. If assign_membership is true, assign membership and create invoice
-      let invoiceId: string | undefined;
-      
-      if (values.assign_membership && values.membership_id && values.start_date) {
-        const membership = memberships?.find(m => m.id === values.membership_id);
-        
-        if (membership) {
-          // Calculate end date
-          const endDate = new Date(values.start_date);
-          endDate.setDate(endDate.getDate() + membership.duration_days);
-          
-          const membershipResult = await membershipService.assignMembership({
-            memberId: memberData.id,
-            membershipId: values.membership_id,
-            startDate: values.start_date,
-            endDate,
-            amount: totalAmount,
-            amountPaid: values.amount_paid || 0,
-            paymentStatus: values.payment_status || 'pending',
-            paymentMethod: values.payment_method,
-            branchId: currentBranch.id,
-            trainerId: values.trainer_id,
-          });
-          
-          if (!membershipResult.success) {
-            throw new Error(`Failed to assign membership: ${membershipResult.error}`);
-          }
-          
-          invoiceId = membershipResult.invoiceId;
-        }
-      }
-      
-      // 3. If biometric integration is enabled, register member in the device
-      if (biometricEnabled) {
-        const biometricResult = await membershipService.registerInBiometricDevices(
-          memberData,
-          currentBranch.id
+      // Member successfully created
+      let invoiceId = null;
+
+      // 2. If membership is selected, create membership assignment
+      if (values.createWithMembership && values.membershipId && values.startDate && selectedMembership) {
+        const endDate = membershipService.calculateEndDate(
+          values.startDate,
+          selectedMembership.duration_days
         );
         
-        // Biometric registration failure is non-critical, just show a warning toast
-        if (!biometricResult.success) {
-          toast({
-            title: "Biometric Registration Warning",
-            description: biometricResult.message,
-            variant: "warning",
-          });
+        const assignResult = await membershipService.assignMembership({
+          memberId: newMember.id,
+          membershipId: values.membershipId,
+          startDate: values.startDate,
+          endDate: endDate,
+          amount: totalAmount,
+          amountPaid: values.amountPaid || 0,
+          paymentStatus: values.paymentStatus as 'paid' | 'partial' | 'pending',
+          paymentMethod: values.paymentMethod,
+          branchId: currentBranch.id,
+          notes: values.membershipNotes
+        });
+        
+        if (!assignResult.success) {
+          // Don't throw error here, just log it and continue
+          console.error("Error assigning membership:", assignResult.error);
+          setRegistrationError(assignResult.error || "Failed to assign membership");
         } else {
-          toast({
-            description: biometricResult.message,
-          });
+          invoiceId = assignResult.invoiceId;
         }
       }
-
-      // 4. Show success message
-      toast({
-        title: "Member Created",
-        description: "Member has been created successfully",
-      });
       
-      // 5. Redirect to appropriate page
+      // 3. If biometric integration is enabled, register member in biometric devices
+      if (newMember) {
+        const biometricResult = await membershipService.registerInBiometricDevices(newMember, currentBranch.id);
+        setBiometricStatus(biometricResult);
+      }
+
+      // Show success message
+      toast({
+        title: "Member added successfully",
+        description: "The new member has been created",
+      });
+
+      // Navigate to invoice if created, otherwise to member profile
       if (invoiceId) {
         navigate(`/finance/invoices/${invoiceId}`);
       } else {
-        navigate(`/members/${memberData.id}`);
+        navigate(`/members/${newMember.id}`);
       }
     } catch (error: any) {
-      console.error('Error creating member:', error);
+      console.error("Error creating member:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create member",
+        title: "Failed to create member",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
+      setRegistrationError(error.message || "Failed to create member");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const nextTab = () => {
-    if (activeTab === 'basic') {
-      // Validate basic fields before moving to next tab
-      const basicFields = ['name', 'phone'];
-      const isValid = basicFields.every(field => {
-        const result = form.trigger(field as any);
-        return result;
-      });
-      
-      if (isValid) {
-        setActiveTab('details');
-      }
-    } else if (activeTab === 'details') {
-      setActiveTab('membership');
-    }
-  };
-
-  const prevTab = () => {
-    if (activeTab === 'details') {
-      setActiveTab('basic');
-    } else if (activeTab === 'membership') {
-      setActiveTab('details');
     }
   };
 
@@ -318,21 +240,42 @@ const NewMemberPage: React.FC = () => {
       <div className="py-6">
         <h1 className="text-2xl font-bold mb-6">Add New Member</h1>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Member Registration Form</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="membership">Membership</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="basic" className="mt-6">
+        {registrationError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{registrationError}</AlertDescription>
+          </Alert>
+        )}
+        
+        {biometricStatus && (
+          <Alert 
+            variant={biometricStatus.success ? "default" : "warning"} 
+            className="mb-6"
+          >
+            <AlertTitle>Biometric Registration</AlertTitle>
+            <AlertDescription>{biometricStatus.message}</AlertDescription>
+          </Alert>
+        )}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <Tabs defaultValue="personal" className="w-full">
+              <TabsList className="grid grid-cols-3 w-full mb-6">
+                <TabsTrigger value="personal">Personal Information</TabsTrigger>
+                <TabsTrigger value="address">Address & Contact</TabsTrigger>
+                <TabsTrigger value="membership">Membership</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="personal">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>
+                      Enter the member's personal details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
@@ -341,35 +284,7 @@ const NewMemberPage: React.FC = () => {
                           <FormItem>
                             <FormLabel>Full Name*</FormLabel>
                             <FormControl>
-                              <Input placeholder="John Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number*</FormLabel>
-                            <FormControl>
-                              <Input placeholder="10-digit number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input placeholder="john@example.com" {...field} />
+                              <Input placeholder="Enter full name" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -382,7 +297,10 @@ const NewMemberPage: React.FC = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Gender</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select gender" />
@@ -401,7 +319,7 @@ const NewMemberPage: React.FC = () => {
                       
                       <FormField
                         control={form.control}
-                        name="date_of_birth"
+                        name="dateOfBirth"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
                             <FormLabel>Date of Birth</FormLabel>
@@ -411,7 +329,7 @@ const NewMemberPage: React.FC = () => {
                                   <Button
                                     variant={"outline"}
                                     className={cn(
-                                      "pl-3 text-left font-normal",
+                                      "w-full pl-3 text-left font-normal",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
@@ -424,7 +342,7 @@ const NewMemberPage: React.FC = () => {
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
+                              <PopoverContent className="w-auto p-0">
                                 <Calendar
                                   mode="single"
                                   selected={field.value}
@@ -440,106 +358,17 @@ const NewMemberPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                    </div>
-                    
-                    <div className="mt-6 flex justify-end">
-                      <Button type="button" onClick={nextTab}>Next</Button>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="details" className="mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                       <FormField
                         control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Address</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Street address" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input placeholder="City" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State</FormLabel>
-                            <FormControl>
-                              <Input placeholder="State" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="zipCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>ZIP/Postal Code</FormLabel>
-                            <FormControl>
-                              <Input placeholder="ZIP code" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="country"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Country</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Country" defaultValue="India" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="occupation"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Occupation</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Occupation" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="blood_group"
+                        name="bloodGroup"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Blood Group</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select blood group" />
@@ -560,86 +389,263 @@ const NewMemberPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
+                      <FormField
+                        control={form.control}
+                        name="occupation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Occupation</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter occupation" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <FormField
                         control={form.control}
                         name="goal"
                         render={({ field }) => (
-                          <FormItem className="col-span-2">
+                          <FormItem>
                             <FormLabel>Fitness Goal</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select fitness goal" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="weight_loss">Weight Loss</SelectItem>
+                                <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                                <SelectItem value="stamina">Stamina Building</SelectItem>
+                                <SelectItem value="flexibility">Flexibility</SelectItem>
+                                <SelectItem value="strength">Strength Training</SelectItem>
+                                <SelectItem value="general_fitness">General Fitness</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">ID Proof Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="idType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>ID Type</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select ID type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="aadhar">Aadhar Card</SelectItem>
+                                  <SelectItem value="pan">PAN Card</SelectItem>
+                                  <SelectItem value="driving_license">Driving License</SelectItem>
+                                  <SelectItem value="passport">Passport</SelectItem>
+                                  <SelectItem value="voter_id">Voter ID</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="idNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>ID Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter ID number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => navigate("/members")}>
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={() => form.getValues("name") ? document.querySelector('[data-value="address"]')?.click() : null}>
+                      Next
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="address">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Address & Contact Information</CardTitle>
+                    <CardDescription>
+                      Enter the member's contact details and address
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
                             <FormControl>
-                              <Textarea 
-                                placeholder="What does the member want to achieve?" 
-                                className="resize-none" 
-                                {...field} 
-                              />
+                              <Input placeholder="Enter phone number" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       
-                      {biometricEnabled && (
-                        <>
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email Address</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter email address" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Address</h3>
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Street Address</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Enter street address"
+                                  {...field}
+                                  rows={2}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField
                             control={form.control}
-                            name="id_type"
+                            name="city"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>ID Type (For Biometric)</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select ID type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="aadhar">Aadhar Card</SelectItem>
-                                    <SelectItem value="pan">PAN Card</SelectItem>
-                                    <SelectItem value="dl">Driving License</SelectItem>
-                                    <SelectItem value="voter">Voter ID</SelectItem>
-                                    <SelectItem value="passport">Passport</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="id_number"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>ID Number (For Biometric)</FormLabel>
+                                <FormLabel>City</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Enter ID number" {...field} />
+                                  <Input placeholder="Enter city" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        </>
-                      )}
+
+                          <FormField
+                            control={form.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>State</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter state" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="zipCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>ZIP Code</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter ZIP code" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="country"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Country</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter country" {...field} defaultValue="India" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div className="mt-6 flex justify-between">
-                      <Button type="button" variant="outline" onClick={prevTab}>Back</Button>
-                      <Button type="button" onClick={nextTab}>Next</Button>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="membership" className="mt-6">
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="personal"]')?.click()}>
+                      Previous
+                    </Button>
+                    <Button type="button" onClick={() => document.querySelector('[data-value="membership"]')?.click()}>
+                      Next
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="membership">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Membership Details</CardTitle>
+                    <CardDescription>
+                      Assign a membership plan to the new member or add them without one
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     <FormField
                       control={form.control}
-                      name="assign_membership"
+                      name="createWithMembership"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mb-6">
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">Assign Membership</FormLabel>
                             <FormDescription>
-                              Would you like to assign a membership plan now?
+                              Create member with an active membership plan
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -651,243 +657,258 @@ const NewMemberPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
-                    {form.watch('assign_membership') && (
-                      <div className="space-y-6">
-                        <FormField
-                          control={form.control}
-                          name="membership_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Membership Plan*</FormLabel>
-                              <Select 
-                                disabled={isLoadingMemberships} 
-                                onValueChange={field.onChange} 
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a membership plan" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {memberships?.map((membership) => (
-                                    <SelectItem key={membership.id} value={membership.id}>
-                                      {membership.name} - {membership.price} for {membership.duration_days} days
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+
+                    {form.watch("createWithMembership") && (
+                      <>
+                        <Separator />
                         
-                        <FormField
-                          control={form.control}
-                          name="start_date"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>Start Date*</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant={"outline"}
-                                      className={cn(
-                                        "pl-3 text-left font-normal",
-                                        !field.value && "text-muted-foreground"
-                                      )}
-                                    >
-                                      {field.value ? (
-                                        format(field.value, "PPP")
-                                      ) : (
-                                        <span>Pick a date</span>
-                                      )}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    disabled={(date) =>
-                                      date < new Date("1900-01-01")
-                                    }
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="trainer_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Assign Trainer (Optional)</FormLabel>
-                              <Select 
-                                disabled={isLoadingTrainers} 
-                                onValueChange={field.onChange} 
-                                value={field.value || ""}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a trainer" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="">No trainer</SelectItem>
-                                  {trainers?.map((trainer) => (
-                                    <SelectItem key={trainer.id} value={trainer.id}>
-                                      {trainer.name || trainer.fullName || "Unnamed Trainer"}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="payment_status"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Payment Status*</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value || 'pending'}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select payment status" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="paid">Paid (Full payment)</SelectItem>
-                                  <SelectItem value="partial">Partial Payment</SelectItem>
-                                  <SelectItem value="pending">Pending (No payment now)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        {(form.watch('payment_status') === 'paid' || form.watch('payment_status') === 'partial') && (
+                        <div className="space-y-4">
                           <FormField
                             control={form.control}
-                            name="payment_method"
+                            name="membershipId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Payment Method*</FormLabel>
+                                <FormLabel>Membership Plan*</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Select payment method" />
+                                      <SelectValue placeholder="Select a membership plan" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="cash">Cash</SelectItem>
-                                    <SelectItem value="card">Card</SelectItem>
-                                    <SelectItem value="upi">UPI</SelectItem>
-                                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                    <SelectItem value="cheque">Cheque</SelectItem>
-                                    <SelectItem value="online">Online</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
+                                    {isLoadingMemberships ? (
+                                      <SelectItem value="" disabled>
+                                        Loading...
+                                      </SelectItem>
+                                    ) : memberships && memberships.length > 0 ? (
+                                      memberships.map((membership) => (
+                                        <SelectItem key={membership.id} value={membership.id}>
+                                          {membership.name} - ₹{membership.price} for {membership.duration_days} days
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="" disabled>
+                                        No membership plans available
+                                      </SelectItem>
+                                    )}
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        )}
-                        
-                        {form.watch('payment_status') === 'partial' && (
+                          
                           <FormField
                             control={form.control}
-                            name="amount_paid"
+                            name="startDate"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Start Date*</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                          "w-full pl-3 text-left font-normal",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        {field.value ? (
+                                          format(field.value, "PPP")
+                                        ) : (
+                                          <span>Pick a date</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value}
+                                      onSelect={field.onChange}
+                                      disabled={(date) =>
+                                        date < new Date("1900-01-01")
+                                      }
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {selectedMembership && (
+                            <div className="rounded-md border bg-muted p-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium">Membership</p>
+                                  <p className="text-sm">{selectedMembership.name}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Price</p>
+                                  <p className="text-sm">₹{selectedMembership.price}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">Duration</p>
+                                  <p className="text-sm">{selectedMembership.duration_days} days</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">End Date</p>
+                                  <p className="text-sm">
+                                    {form.watch("startDate") && selectedMembership
+                                      ? format(
+                                          membershipService.calculateEndDate(
+                                            form.watch("startDate") as Date,
+                                            selectedMembership.duration_days
+                                          ),
+                                          "PPP"
+                                        )
+                                      : "-"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <Separator />
+                          
+                          <FormField
+                            control={form.control}
+                            name="paymentStatus"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Amount Paid*</FormLabel>
+                                <FormLabel>Payment Status*</FormLabel>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="flex flex-col space-y-1"
+                                >
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="paid" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal cursor-pointer">
+                                      Paid (Full payment: ₹{selectedMembership ? selectedMembership.price : 0})
+                                    </FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="partial" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal cursor-pointer">
+                                      Partial Payment
+                                    </FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="pending" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal cursor-pointer">
+                                      Pending (No payment now)
+                                    </FormLabel>
+                                  </FormItem>
+                                </RadioGroup>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {(form.watch("paymentStatus") === "paid" || form.watch("paymentStatus") === "partial") && (
+                            <>
+                              <FormField
+                                control={form.control}
+                                name="paymentMethod"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Payment Method*</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select payment method" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="cash">Cash</SelectItem>
+                                        <SelectItem value="card">Card</SelectItem>
+                                        <SelectItem value="upi">UPI</SelectItem>
+                                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                        <SelectItem value="cheque">Cheque</SelectItem>
+                                        <SelectItem value="online">Online</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </>
+                          )}
+                          
+                          {form.watch("paymentStatus") === "partial" && (
+                            <FormField
+                              control={form.control}
+                              name="amountPaid"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Amount Paid*</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      placeholder="Enter amount paid"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                          
+                          <FormField
+                            control={form.control}
+                            name="membershipNotes"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Notes</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
-                                    placeholder="Enter amount paid"
+                                  <Textarea
+                                    placeholder="Additional notes about this membership assignment"
                                     {...field}
-                                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                    rows={2}
                                   />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        )}
-                        
-                        {selectedMembership && (
-                          <Alert>
-                            <AlertTitle>Membership Summary</AlertTitle>
-                            <AlertDescription>
-                              <div className="grid grid-cols-2 gap-2 mt-2">
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Plan</p>
-                                  <p>{selectedMembership.name}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Duration</p>
-                                  <p>{selectedMembership.duration_days} days</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Total Amount</p>
-                                  <p>{selectedMembership.price}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Amount to Pay Now</p>
-                                  <p>
-                                    {form.watch('payment_status') === 'paid' ? selectedMembership.price : 
-                                     form.watch('payment_status') === 'partial' ? form.watch('amount_paid') || 0 : 0}
-                                  </p>
-                                </div>
-                              </div>
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                        
-                        {biometricEnabled && (
-                          <Alert>
-                            <AlertTitle>Biometric Registration</AlertTitle>
-                            <AlertDescription>
-                              Member will be automatically registered in the biometric system upon creation.
-                              Ensure ID details are entered correctly.
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
+                        </div>
+                      </>
                     )}
-                    
-                    <div className="mt-6 flex justify-between">
-                      <Button type="button" variant="outline" onClick={prevTab}>Back</Button>
-                      <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating...
-                          </>
-                        ) : (
-                          'Create Member'
-                        )}
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => document.querySelector('[data-value="address"]')?.click()}>
+                      Previous
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Member'
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </form>
+        </Form>
       </div>
     </Container>
   );

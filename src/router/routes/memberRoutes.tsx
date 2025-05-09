@@ -42,6 +42,15 @@ export const memberRoutes: RouteObject[] = [
       </PrivateRoute>
     )
   },
+  // Additional route for admin prefix (to fix 404 issue)
+  {
+    path: '/admin/members/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
   {
     path: '/members/progress/:id',
     element: (

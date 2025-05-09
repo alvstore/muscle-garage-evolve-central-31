@@ -1,145 +1,100 @@
 
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Calendar, Mail, Phone, Star, MoreHorizontal } from "lucide-react";
-import { getInitials } from "@/utils/stringUtils";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Phone, Mail, MapPin } from 'lucide-react';
+import { getInitials } from '@/utils/stringUtils';
 
 interface PersonCardProps {
-  id: string;
   name: string;
-  email: string;
+  role?: string;
+  email?: string;
   phone?: string;
-  avatar?: string;
-  role: string;
-  specialty?: string;
-  department?: string;
-  status: 'active' | 'inactive';
-  rating?: number;
-  stats?: {
-    label: string;
-    value: number;
-  }[];
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onViewProfile?: (id: string) => void;
+  location?: string;
+  avatarUrl?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function PersonCard({
-  id,
+const PersonCard: React.FC<PersonCardProps> = ({
   name,
+  role,
   email,
   phone,
-  avatar,
-  role,
-  specialty,
-  department,
-  status,
-  rating,
-  stats,
-  onEdit,
-  onDelete,
-  onViewProfile,
-}: PersonCardProps) {
+  location,
+  avatarUrl,
+  status = 'active',
+  size = 'md',
+}) => {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'inactive':
+        return 'bg-gray-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const avatarSizes = {
+    sm: 'h-10 w-10',
+    md: 'h-14 w-14',
+    lg: 'h-20 w-20',
+  };
+
+  const nameSizes = {
+    sm: 'text-sm font-medium',
+    md: 'text-lg font-medium',
+    lg: 'text-xl font-semibold',
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-4">
-          <div className="flex justify-between items-center">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={avatar} alt={name} />
-              <AvatarFallback>{getInitials(name)}</AvatarFallback>
-            </Avatar>
-            <Badge 
-              variant={status === 'active' ? 'default' : 'secondary'}
-              className={status === 'active' ? 'bg-green-500' : 'bg-gray-500'}
-            >
-              {status}
-            </Badge>
-          </div>
-          
-          <div className="mt-4">
-            <h3 className="font-medium text-lg">{name}</h3>
-            <p className="text-sm text-muted-foreground">{role}</p>
-            {(specialty || department) && (
-              <p className="text-sm text-muted-foreground">{specialty || department}</p>
+    <Card className="w-full">
+      <CardContent className="flex items-center p-4">
+        <Avatar className={avatarSizes[size]}>
+          <AvatarImage src={avatarUrl || ''} alt={name} />
+          <AvatarFallback className="bg-primary/10">
+            {getInitials(name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="ml-4 flex-grow">
+          <div className="flex items-center justify-between">
+            <h3 className={nameSizes[size]}>{name}</h3>
+            {status && (
+              <Badge className={getStatusColor()}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Badge>
             )}
           </div>
-
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Mail className="h-4 w-4 mr-2" />
-              {email}
-            </div>
+          {role && <p className="text-sm text-muted-foreground">{role}</p>}
+          <div className="mt-2 space-y-1">
+            {email && (
+              <div className="flex items-center text-sm">
+                <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>{email}</span>
+              </div>
+            )}
             {phone && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Phone className="h-4 w-4 mr-2" />
-                {phone}
+              <div className="flex items-center text-sm">
+                <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>{phone}</span>
+              </div>
+            )}
+            {location && (
+              <div className="flex items-center text-sm">
+                <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                <span>{location}</span>
               </div>
             )}
           </div>
-
-          {rating && (
-            <div className="mt-3 flex items-center">
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-              <span className="font-medium">{rating}</span>
-              <span className="text-sm text-muted-foreground ml-1">rating</span>
-            </div>
-          )}
-
-          {stats && stats.length > 0 && (
-            <div className="mt-3 flex gap-2">
-              {stats.map((stat, index) => (
-                <Badge key={index} variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                  {stat.value} {stat.label}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex border-t">
-          <Button
-            variant="ghost"
-            className="flex-1 rounded-none py-2 h-auto font-normal text-xs"
-            onClick={() => onViewProfile?.(id)}
-          >
-            View Profile
-          </Button>
-          <div className="border-r" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-none h-auto py-2"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit?.(id)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => onDelete?.(id)}
-                className="text-red-600"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default PersonCard;
