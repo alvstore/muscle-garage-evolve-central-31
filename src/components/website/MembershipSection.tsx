@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface CheckoutFormData {
   name: string;
@@ -300,6 +301,12 @@ const MembershipSection = () => {
       {/* Checkout Dialog */}
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
         <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Your Purchase</DialogTitle>
+            <DialogDescription>
+              Enter your details to purchase the {selectedPlan?.name} plan for ₹{selectedPlan?.price?.toLocaleString()}.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-2 pb-4">
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Complete Your Purchase</h2>
