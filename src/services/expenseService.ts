@@ -2,181 +2,148 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface Expense {
+export interface ExpenseRecord {
   id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: string;
-  vendor: string;
   reference: string;
+  date: string;
+  amount: number;
+  branch_id: string;
   status: string;
   payment_method: string;
-  branch_id?: string;
+  vendor: string;
+  description: string;
+  category: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface ExpenseCategory {
-  id: string;
-  name: string;
-  description?: string;
-  is_active: boolean;
-  branch_id?: string;
-}
-
 export const expenseService = {
-  // Fetch all expenses with optional filters
-  async getExpenses(filters?: { category?: string; startDate?: string; endDate?: string }): Promise<Expense[]> {
+  async getExpenseRecords(branchId: string | undefined): Promise<ExpenseRecord[]> {
     try {
-      let query = supabase
+      if (!branchId) {
+        console.warn('No branch ID provided for getExpenseRecords');
+        return [];
+      }
+      
+      const { data, error } = await supabase
         .from('expense_records')
         .select('*')
+        .eq('branch_id', branchId)
         .order('date', { ascending: false });
-      
-      // Apply filters if provided
-      if (filters?.category) {
-        query = query.eq('category', filters.category);
+
+      if (error) {
+        console.error('Supabase error fetching expense records:', error);
+        toast.error('Failed to load expense records');
+        return [];
       }
       
-      if (filters?.startDate && filters?.endDate) {
-        query = query
-          .gte('date', filters.startDate)
-          .lte('date', filters.endDate);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      return data;
+      return data as ExpenseRecord[];
     } catch (error: any) {
-      console.error('Error fetching expenses:', error);
-      toast.error(error.message || 'Failed to fetch expenses');
+      console.error('Error fetching expense records:', error);
+      toast.error('Failed to load expense records');
       return [];
     }
   },
   
-  // Create a new expense
-  async createExpense(expense: Omit<Expense, 'id'>): Promise<Expense | null> {
+  async createExpenseRecord(expense: Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>): Promise<ExpenseRecord | null> {
     try {
+      if (!expense.branch_id) {
+        toast.error('Branch ID is required to create an expense record');
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('expense_records')
-        .insert([{
-          description: expense.description,
-          amount: expense.amount,
-          category: expense.category,
-          date: expense.date,
-          vendor: expense.vendor,
-          reference: expense.reference,
-          status: expense.status,
-          payment_method: expense.payment_method,
-          branch_id: expense.branch_id
-        }])
+        .insert([expense])
         .select()
         .single();
-        
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error creating expense record:', error);
+        toast.error(`Failed to create expense record: ${error.message}`);
+        return null;
+      }
       
-      toast.success('Expense created successfully');
-      return data;
+      toast.success('Expense record created successfully');
+      return data as ExpenseRecord;
     } catch (error: any) {
-      console.error('Error creating expense:', error);
-      toast.error(error.message || 'Failed to create expense');
+      console.error('Error creating expense record:', error);
+      toast.error(`Failed to create expense record: ${error.message}`);
       return null;
     }
   },
   
-  // Update an existing expense
-  async updateExpense(id: string, expense: Partial<Expense>): Promise<Expense | null> {
+  async updateExpenseRecord(id: string, updates: Partial<ExpenseRecord>): Promise<ExpenseRecord | null> {
     try {
       const { data, error } = await supabase
         .from('expense_records')
-        .update({
-          description: expense.description,
-          amount: expense.amount,
-          category: expense.category,
-          date: expense.date,
-          vendor: expense.vendor,
-          reference: expense.reference,
-          status: expense.status,
-          payment_method: expense.payment_method
-        })
+        .update({...updates, updated_at: new Date().toISOString()})
         .eq('id', id)
         .select()
         .single();
-        
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error updating expense record:', error);
+        toast.error(`Failed to update expense record: ${error.message}`);
+        return null;
+      }
       
-      toast.success('Expense updated successfully');
-      return data;
+      toast.success('Expense record updated successfully');
+      return data as ExpenseRecord;
     } catch (error: any) {
-      console.error('Error updating expense:', error);
-      toast.error(error.message || 'Failed to update expense');
+      console.error('Error updating expense record:', error);
+      toast.error(`Failed to update expense record: ${error.message}`);
       return null;
     }
   },
   
-  // Delete an expense
-  async deleteExpense(id: string): Promise<boolean> {
+  async deleteExpenseRecord(id: string): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('expense_records')
         .delete()
         .eq('id', id);
-        
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error deleting expense record:', error);
+        toast.error(`Failed to delete expense record: ${error.message}`);
+        return false;
+      }
       
-      toast.success('Expense deleted successfully');
+      toast.success('Expense record deleted successfully');
       return true;
     } catch (error: any) {
-      console.error('Error deleting expense:', error);
-      toast.error(error.message || 'Failed to delete expense');
+      console.error('Error deleting expense record:', error);
+      toast.error(`Failed to delete expense record: ${error.message}`);
       return false;
     }
   },
   
-  // Get expense categories
-  async getExpenseCategories(): Promise<ExpenseCategory[]> {
+  async getExpenseCategories(branchId: string | undefined): Promise<{id: string, name: string}[]> {
     try {
+      if (!branchId) {
+        console.warn('No branch ID provided for getExpenseCategories');
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('expense_categories')
-        .select('*')
+        .select('id, name')
+        .eq('branch_id', branchId)
         .eq('is_active', true)
         .order('name');
-        
-      if (error) throw error;
+
+      if (error) {
+        console.error('Supabase error fetching expense categories:', error);
+        toast.error('Failed to load expense categories');
+        return [];
+      }
       
       return data;
     } catch (error: any) {
       console.error('Error fetching expense categories:', error);
-      toast.error(error.message || 'Failed to fetch expense categories');
+      toast.error('Failed to load expense categories');
       return [];
-    }
-  },
-  
-  // Create a new expense category
-  async createExpenseCategory(category: Omit<ExpenseCategory, 'id'>): Promise<ExpenseCategory | null> {
-    try {
-      const { data, error } = await supabase
-        .from('expense_categories')
-        .insert([{
-          name: category.name,
-          description: category.description,
-          is_active: category.is_active || true,
-          branch_id: category.branch_id
-        }])
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      toast.success('Expense category created successfully');
-      return data;
-    } catch (error: any) {
-      console.error('Error creating expense category:', error);
-      toast.error(error.message || 'Failed to create expense category');
-      return null;
     }
   }
 };

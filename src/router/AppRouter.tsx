@@ -15,6 +15,19 @@ export default function AppRouter() {
     const checkSession = async () => {
       try {
         await supabase.auth.getSession();
+        
+        // Set up auth state change listener
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+          // Handle auth state changes if needed
+          console.log('Auth state changed:', event);
+        });
+
+        // Cleanup subscription on unmount
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error("Error checking session:", error);
       }

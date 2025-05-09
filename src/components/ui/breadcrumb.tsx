@@ -1,120 +1,111 @@
 
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const Breadcrumb = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
-      className
-    )}
-    {...props}
-  />
-))
-Breadcrumb.displayName = "Breadcrumb"
+// Define types
+export interface BreadcrumbProps extends React.ComponentProps<"nav"> {
+  children: React.ReactNode;
+  separator?: React.ReactNode;
+}
 
-const BreadcrumbList = React.forwardRef<
-  HTMLOListElement,
-  React.OlHTMLAttributes<HTMLOListElement>
->(({ className, ...props }, ref) => (
-  <ol
-    ref={ref}
-    className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words sm:gap-2.5",
-      className
-    )}
-    {...props}
-  />
-))
-BreadcrumbList.displayName = "BreadcrumbList"
+export interface BreadcrumbItemProps extends React.ComponentProps<"li"> {
+  children: React.ReactNode;
+}
 
-const BreadcrumbItem = React.forwardRef<
-  HTMLLIElement,
-  React.LiHTMLAttributes<HTMLLIElement>
->(({ className, ...props }, ref) => (
-  <li
-    ref={ref}
-    className={cn("inline-flex items-center gap-1.5", className)}
-    {...props}
-  />
-))
-BreadcrumbItem.displayName = "BreadcrumbItem"
+export interface BreadcrumbLinkProps {
+  asChild?: boolean;
+  children: React.ReactNode;
+  href?: string;
+  className?: string;
+  isCurrentPage?: boolean;
+}
 
-// Fix to avoid using React.AnchorElement which doesn't exist
-const BreadcrumbLink = React.forwardRef<
-  HTMLAnchorElement,
-  React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    isCurrentPage?: boolean
-  }
->(({ className, href, isCurrentPage = false, ...props }, ref) => {
+// Breadcrumb component
+export function Breadcrumb({
+  children,
+  className,
+  separator = <ChevronRight className="h-4 w-4" />,
+  ...props
+}: BreadcrumbProps) {
+  const childrenArray = React.Children.toArray(children);
+  const childrenWithSeparators = childrenArray.reduce(
+    (acc: React.ReactNode[], child, index) => {
+      if (index !== 0) {
+        acc.push(
+          <li key={`separator-${index}`} aria-hidden="true" className="mx-2 text-muted-foreground">
+            {separator}
+          </li>
+        );
+      }
+      acc.push(child);
+      return acc;
+    },
+    []
+  );
+
+  return (
+    <nav
+      className={cn("flex flex-wrap", className)}
+      aria-label="Breadcrumb"
+      {...props}
+    >
+      <ol className="flex items-center flex-wrap">{childrenWithSeparators}</ol>
+    </nav>
+  );
+}
+
+// BreadcrumbItem component
+export function BreadcrumbItem({
+  children,
+  className,
+  ...props
+}: BreadcrumbItemProps) {
+  return (
+    <li className={cn("inline-flex items-center", className)} {...props}>
+      {children}
+    </li>
+  );
+}
+
+// BreadcrumbLink component - using React Router's Link
+export function BreadcrumbLink({
+  children,
+  href,
+  className,
+  isCurrentPage,
+  ...props
+}: BreadcrumbLinkProps) {
   if (isCurrentPage) {
     return (
       <span
-        className={cn(
-          "flex items-center font-medium text-foreground",
-          className
-        )}
+        className={cn("text-muted-foreground font-medium", className)}
         aria-current="page"
         {...props}
-      />
-    )
+      >
+        {children}
+      </span>
+    );
   }
 
-  return (
-    <a
-      ref={ref}
-      href={href}
-      className={cn(
-        "flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-        className
-      )}
+  return href ? (
+    <Link
+      to={href}
+      className={cn("text-muted-foreground hover:text-foreground", className)}
       {...props}
-    />
-  )
-})
-BreadcrumbLink.displayName = "BreadcrumbLink"
-
-const BreadcrumbSeparator = React.forwardRef<
-  HTMLSpanElement,
-  React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    role="presentation"
-    className={cn("text-muted-foreground", className)}
-    {...props}
-  />
-))
-BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
-
-const BreadcrumbEllipsis = React.forwardRef<
-  HTMLSpanElement,
-  React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    role="presentation"
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
-    {...props}
-  >
-    <span className="h-1 w-1 rounded-full bg-muted-foreground" />
-    <span className="mx-0.5 h-1 w-1 rounded-full bg-muted-foreground" />
-    <span className="h-1 w-1 rounded-full bg-muted-foreground" />
-    <span className="sr-only">More</span>
-  </span>
-))
-BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis"
-
-export {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbEllipsis,
+    >
+      {children}
+    </Link>
+  ) : (
+    <span className={cn("text-muted-foreground", className)} {...props}>
+      {children}
+    </span>
+  );
 }
+
+// Here we update the default exports for the Breadcrumb component
+Breadcrumb.Item = BreadcrumbItem;
+Breadcrumb.Link = BreadcrumbLink;
+
+export { Breadcrumb as Breadcrumb2 };

@@ -1,97 +1,48 @@
-
-import React from "react";
+import React from 'react';
+import { cn } from "@/lib/utils";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { LogOut, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Logo from "@/components/Logo";
-import NavigationSections from "@/components/navigation/NavigationSections";
-import BranchSelector from "@/components/branch/BranchSelector";
-import { PermissionGuard } from "@/components/auth/PermissionGuard";
-import { useNavigation } from "@/hooks/use-navigation";
+import NavigationSection from "@/components/navigation/NavigationSection";
+import NavigationManager from "@/components/navigation/NavigationManager";
 
 interface DashboardSidebarProps {
-  isSidebarOpen: boolean;
-  closeSidebar: () => void;
+  className?: string;
 }
 
-export default function DashboardSidebar({
-  isSidebarOpen,
-  closeSidebar
-}: DashboardSidebarProps) {
-  const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const { logout, user } = useAuth();
-  const { sections, expandedSections, toggleSection } = useNavigation();
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
+export function DashboardSidebar({ className }: DashboardSidebarProps) {
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-br from-indigo-950 to-blue-900 text-white 
-                    transform transition-transform duration-300 ease-in-out md:translate-x-0
-                    flex flex-col h-full">
-      {/* Mobile Close Button */}
-      <div className="md:hidden absolute top-4 right-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:bg-indigo-800/50"
-          onClick={closeSidebar}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <div className="p-4">
-        <div className="flex flex-col gap-3">
-          <div className="p-1 rounded-md px-[27px] py-[8px] mx-0 my-0 bg-slate-50 overflow-hidden">
-            <div className="w-36 truncate">
-              <Logo variant="default" />
-            </div>
+    <div className={cn("pb-12 w-full", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <div className="mb-5">
+            <Link to="/" className="flex items-center">
+              <h2 className="text-lg font-semibold">Muscle Garage</h2>
+            </Link>
           </div>
-          {user?.role === "admin" && (
-            <PermissionGuard permission="view_branch_data">
-              <div className="max-w-full">
-                <BranchSelector />
-              </div>
-            </PermissionGuard>
-          )}
+          <div className="space-y-1">
+            <NavigationManager>
+              {({ sections, activePath, expandedSections, toggleSection }) => (
+                <ScrollArea className="h-[calc(100vh-10rem)]">
+                  <div className="space-y-1">
+                    {sections.map((section) => (
+                      <NavigationSection 
+                        key={section.name}
+                        section={section}
+                        activePath={activePath}
+                        isExpanded={expandedSections.includes(section.name)}
+                        onToggle={() => toggleSection(section.name)}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </NavigationManager>
+          </div>
         </div>
-      </div>
-      
-      <ScrollArea className="flex-1 overflow-y-auto py-2 max-h-[calc(100vh-200px)]">
-        <NavigationSections 
-          sections={sections} 
-          expandedSections={expandedSections} 
-          toggleSection={toggleSection} 
-          onLinkClick={closeSidebar}
-        />
-      </ScrollArea>
-      
-      <div className="mt-auto p-4">
-        <Separator className="my-2 bg-indigo-800" />
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-indigo-200 hover:text-white hover:bg-indigo-800/50" 
-          onClick={handleLogout} 
-          disabled={isLoggingOut}
-        >
-          <LogOut className="mr-2 h-5 w-5" />
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </Button>
       </div>
     </div>
   );
 }
+
+export default DashboardSidebar;

@@ -18,80 +18,58 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
-
-interface Deal {
-  id: string;
-  title: string;
-  value: number;
-  stage: string;
-  probability: number;
-  contact: string;
-  closing_date?: string;
-  created_at: string;
-}
+import { Deal, dealService } from '@/services/dealService';
+import { useParams } from 'react-router-dom';
+import { formatCurrency } from '@/utils/stringUtils';
 
 const DealsPage: React.FC = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { branchId } = useParams<{ branchId?: string }>();
 
   useEffect(() => {
-    // Mock data loading
-    const mockDeals: Deal[] = [
-      {
-        id: '1',
-        title: 'Corporate Membership Package',
-        value: 50000,
-        stage: 'proposal',
-        probability: 60,
-        contact: 'TechX Corp',
-        closing_date: '2023-06-30',
-        created_at: '2023-05-15',
-      },
-      {
-        id: '2',
-        title: 'Premium Family Package',
-        value: 12000,
-        stage: 'negotiation',
-        probability: 85,
-        contact: 'Sharma Family',
-        closing_date: '2023-06-15',
-        created_at: '2023-05-10',
-      },
-      {
-        id: '3',
-        title: 'Group Training Sessions',
-        value: 25000,
-        stage: 'discovery',
-        probability: 30,
-        contact: 'AcmeFit Inc',
-        closing_date: '2023-07-15',
-        created_at: '2023-05-20',
-      },
-      {
-        id: '4',
-        title: 'Annual VIP Subscription',
-        value: 40000,
-        stage: 'closed_won',
-        probability: 100,
-        contact: 'Elite Sports Club',
-        closing_date: '2023-05-05',
-        created_at: '2023-04-15',
+    const fetchDeals = async () => {
+      try {
+        setIsLoading(true);
+        const data = await dealService.getDeals(branchId);
+        setDeals(data);
+      } catch (error) {
+        console.error('Error fetching deals:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load deals.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
       }
-    ];
-    
-    setDeals(mockDeals);
-    
-    toast({
-      title: 'Coming Soon',
-      description: 'Deal management will be connected to real data in an upcoming update.',
-    });
-  }, [toast]);
+    };
+
+    fetchDeals();
+  }, [toast, branchId]);
   
   const filteredDeals = deals.filter(deal => 
     deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     deal.contact.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Calculate pipeline metrics
+  const totalPipelineValue = filteredDeals.reduce((sum, deal) => sum + deal.value, 0);
+  const closedWonValue = filteredDeals
+    .filter(deal => deal.stage === 'closed_won')
+    .reduce((sum, deal) => sum + deal.value, 0);
+  const activeDeals = filteredDeals.filter(deal => 
+    deal.stage !== 'closed_won' && deal.stage !== 'closed_lost'
+  ).length;
+  
+  // Calculate average win rate
+  const wonDeals = filteredDeals.filter(deal => deal.stage === 'closed_won').length;
+  const completedDeals = filteredDeals.filter(deal => 
+    deal.stage === 'closed_won' || deal.stage === 'closed_lost'
+  ).length;
+  const winRate = completedDeals > 0 ? Math.round((wonDeals / completedDeals) * 100) : 0;
   
   const getStageBadge = (stage: string) => {
     switch (stage) {
@@ -153,25 +131,25 @@ const DealsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">₹127,000</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalPipelineValue)}</div>
               <p className="text-xs text-muted-foreground">Total Pipeline Value</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">₹40,000</div>
+              <div className="text-2xl font-bold">{formatCurrency(closedWonValue)}</div>
               <p className="text-xs text-muted-foreground">Closed Won (30 days)</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">4</div>
+              <div className="text-2xl font-bold">{activeDeals}</div>
               <p className="text-xs text-muted-foreground">Active Deals</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">45%</div>
+              <div className="text-2xl font-bold">{winRate}%</div>
               <p className="text-xs text-muted-foreground">Avg. Win Rate</p>
             </CardContent>
           </Card>
@@ -214,43 +192,50 @@ const DealsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDeals.map((deal) => (
-                  <TableRow key={deal.id}>
-                    <TableCell className="font-medium">{deal.title}</TableCell>
-                    <TableCell>₹{deal.value.toLocaleString()}</TableCell>
-                    <TableCell>{getStageBadge(deal.stage)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={deal.probability} 
-                          className={`h-2 ${getProbabilityColor(deal.probability)}`} 
-                        />
-                        <span className="text-xs">{deal.probability}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{deal.contact}</TableCell>
-                    <TableCell>{deal.closing_date && new Date(deal.closing_date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <span className="sr-only">Open menu</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit Deal</DropdownMenuItem>
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Mark as Won</DropdownMenuItem>
-                          <DropdownMenuItem>Mark as Lost</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Loading deals...
                     </TableCell>
                   </TableRow>
-                ))}
-                {filteredDeals.length === 0 && (
+                ) : filteredDeals.length > 0 ? (
+                  filteredDeals.map((deal) => (
+                    <TableRow key={deal.id}>
+                      <TableCell className="font-medium">{deal.title}</TableCell>
+                      <TableCell>{formatCurrency(deal.value)}</TableCell>
+                      <TableCell>{getStageBadge(deal.stage)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress 
+                            value={deal.probability} 
+                            className={`h-2 ${getProbabilityColor(deal.probability)}`} 
+                          />
+                          <span className="text-xs">{deal.probability}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{deal.contact}</TableCell>
+                      <TableCell>{deal.closing_date && new Date(deal.closing_date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <span className="sr-only">Open menu</span>
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit Deal</DropdownMenuItem>
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Mark as Won</DropdownMenuItem>
+                            <DropdownMenuItem>Mark as Lost</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       {searchQuery ? 'No deals match your search.' : 'No deals found.'}

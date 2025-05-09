@@ -9,75 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Search, Plus, Filter, MoreHorizontal } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: string;
-  tags?: string[];
-  last_contact?: string;
-  source?: string;
-}
+import { Contact, contactService } from '@/services/contactService';
+import { useParams } from 'react-router-dom';
+import { getInitials } from '@/utils/stringUtils';
 
 const ContactsPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const { branchId } = useParams<{ branchId?: string }>();
   
   useEffect(() => {
     const fetchContacts = async () => {
       try {
         setIsLoading(true);
-        
-        // For now, using mock data since we're just setting up the UI structure
-        // In reality, this would fetch from Supabase like:
-        // const { data, error } = await supabase.from('contacts').select('*');
-        
-        // Mock data for demonstration
-        const mockContacts: Contact[] = [
-          {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            phone: '+91 98765 43210',
-            status: 'active',
-            tags: ['member', 'premium'],
-            last_contact: '2023-05-01',
-            source: 'website'
-          },
-          {
-            id: '2',
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            phone: '+91 98765 12345',
-            status: 'lead',
-            tags: ['potential', 'interested'],
-            last_contact: '2023-05-10',
-            source: 'referral'
-          },
-          {
-            id: '3',
-            name: 'Mike Johnson',
-            email: 'mike@example.com',
-            phone: '+91 87654 32109',
-            status: 'inactive',
-            tags: ['former', 'cancelled'],
-            last_contact: '2023-04-15',
-            source: 'walk-in'
-          }
-        ];
-        
-        setContacts(mockContacts);
-        
-        toast({
-          title: 'Coming Soon',
-          description: 'Contact management will be connected to real data in an upcoming update.',
-        });
+        const data = await contactService.getContacts(branchId);
+        setContacts(data);
       } catch (error) {
         console.error('Error fetching contacts:', error);
         toast({
@@ -91,12 +40,12 @@ const ContactsPage: React.FC = () => {
     };
     
     fetchContacts();
-  }, [toast]);
+  }, [toast, branchId]);
   
   const filteredContacts = contacts.filter(contact => 
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.phone.includes(searchQuery)
+    (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (contact.phone && contact.phone.includes(searchQuery))
   );
   
   return (
@@ -170,36 +119,43 @@ const ContactsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredContacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{contact.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{contact.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{contact.email}</TableCell>
-                    <TableCell>{contact.phone}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        contact.status === 'active' ? 'default' :
-                        contact.status === 'lead' ? 'outline' : 'secondary'
-                      }>
-                        {contact.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{contact.source}</TableCell>
-                    <TableCell>{contact.last_contact && new Date(contact.last_contact).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Loading contacts...
                     </TableCell>
                   </TableRow>
-                ))}
-                {filteredContacts.length === 0 && (
+                ) : filteredContacts.length > 0 ? (
+                  filteredContacts.map((contact) => (
+                    <TableRow key={contact.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{contact.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{contact.email}</TableCell>
+                      <TableCell>{contact.phone}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          contact.status === 'active' ? 'default' :
+                          contact.status === 'lead' ? 'outline' : 'secondary'
+                        }>
+                          {contact.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{contact.source}</TableCell>
+                      <TableCell>{contact.last_contact && new Date(contact.last_contact).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       {searchQuery ? 'No contacts match your search.' : 'No contacts found.'}
