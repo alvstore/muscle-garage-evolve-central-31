@@ -1,3 +1,4 @@
+
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'inactive' | 'converted';
 export type LeadSource = 'website' | 'referral' | 'cold_call' | 'walk_in' | 'social_media' | 'event' | 'advertisement' | 'other';
 export type FunnelStage = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'cold' | 'warm' | 'hot';

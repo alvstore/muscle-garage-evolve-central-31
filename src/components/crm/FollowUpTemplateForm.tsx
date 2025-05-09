@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -90,17 +89,14 @@ const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, o
     try {
       const newTemplate: FollowUpTemplate = {
         id: template?.id || uuidv4(),
-        name: values.title, // Map title to name for backend compatibility
+        name: values.title, 
         title: values.title,
         content: values.content,
         type: values.type as FollowUpType,
         variables: selectedVariables,
         created_by: template?.created_by || "current-user-id",
-        createdBy: template?.created_by || "current-user-id",
         created_at: template?.created_at || new Date().toISOString(),
-        createdAt: template?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         isDefault: values.isDefault,
       };
       

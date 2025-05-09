@@ -44,9 +44,7 @@ const mockTemplates: FollowUpTemplate[] = [
     content: "Hello {{name}},\n\nThank you for your interest in our gym. We would love to have you visit us for a free trial session.\n\nPlease let me know when would be a convenient time for you.\n\nBest regards,\n{{staffName}}",
     variables: ["name", "staffName"],
     created_by: "Admin",
-    createdBy: "Admin",
     created_at: "2023-05-15T10:00:00Z",
-    createdAt: "2023-05-15T10:00:00Z",
     isDefault: true
   },
   {
@@ -57,9 +55,7 @@ const mockTemplates: FollowUpTemplate[] = [
     content: "Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}",
     variables: ["name", "trialDate", "staffName"],
     created_by: "Admin",
-    createdBy: "Admin",
     created_at: "2023-05-16T11:30:00Z",
-    createdAt: "2023-05-16T11:30:00Z",
     isDefault: false
   },
   {
@@ -70,9 +66,7 @@ const mockTemplates: FollowUpTemplate[] = [
     content: "Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.",
     variables: ["name", "gymPhone"],
     created_by: "Admin",
-    createdBy: "Admin",
     created_at: "2023-05-17T09:15:00Z",
-    createdAt: "2023-05-17T09:15:00Z",
     isDefault: false
   },
   {
@@ -83,9 +77,7 @@ const mockTemplates: FollowUpTemplate[] = [
     content: "Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.",
     variables: ["name", "staffName"],
     created_by: "Admin",
-    createdBy: "Admin",
     created_at: "2023-05-20T14:20:00Z",
-    createdAt: "2023-05-20T14:20:00Z",
     isDefault: false
   },
   {
@@ -96,9 +88,7 @@ const mockTemplates: FollowUpTemplate[] = [
     content: "Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}",
     variables: ["name", "discountAmount", "expiryDate", "staffName"],
     created_by: "Admin",
-    createdBy: "Admin",
     created_at: "2023-05-22T13:40:00Z",
-    createdAt: "2023-05-22T13:40:00Z",
     isDefault: false
   }
 ];
@@ -141,7 +131,6 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
       name: `Copy of ${template.name}`,
       title: `Copy of ${template.title}`,
       created_at: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
       isDefault: false
     };
     
@@ -260,8 +249,8 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell>{template.createdBy}</TableCell>
-                    <TableCell>{formatDate(template.createdAt)}</TableCell>
+                    <TableCell>{template.created_by}</TableCell>
+                    <TableCell>{formatDate(template.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
