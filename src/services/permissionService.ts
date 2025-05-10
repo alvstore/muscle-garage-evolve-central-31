@@ -1,3 +1,4 @@
+
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -21,6 +22,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   
   // Branch Management
   'manage_branches': { roles: ['admin'] },
+  'manage_branch': { roles: ['admin', 'staff'] },
   'view_all_branches': { roles: ['admin'] },
   
   // Staff Management
@@ -90,7 +92,6 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'view_finance_dashboard': { roles: ['admin', 'staff'] },
   
   // Manager
-  'manage_branch': { roles: ['admin', 'staff'] },
   'manage_trainers': { roles: ['admin'] },
   'manage_memberships': { roles: ['admin', 'staff'] },
   

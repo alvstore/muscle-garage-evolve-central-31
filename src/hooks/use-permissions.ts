@@ -53,6 +53,7 @@ export type Permission =
   | 'delete_branches'
   | 'view_all_branches'
   | 'manage_branches'
+  | 'manage_branch'
   
   // Finance
   | 'view_finance_dashboard'
