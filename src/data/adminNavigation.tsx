@@ -1,6 +1,6 @@
-
 import React from "react";
 import { NavSection } from "@/types/navigation";
+import { Permission } from "@/hooks/use-permissions";
 import { 
   LayoutDashboard, 
   Users, 
@@ -26,9 +26,11 @@ import {
   UserPlus,
   ClipboardList,
   GitMerge,
-  PhoneCall,
   Clock
 } from "lucide-react";
+
+// Helper function to safely cast permission strings
+const asPermission = (p: string): Permission => p as Permission;
 
 export const adminNavSections: NavSection[] = [
   {
@@ -37,13 +39,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/dashboard",
         label: "Analytics Dashboard",
-        permission: "view_dashboard",
+        permission: asPermission("view_dashboard"),
         icon: <LayoutDashboard className="h-5 w-5" />
       },
       {
         href: "/dashboard/realtime",
         label: "Real-Time Dashboard",
-        permission: "view_dashboard",
+        permission: asPermission("view_dashboard"),
         icon: <BarChart className="h-5 w-5" />
       }
     ]
@@ -54,13 +56,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/members",
         label: "Member List",
-        permission: "manage_members",
+        permission: asPermission("manage_members"),
         icon: <Users className="h-5 w-5" />
       },
       {
         href: "/memberships",
         label: "Membership Plans",
-        permission: "manage_memberships",
+        permission: asPermission("manage_memberships"),
         icon: <FileText className="h-5 w-5" />
       }
     ]
@@ -71,13 +73,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/classes",
         label: "Class Schedule",
-        permission: "manage_classes",
+        permission: asPermission("manage_classes"),
         icon: <CalendarDays className="h-5 w-5" />
       },
       {
         href: "/classes/types",
         label: "Class Types",
-        permission: "manage_classes",
+        permission: asPermission("manage_classes"),
         icon: <FileText className="h-5 w-5" />
       }
     ]
@@ -88,13 +90,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/staff",
         label: "Staff List",
-        permission: "manage_staff",
+        permission: asPermission("manage_staff"),
         icon: <Users className="h-5 w-5" />
       },
       {
         href: "/trainers",
         label: "Trainers",
-        permission: "manage_trainers",
+        permission: asPermission("manage_trainers"),
         icon: <UserRound className="h-5 w-5" />
       }
     ]
@@ -105,19 +107,19 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/crm/leads",
         label: "Lead Management",
-        permission: "access_crm",
+        permission: asPermission("access_crm"),
         icon: <UserPlus className="h-5 w-5" />
       },
       {
         href: "/crm/funnel",
         label: "Sales Funnel",
-        permission: "access_crm",
+        permission: asPermission("access_crm"),
         icon: <BarChart className="h-5 w-5" />
       },
       {
         href: "/crm/follow-up",
         label: "Follow-Up Management",
-        permission: "access_crm",
+        permission: asPermission("access_crm"),
         icon: <Clock className="h-5 w-5" />
       }
     ]
@@ -128,13 +130,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/marketing/promo",
         label: "Promotions",
-        permission: "manage_marketing",
+        permission: asPermission("manage_marketing"),
         icon: <Megaphone className="h-5 w-5" />
       },
       {
         href: "/marketing/referral",
         label: "Referral Programs",
-        permission: "manage_marketing",
+        permission: asPermission("manage_marketing"),
         icon: <Users className="h-5 w-5" />
       }
     ]
@@ -145,13 +147,13 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/inventory",
         label: "Inventory",
-        permission: "manage_inventory",
+        permission: asPermission("manage_inventory"),
         icon: <Store className="h-5 w-5" />
       },
       {
         href: "/store",
         label: "Store",
-        permission: "manage_inventory",
+        permission: asPermission("manage_inventory"),
         icon: <Store className="h-5 w-5" />
       }
     ]
@@ -162,25 +164,25 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/fitness-plans",
         label: "Fitness Plans Management",
-        permission: "trainer_edit_fitness",
+        permission: asPermission("trainer_edit_fitness"),
         icon: <Dumbbell className="h-5 w-5" />
       },
       {
         href: "/fitness/progress",
         label: "Member Progress",
-        permission: "trainer_view_members",
+        permission: asPermission("trainer_view_members"),
         icon: <BarChart className="h-5 w-5" />
       },
       {
         href: "/fitness/workout-plans",
         label: "Workout Plans",
-        permission: "trainer_edit_fitness",
+        permission: asPermission("trainer_edit_fitness"),
         icon: <Dumbbell className="h-5 w-5" />
       },
       {
         href: "/fitness/diet",
         label: "Diet Plans",
-        permission: "trainer_edit_fitness",
+        permission: asPermission("trainer_edit_fitness"),
         icon: <FileText className="h-5 w-5" />
       }
     ]
@@ -191,37 +193,37 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/communication/announcements",
         label: "Announcements",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <Megaphone className="h-5 w-5" />
       },
       {
         href: "/communication/feedback",
         label: "Feedback Management",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <MessageSquare className="h-5 w-5" />
       },
       {
         href: "/communication/reminders",
         label: "Reminder Rules",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <Clock className="h-5 w-5" />
       },
       {
         href: "/communication/motivational",
         label: "Motivational Messages",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <Users className="h-5 w-5" />
       },
       {
         href: "/communication/notifications",
         label: "Notifications",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <PhoneCall className="h-5 w-5" />
       },
       {
         href: "/communication/tasks",
         label: "Task Manager",
-        permission: "access_communication",
+        permission: asPermission("access_communication"),
         icon: <ClipboardList className="h-5 w-5" />
       }
     ]
@@ -232,7 +234,7 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/website",
         label: "Website Management",
-        permission: "manage_website",
+        permission: asPermission("manage_website"),
         icon: <Globe className="h-5 w-5" />
       }
     ]
@@ -243,19 +245,19 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/analytics",
         label: "Analytics",
-        permission: "view_analytics",
+        permission: asPermission("view_analytics"),
         icon: <BarChart className="h-5 w-5" />
       },
       {
         href: "/reports",
         label: "Reports",
-        permission: "view_reports",
+        permission: asPermission("view_reports"),
         icon: <FileText className="h-5 w-5" />
       },
       {
         href: "/attendance",
         label: "Attendance Tracking",
-        permission: "view_attendance",
+        permission: asPermission("view_attendance"),
         icon: <Clock className="h-5 w-5" />
       }
     ]
@@ -266,31 +268,31 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/finance/dashboard",
         label: "Finance Dashboard",
-        permission: "view_finance_dashboard",
+        permission: asPermission("view_finance_dashboard"),
         icon: <DollarSign className="h-5 w-5" />
       },
       {
         href: "/finance/invoices",
         label: "Invoices",
-        permission: "manage_invoices",
+        permission: asPermission("manage_invoices"),
         icon: <Receipt className="h-5 w-5" />
       },
       {
         href: "/finance/transactions",
         label: "Transactions",
-        permission: "manage_transactions",
+        permission: asPermission("manage_transactions"),
         icon: <ArrowDownUp className="h-5 w-5" />
       },
       {
         href: "/finance/income",
         label: "Income Records",
-        permission: "manage_income",
+        permission: asPermission("manage_income"),
         icon: <Wallet className="h-5 w-5" />
       },
       {
         href: "/finance/expenses",
         label: "Expense Management",
-        permission: "manage_expenses",
+        permission: asPermission("manage_expenses"),
         icon: <Calculator className="h-5 w-5" />
       }
     ]
@@ -301,25 +303,25 @@ export const adminNavSections: NavSection[] = [
       {
         href: "/settings",
         label: "System Settings",
-        permission: "manage_settings",
+        permission: asPermission("manage_settings"),
         icon: <Settings className="h-5 w-5" />
       },
       {
         href: "/settings/integrations",
         label: "Integration Settings",
-        permission: "manage_settings",
+        permission: asPermission("manage_settings"),
         icon: <GitMerge className="h-5 w-5" />
       },
       {
         href: "/system-backup",
         label: "System Backup & Restore",
-        permission: "manage_settings",
+        permission: asPermission("manage_settings"),
         icon: <Archive className="h-5 w-5" />
       },
       {
         href: "/branches",
         label: "Branch Management",
-        permission: "manage_branches",
+        permission: asPermission("manage_branches"),
         icon: <Building2 className="h-5 w-5" />
       }
     ]

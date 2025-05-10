@@ -4,12 +4,12 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { UserRole } from '@/types';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions, Permission } from '@/hooks/use-permissions';
 
 interface PrivateRouteProps {
   allowedRoles?: UserRole[];
   requiresAuth?: boolean;
-  requiredPermission?: string;
+  requiredPermission?: Permission;
   children?: ReactNode;
 }
 
@@ -20,7 +20,7 @@ const PrivateRoute = ({
   children
 }: PrivateRouteProps) => {
   const { isAuthenticated, user, userRole, isLoading } = useAuth();
-  const { can } = usePermissions();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
 
   // Show a loading indicator while checking authentication status
@@ -50,7 +50,7 @@ const PrivateRoute = ({
   }
 
   // Check for specific permission if required
-  if (requiredPermission && !can(requiredPermission as any)) {
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

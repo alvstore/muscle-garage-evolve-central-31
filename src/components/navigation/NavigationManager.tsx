@@ -8,6 +8,7 @@ import { crmRoutes } from '@/router/routes/crmRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
 import { classRoutes } from '@/router/routes/classRoutes';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
+import { Permission } from '@/hooks/use-permissions';
 
 // Import other route files as needed
 
@@ -21,7 +22,7 @@ export interface NavigationManagerProps {
 }
 
 export function NavigationManager({ children }: NavigationManagerProps) {
-  const { can } = usePermissions();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = React.useState<string[]>(['Dashboard']);
   
@@ -63,11 +64,13 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   // Group items into sections
   const sections = useMemo(() => {
     // Filter items by permission
-    const filteredItems = allNavItems.filter(item => can(item.permission));
+    const filteredItems = allNavItems.filter(item => 
+      hasPermission(item.permission as Permission)
+    );
     
     // Group by section
     return groupNavItemsBySection(filteredItems, sectionMap);
-  }, [allNavItems, can]);
+  }, [allNavItems, hasPermission]);
   
   // Expand the section of the active path
   React.useEffect(() => {

@@ -1,15 +1,16 @@
+
 import React from "react";
 import { ChevronDown, ChevronRight, Circle } from "lucide-react";
 import { useLocation, NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { NavSection, Permission as NavPermission } from "@/types/navigation";
+import { NavItem, NavSection } from "@/types/navigation";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
 import { usePermissions } from "@/hooks/use-permissions";
+import { Permission } from "@/hooks/use-permissions";
 
 interface NavigationSectionProps {
   section: NavSection;
-
   isExpanded: boolean;
   onToggle: () => void;
   onLinkClick?: () => void;
@@ -23,7 +24,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { can } = usePermissions();
+  const { hasPermission } = usePermissions();
   
   // Check if a route is active (including child routes)
   const isRouteActive = (path: string) => {
@@ -49,7 +50,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
       {section.items.map((item, itemIndex) => {
         const hasChildren = item.children && item.children.length > 0;
         const filteredChildren = hasChildren 
-          ? item.children!.filter(child => can(child.permission as any))
+          ? item.children!.filter(child => hasPermission(child.permission as Permission))
           : [];
         const showChildren = hasChildren && filteredChildren.length > 0;
         const isActive = isRouteActive(item.href);
@@ -57,7 +58,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
         return (
           <RoutePermissionGuard 
             key={itemIndex} 
-            permission={item.permission as any}
+            permission={item.permission as Permission}
           >
             <div className="mb-1">
               <button
@@ -95,7 +96,7 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
                   {filteredChildren.map((child, childIndex) => (
                     <RoutePermissionGuard 
                       key={childIndex} 
-                      permission={child.permission as any}
+                      permission={child.permission as Permission}
                     >
                       <NavLink
                         to={child.href}
@@ -125,25 +126,5 @@ const NavigationSection: React.FC<NavigationSectionProps> = ({
     </div>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export default NavigationSection;

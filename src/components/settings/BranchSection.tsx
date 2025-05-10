@@ -7,10 +7,13 @@ import { useBranch } from '@/hooks/use-branch';
 import { useNavigate } from 'react-router-dom';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { Badge } from "@/components/ui/badge";
+import { Permission } from "@/hooks/use-permissions";
 
 const BranchSection = () => {
   const { branches, currentBranch } = useBranch();
   const navigate = useNavigate();
+  
+  const manageBranchesPermission: Permission = 'manage_branches';
   
   return (
     <Card>
@@ -20,7 +23,7 @@ const BranchSection = () => {
             <CardTitle>Branch Management</CardTitle>
             <CardDescription>Manage your gym locations</CardDescription>
           </div>
-          <PermissionGuard permission="manage_branches">
+          <PermissionGuard permission={manageBranchesPermission}>
             <Button 
               variant="outline" 
               size="sm"
@@ -40,7 +43,7 @@ const BranchSection = () => {
               <p className="font-medium">Current Branch</p>
               <p className="text-sm text-muted-foreground">{currentBranch?.name || 'No branch selected'}</p>
             </div>
-            <PermissionGuard permission="manage_branches">
+            <PermissionGuard permission={manageBranchesPermission}>
               <Button 
                 variant="outline"
                 size="sm"
@@ -80,7 +83,7 @@ const BranchSection = () => {
           </div>
           
           <div className="grid grid-cols-2 gap-2">
-            <PermissionGuard permission="manage_branches">
+            <PermissionGuard permission={manageBranchesPermission}>
               <Button 
                 variant="outline" 
                 className="w-full" 
@@ -91,7 +94,7 @@ const BranchSection = () => {
               </Button>
             </PermissionGuard>
             
-            <PermissionGuard permission="manage_branches">
+            <PermissionGuard permission={manageBranchesPermission}>
               <Button 
                 variant="outline" 
                 className="w-full" 
