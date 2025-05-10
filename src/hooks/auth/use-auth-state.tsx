@@ -1,75 +1,70 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface AuthStateContextType {
   user: User | null;
   session: Session | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthStateContext = createContext<AuthStateContextType>({
   user: null,
   session: null,
-  isLoading: true,
   isAuthenticated: false,
+  isLoading: true,
 });
 
 export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
-    const setupAuth = async () => {
+    // First set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('Auth state changed:', event);
+      setSession(newSession);
+      setUser(newSession?.user || null);
+    });
+
+    // Then check for existing session
+    const initializeAuth = async () => {
       try {
-        setIsLoading(true);
+        const { data, error } = await supabase.auth.getSession();
         
-        // Set up the auth state listener first
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, newSession) => {
-            if (event === 'SIGNED_OUT') {
-              setUser(null);
-              setSession(null);
-            } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-              setUser(newSession?.user || null);
-              setSession(newSession);
-            }
-          }
-        );
-
-        // Then check for existing session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (currentSession) {
-          setUser(currentSession.user);
-          setSession(currentSession);
+        if (error) {
+          throw error;
         }
-
-        return () => {
-          subscription.unsubscribe();
-        };
+        
+        setSession(data.session);
+        setUser(data.session?.user || null);
       } catch (error) {
-        console.error('Auth setup error:', error);
-        toast.error('Authentication setup failed');
+        console.error('Failed to get auth session:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    setupAuth();
+    initializeAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Determine authentication state - a user is authenticated if they have a session
+  const isAuthenticated = !!session && !!user;
 
   return (
     <AuthStateContext.Provider
       value={{
         user,
         session,
+        isAuthenticated,
         isLoading,
-        isAuthenticated: !!user,
       }}
     >
       {children}
@@ -77,4 +72,12 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuthState = () => useContext(AuthStateContext);
+export const useAuthState = () => {
+  const context = useContext(AuthStateContext);
+  
+  if (!context) {
+    throw new Error('useAuthState must be used within an AuthStateProvider');
+  }
+  
+  return context;
+};

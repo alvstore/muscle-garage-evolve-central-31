@@ -6,6 +6,7 @@ import { ThemeProvider } from './providers/ThemeProvider';
 import { Toaster } from "@/components/ui/sonner";
 import { ensureStorageBucketsExist } from './services/storageService';
 import { supabase } from './integrations/supabase/client';
+import { AuthProvider } from './hooks/use-auth';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -18,7 +19,7 @@ const queryClient = new QueryClient({
 
 // Dynamically import React Query Devtools (only in development)
 const ReactQueryDevtoolsProduction = React.lazy(() =>
-  import('@tanstack/react-query-devtools').then(d => ({
+  import('@tanstack/react-query-devtools/production').then(d => ({
     default: d.ReactQueryDevtools
   }))
 );
@@ -50,10 +51,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AppRouter />
-        <Toaster />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppRouter />
+          <Toaster />
+        </ThemeProvider>
+      </AuthProvider>
       {showDevtools && (
         <Suspense fallback={null}>
           <ReactQueryDevtoolsProduction initialIsOpen={false} />

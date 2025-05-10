@@ -61,41 +61,60 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<Error | null>(null);
   
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (user) {
-        try {
-          setIsLoadingProfile(true);
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching profile:', error);
-            toast.error('Failed to load user profile data');
-          } else if (data) {
-            // Only update profile if it's different
-            if (!profile || JSON.stringify(profile) !== JSON.stringify(data)) {
-              setProfile(data);
-            }
-          }
-        } catch (err) {
-          console.error('Profile fetch error:', err);
-        } finally {
-          setIsLoadingProfile(false);
-        }
-      } else {
+      if (!user) {
         setProfile(null);
+        return;
+      }
+      
+      try {
+        setIsLoadingProfile(true);
+        setProfileError(null);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setProfileError(new Error(error.message));
+          toast.error('Failed to load user profile data');
+        } else if (data) {
+          setProfile(data);
+        }
+      } catch (err: any) {
+        console.error('Profile fetch error:', err);
+        setProfileError(err);
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     
-    // Debounce the profile fetch to prevent rapid updates
-    const timer = setTimeout(fetchUserProfile, 500);
+    fetchUserProfile();
     
-    return () => clearTimeout(timer);
+    // Set up real-time subscription for profile changes
+    const profileSubscription = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles',
+        filter: user ? `id=eq.${user.id}` : undefined
+      }, (payload) => {
+        if (payload.new && user && payload.new.id === user.id) {
+          setProfile(payload.new as Profile);
+        }
+      })
+      .subscribe();
+    
+    return () => {
+      profileSubscription.unsubscribe();
+    };
   }, [user]);
 
   const updateUserBranch = async (branchId: string): Promise<boolean> => {
@@ -109,8 +128,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
-      // Update local profile state
-      setProfile(prev => prev ? { ...prev, branch_id: branchId } : null);
+      // Update will happen automatically through subscription
       
       return true;
     } catch (err) {
