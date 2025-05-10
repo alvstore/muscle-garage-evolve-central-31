@@ -1,5 +1,7 @@
 
-import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, Sun, Moon, LogOut } from "lucide-react";
+import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, LogOut, Settings, CreditCard } from "lucide-react";
+import ThemeToggle from "@/components/theme/ThemeToggle";
+import { useTheme } from "@/providers/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -43,6 +45,7 @@ interface DashboardNavbarProps {
 const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { mode, setMode, isDark } = useTheme();
   const [notifications, setNotifications] = useState([
     {
       id: "1",
@@ -121,13 +124,8 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
 
 
 
-
-
-
-
-
   return (
-    <div className="sticky top-0 z-30 flex h-16 items-center border-b bg-white px-4 md:px-6 dark:bg-gray-800 dark:border-gray-700">
+    <div className={`sticky top-0 z-30 flex h-16 items-center border-b px-4 md:px-6 shadow-sm ${isDark ? 'bg-background border-border' : 'bg-white border-gray-200'}`}>
       <div className="flex items-center gap-4 md:hidden">
         <Button
           variant="ghost"
@@ -147,194 +145,154 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
           <Input
             type="search"
             placeholder="Search members, workout plans..."
-            className="bg-gray-50 border-gray-200 pl-8 md:w-80 lg:w-96 focus:bg-white dark:bg-gray-700 dark:border-gray-600"
+            className={`pl-8 md:w-80 lg:w-96 rounded-md ${isDark ? 'bg-muted border-border focus:bg-background' : 'bg-gray-50 border-gray-200 focus:bg-white'}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </form>
       </div>
       
-      <div className="flex items-center gap-3">
-        {/* Theme toggle - a placeholder since you haven't implemented theme switching yet */}
-        <Button variant="ghost" size="icon" className="hidden md:flex">
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-        
-        {/* Cart button */}
-        <Button variant="ghost" size="icon" className="relative" asChild>
-          <Link to="/store">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
-              3
-            </span>
-            <span className="sr-only">View cart</span>
-          </Link>
-        </Button>
+      <div className="flex items-center gap-4">
+        {/* Theme toggle */}
+        <div className="flex items-center">
+          <ThemeToggle />
+        </div>
         
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
+              <Bell className="h-5 w-5 text-gray-500" />
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-semibold text-white">
                   {unreadCount}
                 </span>
               )}
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80" align="end">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <span>Notifications</span>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 text-xs font-normal text-indigo-600"
-                  onClick={markAllAsRead}
-                >
-                  Mark all as read
-                </Button>
-              )}
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+          <DropdownMenuContent className="w-[380px] p-0" align="end">
+            <div className="flex items-center justify-between p-4 border-b">
+              <span className="font-medium">Notifications</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-primary-500/10 text-primary-500 px-2 py-0.5 rounded-full">
+                  {unreadCount} New
+                </span>
+                {unreadCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 text-xs font-normal text-primary-500"
+                    onClick={markAllAsRead}
+                  >
+                    Mark all as read
+                  </Button>
+                )}
+              </div>
+            </div>
             {notifications.length === 0 ? (
-              <div className="py-4 text-center text-sm text-muted-foreground">
-                No new notifications
+              <div className="py-8 text-center text-sm text-gray-500">
+                <div className="flex flex-col items-center gap-2">
+                  <Bell className="h-10 w-10 text-gray-300" />
+                  <p>No notifications</p>
+                </div>
               </div>
             ) : (
-              notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className="cursor-pointer flex flex-col items-start gap-1 p-3"
-                  onClick={() => markAsRead(notification.id)}
-                >
-                  <div className="flex w-full justify-between">
-                    <span className="font-medium">{notification.title}</span>
-                    {!notification.read && (
-                      <span className="flex h-2 w-2 rounded-full bg-indigo-600" />
-                    )}
+              <div className="max-h-[350px] overflow-y-auto">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`flex items-start p-4 border-b cursor-pointer hover:bg-gray-50 ${!notification.read ? 'bg-primary-50/50' : ''}`}
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center mr-3 flex-shrink-0">
+                      <Bell className="h-5 w-5 text-primary-500" />
+                    </div>
+                    <div className="flex flex-col gap-1 flex-1">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-sm">{notification.title}</span>
+                        {!notification.read && (
+                          <span className="flex h-2 w-2 rounded-full bg-primary-500" />
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-600">
+                        {notification.message}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {notification.time}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {notification.message}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {notification.time}
-                  </span>
-                </DropdownMenuItem>
-              ))
+                ))}
+              </div>
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer justify-center">
-              View all notifications
-            </DropdownMenuItem>
+            <div className="p-3 border-t">
+              <Button className="w-full bg-primary-500 hover:bg-primary-600 text-white">
+                View All Notifications
+              </Button>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
         
+        {/* Cart button */}
+        <Button variant="ghost" size="icon" className="relative" asChild>
+          <Link to="/store">
+            <ShoppingCart className="h-5 w-5 text-gray-500" />
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-semibold text-white">
+              3
+            </span>
+            <span className="sr-only">View cart</span>
+          </Link>
+        </Button>
+        
         {/* User menu */}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1 md:flex"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={user.avatar}
-                  alt={user.name}
-                />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar className="h-9 w-9 border-2 border-gray-200">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="bg-primary-500 text-white">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
-              <span className="hidden md:inline-block">{user.name}</span>
-              <ChevronDown className="h-4 w-4 hidden md:block" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={user.avatar}
-                  alt={user.name}
-                />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+              <div className="hidden md:flex flex-col items-start">
+                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-xs text-gray-500">Admin</span>
               </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            </DropdownMenuItem>
-            {/* Settings menu item - only show for non-trainer roles */}
-            {user.role !== 'trainer' && (
-              <DropdownMenuItem>
+              <ChevronDown className="h-4 w-4 text-gray-500 hidden md:block" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <div className="p-3 border-b">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-gray-500">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <div className="p-1">
+              <DropdownMenuItem className="p-2 cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="p-2 cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
-            )}
+              <DropdownMenuItem className="p-2 cursor-pointer">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Billing</span>
+              </DropdownMenuItem>
+            </div>
+            <div className="p-2 border-t">
+              <Button
+                variant="destructive"
+                className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />

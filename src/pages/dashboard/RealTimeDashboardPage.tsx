@@ -244,7 +244,7 @@ const RealTimeDashboardPage = () => {
                   <CardContent>
                     {isLoading ? (
                       <div className="h-96 flex items-center justify-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full"></div>
                       </div>
                     ) : attendanceData.length === 0 ? (
                       <div className="h-96 flex items-center justify-center flex-col">
@@ -266,7 +266,7 @@ const RealTimeDashboardPage = () => {
                   <CardContent>
                     {isLoading ? (
                       <div className="h-64 flex items-center justify-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full"></div>
                       </div>
                     ) : (
                       <Table>
@@ -335,7 +335,7 @@ const RealTimeDashboardPage = () => {
                   <CardContent>
                     {isLoading ? (
                       <div className="h-64 flex items-center justify-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full"></div>
                       </div>
                     ) : (
                       <Table>

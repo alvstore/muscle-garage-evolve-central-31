@@ -40,7 +40,7 @@ const BranchesPage = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Branch Management</h1>
           <PermissionGuard permission="manage_branches">
-            <Button onClick={handleAddBranch} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleAddBranch} className="bg-primary-500 hover:bg-primary-600">
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Branch
             </Button>
@@ -104,7 +104,7 @@ const BranchList = ({ branches, isLoading, onEdit, showEditOptions }: BranchList
   if (isLoading) {
     return (
       <div className="p-8 text-center">
-        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
         <p className="mt-4 text-gray-600">Loading branches...</p>
       </div>
     );

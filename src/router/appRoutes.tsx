@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navigate, RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 // Pages
 import Index from '@/pages/Index';

@@ -85,12 +85,20 @@ export function BreadcrumbLink({
   isCurrentPage,
   ...props
 }: BreadcrumbLinkProps) {
+  // Filter out any data-* attributes from props
+  const safeProps = Object.entries(props).reduce((acc, [key, value]) => {
+    if (!key.startsWith('data-')) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+
   if (isCurrentPage) {
     return (
       <span
         className={cn("text-muted-foreground font-medium", className)}
         aria-current="page"
-        {...props}
+        {...safeProps}
       >
         {children}
       </span>
@@ -101,12 +109,12 @@ export function BreadcrumbLink({
     <Link
       to={href}
       className={cn("text-muted-foreground hover:text-foreground", className)}
-      {...props}
+      {...safeProps}
     >
       {children}
     </Link>
   ) : (
-    <span className={cn("text-muted-foreground", className)} {...props}>
+    <span className={cn("text-muted-foreground", className)} {...safeProps}>
       {children}
     </span>
   );

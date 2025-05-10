@@ -17,7 +17,7 @@ interface StatCardProps {
   iconColor?: string;
 }
 
-const StatCard = ({ title, value, icon: Icon, change, description, iconColor = "text-indigo-600" }: StatCardProps) => {
+const StatCard = ({ title, value, icon: Icon, change, description, iconColor = "text-primary-500" }: StatCardProps) => {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-6">
@@ -59,8 +59,8 @@ const StatCard = ({ title, value, icon: Icon, change, description, iconColor = "
             )}
           </div>
           
-          <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
-            <Icon className={`h-6 w-6 ${iconColor || "text-indigo-600"} dark:text-indigo-400`} />
+          <div className="p-3 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+            <Icon className={`h-6 w-6 ${iconColor || "text-primary-500"} dark:text-primary-400`} />
           </div>
         </div>
       </CardContent>

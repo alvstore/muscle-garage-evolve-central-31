@@ -67,7 +67,7 @@ const StaffListPage: React.FC = () => {
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="bg-primary hover:bg-primary/90 text-white">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add Staff
                 </Button>
@@ -139,7 +139,7 @@ const StaffListPage: React.FC = () => {
                   <p className="text-muted-foreground my-4">
                     {searchTerm ? 'No staff members match your search term.' : 'No staff members found.'}
                   </p>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+                  <Button className="bg-primary hover:bg-primary/90 text-white" onClick={() => setIsDialogOpen(true)}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add Staff
                   </Button>

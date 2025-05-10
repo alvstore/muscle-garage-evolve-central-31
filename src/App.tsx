@@ -7,6 +7,8 @@ import AppRouter from './router/AppRouter';
 import RouteChecker from './components/debug/RouteChecker';
 import { toast, Toaster } from 'sonner';
 import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
+import { ThemeProvider } from './providers/ThemeProvider';
+import ThemeCustomizer from './components/theme/ThemeCustomizer';
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -62,13 +64,15 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BranchProvider>
-          <Toaster position="top-right" />
-          <AppRouter />
-          {process.env.NODE_ENV === 'development' && <RouteChecker />}
-        </BranchProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BranchProvider>
+            <Toaster position="top-right" />
+            <AppRouter />
+            {process.env.NODE_ENV === 'development' && <RouteChecker />}
+          </BranchProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

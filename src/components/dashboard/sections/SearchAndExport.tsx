@@ -95,7 +95,7 @@ export const SearchAndExport = ({ onSearch, onDateRangeChange, onExport }: Searc
       
       <Button 
         variant="default" 
-        className="h-8 bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1"
+        className="h-8 bg-primary-500 hover:bg-primary-600 flex items-center gap-1"
         onClick={onExport}
       >
         <Download className="h-4 w-4" />

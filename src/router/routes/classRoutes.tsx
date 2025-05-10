@@ -1,21 +1,29 @@
 
-import React from 'react';
-import { AppRoute } from '@/types/route';
+import React, { lazy, Suspense } from 'react';
+import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import ClassPage from '@/pages/classes/ClassPage';
-import ClassSchedulePage from '@/pages/classes/ClassSchedulePage';
-import ClassDetailsPage from '@/pages/classes/ClassDetailsPage';
-import ClassAttendancePage from '@/pages/classes/ClassAttendancePage';
-import ClassTypesPage from '@/pages/classes/ClassTypesPage';
-import ClassCreatePage from '@/pages/classes/ClassCreatePage';
 import { Calendar, ListChecks, Info, Users, Tag, Plus } from 'lucide-react';
+import { AppRoute } from '@/types/route';
+
+// Use lazy loading to break circular dependencies
+const ClassPage = lazy(() => import('@/pages/classes/ClassPage'));
+const ClassSchedulePage = lazy(() => import('@/pages/classes/ClassSchedulePage'));
+const ClassDetailsPage = lazy(() => import('@/pages/classes/ClassDetailsPage'));
+const ClassAttendancePage = lazy(() => import('@/pages/classes/ClassAttendancePage'));
+const ClassTypesPage = lazy(() => import('@/pages/classes/ClassTypesPage'));
+const ClassCreatePage = lazy(() => import('@/pages/classes/ClassCreatePage'));
+
+// Loading component
+const LoadingComponent = () => <div className="p-4">Loading...</div>;
 
 export const classRoutes: AppRoute[] = [
   {
     path: '/classes',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <ClassPage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassPage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -29,7 +37,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/schedule',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <ClassSchedulePage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassSchedulePage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -43,7 +53,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <ClassDetailsPage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassDetailsPage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -58,7 +70,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/attendance/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <ClassAttendancePage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassAttendancePage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -73,7 +87,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/types',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <ClassTypesPage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassTypesPage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -87,7 +103,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/create',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <ClassCreatePage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassCreatePage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {
@@ -102,7 +120,9 @@ export const classRoutes: AppRoute[] = [
     path: '/classes/edit/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <ClassCreatePage />
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassCreatePage />
+        </Suspense>
       </PrivateRoute>
     ),
     meta: {

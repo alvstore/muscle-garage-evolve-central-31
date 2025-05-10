@@ -25,7 +25,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) =>
       className={({ isActive }) => `
         flex items-center gap-2 py-2 px-3 text-sm rounded-md my-1 transition-colors
         ${isActive 
-          ? 'bg-indigo-600 text-white' 
+          ? 'bg-primary-500 text-white' 
           : 'text-white/70 hover:text-white hover:bg-white/10'}
       `}
       onClick={handleClick}

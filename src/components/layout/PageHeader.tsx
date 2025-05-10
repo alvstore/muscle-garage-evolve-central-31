@@ -45,30 +45,40 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     return matchingRoute && matchingRoute.meta?.title || 'Dashboard';
   })();
 
+  // Render breadcrumb items
+  const renderBreadcrumbs = () => {
+    return breadcrumbs.map((crumb, index) => {
+      // Use a simple key without any data attributes
+      const itemKey = `breadcrumb-${index}`;
+      
+      // Create breadcrumb item and separator separately
+      const breadcrumbItem = (
+        <BreadcrumbItem key={`item-${itemKey}`}>
+          <BreadcrumbLink href={crumb.href}>
+            {index === 0 ? <Home className="h-4 w-4" /> : crumb.label}
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+      );
+      
+      // Create separator if needed
+      const separator = index < breadcrumbs.length - 1 ? (
+        <BreadcrumbSeparator key={`separator-${itemKey}`}>
+          <ChevronRight className="h-4 w-4" />
+        </BreadcrumbSeparator>
+      ) : null;
+      
+      // Return an array of elements instead of using Fragment
+      return [breadcrumbItem, separator].filter(Boolean);
+    }).flat();
+  };
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
       <div>
         {breadcrumbs.length > 0 && (
           <Breadcrumb className="mb-2">
             <BreadcrumbList>
-              {breadcrumbs.map((crumb, index) => (
-                <React.Fragment key={crumb.href}>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href={crumb.href}>
-                      {index === 0 ? (
-                        <Home className="h-4 w-4" />
-                      ) : (
-                        crumb.label
-                      )}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {index < breadcrumbs.length - 1 && (
-                    <BreadcrumbSeparator>
-                      <ChevronRight className="h-4 w-4" />
-                    </BreadcrumbSeparator>
-                  )}
-                </React.Fragment>
-              ))}
+              {renderBreadcrumbs()}
             </BreadcrumbList>
           </Breadcrumb>
         )}

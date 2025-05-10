@@ -1,0 +1,32 @@
+/* Import Montserrat font from Google Fonts - used by Vuexy */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* Apply Montserrat font to the entire application */
+:root {
+  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Adjust font weights to match Vuexy design */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Adjust button text to match Vuexy */
+button, .btn {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Sidebar navigation styling to match Vuexy */
+.sidebar-nav-item {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
