@@ -11,21 +11,7 @@ const sectionMap = {
   'dashboard': 'Dashboard',
   'classes': 'Classes',
   'crm': 'CRM',
-  'members': 'Members',
-  'staff': 'Staff',
-  'trainers': 'Staff',
-  'fitness': 'Fitness',
-  'communication': 'Communication',
-  'marketing': 'Marketing',
-  'inventory': 'Inventory & Shop',
-  'store': 'Inventory & Shop',
-  'finance': 'Finance',
-  'reports': 'Reports',
-  'analytics': 'Reports',
-  'settings': 'Settings',
-  'website': 'Website',
-  'branches': 'Settings',
-  'admin': 'Settings'
+  // ... other mappings
 };
 
 /**

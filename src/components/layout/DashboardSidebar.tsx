@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -11,7 +10,6 @@ import NavigationSections from "@/components/navigation/NavigationSections";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
-import { NavSection } from "@/types/navigation";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -27,42 +25,6 @@ export default function DashboardSidebar({
   const { logout, user } = useAuth();
   const { sections, expandedSections, toggleSection } = useNavigation();
 
-  // Updated navigation sections to include staff and trainers
-  React.useEffect(() => {
-    if (!sections.some(section => section.name === 'Staff Management')) {
-      const staffSection: NavSection = {
-        name: 'Staff Management',
-        items: [
-          {
-            title: 'Staff List',
-            href: '/staff',
-            icon: 'Users',
-            permission: 'view_staff'
-          },
-          {
-            title: 'Trainers List',
-            href: '/trainers',
-            icon: 'Users',
-            permission: 'view_trainers'
-          }
-        ]
-      };
-      
-      // Find the position to insert the staff section (after "Members" section)
-      const membersSectionIndex = sections.findIndex(section => {
-        // Check for both name properties
-        return section.name === 'Members' || (section.name && section.name.includes('Member'));
-      });
-      
-      if (membersSectionIndex !== -1) {
-        const updatedSections = [...sections];
-        updatedSections.splice(membersSectionIndex + 1, 0, staffSection);
-        // This will just add the staff section to the sidebar without changing the state
-        // The state itself is managed by useNavigation hook
-      }
-    }
-  }, [sections]);
-
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -76,7 +38,7 @@ export default function DashboardSidebar({
   };
 
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-sidebar-foreground
+    <div className="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-br from-indigo-950 to-blue-900 text-white 
                     transform transition-transform duration-300 ease-in-out md:translate-x-0
                     flex flex-col h-full">
       {/* Mobile Close Button */}
@@ -84,7 +46,7 @@ export default function DashboardSidebar({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-sidebar-foreground hover:bg-sidebar-accent/50"
+          className="text-white hover:bg-indigo-800/50"
           onClick={closeSidebar}
         >
           <X className="h-5 w-5" />
@@ -97,6 +59,11 @@ export default function DashboardSidebar({
             <div className="w-36 truncate">
               <Logo variant="default" />
             </div>
+
+
+
+
+
           </div>
           {user?.role === "admin" && (
             <PermissionGuard permission="view_branch_data">
@@ -118,10 +85,10 @@ export default function DashboardSidebar({
       </ScrollArea>
       
       <div className="mt-auto p-4">
-        <Separator className="my-2 bg-sidebar-accent" />
+        <Separator className="my-2 bg-indigo-800" />
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50" 
+          className="w-full justify-start text-indigo-200 hover:text-white hover:bg-indigo-800/50" 
           onClick={handleLogout} 
           disabled={isLoggingOut}
         >

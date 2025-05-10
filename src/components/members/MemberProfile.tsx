@@ -8,9 +8,6 @@ import { Member } from "@/types";
 import { CalendarIcon, Edit2Icon, MapPinIcon, UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import MemberProfileForm from "./MemberProfileForm";
-import MemberAttendanceCard from "./MemberAttendanceCard";
-import MemberBodyMeasurementCard from "./MemberBodyMeasurementCard";
-import MembershipAssignmentCard from "./MembershipAssignmentCard";
 
 interface MemberProfileProps {
   member: Member;
@@ -74,8 +71,6 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
             <TabsTrigger value="address">Address</TabsTrigger>
             <TabsTrigger value="membership">Membership</TabsTrigger>
             <TabsTrigger value="fitness">Fitness Details</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="measurements">Measurements</TabsTrigger>
           </TabsList>
           
           <TabsContent value="personal" className="space-y-4">
@@ -112,7 +107,7 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
             </div>
           </TabsContent>
           
-          {/* Address Tab */}
+          {/* New Address Tab */}
           <TabsContent value="address" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -173,9 +168,6 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                 </p>
               </div>
             </div>
-
-            {/* Membership Assignment Card */}
-            <MembershipAssignmentCard memberId={member.id} />
           </TabsContent>
           
           <TabsContent value="fitness" className="space-y-4">
@@ -193,16 +185,6 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                 </p>
               </div>
             </div>
-          </TabsContent>
-
-          {/* New Attendance Tab */}
-          <TabsContent value="attendance" className="space-y-4">
-            <MemberAttendanceCard memberId={member.id} />
-          </TabsContent>
-
-          {/* New Measurements Tab */}
-          <TabsContent value="measurements" className="space-y-4">
-            <MemberBodyMeasurementCard memberId={member.id} />
           </TabsContent>
         </Tabs>
       </CardContent>

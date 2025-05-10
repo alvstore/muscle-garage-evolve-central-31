@@ -1,16 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type ThemeMode = 'light' | 'dark' | 'semi-dark';
-type PrimaryColor = 'blue' | 'purple' | 'orange' | 'red' | 'teal';
+type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   mode: ThemeMode;
-  primaryColor: PrimaryColor;
   setMode: (mode: ThemeMode) => void;
-  setPrimaryColor: (color: PrimaryColor) => void;
   isDark: boolean;
-  isSemiDark: boolean;
   toggleTheme: () => void;
   systemTheme: 'light' | 'dark';
 }
@@ -20,22 +16,15 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: ThemeMode;
-  defaultPrimaryColor?: PrimaryColor;
 }
 
 export const ThemeProvider = ({ 
   children, 
-  defaultTheme = 'light',
-  defaultPrimaryColor = 'blue'
+  defaultTheme = 'system' 
 }: ThemeProviderProps) => {
   const [mode, setMode] = useState<ThemeMode>(() => {
     const savedMode = localStorage.getItem('theme-mode');
     return (savedMode as ThemeMode) || defaultTheme;
-  });
-  
-  const [primaryColor, setPrimaryColor] = useState<PrimaryColor>(() => {
-    const savedColor = localStorage.getItem('primary-color');
-    return (savedColor as PrimaryColor) || defaultPrimaryColor;
   });
   
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() => {
@@ -45,16 +34,11 @@ export const ThemeProvider = ({
   });
   
   // Computed dark mode value
-  const isDark = mode === 'dark';
-  const isSemiDark = mode === 'semi-dark';
+  const isDark = mode === 'dark' || (mode === 'system' && systemTheme === 'dark');
   
   // Toggle between light and dark
   const toggleTheme = () => {
-    setMode(prev => {
-      if (prev === 'light') return 'dark';
-      if (prev === 'dark') return 'semi-dark';
-      return 'light';
-    });
+    setMode(prev => prev === 'light' ? 'dark' : 'light');
   };
   
   // Listen for system theme changes
@@ -74,37 +58,17 @@ export const ThemeProvider = ({
   useEffect(() => {
     localStorage.setItem('theme-mode', mode);
     
-    document.documentElement.classList.remove('dark', 'semi-dark');
-    
     if (isDark) {
       document.documentElement.classList.add('dark');
-    } else if (isSemiDark) {
-      document.documentElement.classList.add('semi-dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, [mode, isDark, isSemiDark]);
-  
-  // Update primary color
-  useEffect(() => {
-    localStorage.setItem('primary-color', primaryColor);
-    
-    document.documentElement.classList.remove(
-      'theme-blue', 
-      'theme-purple', 
-      'theme-orange', 
-      'theme-red', 
-      'theme-teal'
-    );
-    
-    document.documentElement.classList.add(`theme-${primaryColor}`);
-  }, [primaryColor]);
+  }, [mode, isDark]);
   
   const value = {
     mode,
-    primaryColor,
     setMode,
-    setPrimaryColor,
     isDark,
-    isSemiDark,
     toggleTheme,
     systemTheme
   };

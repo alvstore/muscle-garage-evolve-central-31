@@ -1,220 +1,154 @@
 
-import { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreHorizontal, Search, Plus, Mail, Phone } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import PageHeader from "@/components/layout/PageHeader";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useBranch } from "@/hooks/use-branch";
+import React, { useState, useEffect } from 'react';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { UserPlus, Search, Loader2 } from 'lucide-react';
+import { useStaff } from '@/hooks/use-staff';
+import CreateStaffForm from '@/components/staff/CreateStaffForm';
+import { Badge } from '@/components/ui/badge';
 
 interface StaffMember {
   id: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
+  name: string;
+  email: string;
   role: string;
-  avatar_url?: string;
-  is_active: boolean;
   department?: string;
   branch_id?: string;
+  avatar_url?: string;
 }
 
-const StaffListPage = () => {
-  const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterRole, setFilterRole] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { currentBranch } = useBranch();
-
+const StaffListPage: React.FC = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { staff, isLoading, fetchStaff, createStaffMember } = useStaff();
+  
   useEffect(() => {
-    if (currentBranch?.id) {
-      fetchStaffMembers();
-    }
-  }, [currentBranch?.id]);
-
-  const fetchStaffMembers = async () => {
-    try {
-      setIsLoading(true);
-      
-      let query = supabase
-        .from("profiles")
-        .select("*")
-        .in("role", ["staff", "admin"])
-        .eq("is_active", true);
-      
-      if (currentBranch?.id) {
-        query = query.eq("branch_id", currentBranch.id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setStaffList(data || []);
-    } catch (error) {
-      console.error("Error fetching staff members:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load staff members",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    fetchStaff();
+  }, []);
+  
+  const filteredStaff = staff.filter((staffMember) => 
+    staffMember.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    staffMember.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    return parts.length > 1 
+      ? `${parts[0][0]}${parts[1][0]}` 
+      : parts[0].substring(0, 2);
   };
-
-  const getInitials = (name: string = "") => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Badge className="bg-red-500 hover:bg-red-600">Admin</Badge>;
-      case "staff":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Staff</Badge>;
-      default:
-        return <Badge>{role}</Badge>;
-    }
-  };
-
-  const filteredStaff = staffList.filter(staff => {
-    const matchesQuery = searchQuery 
-      ? staff.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        staff.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-      
-    const matchesRole = filterRole ? staff.role === filterRole : true;
-    
-    return matchesQuery && matchesRole;
-  });
-
+  
   return (
     <Container>
-      <PageHeader 
-        title="Staff Management" 
-        description="Manage your staff members"
-        actions={
-          <Button className="flex items-center">
-            <Plus className="mr-2 h-4 w-4" /> Add Staff
-          </Button>
-        }
-      />
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Staff Directory</CardTitle>
-          <CardDescription>View and manage your staff members</CardDescription>
+      <div className="py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Staff Management</h1>
+            <p className="text-muted-foreground">
+              Manage your gym's staff and their roles
+            </p>
+          </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search staff..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select
-              value={filterRole || ""}
-              onValueChange={(value) => setFilterRole(value || null)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Staff
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <CreateStaffForm 
+                  onSuccess={() => {
+                    fetchStaff();
+                    setIsDialogOpen(false);
+                  }}
+                  onCancel={() => setIsDialogOpen(false)} 
+                  staff={[]} 
+                  refetch={fetchStaff} 
+                />
+              </DialogContent>
+            </Dialog>
           </div>
-        </CardHeader>
+        </div>
         
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading staff members...</div>
-          ) : filteredStaff.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No staff members found
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {filteredStaff.map((staff) => (
-                <div
-                  key={staff.id}
-                  className="flex flex-col sm:flex-row justify-between gap-4 p-4 border rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
+        {isLoading ? (
+          <div className="flex justify-center my-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredStaff.map((staffMember) => (
+              <Card key={staffMember.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={staff.avatar_url || ""} alt={staff.full_name} />
-                      <AvatarFallback>{getInitials(staff.full_name)}</AvatarFallback>
+                      {staffMember.avatar_url ? (
+                        <AvatarImage src={staffMember.avatar_url} alt={staffMember.name} />
+                      ) : (
+                        <AvatarFallback>{getInitials(staffMember.name)}</AvatarFallback>
+                      )}
                     </Avatar>
                     <div>
-                      <div className="font-medium">{staff.full_name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> {staff.email}
-                      </div>
-                      {staff.phone && (
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" /> {staff.phone}
-                        </div>
-                      )}
+                      <CardTitle className="text-lg">{staffMember.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{staffMember.email}</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 sm:ml-auto">
-                    <div>{getRoleBadge(staff.role)}</div>
-                    {staff.department && (
-                      <div className="hidden sm:block">
-                        <Badge variant="outline">{staff.department}</Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Role</span>
+                      <Badge variant="outline" className="capitalize">
+                        {staffMember.role}
+                      </Badge>
+                    </div>
+                    {staffMember.department && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Department</span>
+                        <span className="text-sm">{staffMember.department}</span>
                       </div>
                     )}
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          Deactivate
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button variant="outline" size="sm">View Details</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {filteredStaff.length === 0 && (
+              <Card className="col-span-1 md:col-span-3">
+                <CardContent className="flex flex-col items-center justify-center p-6">
+                  <p className="text-muted-foreground my-4">
+                    {searchTerm ? 'No staff members match your search term.' : 'No staff members found.'}
+                  </p>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Staff
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </Container>
   );
 };

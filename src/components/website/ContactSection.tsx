@@ -2,51 +2,29 @@ import { useState, useEffect, useRef } from "react";
 import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { getCurrentUserBranch, supabase } from '@/services/supabaseClient';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getCurrentUserBranch } from '@/services/supabaseClient';
 
 const ContactSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
+  const [branchId, setBranchId] = useState<string | null>(null);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     inquiryType: "membership",
-    message: "",
-    branchId: ""
+    message: ""
   });
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('branches')
-          .select('id, name')
-          .order('name');
-
-        if (error) throw error;
-
-        if (data) {
-          setBranches(data);
-          // If there's only one branch, select it by default
-          if (data.length === 1) {
-            setFormData(prev => ({ ...prev, branchId: data[0].id }));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching branches:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load branches. Please try again later.",
-          variant: "destructive"
-        });
-      }
+    const fetchBranchId = async () => {
+      // Try to get branch ID, fallback to a default branch ID
+      const userBranchId = await getCurrentUserBranch();
+      setBranchId(userBranchId || "default-branch-id");
     };
 
-    fetchBranches();
+    fetchBranchId();
   }, []);
 
   useEffect(() => {
@@ -82,17 +60,6 @@ const ContactSection = () => {
   const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate branch selection
-    if (!formData.branchId) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a branch for your inquiry.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setSubmitting(true);
     try {
       const leadInput = {
@@ -103,7 +70,7 @@ const ContactSection = () => {
         status: 'new' as LeadStatus,
         funnel_stage: 'cold' as FunnelStage, // Using snake_case to match the backend
         notes: `${formData.inquiryType}: ${formData.message}`,
-        branch_id: formData.branchId
+        branch_id: branchId || "default-branch-id" // Use fetched branch ID or fall back to default
       };
       
       const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));
@@ -117,8 +84,7 @@ const ContactSection = () => {
           email: "",
           phone: "",
           inquiryType: "membership",
-          message: "",
-          branchId: ""
+          message: ""
         });
       } else {
         toast({
@@ -183,39 +149,12 @@ const ContactSection = () => {
                 <label htmlFor="inquiryType" className="block text-sm font-medium text-gray-300 mb-1">
                   Inquiry Type
                 </label>
-                <select
-                  id="inquiryType"
-                  name="inquiryType"
-                  value={formData.inquiryType}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-md bg-transparent border border-gray-700 text-white focus:outline-none focus:border-gym-yellow"
-                  required
-                >
-                  <option value="membership">Membership</option>
-                  <option value="personalTraining">Personal Training</option>
-                  <option value="groupClasses">Group Classes</option>
+                <select id="inquiryType" name="inquiryType" value={formData.inquiryType} onChange={handleChange} className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" required>
+                  <option value="membership">Membership Inquiry</option>
+                  <option value="training">Personal Training</option>
+                  <option value="classes">Group Classes</option>
+                  <option value="facilities">Facility Information</option>
                   <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="branchId" className="block text-sm font-medium text-gray-300 mb-1">
-                  Select Branch *
-                </label>
-                <select
-                  id="branchId"
-                  name="branchId"
-                  value={formData.branchId}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-md bg-transparent border border-gray-700 text-white focus:outline-none focus:border-gym-yellow"
-                  required
-                >
-                  <option value="">Select a branch</option>
-                  {branches.map(branch => (
-                    <option key={branch.id} value={branch.id} className="bg-gym-black">
-                      {branch.name}
-                    </option>
-                  ))}
                 </select>
               </div>
 

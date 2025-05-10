@@ -3,8 +3,7 @@ import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import StaffListPage from '@/pages/staff/StaffListPage';
-import TrainersListPage from '@/pages/trainers/TrainersListPage';
-import TrainerProfilePage from '@/pages/trainers/TrainerProfilePage';
+import StaffDietPlansPage from '@/pages/staff/StaffDietPlansPage';
 
 export const staffRoutes: RouteObject[] = [
   {
@@ -16,18 +15,18 @@ export const staffRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/trainers',
+    path: '/staff/list',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <TrainersListPage />
+        <StaffListPage />
       </PrivateRoute>
     )
   },
   {
-    path: '/trainers/:id',
+    path: '/fitness/diet-plans',
     element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-        <TrainerProfilePage />
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <StaffDietPlansPage />
       </PrivateRoute>
     )
   }

@@ -31,10 +31,7 @@ export function groupNavItemsBySection(
   
   items.forEach(item => {
     const path = item.href.split('/')[1];
-    const sectionName = sectionMap[path];
-    
-    // Skip items that don't map to a known section
-    if (!sectionName) return;
+    const sectionName = sectionMap[path] || 'Other';
     
     if (!sections[sectionName]) {
       sections[sectionName] = [];

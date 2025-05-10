@@ -10,7 +10,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import GymEquipment3D from "@/components/website/GymEquipment3D";
-import { supabase } from "@/services/supabaseClient";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -19,8 +18,7 @@ const loginSchema = z.object({
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -83,47 +81,19 @@ const LoginForm = () => {
     }
   
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
-      if (data?.user) {
-        // Get user role and branch from profiles table
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          // Still allow login even if profile fetch fails
-        }
-
-        const role = profile?.role || 'member';
-        const redirectPath = role === 'admin' ? '/admin/dashboard' :
-                           role === 'trainer' ? '/trainers/dashboard' :
-                           '/dashboard/overview';
-
-        // Show success message before navigation
+      const result = await login(email, password);
+      if (result.success) {
+        // Login successful - navigation will be handled by the Login page component
+        // based on user role
         toast.success("Login successful");
-        
-        // Small delay to ensure toast is shown
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Navigate to dashboard
-        navigate(redirectPath, { replace: true });
+      } else {
+        setError(result.error || "Login failed. Please check your credentials.");
+        toast.error(result.error || "Login failed");
       }
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to login. Please try again.");
-      toast.error(error.message || "Invalid email or password");
-    } finally {
-      setIsLoading(false);
+      toast.error("Login error: " + (error.message || "Unknown error"));
     }
   };
 
@@ -276,17 +246,17 @@ const LoginForm = () => {
               <div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <div className="flex items-center justify-center">
+                    <>
                       <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span>Signing in...</span>
-                    </div>
+                      Signing in...
+                    </>
                   ) : (
                     "Sign in"
                   )}
