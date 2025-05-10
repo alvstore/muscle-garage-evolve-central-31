@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './router/AppRouter';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -52,12 +52,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AppRouter />
+        <Toaster />
       </ThemeProvider>
-      <Toaster />
       {showDevtools && (
-        <React.Suspense fallback={null}>
+        <Suspense fallback={null}>
           <ReactQueryDevtoolsProduction initialIsOpen={false} />
-        </React.Suspense>
+        </Suspense>
       )}
     </QueryClientProvider>
   );
