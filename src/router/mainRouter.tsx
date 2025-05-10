@@ -1,74 +1,53 @@
 
 import React from "react";
-import { RouteObject, createBrowserRouter } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import WebsiteLayout from "@/components/layout/WebsiteLayout";
-import HomePage from "@/pages/HomePage";
-import LoginPage from "@/pages/auth/LoginPage";
-import RegisterPage from "@/pages/auth/RegisterPage";
-import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
-import { dashboardRoutes } from "./routes/dashboardRoutes";
-import { memberRoutes } from "./routes/memberRoutes";
-import { fitnessRoutes } from "./routes/fitnessRoutes";
-import { classesRoutes } from "./routes/classesRoutes";
-import { attendanceRoutes } from "./routes/attendanceRoutes";
-import { adminMembershipRoutes } from "./routes/admin/membershipRoutes";
-import { settingsRoutes } from "./routes/settingsRoutes";
-import { financeRoutes } from "./routes/financeRoutes";
-import { staffRoutes } from "./routes/staffRoutes";
 import PrivateRoute from "@/components/auth/PrivateRoute";
-import NotFoundPage from "@/pages/NotFoundPage";
-import { inventoryRoutes } from "./routes/inventoryRoutes";
-import { storeRoutes } from "./routes/storeRoutes";
-import { insightsRoutes } from "./routes/insightsRoutes";
+import { settingsRoutes } from "./routes/admin/settingsRoutes";
 
-// Website pages
-import AboutPage from "@/pages/website/AboutPage";
-import ContactPage from "@/pages/website/ContactPage";
-import ClassesPage from "@/pages/website/ClassesPage";
+// Temporary placeholder until pages are created
+const PlaceholderPage = () => <div>Page Coming Soon</div>;
 
-// Concatenate all routes
 const routes: RouteObject[] = [
-  // Website routes
+  // Website routes placeholder
   {
     path: "/",
-    element: <WebsiteLayout />,
+    element: <PlaceholderPage />,
     children: [
       {
         path: "/",
-        element: <HomePage />,
+        element: <PlaceholderPage />,
       },
       {
         path: "/about",
-        element: <AboutPage />,
+        element: <PlaceholderPage />,
       },
       {
         path: "/contact",
-        element: <ContactPage />,
+        element: <PlaceholderPage />,
       },
       {
         path: "/classes",
-        element: <ClassesPage />,
+        element: <PlaceholderPage />,
       },
     ],
   },
   // Auth routes
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <PlaceholderPage />,
   },
   {
     path: "/register",
-    element: <RegisterPage />,
+    element: <PlaceholderPage />,
   },
   {
     path: "/forgot-password",
-    element: <ForgotPasswordPage />,
+    element: <PlaceholderPage />,
   },
   {
     path: "/reset-password",
-    element: <ResetPasswordPage />,
+    element: <PlaceholderPage />,
   },
   // Dashboard routes with auth protection
   {
@@ -79,25 +58,15 @@ const routes: RouteObject[] = [
       </PrivateRoute>
     ),
     children: [
-      ...dashboardRoutes,
-      ...memberRoutes,
-      ...fitnessRoutes,
-      ...classesRoutes,
-      ...attendanceRoutes,
-      ...adminMembershipRoutes,
+      // Only include settings routes since they exist
       ...settingsRoutes,
-      ...financeRoutes,
-      ...inventoryRoutes,
-      ...storeRoutes,
-      ...insightsRoutes,
-      ...staffRoutes,
     ],
   },
   // 404 route
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: <PlaceholderPage />,
   },
 ];
 
-export const router = createBrowserRouter(routes);
+export { routes };

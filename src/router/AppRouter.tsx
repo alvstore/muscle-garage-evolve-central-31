@@ -1,45 +1,48 @@
 
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { appRoutes } from './appRoutes';
-import { supabase } from '@/integrations/supabase/client';
-import { PermissionsProvider } from '@/hooks/permissions/use-permissions-manager';
+import { Routes, Route } from 'react-router-dom'; 
+import { settingsRoutes } from './routes/admin/settingsRoutes';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import WebsiteLayout from '@/components/layout/WebsiteLayout';
+import SettingsPage from '@/pages/settings/SettingsPage';
 
-// Create the router with all defined routes
-const router = createBrowserRouter(appRoutes);
+// Placeholder component for pages we haven't created yet
+const PlaceholderPage = ({ text = "Coming Soon" }: { text?: string }) => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <h1 className="text-2xl font-bold mb-4">{text}</h1>
+      <p className="text-gray-500">This page is under construction</p>
+    </div>
+  </div>
+);
 
-export default function AppRouter() {
-  // When the app loads, set up auth listener to fetch the session
-  React.useEffect(() => {
-    // Always check the session on initial load
-    const checkSession = async () => {
-      try {
-        await supabase.auth.getSession();
-        
-        // Set up auth state change listener
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (event, session) => {
-          // Handle auth state changes if needed
-          console.log('Auth state changed:', event);
-        });
-
-        // Cleanup subscription on unmount
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error checking session:", error);
-      }
-    };
-    
-    checkSession();
-  }, []);
-  
-  // Provide access to the router throughout the application, wrapped with PermissionsProvider
+const AppRouter = () => {
   return (
-    <PermissionsProvider>
-      <RouterProvider router={router} />
-    </PermissionsProvider>
+    <Routes>
+      {/* Website routes */}
+      <Route path="/" element={<WebsiteLayout />}>
+        <Route index element={<PlaceholderPage text="Home Page" />} />
+        <Route path="about" element={<PlaceholderPage text="About Us" />} />
+        <Route path="contact" element={<PlaceholderPage text="Contact Us" />} />
+      </Route>
+      
+      {/* Auth routes */}
+      <Route path="login" element={<PlaceholderPage text="Login" />} />
+      <Route path="register" element={<PlaceholderPage text="Register" />} />
+      <Route path="forgot-password" element={<PlaceholderPage text="Forgot Password" />} />
+      
+      {/* Dashboard routes */}
+      <Route path="dashboard" element={<DashboardLayout />}>
+        <Route index element={<PlaceholderPage text="Dashboard" />} />
+        
+        {/* Only using settings routes we know exist */}
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+      
+      {/* 404 Route */}
+      <Route path="*" element={<PlaceholderPage text="404 - Page Not Found" />} />
+    </Routes>
   );
-}
+};
+
+export default AppRouter;

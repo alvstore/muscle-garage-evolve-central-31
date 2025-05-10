@@ -34,16 +34,16 @@ export default function DashboardSidebar({
         name: 'Staff Management',
         items: [
           {
-            title: 'Staff List',
+            label: 'Staff List',
             href: '/staff',
             icon: 'Users',
             permission: 'view_staff'
           },
           {
-            title: 'Trainers List',
+            label: 'Trainers List',
             href: '/trainers',
             icon: 'Users',
-            permission: 'view_trainers'
+            permission: 'view_all_trainers'
           }
         ]
       };

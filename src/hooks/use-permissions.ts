@@ -1,130 +1,108 @@
 
-import { useAuth } from './use-auth';
-import { usePermissionsManager } from './permissions/use-permissions-manager';
-import { UserRole } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
 
 export type Permission = 
+  // Role-based permissions
   | 'access_dashboards'
-  | 'view_all_branches' 
-  | 'manage_branches'
-  | 'manage_branch'
-  | 'view_branch_data'
-  | 'view_all_attendance'
-  | 'view_attendance'
-  | 'manage_members'
-  | 'member_view_plans'
-  | 'view_classes'
-  | 'manage_classes'
-  | 'view_staff'
-  | 'view_all_trainers'
-  | 'trainer_view_classes'
-  | 'trainer_view_members'
-  | 'trainer_edit_fitness'
-  | 'trainer_view_attendance'
-  | 'view_dashboard'
-  | 'access_crm' 
-  | 'manage_marketing'
-  | 'access_marketing'
-  | 'access_inventory'
-  | 'manage_inventory'
-  | 'access_store'
-  | 'access_communication'
-  | 'access_reports'
-  | 'access_finance'
-  | 'manage_invoices'
-  | 'manage_transactions'
-  | 'manage_income'
-  | 'manage_expenses'
-  | 'access_settings'
   | 'manage_settings'
-  | 'manage_integrations'
-  | 'manage_templates'
-  | 'manage_devices'
-  | 'manage_website'
-  | 'manage_fitness_data'
-  | 'assign_workout_plan'
-  | 'assign_diet_plan'
-  | 'log_attendance'
-  | 'assign_plan'
-  | 'manage_roles'
-  | 'manage_staff'
-  | 'feature_trainer_dashboard'
   | 'view_analytics'
-  | 'view_reports'
-  | 'view_finance_dashboard'
-  | 'manage_trainers'
-  | 'manage_memberships'
-  | 'feature_member_dashboard'
-  | 'member_view_profile'
-  | 'member_book_classes'
-  | 'member_view_attendance'
-  | 'member_view_invoices'
-  | 'feature_email_campaigns'
-  | 'full_system_access';
+  
+  // Member management
+  | 'create_members'
+  | 'view_members'
+  | 'edit_members'
+  | 'delete_members'
+  
+  // Staff management
+  | 'create_staff'
+  | 'view_staff'
+  | 'edit_staff'
+  | 'delete_staff'
+  
+  // Trainer management
+  | 'create_trainers'
+  | 'view_all_trainers'
+  | 'edit_trainers'
+  | 'delete_trainers'
+  
+  // Class management
+  | 'create_classes'
+  | 'view_classes'
+  | 'edit_classes'
+  | 'delete_classes'
+  
+  // Branch management
+  | 'view_branch_data'
+  | 'manage_branch_settings'
+  | 'create_branches'
+  | 'edit_branches'
+  | 'delete_branches';
 
 export const usePermissions = () => {
   const { user } = useAuth();
-  const { can, isSystemAdmin, isBranchAdmin, userRole } = usePermissionsManager();
-
+  
+  const getPermissions = (): Permission[] => {
+    switch (user?.role) {
+      case 'admin':
+        return [
+          'access_dashboards',
+          'manage_settings',
+          'view_analytics',
+          'create_members',
+          'view_members',
+          'edit_members',
+          'delete_members',
+          'create_staff',
+          'view_staff',
+          'edit_staff',
+          'delete_staff',
+          'create_trainers',
+          'view_all_trainers',
+          'edit_trainers',
+          'delete_trainers',
+          'create_classes',
+          'view_classes',
+          'edit_classes',
+          'delete_classes',
+          'view_branch_data',
+          'manage_branch_settings',
+          'create_branches',
+          'edit_branches',
+          'delete_branches',
+        ];
+      case 'staff':
+        return [
+          'access_dashboards',
+          'view_members',
+          'edit_members',
+          'create_members',
+          'view_all_trainers',
+          'view_classes',
+          'view_branch_data',
+        ];
+      case 'trainer':
+        return [
+          'access_dashboards',
+          'view_members',
+          'view_classes',
+        ];
+      case 'member':
+        return [
+          'access_dashboards',
+          'view_classes',
+        ];
+      default:
+        return [];
+    }
+  };
+  
   const hasPermission = (permission: Permission): boolean => {
-    return can(permission);
+    const userPermissions = getPermissions();
+    return userPermissions.includes(permission);
   };
-
-  const isAdmin = (): boolean => {
-    return user?.role === 'admin';
-  };
-
-  const isStaff = (): boolean => {
-    return user?.role === 'staff';
-  };
-
-  const isTrainer = (): boolean => {
-    return user?.role === 'trainer';
-  };
-
-  const isMember = (): boolean => {
-    return user?.role === 'member';
-  };
-
-  const canManageBranches = (): boolean => {
-    return hasPermission('manage_branches');
-  };
-
-  const canViewAllBranches = (): boolean => {
-    return hasPermission('view_all_branches');
-  };
-
-  const canManageMembers = (): boolean => {
-    return hasPermission('manage_members');
-  };
-
-  const canAccessSettings = (): boolean => {
-    return hasPermission('access_settings');
-  };
-
-  const canAccessFinanceSection = (): boolean => {
-    return hasPermission('access_finance');
-  };
-
+  
   return {
-    user,
-    can: hasPermission,
-    isAdmin,
-    isStaff,
-    isTrainer,
-    isMember,
-    isSuperAdmin: isSystemAdmin,
-    isBranchManager: isBranchAdmin,
-    canManageBranches,
-    canViewAllBranches,
-    canManageMembers,
-    canAccessSettings,
-    canAccessFinanceSection,
-    userRole,  // Expose userRole directly
+    hasPermission,
+    getPermissions,
   };
 };
-
-// Re-export the provider from the permissions manager
-export { PermissionsProvider } from './permissions/use-permissions-manager';
-
-export default usePermissions;
