@@ -8,6 +8,7 @@ import { toast, Toaster } from 'sonner';
 import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
 import { ThemeProvider } from './providers/ThemeProvider';
 import ThemeCustomizer from './components/theme/ThemeCustomizer';
+import { ensureStorageBucketsExist } from './services/storageService';
 
 // Create a query client
 const queryClient = new QueryClient({
