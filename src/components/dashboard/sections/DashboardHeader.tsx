@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
+import { Menu, Bell, X, Moon, Sun, Monitor, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -8,7 +8,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +24,10 @@ import { Badge } from '@/components/ui/badge';
 interface DashboardHeaderProps {
   toggleSidebar: () => void;
   toggleTheme: () => void;
-  isDarkMode: boolean;
+  currentThemeMode: 'light' | 'dark' | 'semi-dark';
+  currentPrimaryColor: string;
+  changeThemeMode: (mode: 'light' | 'dark' | 'semi-dark') => void;
+  changePrimaryColor: (color: 'blue' | 'purple' | 'orange' | 'red' | 'teal') => void;
   sidebarOpen?: boolean;
 }
 
@@ -42,10 +50,21 @@ const fakeNotifications: Notification[] = [
   }
 ];
 
+const colorOptions = [
+  { name: 'Blue', value: 'blue', bg: 'bg-blue-500' },
+  { name: 'Purple', value: 'purple', bg: 'bg-purple-500' },
+  { name: 'Orange', value: 'orange', bg: 'bg-orange-500' },
+  { name: 'Red', value: 'red', bg: 'bg-red-500' },
+  { name: 'Teal', value: 'teal', bg: 'bg-teal-500' },
+];
+
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   toggleSidebar,
   toggleTheme,
-  isDarkMode,
+  currentThemeMode,
+  currentPrimaryColor,
+  changeThemeMode,
+  changePrimaryColor,
   sidebarOpen
 }) => {
   const { user, logout } = useAuth();
@@ -66,9 +85,21 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     // In a real app, this would call an API to mark notifications as read
     setUnreadCount(0);
   };
+
+  const getThemeIcon = () => {
+    switch (currentThemeMode) {
+      case 'light': return <Sun className="h-5 w-5" />;
+      case 'dark': return <Moon className="h-5 w-5" />;
+      case 'semi-dark': return <div className="h-5 w-5 rounded-full overflow-hidden flex">
+        <div className="w-1/2 bg-gray-800"></div>
+        <div className="w-1/2 bg-white"></div>
+      </div>;
+      default: return <Sun className="h-5 w-5" />;
+    }
+  };
   
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-16 items-center bg-background border-b border-border px-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Button 
           variant="ghost" 
@@ -82,11 +113,62 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
       
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          <span className="sr-only">Toggle Theme</span>
-        </Button>
+        {/* Theme Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              {getThemeIcon()}
+              <span className="sr-only">Theme Settings</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Theme Settings</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem onClick={() => changeThemeMode('light')} className="flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              <span>Light</span>
+              {currentThemeMode === 'light' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem onClick={() => changeThemeMode('dark')} className="flex items-center gap-2">
+              <Moon className="h-4 w-4" />
+              <span>Dark</span>
+              {currentThemeMode === 'dark' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem onClick={() => changeThemeMode('semi-dark')} className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full overflow-hidden flex">
+                <div className="w-1/2 bg-gray-800"></div>
+                <div className="w-1/2 bg-white"></div>
+              </div>
+              <span>Semi Dark</span>
+              {currentThemeMode === 'semi-dark' && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Primary Color</DropdownMenuLabel>
+            
+            <div className="grid grid-cols-5 gap-2 p-2">
+              {colorOptions.map((color) => (
+                <Button 
+                  key={color.value}
+                  variant="ghost"
+                  size="icon"
+                  title={color.name}
+                  onClick={() => changePrimaryColor(color.value as any)}
+                  className={`w-8 h-8 rounded-full p-0 ${color.bg} ${currentPrimaryColor === color.value ? 'ring-2 ring-offset-2 ring-black dark:ring-white' : ''}`}
+                >
+                  {currentPrimaryColor === color.value && (
+                    <span className="text-white text-xs">✓</span>
+                  )}
+                </Button>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
+        {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -137,6 +219,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
         
+        {/* User Menu Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">

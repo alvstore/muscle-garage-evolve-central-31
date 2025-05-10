@@ -3,6 +3,7 @@ import { useState, useEffect, ReactNode } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/providers/ThemeProvider";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
@@ -15,22 +16,10 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, isLoading } = useAuth();
+  const { mode, primaryColor, setMode, setPrimaryColor } = useTheme();
   
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  
-  useEffect(() => {
-    // Apply or remove dark mode class based on state
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
   
   useEffect(() => {
     // Update sidebar state when screen size changes
@@ -42,9 +31,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const toggleTheme = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
+    setMode(prev => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'semi-dark';
+      return 'light';
+    });
+  };
+
+  const changeThemeMode = (newMode: 'light' | 'dark' | 'semi-dark') => {
+    setMode(newMode);
+  };
+  
+  const changePrimaryColor = (color: 'blue' | 'purple' | 'orange' | 'red' | 'teal') => {
+    setPrimaryColor(color);
   };
   
   if (isLoading) {
@@ -69,7 +68,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
   
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <div className={`fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
            onClick={() => setSidebarOpen(false)}></div>
            
@@ -83,7 +82,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <DashboardHeader 
           toggleSidebar={toggleSidebar}
           toggleTheme={toggleTheme}
-          isDarkMode={darkMode}
+          currentThemeMode={mode}
+          currentPrimaryColor={primaryColor}
+          changeThemeMode={changeThemeMode}
+          changePrimaryColor={changePrimaryColor}
           sidebarOpen={sidebarOpen}
         />
         

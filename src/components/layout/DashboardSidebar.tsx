@@ -11,6 +11,7 @@ import NavigationSections from "@/components/navigation/NavigationSections";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
+import { NavSection } from "@/types/navigation";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -28,9 +29,9 @@ export default function DashboardSidebar({
 
   // Updated navigation sections to include staff and trainers
   React.useEffect(() => {
-    if (!sections.some(section => section.title === 'Staff')) {
-      const staffSection = {
-        title: 'Staff Management',
+    if (!sections.some(section => section.name === 'Staff Management')) {
+      const staffSection: NavSection = {
+        name: 'Staff Management',
         items: [
           {
             title: 'Staff List',
@@ -49,9 +50,8 @@ export default function DashboardSidebar({
       
       // Find the position to insert the staff section (after "Members" section)
       const membersSectionIndex = sections.findIndex(section => {
-        // Check for both name and title properties to be safe
-        const sectionTitle = section.title || section.name;
-        return sectionTitle === 'Members' || (sectionTitle && sectionTitle.includes('Member'));
+        // Check for both name properties
+        return section.name === 'Members' || (section.name && section.name.includes('Member'));
       });
       
       if (membersSectionIndex !== -1) {
@@ -76,7 +76,7 @@ export default function DashboardSidebar({
   };
 
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-br from-indigo-950 to-blue-900 text-white 
+    <div className="fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-sidebar-foreground
                     transform transition-transform duration-300 ease-in-out md:translate-x-0
                     flex flex-col h-full">
       {/* Mobile Close Button */}
@@ -84,7 +84,7 @@ export default function DashboardSidebar({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-white hover:bg-indigo-800/50"
+          className="text-sidebar-foreground hover:bg-sidebar-accent/50"
           onClick={closeSidebar}
         >
           <X className="h-5 w-5" />
@@ -118,10 +118,10 @@ export default function DashboardSidebar({
       </ScrollArea>
       
       <div className="mt-auto p-4">
-        <Separator className="my-2 bg-indigo-800" />
+        <Separator className="my-2 bg-sidebar-accent" />
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-indigo-200 hover:text-white hover:bg-indigo-800/50" 
+          className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50" 
           onClick={handleLogout} 
           disabled={isLoggingOut}
         >
