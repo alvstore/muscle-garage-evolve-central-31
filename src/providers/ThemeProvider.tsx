@@ -9,6 +9,13 @@ type ThemeContextProps = {
   settings: ThemeSettings
   updateSettings: (settings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => void
   resetSettings: () => void
+  // Add these missing properties for compatibility with existing components
+  mode: Mode
+  setMode: (mode: Mode) => void
+  isDark: boolean
+  toggleTheme: () => void
+  primaryColor: string
+  setPrimaryColor: (color: string) => void
 }
 
 // Props type for the provider
@@ -55,6 +62,7 @@ export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps)
 
   // State for settings
   const [settings, setSettings] = useState<ThemeSettings>(getStoredSettings)
+  const [primaryColor, setPrimaryColorState] = useState<string>(settings.primaryColor || themeConfig.primaryColor)
 
   // Function to update settings
   const updateSettings = (newSettings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => {
@@ -70,12 +78,44 @@ export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps)
 
       return updatedSettings
     })
+
+    // If primary color is updated, update the state
+    if (newSettings.primaryColor) {
+      setPrimaryColorState(newSettings.primaryColor)
+    }
   }
 
   // Function to reset settings to initial values
   const resetSettings = () => {
     localStorage.removeItem(themeConfig.settingsCookieName)
     setSettings(initialSettings)
+    setPrimaryColorState(initialSettings.primaryColor || themeConfig.primaryColor)
+  }
+
+  // Current mode getter
+  const mode = useMemo(() => settings.mode || 'system', [settings.mode])
+  
+  // Mode setter that updates settings
+  const setMode = (newMode: Mode) => {
+    updateSettings({ mode: newMode })
+  }
+
+  // Dark mode status based on current settings and system preference
+  const isDark = useMemo(() => {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    return mode === 'dark' || (mode === 'system' && prefersDark)
+  }, [mode])
+
+  // Toggle between light and dark mode
+  const toggleTheme = () => {
+    const newMode = isDark ? 'light' : 'dark'
+    setMode(newMode)
+  }
+
+  // Set primary color
+  const setPrimaryColor = (color: string) => {
+    updateSettings({ primaryColor: color })
+    setPrimaryColorState(color)
   }
 
   // Apply theme settings to document
@@ -200,8 +240,15 @@ export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps)
   const contextValue = useMemo(() => ({
     settings,
     updateSettings,
-    resetSettings
-  }), [settings])
+    resetSettings,
+    // Add these properties for component compatibility
+    mode,
+    setMode,
+    isDark,
+    toggleTheme,
+    primaryColor,
+    setPrimaryColor
+  }), [settings, mode, isDark, primaryColor])
 
   return (
     <ThemeContext.Provider value={contextValue}>
@@ -209,3 +256,5 @@ export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps)
     </ThemeContext.Provider>
   )
 }
+
+export default ThemeProvider

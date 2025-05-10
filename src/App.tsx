@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './router/AppRouter';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -18,7 +17,23 @@ const queryClient = new QueryClient({
   },
 });
 
+// Dynamically import React Query Devtools (only in development)
+const ReactQueryDevtoolsProduction = React.lazy(() =>
+  import('@tanstack/react-query-devtools').then(d => ({
+    default: d.ReactQueryDevtools
+  }))
+);
+
 function App() {
+  const [showDevtools, setShowDevtools] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only show devtools in development
+    if (process.env.NODE_ENV === 'development') {
+      setShowDevtools(true);
+    }
+  }, []);
+
   useEffect(() => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -41,8 +56,12 @@ function App() {
           <AppRouter />
         </Router>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
       <Toaster />
+      {showDevtools && (
+        <React.Suspense fallback={null}>
+          <ReactQueryDevtoolsProduction initialIsOpen={false} />
+        </React.Suspense>
+      )}
     </QueryClientProvider>
   );
 }
