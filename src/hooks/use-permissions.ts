@@ -92,6 +92,7 @@ export type Permission =
   // Communication
   | 'access_communication'
   | 'access_reports'
+  | 'view_reports'
   
   // Attendance
   | 'view_attendance'

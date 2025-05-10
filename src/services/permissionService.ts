@@ -1,4 +1,3 @@
-
 import { UserRole } from '@/types';
 import { Permission } from '@/hooks/use-permissions';
 
@@ -52,6 +51,7 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   // Feature Access
   'access_dashboards': { roles: ['admin', 'staff', 'trainer', 'member'] },
   'access_reports': { roles: ['admin', 'staff'] },
+  'view_reports': { roles: ['admin', 'staff'] },
   'access_inventory': { roles: ['admin', 'staff'] },
   'access_communication': { roles: ['admin', 'staff', 'trainer'] },
   'access_marketing': { roles: ['admin', 'staff'] },
@@ -87,7 +87,6 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   
   // Analytics
   'view_analytics': { roles: ['admin', 'staff'] },
-  'view_reports': { roles: ['admin', 'staff'] },
   'view_finance_dashboard': { roles: ['admin', 'staff'] },
   
   // Manager
