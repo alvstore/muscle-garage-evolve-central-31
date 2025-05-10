@@ -42,3 +42,43 @@ export const groupNavItemsBySection = (
     items
   }));
 };
+
+interface BreadcrumbItem {
+  href: string;
+  label: string;
+}
+
+export const generateBreadcrumbs = (pathname: string, routes: RouteObject[]): BreadcrumbItem[] => {
+  if (pathname === '/') {
+    return [{ href: '/', label: 'Home' }];
+  }
+
+  // Split the pathname into segments
+  const segments = pathname.split('/').filter(Boolean);
+  
+  const breadcrumbs: BreadcrumbItem[] = [{ href: '/', label: 'Home' }];
+  
+  let currentPath = '';
+  
+  // Build up breadcrumbs based on path segments
+  segments.forEach((segment, index) => {
+    currentPath += `/${segment}`;
+    
+    // Try to find a matching route
+    const matchingRoute = routes.find(route => route.path === currentPath);
+    
+    let label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+    
+    // If we have metadata for this route, use its title
+    if (matchingRoute && (matchingRoute as any).meta?.title) {
+      label = (matchingRoute as any).meta.title;
+    }
+    
+    breadcrumbs.push({
+      href: currentPath,
+      label
+    });
+  });
+  
+  return breadcrumbs;
+};

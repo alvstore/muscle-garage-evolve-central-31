@@ -3,7 +3,7 @@ import { RouteObject } from 'react-router-dom';
 import { settingsRoutes } from './admin/settingsRoutes';
 import { adminRoutes } from './adminRoutes';
 import { dashboardRoutes } from './dashboardRoutes';
-import { classRoutes } from './classesRoutes';
+import { classesRoutes } from './classesRoutes';
 import { attendanceRoutes } from './attendanceRoutes';
 import { crmRoutes } from './crmRoutes';
 import { financeRoutes } from './financeRoutes';
@@ -17,7 +17,7 @@ export {
   adminRoutes,
   settingsRoutes,
   dashboardRoutes,
-  classRoutes,
+  classesRoutes,
   attendanceRoutes,
   crmRoutes,
   financeRoutes,

@@ -46,7 +46,7 @@ export const rolePermissions: Record<string, Permission[]> = {
     'feature_trainer_dashboard',
     'feature_email_campaigns',
     'full_system_access'
-  ],
+  ] as Permission[],
   staff: [
     'access_dashboards',
     'manage_members',
@@ -68,7 +68,7 @@ export const rolePermissions: Record<string, Permission[]> = {
     'view_branch_data',
     'log_attendance',
     'assign_plan'
-  ],
+  ] as Permission[],
   trainer: [
     'access_dashboards',
     'view_classes',
@@ -81,10 +81,10 @@ export const rolePermissions: Record<string, Permission[]> = {
     'feature_trainer_dashboard',
     'assign_workout_plan',
     'assign_diet_plan'
-  ],
+  ] as Permission[],
   member: [
     'member_view_plans'
-  ]
+  ] as Permission[]
 };
 
 // Helper function to check if a user has a specific permission

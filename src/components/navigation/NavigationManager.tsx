@@ -6,9 +6,10 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { adminRoutes } from '@/router/routes/adminRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
-import { classRoutes } from '@/router/routes/classRoutes';
+import { classesRoutes } from '@/router/routes/classesRoutes';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
 import { Permission } from '@/hooks/use-permissions';
+import { AppRoute } from '@/types/routes';
 
 // Import other route files as needed
 
@@ -49,14 +50,14 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   // Get active path section
   const activePathSection = location.pathname.split('/')[1] || 'dashboard';
   
-  // Combine all routes
+  // Combine all routes - treating them as basic RouteObject for navigation purposes
   const allRoutes = useMemo(() => [
     ...adminRoutes,
     ...crmRoutes,
     ...settingsRoutes,
-    ...classRoutes,
+    ...classesRoutes,
     // Add other routes here
-  ], []);
+  ] as AppRoute[], []);
   
   // Generate nav items from routes
   const allNavItems = useMemo(() => routesToNavItems(allRoutes), [allRoutes]);
@@ -65,7 +66,7 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   const sections = useMemo(() => {
     // Filter items by permission
     const filteredItems = allNavItems.filter(item => 
-      hasPermission(item.permission as Permission)
+      !item.permission || hasPermission(item.permission as Permission)
     );
     
     // Group by section

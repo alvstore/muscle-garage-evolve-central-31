@@ -1,3 +1,4 @@
+
 import React from "react";
 import { NavSection } from "@/types/navigation";
 import { Permission } from "@/hooks/use-permissions";
@@ -26,7 +27,8 @@ import {
   UserPlus,
   ClipboardList,
   GitMerge,
-  Clock
+  Clock,
+  PhoneCall
 } from "lucide-react";
 
 // Helper function to safely cast permission strings

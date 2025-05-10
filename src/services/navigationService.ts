@@ -1,91 +1,53 @@
-import { NavSection, NavItem } from '@/types/navigation';
-import { adminNavSections } from '@/data/adminNavigation';
-import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
-import { adminRoutes } from '@/router/routes/adminRoutes';
-import { crmRoutes } from '@/router/routes/crmRoutes';
-import { settingsRoutes } from '@/router/routes/settingsRoutes';
-import { classRoutes } from '@/router/routes/classRoutes';
 
-// Section mapping for route-based navigation
-const sectionMap = {
-  'dashboard': 'Dashboard',
-  'classes': 'Classes',
-  'crm': 'CRM',
-  'members': 'Members',
-  'staff': 'Staff',
-  'trainers': 'Staff',
-  'fitness': 'Fitness',
-  'communication': 'Communication',
-  'marketing': 'Marketing',
-  'inventory': 'Inventory & Shop',
-  'store': 'Inventory & Shop',
-  'finance': 'Finance',
-  'reports': 'Reports',
-  'analytics': 'Reports',
-  'settings': 'Settings',
-  'website': 'Website',
-  'branches': 'Settings',
-  'admin': 'Settings'
+import { RouteObject } from 'react-router-dom';
+import { AppRoute } from '@/types/routes';
+import { NavItem, NavSection } from '@/types/navigation';
+
+// Convert routes to navigation items
+export const routesToNavItems = (routes: RouteObject[]): NavItem[] => {
+  return routes
+    .filter(route => route.handle && (route.handle as any).navigation) 
+    .map(route => {
+      const handle = route.handle as any;
+      return {
+        href: route.path || '/',
+        label: handle.navigation.label || 'Unlabeled',
+        icon: handle.navigation.icon || undefined,
+        permission: handle.navigation.permission || undefined,
+        badge: handle.navigation.badge || undefined,
+        children: handle.navigation.children || [],
+      };
+    });
 };
 
-/**
- * Enhances static navigation with dynamic route data
- * This preserves the structure of adminNavSections while adding any missing routes
- */
-export function getEnhancedNavigation(userRole?: string): NavSection[] {
-  // Get static navigation
-  const staticNavigation = [...adminNavSections];
+// Group navigation items by section
+export const groupNavItemsBySection = (
+  items: NavItem[], 
+  sectionMap: Record<string, string>
+): NavSection[] => {
+  const sections: Record<string, NavItem[]> = {};
   
-  // Generate dynamic navigation from routes
-  const allRoutes = [...adminRoutes, ...crmRoutes, ...settingsRoutes, ...classRoutes];
-  const navItems = routesToNavItems(allRoutes);
-  
-  // Filter items based on role instead of permissions array
-  const filteredItems = navItems.filter(item => {
-    // If no role, show nothing
-    if (!userRole) return false;
+  // Group items by section
+  items.forEach(item => {
+    const pathPart = item.href.split('/')[1] || 'dashboard';
+    const sectionName = sectionMap[pathPart] || 'Other';
     
-    // Admin sees everything
-    if (userRole === 'admin') return true;
-    
-    // For other roles, you'll need to implement role-based permission checking
-    // This is a simplified example - you should adapt it to your permission system
-    const rolePermissions = {
-      'staff': ['access_dashboards', 'manage_members', 'view_classes'],
-      'trainer': ['access_dashboards', 'view_classes', 'trainer_view_classes'],
-      'member': ['member_view_plans']
-    };
-    
-    return rolePermissions[userRole as keyof typeof rolePermissions]?.includes(item.permission) || false;
-  });
-  
-  const dynamicSections = groupNavItemsBySection(filteredItems, sectionMap);
-  
-  // Merge static and dynamic navigation
-  return mergeNavigations(staticNavigation, dynamicSections);
-}
-
-/**
- * Merges static and dynamic navigation sections
- */
-function mergeNavigations(staticNav: NavSection[], dynamicNav: NavSection[]): NavSection[] {
-  const result = [...staticNav];
-  
-  // For each dynamic section
-  dynamicNav.forEach(dynamicSection => {
-    // Find matching static section
-    const existingSection = result.find(s => s.name === dynamicSection.name);
-    
-    if (existingSection) {
-      // Merge items, avoiding duplicates
-      const existingHrefs = existingSection.items.map(item => item.href);
-      const newItems = dynamicSection.items.filter(item => !existingHrefs.includes(item.href));
-      existingSection.items = [...existingSection.items, ...newItems];
-    } else {
-      // Add new section
-      result.push(dynamicSection);
+    if (!sections[sectionName]) {
+      sections[sectionName] = [];
     }
+    
+    sections[sectionName].push(item);
   });
   
-  return result;
-}
+  // Convert to array of NavSection
+  return Object.entries(sections).map(([name, items]) => ({
+    name,
+    items
+  }));
+};
+
+// Function to safely process a mix of RouteObject and AppRoute
+export const processRoutes = (routes: (RouteObject | AppRoute)[]) => {
+  // For safety, just cast to RouteObject[] since we're only using common properties
+  return routesToNavItems(routes as RouteObject[]);
+};

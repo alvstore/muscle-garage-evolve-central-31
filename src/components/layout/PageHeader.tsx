@@ -42,7 +42,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     const path = location.pathname;
     // Look for route with matching path property instead of directly using path
     const matchingRoute = combinedRoutes.find(r => r && typeof r === 'object' && 'path' in r && r.path === path);
-    return matchingRoute && matchingRoute.meta?.title || 'Dashboard';
+    return matchingRoute && (matchingRoute as any)?.handle?.title || 'Dashboard';
   })();
 
   return (

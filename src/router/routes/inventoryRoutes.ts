@@ -1,5 +1,4 @@
 
 import { RouteObject } from 'react-router-dom';
 
-// Placeholder for now - add proper routes later
 export const inventoryRoutes: RouteObject[] = [];

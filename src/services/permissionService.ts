@@ -107,7 +107,28 @@ const permissionsMatrix: Record<Permission, { roles: UserRole[], memberSelfOnly?
   'member_view_invoices': { roles: ['admin', 'member'] },
   
   // Email campaigns
-  'feature_email_campaigns': { roles: ['admin', 'staff'] }
+  'feature_email_campaigns': { roles: ['admin', 'staff'] },
+
+  // Aliases for backward compatibility
+  'create_members': { roles: ['admin', 'staff'] },
+  'edit_members': { roles: ['admin', 'staff'] },
+  'delete_members': { roles: ['admin', 'staff'] },
+  'view_members': { roles: ['admin', 'staff', 'trainer'] },
+  'view_memberships': { roles: ['admin', 'staff', 'member'] },
+  'create_classes': { roles: ['admin', 'staff'] },
+  'edit_classes': { roles: ['admin', 'staff'] },
+  'delete_classes': { roles: ['admin', 'staff'] },
+  'view_trainers': { roles: ['admin', 'staff'] },
+  'create_trainers': { roles: ['admin'] },
+  'edit_trainers': { roles: ['admin'] },
+  'delete_trainers': { roles: ['admin'] },
+  'create_staff': { roles: ['admin'] },
+  'edit_staff': { roles: ['admin'] },
+  'delete_staff': { roles: ['admin'] },
+  'create_branches': { roles: ['admin'] },
+  'edit_branches': { roles: ['admin'] },
+  'delete_branches': { roles: ['admin'] },
+  'manage_branch_settings': { roles: ['admin', 'staff'] }
 };
 
 export const hasPermission = (

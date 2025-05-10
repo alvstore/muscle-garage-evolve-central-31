@@ -1,12 +1,11 @@
 
 import { ReactNode } from 'react';
-import { Permission } from '@/hooks/use-permissions';
 
 export interface NavItem {
   href: string;
   label: string;
-  icon?: ReactNode;  // Changed from string to ReactNode
-  permission?: Permission;
+  icon?: ReactNode;
+  permission?: string;
   badge?: string;
   children?: NavItem[];
 }
@@ -14,7 +13,8 @@ export interface NavItem {
 export interface NavSection {
   name: string;
   items: NavItem[];
+  icon?: ReactNode;
 }
 
-// Re-export Permission type
-export { Permission } from '@/hooks/use-permissions';
+// Re-export Permission type with proper syntax for 'isolatedModules'
+export type { Permission } from '@/hooks/use-permissions';
