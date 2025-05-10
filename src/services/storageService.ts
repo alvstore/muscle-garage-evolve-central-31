@@ -32,11 +32,25 @@ const createBucketIfNotExists = async (name: string): Promise<void> => {
     
     if (!exists) {
       console.info(`Creating storage bucket: ${name}`);
-      await supabase.storage.createBucket(name, {
-        public: false,
+      const { error } = await supabase.storage.createBucket(name, {
+        public: true, // Make bucket public so files can be accessed without authentication
         fileSizeLimit: 52428800, // 50MB
         allowedMimeTypes: ['image/*', 'video/*', 'application/pdf']
       });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Set public bucket policy after creation
+      const { error: policyError } = await supabase
+        .storage
+        .from(name)
+        .createSignedUrl('dummy.txt', 3600);
+      
+      if (policyError && !policyError.message.includes('Object not found')) {
+        console.error(`Error setting policy for bucket ${name}:`, policyError);
+      }
     }
   } catch (error) {
     console.error(`Error creating bucket ${name}:`, error);

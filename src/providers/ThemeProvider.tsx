@@ -208,14 +208,37 @@ export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps)
           --tw-ring-color: ${primaryColorObj.main} !important;
         }
         
-        /* Button styles */
+        /* All buttons with any variant that should use primary color */
+        .btn-primary, 
+        .btn, 
+        button[class*="bg-primary"],
+        [role="button"][class*="bg-primary"],
         .button-primary {
           background-color: ${primaryColorObj.main} !important;
           border-color: ${primaryColorObj.main} !important;
         }
+        
+        /* Button hover states */
+        .btn-primary:hover, 
+        .btn:hover, 
+        button[class*="bg-primary"]:hover,
+        [role="button"][class*="bg-primary"]:hover,
         .button-primary:hover {
           background-color: ${primaryColorObj.dark} !important;
           border-color: ${primaryColorObj.dark} !important;
+        }
+        
+        /* shadcn Button with default variant */
+        button[class*="bg-primary"], 
+        .button[class*="bg-primary"], 
+        a[class*="bg-primary"] {
+          background-color: ${primaryColorObj.main} !important;
+        }
+        
+        button[class*="bg-primary"]:hover, 
+        .button[class*="bg-primary"]:hover, 
+        a[class*="bg-primary"]:hover {
+          background-color: ${primaryColorObj.dark} !important;
         }
       `
       

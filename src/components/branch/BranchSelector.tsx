@@ -34,6 +34,8 @@ const BranchSelector: React.FC = () => {
       console.log('BranchSelector fetching branches on mount');
       fetchBranches().then(() => {
         console.log('Initial branches fetch complete');
+      }).catch(err => {
+        console.error('Error fetching branches:', err);
       });
       initialFetchRef.current = true;
     }
@@ -48,6 +50,8 @@ const BranchSelector: React.FC = () => {
 
   // Handle branch selection
   const handleValueChange = useCallback((value: string) => {
+    if (!value) return;
+    
     console.log('Branch selected:', value); 
     switchBranch(value);
     setIsOpen(false);
@@ -92,11 +96,11 @@ const BranchSelector: React.FC = () => {
   }, []);
 
   // Render loading state
-  if (isLoading && !refreshing) {
+  if (isLoading && !refreshing && !currentBranch) {
     return <Skeleton className="w-full h-10 rounded" />;
   }
 
-  // Render empty state
+  // Handle no branches case with better error handling
   if (!branches || branches.length === 0) {
     return (
       <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-muted-foreground bg-secondary/50 rounded-md">
@@ -132,7 +136,9 @@ const BranchSelector: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            <SelectValue placeholder="Select Branch" />
+            <SelectValue placeholder="Select Branch">
+              {currentBranch?.name || "Select Branch"}
+            </SelectValue>
           </div>
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">

@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ensureStorageBucketsExist } from './services/storageService';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './hooks/use-auth';
+import { BranchProvider } from './hooks/use-branch';
+import { toast } from 'sonner';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -34,6 +36,20 @@ function App() {
     }
   }, []);
 
+  // Initialize storage buckets when app loads
+  useEffect(() => {
+    const initializeStorage = async () => {
+      try {
+        await ensureStorageBucketsExist();
+      } catch (error) {
+        console.error('Failed to initialize storage buckets:', error);
+        toast.error('Failed to initialize storage');
+      }
+    };
+    
+    initializeStorage();
+  }, []);
+
   useEffect(() => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -52,10 +68,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider>
-          <AppRouter />
-          <Toaster />
-        </ThemeProvider>
+        <BranchProvider>
+          <ThemeProvider>
+            <AppRouter />
+            <Toaster />
+          </ThemeProvider>
+        </BranchProvider>
       </AuthProvider>
       {showDevtools && (
         <Suspense fallback={null}>
