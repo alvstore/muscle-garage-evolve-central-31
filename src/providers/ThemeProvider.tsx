@@ -1,203 +1,211 @@
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
-import themeConfig from '@/configs/themeConfig';
-import primaryColorConfig from '@/configs/primaryColorConfig';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
+import { ThemeSettings, UpdateSettingsOptions, Mode } from '@/types/theme'
+import themeConfig from '@/configs/themeConfig'
+import primaryColorConfig from '@/configs/primaryColorConfig'
 
-// Theme types
-type ThemeMode = 'light' | 'dark' | 'system';
-type ThemeSkin = 'default' | 'bordered';
-
-// Theme settings type
-interface ThemeSettings {
-  mode: ThemeMode;
-  skin: ThemeSkin;
-  semiDark: boolean;
-  primaryColor: string;
+// Settings context props type
+type ThemeContextProps = {
+  settings: ThemeSettings
+  updateSettings: (settings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => void
+  resetSettings: () => void
 }
 
-// Theme context type
-interface ThemeContextType {
-  // Legacy properties for backward compatibility
-  mode: ThemeMode;
-  setMode: (mode: ThemeMode) => void;
-  isDark: boolean;
-  toggleTheme: () => void;
-  systemTheme: 'light' | 'dark';
-  
-  // New Vuexy-style properties
-  settings: ThemeSettings;
-  updateSettings: (settings: Partial<ThemeSettings>) => void;
-  resetSettings: () => void;
+// Props type for the provider
+type ThemeProviderProps = {
+  children: ReactNode
+  defaultSettings?: ThemeSettings
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+// Create the context
+export const ThemeContext = createContext<ThemeContextProps | null>(null)
 
-interface ThemeProviderProps {
-  children: ReactNode;
-  defaultTheme?: ThemeMode;
+// Custom hook to use the theme context
+export const useTheme = () => {
+  const context = useContext(ThemeContext)
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider')
+  }
+  return context
 }
 
-export const ThemeProvider = ({ 
-  children, 
-  defaultTheme = themeConfig.mode as ThemeMode
-}: ThemeProviderProps) => {
-  // Get system theme
-  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches 
-      ? 'dark' 
-      : 'light';
-  });
-  
-  // Initialize settings from localStorage or defaults
-  const [settings, setSettings] = useState<ThemeSettings>(() => {
-    try {
-      const savedSettings = localStorage.getItem(themeConfig.settingsCookieName);
-      if (savedSettings) {
-        return JSON.parse(savedSettings);
+// Theme provider component
+export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps) => {
+  // Initial settings
+  const initialSettings: ThemeSettings = {
+    mode: themeConfig.mode,
+    skin: themeConfig.skin,
+    semiDark: themeConfig.semiDark,
+    layout: themeConfig.layout,
+    primaryColor: themeConfig.primaryColor
+  }
+
+  // Get settings from localStorage or use initial settings
+  const getStoredSettings = (): ThemeSettings => {
+    const storedSettings = localStorage.getItem(themeConfig.settingsCookieName)
+    if (storedSettings) {
+      try {
+        return JSON.parse(storedSettings)
+      } catch (error) {
+        console.error('Error parsing stored settings:', error)
       }
-    } catch (error) {
-      console.error('Error loading theme settings:', error);
     }
-    
-    // Default settings
-    return {
-      mode: defaultTheme,
-      skin: themeConfig.skin as ThemeSkin,
-      semiDark: themeConfig.semiDark,
-      primaryColor: themeConfig.primaryColor
-    };
-  });
-  
-  // Legacy mode state for backward compatibility
-  const [mode, setMode] = useState<ThemeMode>(settings.mode);
-  
-  // Computed dark mode value
-  const isDark = settings.mode === 'dark' || (settings.mode === 'system' && systemTheme === 'dark');
-  
-  // Update settings
-  const updateSettings = (newSettings: Partial<ThemeSettings>) => {
-    setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem(themeConfig.settingsCookieName, JSON.stringify(updated));
+    return defaultSettings || initialSettings
+  }
+
+  // State for settings
+  const [settings, setSettings] = useState<ThemeSettings>(getStoredSettings)
+
+  // Function to update settings
+  const updateSettings = (newSettings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => {
+    const { updateStorage = true } = options || {}
+
+    setSettings(prevSettings => {
+      const updatedSettings = { ...prevSettings, ...newSettings }
       
-      // Update legacy mode state if mode changes
-      if (newSettings.mode && newSettings.mode !== prev.mode) {
-        setMode(newSettings.mode);
+      // Update localStorage if needed
+      if (updateStorage) {
+        localStorage.setItem(themeConfig.settingsCookieName, JSON.stringify(updatedSettings))
       }
-      
-      return updated;
-    });
-  };
-  
-  // Reset settings to defaults
+
+      return updatedSettings
+    })
+  }
+
+  // Function to reset settings to initial values
   const resetSettings = () => {
-    const defaultSettings: ThemeSettings = {
-      mode: themeConfig.mode as ThemeMode,
-      skin: themeConfig.skin as ThemeSkin,
-      semiDark: themeConfig.semiDark,
-      primaryColor: themeConfig.primaryColor
-    };
-    
-    localStorage.removeItem(themeConfig.settingsCookieName);
-    setSettings(defaultSettings);
-    setMode(defaultSettings.mode);
-  };
-  
-  // Legacy toggle theme function for backward compatibility
-  const toggleTheme = () => {
-    const newMode = mode === 'light' ? 'dark' : 'light';
-    updateSettings({ mode: newMode });
-  };
-  
-  // Listen for system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? 'dark' : 'light');
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-  
+    localStorage.removeItem(themeConfig.settingsCookieName)
+    setSettings(initialSettings)
+  }
+
   // Apply theme settings to document
   useEffect(() => {
-    // Apply dark/light mode
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
+    const applyTheme = () => {
+      const { mode, semiDark, primaryColor } = settings
+      const root = document.documentElement
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      
+      // Determine if dark mode should be applied
+      const isDarkMode = 
+        mode === 'dark' || 
+        (mode === 'system' && prefersDark)
+      
+      // Apply dark/light mode
+      if (isDarkMode) {
+        root.classList.add('dark')
+        root.classList.remove('light')
+      } else {
+        root.classList.add('light')
+        root.classList.remove('dark')
+      }
+
+      // Apply semi-dark mode for sidebar
+      if (semiDark && !isDarkMode) {
+        root.setAttribute('data-sidebar-dark', 'true')
+      } else {
+        root.removeAttribute('data-sidebar-dark')
+      }
+
+      // Apply primary color
+      const primaryColorObj = primaryColorConfig.find(color => color.main === primaryColor) || primaryColorConfig[0]
+      
+      // Set CSS variables for primary color - ensuring this works correctly in both light and dark modes
+      root.style.setProperty('--primary', primaryColorObj.main)
+      root.style.setProperty('--primary-light', primaryColorObj.light)
+      root.style.setProperty('--primary-dark', primaryColorObj.dark)
+      
+      // Convert hex to RGB for opacity variants
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16)
+            }
+          : { r: 0, g: 0, b: 0 }
+      }
+      
+      const primaryRgb = hexToRgb(primaryColorObj.main)
+      root.style.setProperty('--primary-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`)
+      
+      // Additional CSS variable for the button background to ensure proper color application
+      root.style.setProperty('--button-primary-bg', primaryColorObj.main)
+      
+      // Additional styling for specific components
+      const styleSheet = document.createElement('style')
+      styleSheet.id = 'primary-color-styles'
+      
+      // Remove any existing style element for primary color
+      const existingStyle = document.getElementById('primary-color-styles')
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+      
+      styleSheet.innerHTML = `
+        .bg-primary, .hover\\:bg-primary:hover, .focus\\:bg-primary:focus {
+          background-color: ${primaryColorObj.main} !important;
+        }
+        .text-primary, .hover\\:text-primary:hover {
+          color: ${primaryColorObj.main} !important;
+        }
+        .border-primary, .focus\\:border-primary:focus {
+          border-color: ${primaryColorObj.main} !important;
+        }
+        .bg-primary-light, .hover\\:bg-primary-light:hover {
+          background-color: ${primaryColorObj.light} !important;
+        }
+        .text-primary-light, .hover\\:text-primary-light:hover {
+          color: ${primaryColorObj.light} !important;
+        }
+        .bg-primary-dark, .hover\\:bg-primary-dark:hover {
+          background-color: ${primaryColorObj.dark} !important;
+        }
+        .text-primary-dark, .hover\\:text-primary-dark:hover {
+          color: ${primaryColorObj.dark} !important;
+        }
+        .ring-primary, .focus\\:ring-primary:focus {
+          --tw-ring-color: ${primaryColorObj.main} !important;
+        }
+        
+        /* Button styles */
+        .button-primary {
+          background-color: ${primaryColorObj.main} !important;
+          border-color: ${primaryColorObj.main} !important;
+        }
+        .button-primary:hover {
+          background-color: ${primaryColorObj.dark} !important;
+          border-color: ${primaryColorObj.dark} !important;
+        }
+      `
+      
+      document.head.appendChild(styleSheet)
     }
-    
-    // Apply semi-dark mode for sidebar
-    if (settings.semiDark && !isDark) {
-      document.documentElement.setAttribute('data-sidebar-dark', 'true');
-    } else {
-      document.documentElement.removeAttribute('data-sidebar-dark');
+
+    applyTheme()
+
+    // Listen for system preference changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (settings.mode === 'system') {
+        applyTheme()
+      }
     }
-    
-    // Apply primary color
-    const primaryColorObj = primaryColorConfig.find(color => color.main === settings.primaryColor) || primaryColorConfig[0];
-    
-    // Set CSS variables for primary color
-    const root = document.documentElement;
-    root.style.setProperty('--primary-light', primaryColorObj.light);
-    root.style.setProperty('--primary', primaryColorObj.main);
-    root.style.setProperty('--primary-dark', primaryColorObj.dark);
-    
-    // Convert hex to RGB for opacity variants
-    const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result
-        ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-          }
-        : null;
-    };
-    
-    const primaryRgb = hexToRgb(primaryColorObj.main);
-    if (primaryRgb) {
-      root.style.setProperty('--primary-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`);
-    }
-    
-    // For legacy code compatibility
-    localStorage.setItem('theme-mode', settings.mode);
-  }, [settings, isDark]);
-  
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [settings])
+
   // Context value
-  const value = useMemo(() => ({
-    // Legacy properties
-    mode: settings.mode,
-    setMode: (newMode: ThemeMode) => updateSettings({ mode: newMode }),
-    isDark,
-    toggleTheme,
-    systemTheme,
-    
-    // New Vuexy-style properties
+  const contextValue = useMemo(() => ({
     settings,
     updateSettings,
     resetSettings
-  }), [settings, isDark, systemTheme]);
-  
+  }), [settings])
+
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
-  );
-};
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  
-  return context;
-};
+  )
+}

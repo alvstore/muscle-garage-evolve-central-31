@@ -1,651 +1,461 @@
 
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Upload } from "lucide-react";
-import { toast } from "sonner";
-import { useStaff } from "@/hooks/use-staff";
-import { useBranch } from "@/hooks/use-branch";
-import generatePassword from "@/lib/generatePassword";
-import ProfileImageUpload from "@/components/members/ProfileImageUpload";
-import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useStaff } from '@/hooks/use-staff';
+import { useBranch } from '@/hooks/use-branch';
+import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
-// Define the staff member type
-export type StaffMember = {
-  id: string;
-  full_name: string;
+interface FormData {
+  name: string;
   email: string;
+  password: string;
+  confirmPassword: string;
   phone?: string;
   role: 'staff' | 'trainer' | 'admin';
   department?: string;
   branch_id?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
   address?: string;
   city?: string;
   state?: string;
   country?: string;
-  gender?: string;
   id_type?: string;
   id_number?: string;
-  id_document_url?: string;
-};
-
-// Define the form schema
-const formSchema = z.object({
-  fullName: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  phone: z.string().min(6, {
-    message: "Phone number must be at least 6 characters.",
-  }).optional(),
-  role: z.enum(['staff', 'trainer', 'admin'], {
-    required_error: "You need to select a role.",
-  }),
-  department: z.string().min(2, {
-    message: "Department must be at least 2 characters.",
-  }).optional(),
-  gender: z.enum(['male', 'female', 'other'], {
-    required_error: "Please select a gender.",
-  }).optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  id_type: z.string().optional(),
-  id_number: z.string().optional(),
-  branchId: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isBranchManager: z.boolean().default(false),
-});
-
-interface CreateStaffFormProps {
-  staff: StaffMember[];
-  refetch: () => void;
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  initialData?: Partial<StaffMember>;
 }
 
-export default function CreateStaffForm({
-  staff,
-  refetch,
-  onSuccess,
-  onCancel,
-  initialData
-}: CreateStaffFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [idDocumentFile, setIdDocumentFile] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | undefined>(initialData?.id_document_url);
-  const { createStaffMember, updateStaffMember } = useStaff();
+interface CreateStaffFormProps {
+  onSuccess?: () => void;
+}
+
+const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>();
+  const { toast } = useToast();
+  const { createStaffMember } = useStaff();
   const { branches, currentBranch } = useBranch();
-  const [tempUserId, setTempUserId] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic-info');
+  const [idDocument, setIdDocument] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const password = watch('password');
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: initialData?.full_name || "",
-      email: initialData?.email || "",
-      phone: initialData?.phone || "",
-      role: (initialData?.role as 'staff' | 'trainer' | 'admin') || 'staff',
-      department: initialData?.department || "",
-      gender: initialData?.gender as 'male' | 'female' | 'other' | undefined,
-      address: initialData?.address || "",
-      city: initialData?.city || "",
-      state: initialData?.state || "",
-      country: initialData?.country || "India",
-      id_type: initialData?.id_type || "",
-      id_number: initialData?.id_number || "",
-      branchId: initialData?.branch_id || currentBranch?.id || "",
-      isActive: initialData?.is_active !== undefined ? initialData.is_active : true,
-      isBranchManager: false,
-    },
-  });
-
-  useEffect(() => {
-    // Set branch ID if current branch is available and no initialData
-    if (currentBranch?.id && !initialData?.branch_id) {
-      form.setValue('branchId', currentBranch.id);
-    }
-  }, [currentBranch, form, initialData]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setIdDocumentFile(file);
-      
-      // Create a preview URL
-      const objectUrl = URL.createObjectURL(file);
-      setPreviewImage(objectUrl);
-      
-      return () => URL.revokeObjectURL(objectUrl);
-    }
-  };
-
-  const uploadIdDocument = async (userId: string): Promise<string | null> => {
-    if (!idDocumentFile) return null;
-    
-    try {
-      const fileExt = idDocumentFile.name.split('.').pop();
-      const filePath = `staff-documents/${userId}-${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .upload(filePath, idDocumentFile);
-      
-      if (error) throw error;
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-      
-      return publicUrlData.publicUrl;
-    } catch (error) {
-      console.error('Error uploading ID document:', error);
-      return null;
-    }
-  };
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!values.branchId && !currentBranch?.id) {
-      toast.error("Please select a branch");
+  const onSubmit = async (data: FormData) => {
+    if (data.password !== data.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
       return;
     }
-    
-    const branchId = values.branchId || currentBranch?.id;
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      // Generate a secure random password for new users
-      const password = generatePassword(12);
-      
-      let userId;
-      let documentUrl: string | null = null;
-      
-      if (initialData?.id) {
-        // Update existing staff member
-        await updateStaffMember(initialData.id, {
-          name: values.fullName,
-          email: values.email,
-          phone: values.phone || '',
-          role: values.role,
-          department: values.department || '',
-          branch_id: branchId,
-          address: values.address,
-          city: values.city,
-          state: values.state,
-          country: values.country,
-          gender: values.gender,
-          id_type: values.id_type,
-          id_number: values.id_number,
-          is_active: values.isActive,
-          is_branch_manager: values.isBranchManager,
-        });
-        
-        userId = initialData.id;
-      } else {
-        // Create new staff member
-        const result = await createStaffMember({
-          email: values.email,
-          password,
-          name: values.fullName,
-          role: values.role,
-        });
-        
-        if (result.error) {
-          toast.error(`Failed to create staff member: ${result.error}`);
-          setIsSubmitting(false);
-          return;
-        }
-        
-        userId = result.data?.id;
-        setTempUserId(userId);
-        
-        // Update the profile with additional information
-        if (userId) {
-          await supabase
-            .from('profiles')
-            .update({
-              full_name: values.fullName,
-              phone: values.phone || null,
-              role: values.role,
-              department: values.department || null,
-              branch_id: branchId,
-              address: values.address || null,
-              city: values.city || null,
-              state: values.state || null,
-              country: values.country || 'India',
-              gender: values.gender || null,
-              id_type: values.id_type || null,
-              id_number: values.id_number || null,
-              is_active: values.isActive,
-              is_branch_manager: values.isBranchManager,
-            })
-            .eq('id', userId);
-        }
-        
-        // Temporary password notification
-        toast.info(`Temporary password: ${password}`, {
-          duration: 10000,
-          action: {
-            label: 'Copy',
-            onClick: () => {
-              navigator.clipboard.writeText(password);
-              toast.success('Password copied to clipboard');
-            }
-          }
-        });
+      // Create the staff member auth user
+      const { data: authData, error } = await createStaffMember({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        role: data.role,
+      });
+
+      if (error) {
+        throw new Error(error);
       }
-      
+
+      if (!authData?.id) {
+        throw new Error('Failed to create staff member');
+      }
+
+      // Default branch to current branch if not specified
+      const branchId = data.branch_id || currentBranch?.id;
+
+      // Create or update the profile with additional information
+      const profileUpdate = {
+        full_name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        department: data.department,
+        branch_id: branchId,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        id_type: data.id_type,
+        id_number: data.id_number,
+        is_branch_manager: false,
+      };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('id', authData.id);
+
+      if (profileError) {
+        throw new Error(profileError.message);
+      }
+
       // Upload ID document if provided
-      if (idDocumentFile && userId) {
-        documentUrl = await uploadIdDocument(userId);
+      if (idDocument && authData.id) {
+        setIsUploading(true);
+        const fileExt = idDocument.name.split('.').pop();
+        const filePath = `documents/${authData.id}/${Date.now()}.${fileExt}`;
         
-        if (documentUrl) {
-          await supabase
-            .from('profiles')
-            .update({ id_document_url: documentUrl })
-            .eq('id', userId);
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, idDocument, {
+            cacheControl: '3600',
+            upsert: true,
+            onUploadProgress: (progress) => {
+              setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
+            },
+          });
+
+        if (uploadError) {
+          console.error('Error uploading document:', uploadError);
+          toast({
+            title: 'Warning',
+            description: 'Staff member created but document upload failed',
+            variant: 'destructive',
+          });
         }
+        
+        setIsUploading(false);
       }
-      
-      toast.success(`Staff member ${initialData ? 'updated' : 'created'} successfully`);
-      
+
+      toast({
+        title: 'Success',
+        description: 'Staff member created successfully',
+      });
+
+      reset();
       if (onSuccess) {
         onSuccess();
       }
-      
-      refetch();
+
     } catch (error: any) {
-      toast.error(`An error occurred: ${error.message}`);
+      console.error('Error creating staff member:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create staff member',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setIdDocument(e.target.files[0]);
+    }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="john.doe@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
+          <TabsTrigger value="contact">Contact</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="basic-info" className="space-y-4 pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                {...register('name', { required: 'Name is required' })}
+                placeholder="Full name"
               />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1234567890" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="staff" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Staff
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="trainer" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Trainer
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="admin" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          Admin
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="department"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Front Desk / Fitness / Management" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="branchId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Branch</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {branches.map(branch => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email', { 
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^\S+@\S+$/i,
+                    message: 'Invalid email address',
+                  },
+                })}
+                placeholder="Email address"
+              />
+              {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gender</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="City" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                type="password"
+                {...register('password', { 
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password must be at least 6 characters',
+                  },
+                })}
+                placeholder="Password"
               />
+              {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password *</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                {...register('confirmPassword', {
+                  required: 'Please confirm password',
+                  validate: value => value === password || 'Passwords do not match',
+                })}
+                placeholder="Confirm password"
+              />
+              {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+            </div>
+          </div>
 
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="State" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select
+                onValueChange={(value) => {
+                  const event = {
+                    target: {
+                      name: 'role',
+                      value
+                    }
+                  };
+                  register('role').onChange(event);
+                }}
+                defaultValue="staff"
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="trainer">Trainer</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <input type="hidden" {...register('role', { required: true })} defaultValue="staff" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="branch_id">Branch</Label>
+              <Select
+                onValueChange={(value) => {
+                  const event = {
+                    target: {
+                      name: 'branch_id',
+                      value
+                    }
+                  };
+                  register('branch_id').onChange(event);
+                }}
+                defaultValue={currentBranch?.id}
+              >
+                <SelectTrigger id="branch_id">
+                  <SelectValue placeholder="Select branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map(branch => (
+                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <input type="hidden" {...register('branch_id')} defaultValue={currentBranch?.id} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                {...register('phone')}
+                placeholder="Phone number"
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Country" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                {...register('department')}
+                placeholder="Department"
+              />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="contact" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              {...register('address')}
+              placeholder="Street address"
             />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                {...register('city')}
+                placeholder="City"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                {...register('state')}
+                placeholder="State"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="country">Country</Label>
+            <Input
+              id="country"
+              {...register('country')}
+              defaultValue="India"
+              placeholder="Country"
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="documents" className="space-y-4 pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="id_type">ID Type</Label>
+              <Select
+                onValueChange={(value) => {
+                  const event = {
+                    target: {
+                      name: 'id_type',
+                      value
+                    }
+                  };
+                  register('id_type').onChange(event);
+                }}
+              >
+                <SelectTrigger id="id_type">
+                  <SelectValue placeholder="Select ID type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="passport">Passport</SelectItem>
+                  <SelectItem value="drivers_license">Driver's License</SelectItem>
+                  <SelectItem value="national_id">National ID</SelectItem>
+                  <SelectItem value="aadhar">Aadhar Card</SelectItem>
+                  <SelectItem value="pan">PAN Card</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <input type="hidden" {...register('id_type')} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="id_number">ID Number</Label>
+              <Input
+                id="id_number"
+                {...register('id_number')}
+                placeholder="ID number"
+              />
+            </div>
+          </div>
 
-            <Card className="border border-gray-200">
-              <CardContent className="pt-4">
-                <FormLabel className="mb-2 block">ID Document</FormLabel>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="id_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ID Type</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Passport, Driver's license, etc." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="id_number"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ID Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="ID number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+          <div className="space-y-2">
+            <Label htmlFor="id_document">Upload ID Document</Label>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <div className="flex items-center justify-center w-full">
+                    <label 
+                      htmlFor="id_document"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
+                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                          {idDocument ? idDocument.name : 'Click to upload or drag and drop'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or PDF (MAX. 5MB)</p>
+                      </div>
+                      <input 
+                        id="id_document" 
+                        type="file" 
+                        className="hidden" 
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        onChange={handleFileChange}
+                      />
+                    </label>
                   </div>
-
-                  <div className="mt-4">
-                    <FormLabel>Upload ID Document</FormLabel>
-                    <div className="mt-2">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          {previewImage ? (
-                            <div className="w-full h-full overflow-hidden relative">
-                              <img 
-                                src={previewImage} 
-                                alt="ID Document Preview" 
-                                className="w-full h-full object-contain" 
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                              <p className="mb-2 text-sm text-gray-500">
-                                <span className="font-semibold">Click to upload</span> or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                PNG, JPG, PDF (MAX. 5MB)
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept=".jpg,.jpeg,.png,.pdf" 
-                          onChange={handleFileChange}
-                        />
-                      </label>
+                  {uploadProgress > 0 && isUploading && (
+                    <div className="w-full mt-2">
+                      <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                        <div 
+                          className="h-2 bg-blue-600 rounded-full" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-right mt-1">{uploadProgress}%</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </TabsContent>
+      </Tabs>
 
-        <FormField
-          control={form.control}
-          name="isBranchManager"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Branch Manager
-                </FormLabel>
-                <FormDescription>
-                  Branch managers have additional permissions.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="isActive"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Active
-                </FormLabel>
-                <FormDescription>
-                  Inactive staff members cannot log in.
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <div className="flex gap-2 justify-end">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {initialData ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              initialData ? 'Update Staff Member' : 'Create Staff Member'
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <div className="flex justify-between pt-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => {
+            if (activeTab === 'basic-info') {
+              setActiveTab('contact');
+            } else if (activeTab === 'contact') {
+              setActiveTab('documents');
+            }
+          }}
+          disabled={activeTab === 'documents' || isSubmitting}
+        >
+          Next
+        </Button>
+        
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create Staff Member
+        </Button>
+      </div>
+    </form>
   );
-}
+};
+
+export default CreateStaffForm;

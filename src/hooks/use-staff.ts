@@ -26,18 +26,22 @@ export const useStaff = () => {
   const fetchStaff = useCallback(async () => {
     setIsLoading(true);
     try {
-      let query = supabase.from('profiles').select('*').in('role', ['staff', 'admin']);
+      // First, fetch staff profiles
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['staff', 'admin', 'trainer']); // Include trainers!
       
       if (currentBranch?.id) {
         query = query.eq('branch_id', currentBranch.id);
       }
       
-      const { data, error } = await query.order('full_name', { ascending: true });
+      const { data: staffProfiles, error: staffError } = await query.order('full_name', { ascending: true });
       
-      if (error) throw error;
+      if (staffError) throw staffError;
       
       // Map the data to our StaffMember interface
-      const formattedStaff = data.map(member => ({
+      const formattedStaff = staffProfiles.map(member => ({
         id: member.id,
         name: member.full_name || '',
         email: member.email || '',

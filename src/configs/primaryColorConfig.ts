@@ -1,42 +1,54 @@
-export type PrimaryColorConfig = {
-  name: string
-  light: string
-  main: string
-  dark: string
+
+type ColorConfig = {
+  name: string;
+  main: string;
+  light: string;
+  dark: string;
 }
 
-// Primary color config object
-const primaryColorConfig: PrimaryColorConfig[] = [
+const primaryColorConfig: ColorConfig[] = [
   {
-    name: 'primary-1',
-    light: '#8F85F3',
-    main: '#7367F0',
-    dark: '#675DD8'
+    name: 'Purple',
+    main: '#9b87f5',
+    light: '#d6bcfa',
+    dark: '#694fff',
   },
   {
-    name: 'primary-2',
-    light: '#4EB0B1',
-    main: '#0D9394',
-    dark: '#096B6C'
+    name: 'Blue',
+    main: '#1EAEDB',
+    light: '#90cdf4',
+    dark: '#0462a1',
   },
   {
-    name: 'primary-3',
-    light: '#FFC25A',
-    main: '#FFAB1D',
-    dark: '#BA7D15'
+    name: 'Green',
+    main: '#48bb78',
+    light: '#9ae6b4',
+    dark: '#2f855a',
   },
   {
-    name: 'primary-4',
-    light: '#F0718D',
-    main: '#EB3D63',
-    dark: '#AC2D48'
+    name: 'Orange',
+    main: '#F97316',
+    light: '#fdba74',
+    dark: '#c2410c',
   },
   {
-    name: 'primary-5',
-    light: '#5CAFF1',
-    main: '#2092EC',
-    dark: '#176BAC'
-  }
+    name: 'Red',
+    main: '#ef4444',
+    light: '#fca5a5',
+    dark: '#b91c1c',
+  },
+  {
+    name: 'Pink',
+    main: '#ec4899',
+    light: '#f9a8d4',
+    dark: '#be185d',
+  },
+  {
+    name: 'Gray',
+    main: '#6b7280',
+    light: '#d1d5db',
+    dark: '#374151',
+  },
 ]
 
-export default primaryColorConfig
+export default primaryColorConfig;
