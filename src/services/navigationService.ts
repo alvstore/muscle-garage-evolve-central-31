@@ -3,8 +3,8 @@ import { RouteObject } from 'react-router-dom';
 import { AppRoute } from '@/types/routes';
 import { NavItem, NavSection } from '@/types/navigation';
 
-// Convert routes to navigation items
-export const routesToNavItems = (routes: RouteObject[]): NavItem[] => {
+// Convert routes to navigation items - accepting both RouteObject and AppRoute types
+export const routesToNavItems = (routes: (RouteObject | AppRoute)[]): NavItem[] => {
   return routes
     .filter(route => route.handle && (route.handle as any).navigation) 
     .map(route => {
@@ -48,6 +48,5 @@ export const groupNavItemsBySection = (
 
 // Function to safely process a mix of RouteObject and AppRoute
 export const processRoutes = (routes: (RouteObject | AppRoute)[]) => {
-  // For safety, just cast to RouteObject[] since we're only using common properties
-  return routesToNavItems(routes as RouteObject[]);
+  return routesToNavItems(routes);
 };

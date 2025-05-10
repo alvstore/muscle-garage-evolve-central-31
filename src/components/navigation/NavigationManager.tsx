@@ -10,6 +10,7 @@ import { classesRoutes } from '@/router/routes/classesRoutes';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
 import { Permission } from '@/hooks/use-permissions';
 import { AppRoute } from '@/types/routes';
+import { RouteObject } from 'react-router-dom';
 
 // Import other route files as needed
 
@@ -50,14 +51,14 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   // Get active path section
   const activePathSection = location.pathname.split('/')[1] || 'dashboard';
   
-  // Combine all routes - treating them as basic RouteObject for navigation purposes
+  // Combine all routes - treating them as a union type for navigation purposes
   const allRoutes = useMemo(() => [
     ...adminRoutes,
     ...crmRoutes,
     ...settingsRoutes,
     ...classesRoutes,
     // Add other routes here
-  ] as AppRoute[], []);
+  ] as (RouteObject | AppRoute)[], []);
   
   // Generate nav items from routes
   const allNavItems = useMemo(() => routesToNavItems(allRoutes), [allRoutes]);

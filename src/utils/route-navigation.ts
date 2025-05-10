@@ -1,8 +1,9 @@
 
 import { RouteObject } from 'react-router-dom';
 import { NavItem, NavSection } from '@/types/navigation';
+import { AppRoute } from '@/types/routes';
 
-export const routesToNavItems = (routes: RouteObject[]): NavItem[] => {
+export const routesToNavItems = (routes: (RouteObject | AppRoute)[]): NavItem[] => {
   return routes
     .filter(route => route.handle && (route.handle as any).navigation) 
     .map(route => {
@@ -48,7 +49,7 @@ interface BreadcrumbItem {
   label: string;
 }
 
-export const generateBreadcrumbs = (pathname: string, routes: RouteObject[]): BreadcrumbItem[] => {
+export const generateBreadcrumbs = (pathname: string, routes: (RouteObject | AppRoute)[]): BreadcrumbItem[] => {
   if (pathname === '/') {
     return [{ href: '/', label: 'Home' }];
   }
@@ -61,7 +62,7 @@ export const generateBreadcrumbs = (pathname: string, routes: RouteObject[]): Br
   let currentPath = '';
   
   // Build up breadcrumbs based on path segments
-  segments.forEach((segment, index) => {
+  segments.forEach((segment) => {
     currentPath += `/${segment}`;
     
     // Try to find a matching route
@@ -70,8 +71,11 @@ export const generateBreadcrumbs = (pathname: string, routes: RouteObject[]): Br
     let label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
     
     // If we have metadata for this route, use its title
-    if (matchingRoute && (matchingRoute as any).meta?.title) {
-      label = (matchingRoute as any).meta.title;
+    if (matchingRoute) {
+      const meta = 'meta' in matchingRoute && matchingRoute.meta;
+      if (meta && meta.title) {
+        label = meta.title;
+      }
     }
     
     breadcrumbs.push({
