@@ -8,11 +8,15 @@ import { BodyMeasurement } from "@/types/measurements";
 import { User } from "@/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Switch } from "@/components/ui/switch";
+import { ImagePlus, Trash2, Upload } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BodyMeasurementFormProps {
   memberId?: string;
   initialData?: Partial<BodyMeasurement>;
-  onSave: (data: Partial<BodyMeasurement>) => void;
+  onSave: (data: Partial<BodyMeasurement> & { photos?: string[] }) => void;
   onCancel?: () => void;
   currentUser: User;
   isEditMode?: boolean;
@@ -36,11 +40,15 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
     thighs: initialData?.thighs || undefined,
     bodyFat: initialData?.bodyFat || undefined,
     notes: initialData?.notes || "",
-    date: initialData?.date || format(new Date(), "yyyy-MM-dd"),
+    date: format(new Date(), "yyyy-MM-dd"), // Always use current date
     memberId: memberId || initialData?.memberId || "",
   });
 
   const [calculatedBMI, setCalculatedBMI] = useState<number | undefined>(initialData?.bmi);
+  const [includePhotos, setIncludePhotos] = useState<boolean>(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Calculate BMI when height or weight changes
   useEffect(() => {
@@ -61,34 +69,84 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setPhotos(prev => [...prev, ...newFiles]);
+      
+      // Create preview URLs for the new files
+      const newUrls = newFiles.map(file => URL.createObjectURL(file));
+      setPhotoUrls(prev => [...prev, ...newUrls]);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(photoUrls[index]);
+    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPhotos = async (): Promise<string[]> => {
+    if (photos.length === 0) return [];
+    
+    const uploadedUrls: string[] = [];
+    setIsUploading(true);
+    
+    try {
+      for (const photo of photos) {
+        const fileName = `${memberId || formData.memberId}/measurements/${Date.now()}-${photo.name}`;
+        
+        const { data, error } = await supabase.storage
+          .from('member-photos')
+          .upload(fileName, photo);
+          
+        if (error) throw error;
+        
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('member-photos')
+          .getPublicUrl(fileName);
+          
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+      
+      return uploadedUrls;
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Failed to upload photos');
+      return [];
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.memberId) {
+    if (!formData.memberId && !memberId) {
       toast.error("Member ID is required");
       return;
     }
-
-    // Prepare data for submission
-    const measurementData: Partial<BodyMeasurement> = {
+    
+    let uploadedPhotoUrls: string[] = [];
+    
+    if (includePhotos && photos.length > 0) {
+      uploadedPhotoUrls = await uploadPhotos();
+    }
+    
+    const dataToSave: Partial<BodyMeasurement> & { photos?: string[] } = {
       ...formData,
+      memberId: formData.memberId || memberId,
       bmi: calculatedBMI,
-      addedBy: {
-        id: currentUser.id,
-        role: currentUser.role,
-        name: currentUser.name
-      }
     };
-
-    onSave(measurementData);
-  };
-
-  const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5) return { label: "Underweight", color: "text-blue-500" };
-    if (bmi < 25) return { label: "Normal", color: "text-green-500" };
-    if (bmi < 30) return { label: "Overweight", color: "text-yellow-500" };
-    return { label: "Obese", color: "text-red-500" };
+    
+    if (uploadedPhotoUrls.length > 0) {
+      dataToSave.photos = uploadedPhotoUrls;
+    }
+    
+    onSave(dataToSave);
   };
 
   return (
@@ -101,48 +159,35 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="height">Height (cm)</Label>
-              <Input
-                id="height"
-                name="height"
-                type="number"
-                step="0.1"
-                placeholder="Height in cm"
-                value={formData.height || ""}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
               <Label htmlFor="weight">Weight (kg)</Label>
               <Input
                 id="weight"
-                name="weight"
                 type="number"
                 step="0.1"
-                placeholder="Weight in kg"
+                min="0"
                 value={formData.weight || ""}
                 onChange={handleChange}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bmi">BMI (Calculated)</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="bmi"
-                  readOnly
-                  value={calculatedBMI?.toString() || ""}
-                  className="bg-gray-50"
-                />
-                {calculatedBMI && (
-                  <span className={`text-sm font-medium ${getBMICategory(calculatedBMI).color}`}>
-                    {getBMICategory(calculatedBMI).label}
-                  </span>
-                )}
-              </div>
+            <div>
+              <Label htmlFor="height">Height (cm)</Label>
+              <Input
+                id="height"
+                type="number"
+                step="0.1"
+                min="0"
+                value={formData.height || ""}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <Label htmlFor="date" className="block mb-2">Measurement Date</Label>
+            <div className="text-sm text-muted-foreground">
+              {format(new Date(), "MMMM dd, yyyy")} (Today)
             </div>
           </div>
           
@@ -228,25 +273,95 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
             </div>
           </div>
           
-          <div className="space-y-2">
+          <div className="mb-4">
             <Label htmlFor="notes">Notes</Label>
-            <Input
+            <textarea
               id="notes"
-              name="notes"
-              placeholder="Additional notes about this measurement"
+              className="w-full p-2 border rounded-md mt-1"
+              rows={3}
               value={formData.notes || ""}
-              onChange={handleChange}
+              onChange={(e) => handleChange({
+                target: {
+                  name: "notes",
+                  value: e.target.value
+                }
+              } as React.ChangeEvent<HTMLInputElement>)}
             />
           </div>
           
-          <div className="flex justify-end space-x-2">
+          <Separator className="my-4" />
+          
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="include-photos" className="font-medium">Include Photos</Label>
+              <Switch 
+                id="include-photos" 
+                checked={includePhotos} 
+                onCheckedChange={setIncludePhotos} 
+              />
+            </div>
+            
+            {includePhotos && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="photo-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50">
+                      <ImagePlus className="h-4 w-4" />
+                      <span>Add Photos</span>
+                    </div>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    Upload before/after photos
+                  </span>
+                </div>
+                
+                {photoUrls.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {photoUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={url} 
+                          alt={`Photo ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(index)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2">
             {onCancel && (
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
             )}
-            <Button type="submit">
-              {isEditMode ? "Update Measurements" : "Save Measurements"}
+            <Button type="submit" disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <Upload className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>{isEditMode ? "Update" : "Save"} Measurements</>
+              )}
             </Button>
           </div>
         </form>
