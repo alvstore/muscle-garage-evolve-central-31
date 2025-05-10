@@ -6,11 +6,8 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { adminRoutes } from '@/router/routes/adminRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
-import { classesRoutes } from '@/router/routes/classesRoutes';
+import { classRoutes } from '@/router/routes/classRoutes';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
-import { Permission } from '@/hooks/use-permissions';
-import { AppRoute } from '@/types/routes';
-import { RouteObject } from 'react-router-dom';
 
 // Import other route files as needed
 
@@ -24,7 +21,7 @@ export interface NavigationManagerProps {
 }
 
 export function NavigationManager({ children }: NavigationManagerProps) {
-  const { hasPermission } = usePermissions();
+  const { can } = usePermissions();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = React.useState<string[]>(['Dashboard']);
   
@@ -51,14 +48,14 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   // Get active path section
   const activePathSection = location.pathname.split('/')[1] || 'dashboard';
   
-  // Combine all routes - treating them as a union type for navigation purposes
+  // Combine all routes
   const allRoutes = useMemo(() => [
     ...adminRoutes,
     ...crmRoutes,
     ...settingsRoutes,
-    ...classesRoutes,
+    ...classRoutes,
     // Add other routes here
-  ] as (RouteObject | AppRoute)[], []);
+  ], []);
   
   // Generate nav items from routes
   const allNavItems = useMemo(() => routesToNavItems(allRoutes), [allRoutes]);
@@ -66,13 +63,11 @@ export function NavigationManager({ children }: NavigationManagerProps) {
   // Group items into sections
   const sections = useMemo(() => {
     // Filter items by permission
-    const filteredItems = allNavItems.filter(item => 
-      !item.permission || hasPermission(item.permission as Permission)
-    );
+    const filteredItems = allNavItems.filter(item => can(item.permission));
     
     // Group by section
     return groupNavItemsBySection(filteredItems, sectionMap);
-  }, [allNavItems, hasPermission]);
+  }, [allNavItems, can]);
   
   // Expand the section of the active path
   React.useEffect(() => {

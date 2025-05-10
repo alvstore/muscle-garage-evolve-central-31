@@ -1,10 +1,7 @@
 
-import { Permission } from "@/hooks/use-permissions";
+import { ReactNode } from "react";
 import { createNavIcon } from "@/utils/createNavIcon";
-import { NavItem, NavSection } from "@/types/navigation";
-
-// Helper function to safely cast permission strings to Permission type
-const asPermission = (p: string): Permission => p as Permission;
+import { NavItem, NavSection, Permission } from "@/types/navigation";
 
 export const memberNavSections: NavSection[] = [
   {
@@ -14,7 +11,7 @@ export const memberNavSections: NavSection[] = [
         href: "/dashboard", 
         label: "Overview", 
         icon: createNavIcon("Home"),
-        permission: asPermission("feature_member_dashboard")
+        permission: "feature_member_dashboard" 
       },
     ],
   },
@@ -25,7 +22,7 @@ export const memberNavSections: NavSection[] = [
         href: "/members/profile", 
         label: "Profile", 
         icon: createNavIcon("User"),
-        permission: asPermission("member_view_profile")
+        permission: "member_view_profile" 
       },
     ],
   },
@@ -36,31 +33,31 @@ export const memberNavSections: NavSection[] = [
         href: "/classes", 
         label: "Book Classes", 
         icon: createNavIcon("Calendar"),
-        permission: asPermission("member_book_classes")
+        permission: "member_book_classes"
       },
       { 
         href: "/attendance", 
         label: "Attendance", 
         icon: createNavIcon("Activity"),
-        permission: asPermission("member_view_attendance")
+        permission: "member_view_attendance"
       },
       { 
         href: "/fitness/progress", 
         label: "Progress Tracker", 
         icon: createNavIcon("TrendingUp"),
-        permission: asPermission("member_view_profile")
+        permission: "member_view_profile"
       },
       { 
         href: "/fitness/workout-plans", 
         label: "Workout Plans", 
         icon: createNavIcon("Activity"),
-        permission: asPermission("member_view_plans")
+        permission: "member_view_plans"
       },
       { 
         href: "/fitness/diet", 
         label: "Diet Plan", 
         icon: createNavIcon("Utensils"),
-        permission: asPermission("member_view_plans")
+        permission: "member_view_plans"
       },
     ],
   },
@@ -71,13 +68,13 @@ export const memberNavSections: NavSection[] = [
         href: "/finance/invoices", 
         label: "Invoices", 
         icon: createNavIcon("FileText"),
-        permission: asPermission("member_view_invoices")
+        permission: "member_view_invoices"
       },
       { 
         href: "/membership", 
         label: "Membership", 
         icon: createNavIcon("CreditCard"),
-        permission: asPermission("member_view_plans")
+        permission: "member_view_plans"
       },
     ],
   },
@@ -88,7 +85,7 @@ export const memberNavSections: NavSection[] = [
         href: "/store", 
         label: "Shop", 
         icon: createNavIcon("ShoppingBag"),
-        permission: asPermission("access_store")
+        permission: "access_store"
       },
     ],
   },
@@ -99,13 +96,13 @@ export const memberNavSections: NavSection[] = [
         href: "/communication/feedback", 
         label: "Feedback", 
         icon: createNavIcon("MessageCircle"),
-        permission: asPermission("access_communication")
+        permission: "access_communication"
       },
       { 
         href: "/communication/announcements", 
         label: "Announcements", 
         icon: createNavIcon("Bell"),
-        permission: asPermission("access_communication")
+        permission: "access_communication"
       },
     ],
   },

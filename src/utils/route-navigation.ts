@@ -1,34 +1,40 @@
 
-import { RouteObject } from 'react-router-dom';
+import { AppRoute } from '@/types/route';
 import { NavItem, NavSection } from '@/types/navigation';
-import { AppRoute } from '@/types/routes';
+import { Permission } from '@/hooks/use-permissions';
 
-export const routesToNavItems = (routes: (RouteObject | AppRoute)[]): NavItem[] => {
+/**
+ * Converts routes with metadata into navigation items
+ */
+export function routesToNavItems(routes: AppRoute[]): NavItem[] {
   return routes
-    .filter(route => route.handle && (route.handle as any).navigation) 
-    .map(route => {
-      const handle = route.handle as any;
-      return {
-        href: route.path || '/',
-        label: handle.navigation.label || 'Unlabeled',
-        icon: handle.navigation.icon || undefined,
-        permission: handle.navigation.permission || undefined,
-        badge: handle.navigation.badge || undefined,
-        children: handle.navigation.children || [],
-      };
-    });
-};
+    .filter(route => route.meta && !route.meta.hideInNav)
+    .map(route => ({
+      href: route.path || '#',
+      label: route.meta?.title || 'Unknown',
+      permission: route.meta?.permission as Permission || 'access_dashboards',
+      icon: route.meta?.icon,
+      children: route.meta?.children 
+        ? routesToNavItems(route.meta.children)
+        : undefined
+    }));
+}
 
-export const groupNavItemsBySection = (
+/**
+ * Groups navigation items into sections
+ */
+export function groupNavItemsBySection(
   items: NavItem[], 
   sectionMap: Record<string, string>
-): NavSection[] => {
+): NavSection[] {
   const sections: Record<string, NavItem[]> = {};
   
-  // Group items by section
   items.forEach(item => {
-    const pathPart = item.href.split('/')[1] || 'dashboard';
-    const sectionName = sectionMap[pathPart] || 'Other';
+    const path = item.href.split('/')[1];
+    const sectionName = sectionMap[path];
+    
+    // Skip items that don't map to a known section
+    if (!sectionName) return;
     
     if (!sections[sectionName]) {
       sections[sectionName] = [];
@@ -37,52 +43,50 @@ export const groupNavItemsBySection = (
     sections[sectionName].push(item);
   });
   
-  // Convert to array of NavSection
   return Object.entries(sections).map(([name, items]) => ({
     name,
     items
   }));
-};
-
-interface BreadcrumbItem {
-  href: string;
-  label: string;
 }
 
-export const generateBreadcrumbs = (pathname: string, routes: (RouteObject | AppRoute)[]): BreadcrumbItem[] => {
-  if (pathname === '/') {
-    return [{ href: '/', label: 'Home' }];
-  }
-
-  // Split the pathname into segments
-  const segments = pathname.split('/').filter(Boolean);
-  
-  const breadcrumbs: BreadcrumbItem[] = [{ href: '/', label: 'Home' }];
+/**
+ * Generates breadcrumbs from route metadata
+ */
+export function generateBreadcrumbs(path: string, routes: AppRoute[]): { label: string, href: string }[] {
+  const breadcrumbs: { label: string, href: string }[] = [];
+  const pathSegments = path.split('/').filter(Boolean);
   
   let currentPath = '';
+  let currentRoutes = routes;
   
-  // Build up breadcrumbs based on path segments
-  segments.forEach((segment) => {
+  // Always add Home
+  breadcrumbs.push({
+    label: 'Home',
+    href: '/'
+  });
+  
+  pathSegments.forEach((segment, index) => {
     currentPath += `/${segment}`;
     
-    // Try to find a matching route
-    const matchingRoute = routes.find(route => route.path === currentPath);
+    const matchingRoute = currentRoutes.find(route => {
+      const routePath = route.path || '';
+      const routePathSegments = routePath.split('/').filter(Boolean);
+      return routePathSegments[index] === segment || 
+             routePathSegments[index]?.startsWith(':');
+    });
     
-    let label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
-    
-    // If we have metadata for this route, use its title
-    if (matchingRoute) {
-      const meta = 'meta' in matchingRoute && matchingRoute.meta;
-      if (meta && meta.title) {
-        label = meta.title;
-      }
+    if (matchingRoute?.meta?.breadcrumb) {
+      breadcrumbs.push({
+        label: matchingRoute.meta.breadcrumb,
+        href: currentPath
+      });
     }
     
-    breadcrumbs.push({
-      href: currentPath,
-      label
-    });
+    // Update children access to use route.children
+    if (matchingRoute?.children) {
+      currentRoutes = matchingRoute.children;
+    }
   });
   
   return breadcrumbs;
-};
+}

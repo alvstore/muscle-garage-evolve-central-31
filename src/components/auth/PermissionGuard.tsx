@@ -15,9 +15,9 @@ export const PermissionGuard = ({
   fallback = null, 
   children 
 }: PermissionGuardProps) => {
-  const { hasPermission } = usePermissions();
+  const { can } = usePermissions();
   
-  if (hasPermission(permission)) {
+  if (can(permission)) {
     return <>{children}</>;
   }
   
@@ -39,17 +39,17 @@ export const PermissionButton = ({
   children,
   ...props
 }: PermissionButtonProps) => {
-  const { hasPermission } = usePermissions();
-  const hasAccess = hasPermission(permission);
+  const { can } = usePermissions();
+  const hasPermission = can(permission);
   
-  if (!hasAccess && !disableOnly) {
+  if (!hasPermission && !disableOnly) {
     return null;
   }
   
   return (
     <button
       {...props}
-      disabled={!hasAccess || props.disabled}
+      disabled={!hasPermission || props.disabled}
     >
       {children}
     </button>
@@ -64,9 +64,9 @@ export const RoutePermissionGuard = ({
   permission: Permission;
   children: ReactNode;
 }) => {
-  const { hasPermission } = usePermissions();
+  const { can } = usePermissions();
   
-  if (hasPermission(permission)) {
+  if (can(permission)) {
     return <>{children}</>;
   }
   

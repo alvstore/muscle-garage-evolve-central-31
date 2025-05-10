@@ -8,14 +8,12 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
 import { useLocation } from 'react-router-dom';
-import { RouteObject } from 'react-router-dom';
 import { adminRoutes } from '@/router/routes/adminRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
-import { classesRoutes } from '@/router/routes/classesRoutes';
+import { classRoutes } from '@/router/routes/classRoutes';
 import { generateBreadcrumbs } from '@/utils/route-navigation';
 import { ChevronRight, Home } from 'lucide-react';
-import { AppRoute } from '@/types/routes';
 
 interface PageHeaderProps {
   title?: string;
@@ -29,11 +27,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   actions
 }) => {
   const location = useLocation();
-  const combinedRoutes: (RouteObject | AppRoute)[] = [
+  const combinedRoutes = [
     ...adminRoutes,
     ...settingsRoutes,
     ...crmRoutes,
-    ...classesRoutes,
+    ...classRoutes,
     // Add other route arrays here
   ];
   
@@ -44,10 +42,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     const path = location.pathname;
     // Look for route with matching path property instead of directly using path
     const matchingRoute = combinedRoutes.find(r => r && typeof r === 'object' && 'path' in r && r.path === path);
-    if (matchingRoute && 'meta' in matchingRoute && matchingRoute.meta?.title) {
-      return matchingRoute.meta.title;
-    }
-    return 'Dashboard';
+    return matchingRoute && matchingRoute.meta?.title || 'Dashboard';
   })();
 
   return (

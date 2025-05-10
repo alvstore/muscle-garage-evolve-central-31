@@ -31,13 +31,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const toggleTheme = () => {
-    if (mode === 'light') {
-      setMode('dark');
-    } else if (mode === 'dark') {
-      setMode('semi-dark');
-    } else {
-      setMode('light');
-    }
+    setMode(prev => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'semi-dark';
+      return 'light';
+    });
   };
 
   const changeThemeMode = (newMode: 'light' | 'dark' | 'semi-dark') => {

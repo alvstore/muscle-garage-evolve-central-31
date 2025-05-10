@@ -1,29 +1,13 @@
 
-import { RouteObject } from 'react-router-dom';
-import { settingsRoutes } from './admin/settingsRoutes';
-import { adminRoutes } from './adminRoutes';
-import { dashboardRoutes } from './dashboardRoutes';
-import { classesRoutes } from './classesRoutes';
-import { attendanceRoutes } from './attendanceRoutes';
-import { crmRoutes } from './crmRoutes';
-import { financeRoutes } from './financeRoutes';
-import { memberRoutes } from './memberRoutes';
-import { trainerRoutes } from './trainerRoutes';
-import { inventoryRoutes } from './inventoryRoutes';
-import { storeRoutes } from './storeRoutes';
-import { insightsRoutes } from './insightsRoutes';
-
-export {
-  adminRoutes,
-  settingsRoutes,
-  dashboardRoutes,
-  classesRoutes,
-  attendanceRoutes,
-  crmRoutes,
-  financeRoutes,
-  memberRoutes,
-  trainerRoutes,
-  inventoryRoutes,
-  storeRoutes,
-  insightsRoutes
-};
+export * from './dashboardRoutes';
+export * from './memberRoutes';
+export * from './fitnessRoutes';
+export * from './classesRoutes';
+export * from './attendanceRoutes';
+export * from './admin/membershipRoutes';
+export * from './settingsRoutes';
+export * from './financeRoutes';
+export * from './inventoryRoutes';
+export * from './storeRoutes';
+export * from './insightsRoutes';
+export * from './staffRoutes';
