@@ -301,104 +301,43 @@ const MemberProfilePage = () => {
   }
 
   return (
-    <><Container>
-      <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Member Profile</h1>
-          <div className="space-x-2">
-            <Button variant="outline" onClick={() => navigate(`/members/${member.id}/edit`)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button onClick={() => setIsAddMembershipOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Membership
-            </Button>
-          </div>
-        </div>
-        )}
-
-        {member.goal && (
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Fitness Goal</h4>
-            <p className="mt-1">{member.goal}</p>
-          </div>
-        )}
-
-        <div>
-          <h4 className="text-sm font-medium text-muted-foreground">Payment Summary</h4>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <p className="text-xs text-muted-foreground">Total Paid</p>
-              <p className="font-medium text-green-600">{formatCurrency(getTotalPaid())}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Due</p>
-              <p className="font-medium text-red-600">{formatCurrency(getTotalDue())}</p>
+    <>
+      <Container>
+        <div className="py-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Member Profile</h1>
+            <div className="space-x-2">
+              <Button variant="outline" onClick={() => navigate(`/members/${member.id}/edit`)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button onClick={() => setIsAddMembershipOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Membership
+              </Button>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card><div className="col-span-1 md:col-span-2">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 mb-4" onValueChange={(value) => {
-            setActiveTab(value);
-            // Force re-render of buttons to maintain styling
-            setTimeout(() => { }, 0);
-          } }>
-            <TabsTrigger value="overview">
-              <User className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="memberships">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Memberships
-            </TabsTrigger>
-            <TabsTrigger value="invoices">
-              <ReceiptText className="h-4 w-4 mr-2" />
-              Invoices
-            </TabsTrigger>
-            <TabsTrigger value="progress">
-              <Activity className="h-4 w-4 mr-2" />
-              Progress
-            </TabsTrigger>
-            <TabsTrigger value="attendance">
-              <Clock className="h-4 w-4 mr-2" />
-              Attendance
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Membership</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {activeMemberships.length > 0 ? (
-                    <div>
-                      <p className="font-medium">{activeMemberships[0].memberships.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Expires: {new Date(activeMemberships[0].end_date).toLocaleDateString()}
-                      </p>
-                      <div className="flex justify-between mt-2">
-                        <p className="text-sm">Total: {formatCurrency(activeMemberships[0].total_amount)}</p>
-                        <p className="text-sm">Paid: {formatCurrency(activeMemberships[0].amount_paid)}</p>
-                      </div>
-                      <div className="mt-2">
-                        {activeMemberships[0].payment_status === 'paid' ? (
-                          <Badge className="bg-green-500">Paid</Badge>
-                        ) : activeMemberships[0].payment_status === 'partial' ? (
-                          <Badge variant="secondary" className="bg-amber-500">Partial</Badge>
-                        ) : (
-                          <Badge variant="outline">Pending</Badge>
-                        )}
-                      </div>
-                    </div>)
-                    :
-                  }
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-1">
+              <CardHeader className="flex flex-row items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={member.profile_picture || ""} alt={member.name} />
+                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle>{member.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    ID: {member.id.substring(0, 8)}
+                  </p>
+                  {member.membership_status && (
+                    <div className="mt-1">
+                      {getMembershipStatusBadge(member.membership_status)}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
+              
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Contact Information</h4>
@@ -479,11 +418,7 @@ const MemberProfilePage = () => {
 
             <div className="col-span-1 md:col-span-2">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-5 mb-4" onValueChange={(value) => {
-                  setActiveTab(value);
-                  // Force re-render of buttons to maintain styling
-                  setTimeout(() => { }, 0);
-                } }>
+                <TabsList className="grid grid-cols-5 mb-4">
                   <TabsTrigger value="overview">
                     <User className="h-4 w-4 mr-2" />
                     Overview
@@ -901,7 +836,11 @@ const MemberProfilePage = () => {
               </Tabs>
             </div>
           </div>
-        </></div><Dialog open={isAddMembershipOpen} onOpenChange={setIsAddMembershipOpen}>
+        </div>
+      </Container>
+
+      {/* Add Membership Dialog */}
+      <Dialog open={isAddMembershipOpen} onOpenChange={setIsAddMembershipOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Assign Membership</DialogTitle>
@@ -913,7 +852,7 @@ const MemberProfilePage = () => {
             memberId={member.id}
             onSuccess={handleAddMembershipSuccess} />
         </DialogContent>
-      </Dialog></>
+      </Dialog>
 
       {/* Add Measurement Dialog */}
       <Dialog open={isAddMeasurementOpen} onOpenChange={setIsAddMeasurementOpen}>
@@ -978,7 +917,7 @@ const MemberProfilePage = () => {
           )}
         </DialogContent>
       </Dialog>
-    </Container>
+    </>
   );
 };
 
