@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
@@ -22,6 +21,9 @@ const queryClient = new QueryClient({
 
 function App() {
   useEffect(() => {
+    // Ensure storage buckets exist
+    ensureStorageBucketsExist();
+    
     // Start Hikvision polling if enabled
     const pollingEnabled = localStorage.getItem('hikvision_polling_enabled');
     if (pollingEnabled === 'true') {
