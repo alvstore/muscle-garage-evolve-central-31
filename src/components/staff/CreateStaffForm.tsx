@@ -30,11 +30,27 @@ interface FormData {
   id_number?: string;
 }
 
-interface CreateStaffFormProps {
+export interface CreateStaffFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
+  staff?: StaffMember[];
+  refetch?: () => Promise<void>;
 }
 
-const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
+export interface StaffMember {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  role: 'staff' | 'trainer' | 'admin';
+  department?: string;
+  branch_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>();
   const { toast } = useToast();
   const { createStaffMember } = useStaff();
@@ -115,10 +131,7 @@ const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
           .from('documents')
           .upload(filePath, idDocument, {
             cacheControl: '3600',
-            upsert: true,
-            onUploadProgress: (progress) => {
-              setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
-            },
+            upsert: true
           });
 
         if (uploadError) {
@@ -434,20 +447,31 @@ const CreateStaffForm = ({ onSuccess }: CreateStaffFormProps) => {
       </Tabs>
 
       <div className="flex justify-between pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => {
-            if (activeTab === 'basic-info') {
-              setActiveTab('contact');
-            } else if (activeTab === 'contact') {
-              setActiveTab('documents');
-            }
-          }}
-          disabled={activeTab === 'documents' || isSubmitting}
-        >
-          Next
-        </Button>
+        {onCancel ? (
+          <Button 
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+        ) : (
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              if (activeTab === 'basic-info') {
+                setActiveTab('contact');
+              } else if (activeTab === 'contact') {
+                setActiveTab('documents');
+              }
+            }}
+            disabled={activeTab === 'documents' || isSubmitting}
+          >
+            Next
+          </Button>
+        )}
         
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

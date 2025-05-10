@@ -1,81 +1,48 @@
-import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './hooks/use-branch';
-import AppRouter from './router/AppRouter';
-import RouteChecker from './components/debug/RouteChecker';
-import { toast, Toaster } from 'sonner';
-import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
-import { ThemeProvider } from './providers/ThemeProvider';
-import ThemeCustomizer from './components/theme/ThemeCustomizer';
-import { ensureStorageBucketsExist } from './services/storageService';
 
-// Create a query client
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AppRouter from './router/AppRouter';
+import { ThemeProvider } from './providers/ThemeProvider';
+import { Toaster } from "@/components/ui/sonner";
+import { ensureStorageBucketsExist } from './services/storageService';
+import { supabase } from './integrations/supabase/client';
+
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   },
 });
 
 function App() {
   useEffect(() => {
-    // Ensure storage buckets exist
-    ensureStorageBucketsExist();
-    
-    // Start Hikvision polling if enabled
-    const pollingEnabled = localStorage.getItem('hikvision_polling_enabled');
-    if (pollingEnabled === 'true') {
-      hikvisionPollingService.startPolling();
-    }
-
-    // Tab visibility management
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        // You can add code here to pause certain activities when tab is hidden
-        // For example, pause animations, timers, or non-critical background tasks
-        console.log('Tab hidden, pausing non-critical operations');
-      } else {
-        // Resume activities when tab becomes visible
-        console.log('Tab visible, resuming operations');
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        console.log('User signed in', session?.user?.id);
+        // Ensure storage buckets exist when user signs in
+        ensureStorageBucketsExist();
       }
-    };
+    });
 
-    // Add event listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Move initialization here
-    const initializeApp = async () => {
-      try {
-        // Removed the createInitialAdmin call
-      } catch (error) {
-        console.error("Error during app initialization:", error);
-        toast.error("Error initializing application");
-      }
-    };
-    
-    initializeApp();
-    
-    // Cleanup on unmount
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      hikvisionPollingService.stopPolling();
+      subscription.unsubscribe();
     };
   }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <BranchProvider>
-            <Toaster position="top-right" />
-            <AppRouter />
-            {process.env.NODE_ENV === 'development' && <RouteChecker />}
-          </BranchProvider>
-        </AuthProvider>
+        <Router>
+          <AppRouter />
+        </Router>
       </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+      <Toaster />
     </QueryClientProvider>
   );
 }

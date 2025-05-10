@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -44,6 +43,7 @@ interface MemberData {
   gender?: string;
   occupation?: string;
   profile_picture?: string;
+  created_at: string;
 }
 
 interface Invoice {

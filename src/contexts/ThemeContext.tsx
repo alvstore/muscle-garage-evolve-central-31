@@ -1,160 +1,104 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
-import { ThemeSettings, UpdateSettingsOptions, Mode } from '@/types/theme'
-import themeConfig from '@/configs/themeConfig'
-import primaryColorConfig from '@/configs/primaryColorConfig'
 
-// Settings context props type
-type ThemeContextProps = {
-  settings: ThemeSettings
-  updateSettings: (settings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => void
-  resetSettings: () => void
+import React, { createContext, useState, useEffect } from 'react';
+import primaryColorConfig from '@/configs/primaryColorConfig';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+interface ThemeContextProps {
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
 }
 
-// Props type for the provider
-type ThemeProviderProps = {
-  children: ReactNode
-  defaultSettings?: ThemeSettings
-}
+export const ThemeContext = createContext<ThemeContextProps>({
+  primaryColor: primaryColorConfig[0].main,
+  setPrimaryColor: () => {},
+  mode: 'system',
+  setMode: () => {},
+  isDark: false,
+  toggleTheme: () => {},
+});
 
-// Create the context
-export const ThemeContext = createContext<ThemeContextProps | null>(null)
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [primaryColor, setPrimaryColor] = useState<string>(primaryColorConfig[0].main);
+  const [mode, setMode] = useState<ThemeMode>('system');
+  const [isDark, setIsDark] = useState<boolean>(false);
 
-// Custom hook to use the theme context
-export const useTheme = () => {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
-}
+  // Function to set theme based on system preference
+  const setThemeFromSystemPreference = () => {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDark(prefersDark);
+    document.documentElement.classList.toggle('dark', prefersDark);
+  };
 
-// Theme provider component
-export const ThemeProvider = ({ children, defaultSettings }: ThemeProviderProps) => {
-  // Initial settings
-  const initialSettings: ThemeSettings = {
-    mode: themeConfig.mode,
-    skin: themeConfig.skin,
-    semiDark: themeConfig.semiDark,
-    layout: themeConfig.layout,
-    primaryColor: themeConfig.primaryColor
-  }
-
-  // Get settings from localStorage or use initial settings
-  const getStoredSettings = (): ThemeSettings => {
-    const storedSettings = localStorage.getItem(themeConfig.settingsCookieName)
-    if (storedSettings) {
-      try {
-        return JSON.parse(storedSettings)
-      } catch (error) {
-        console.error('Error parsing stored settings:', error)
-      }
-    }
-    return defaultSettings || initialSettings
-  }
-
-  // State for settings
-  const [settings, setSettings] = useState<ThemeSettings>(getStoredSettings)
-
-  // Function to update settings
-  const updateSettings = (newSettings: Partial<ThemeSettings>, options?: UpdateSettingsOptions) => {
-    const { updateStorage = true } = options || {}
-
-    setSettings(prevSettings => {
-      const updatedSettings = { ...prevSettings, ...newSettings }
-      
-      // Update localStorage if needed
-      if (updateStorage) {
-        localStorage.setItem(themeConfig.settingsCookieName, JSON.stringify(updatedSettings))
-      }
-
-      return updatedSettings
-    })
-  }
-
-  // Function to reset settings to initial values
-  const resetSettings = () => {
-    localStorage.removeItem(themeConfig.settingsCookieName)
-    setSettings(initialSettings)
-  }
-
-  // Apply theme settings to document
+  // Initialize theme on component mount
   useEffect(() => {
-    const applyTheme = () => {
-      const { mode, semiDark, primaryColor } = settings
-      const root = document.documentElement
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      
-      // Determine if dark mode should be applied
-      const isDarkMode = 
-        mode === 'dark' || 
-        (mode === 'system' && prefersDark)
-      
-      // Apply dark/light mode
-      if (isDarkMode) {
-        root.classList.add('dark')
-        root.classList.remove('light')
-      } else {
-        root.classList.add('light')
-        root.classList.remove('dark')
-      }
-
-      // Apply semi-dark mode for sidebar
-      if (semiDark && !isDarkMode) {
-        root.setAttribute('data-sidebar-dark', 'true')
-      } else {
-        root.removeAttribute('data-sidebar-dark')
-      }
-
-      // Apply primary color
-      const primaryColorObj = primaryColorConfig.find(color => color.main === primaryColor) || primaryColorConfig[0]
-      
-      // Set CSS variables for primary color
-      root.style.setProperty('--primary-light', primaryColorObj.light)
-      root.style.setProperty('--primary', primaryColorObj.main)
-      root.style.setProperty('--primary-dark', primaryColorObj.dark)
-      
-      // Convert hex to RGB for opacity variants
-      const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-        return result
-          ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16)
-            }
-          : null
-      }
-      
-      const primaryRgb = hexToRgb(primaryColorObj.main)
-      if (primaryRgb) {
-        root.style.setProperty('--primary-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`)
-      }
+    // Check for saved theme preference
+    const savedMode = localStorage.getItem('theme-mode') as ThemeMode;
+    const savedColor = localStorage.getItem('primary-color');
+    
+    if (savedMode) {
+      setMode(savedMode);
     }
-
-    applyTheme()
-
-    // Listen for system preference changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = () => {
-      if (settings.mode === 'system') {
-        applyTheme()
-      }
+    
+    if (savedColor) {
+      setPrimaryColor(savedColor);
     }
+    
+    // Apply theme
+    applyTheme(savedMode || mode);
+  }, []);
 
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [settings])
+  // Apply theme
+  const applyTheme = (newMode: ThemeMode) => {
+    if (newMode === 'system') {
+      setThemeFromSystemPreference();
+      // Listen for system preference changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setThemeFromSystemPreference);
+    } else {
+      const isDarkMode = newMode === 'dark';
+      setIsDark(isDarkMode);
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      // Remove listener if we're not using system preference
+      window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', setThemeFromSystemPreference);
+    }
+    
+    // Save preference
+    localStorage.setItem('theme-mode', newMode);
+  };
 
-  // Context value
-  const contextValue = useMemo(() => ({
-    settings,
-    updateSettings,
-    resetSettings
-  }), [settings])
+  const toggleTheme = () => {
+    const newMode = isDark ? 'light' : 'dark';
+    setMode(newMode);
+    applyTheme(newMode);
+  };
+
+  // Apply primary color
+  useEffect(() => {
+    document.documentElement.style.setProperty('--primary-color', primaryColor);
+    localStorage.setItem('primary-color', primaryColor);
+  }, [primaryColor]);
+
+  // Watch for mode changes
+  useEffect(() => {
+    applyTheme(mode);
+  }, [mode]);
 
   return (
-    <ThemeContext.Provider value={contextValue}>
+    <ThemeContext.Provider value={{ 
+      primaryColor, 
+      setPrimaryColor, 
+      mode,
+      setMode,
+      isDark,
+      toggleTheme
+    }}>
       {children}
     </ThemeContext.Provider>
-  )
-}
+  );
+};
+
+export default ThemeProvider;
