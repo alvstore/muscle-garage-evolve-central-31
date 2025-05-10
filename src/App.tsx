@@ -1,6 +1,5 @@
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './router/AppRouter';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -52,9 +51,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router>
-          <AppRouter />
-        </Router>
+        <AppRouter />
       </ThemeProvider>
       <Toaster />
       {showDevtools && (
