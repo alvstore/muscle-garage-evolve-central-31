@@ -264,7 +264,7 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({ mem
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No trainer</SelectItem>
+                    <SelectItem value="none">No trainer</SelectItem>
                     {trainers?.map((trainer) => (
                       <SelectItem key={trainer.id} value={trainer.id}>
                         {trainer.name || trainer.fullName || "Unnamed Trainer"}

@@ -18,6 +18,7 @@ import { membershipService } from '@/services/membershipService';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/utils/stringUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import BodyMeasurementForm from '@/components/fitness/BodyMeasurementForm';
 
 interface MemberData {
   id: string;
@@ -89,6 +90,7 @@ const MemberProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddMembershipOpen, setIsAddMembershipOpen] = useState(false);
+  const [isAddMeasurementOpen, setIsAddMeasurementOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   
   useEffect(() => {
@@ -98,6 +100,13 @@ const MemberProfilePage = () => {
       
       try {
         let memberId = id;
+        
+        // Handle case where id is 'edit' (invalid UUID)
+        if (memberId === 'edit') {
+          setError('Invalid member ID');
+          setIsLoading(false);
+          return;
+        }
         
         // If no ID is provided and the current user is a member, show their own profile
         if (!memberId && user?.role === 'member') {
@@ -497,7 +506,7 @@ const MemberProfilePage = () => {
                             variant="outline" 
                             size="sm" 
                             className="mt-2"
-                            onClick={() => navigate(`/members/progress/${member.id}`)}
+                            onClick={() => setIsAddMeasurementOpen(true)}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add Measurement
@@ -698,7 +707,7 @@ const MemberProfilePage = () => {
                       <CardTitle>Fitness Progress</CardTitle>
                       <CardDescription>Measurements and body statistics</CardDescription>
                     </div>
-                    <Button variant="outline" onClick={() => navigate(`/members/progress/${member.id}`)}>
+                    <Button variant="outline" onClick={() => setIsAddMeasurementOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Measurement
                     </Button>
@@ -779,12 +788,7 @@ const MemberProfilePage = () => {
                     ) : (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">No measurements recorded yet</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => navigate(`/members/progress/${member.id}`)}
-                        >
+                        <Button variant="outline" onClick={() => setIsAddMeasurementOpen(true)}>
                           <Plus className="h-4 w-4 mr-2" />
                           Add First Measurement
                         </Button>
@@ -810,6 +814,70 @@ const MemberProfilePage = () => {
             memberId={member.id} 
             onSuccess={handleAddMembershipSuccess} 
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Measurement Dialog */}
+      <Dialog open={isAddMeasurementOpen} onOpenChange={setIsAddMeasurementOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Body Measurement</DialogTitle>
+            <DialogDescription>
+              Record new body measurements for this member.
+            </DialogDescription>
+          </DialogHeader>
+          {member && (
+            <BodyMeasurementForm
+              memberId={member.id}
+              currentUser={user!}
+              onSave={async (data) => {
+                try {
+                  // Convert the data to match the database schema
+                  const measurementData = {
+                    member_id: member.id,
+                    measurement_date: data.date,
+                    weight: data.weight,
+                    height: data.height,
+                    bmi: data.bmi,
+                    body_fat_percentage: data.bodyFat,
+                    chest: data.chest,
+                    waist: data.waist,
+                    hips: data.hips,
+                    biceps: data.biceps,
+                    thighs: data.thighs,
+                    notes: data.notes
+                  };
+                  
+                  // Save to database
+                  const { data: newMeasurement, error } = await supabase
+                    .from('measurements')
+                    .insert(measurementData)
+                    .select()
+                    .single();
+                    
+                  if (error) throw error;
+                  
+                  // Update the measurements list
+                  setMeasurements([newMeasurement, ...measurements]);
+                  
+                  toast({
+                    title: "Success",
+                    description: "Measurement added successfully"
+                  });
+                  
+                  setIsAddMeasurementOpen(false);
+                } catch (error: any) {
+                  console.error('Error adding measurement:', error);
+                  toast({
+                    title: "Error",
+                    description: error.message || "Failed to add measurement",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              onCancel={() => setIsAddMeasurementOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </Container>

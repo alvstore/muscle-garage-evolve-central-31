@@ -6,7 +6,7 @@ import IntegrationsPage from '@/pages/settings/IntegrationsPage';
 import AccessControlIntegrationPage from '@/pages/settings/AccessControlIntegrationPage';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
 import PushNotificationSettingsPage from '@/pages/settings/PushNotificationSettingsPage';
-import EmailIntegrationPage from '@/pages/settings/EmailIntegrationPage';
+import EmailSettingsPage from '@/pages/settings/EmailSettingsPage';
 import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import MessagingSettingsPage from '@/pages/settings/MessagingSettingsPage';
 import TemplatesPage from '@/pages/settings/TemplatesPage';
@@ -104,10 +104,10 @@ export const settingsRoutes: AppRoute[] = [
   },
   {
     path: '/settings/email',
-    element: <EmailIntegrationPage />,
+    element: <EmailSettingsPage />,
     meta: {
-      title: 'Email Settings',
-      breadcrumb: 'Email Settings',
+      title: 'Email Integration',
+      breadcrumb: 'Email Integration',
       permission: 'manage_integrations',
       icon: <Mail className="h-5 w-5" />
     }
@@ -144,7 +144,7 @@ export const settingsRoutes: AppRoute[] = [
   },
   {
     path: '/settings/templates/email',
-    element: <EmailTemplatesPage />,
+    element: <EmailSettingsPage />,
     meta: {
       title: 'Email Templates',
       breadcrumb: 'Email Templates',
