@@ -15,12 +15,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import MembershipAssignmentForm from '@/components/membership/MembershipAssignmentForm';
 import { useBranch } from '@/hooks/use-branch';
 import { membershipService } from '@/services/membershipService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/stringUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AttendanceHistory from "@/components/attendance/AttendanceHistory";
 import BodyMeasurementForm from '@/components/fitness/BodyMeasurementForm';
 import ProfileImageUpload from '@/components/members/ProfileImageUpload';
+import { registerMemberInBiometricDevice, checkBiometricDeviceStatus } from '@/services/biometricService';
 
 interface MemberData {
   id: string;
@@ -41,7 +42,8 @@ interface MemberData {
   country?: string;
   gender?: string;
   occupation?: string;
-  profile_picture?: string;  // Added this property
+  profile_picture?: string;
+  created_at: string;
 }
 
 interface Invoice {
@@ -79,6 +81,11 @@ interface MembershipData {
   };
 }
 
+interface BiometricStatus {
+  hikvision: boolean;
+  essl: boolean;
+}
+
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -94,6 +101,9 @@ const MemberProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAddMembershipOpen, setIsAddMembershipOpen] = useState(false);
   const [isAddMeasurementOpen, setIsAddMeasurementOpen] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState<BiometricStatus | null>(null);
+  const [biometricRegistrationStatus, setBiometricRegistrationStatus] = useState<string | null>(null);
+  const [isBiometricRegistering, setIsBiometricRegistering] = useState(false);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
@@ -104,90 +114,52 @@ const MemberProfilePage = () => {
       setError(null);
       
       try {
-        let memberId = id;
+        // If no ID is provided at all, handle that case first
+        if (!id) {
+          if (user?.role === 'member') {
+            // For member users, show their own profile
+            const { data: memberData, error: memberError } = await supabase
+              .from('members')
+              .select('*')
+              .eq('user_id', user.id)
+              .single();
+              
+            if (memberError) throw memberError;
+            if (memberData) {
+              setMember(memberData);
+              await fetchRelatedData(memberData.id);
+            } else {
+              setError('Member profile not found');
+            }
+          } else {
+            setError('No member ID provided');
+          }
+          setIsLoading(false);
+          return;
+        }
         
-        // Handle case where id is 'edit' (invalid UUID)
-        if (memberId === 'edit') {
+        // Now handle cases where ID is provided
+        if (id === 'edit' || id === 'new') {
           setError('Invalid member ID');
           setIsLoading(false);
           return;
         }
         
-        // If no ID is provided and the current user is a member, show their own profile
-        if (!memberId && user?.role === 'member') {
-          const { data: memberData, error: memberError } = await supabase
-            .from('members')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-            
-          if (memberError) throw memberError;
-          if (memberData) {
-            setMember(memberData);
-            memberId = memberData.id;
-          }
+        // Try to fetch the member by the provided ID
+        const { data, error: memberError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (memberError) {
+          console.error('Error fetching member:', memberError);
+          throw new Error('Member not found or database error');
         }
         
-        // If ID is provided, fetch that specific member
-        else if (memberId) {
-          const { data, error: memberError } = await supabase
-            .from('members')
-            .select('*')
-            .eq('id', memberId)
-            .single();
-            
-          if (memberError) throw memberError;
-          setMember(data);
-        } else {
-          setError('No member ID provided');
-          setIsLoading(false);
-          return;
-        }
+        setMember(data);
+        await fetchRelatedData(data.id);
         
-        // Fetch trainer if assigned
-        if (member?.trainer_id) {
-          const { data: trainerData, error: trainerError } = await supabase
-            .from('profiles')
-            .select('id, full_name, email, phone, avatar_url')
-            .eq('id', member.trainer_id)
-            .single();
-            
-          if (!trainerError && trainerData) {
-            setTrainer(trainerData);
-          }
-        }
-        
-        // Fetch active memberships
-        if (memberId) {
-          const memberships = await membershipService.getMemberActiveMemberships(memberId);
-          setActiveMemberships(memberships);
-          
-          // Fetch invoice history
-          const invoiceHistory = await membershipService.getMemberInvoiceHistory(memberId);
-          setInvoices(invoiceHistory);
-          
-          // Fetch measurements
-          const { data: measurementsData, error: measurementsError } = await supabase
-            .from('measurements')
-            .select('*')
-            .eq('member_id', memberId)
-            .order('measurement_date', { ascending: false });
-            
-          if (!measurementsError && measurementsData) {
-            setMeasurements(measurementsData);
-          }
-          
-          // Fetch attendance records
-          const { data: attendanceData, error: attendanceError } = await supabase
-            .from('attendance')
-            .select('*')
-            .eq('member_id', memberId)
-            .order('check_in_time', { ascending: false });
-            
-          if (!attendanceError && attendanceData) {
-            setAttendanceRecords(attendanceData);
-          }
-        }
       } catch (err: any) {
         console.error('Error fetching member:', err);
         setError(err.message || 'Failed to load member data');
@@ -196,8 +168,69 @@ const MemberProfilePage = () => {
       }
     };
     
+    const fetchRelatedData = async (memberId: string) => {
+      try {
+        // Fetch trainer if assigned
+        const memberData = await supabase
+          .from('members')
+          .select('*')
+          .eq('id', memberId)
+          .single();
+          
+        if (memberData.data?.trainer_id) {
+          const { data: trainerData, error: trainerError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone, avatar_url')
+            .eq('id', memberData.data.trainer_id)
+            .single();
+            
+          if (!trainerError && trainerData) {
+            setTrainer(trainerData);
+          }
+        }
+        
+        // Fetch active memberships
+        const memberships = await membershipService.getMemberActiveMemberships(memberId);
+        setActiveMemberships(memberships);
+        
+        // Fetch invoice history
+        const invoiceHistory = await membershipService.getMemberInvoiceHistory(memberId);
+        setInvoices(invoiceHistory);
+        
+        // Fetch measurements
+        const { data: measurementsData, error: measurementsError } = await supabase
+          .from('measurements')
+          .select('*')
+          .eq('member_id', memberId)
+          .order('measurement_date', { ascending: false });
+          
+        if (!measurementsError && measurementsData) {
+          setMeasurements(measurementsData);
+        }
+        
+        // Fetch attendance records
+        const { data: attendanceData, error: attendanceError } = await supabase
+          .from('member_attendance') // Changed from 'attendance' to 'member_attendance'
+          .select('*')
+          .eq('member_id', memberId)
+          .order('check_in', { ascending: false });
+          
+        if (!attendanceError && attendanceData) {
+          setAttendanceRecords(attendanceData);
+        }
+
+        // Check biometric registration status
+        if (currentBranch?.id) {
+          const status = await checkBiometricDeviceStatus(currentBranch.id);
+          setBiometricStatus(status);
+        }
+      } catch (err) {
+        console.error('Error fetching related data:', err);
+      }
+    };
+    
     fetchMemberData();
-  }, [id, user, member?.trainer_id]);
+  }, [id, user, currentBranch?.id]);
 
   const handleAddMembershipSuccess = async () => {
     if (member?.id) {
@@ -214,6 +247,54 @@ const MemberProfilePage = () => {
       // Refresh invoices
       const invoiceHistory = await membershipService.getMemberInvoiceHistory(member.id);
       setInvoices(invoiceHistory);
+    }
+  };
+
+  const handleBiometricRegistration = async (deviceType: 'hikvision' | 'essl') => {
+    if (!member || !member.id || !currentBranch?.id) {
+      toast({
+        title: "Error",
+        description: "Missing member or branch information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBiometricRegistering(true);
+    setBiometricRegistrationStatus("Registering...");
+    
+    try {
+      const result = await registerMemberInBiometricDevice({
+        memberId: member.id,
+        name: member.name,
+        phone: member.phone || '',
+        branchId: currentBranch.id,
+        deviceType,
+      });
+      
+      if (result.success) {
+        setBiometricRegistrationStatus("Registered");
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+      } else {
+        setBiometricRegistrationStatus("Failed");
+        toast({
+          title: "Registration failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      setBiometricRegistrationStatus("Error");
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred during biometric registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBiometricRegistering(false);
     }
   };
 
@@ -317,28 +398,26 @@ const MemberProfilePage = () => {
               </Button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-1">
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={member.profile_picture || ""} alt={member.name} />
-                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle>{member.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    ID: {member.id.substring(0, 8)}
-                  </p>
-                  {member.membership_status && (
-                    <div className="mt-1">
-                      {getMembershipStatusBadge(member.membership_status)}
-                    </div>
-                  )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader className="flex justify-between items-start space-y-0 pb-2">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xl">{member.name}</CardTitle>
+                  <CardDescription>
+                    Member Since: {new Date(member.created_at || Date.now()).toLocaleDateString()}
+                  </CardDescription>
                 </div>
+                {getMembershipStatusBadge(member.membership_status)}
               </CardHeader>
-              
               <CardContent className="space-y-4">
+                <div className="flex justify-center">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={member.profile_picture || ""} alt={member.name} />
+                    <AvatarFallback className="text-lg">{getInitials(member.name)}</AvatarFallback>
+                  </Avatar>
+                </div>
+
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Contact Information</h4>
                   <div className="space-y-2 mt-2">
@@ -413,6 +492,76 @@ const MemberProfilePage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Biometric Registration Section */}
+                {biometricStatus && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Biometric Access</h4>
+                    <div className="mt-2 space-y-2">
+                      {biometricStatus.hikvision && (
+                        <div>
+                          <Badge variant="outline" className="mb-2">Hikvision</Badge>
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            disabled={isBiometricRegistering}
+                            onClick={() => handleBiometricRegistration('hikvision')}
+                          >
+                            {isBiometricRegistering ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Registering...
+                              </>
+                            ) : (
+                              <>
+                                {biometricRegistrationStatus === "Registered" ? (
+                                  <Check className="h-4 w-4 mr-2" />
+                                ) : (
+                                  <Dumbbell className="h-4 w-4 mr-2" />
+                                )}
+                                Register with Hikvision
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                      {biometricStatus.essl && (
+                        <div>
+                          <Badge variant="outline" className="mb-2">eSSL</Badge>
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            disabled={isBiometricRegistering}
+                            onClick={() => handleBiometricRegistration('essl')}
+                          >
+                            {isBiometricRegistering ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Registering...
+                              </>
+                            ) : (
+                              <>
+                                {biometricRegistrationStatus === "Registered" ? (
+                                  <Check className="h-4 w-4 mr-2" />
+                                ) : (
+                                  <Dumbbell className="h-4 w-4 mr-2" />
+                                )}
+                                Register with eSSL
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                      {!biometricStatus.hikvision && !biometricStatus.essl && (
+                        <p className="text-sm text-muted-foreground">
+                          No biometric devices are configured for this branch.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -474,7 +623,7 @@ const MemberProfilePage = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="mt-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="mt-2"
                               onClick={() => setIsAddMembershipOpen(true)}
                             >
                               <Plus className="h-4 w-4 mr-2" />
@@ -633,7 +782,7 @@ const MemberProfilePage = () => {
                               </div>
                               {membership.total_amount > membership.amount_paid && (
                                 <div className="mt-4">
-                                  <Button variant="outline" size="sm" onClick={() => navigate(`/finance/invoices?memberId=${member.id}`)}>
+                                  <Button variant="outline" size="sm" onClick={() => navigate(`/finance/invoices/new?memberId=${member.id}`)}>
                                     <CreditCard className="h-4 w-4 mr-2" />
                                     Pay Remaining
                                   </Button>
@@ -698,7 +847,7 @@ const MemberProfilePage = () => {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => navigate(`/finance/invoices/${invoice.id}`)}
+                                  onClick={() => navigate(`/finance/invoices/detail/${invoice.id}`)}
                                 >
                                   View
                                 </Button>
@@ -831,7 +980,7 @@ const MemberProfilePage = () => {
                 </TabsContent>
 
                 <TabsContent value="attendance">
-                  <AttendanceHistory memberId={id || ''} />
+                  <AttendanceHistory memberId={member.id || ''} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -839,7 +988,6 @@ const MemberProfilePage = () => {
         </div>
       </Container>
 
-      {/* Add Membership Dialog */}
       <Dialog open={isAddMembershipOpen} onOpenChange={setIsAddMembershipOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>

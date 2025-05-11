@@ -36,7 +36,7 @@ export default function AppRouter() {
     checkSession();
   }, []);
   
-  // Provide access to the router throughout the application, wrapped with PermissionsProvider
+  // Provide permissions context and router
   return (
     <PermissionsProvider>
       <RouterProvider router={router} />

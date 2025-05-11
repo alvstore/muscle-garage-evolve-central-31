@@ -13,7 +13,7 @@ export const BranchContext = createContext<ReturnType<typeof useBranchData>>({
   isLoading: true,
   error: null,
   fetchBranches: async () => [],
-  fetchCurrentBranch: async () => {},
+  fetchCurrentBranch: async () => null,
   createBranch: async () => null,
   updateBranch: async () => null,
   deleteBranch: async () => false,
@@ -91,9 +91,8 @@ const useBranchData = () => {
         console.log('No branches found');
       } else {
         console.log(`Found ${branchesData.length} branches`);
+        setBranches(branchesData);
       }
-      
-      setBranches(branchesData || []);
       
       // Try to set current branch if we don't have one yet
       if (!currentBranch && branchesData && branchesData.length > 0) {
@@ -127,10 +126,10 @@ const useBranchData = () => {
 
   // Fetch current branch details
   const fetchCurrentBranch = useCallback(async () => {
-    if (!user) return;
+    if (!user) return null;
     
     const savedBranchId = localStorage.getItem('currentBranchId');
-    if (!savedBranchId) return;
+    if (!savedBranchId) return null;
     
     try {
       setIsLoading(true);
@@ -143,14 +142,17 @@ const useBranchData = () => {
         
       if (error) {
         console.error('Error fetching current branch:', error);
-        return;
+        return null;
       }
       
       if (data) {
         setCurrentBranch(data);
+        return data;
       }
+      return null;
     } catch (err) {
       console.error('Error in fetchCurrentBranch:', err);
+      return null;
     } finally {
       setIsLoading(false);
     }

@@ -1,81 +1,85 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AppRouter from './router/AppRouter';
+import { ThemeProvider } from './providers/ThemeProvider';
+import { Toaster } from "@/components/ui/sonner";
+import { ensureStorageBucketsExist } from './services/storageService';
+import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
-import AppRouter from './router/AppRouter';
-import RouteChecker from './components/debug/RouteChecker';
-import { toast, Toaster } from 'sonner';
-import { hikvisionPollingService } from './services/integrations/hikvisionPollingService';
-import { ThemeProvider } from './providers/ThemeProvider';
-import ThemeCustomizer from './components/theme/ThemeCustomizer';
-import { ensureStorageBucketsExist } from './services/storageService';
+import { toast } from 'sonner';
 
-// Create a query client
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   },
 });
 
+// Dynamically import React Query Devtools (only in development)
+const ReactQueryDevtoolsProduction = React.lazy(() =>
+  import('@tanstack/react-query-devtools/production').then(d => ({
+    default: d.ReactQueryDevtools
+  }))
+);
+
 function App() {
-  useEffect(() => {
-    // Ensure storage buckets exist
-    ensureStorageBucketsExist();
-    
-    // Start Hikvision polling if enabled
-    const pollingEnabled = localStorage.getItem('hikvision_polling_enabled');
-    if (pollingEnabled === 'true') {
-      hikvisionPollingService.startPolling();
+  const [showDevtools, setShowDevtools] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only show devtools in development
+    if (process.env.NODE_ENV === 'development') {
+      setShowDevtools(true);
     }
+  }, []);
 
-    // Tab visibility management
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        // You can add code here to pause certain activities when tab is hidden
-        // For example, pause animations, timers, or non-critical background tasks
-        console.log('Tab hidden, pausing non-critical operations');
-      } else {
-        // Resume activities when tab becomes visible
-        console.log('Tab visible, resuming operations');
-      }
-    };
-
-    // Add event listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Move initialization here
-    const initializeApp = async () => {
+  // Initialize storage buckets when app loads
+  useEffect(() => {
+    const initializeStorage = async () => {
       try {
-        // Removed the createInitialAdmin call
+        await ensureStorageBucketsExist();
       } catch (error) {
-        console.error("Error during app initialization:", error);
-        toast.error("Error initializing application");
+        console.error('Failed to initialize storage buckets:', error);
+        toast.error('Failed to initialize storage');
       }
     };
     
-    initializeApp();
-    
-    // Cleanup on unmount
+    initializeStorage();
+  }, []);
+
+  useEffect(() => {
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        console.log('User signed in', session?.user?.id);
+        // Ensure storage buckets exist when user signs in
+        ensureStorageBucketsExist();
+      }
+    });
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      hikvisionPollingService.stopPolling();
+      subscription.unsubscribe();
     };
   }, []);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <BranchProvider>
-            <Toaster position="top-right" />
+      <AuthProvider>
+        <BranchProvider>
+          <ThemeProvider>
             <AppRouter />
-            {process.env.NODE_ENV === 'development' && <RouteChecker />}
-          </BranchProvider>
-        </AuthProvider>
-      </ThemeProvider>
+            <Toaster />
+          </ThemeProvider>
+        </BranchProvider>
+      </AuthProvider>
+      {showDevtools && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtoolsProduction initialIsOpen={false} />
+        </Suspense>
+      )}
     </QueryClientProvider>
   );
 }

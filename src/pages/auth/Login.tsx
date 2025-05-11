@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@/types";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Login = () => {
   useEffect(() => {
     // Only redirect if we have confirmed authentication and user data
     if (isAuthenticated && user && !isLoading) {
+      console.log("Redirecting authenticated user with role:", userRole || user.role);
       const role = userRole || user.role as UserRole;
       
       // Redirect based on role
@@ -31,9 +33,15 @@ const Login = () => {
 
   // If still loading, render nothing or a loader
   if (isLoading && isAuthenticated) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-lg">Redirecting...</span>
+      </div>
+    );
   }
 
+  // Only show login form if not authenticated
   return <LoginForm />;
 };
 

@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate, RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import WebsiteLayout from '@/layouts/WebsiteLayout';
 
 // Pages
 import Index from '@/pages/Index';
@@ -13,6 +14,9 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Unauthorized from '@/pages/auth/Unauthorized';
 import Dashboard from '@/pages/dashboard/Dashboard';
 import RealTimeDashboardPage from '@/pages/dashboard/RealTimeDashboardPage';
+
+// Import website routes
+import { websiteRoutes } from './routes/websiteRoutes';
 
 // Import route groups
 import { memberRoutes } from './routes/memberRoutes';
@@ -45,13 +49,13 @@ const typedAdminRoutes = adminRoutes as RouteObject[];
 const typedBranchRoutes = branchRoutes as RouteObject[];
 const typedAnalyticsRoutes = analyticsRoutes as RouteObject[];
 const typedClassRoutes = classRoutes as RouteObject[];
+const typedWebsiteRoutes = websiteRoutes as RouteObject[];
 
 export const appRoutes: RouteObject[] = [
-  // Public routes
-  {
-    path: '/',
-    element: <Index />
-  },
+  // Public website routes
+  ...typedWebsiteRoutes,
+  
+  // Auth routes
   {
     path: '/login',
     element: <Login />

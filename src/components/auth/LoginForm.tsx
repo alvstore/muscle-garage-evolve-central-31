@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,11 +27,9 @@ const LoginForm = () => {
     email?: string;
     password?: string;
   }>({});
-
-  // Add this near your other state variables
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // Add this effect to monitor online status
+  // Add effect to monitor online status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -68,7 +67,6 @@ const LoginForm = () => {
     }
   };
   
-  // Then in your handleSubmit function, add this check
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -83,9 +81,8 @@ const LoginForm = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        // Login successful - navigation will be handled by the Login page component
-        // based on user role
         toast.success("Login successful");
+        // Login is successful - navigation will be handled by the Login page component
       } else {
         setError(result.error || "Login failed. Please check your credentials.");
         toast.error(result.error || "Login failed");

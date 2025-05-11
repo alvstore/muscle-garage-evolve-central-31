@@ -7,9 +7,10 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+    storage: localStorage, // Use local storage for auth state
+    persistSession: true,  // Persist the session
+    autoRefreshToken: true, // Automatically refresh token
+    detectSessionInUrl: true // Detect session in URL (for OAuth and password reset)
   },
   // Add global headers to ensure API key is sent with every request
   global: {
