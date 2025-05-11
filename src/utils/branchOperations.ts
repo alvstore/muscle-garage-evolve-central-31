@@ -1,3 +1,4 @@
+
 import { supabase } from '@/services/supabaseClient';
 import { Branch, normalizeBranch } from '@/types/branch';
 

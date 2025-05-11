@@ -21,8 +21,9 @@ type ThemeProviderState = {
   toggleTheme: () => void;
   settings: {
     mode: Theme;
+    semiDark: boolean;
   };
-  updateSettings: (settings: { mode?: Theme }) => void;
+  updateSettings: (settings: { mode?: Theme; semiDark?: boolean }) => void;
 };
 
 export interface ThemeProviderProps {
@@ -46,7 +47,8 @@ const initialState: ThemeProviderState = {
   isDark: false,
   toggleTheme: () => null,
   settings: {
-    mode: "system"
+    mode: "system",
+    semiDark: false
   },
   updateSettings: () => null
 };
@@ -68,6 +70,10 @@ export function ThemeProvider({
   const [radius, setRadius] = useLocalStorage<number>(
     "ui-radius",
     defaultRadius
+  );
+  const [semiDark, setSemiDark] = useLocalStorage<boolean>(
+    "ui-semi-dark",
+    false
   );
   
   // Calculate if we're in dark mode based on the theme
@@ -118,7 +124,7 @@ export function ThemeProvider({
   }, [radius]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => {
+    setTheme((prevTheme: Theme) => {
       if (prevTheme === "dark") return "light";
       if (prevTheme === "light") return "dark";
       // If system, then toggle based on current appearance
@@ -126,9 +132,12 @@ export function ThemeProvider({
     });
   };
 
-  const updateSettings = (newSettings: { mode?: Theme }) => {
+  const updateSettings = (newSettings: { mode?: Theme; semiDark?: boolean }) => {
     if (newSettings.mode) {
       setTheme(newSettings.mode);
+    }
+    if (newSettings.semiDark !== undefined) {
+      setSemiDark(newSettings.semiDark);
     }
   };
 
@@ -145,7 +154,8 @@ export function ThemeProvider({
     isDark,
     toggleTheme,
     settings: {
-      mode: theme
+      mode: theme,
+      semiDark
     },
     updateSettings
   };
