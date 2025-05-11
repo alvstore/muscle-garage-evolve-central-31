@@ -6,20 +6,10 @@ export interface Branch {
   city?: string;
   state?: string;
   country?: string;
-  managerId?: string;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  
-  // Additional properties needed by components
   phone?: string;
   email?: string;
-  manager?: string; // Human-readable manager name
-  maxCapacity?: number;
-  openingHours?: string;
-  closingHours?: string;
-  region?: string;
-  branchCode?: string;
-  taxRate?: number;
-  timezone?: string;
+  manager_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
 }

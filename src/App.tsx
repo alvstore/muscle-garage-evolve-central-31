@@ -9,12 +9,15 @@ import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
 import { toast } from 'sonner';
+import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      networkMode: 'always',
     },
   },
 });
@@ -47,16 +50,11 @@ function App() {
       }
     };
     
-    initializeStorage();
-  }, []);
-
-  useEffect(() => {
-    // Set up auth state change listener
+    // Only initialize storage when user signs in
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         console.log('User signed in', session?.user?.id);
-        // Ensure storage buckets exist when user signs in
-        ensureStorageBucketsExist();
+        initializeStorage();
       }
     });
 
@@ -69,10 +67,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BranchProvider>
-          <ThemeProvider>
-            <AppRouter />
-            <Toaster />
-          </ThemeProvider>
+          <PermissionsProvider>
+            <ThemeProvider>
+              <AppRouter />
+              <Toaster />
+            </ThemeProvider>
+          </PermissionsProvider>
         </BranchProvider>
       </AuthProvider>
       {showDevtools && (

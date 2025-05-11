@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, RefreshCw, Search, Plus } from 'lucide-react';
+import { Building2, RefreshCw, Search } from 'lucide-react';
 import { useBranch } from '@/hooks/use-branch';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
@@ -55,21 +55,15 @@ const BranchSelector: React.FC = () => {
     console.log('Branch selected:', value); 
     switchBranch(value);
     setIsOpen(false);
-    
-    const selectedBranch = branches.find(b => b.id === value);
-    if (selectedBranch) {
-      console.log('Setting branch:', selectedBranch);
-      toast.success(`Switched to ${selectedBranch.name}`);
-    }
-  }, [branches, switchBranch]);
+  }, [switchBranch]);
 
   // Handle dropdown open/close
   const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
     if (open) {
       fetchBranches();
       setSearchQuery('');
     }
-    setIsOpen(open);
   }, [fetchBranches]);
 
   // Handle refresh button click
@@ -100,7 +94,7 @@ const BranchSelector: React.FC = () => {
     return <Skeleton className="w-full h-10 rounded" />;
   }
 
-  // Handle no branches case with better error handling
+  // Handle no branches case
   if (!branches || branches.length === 0) {
     return (
       <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm text-muted-foreground bg-secondary/50 rounded-md">

@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const requiredBuckets = [
   'avatars',
@@ -39,27 +40,27 @@ const createBucketIfNotExists = async (name: string): Promise<void> => {
       });
       
       if (error) {
+        console.error(`Error creating bucket ${name}:`, error);
         throw error;
-      }
-      
-      // Set public bucket policy after creation
-      const { error: policyError } = await supabase
-        .storage
-        .from(name)
-        .createSignedUrl('dummy.txt', 3600);
-      
-      if (policyError && !policyError.message.includes('Object not found')) {
-        console.error(`Error setting policy for bucket ${name}:`, policyError);
       }
     }
   } catch (error) {
     console.error(`Error creating bucket ${name}:`, error);
+    // Don't throw here, just log the error and continue with other buckets
   }
 };
 
 // Main function to ensure all required buckets exist
 export const ensureStorageBucketsExist = async (): Promise<void> => {
   try {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.warn('User not authenticated, skipping bucket creation');
+      return;
+    }
+    
     for (const bucket of requiredBuckets) {
       await createBucketIfNotExists(bucket);
     }
@@ -101,6 +102,7 @@ export const uploadFile = async (
     return urlData.publicUrl;
   } catch (error) {
     console.error(`Error uploading file to ${bucketName}/${filePath}:`, error);
+    toast.error(`Error uploading file: ${error.message || 'Unknown error'}`);
     return null;
   }
 };
@@ -123,6 +125,7 @@ export const deleteFile = async (
     return true;
   } catch (error) {
     console.error(`Error deleting file ${bucketName}/${filePath}:`, error);
+    toast.error(`Error deleting file: ${error.message || 'Unknown error'}`);
     return false;
   }
 };

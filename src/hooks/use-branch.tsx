@@ -211,7 +211,12 @@ const useBranchData = () => {
       }
 
       setBranches(prev => prev.map(branch => branch.id === id ? data : branch));
-      setCurrentBranch(prev => prev?.id === id ? { ...prev, ...data } : prev);
+      
+      // Update currentBranch if we're updating the currently selected branch
+      if (currentBranch?.id === id) {
+        setCurrentBranch(data);
+      }
+      
       toast.success('Branch updated successfully');
       return data;
     } catch (err) {
@@ -244,8 +249,15 @@ const useBranchData = () => {
 
       setBranches(prev => prev.filter(branch => branch.id !== id));
       if (currentBranch?.id === id) {
-        setCurrentBranch(branches[0] || null);
-        localStorage.removeItem('currentBranchId');
+        // If we deleted the current branch, switch to another one
+        const newBranch = branches.find(branch => branch.id !== id);
+        if (newBranch) {
+          setCurrentBranch(newBranch);
+          localStorage.setItem('currentBranchId', newBranch.id);
+        } else {
+          setCurrentBranch(null);
+          localStorage.removeItem('currentBranchId');
+        }
       }
       toast.success('Branch deleted successfully');
       return true;
@@ -266,6 +278,7 @@ const useBranchData = () => {
       setCurrentBranch(branch);
       localStorage.setItem('currentBranchId', branchId);
       console.log('Switched to branch:', branch.name);
+      toast.success(`Switched to branch: ${branch.name}`);
     } else {
       console.error('Branch not found:', branchId);
       toast.error('Branch not found');
@@ -273,11 +286,15 @@ const useBranchData = () => {
   };
   
   const getImageUrl = (bucket: string, path: string) => {
-    if (!supabase) return '';
+    if (!path) return '';
     
-    // Use the proper supabase URL construction for files
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data?.publicUrl || '';
+    try {
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      return data?.publicUrl || '';
+    } catch (err) {
+      console.error('Error getting image URL:', err);
+      return '';
+    }
   };
 
   // Fetch branches on mount if user is available
@@ -285,15 +302,12 @@ const useBranchData = () => {
     if (user) {
       console.log('User authenticated, fetching branches');
       fetchBranches();
+    } else {
+      setBranches([]);
+      setCurrentBranch(null);
+      localStorage.removeItem('currentBranchId');
     }
   }, [user, fetchBranches]);
-
-  // Check for saved branch in localStorage
-  useEffect(() => {
-    if (user && !currentBranch) {
-      fetchCurrentBranch();
-    }
-  }, [user, currentBranch, fetchCurrentBranch]);
 
   return {
     branches,
