@@ -124,12 +124,14 @@ export function ThemeProvider({
   }, [radius]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme: Theme) => {
-      if (prevTheme === "dark") return "light";
-      if (prevTheme === "light") return "dark";
+    if (theme === "dark") {
+      setTheme("light");
+    } else if (theme === "light") {
+      setTheme("dark");
+    } else {
       // If system, then toggle based on current appearance
-      return isDark ? "light" : "dark";
-    });
+      setTheme(isDark ? "light" : "dark");
+    }
   };
 
   const updateSettings = (newSettings: { mode?: Theme; semiDark?: boolean }) => {

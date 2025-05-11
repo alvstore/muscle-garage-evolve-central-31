@@ -1,226 +1,201 @@
 
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Edit, Trash2, Search, UserPlus, Filter } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lead } from '@/types/crm';
-import { crmService } from '@/services/crmService';
-import { useBranch } from '@/hooks/use-branch';
-import { toast } from 'sonner';
+import { useLeads } from '@/hooks/use-leads';
+import { formatDistanceToNow } from 'date-fns';
+import { Edit, Loader2, MoreHorizontal, Plus, Search } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LeadsListProps {
-  onEdit: (lead: Lead) => void;
-  onAddNew: () => void;
+  onEdit?: (lead: Lead) => void;
+  onAddNew?: () => void;
 }
 
-export default function LeadsList({ onEdit, onAddNew }: LeadsListProps) {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [funnelFilter, setFunnelFilter] = useState('all');
-  const { currentBranch } = useBranch();
-
-  useEffect(() => {
-    fetchLeads();
-  }, [currentBranch?.id]);
-
-  const fetchLeads = async () => {
-    setIsLoading(true);
-    try {
-      if (!currentBranch?.id) {
-        setLeads([]);
-        return;
-      }
-      
-      const fetchedLeads = await crmService.getLeads(currentBranch?.id);
-      setLeads(fetchedLeads);
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteLead = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (window.confirm('Are you sure you want to delete this lead?')) {
-      try {
-        const success = await crmService.deleteLead(id);
-        if (success) {
-          setLeads(leads.filter(lead => lead.id !== id));
-          toast.success('Lead deleted successfully');
-        }
-      } catch (error) {
-        console.error('Error deleting lead:', error);
-      }
-    }
-  };
-
-  const handleEditLead = (lead: Lead, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit(lead);
-  };
+const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew }) => {
+  const { leads, isLoading, error, deleteLead } = useLeads();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
 
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
-      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (lead.email && lead.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (lead.phone && lead.phone.toLowerCase().includes(searchQuery.toLowerCase()));
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (lead.phone && lead.phone.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesFunnel = funnelFilter === 'all' || lead.funnel_stage === funnelFilter;
+    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
     
-    return matchesSearch && matchesFunnel;
+    return matchesSearch && matchesStatus && matchesSource;
   });
 
-  // Function to generate badge variant based on funnel stage
-  const getFunnelStageBadge = (stage: string) => {
-    switch (stage) {
-      case 'new':
-        return <Badge variant="secondary">New</Badge>;
-      case 'contacted':
-        return <Badge variant="outline">Contacted</Badge>;
-      case 'qualified':
-        return <Badge variant="default">Qualified</Badge>;
-      case 'proposal':
-        return <Badge variant="secondary">Proposal</Badge>;
-      case 'negotiation':
-        return <Badge className="bg-amber-500">Negotiation</Badge>;
-      case 'won':
-        return <Badge className="bg-green-500">Won</Badge>;
-      case 'lost':
-        return <Badge variant="destructive">Lost</Badge>;
-      default:
-        return <Badge variant="outline">{stage}</Badge>;
+  // Extract unique statuses and sources for filters
+  const statuses = [...new Set(leads.map(lead => lead.status))];
+  const sources = [...new Set(leads.map(lead => lead.source))];
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this lead?')) {
+      await deleteLead(id);
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'new': return 'bg-blue-500';
+      case 'contacted': return 'bg-yellow-500';
+      case 'qualified': return 'bg-indigo-500';
+      case 'converted': return 'bg-green-500';
+      case 'lost': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
   };
+  
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center text-red-500">
+            <p>Error loading leads: {error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search leads..." 
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select 
-            value={funnelFilter} 
-            onValueChange={setFunnelFilter}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Filter stage" />
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle>Leads Management</CardTitle>
+        <Button onClick={onAddNew}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add New Lead
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search leads..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="qualified">Qualified</SelectItem>
-              <SelectItem value="proposal">Proposal</SelectItem>
-              <SelectItem value="negotiation">Negotiation</SelectItem>
-              <SelectItem value="won">Won</SelectItem>
-              <SelectItem value="lost">Lost</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {statuses.map(status => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          
-          <Button onClick={onAddNew}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Lead
-          </Button>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              {sources.map(source => (
+                <SelectItem key={source} value={source}>{source}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : !currentBranch?.id ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Please select a branch to view leads</p>
-        </div>
-      ) : leads.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg">
-          <h3 className="font-medium text-lg">No leads found</h3>
-          <p className="text-muted-foreground mb-6">Get started by adding your first lead</p>
-          <Button onClick={onAddNew}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Lead
-          </Button>
-        </div>
-      ) : filteredLeads.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg">
-          <h3 className="font-medium text-lg">No matching leads</h3>
-          <p className="text-muted-foreground">Try adjusting your search or filters</p>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Stage</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead className="hidden md:table-cell">Created</TableHead>
-              <TableHead className="hidden md:table-cell">Follow-up</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredLeads.map((lead) => (
-              <TableRow 
-                key={lead.id} 
-                className="cursor-pointer"
-                onClick={(e) => handleEditLead(lead, e)}
-              >
-                <TableCell className="font-medium">{lead.name}</TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {lead.email && <div>{lead.email}</div>}
-                    {lead.phone && <div>{lead.phone}</div>}
-                  </div>
-                </TableCell>
-                <TableCell>{getFunnelStageBadge(lead.funnel_stage)}</TableCell>
-                <TableCell>{lead.source}</TableCell>
-                <TableCell className="hidden md:table-cell">{formatDate(lead.created_at || '')}</TableCell>
-                <TableCell className="hidden md:table-cell">{lead.follow_up_date ? formatDate(lead.follow_up_date) : 'N/A'}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={(e) => handleEditLead(lead, e)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={(e) => handleDeleteLead(lead.id, e)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredLeads.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No leads found matching your criteria.</p>
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead>Last Contact</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium">{lead.name}</TableCell>
+                    <TableCell>
+                      <div>{lead.email}</div>
+                      <div className="text-sm text-muted-foreground">{lead.phone}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusBadgeColor(lead.status)}>
+                        {lead.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{lead.source}</TableCell>
+                    <TableCell>
+                      {lead.last_contact_date ? (
+                        formatDistanceToNow(new Date(lead.last_contact_date), { addSuffix: true })
+                      ) : (
+                        'Never'
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onEdit && onEdit(lead)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(lead.id)}
+                            className="text-red-600"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default LeadsList;

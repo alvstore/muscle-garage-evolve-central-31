@@ -1,119 +1,29 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Product, ProductCategory } from '@/types/store';
+import { StoreProduct } from '@/services/storeService';
 import { formatCurrency } from '@/utils/formatters';
-import { Edit, Plus, ShoppingCart } from 'lucide-react';
+import { Edit, Plus, ShoppingCart, Loader2 } from 'lucide-react';
+import { useStoreProducts } from '@/hooks/use-store-products';
 
 interface ProductListProps {
-  onEdit?: (product: Product) => void;
+  onEdit?: (product: StoreProduct) => void;
   onAddNew?: () => void;
-  onAddToCart?: (product: Product, quantity: number) => void;
+  onAddToCart?: (product: StoreProduct, quantity: number) => void;
   isMemberView?: boolean;
 }
 
 const ProductList: React.FC<ProductListProps> = ({ onEdit, onAddNew, onAddToCart, isMemberView = false }) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, isLoading } = useStoreProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  useEffect(() => {
-    // In a real app, this would fetch data from an API
-    const fetchProducts = async () => {
-      // Simulating API call with timeout
-      setTimeout(() => {
-        const mockProducts: Product[] = [
-          {
-            id: 'prod_1',
-            name: 'Premium Whey Protein',
-            description: 'High-quality whey protein to support muscle growth and recovery.',
-            price: 1999,
-            salePrice: 1799,
-            category: 'supplement',
-            status: 'in-stock',
-            stock: 45,
-            sku: 'WHEY-001',
-            images: ['/placeholder.svg'],
-            features: ['24g protein per serving', 'Low in carbs and fat', 'Great taste'],
-            brand: 'NutriMax',
-            featured: true,
-            createdAt: '2023-12-01',
-          },
-          {
-            id: 'prod_2',
-            name: 'Adjustable Dumbbells (5-25kg)',
-            description: 'Space-saving adjustable dumbbells for home workouts.',
-            price: 12000,
-            category: 'equipment',
-            status: 'in-stock',
-            stock: 8,
-            sku: 'DUMB-001',
-            images: ['/placeholder.svg'],
-            brand: 'FitGear',
-            featured: true,
-            createdAt: '2023-11-15',
-          },
-          {
-            id: 'prod_3',
-            name: 'Performance T-Shirt',
-            description: 'Moisture-wicking t-shirt for comfortable workouts.',
-            price: 799,
-            salePrice: 599,
-            category: 'apparel',
-            status: 'in-stock',
-            stock: 120,
-            sku: 'TSHIRT-001',
-            images: ['/placeholder.svg'],
-            brand: 'ActiveWear',
-            featured: false,
-            createdAt: '2023-12-10',
-          },
-          {
-            id: 'prod_4',
-            name: 'Fitness Tracker Watch',
-            description: 'Track your workouts, heart rate, and sleep patterns.',
-            price: 3499,
-            category: 'accessory',
-            status: 'low-stock',
-            stock: 3,
-            sku: 'FTWATCH-001',
-            images: ['/placeholder.svg'],
-            brand: 'TechFit',
-            featured: true,
-            createdAt: '2023-10-20',
-          },
-          {
-            id: 'prod_5',
-            name: 'Muscle Gain Bundle',
-            description: 'Protein, creatine, and BCAA bundle for serious muscle gain.',
-            price: 3999,
-            category: 'supplement',
-            status: 'in-stock',
-            stock: 15,
-            sku: 'BUNDLE-001',
-            images: ['/placeholder.svg'],
-            features: ['Premium protein', 'Pure creatine', 'Essential BCAAs'],
-            brand: 'NutriMax',
-            featured: false,
-            createdAt: '2023-11-05',
-          },
-        ];
-        
-        setProducts(mockProducts);
-        setLoading(false);
-      }, 1000);
-    };
-    
-    fetchProducts();
-  }, []);
-
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                          (product.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
     
@@ -130,10 +40,11 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onAddNew, onAddToCart
     { value: 'other', label: 'Other' },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="text-center py-10">
-        <p>Loading products...</p>
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2">Loading products...</p>
       </div>
     );
   }
@@ -181,11 +92,13 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onAddNew, onAddToCart
             <Card key={product.id} className="flex flex-col h-full">
               <div className="aspect-square relative overflow-hidden rounded-t-lg">
                 <img 
-                  src={product.images[0] || '/placeholder.svg'} 
+                  src={product.images && product.images.length > 0 
+                    ? product.images[0] 
+                    : '/placeholder.svg'} 
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
-                {product.salePrice && (
+                {product.sale_price && (
                   <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
                     Sale
                   </div>
@@ -203,9 +116,9 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onAddNew, onAddToCart
                 <p className="text-sm line-clamp-2">{product.description}</p>
                 
                 <div className="mt-3 flex items-center">
-                  {product.salePrice ? (
+                  {product.sale_price ? (
                     <>
-                      <span className="font-semibold">{formatCurrency(product.salePrice)}</span>
+                      <span className="font-semibold">{formatCurrency(product.sale_price)}</span>
                       <span className="ml-2 text-sm text-muted-foreground line-through">
                         {formatCurrency(product.price)}
                       </span>

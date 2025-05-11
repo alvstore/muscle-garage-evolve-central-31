@@ -1,50 +1,76 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { UserRole } from "@/types";
-import { format } from "date-fns";
-
-interface Notification {
-  id: string;
-  title: string;
-  description: string;
-  timestamp: Date;
-  read: boolean;
-  avatar?: string;
-}
+import { formatDistanceToNow } from "date-fns";
+import notificationService, { Notification } from "@/services/notificationService";
+import { Loader2 } from "lucide-react";
 
 export interface NotificationListProps {
-  userRole?: UserRole;
+  userId: string;
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "New Class Schedule",
-    description: "The yoga class schedule has been updated.",
-    timestamp: new Date(),
-    read: false
-  },
-  {
-    id: "2",
-    title: "Membership Renewal",
-    description: "Your membership will expire in 7 days.",
-    timestamp: new Date(),
-    read: false
-  }
-];
+const NotificationList: React.FC<NotificationListProps> = ({ userId }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const NotificationList: React.FC<NotificationListProps> = ({ userRole = 'member' }) => {
-  // Filter notifications based on user role
-  const notifications = mockNotifications.filter(notification => {
-    if (userRole === 'member') {
-      // Show only member-relevant notifications
-      return true; // In a real app, you'd filter based on notification type/metadata
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!userId) return;
+      
+      setLoading(true);
+      try {
+        const data = await notificationService.getNotifications(userId);
+        setNotifications(data);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [userId]);
+
+  const handleNotificationClick = async (id: string) => {
+    await notificationService.markAsRead(id);
+    setNotifications(prevNotifications => 
+      prevNotifications.map(notification => 
+        notification.id === id ? { ...notification, read: true } : notification
+      )
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        No notifications yet.
+      </div>
+    );
+  }
+
+  // Function to get notification icon based on type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'task':
+        return 'T';
+      case 'payment':
+        return 'P';
+      case 'system':
+        return 'S';
+      default:
+        return 'N';
     }
-    return true; // Show all for other roles
-  });
+  };
 
   return (
     <ScrollArea className="h-[300px] px-4">
@@ -53,21 +79,22 @@ const NotificationList: React.FC<NotificationListProps> = ({ userRole = 'member'
           <div
             key={notification.id}
             className={cn(
-              "flex items-start gap-4 rounded-lg p-2 transition-colors hover:bg-accent/50",
+              "flex items-start gap-4 rounded-lg p-2 transition-colors hover:bg-accent/50 cursor-pointer",
               !notification.read && "bg-accent/25"
             )}
+            onClick={() => handleNotificationClick(notification.id)}
           >
             <Avatar className="h-9 w-9">
-              <AvatarImage src={notification.avatar} alt="Notification" />
-              <AvatarFallback>N</AvatarFallback>
+              <AvatarImage src="/placeholder.svg" alt="Notification" />
+              <AvatarFallback>{getNotificationIcon(notification.type)}</AvatarFallback>
             </Avatar>
             <div className="space-y-1">
               <p className="text-sm font-medium">{notification.title}</p>
               <p className="text-sm text-muted-foreground">
-                {notification.description}
+                {notification.message}
               </p>
               <p className="text-xs text-muted-foreground">
-                {format(notification.timestamp, 'PP')}
+                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
               </p>
             </div>
           </div>

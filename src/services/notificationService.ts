@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
 export interface Notification {
@@ -79,3 +79,5 @@ export const notificationService = {
     }
   }
 };
+
+export default notificationService;
