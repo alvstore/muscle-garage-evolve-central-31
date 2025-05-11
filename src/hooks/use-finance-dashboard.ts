@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from './use-branch';
@@ -82,7 +81,7 @@ export const useFinanceDashboard = () => {
           id,
           amount,
           due_date,
-          members:member_id (name),
+          member_id,
           status
         `)
         .eq('branch_id', currentBranch.id)
@@ -90,6 +89,27 @@ export const useFinanceDashboard = () => {
         .order('due_date', { ascending: true });
         
       if (invoiceError) throw invoiceError;
+
+      // After fetching invoices, get member names
+      const memberIds = invoiceData?.map(invoice => invoice.member_id).filter(Boolean) || [];
+      
+      // Only fetch member data if there are valid member IDs
+      let memberNameMap: Record<string, string> = {};
+      
+      if (memberIds.length > 0) {
+        const { data: membersData, error: membersError } = await supabase
+          .from('members')
+          .select('id, name')
+          .in('id', memberIds);
+          
+        if (!membersError && membersData) {
+          // Create a map of member id to name for easy lookup
+          memberNameMap = membersData.reduce((acc: Record<string, string>, member) => {
+            acc[member.id] = member.name;
+            return acc;
+          }, {});
+        }
+      }
       
       // Calculate totals
       const totalRevenue = incomeData?.reduce((sum, record) => sum + parseFloat(record.amount), 0) || 0;
@@ -152,15 +172,15 @@ export const useFinanceDashboard = () => {
       recentTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       recentTransactions = recentTransactions.slice(0, 10);
       
-      // Format pending invoices - Fixed to handle the type properly
+      // Format pending invoices - Fixed properly to handle member names
       const pendingInvoices = invoiceData?.map(invoice => {
-        // The members object from the join query might be null
-        // In that case, provide a default name
         return {
           id: invoice.id,
           amount: parseFloat(invoice.amount),
           dueDate: invoice.due_date,
-          memberName: invoice.members ? String(invoice.members.name) : 'Unknown Member'
+          memberName: invoice.member_id && memberNameMap[invoice.member_id] 
+            ? memberNameMap[invoice.member_id] 
+            : 'Unknown Member'
         };
       }) || [];
       
