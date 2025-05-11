@@ -48,7 +48,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onClose }) => {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <NotificationList userRole={user?.role} />
+        <NotificationList userId={user?.id} />
       </div>
 
       {onClose && (

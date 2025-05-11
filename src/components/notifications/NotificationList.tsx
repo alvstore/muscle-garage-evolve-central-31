@@ -8,7 +8,7 @@ import notificationService, { Notification } from "@/services/notificationServic
 import { Loader2 } from "lucide-react";
 
 export interface NotificationListProps {
-  userId: string;
+  userId?: string;
 }
 
 const NotificationList: React.FC<NotificationListProps> = ({ userId }) => {
