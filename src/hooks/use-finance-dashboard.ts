@@ -82,7 +82,7 @@ export const useFinanceDashboard = () => {
           id,
           amount,
           due_date,
-          members (name),
+          members:member_id (name),
           status
         `)
         .eq('branch_id', currentBranch.id)
@@ -152,16 +152,15 @@ export const useFinanceDashboard = () => {
       recentTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       recentTransactions = recentTransactions.slice(0, 10);
       
-      // Format pending invoices - Fix for the type error
+      // Format pending invoices - Fixed to handle the type properly
       const pendingInvoices = invoiceData?.map(invoice => {
-        // Access the nested members object's name property safely
-        const memberName = invoice.members ? invoice.members.name || 'Unknown Member' : 'Unknown Member';
-        
+        // The members object from the join query might be null
+        // In that case, provide a default name
         return {
           id: invoice.id,
           amount: parseFloat(invoice.amount),
           dueDate: invoice.due_date,
-          memberName: memberName
+          memberName: invoice.members ? String(invoice.members.name) : 'Unknown Member'
         };
       }) || [];
       
