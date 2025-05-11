@@ -152,13 +152,18 @@ export const useFinanceDashboard = () => {
       recentTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       recentTransactions = recentTransactions.slice(0, 10);
       
-      // Format pending invoices
-      const pendingInvoices = invoiceData?.map(invoice => ({
-        id: invoice.id,
-        amount: parseFloat(invoice.amount),
-        dueDate: invoice.due_date,
-        memberName: invoice.members?.name || 'Unknown Member'
-      })) || [];
+      // Format pending invoices - Fix for the type error
+      const pendingInvoices = invoiceData?.map(invoice => {
+        // Access the nested members object's name property safely
+        const memberName = invoice.members ? invoice.members.name || 'Unknown Member' : 'Unknown Member';
+        
+        return {
+          id: invoice.id,
+          amount: parseFloat(invoice.amount),
+          dueDate: invoice.due_date,
+          memberName: memberName
+        };
+      }) || [];
       
       // Calculate monthly revenue for the last 6 months
       const monthlyRevenue = await calculateMonthlyRevenue(currentBranch.id);
