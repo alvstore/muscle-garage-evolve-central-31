@@ -1,9 +1,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { ThemeProviderProps } from "@/components/ui/theme-provider";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 type Theme = "light" | "dark" | "system";
 type ColorScheme = "slate" | "blue" | "green" | "orange" | "red" | "violet" | "zinc" | "yellow" | "gray" | "primary";
@@ -15,7 +14,24 @@ type ThemeProviderState = {
   setColorScheme: (colorScheme: ColorScheme) => void;
   radius: number;
   setRadius: (radius: number) => void;
+  // Added compatibility properties
+  mode: Theme;
+  setMode: (theme: Theme) => void;
+  isDark: boolean;
+  toggleTheme: () => void;
+  settings: {
+    mode: Theme;
+  };
+  updateSettings: (settings: { mode?: Theme }) => void;
 };
+
+export interface ThemeProviderProps {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  defaultColorScheme?: ColorScheme;
+  defaultRadius?: number;
+  storageKey?: string;
+}
 
 const initialState: ThemeProviderState = {
   theme: "system",
@@ -24,6 +40,15 @@ const initialState: ThemeProviderState = {
   setColorScheme: () => null,
   radius: 0.5,
   setRadius: () => null,
+  // Added compatibility properties
+  mode: "system",
+  setMode: () => null,
+  isDark: false,
+  toggleTheme: () => null,
+  settings: {
+    mode: "system"
+  },
+  updateSettings: () => null
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -44,6 +69,10 @@ export function ThemeProvider({
     "ui-radius",
     defaultRadius
   );
+  
+  // Calculate if we're in dark mode based on the theme
+  const [isDark, setIsDark] = useState<boolean>(theme === "dark" || 
+    (theme === "system" && window.matchMedia('(prefers-color-scheme: dark)').matches));
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -56,10 +85,12 @@ export function ThemeProvider({
         : "light";
 
       root.classList.add(systemTheme);
+      setIsDark(systemTheme === "dark");
       return;
     }
 
     root.classList.add(theme);
+    setIsDark(theme === "dark");
   }, [theme]);
 
   useEffect(() => {
@@ -86,6 +117,21 @@ export function ThemeProvider({
     document.documentElement.style.setProperty('--radius', `${radius}rem`);
   }, [radius]);
 
+  const toggleTheme = () => {
+    setTheme(prevTheme => {
+      if (prevTheme === "dark") return "light";
+      if (prevTheme === "light") return "dark";
+      // If system, then toggle based on current appearance
+      return isDark ? "light" : "dark";
+    });
+  };
+
+  const updateSettings = (newSettings: { mode?: Theme }) => {
+    if (newSettings.mode) {
+      setTheme(newSettings.mode);
+    }
+  };
+
   const value = {
     theme,
     setTheme,
@@ -93,6 +139,15 @@ export function ThemeProvider({
     setColorScheme,
     radius,
     setRadius,
+    // Added compatibility properties
+    mode: theme,
+    setMode: setTheme,
+    isDark,
+    toggleTheme,
+    settings: {
+      mode: theme
+    },
+    updateSettings
   };
 
   return (

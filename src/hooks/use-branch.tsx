@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useCallback, createContext, ReactNode, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Branch } from '@/types/branch';
+import { Branch, normalizeBranch } from '@/types/branch';
 import { toast } from 'sonner';
 import { useAuth } from './use-auth';
 
@@ -91,7 +90,9 @@ const useBranchData = () => {
         console.log('No branches found');
       } else {
         console.log(`Found ${branchesData.length} branches`);
-        setBranches(branchesData);
+        // Normalize branch data to add compatibility properties
+        const normalizedBranches = branchesData.map(branch => normalizeBranch(branch as Branch));
+        setBranches(normalizedBranches);
       }
       
       // Try to set current branch if we don't have one yet
@@ -109,12 +110,12 @@ const useBranchData = () => {
           
         if (defaultBranch) {
           console.log('Setting current branch to:', defaultBranch.name);
-          setCurrentBranch(defaultBranch);
+          setCurrentBranch(normalizeBranch(defaultBranch as Branch));
           localStorage.setItem('currentBranchId', defaultBranch.id);
         }
       }
       
-      return branchesData || [];
+      return branchesData ? branchesData.map(branch => normalizeBranch(branch as Branch)) : [];
     } catch (err: any) {
       console.error('Error in fetchBranches:', err);
       setError('Error fetching branches');
@@ -146,8 +147,9 @@ const useBranchData = () => {
       }
       
       if (data) {
-        setCurrentBranch(data);
-        return data;
+        const normalizedBranch = normalizeBranch(data as Branch);
+        setCurrentBranch(normalizedBranch);
+        return normalizedBranch;
       }
       return null;
     } catch (err) {
@@ -159,14 +161,21 @@ const useBranchData = () => {
   }, [user]);
 
   // Create a new branch
-  const createBranch = async (branch: Omit<Branch, 'id'>) => {
+  const createBranch = async (branchData: Omit<Branch, 'id'>) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Convert any camelCase properties to snake_case for the database
+      const dbBranchData = {
+        ...branchData,
+        manager_id: branchData.managerId || branchData.manager_id,
+        is_active: branchData.isActive !== undefined ? branchData.isActive : branchData.is_active
+      };
+
       const { data, error } = await supabase
         .from('branches')
-        .insert([branch])
+        .insert([dbBranchData])
         .select()
         .single();
 
@@ -177,9 +186,10 @@ const useBranchData = () => {
         return null;
       }
 
-      setBranches(prev => [...prev, data]);
+      const normalizedBranch = normalizeBranch(data as Branch);
+      setBranches(prev => [...prev, normalizedBranch]);
       toast.success('Branch created successfully');
-      return data;
+      return normalizedBranch;
     } catch (err) {
       console.error('Error creating branch:', err);
       setError('Failed to create branch');
@@ -196,9 +206,16 @@ const useBranchData = () => {
     setError(null);
 
     try {
+      // Convert any camelCase properties to snake_case for the database
+      const dbUpdates = {
+        ...updates,
+        manager_id: updates.managerId || updates.manager_id,
+        is_active: updates.isActive !== undefined ? updates.isActive : updates.is_active
+      };
+
       const { data, error } = await supabase
         .from('branches')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -210,15 +227,16 @@ const useBranchData = () => {
         return null;
       }
 
-      setBranches(prev => prev.map(branch => branch.id === id ? data : branch));
+      const normalizedBranch = normalizeBranch(data as Branch);
+      setBranches(prev => prev.map(branch => branch.id === id ? normalizedBranch : branch));
       
       // Update currentBranch if we're updating the currently selected branch
       if (currentBranch?.id === id) {
-        setCurrentBranch(data);
+        setCurrentBranch(normalizedBranch);
       }
       
       toast.success('Branch updated successfully');
-      return data;
+      return normalizedBranch;
     } catch (err) {
       console.error('Error updating branch:', err);
       setError('Failed to update branch');
@@ -275,7 +293,8 @@ const useBranchData = () => {
   const switchBranch = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
     if (branch) {
-      setCurrentBranch(branch);
+      const normalizedBranch = normalizeBranch(branch);
+      setCurrentBranch(normalizedBranch);
       localStorage.setItem('currentBranchId', branchId);
       console.log('Switched to branch:', branch.name);
       toast.success(`Switched to branch: ${branch.name}`);

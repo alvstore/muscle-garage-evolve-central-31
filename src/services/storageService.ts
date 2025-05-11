@@ -33,6 +33,29 @@ const createBucketIfNotExists = async (name: string): Promise<void> => {
     
     if (!exists) {
       console.info(`Creating storage bucket: ${name}`);
+      
+      // First make sure the user has the right role/permissions
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Check if user is an admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) {
+        console.error('Error checking user role:', profileError);
+        throw new Error('Could not verify user permissions');
+      }
+      
+      if (profile?.role !== 'admin') {
+        console.warn('User is not an admin, might not have permission to create buckets');
+      }
+      
       const { error } = await supabase.storage.createBucket(name, {
         public: true, // Make bucket public so files can be accessed without authentication
         fileSizeLimit: 52428800, // 50MB
@@ -41,7 +64,23 @@ const createBucketIfNotExists = async (name: string): Promise<void> => {
       
       if (error) {
         console.error(`Error creating bucket ${name}:`, error);
-        throw error;
+        
+        // If we get a permission error, try to add permissions
+        if (error.message.includes('permission')) {
+          console.info('Attempting to set permissions for bucket...');
+          
+          // Use SQL to set permissions (this may require the user to be a super admin)
+          const { error: sqlError } = await supabase.rpc('create_storage_bucket', { 
+            bucket_name: name,
+            public_access: true
+          });
+          
+          if (sqlError) {
+            console.error('Error creating bucket via RPC:', sqlError);
+          } else {
+            console.info('Created bucket via RPC');
+          }
+        }
       }
     }
   } catch (error) {

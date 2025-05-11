@@ -1,6 +1,5 @@
-
 import { supabase } from '@/services/supabaseClient';
-import { Branch } from '@/types/branch';
+import { Branch, normalizeBranch } from '@/types/branch';
 
 export const fetchUserBranches = async (userId: string): Promise<{ branchesData: any[], primaryBranchId: string | null }> => {
   try {
@@ -38,7 +37,9 @@ export const fetchUserBranches = async (userId: string): Promise<{ branchesData:
       return { branchesData: [], primaryBranchId };
     }
 
-    return { branchesData: branches || [], primaryBranchId };
+    // Normalize branch data
+    const normalizedBranches = branches ? branches.map(branch => normalizeBranch(branch as Branch)) : [];
+    return { branchesData: normalizedBranches, primaryBranchId };
   } catch (error) {
     console.error('Error in fetchUserBranches:', error);
     return { branchesData: [], primaryBranchId: null };
@@ -46,21 +47,20 @@ export const fetchUserBranches = async (userId: string): Promise<{ branchesData:
 };
 
 export const formatBranchData = (branch: any): Branch => {
-  return {
+  // Make sure we handle both snake_case and camelCase properties
+  return normalizeBranch({
     id: branch.id,
     name: branch.name,
     address: branch.address || '',
     city: branch.city || '',
     state: branch.state || '',
     country: branch.country || 'India',
-    managerId: branch.manager_id || null,
-    isActive: branch.is_active !== false,
-    createdAt: branch.created_at,
-    updatedAt: branch.updated_at
-  };
+    manager_id: branch.manager_id || null,
+    is_active: branch.is_active !== false
+  } as Branch);
 };
 
-export const createBranchInDb = async (branchData: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const createBranchInDb = async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
   try {
     const { data, error } = await supabase
       .from('branches')
@@ -70,8 +70,8 @@ export const createBranchInDb = async (branchData: Omit<Branch, 'id' | 'createdA
         city: branchData.city,
         state: branchData.state,
         country: branchData.country || 'India',
-        manager_id: branchData.managerId,
-        is_active: branchData.isActive !== false
+        manager_id: branchData.manager_id || branchData.managerId,
+        is_active: branchData.is_active !== undefined ? branchData.is_active : branchData.isActive !== false
       }])
       .select();
 
@@ -92,7 +92,9 @@ export const updateBranchInDb = async (id: string, branchData: Partial<Branch>) 
     if (branchData.city !== undefined) updates.city = branchData.city;
     if (branchData.state !== undefined) updates.state = branchData.state;
     if (branchData.country !== undefined) updates.country = branchData.country;
+    if (branchData.manager_id !== undefined) updates.manager_id = branchData.manager_id;
     if (branchData.managerId !== undefined) updates.manager_id = branchData.managerId;
+    if (branchData.is_active !== undefined) updates.is_active = branchData.is_active;
     if (branchData.isActive !== undefined) updates.is_active = branchData.isActive;
 
     const { data, error } = await supabase
