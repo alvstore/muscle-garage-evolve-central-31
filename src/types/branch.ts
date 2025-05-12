@@ -4,44 +4,45 @@ import { z } from 'zod';
 export interface Branch {
   id: string;
   name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  email?: string;
-  phone?: string;
-  isActive?: boolean;
-  manager?: string;
-  manager_id?: string;
-  openingHours?: string;
-  closingHours?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  branch_code?: string;
+  address: string;
+  city: string | null;
+  state: string | null;
+  country: string;
+  email: string | null;
+  phone: string | null;
+  is_active: boolean;
+  manager_id: string | null;
+  branch_code: string | null;
+  created_at: string;
+  updated_at: string;
   
-  // Additional fields needed for multi-branch architecture
-  maxCapacity?: number;
-  region?: string;
-  timezone?: string;
-  taxRate?: number;
+  // Extended fields (not in the base database schema)
+  max_capacity?: number | null;
+  opening_hours?: string | null;
+  closing_hours?: string | null;
+  region?: string | null;
+  tax_rate?: number | null;
+  timezone?: string | null;
 }
 
 export const BranchSchema = z.object({
   name: z.string().min(1, 'Branch name is required'),
-  address: z.string().optional(),
+  address: z.string().min(1, 'Address is required'),
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().default('India'),
-  email: z.string().email().optional().or(z.string().length(0)),
+  email: z.string().email('Invalid email address').optional().or(z.string().length(0)),
   phone: z.string().optional(),
-  isActive: z.boolean().default(true),
+  is_active: z.boolean().default(true),
+  manager_id: z.string().optional(),
   branch_code: z.string().optional(),
-  
-  // Additional schema validations for new fields
-  maxCapacity: z.string().optional().transform(val => val ? parseInt(val) : undefined),
+  // Extended fields
+  max_capacity: z.string().optional().transform(val => val ? parseInt(val) : null),
+  opening_hours: z.string().optional(),
+  closing_hours: z.string().optional(),
   region: z.string().optional(),
+  tax_rate: z.string().optional().transform(val => val ? parseFloat(val) : null),
   timezone: z.string().optional(),
-  taxRate: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
 });
 
 export type BranchFormValues = z.infer<typeof BranchSchema>;
@@ -57,18 +58,17 @@ export const normalizeBranch = (branch: any): Branch => {
     country: branch.country || 'India',
     email: branch.email,
     phone: branch.phone,
-    isActive: branch.is_active ?? true,
-    manager: branch.manager,
+    is_active: branch.is_active ?? true,
     manager_id: branch.manager_id,
-    openingHours: branch.opening_hours,
-    closingHours: branch.closing_hours,
-    createdAt: branch.created_at,
-    updatedAt: branch.updated_at,
     branch_code: branch.branch_code,
-    // Map additional fields
-    maxCapacity: branch.max_capacity,
-    region: branch.region,
-    timezone: branch.timezone,
-    taxRate: branch.tax_rate,
+    created_at: branch.created_at,
+    updated_at: branch.updated_at,
+    // Extended fields
+    ...(branch.max_capacity !== undefined && { max_capacity: branch.max_capacity }),
+    ...(branch.opening_hours !== undefined && { opening_hours: branch.opening_hours }),
+    ...(branch.closing_hours !== undefined && { closing_hours: branch.closing_hours }),
+    ...(branch.region !== undefined && { region: branch.region }),
+    ...(branch.tax_rate !== undefined && { tax_rate: branch.tax_rate }),
+    ...(branch.timezone !== undefined && { timezone: branch.timezone })
   };
 };

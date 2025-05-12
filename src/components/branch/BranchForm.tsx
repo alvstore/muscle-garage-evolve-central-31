@@ -25,15 +25,18 @@ const formSchema = z.object({
   address: z.string().min(5, "Address must be at least 5 characters"),
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  manager: z.string().optional(),
   manager_id: z.string().optional(),
   is_active: z.boolean().default(true),
+  branch_code: z.string().optional(),
+  // Additional fields from the database schema
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional().default('India'),
+  // Extended fields (if needed)
   max_capacity: z.string().optional(),
   opening_hours: z.string().optional(),
   closing_hours: z.string().optional(),
-  // Added fields for enhanced multi-branch support
   region: z.string().optional(),
-  branch_code: z.string().optional(),
   tax_rate: z.string().optional(),
   timezone: z.string().optional(),
 });
@@ -55,16 +58,18 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       address: branch?.address || "",
       phone: branch?.phone || "",
       email: branch?.email || "",
-      manager: branch?.manager || "",
       manager_id: branch?.manager_id || "",
-      is_active: branch?.isActive ?? true,
-      max_capacity: branch?.maxCapacity?.toString() || "",
-      opening_hours: branch?.openingHours || "",
-      closing_hours: branch?.closingHours || "",
-      // Initialize new fields
-      region: branch?.region || "",
+      is_active: branch?.is_active ?? true,
       branch_code: branch?.branch_code || "",
-      tax_rate: branch?.taxRate?.toString() || "",
+      city: branch?.city || "",
+      state: branch?.state || "",
+      country: branch?.country || "India",
+      // Extended fields
+      max_capacity: branch?.max_capacity?.toString() || "",
+      opening_hours: branch?.opening_hours || "",
+      closing_hours: branch?.closing_hours || "",
+      region: branch?.region || "",
+      tax_rate: branch?.tax_rate?.toString() || "",
       timezone: branch?.timezone || "",
     },
   });
@@ -72,27 +77,40 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
   // Helper function to safely cast field values
   const getFieldValue = (value: unknown, defaultValue: string = ""): string => {
     if (value === null || value === undefined) return defaultValue;
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
     return String(value);
+  };
+  
+  // Helper to get field value for form inputs
+  const getInputValue = (field: any): string => {
+    if (field.value === undefined || field.value === null) return '';
+    return String(field.value);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const branchData = {
+      // Prepare branch data with all required fields
+      const branchData: Omit<Branch, 'id'> = {
         name: values.name,
         address: values.address,
-        phone: values.phone || '',
-        email: values.email || '',
-        manager: values.manager || '',
-        manager_id: values.manager_id || branch?.manager_id || '',
+        phone: values.phone || null,
+        email: values.email || null,
+        manager_id: values.manager_id || null,
         is_active: values.is_active,
-        max_capacity: values.max_capacity ? parseInt(values.max_capacity) : 0,
-        opening_hours: values.opening_hours || '',
-        closing_hours: values.closing_hours || '',
-        region: values.region,
-        branch_code: values.branch_code,
-        tax_rate: values.tax_rate ? parseFloat(values.tax_rate) : undefined,
-        timezone: values.timezone
+        branch_code: values.branch_code || null,
+        city: values.city || null,
+        state: values.state || null,
+        country: values.country || 'India',
+        created_at: branch?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Extended fields
+        ...(values.max_capacity && { max_capacity: parseInt(values.max_capacity) }),
+        ...(values.opening_hours && { opening_hours: values.opening_hours }),
+        ...(values.closing_hours && { closing_hours: values.closing_hours }),
+        ...(values.region && { region: values.region }),
+        ...(values.tax_rate && { tax_rate: parseFloat(values.tax_rate) }),
+        ...(values.timezone && { timezone: values.timezone })
       };
       
       let success = false;
@@ -147,7 +165,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                     <Input
                       placeholder="e.g., BR-001"
                       {...field}
-                      value={getFieldValue(field.value)}
+                      value={getInputValue(field)}
                     />
                   </FormControl>
                   <FormDescription>
@@ -266,7 +284,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                       type="time"
                       placeholder="09:00"
                       {...field}
-                      value={getFieldValue(field.value, '09:00')}
+                      value={getInputValue(field) || '09:00'}
                     />
                   </FormControl>
                   <FormMessage />
@@ -281,7 +299,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Closing Hours</FormLabel>
                   <FormControl>
-                    <Input type="time" placeholder="18:00" {...field} value={getFieldValue(field.value, '18:00')} />
+                    <Input type="time" placeholder="18:00" {...field} value={getInputValue(field) || '18:00'} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -292,13 +310,20 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="manager"
+              name="manager_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Branch Manager</FormLabel>
+                  <FormLabel>Manager ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter manager name" {...field} />
+                    <Input 
+                      placeholder="Manager's user ID" 
+                      {...field} 
+                      value={field.value || ''} 
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Enter the user ID of the branch manager
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -315,7 +340,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                       type="number"
                       placeholder="e.g., 50"
                       {...field}
-                      value={getFieldValue(field.value, '')}
+                      value={getInputValue(field)}
                     />
                   </FormControl>
                   <FormMessage />
