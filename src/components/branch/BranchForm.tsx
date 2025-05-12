@@ -68,6 +68,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       timezone: branch?.timezone || "",
     },
   });
+  
+  // Helper function to safely cast field values
+  const getFieldValue = (value: unknown, defaultValue: string = ""): string => {
+    if (value === null || value === undefined) return defaultValue;
+    return String(value);
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -141,7 +147,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                     <Input
                       placeholder="e.g., BR-001"
                       {...field}
-                      value={field.value as string}
+                      value={getFieldValue(field.value)}
                     />
                   </FormControl>
                   <FormDescription>
@@ -260,7 +266,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                       type="time"
                       placeholder="09:00"
                       {...field}
-                      value={field.value as string}
+                      value={getFieldValue(field.value, '09:00')}
                     />
                   </FormControl>
                   <FormMessage />
@@ -275,7 +281,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Closing Hours</FormLabel>
                   <FormControl>
-                    <Input type="time" placeholder="18:00" {...field} value={field.value as string} />
+                    <Input type="time" placeholder="18:00" {...field} value={getFieldValue(field.value, '18:00')} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -309,7 +315,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                       type="number"
                       placeholder="e.g., 50"
                       {...field}
-                      value={field.value as string}
+                      value={getFieldValue(field.value, '')}
                     />
                   </FormControl>
                   <FormMessage />
@@ -330,7 +336,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                     step="0.01"
                     placeholder="e.g., 18.00"
                     {...field}
-                    value={field.value as string}
+                    value={getFieldValue(field.value, '')}
                   />
                 </FormControl>
                 <FormDescription>
