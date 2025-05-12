@@ -13,7 +13,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
 import { Notification } from '@/types/notification';
-import NotificationItem from '@/components/notification/NotificationItem';
+import NotificationItem from '@/components/notifications/NotificationItem';
 import { Badge } from '@/components/ui/badge';
 
 interface DashboardHeaderProps {

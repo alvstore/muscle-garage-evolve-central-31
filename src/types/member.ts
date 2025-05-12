@@ -28,6 +28,10 @@ export interface Member {
   id_type?: string;
   id_number?: string;
   
+  // Emergency contact information
+  emergencyContact?: string;
+  notes?: string;
+  
   // Profile Picture - updated to match the DB schema
   profile_picture?: string;
   avatar?: string; // Keep for backward compatibility

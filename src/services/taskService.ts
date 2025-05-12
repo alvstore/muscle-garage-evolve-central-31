@@ -15,6 +15,8 @@ export interface Task {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+  related_to?: string; // Type of entity this task is related to (e.g., 'lead', 'member', 'class')
+  related_id?: string; // ID of the related entity
 }
 
 export const taskService = {

@@ -4,6 +4,33 @@ import { toast } from 'sonner';
 import { Lead } from '@/types/crm';
 
 export const leadService = {
+  async getLeadById(leadId: string, branchId: string): Promise<Lead | null> {
+    try {
+      if (!branchId) {
+        console.warn('No branch ID provided for getLeadById');
+        return null;
+      }
+      
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadId)
+        .eq('branch_id', branchId)
+        .single();
+
+      if (error) {
+        console.error('Supabase error fetching lead:', error);
+        throw error;
+      }
+      
+      return data as Lead;
+    } catch (error: any) {
+      console.error('Error fetching lead:', error);
+      toast.error('Failed to load lead details');
+      return null;
+    }
+  },
+  
   async getLeads(branchId: string | undefined): Promise<Lead[]> {
     try {
       if (!branchId) {

@@ -5,11 +5,13 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 
 // CRM pages
 import LeadsPage from '@/pages/crm/LeadsPage';
+import LeadDetailPage from '@/pages/crm/LeadDetailPage';
 import FunnelPage from '@/pages/crm/FunnelPage';
 import FollowUpPage from '@/pages/crm/FollowUpPage';
 import ContactsPage from '@/pages/crm/ContactsPage';
 import DealsPage from '@/pages/crm/DealsPage';
 import TasksPage from '@/pages/crm/TasksPage';
+import DashboardPage from '@/pages/crm/DashboardPage';
 import { 
   UserPlus, 
   BarChart, 
@@ -21,6 +23,20 @@ import {
 
 export const crmRoutes: AppRoute[] = [
   {
+    path: '/crm/dashboard',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <DashboardPage />
+      </PrivateRoute>
+    ),
+    meta: {
+      title: 'CRM Dashboard',
+      breadcrumb: 'Dashboard',
+      permission: 'access_crm',
+      icon: <BarChart className="h-5 w-5" />
+    }
+  },
+  {
     path: '/crm/leads',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
@@ -30,6 +46,20 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Lead Management',
       breadcrumb: 'Leads',
+      permission: 'access_crm',
+      icon: <UserPlus className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/crm/leads/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <LeadDetailPage />
+      </PrivateRoute>
+    ),
+    meta: {
+      title: 'Lead Details',
+      breadcrumb: 'Lead Details',
       permission: 'access_crm',
       icon: <UserPlus className="h-5 w-5" />
     }

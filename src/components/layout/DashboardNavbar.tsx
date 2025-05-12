@@ -1,5 +1,8 @@
 
-import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, LogOut, Settings, CreditCard } from "lucide-react";
+import { Bell, ChevronDown, Menu, Search, User, ShoppingCart, LogOut, Settings, CreditCard, Phone, Mail, Calendar, MessageCircle, ChevronRight, Check, Trash2 } from "lucide-react";
+import { useEffect } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from "sonner";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Button } from "@/components/ui/button";
@@ -46,40 +49,151 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { mode, setMode, isDark } = useTheme();
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "New Member Registration",
-      message: "Sarah Parker has registered as a new member.",
-      time: "10 minutes ago",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Payment Received",
-      message: "John Doe has completed payment for Premium Annual membership.",
-      time: "30 minutes ago",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "Low Inventory Alert",
-      message: "Protein powder (Chocolate) is below reorder level.",
-      time: "1 hour ago",
-      read: true,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Fetch notifications when the component mounts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.id) return;
+      
+      setIsLoadingNotifications(true);
+      try {
+        const notificationService = (await import('@/services/notificationService')).default;
+        const data = await notificationService.getNotifications(user.id);
+        setNotifications(data);
+        setUnreadCount(data.filter((n: any) => !n.read).length);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    };
 
-  const markAsRead = (id: string) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+    fetchNotifications();
+    
+    // Set up real-time subscription for notifications using Supabase
+    const setupRealtimeSubscriptions = async () => {
+      if (!user?.id) return;
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Subscribe to changes in the notifications table
+      const notificationsSubscription = supabase
+        .channel('navbar-notifications')
+        .on('postgres_changes', {
+          event: '*', // Listen for inserts, updates, and deletes
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        }, () => {
+          // Refresh notifications when changes occur
+          fetchNotifications();
+        })
+        .subscribe();
+        
+      // Subscribe to changes in follow-up history for real-time follow-up notifications
+      const followUpSubscription = supabase
+        .channel('navbar-follow-ups')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'follow_up_history',
+        }, () => {
+          // Refresh notifications when follow-ups change
+          fetchNotifications();
+        })
+        .subscribe();
+      
+      return () => {
+        // Clean up subscriptions
+        notificationsSubscription.unsubscribe();
+        followUpSubscription.unsubscribe();
+      };
+    };
+    
+    const cleanup = setupRealtimeSubscriptions();
+    return () => {
+      // Clean up subscriptions when component unmounts
+      if (cleanup) cleanup.then(fn => fn && fn());
+    };
+  }, [user?.id]);
+  
+  // Add function to clear all notifications
+  const handleClearAll = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const notificationService = (await import('@/services/notificationService')).default;
+      await notificationService.clearAllNotifications(user.id);
+      
+      // Remove only system notifications, keep follow-up notifications
+      const followUpNotifications = notifications.filter(n => 
+        n.id.startsWith('follow-up-') || n.source === 'follow-up'
+      );
+      setNotifications(followUpNotifications);
+      setUnreadCount(followUpNotifications.filter(n => !n.read).length);
+      
+      toast.success("All notifications cleared");
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      toast.error("Failed to clear notifications");
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+  const markAsRead = async (id: string, notification?: any) => {
+    // For follow-up notifications (which start with 'follow-up-'), we don't mark them as read
+    // since they're handled differently
+    if (id.startsWith('follow-up-') || notification?.source === 'follow-up') {
+      if (notification?.link) {
+        window.location.href = notification.link;
+      }
+      return;
+    }
+    
+    try {
+      const notificationService = (await import('@/services/notificationService')).default;
+      await notificationService.markAsRead(id);
+      setNotifications(
+        notifications.map((n) => (
+          n.id === id ? { ...n, read: true } : n
+        ))
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const notificationService = (await import('@/services/notificationService')).default;
+      const systemNotifications = notifications.filter(n => 
+        !n.id.startsWith('follow-up-') && n.source !== 'follow-up'
+      );
+      
+      if (systemNotifications.length > 0) {
+        await notificationService.markAllAsRead(user?.id || '');
+      }
+      
+      // Only mark system notifications as read, not follow-up notifications
+      setNotifications(notifications.map((n) => {
+        if (n.id.startsWith('follow-up-') || n.source === 'follow-up') return n;
+        return { ...n, read: true };
+      }));
+      
+      // Recalculate unread count
+      setUnreadCount(notifications.filter(n => 
+        (n.id.startsWith('follow-up-') || n.source === 'follow-up') && !n.read
+      ).length);
+      
+      toast.success("All notifications marked as read");
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error("Failed to mark notifications as read");
+    }
   };
 
   const getInitials = (name: string) => {
@@ -159,7 +273,7 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
         </div>
         
         {/* Notifications */}
-        <DropdownMenu>
+        <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5 text-gray-500" />
@@ -190,7 +304,16 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
                 )}
               </div>
             </div>
-            {notifications.length === 0 ? (
+            {isLoadingNotifications ? (
+              <div className="py-8 text-center text-sm text-gray-500">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin">
+                    <Bell className="h-10 w-10 text-gray-300" />
+                  </div>
+                  <p>Loading notifications...</p>
+                </div>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="py-8 text-center text-sm text-gray-500">
                 <div className="flex flex-col items-center gap-2">
                   <Bell className="h-10 w-10 text-gray-300" />
@@ -199,36 +322,82 @@ const DashboardNavbar = ({ user, onToggleSidebar }: DashboardNavbarProps) => {
               </div>
             ) : (
               <div className="max-h-[350px] overflow-y-auto">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`flex items-start p-4 border-b cursor-pointer hover:bg-gray-50 ${!notification.read ? 'bg-primary-50/50' : ''}`}
-                    onClick={() => markAsRead(notification.id)}
-                  >
-                    <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center mr-3 flex-shrink-0">
-                      <Bell className="h-5 w-5 text-primary-500" />
-                    </div>
-                    <div className="flex flex-col gap-1 flex-1">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-sm">{notification.title}</span>
-                        {!notification.read && (
-                          <span className="flex h-2 w-2 rounded-full bg-primary-500" />
+                {notifications.map((notification) => {
+                  // Determine if this is a follow-up notification
+                  const isFollowUp = notification.id.startsWith('follow-up-') || notification.type === 'follow-up';
+                  
+                  // Choose the appropriate icon based on notification type
+                  let NotificationIcon = Bell;
+                  if (isFollowUp) {
+                    const followUpType = notification.title?.toLowerCase() || '';
+                    if (followUpType.includes('call')) {
+                      NotificationIcon = Phone;
+                    } else if (followUpType.includes('email')) {
+                      NotificationIcon = Mail;
+                    } else if (followUpType.includes('meeting')) {
+                      NotificationIcon = Calendar;
+                    } else if (followUpType.includes('whatsapp') || followUpType.includes('sms')) {
+                      NotificationIcon = MessageCircle;
+                    }
+                  }
+                  
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`flex items-start gap-3 p-4 border-b hover:bg-accent/10 transition-colors cursor-pointer ${!notification.read ? 'bg-primary-50' : ''}`}
+                      onClick={() => markAsRead(notification.id, notification)}
+                    >
+                      <div className="flex-shrink-0">
+                        <div 
+                          className={`h-9 w-9 rounded-full flex items-center justify-center ${!notification.read 
+                            ? isFollowUp 
+                              ? 'bg-amber-500/10 text-amber-500' 
+                              : 'bg-primary-500/10 text-primary-500' 
+                            : 'bg-gray-100 text-gray-500'}`}
+                        >
+                          <NotificationIcon className="h-5 w-5" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`text-sm font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-600'}`}>
+                            {notification.title}
+                          </p>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {notification.message}
+                        </p>
+                        {notification.link && (
+                          <div className="mt-1 text-xs text-primary-500 flex items-center">
+                            <span>View details</span>
+                            <ChevronRight className="h-3 w-3 ml-1" />
+                          </div>
                         )}
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {notification.message}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {notification.time}
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
-            <div className="p-3 border-t">
-              <Button className="w-full bg-primary-500 hover:bg-primary-600 text-white">
-                View All Notifications
+            <div className="p-3 border-t flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" size="sm" onClick={markAllAsRead}>
+                  <Check className="h-4 w-4 mr-1" />
+                  Mark all read
+                </Button>
+                <Button variant="outline" className="flex-1" size="sm" onClick={handleClearAll}>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Clear all
+                </Button>
+              </div>
+              <Button variant="outline" className="w-full" onClick={() => {
+                setNotificationsOpen(false);
+                navigate('/notifications');
+              }}>
+                View all notifications
               </Button>
             </div>
           </DropdownMenuContent>
