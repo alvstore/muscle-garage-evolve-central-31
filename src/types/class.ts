@@ -71,6 +71,7 @@ export interface GymClass {
   duration?: number;
   recurring?: boolean;
   recurringPattern?: string;
+  branchId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -82,7 +83,12 @@ export interface ClassBooking {
   classId: string;
   memberId: string;
   memberName?: string;
+  memberEmail?: string;
+  memberPhone?: string;
   memberAvatar?: string;
+  className?: string;
+  classStartTime?: string;
+  classEndTime?: string;
   bookingDate: string;
   status: BookingStatus;
   notes?: string;

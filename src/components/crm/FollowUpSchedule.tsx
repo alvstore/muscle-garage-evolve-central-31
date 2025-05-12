@@ -1,11 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2 } from "lucide-react";
+import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Lead, FollowUpType, FollowUpScheduled, ScheduledFollowUp } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
+import { followUpService } from '@/services/followUpService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useBranch } from '@/hooks/use-branch';
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
+import { toast } from 'sonner';
 
 // Convert the database model to the component model
 const convertToScheduledFollowUp = (item: FollowUpScheduled): ScheduledFollowUp => {
@@ -14,105 +19,52 @@ const convertToScheduledFollowUp = (item: FollowUpScheduled): ScheduledFollowUp 
     leadId: item.lead_id,
     leadName: item.lead_name || "Unknown Lead",
     type: item.type,
-    scheduledFor: item.scheduled_for,
-    subject: item.subject,
+    scheduledFor: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
+    subject: item.subject || "",
     content: item.content,
     status: item.status,
   };
 };
 
-// Mock data for scheduled follow-ups
-const mockScheduledFollowUps: FollowUpScheduled[] = [
-  {
-    id: "1",
-    lead_id: "lead-1",
-    lead_name: "John Smith",
-    type: "email",
-    scheduled_for: "2023-06-10T10:00:00Z",
-    subject: "Follow up on membership options",
-    content: "Hi John,\n\nI wanted to follow up on our conversation about membership options. Let me know if you have any questions.\n\nBest,\nJane",
-    status: "scheduled"
-  },
-  {
-    id: "2",
-    lead_id: "lead-2",
-    lead_name: "Sarah Johnson",
-    type: "sms",
-    scheduled_for: "2023-06-12T14:30:00Z",
-    subject: "PT session reminder",
-    content: "Hi Sarah, just a reminder about your free PT trial session tomorrow at 3pm. Looking forward to meeting you! - Fitness Gym",
-    status: "scheduled"
-  },
-  {
-    id: "3",
-    lead_id: "lead-3",
-    lead_name: "David Lee",
-    type: "call",
-    scheduled_for: "2023-06-09T16:00:00Z",
-    subject: "Membership renewal discussion",
-    content: "Call to discuss membership renewal options and current promotions.",
-    status: "sent"
-  }
-];
-
-// Mock data for lead options
-const mockLeadOptions: Lead[] = [
-  {
-    id: "lead-1",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    phone: "555-1234",
-    status: "contacted",
-    funnel_stage: "qualified",
-    source: "website",
-    created_at: "2023-05-15T08:30:00Z",
-    updated_at: "2023-06-05T14:15:00Z",
-    branch_id: "default-branch-id"
-  },
-  {
-    id: "lead-2",
-    name: "Sarah Johnson",
-    email: "sarah.j@example.com",
-    phone: "555-5678",
-    status: "new",
-    funnel_stage: "warm",
-    source: "referral",
-    created_at: "2023-06-01T11:45:00Z",
-    updated_at: "2023-06-01T11:45:00Z",
-    branch_id: "default-branch-id"
-  },
-  {
-    id: "lead-3",
-    name: "David Lee",
-    email: "david.lee@example.com",
-    phone: "555-9012",
-    status: "contacted",
-    funnel_stage: "hot",
-    source: "walk_in",
-    created_at: "2023-05-20T09:15:00Z",
-    updated_at: "2023-06-07T16:30:00Z",
-    branch_id: "default-branch-id"
-  }
-];
-
 interface FollowUpScheduleProps {
   isLoading?: boolean;
 }
 
-const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading = false }) => {
-  const [scheduledFollowUps, setScheduledFollowUps] = React.useState<ScheduledFollowUp[]>([]);
+const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLoading = false }) => {
+  const { currentBranch } = useBranch();
+  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState<'all' | 'today' | 'upcoming'>('all');
   
-  React.useEffect(() => {
-    // In a real app, we would fetch from API
-    // For now, use mock data but convert to the component model
-    setScheduledFollowUps(mockScheduledFollowUps.map(convertToScheduledFollowUp));
-  }, []);
+  // Fetch scheduled follow-ups from Supabase
+  const { data: scheduledFollowUpsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ['scheduledFollowUps', currentBranch?.id],
+    queryFn: () => followUpService.getScheduledFollowUps(currentBranch?.id),
+    enabled: !!currentBranch?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
   
+  // Delete follow-up mutation
+  const deleteFollowUpMutation = useMutation({
+    mutationFn: (id: string) => followUpService.deleteScheduledFollowUp(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
+      toast.success('Follow-up deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete follow-up: ${error.message}`);
+    }
+  });
+  
+  // Convert to component model
+  const scheduledFollowUps = scheduledFollowUpsData
+    ? scheduledFollowUpsData.map(convertToScheduledFollowUp)
+    : [];
+
   // Format date to readable format
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
-  
+
   // Format time to readable format
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -136,15 +88,76 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading = false }
     }
   };
 
+  // Get icon for follow-up type
+  const getTypeIcon = (type: FollowUpType) => {
+    switch (type) {
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'sms':
+        return <MessageCircle className="h-4 w-4" />;
+      case 'call':
+        return <Phone className="h-4 w-4" />;
+      case 'whatsapp':
+        return <MessageCircle className="h-4 w-4" />;
+      default:
+        return <MessageCircle className="h-4 w-4" />;
+    }
+  };
+
+  // Handle delete follow-up
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this follow-up?')) {
+      deleteFollowUpMutation.mutate(id);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <CardTitle>Scheduled Follow-ups</CardTitle>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <div className="flex rounded-md border overflow-hidden">
+              <Button 
+                variant={filter === 'all' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('all')}
+                className="rounded-none"
+              >
+                All
+              </Button>
+              <Button 
+                variant={filter === 'today' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('today')}
+                className="rounded-none"
+              >
+                Today
+              </Button>
+              <Button 
+                variant={filter === 'upcoming' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('upcoming')}
+                className="rounded-none"
+              >
+                Upcoming
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span>Refresh</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

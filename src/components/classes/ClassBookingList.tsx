@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Card, 
   CardContent,
@@ -9,6 +10,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu,
@@ -16,88 +19,151 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format, parseISO } from "date-fns";
-import { MoreVertical, Calendar, UserCheck, X, CheckCircle } from "lucide-react";
+import { MoreVertical, Calendar, UserCheck, X, CheckCircle, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ClassBooking, BookingStatus } from "@/types/class";
+import { supabase } from "@/integrations/supabase/client";
+import { useBranch } from "@/hooks/use-branch";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ClassBookingListProps {
   classId: string;
 }
 
-// Mock data for class bookings
-const mockBookings: ClassBooking[] = [
-  {
-    id: "booking1",
-    classId: "class1",
-    memberId: "member1",
-    memberName: "John Smith",
-    memberAvatar: "/placeholder.svg",
-    bookingDate: "2023-07-20T10:00:00Z",
-    status: "confirmed",
-    createdAt: "2023-07-15T14:30:00Z",
-    updatedAt: "2023-07-15T14:30:00Z"
-  },
-  {
-    id: "booking2",
-    classId: "class1",
-    memberId: "member2",
-    memberName: "Emily Davis",
-    memberAvatar: "/placeholder.svg",
-    bookingDate: "2023-07-20T10:00:00Z",
-    status: "attended",
-    attendanceTime: "2023-07-20T09:55:00Z",
-    createdAt: "2023-07-14T11:20:00Z",
-    updatedAt: "2023-07-20T09:55:00Z"
-  },
-  {
-    id: "booking3",
-    classId: "class1",
-    memberId: "member3",
-    memberName: "Michael Brown",
-    memberAvatar: "/placeholder.svg",
-    bookingDate: "2023-07-20T10:00:00Z",
-    status: "cancelled",
-    createdAt: "2023-07-16T09:45:00Z",
-    updatedAt: "2023-07-18T16:30:00Z",
-    notes: "Schedule conflict"
+// Function to fetch bookings from Supabase
+const fetchBookings = async (classId: string, branchId?: string): Promise<ClassBooking[]> => {
+  try {
+    let query = supabase
+      .from('class_bookings')
+      .select(`
+        *,
+        member:member_id(id, full_name, avatar_url),
+        class:class_id(id, name, start_time, branch_id)
+      `)
+      .eq('class_id', classId);
+    
+    // If branch ID is provided, filter by branch
+    if (branchId) {
+      query = query.eq('class.branch_id', branchId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching bookings:', error);
+      throw new Error(error.message);
+    }
+    
+    return data.map((item: any) => ({
+      id: item.id,
+      classId: item.class_id,
+      memberId: item.member_id,
+      memberName: item.member?.full_name || 'Unknown Member',
+      memberAvatar: item.member?.avatar_url,
+      bookingDate: item.class?.start_time,
+      status: item.status,
+      attendanceTime: item.attendance_time,
+      paidAmount: item.paid_amount,
+      paymentStatus: item.payment_status,
+      notes: item.notes,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    })) || [];
+  } catch (error: any) {
+    console.error('Error in fetchBookings:', error);
+    toast.error(`Failed to fetch bookings: ${error.message}`);
+    return [];
   }
-];
+};
+
+// Function to update booking status in Supabase
+const updateBookingStatus = async (bookingId: string, status: BookingStatus, attendanceTime?: string): Promise<void> => {
+  try {
+    const updateData: any = {
+      status,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (attendanceTime) {
+      updateData.attendance_time = attendanceTime;
+    }
+    
+    const { error } = await supabase
+      .from('class_bookings')
+      .update(updateData)
+      .eq('id', bookingId);
+    
+    if (error) {
+      console.error('Error updating booking:', error);
+      throw new Error(error.message);
+    }
+  } catch (error: any) {
+    console.error('Error in updateBookingStatus:', error);
+    throw new Error(`Failed to update booking: ${error.message}`);
+  }
+};
 
 const ClassBookingList = ({ classId }: ClassBookingListProps) => {
-  const [bookings, setBookings] = useState<ClassBooking[]>(mockBookings);
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  const { currentBranch } = useBranch();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const branchId = currentBranch?.id;
+  
+  // Fetch bookings for the class
+  const { data: bookings = [], isLoading, error } = useQuery<ClassBooking[]>({
+    queryKey: ['classBookings', classId, branchId],
+    queryFn: () => fetchBookings(classId, branchId),
+    enabled: !!classId && (!!branchId || user?.role === 'admin')
+  });
+  
+  // Mutation for marking attendance
+  const attendanceMutation = useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) => {
+      const attendanceTime = new Date().toISOString();
+      return updateBookingStatus(bookingId, 'attended', attendanceTime);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classBookings', classId] });
+      toast.success('Attendance marked successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to mark attendance: ${error.message}`);
+    }
+  });
+  
+  // Mutation for cancelling booking
+  const cancelMutation = useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) => {
+      return updateBookingStatus(bookingId, 'cancelled');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classBookings', classId] });
+      toast.success('Booking cancelled successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to cancel booking: ${error.message}`);
+    }
+  });
+  
   // Function to mark attendance
   const markAttendance = (bookingId: string) => {
-    const updatedBookings = bookings.map(booking => 
-      booking.id === bookingId 
-        ? { 
-            ...booking, 
-            status: "attended" as BookingStatus, 
-            attendanceTime: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } 
-        : booking
-    );
-    
-    setBookings(updatedBookings);
-    toast.success("Attendance marked successfully");
+    attendanceMutation.mutate({ bookingId });
   };
 
   // Function to cancel booking
   const cancelBooking = (bookingId: string) => {
-    const updatedBookings = bookings.map(booking => 
-      booking.id === bookingId 
-        ? { 
-            ...booking, 
-            status: "cancelled" as BookingStatus,
-            updatedAt: new Date().toISOString()
-          } 
-        : booking
-    );
-    
-    setBookings(updatedBookings);
-    toast.success("Booking cancelled successfully");
+    cancelMutation.mutate({ bookingId });
   };
 
   const getStatusBadge = (status: BookingStatus) => {
@@ -124,25 +190,82 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
       .join("")
       .toUpperCase();
   };
+  
+  // Filter bookings based on search term and status filter
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = booking.memberName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle>Bookings</CardTitle>
         <CardDescription>Manage member bookings for this class</CardDescription>
       </CardHeader>
       <CardContent>
-        {bookings.length === 0 ? (
+        {/* Search and filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="attended">Attended</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="missed">Missed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {isLoading ? (
+          // Loading skeletons
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-4 rounded-lg border mb-4">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div>
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </div>
+              <Skeleton className="h-6 w-24" />
+            </div>
+          ))
+        ) : error ? (
+          <div className="flex items-center justify-center text-destructive p-8">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            Error loading bookings
+          </div>
+        ) : filteredBookings.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">No bookings</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              There are no bookings for this class yet.
+              {bookings.length === 0 
+                ? "There are no bookings for this class yet." 
+                : "No bookings match your search criteria."}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {bookings.map((booking) => (
+            {filteredBookings.map((booking) => (
               <div
                 key={booking.id}
                 className="flex items-center justify-between p-4 rounded-lg border"
@@ -160,6 +283,11 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
                         Booked for {format(parseISO(booking.bookingDate), "MMM dd, h:mm a")}
                       </span>
                     </div>
+                    {booking.notes && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Note: {booking.notes}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">

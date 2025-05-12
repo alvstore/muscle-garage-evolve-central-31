@@ -59,6 +59,7 @@ export interface FollowUpScheduled {
   lead_name?: string;
   type: FollowUpType;
   scheduled_for: string;
+  scheduled_at?: string; // Added for compatibility with follow_up_history table
   subject: string;
   content: string;
   status: string;

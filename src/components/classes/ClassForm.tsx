@@ -7,6 +7,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
+  DialogDescription, 
   DialogFooter 
 } from "@/components/ui/dialog";
 import { 
@@ -52,6 +53,7 @@ interface ClassFormData {
   type: string;
   location: string;
   difficulty: ClassDifficulty;
+  level: string;
   recurring: boolean;
   recurringPattern: string;
 }
@@ -91,6 +93,7 @@ const ClassForm = ({
       type: "",
       location: "",
       difficulty: "all",
+      level: "all",
       recurring: false,
       recurringPattern: "WEEKLY",
     }
@@ -113,6 +116,7 @@ const ClassForm = ({
         type: initialData.type,
         location: initialData.location || "",
         difficulty: initialData.difficulty,
+        level: initialData.level || "all",
         recurring: initialData.recurring,
         recurringPattern: initialData.recurringPattern || "WEEKLY",
       });
@@ -131,6 +135,7 @@ const ClassForm = ({
         type: "",
         location: "",
         difficulty: "all",
+        level: "all",
         recurring: false,
         recurringPattern: "WEEKLY",
       });
@@ -169,6 +174,7 @@ const ClassForm = ({
       type: data.type,
       location: data.location,
       difficulty: data.difficulty,
+      level: data.level,
       status: "scheduled",
       recurring: data.recurring,
       recurringPattern: data.recurring ? data.recurringPattern : undefined,
@@ -187,6 +193,9 @@ const ClassForm = ({
           <DialogTitle>
             {initialData ? "Edit Class" : "Create New Class"}
           </DialogTitle>
+          <DialogDescription>
+            {initialData ? "Update the details of this class." : "Fill in the details to create a new class."}
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
@@ -378,7 +387,34 @@ const ClassForm = ({
                 name="difficulty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Difficulty Level</FormLabel>
+                    <FormLabel>Difficulty</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="all">All Levels</SelectItem>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Level</FormLabel>
                     <Select 
                       value={field.value} 
                       onValueChange={field.onChange}
@@ -393,6 +429,7 @@ const ClassForm = ({
                         <SelectItem value="beginner">Beginner</SelectItem>
                         <SelectItem value="intermediate">Intermediate</SelectItem>
                         <SelectItem value="advanced">Advanced</SelectItem>
+                        <SelectItem value="expert">Expert</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

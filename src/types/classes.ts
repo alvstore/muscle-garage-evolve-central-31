@@ -4,6 +4,8 @@ export interface ClassType {
   name: string;
   description?: string;
   is_active: boolean;
+  level?: string;
+  difficulty?: string;
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -49,6 +51,8 @@ export function adaptClassTypeFromDB(dbClassType: any): ClassType {
     id: dbClassType.id,
     name: dbClassType.name,
     description: dbClassType.description,
+    level: dbClassType.level || 'all',
+    difficulty: dbClassType.difficulty || 'all',
     is_active: dbClassType.is_active,
     branch_id: dbClassType.branch_id,
     created_at: dbClassType.created_at,

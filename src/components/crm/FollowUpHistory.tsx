@@ -34,64 +34,14 @@ import {
   Search,
   Filter,
   Download,
-  Eye
+  Eye,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { FollowUpHistory, FollowUpType } from '@/types/crm';
-
-// Mock follow-up history data
-const mockFollowUpHistory: FollowUpHistory[] = [
-  {
-    id: "1",
-    lead_id: "lead1",
-    type: "email",
-    content: "Hello John, I'm following up on our conversation about our gym membership options. Would you like to schedule a tour of our facilities?",
-    sent_by: "user1",
-    sent_at: "2023-07-01T10:30:00Z",
-    status: "delivered",
-    response: "Yes, I would like to schedule a tour for tomorrow afternoon if possible.",
-    response_at: "2023-07-01T14:15:00Z",
-  },
-  {
-    id: "2",
-    lead_id: "lead2",
-    template_id: "template1",
-    type: "sms",
-    content: "Hi Sarah, just a reminder about your free trial session scheduled for tomorrow at 10 AM. Looking forward to seeing you!",
-    sent_by: "user1",
-    sent_at: "2023-07-02T09:00:00Z",
-    status: "delivered",
-  },
-  {
-    id: "3",
-    lead_id: "lead3",
-    type: "call",
-    content: "Called to discuss membership options, particularly the annual plan with personal training sessions.",
-    sent_by: "user2",
-    sent_at: "2023-07-03T11:45:00Z",
-    status: "delivered",
-    response: "Lead was interested in the Gold plan, requested email with detailed pricing.",
-    response_at: "2023-07-03T11:55:00Z",
-  },
-  {
-    id: "4",
-    lead_id: "lead4",
-    template_id: "template2",
-    type: "whatsapp",
-    content: "Hi Emily, here's the digital brochure for our gym as requested. Let me know if you have any questions!",
-    sent_by: "user1",
-    sent_at: "2023-07-04T15:20:00Z",
-    status: "read",
-  },
-  {
-    id: "5",
-    lead_id: "lead2",
-    type: "email",
-    content: "Follow-up after your trial session yesterday. How was your experience? Would you be interested in joining our gym?",
-    sent_by: "user2",
-    sent_at: "2023-07-05T14:00:00Z",
-    status: "failed",
-  }
-];
+import { followUpService } from '@/services/followUpService';
+import { useQuery } from '@tanstack/react-query';
+import { useBranch } from '@/hooks/use-branch';
 
 // Map of lead IDs to names for display purpose
 const leadNames = {
@@ -106,11 +56,38 @@ const staffNames = {
   "user2": "Taylor Manager"
 };
 
-const FollowUpHistoryComponent: React.FC = () => {
+const FollowUpHistoryComponent = () => {
+  const { currentBranch } = useBranch();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
+  // Fetch follow-up history from Supabase
+  const { data: followUpHistory, isLoading, isError, refetch } = useQuery({
+    queryKey: ['followUpHistory', currentBranch?.id],
+    queryFn: () => followUpService.getFollowUpHistory(undefined, currentBranch?.id),
+    enabled: !!currentBranch?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
+  // Filter the follow-up history based on search term and filters
+  const filteredHistory = followUpHistory
+    ? followUpHistory.filter(item => {
+        // Search term filter
+        const matchesSearch = 
+          item.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.response && item.response.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        // Type filter
+        const matchesType = typeFilter === 'all' || item.type === typeFilter;
+        
+        // Status filter
+        const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+        
+        return matchesSearch && matchesType && matchesStatus;
+      })
+    : [];
+
   const getTypeIcon = (type: FollowUpType) => {
     switch (type) {
       case "email":
@@ -140,49 +117,50 @@ const FollowUpHistoryComponent: React.FC = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-  
-  const filteredHistory = mockFollowUpHistory.filter(history => {
-    // Filter by search term
-    const searchMatch = 
-      leadNames[history.lead_id as keyof typeof leadNames]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      history.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (history.response?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    
-    // Filter by type
-    const typeMatch = typeFilter === 'all' || history.type === typeFilter;
-    
-    // Filter by status
-    const statusMatch = statusFilter === 'all' || history.status === statusFilter;
-    
-    return searchMatch && typeMatch && statusMatch;
-  });
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <CardTitle>Follow-up History</CardTitle>
-            <CardDescription>View all previous communications with leads</CardDescription>
+            <CardDescription>View all follow-up communications with leads</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="mt-2 sm:mt-0">
-            <Download className="h-4 w-4 mr-1" />
-            Export
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search follow-ups..."
+                className="pl-8 w-full sm:w-[200px] md:w-[250px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span>Refresh</span>
+            </Button>
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
           <div className="w-full sm:w-auto flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <div className="relative w-full sm:w-[300px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search history..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
             <div className="flex space-x-2">
               <Select
                 value={typeFilter}

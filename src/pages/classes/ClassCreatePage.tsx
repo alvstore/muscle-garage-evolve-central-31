@@ -57,7 +57,7 @@ const ClassCreatePage: React.FC = () => {
     location: '',
     capacity: 20,
     trainer_id: '',
-    status: 'scheduled',
+    status: 'active',
   });
   
   const [isLoading, setIsLoading] = useState(false);

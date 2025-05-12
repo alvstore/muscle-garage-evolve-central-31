@@ -1,8 +1,7 @@
-
 import React, { lazy, Suspense } from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import { Calendar, ListChecks, Info, Users, Tag, Plus } from 'lucide-react';
+import { Calendar, ListChecks, Info, Users, Tag, Plus, List, BookOpen } from 'lucide-react';
 import { AppRoute } from '@/types/route';
 
 // Use lazy loading to break circular dependencies
@@ -12,6 +11,8 @@ const ClassDetailsPage = lazy(() => import('@/pages/classes/ClassDetailsPage'));
 const ClassAttendancePage = lazy(() => import('@/pages/classes/ClassAttendancePage'));
 const ClassTypesPage = lazy(() => import('@/pages/classes/ClassTypesPage'));
 const ClassCreatePage = lazy(() => import('@/pages/classes/ClassCreatePage'));
+const ClassListPage = lazy(() => import('@/pages/classes/ClassListPage'));
+const ClassBookingsPage = lazy(() => import('@/pages/classes/ClassBookingsPage'));
 
 // Loading component
 const LoadingComponent = () => <div className="p-4">Loading...</div>;
@@ -31,6 +32,38 @@ export const classRoutes: AppRoute[] = [
       breadcrumb: 'Classes',
       permission: 'view_classes',
       icon: <Calendar className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/classes/list',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassListPage />
+        </Suspense>
+      </PrivateRoute>
+    ),
+    meta: {
+      title: 'Class List',
+      breadcrumb: 'Class List',
+      permission: 'view_classes',
+      icon: <List className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/classes/bookings',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <Suspense fallback={<LoadingComponent />}>
+          <ClassBookingsPage />
+        </Suspense>
+      </PrivateRoute>
+    ),
+    meta: {
+      title: 'Class Bookings',
+      breadcrumb: 'Bookings',
+      permission: 'view_classes',
+      icon: <BookOpen className="h-5 w-5" />
     }
   },
   {

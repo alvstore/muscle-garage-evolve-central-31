@@ -1,81 +1,137 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ClassType, adaptClassTypeFromDB } from '@/types/classes';
-
-// Mock data for class types since this table doesn't exist in the database yet
-const mockClassTypes: ClassType[] = [
-  {
-    id: "1",
-    name: "Yoga",
-    description: "Traditional yoga classes focusing on balance, flexibility, and mental well-being",
-    is_active: true,
-    branch_id: "branch-1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    name: "HIIT",
-    description: "High Intensity Interval Training to build strength and burn calories",
-    is_active: true,
-    branch_id: "branch-1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "3",
-    name: "Pilates",
-    description: "Core strengthening and stability exercises",
-    is_active: true,
-    branch_id: "branch-1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
+import { toast } from 'sonner';
 
 export const classTypesService = {
-  // Simulates fetching class types
-  async fetchClassTypes(): Promise<ClassType[]> {
-    // In a real implementation, we would fetch from the database
-    // For now, we're returning mock data
-    return mockClassTypes;
+  // Fetch all class types from Supabase, filtered by branch ID if provided
+  async fetchClassTypes(branchId?: string): Promise<ClassType[]> {
+    try {
+      let query = supabase
+        .from('class_types')
+        .select('*')
+        .order('name', { ascending: true });
+        
+      // Filter by branch ID if provided
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching class types:', error);
+        throw new Error(error.message);
+      }
+
+      return data.map(adaptClassTypeFromDB) || [];
+    } catch (error: any) {
+      console.error('Error in fetchClassTypes:', error);
+      toast.error(`Failed to fetch class types: ${error.message}`);
+      return [];
+    }
   },
 
-  // Simulates creating a class type
+  // Create a new class type in Supabase
   async createClassType(classType: Partial<ClassType>): Promise<ClassType> {
-    const newClassType: ClassType = {
-      id: Date.now().toString(),
-      name: classType.name || '',
-      description: classType.description,
-      is_active: classType.is_active !== undefined ? classType.is_active : true,
-      branch_id: classType.branch_id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('class_types')
+        .insert({
+          name: classType.name,
+          description: classType.description,
+          is_active: classType.is_active !== undefined ? classType.is_active : true,
+          level: classType.level || 'all',
+          difficulty: classType.difficulty || 'all',
+          branch_id: classType.branch_id,
+        })
+        .select('*')
+        .single();
 
-    // In a real implementation, we would save to the database
-    return newClassType;
+      if (error) {
+        console.error('Error creating class type:', error);
+        throw new Error(error.message);
+      }
+
+      return adaptClassTypeFromDB(data);
+    } catch (error: any) {
+      console.error('Error in createClassType:', error);
+      toast.error(`Failed to create class type: ${error.message}`);
+      throw error;
+    }
   },
 
-  // Simulates updating a class type
+  // Update an existing class type in Supabase
   async updateClassType(id: string, updates: Partial<ClassType>): Promise<ClassType> {
-    // In a real implementation, we would update in the database
-    const updatedClassType: ClassType = {
-      id,
-      name: updates.name || '',
-      description: updates.description,
-      is_active: updates.is_active !== undefined ? updates.is_active : true,
-      branch_id: updates.branch_id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('class_types')
+        .update({
+          name: updates.name,
+          description: updates.description,
+          is_active: updates.is_active,
+          level: updates.level,
+          difficulty: updates.difficulty,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
 
-    return updatedClassType;
+      if (error) {
+        console.error('Error updating class type:', error);
+        throw new Error(error.message);
+      }
+
+      return adaptClassTypeFromDB(data);
+    } catch (error: any) {
+      console.error('Error in updateClassType:', error);
+      toast.error(`Failed to update class type: ${error.message}`);
+      throw error;
+    }
   },
 
-  // Simulates deleting a class type
+  // Delete a class type from Supabase
   async deleteClassType(id: string): Promise<void> {
-    // In a real implementation, we would delete from the database
-    console.log(`Class type ${id} deleted (simulated)`);
+    try {
+      const { error } = await supabase
+        .from('class_types')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting class type:', error);
+        throw new Error(error.message);
+      }
+    } catch (error: any) {
+      console.error('Error in deleteClassType:', error);
+      toast.error(`Failed to delete class type: ${error.message}`);
+      throw error;
+    }
+  },
+
+  // Fetch a single class type by ID
+  async getClassTypeById(id: string): Promise<ClassType | null> {
+    try {
+      const { data, error } = await supabase
+        .from('class_types')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') { // Not found error
+          return null;
+        }
+        console.error('Error fetching class type:', error);
+        throw new Error(error.message);
+      }
+
+      return adaptClassTypeFromDB(data);
+    } catch (error: any) {
+      console.error('Error in getClassTypeById:', error);
+      toast.error(`Failed to fetch class type: ${error.message}`);
+      return null;
+    }
   }
 };

@@ -1,13 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useBookClass } from "@/hooks/use-classes";
 import { toast } from "sonner";
 import { GymClass, ClassBooking } from "@/types/class";
+import { memberService } from "@/services/memberService";
+import { Loader2 } from "lucide-react";
+import { Member } from "@/types/member";
 
 interface ClassBookingFormProps {
   gymClass: GymClass;
@@ -25,6 +28,14 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
   // For admin/staff - allow selecting a member
   const [selectedMemberId, setSelectedMemberId] = useState("");
   
+  // Fetch members from the branch
+  const { data: members, isLoading: isLoadingMembers } = useQuery({
+    queryKey: ['members', gymClass.branchId],
+    queryFn: () => memberService.getMembersByBranch(gymClass.branchId),
+    enabled: open && (user?.role === 'admin' || user?.role === 'staff'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   // Reset form when opened with a new class
   useEffect(() => {
     if (open) {
@@ -36,14 +47,6 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
       }
     }
   }, [open, user]);
-  
-  // Mock member list for admin booking on behalf of members
-  // In a real app, this would be fetched from an API
-  const mockMembers = [
-    { id: "member-1", name: "John Doe" },
-    { id: "member-2", name: "Jane Smith" },
-    { id: "member-3", name: "Mike Johnson" },
-  ];
 
   const handleSubmit = () => {
     // Validate form
@@ -91,6 +94,9 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Book Class: {gymClass.name}</DialogTitle>
+          <DialogDescription>
+            Complete the form below to book this class.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {/* Only show member selection for admin/staff users */}
@@ -102,11 +108,22 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
                   <SelectValue placeholder="Select a member" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockMembers.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
+                  {isLoadingMembers ? (
+                    <div className="flex items-center justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span>Loading members...</span>
+                    </div>
+                  ) : members && members.length > 0 ? (
+                    members.map((member: Member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-center text-muted-foreground">
+                      No members found in this branch
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>

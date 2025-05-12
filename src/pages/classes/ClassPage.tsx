@@ -3,10 +3,10 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from "@/components/ui";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Plus } from "lucide-react";
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Plus, Calendar, List, BookOpen, Tag } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import ClassSchedulePage from "./ClassSchedulePage";
 import ClassTypesPage from "./ClassTypesPage";
@@ -31,6 +31,10 @@ const ClassPage: React.FC = () => {
       navigate("/classes/types");
     } else if (value === "schedule") {
       navigate("/classes/schedule");
+    } else if (value === "list") {
+      navigate("/classes/list");
+    } else if (value === "bookings") {
+      navigate("/classes/bookings");
     }
   };
 
@@ -66,10 +70,24 @@ const ClassPage: React.FC = () => {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="schedule">
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                <List className="mr-2 h-4 w-4" />
+                Class List
+              </TabsTrigger>
+              <TabsTrigger value="bookings">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Bookings
+              </TabsTrigger>
               {can('manage_classes') && (
-                <TabsTrigger value="types">Class Types</TabsTrigger>
+                <TabsTrigger value="types">
+                  <Tag className="mr-2 h-4 w-4" />
+                  Class Types
+                </TabsTrigger>
               )}
             </TabsList>
             <TabsContent value="schedule">
@@ -77,6 +95,35 @@ const ClassPage: React.FC = () => {
                 <ClassSchedulePage hideHeader />
               </div>
             </TabsContent>
+            
+            <TabsContent value="list">
+              <div className="mt-4">
+                <div className="text-center p-8">
+                  <Button onClick={() => navigate('/classes/list')} variant="default">
+                    <List className="mr-2 h-4 w-4" />
+                    View Full Class List
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    View and manage all classes with advanced filtering and search options
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="bookings">
+              <div className="mt-4">
+                <div className="text-center p-8">
+                  <Button onClick={() => navigate('/classes/bookings')} variant="default">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    View All Bookings
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Manage class bookings, track attendance, and handle cancellations
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+            
             {can('manage_classes') && (
               <TabsContent value="types">
                 <div className="mt-4">

@@ -31,7 +31,8 @@ export type Permission =
   | 'create:finances'
   | 'view:branches'
   | 'create:branches'
-  | 'edit:branches';
+  | 'edit:branches'
+  | 'export_data';
 
 export const usePermissions = () => {
   const { user, role, userRole } = useAuth();
