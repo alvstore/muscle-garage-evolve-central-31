@@ -56,6 +56,18 @@ export interface Invoice {
   created_at?: string;
   updated_at?: string;
   
+  // Tax-related fields
+  subtotal?: number;
+  tax_amount?: number;
+  tax_rate?: number;
+  tax_type?: TaxType;
+  tax_details?: TaxDetail[];
+  is_tax_inclusive?: boolean;
+  hsn_sac_code?: string;
+  gst_treatment?: GSTTreatment;
+  gst_number?: string;
+  place_of_supply?: string;
+  
   // Adding camelCase aliases for UI component compatibility
   memberId?: string;
   memberName?: string;
@@ -69,6 +81,15 @@ export interface Invoice {
   membershipPlanId?: string;
   createdAt?: string;
   updatedAt?: string;
+  taxAmount?: number;
+  taxRate?: number;
+  taxType?: TaxType;
+  taxDetails?: TaxDetail[];
+  isTaxInclusive?: boolean;
+  hsnSacCode?: string;
+  gstTreatment?: GSTTreatment;
+  gstNumber?: string;
+  placeOfSupply?: string;
 }
 
 export interface InvoiceItem {

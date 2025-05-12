@@ -34,6 +34,34 @@ export class InvoiceService {
     }
   }
 
+  static async getInvoices(branchId?: string): Promise<Invoice[]> {
+    try {
+      let query = supabase
+        .from('invoices')
+        .select('*, members(name)')
+        .order('issued_date', { ascending: false });
+        
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      // Transform to Invoice type with memberName
+      const invoices: Invoice[] = (data || []).map(item => ({
+        ...item,
+        memberName: item.members?.name || 'Unknown'
+      }));
+      
+      return invoices;
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      return [];
+    }
+  }
+
   static async getInvoiceById(id: string): Promise<Invoice | null> {
     try {
       const { data, error } = await supabase

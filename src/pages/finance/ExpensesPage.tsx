@@ -31,6 +31,7 @@ import {
   SelectItem 
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchExpenses, fetchExpenseCategories, createExpense, updateExpense, deleteExpense, Expense, ExpenseCategory } from '@/services/expenseService';
 import { useBranch } from '@/hooks/use-branch';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -42,26 +43,7 @@ import { CalendarIcon, Download, Filter, MoreHorizontal, PlusCircle, Search, XCi
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
-// Define the expense types
-interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  category: string;
-  date: string;
-  payment_method: string;
-  vendor: string;
-  reference: string;
-  status: string;
-  created_at: string;
-  branch_id: string;
-}
-
-interface ExpenseCategory {
-  id: string;
-  name: string;
-  description: string | null;
-}
+// Using Expense and ExpenseCategory interfaces from expenseService
 
 const ExpensesPage = () => {
   // State
@@ -90,29 +72,16 @@ const ExpensesPage = () => {
   // Fetch expenses
   useEffect(() => {
     if (currentBranch?.id) {
-      fetchExpenses();
-      fetchCategories();
+      loadExpenses();
+      loadCategories();
     }
   }, [currentBranch?.id]);
   
-  const fetchExpenses = async () => {
+  const loadExpenses = async () => {
     try {
       setIsLoading(true);
-      
-      let query = supabase
-        .from('expense_records')
-        .select('*')
-        .order('date', { ascending: false });
-        
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setExpenses(data || []);
+      const data = await fetchExpenses(currentBranch?.id);
+      setExpenses(data);
     } catch (error) {
       console.error('Error fetching expenses:', error);
       toast.error('Failed to load expense data');
@@ -121,56 +90,51 @@ const ExpensesPage = () => {
     }
   };
   
-  const fetchCategories = async () => {
+  const loadCategories = async () => {
     try {
-      let query = supabase
-        .from('expense_categories')
-        .select('id, name, description')
-        .eq('is_active', true);
-        
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setCategories(data || []);
+      const data = await fetchExpenseCategories(currentBranch?.id);
+      setCategories(data);
     } catch (error) {
       console.error('Error fetching expense categories:', error);
-      toast.error('Failed to load expense categories');
+      toast.error('Failed to load categories');
     }
   };
   
   // Handler for adding a new expense
   const handleAddExpense = async () => {
     try {
-      if (!newExpense.description || !newExpense.amount || !newExpense.category) {
+      if (!currentBranch?.id) {
+        toast.error('No branch selected');
+        return;
+      }
+      
+      // Validate form
+      if (!newExpense.description || !newExpense.amount || !newExpense.category || !newExpense.vendor) {
         toast.error('Please fill in all required fields');
         return;
       }
       
-      const { error } = await supabase
-        .from('expense_records')
-        .insert({
-          description: newExpense.description,
-          amount: parseFloat(newExpense.amount),
-          category: newExpense.category,
-          date: newExpense.date.toISOString(),
-          payment_method: newExpense.payment_method,
-          vendor: newExpense.vendor,
-          reference: newExpense.reference || `EXP-${Date.now()}`,
-          status: newExpense.status,
-          branch_id: currentBranch?.id,
-        });
-        
-      if (error) throw error;
+      // Create expense record using the service
+      const createdExpense = await createExpense({
+        description: newExpense.description,
+        amount: parseFloat(newExpense.amount),
+        category: newExpense.category,
+        date: format(newExpense.date, 'yyyy-MM-dd'),
+        payment_method: newExpense.payment_method,
+        vendor: newExpense.vendor,
+        reference: newExpense.reference || `EXP-${Date.now()}`,
+        status: newExpense.status,
+        branch_id: currentBranch.id
+      });
       
-      toast.success('Expense added successfully');
+      // Add to local state
+      setExpenses([createdExpense, ...expenses]);
+      
+      // Close dialog and reset form
       setIsAddDialogOpen(false);
       resetForm();
-      fetchExpenses();
+      
+      toast.success('Expense added successfully');
     } catch (error) {
       console.error('Error adding expense:', error);
       toast.error('Failed to add expense');
@@ -179,20 +143,17 @@ const ExpensesPage = () => {
   
   // Handler for deleting an expense
   const handleDeleteExpense = async () => {
+    if (!selectedExpense) return;
+    
     try {
-      if (!selectedExpense) return;
+      await deleteExpense(selectedExpense.id);
       
-      const { error } = await supabase
-        .from('expense_records')
-        .delete()
-        .eq('id', selectedExpense.id);
-        
-      if (error) throw error;
+      // Update local state by removing the deleted expense
+      setExpenses(expenses.filter(expense => expense.id !== selectedExpense.id));
       
       toast.success('Expense deleted successfully');
       setIsDeleteDialogOpen(false);
       setSelectedExpense(null);
-      fetchExpenses();
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast.error('Failed to delete expense');
