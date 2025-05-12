@@ -99,8 +99,22 @@ export interface InvoiceItem {
   quantity: number;
   price: number;
   
+  // Tax-related fields
+  tax_rate?: number;
+  tax_amount?: number;
+  hsn_sac_code?: string;
+  gst_rate?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  cess?: number;
+  
   // Add unitPrice as an alias for price for backward compatibility
   unitPrice?: number;
+  taxRate?: number;
+  taxAmount?: number;
+  hsnSacCode?: string;
+  gstRate?: number;
 }
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'partially_paid';
@@ -108,3 +122,23 @@ export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelle
 export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'cheque' | 'online' | 'razorpay' | 'other';
 
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+// Tax-related types
+export type TaxType = 'gst' | 'vat' | 'service_tax' | 'none';
+
+export type GSTTreatment = 
+  | 'registered_business' // Regular taxpayer registered under GST
+  | 'unregistered_business' // Business not registered under GST
+  | 'consumer' // Individual consumer
+  | 'overseas' // Overseas customer
+  | 'sez' // Special Economic Zone
+  | 'deemed_export'; // Deemed exports
+
+export interface TaxDetail {
+  tax_name: string; // e.g., 'CGST', 'SGST', 'IGST'
+  tax_rate: number; // e.g., 9 for 9%
+  tax_amount: number; // Calculated amount
+  taxName?: string; // Camel case alias
+  taxRate?: number; // Camel case alias
+  taxAmount?: number; // Camel case alias
+}
