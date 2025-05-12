@@ -26,67 +26,43 @@ const bucketExists = async (name: string): Promise<boolean> => {
   }
 };
 
-// Function to create a bucket if it doesn't exist
-const createBucketIfNotExists = async (name: string): Promise<void> => {
+// Function to get bucket metadata without needing to create it
+const getBucketMetadata = async (name: string) => {
   try {
-    const exists = await bucketExists(name);
-    
-    if (!exists) {
-      console.info(`Creating storage bucket: ${name}`);
-      
-      // First make sure the user has the right role/permissions
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Check if user is an admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-        
-      if (profileError) {
-        console.error('Error checking user role:', profileError);
-        throw new Error('Could not verify user permissions');
-      }
-      
-      if (profile?.role !== 'admin') {
-        console.warn('User is not an admin, might not have permission to create buckets');
-      }
-      
-      const { error } = await supabase.storage.createBucket(name, {
-        public: false, // Make buckets private by default for security
-        fileSizeLimit: 52428800, // 50MB
-        allowedMimeTypes: ['image/*', 'video/*', 'application/pdf']
-      });
-      
-      if (error) {
-        console.error(`Error creating bucket ${name}:`, error);
-      }
+    const { data, error } = await supabase.storage.getBucket(name);
+    if (error) {
+      console.error(`Error getting bucket metadata for ${name}:`, error);
+      return null;
     }
+    return data;
   } catch (error) {
-    console.error(`Error creating bucket ${name}:`, error);
-    // Don't throw here, just log the error and continue with other buckets
+    console.error(`Exception getting bucket metadata for ${name}:`, error);
+    return null;
   }
 };
 
-// Main function to ensure all required buckets exist
+// Main function to verify storage buckets exist
 export const ensureStorageBucketsExist = async (): Promise<void> => {
   try {
     // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.warn('User not authenticated, skipping bucket creation');
+      console.warn('User not authenticated, skipping bucket verification');
       return;
     }
     
+    // Just check if buckets exist but don't try to create them
+    // since bucket creation requires admin privileges
     for (const bucket of requiredBuckets) {
-      await createBucketIfNotExists(bucket);
+      const exists = await bucketExists(bucket);
+      if (!exists) {
+        console.warn(`Storage bucket ${bucket} does not exist. Admin needs to create it.`);
+      } else {
+        console.info(`Storage bucket ${bucket} exists.`);
+      }
     }
-    console.info('Storage buckets verified');
+    console.info('Storage bucket verification complete');
   } catch (error) {
     console.error('Error ensuring storage buckets exist:', error);
   }
@@ -99,8 +75,12 @@ export const uploadFile = async (
   file: File
 ): Promise<string | null> => {
   try {
-    // Ensure bucket exists
-    await createBucketIfNotExists(bucketName);
+    // Verify bucket exists
+    const bucketMetadata = await getBucketMetadata(bucketName);
+    if (!bucketMetadata) {
+      toast.error(`Storage bucket ${bucketName} not found. Please contact admin.`);
+      return null;
+    }
     
     // Upload file
     const { data, error } = await supabase

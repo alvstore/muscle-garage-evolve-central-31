@@ -38,7 +38,25 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
   const onSubmit = async (data: BranchFormValues) => {
     setIsSubmitting(true);
     try {
-      const createdBranch = await createBranch(data);
+      // Ensure a name is provided, which is required by the Branch type
+      if (!data.name) {
+        toast.error("Branch name is required");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const createdBranch = await createBranch({
+        name: data.name, // Required field
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        email: data.email,
+        phone: data.phone,
+        isActive: data.isActive,
+        branch_code: data.branch_code
+      });
+      
       if (createdBranch) {
         toast.success("Branch created successfully");
         form.reset();

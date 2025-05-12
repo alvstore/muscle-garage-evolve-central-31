@@ -18,6 +18,12 @@ export interface Branch {
   createdAt?: string;
   updatedAt?: string;
   branch_code?: string;
+  
+  // Additional fields needed for multi-branch architecture
+  maxCapacity?: number;
+  region?: string;
+  timezone?: string;
+  taxRate?: number;
 }
 
 export const BranchSchema = z.object({
@@ -30,6 +36,12 @@ export const BranchSchema = z.object({
   phone: z.string().optional(),
   isActive: z.boolean().default(true),
   branch_code: z.string().optional(),
+  
+  // Additional schema validations for new fields
+  maxCapacity: z.string().optional().transform(val => val ? parseInt(val) : undefined),
+  region: z.string().optional(),
+  timezone: z.string().optional(),
+  taxRate: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
 });
 
 export type BranchFormValues = z.infer<typeof BranchSchema>;
@@ -53,5 +65,10 @@ export const normalizeBranch = (branch: any): Branch => {
     createdAt: branch.created_at,
     updatedAt: branch.updated_at,
     branch_code: branch.branch_code,
+    // Map additional fields
+    maxCapacity: branch.max_capacity,
+    region: branch.region,
+    timezone: branch.timezone,
+    taxRate: branch.tax_rate,
   };
 };

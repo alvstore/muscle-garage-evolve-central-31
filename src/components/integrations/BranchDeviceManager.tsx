@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -66,36 +65,48 @@ const mockDevices: Device[] = [
   },
 ];
 
-const mockBranches: Branch[] = [
+const MockBranches = [
   {
-    id: "1",
-    name: "Downtown Gym",
-    address: "123 Main St",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    id: 'br1',
+    name: 'Main Branch',
+    address: '123 Main Street',
+    city: 'New York',
+    state: 'NY',
+    country: 'USA',
+    email: 'main@example.com',
+    phone: '+1234567890',
+    isActive: true,
+    branch_code: 'NYC001'
   },
   {
-    id: "2",
-    name: "Westside Fitness",
-    address: "456 Park Ave",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    id: 'br2',
+    name: 'Downtown Branch',
+    address: '456 Market Street',
+    city: 'San Francisco',
+    state: 'CA',
+    country: 'USA',
+    email: 'downtown@example.com',
+    phone: '+1987654321',
+    isActive: true,
+    branch_code: 'SFO002'
   },
   {
-    id: "3",
-    name: "Eastside Health Club",
-    address: "789 Broadway",
-    is_active: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    id: 'br3',
+    name: 'Suburban Branch',
+    address: '789 Park Avenue',
+    city: 'Chicago',
+    state: 'IL',
+    country: 'USA',
+    email: 'suburban@example.com',
+    phone: '+1456789123',
+    isActive: false,
+    branch_code: 'CHI003'
   }
 ];
 
 const BranchDeviceManager = () => {
   const [devices, setDevices] = useState<Device[]>(mockDevices);
-  const [branches, setBranches] = useState<Branch[]>(mockBranches);
+  const [branches, setBranches] = useState<Branch[]>(MockBranches);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [newDevice, setNewDevice] = useState<{ name: string; type: string; ipAddress: string }>({
     name: "",
@@ -107,7 +118,7 @@ const BranchDeviceManager = () => {
   useEffect(() => {
     // Simulate fetching branches from an API
     setTimeout(() => {
-      setBranches(mockBranches);
+      setBranches(MockBranches);
     }, 500);
   }, []);
 

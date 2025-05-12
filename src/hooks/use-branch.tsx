@@ -169,8 +169,8 @@ const useBranchData = () => {
       // Convert any camelCase properties to snake_case for the database
       const dbBranchData = {
         ...branchData,
-        manager_id: branchData.managerId || branchData.manager_id,
-        is_active: branchData.isActive !== undefined ? branchData.isActive : branchData.is_active
+        manager_id: branchData.manager_id,
+        is_active: branchData.isActive
       };
 
       const { data, error } = await supabase
@@ -209,8 +209,8 @@ const useBranchData = () => {
       // Convert any camelCase properties to snake_case for the database
       const dbUpdates = {
         ...updates,
-        manager_id: updates.managerId || updates.manager_id,
-        is_active: updates.isActive !== undefined ? updates.isActive : updates.is_active
+        manager_id: updates.manager_id,
+        is_active: updates.isActive
       };
 
       const { data, error } = await supabase

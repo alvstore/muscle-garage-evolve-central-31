@@ -57,12 +57,13 @@ export const formatBranchData = (branch: any): Branch => {
     state: branch.state || '',
     country: branch.country || 'India',
     manager_id: branch.manager_id || null,
-    is_active: branch.is_active !== false
+    is_active: branch.isActive !== undefined ? branch.isActive : branch.is_active !== false
   } as Branch);
 };
 
 export const createBranchInDb = async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    // Convert camelCase to snake_case for database compatibility
     const { data, error } = await supabase
       .from('branches')
       .insert([{
@@ -71,8 +72,14 @@ export const createBranchInDb = async (branchData: Omit<Branch, 'id' | 'created_
         city: branchData.city,
         state: branchData.state,
         country: branchData.country || 'India',
-        manager_id: branchData.manager_id || branchData.managerId,
-        is_active: branchData.is_active !== undefined ? branchData.is_active : branchData.isActive !== false
+        manager_id: branchData.manager_id || null,
+        is_active: branchData.isActive !== undefined ? branchData.isActive : true,
+        branch_code: branchData.branch_code,
+        // Add additional fields
+        max_capacity: branchData.maxCapacity,
+        region: branchData.region,
+        timezone: branchData.timezone,
+        tax_rate: branchData.taxRate
       }])
       .select();
 
@@ -88,15 +95,21 @@ export const updateBranchInDb = async (id: string, branchData: Partial<Branch>) 
   try {
     const updates: any = {};
     
+    // Map properties from the Branch interface to database columns
     if (branchData.name !== undefined) updates.name = branchData.name;
     if (branchData.address !== undefined) updates.address = branchData.address;
     if (branchData.city !== undefined) updates.city = branchData.city;
     if (branchData.state !== undefined) updates.state = branchData.state;
     if (branchData.country !== undefined) updates.country = branchData.country;
     if (branchData.manager_id !== undefined) updates.manager_id = branchData.manager_id;
-    if (branchData.managerId !== undefined) updates.manager_id = branchData.managerId;
-    if (branchData.is_active !== undefined) updates.is_active = branchData.is_active;
     if (branchData.isActive !== undefined) updates.is_active = branchData.isActive;
+    if (branchData.branch_code !== undefined) updates.branch_code = branchData.branch_code;
+    
+    // Map additional fields
+    if (branchData.maxCapacity !== undefined) updates.max_capacity = branchData.maxCapacity;
+    if (branchData.region !== undefined) updates.region = branchData.region;
+    if (branchData.timezone !== undefined) updates.timezone = branchData.timezone;
+    if (branchData.taxRate !== undefined) updates.tax_rate = branchData.taxRate;
 
     const { data, error } = await supabase
       .from('branches')
