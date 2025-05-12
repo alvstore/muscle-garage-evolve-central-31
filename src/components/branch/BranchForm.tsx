@@ -138,7 +138,11 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Branch Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., BR-001" {...field} />
+                    <Input
+                      placeholder="e.g., BR-001"
+                      {...field}
+                      value={field.value as string}
+                    />
                   </FormControl>
                   <FormDescription>
                     A unique code for this branch
@@ -252,7 +256,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Opening Hours</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 06:00" {...field} />
+                    <Input
+                      type="time"
+                      placeholder="09:00"
+                      {...field}
+                      value={field.value as string}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -296,7 +305,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Max Capacity</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 50" {...field} value={field.value as string} />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 50"
+                      {...field}
+                      value={field.value as string}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -311,7 +325,13 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
               <FormItem>
                 <FormLabel>Tax Rate (%)</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. 8.5" type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g., 18.00"
+                    {...field}
+                    value={field.value as string}
+                  />
                 </FormControl>
                 <FormDescription>
                   Used for calculating taxes on membership fees and product sales
