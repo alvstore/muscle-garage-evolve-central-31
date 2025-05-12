@@ -18,6 +18,7 @@ All major database tables include a `branch_id` field that enables:
 - Data isolation between branches
 - Cross-branch reporting for super admins
 - Role-specific data access
+- Branch identification via unique `branch_code` field
 
 ## 👩‍💼 Admin Dashboard Backend
 
@@ -248,37 +249,19 @@ All database tables have RLS policies that:
 2. Limit member access to their own data
 3. Allow super admins to view all data
 
-Example policy for the `members` table:
+### Storage Bucket Security
 
-```sql
--- Allow users to view their own data
-CREATE POLICY "Users can view own data"
-ON public.members
-FOR SELECT
-USING (auth.uid() = user_id);
+The system uses two primary storage buckets:
 
--- Allow staff to view members in their branch
-CREATE POLICY "Staff can view branch members"
-ON public.members
-FOR SELECT
-USING (
-  branch_id IN (
-    SELECT branch_id FROM profiles
-    WHERE id = auth.uid() AND (role = 'staff' OR role = 'admin')
-  )
-);
+1. `avatars`: For profile pictures and member photos
+   - INSERT policies: Authenticated users can upload to this bucket
+   - SELECT policies: Authenticated users can view avatars
 
--- Allow trainers to view assigned members
-CREATE POLICY "Trainers can view assigned members"
-ON public.members
-FOR SELECT
-USING (
-  id IN (
-    SELECT member_id FROM trainer_assignments
-    WHERE trainer_id = auth.uid() AND is_active = true
-  )
-);
-```
+2. `documents`: For medical records, contracts, and other documents
+   - INSERT policies: Authenticated users can upload to this bucket
+   - SELECT policies: Authenticated users can view documents
+
+Each upload should include proper content-type headers. File paths should be structured to include user or entity IDs for proper organization and security, for example: `{memberId}/{fileName}`.
 
 ### Middleware Guards
 
@@ -333,3 +316,4 @@ npm run test:e2e      # Run end-to-end tests
 2. **Mobile App API**: Enhanced endpoints for native mobile applications
 3. **Integration Marketplace**: Pluggable modules for additional gym software
 4. **Multi-language Support**: Internationalization of notification templates
+

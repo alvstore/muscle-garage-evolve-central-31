@@ -1,3 +1,6 @@
+
+import { z } from 'zod';
+
 export interface Branch {
   id: string;
   name: string;
@@ -5,41 +8,50 @@ export interface Branch {
   city?: string;
   state?: string;
   country?: string;
-  phone?: string;
   email?: string;
+  phone?: string;
+  isActive?: boolean;
+  manager?: string;
   manager_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  is_active?: boolean;
-  
-  // Additional properties needed by components
-  manager?: string; // Used in several components
-  openingHours?: string; // For displaying business hours
-  closingHours?: string; // For displaying business hours
-  maxCapacity?: number; // For branch capacity
-  region?: string; // For geographical organization
-  branchCode?: string; // For branch identification
-  taxRate?: number; // For financial calculations
-  timezone?: string; // For time-based operations
-  managerId?: string; // Alias for manager_id to support existing code
-  isActive?: boolean; // Alias for is_active to support existing code
-  createdAt?: string; // Alias for created_at
-  updatedAt?: string; // Alias for updated_at
+  openingHours?: string;
+  closingHours?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  branch_code?: string;
 }
 
-// Helper function to convert between camelCase and snake_case
-export function normalizeBranch(branch: Branch): Branch {
+export const BranchSchema = z.object({
+  name: z.string().min(1, 'Branch name is required'),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().default('India'),
+  email: z.string().email().optional().or(z.string().length(0)),
+  phone: z.string().optional(),
+  isActive: z.boolean().default(true),
+  branch_code: z.string().optional(),
+});
+
+export type BranchFormValues = z.infer<typeof BranchSchema>;
+
+// Utility function to normalize branch data from the database to our frontend format
+export const normalizeBranch = (branch: any): Branch => {
   return {
-    ...branch,
-    // Set aliases for compatibility
-    managerId: branch.manager_id,
-    isActive: branch.is_active,
+    id: branch.id,
+    name: branch.name,
+    address: branch.address,
+    city: branch.city,
+    state: branch.state,
+    country: branch.country || 'India',
+    email: branch.email,
+    phone: branch.phone,
+    isActive: branch.is_active ?? true,
+    manager: branch.manager,
+    manager_id: branch.manager_id,
+    openingHours: branch.opening_hours,
+    closingHours: branch.closing_hours,
     createdAt: branch.created_at,
     updatedAt: branch.updated_at,
-    // Also keep original properties
-    manager_id: branch.manager_id || branch.managerId,
-    is_active: branch.is_active !== undefined ? branch.is_active : branch.isActive,
-    created_at: branch.created_at || branch.createdAt,
-    updated_at: branch.updated_at || branch.updatedAt
+    branch_code: branch.branch_code,
   };
-}
+};

@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 const requiredBuckets = [
   'avatars',
   'documents',
+  'products',
   'equipment',
   'gallery',
-  'products',
   'trainers',
   'workouts'
 ];
@@ -57,30 +57,13 @@ const createBucketIfNotExists = async (name: string): Promise<void> => {
       }
       
       const { error } = await supabase.storage.createBucket(name, {
-        public: true, // Make bucket public so files can be accessed without authentication
+        public: false, // Make buckets private by default for security
         fileSizeLimit: 52428800, // 50MB
         allowedMimeTypes: ['image/*', 'video/*', 'application/pdf']
       });
       
       if (error) {
         console.error(`Error creating bucket ${name}:`, error);
-        
-        // If we get a permission error, try to add permissions
-        if (error.message.includes('permission')) {
-          console.info('Attempting to set permissions for bucket...');
-          
-          // Use SQL to set permissions (this may require the user to be a super admin)
-          const { error: sqlError } = await supabase.rpc('create_storage_bucket', { 
-            bucket_name: name,
-            public_access: true
-          });
-          
-          if (sqlError) {
-            console.error('Error creating bucket via RPC:', sqlError);
-          } else {
-            console.info('Created bucket via RPC');
-          }
-        }
       }
     }
   } catch (error) {
@@ -125,7 +108,8 @@ export const uploadFile = async (
       .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type // Explicitly set content-type from file
       });
     
     if (error) {
@@ -139,7 +123,7 @@ export const uploadFile = async (
       .getPublicUrl(data.path);
     
     return urlData.publicUrl;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error uploading file to ${bucketName}/${filePath}:`, error);
     toast.error(`Error uploading file: ${error.message || 'Unknown error'}`);
     return null;
@@ -162,7 +146,7 @@ export const deleteFile = async (
     }
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error deleting file ${bucketName}/${filePath}:`, error);
     toast.error(`Error deleting file: ${error.message || 'Unknown error'}`);
     return false;

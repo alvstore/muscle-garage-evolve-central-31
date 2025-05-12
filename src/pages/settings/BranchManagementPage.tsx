@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2 } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useBranch } from "@/hooks/use-branch";
 import { Branch } from "@/types/branch";
@@ -21,13 +22,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const BranchManagementPage = () => {
-  const { branches, isLoading, deleteBranch } = useBranch();
+  const { branches, isLoading, deleteBranch, fetchBranches } = useBranch();
   const [isCreating, setIsCreating] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleRefresh = async () => {
+    await fetchBranches();
     toast.success("Branches refreshed");
   };
 
@@ -83,6 +85,12 @@ const BranchManagementPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
+                  {branch.branch_code && (
+                    <div className="flex items-center">
+                      <Hash className="h-4 w-4 mr-1 text-muted-foreground" />
+                      <span className="font-medium mr-1">Code:</span> {branch.branch_code}
+                    </div>
+                  )}
                   <div>
                     <span className="font-medium">Manager:</span> {branch.manager || "Not assigned"}
                   </div>

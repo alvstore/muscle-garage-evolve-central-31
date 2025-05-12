@@ -53,6 +53,7 @@ This backend powers the Muscle Garage Evolve CRM platform, providing APIs and se
     /invoiceService.ts       # Invoice and payment handling
     /permissionService.ts    # Role-based permissions
     /integrationService.ts   # Third-party integrations
+    /storageService.ts       # File storage operations
   /types                     # TypeScript type definitions
     /index.ts                # Common types
     /member.ts               # Member types
@@ -162,6 +163,61 @@ Data is protected by Row Level Security policies in Supabase that filter data ba
 1. User role
 2. Branch assignment
 3. Ownership (for members and trainers)
+
+## 📂 File Storage
+
+Muscle Garage uses Supabase Storage for file management:
+
+### Storage Buckets
+
+Two main storage buckets are used:
+
+1. **avatars**: For profile pictures and member photos
+2. **documents**: For medical records, contracts, and other documents
+
+### Usage Instructions
+
+#### Uploading Files
+
+```typescript
+import { uploadFile } from '@/services/storageService';
+
+// Upload a profile image
+const uploadProfileImage = async (memberId: string, file: File) => {
+  const fileName = `${memberId}-${Date.now()}.jpg`;
+  const filePath = `${memberId}/${fileName}`;
+  
+  const imageUrl = await uploadFile('avatars', filePath, file);
+  return imageUrl;
+};
+```
+
+#### Retrieving Files
+
+```typescript
+// Get file URL from storage
+const getFileUrl = (bucket: string, filePath: string) => {
+  return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+};
+```
+
+#### Deleting Files
+
+```typescript
+import { deleteFile } from '@/services/storageService';
+
+// Delete a file
+const deleteProfileImage = async (filePath: string) => {
+  return await deleteFile('avatars', filePath);
+};
+```
+
+### Best Practices
+
+1. **Content Types**: Always set the correct content-type when uploading files
+2. **File Organization**: Use member/entity IDs in file paths for proper organization
+3. **Permissions**: Remember files are protected by RLS - ensure proper access policies
+4. **File Size**: Limit uploads to 50MB or less (current bucket setting)
 
 ## 📡 API Documentation
 
@@ -304,11 +360,14 @@ async function exportMembers() {
 1. **Authentication Failed**: Check JWT expiration and refresh tokens
 2. **RLS Policies Blocking Data**: Verify user roles and branch assignments
 3. **Edge Function Errors**: Check logs in Supabase Dashboard
+4. **Storage Errors**: Ensure RLS policies allow access, check bucket permissions
+5. **File Upload Issues**: Verify content-type headers and RLS permissions
 
 ### Logs & Monitoring
 
 - Edge Function logs: Supabase Dashboard > Edge Functions > Logs
 - Database logs: Supabase Dashboard > Database > Logs
+- Storage logs: Supabase Dashboard > Storage > Logs
 
 ## 🤝 Contributing
 

@@ -407,6 +407,7 @@ export type Database = {
       branches: {
         Row: {
           address: string | null
+          branch_code: string | null
           city: string | null
           country: string | null
           created_at: string | null
@@ -421,6 +422,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          branch_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string | null
@@ -435,6 +437,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          branch_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string | null

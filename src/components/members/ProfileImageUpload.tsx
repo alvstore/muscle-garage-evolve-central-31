@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -78,21 +79,24 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
     setIsUploading(true);
 
     try {
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage - using avatars bucket with proper RLS
       const fileExt = file.name.split('.').pop();
       const fileName = `${memberId}-${Date.now()}.${fileExt}`;
-      const filePath = `member-avatars/${fileName}`;
+      const filePath = `${memberId}/${fileName}`;
 
       const { data, error } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, file);
+        .from('avatars')
+        .upload(filePath, file, {
+          contentType: file.type, // Explicitly set content type
+          upsert: false
+        });
 
       if (error) throw error;
 
       // Get public URL
       const { data: publicUrlData } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
+        .from('avatars')
+        .getPublicUrl(data.path);
 
       const publicUrl = publicUrlData.publicUrl;
       
@@ -137,13 +141,13 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
     
     try {
       // Extract file path from URL
-      const urlParts = imageUrl.split('/');
-      const filePath = urlParts[urlParts.length - 1];
+      const urlPath = new URL(imageUrl).pathname;
+      const filePath = urlPath.split('/').slice(-2).join('/'); // Get the last two segments
       
       // Remove from storage
       const { error } = await supabase.storage
-        .from('profiles')
-        .remove([`member-avatars/${filePath}`]);
+        .from('avatars')
+        .remove([filePath]);
         
       if (error) throw error;
       
