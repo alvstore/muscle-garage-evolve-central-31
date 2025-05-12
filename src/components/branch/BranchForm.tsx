@@ -26,14 +26,15 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   manager: z.string().optional(),
-  isActive: z.boolean().default(true),
-  maxCapacity: z.string().optional(),
-  openingHours: z.string().optional(),
-  closingHours: z.string().optional(),
+  manager_id: z.string().optional(),
+  is_active: z.boolean().default(true),
+  max_capacity: z.string().optional(),
+  opening_hours: z.string().optional(),
+  closing_hours: z.string().optional(),
   // Added fields for enhanced multi-branch support
   region: z.string().optional(),
-  branchCode: z.string().optional(),
-  taxRate: z.string().optional(),
+  branch_code: z.string().optional(),
+  tax_rate: z.string().optional(),
   timezone: z.string().optional(),
 });
 
@@ -55,14 +56,15 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       phone: branch?.phone || "",
       email: branch?.email || "",
       manager: branch?.manager || "",
-      isActive: branch?.isActive ?? true,
-      maxCapacity: branch?.maxCapacity?.toString() || "",
-      openingHours: branch?.openingHours || "",
-      closingHours: branch?.closingHours || "",
+      manager_id: branch?.manager_id || "",
+      is_active: branch?.isActive ?? true,
+      max_capacity: branch?.maxCapacity?.toString() || "",
+      opening_hours: branch?.openingHours || "",
+      closing_hours: branch?.closingHours || "",
       // Initialize new fields
       region: branch?.region || "",
-      branchCode: branch?.branchCode || "",
-      taxRate: branch?.taxRate?.toString() || "",
+      branch_code: branch?.branch_code || "",
+      tax_rate: branch?.taxRate?.toString() || "",
       timezone: branch?.timezone || "",
     },
   });
@@ -76,14 +78,14 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         phone: values.phone || '',
         email: values.email || '',
         manager: values.manager || '',
-        managerId: branch?.managerId || '',
-        isActive: values.isActive,
-        maxCapacity: values.maxCapacity ? parseInt(values.maxCapacity) : 0,
-        openingHours: values.openingHours || '',
-        closingHours: values.closingHours || '',
+        manager_id: values.manager_id || branch?.manager_id || '',
+        is_active: values.is_active,
+        max_capacity: values.max_capacity ? parseInt(values.max_capacity) : 0,
+        opening_hours: values.opening_hours || '',
+        closing_hours: values.closing_hours || '',
         region: values.region,
-        branchCode: values.branchCode,
-        taxRate: values.taxRate ? parseFloat(values.taxRate) : undefined,
+        branch_code: values.branch_code,
+        tax_rate: values.tax_rate ? parseFloat(values.tax_rate) : undefined,
         timezone: values.timezone
       };
       
@@ -131,15 +133,15 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
             
             <FormField
               control={form.control}
-              name="branchCode"
+              name="branch_code"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Branch Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. NYC001" {...field} />
+                    <Input placeholder="e.g., BR-001" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Unique code for this branch location
+                    A unique code for this branch
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -149,18 +151,18 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           
           <FormField
             control={form.control}
-            name="isActive"
+            name="is_active"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel className="text-base">Branch Status</FormLabel>
+                  <FormLabel className="text-base">Active</FormLabel>
                   <FormDescription>
-                    Inactive branches won't be available for selection
+                    Toggle to activate or deactivate this branch
                   </FormDescription>
                 </div>
                 <FormControl>
                   <Switch
-                    checked={field.value}
+                    checked={field.value as boolean}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -245,7 +247,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="openingHours"
+              name="opening_hours"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Opening Hours</FormLabel>
@@ -259,12 +261,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
             
             <FormField
               control={form.control}
-              name="closingHours"
+              name="closing_hours"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Closing Hours</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 22:00" {...field} />
+                    <Input type="time" placeholder="18:00" {...field} value={field.value as string} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -289,12 +291,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
             
             <FormField
               control={form.control}
-              name="maxCapacity"
+              name="max_capacity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Maximum Capacity</FormLabel>
+                  <FormLabel>Max Capacity</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter maximum capacity" type="number" {...field} />
+                    <Input type="number" placeholder="e.g., 50" {...field} value={field.value as string} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -304,7 +306,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           
           <FormField
             control={form.control}
-            name="taxRate"
+            name="tax_rate"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tax Rate (%)</FormLabel>
