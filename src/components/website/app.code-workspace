@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "../../.."
-		},
-		{
-			"path": "../../../../../../Downloads/vuexy_v10/nuxt-version/typescript-version/full-version"
 		}
 	],
 	"settings": {}
