@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { aiService, WorkoutPlanParams, DietPlanParams } from '@/services/aiService';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
@@ -42,7 +42,7 @@ const dietaryRestrictions = [
 ];
 
 export default function AIPlanGeneratorPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'workout' | 'diet'>('workout');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -80,7 +80,7 @@ export default function AIPlanGeneratorPage() {
   // Redirect non-admin users
   if (user && !isAdmin) {
     toast.error('Only administrators can access this page');
-    router.push('/dashboard');
+    navigate('/dashboard');
     return null;
   }
 

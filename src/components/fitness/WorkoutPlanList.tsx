@@ -44,7 +44,7 @@ export const WorkoutPlanList: React.FC<WorkoutPlanListProps> = ({
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-semibold text-lg">{plan.name}</h3>
               <Badge variant={plan.difficulty === 'beginner' ? 'outline' : plan.difficulty === 'intermediate' ? 'secondary' : 'destructive'}>
-                {plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)}
+                {plan.difficulty?.charAt(0).toUpperCase() + plan.difficulty?.slice(1) || 'All Levels'}
               </Badge>
             </div>
             
@@ -54,18 +54,18 @@ export const WorkoutPlanList: React.FC<WorkoutPlanListProps> = ({
             
             <div className="space-y-1 mb-4">
               <div className="text-sm">
-                <span className="font-medium">Days:</span> {plan.workoutDays.length}
+                <span className="font-medium">Days:</span> {plan.workout_days.length}
               </div>
               <div className="text-sm">
-                <span className="font-medium">Exercises:</span> {plan.workoutDays.reduce((acc, day) => acc + day.exercises.length, 0)}
+                <span className="font-medium">Exercises:</span> {plan.workout_days.reduce((acc, day) => acc + day.exercises.length, 0)}
               </div>
               <div className="text-sm">
-                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updatedAt), 'MMM d, yyyy')}
+                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updated_at), 'MMM d, yyyy')}
               </div>
             </div>
             
             <div className="flex flex-wrap gap-1 mt-2">
-              {plan.targetGoals?.map((goal, idx) => (
+              {plan.target_goals?.map((goal, idx) => (
                 <Badge key={idx} variant="outline" className="bg-muted">
                   {goal}
                 </Badge>

@@ -1,176 +1,131 @@
 
-import { createContext, useContext, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { User as AppUser, UserRole } from '@/types';
-import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
-import { useAuthActions, LoginResult } from './auth/use-auth-actions';
-import { useEffect, useState } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Session, User } from '@supabase/supabase-js';
 
-interface Profile {
-  id: string;
-  full_name?: string;
-  role: UserRole;
+type AuthUser = User & {
+  role?: string;
   branch_id?: string;
-  accessible_branch_ids?: string[];
-  is_branch_manager?: boolean;
-  email?: string;
-  avatar_url?: string;
-  phone?: string;
-}
+};
 
 interface AuthContextType {
-  user: AppUser | null;
-  userRole: UserRole | null;
-  isAuthenticated: boolean;
+  user: AuthUser | null;
+  session: Session | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<LoginResult>;
-  logout: () => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<boolean>;
-  profile: Profile | null;
-  updateUserBranch: (branchId: string) => Promise<boolean>;
+  isAdmin: boolean;
+  isTrainer: boolean;
+  isMember: boolean;
+  isStaff: boolean;
+  signIn: (email: string, password: string) => Promise<{
+    error: Error | null;
+    data: { user: User | null; session: Session | null } | null;
+  }>;
+  signOut: () => Promise<void>;
+  getCurrentSession: () => Promise<Session | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  userRole: null,
-  isAuthenticated: false,
-  isLoading: true,
-  login: async () => ({ success: false }),
-  logout: async () => {},
-  register: async () => {},
-  changePassword: async () => false,
-  forgotPassword: async () => false,
-  profile: null,
-  updateUserBranch: async () => false,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  return (
-    <AuthStateProvider>
-      <AuthProviderInner>{children}</AuthProviderInner>
-    </AuthStateProvider>
-  );
-};
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-const AuthProviderInner = ({ children }: { children: ReactNode }) => {
-  const { user, isAuthenticated, isLoading: authStateLoading } = useAuthState();
-  const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [profileError, setProfileError] = useState<Error | null>(null);
-  
+  const isAdmin = user?.role === 'admin';
+  const isTrainer = user?.role === 'trainer';
+  const isMember = user?.role === 'member';
+  const isStaff = user?.role === 'staff';
+
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-      
+    const fetchUserProfile = async (userId: string) => {
       try {
-        setIsLoadingProfile(true);
-        setProfileError(null);
-        
-        const { data, error } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
-        
+
         if (error) {
-          console.error('Error fetching profile:', error);
-          setProfileError(new Error(error.message));
-          toast.error('Failed to load user profile data');
-        } else if (data) {
-          setProfile(data);
+          console.error('Error fetching user profile:', error);
+          return;
         }
-      } catch (err: any) {
-        console.error('Profile fetch error:', err);
-        setProfileError(err);
-      } finally {
-        setIsLoadingProfile(false);
+
+        if (profile) {
+          setUser(currentUser => 
+            currentUser ? { ...currentUser, ...profile } : null
+          );
+        }
+      } catch (error) {
+        console.error('Error in profile fetch:', error);
       }
     };
-    
-    fetchUserProfile();
-    
-    // Set up real-time subscription for profile changes
-    const profileSubscription = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles',
-        filter: user ? `id=eq.${user.id}` : undefined
-      }, (payload) => {
-        if (payload.new && user && payload.new.id === user.id) {
-          setProfile(payload.new as Profile);
-        }
-      })
-      .subscribe();
-    
-    return () => {
-      profileSubscription.unsubscribe();
-    };
-  }, [user]);
 
-  const updateUserBranch = async (branchId: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ branch_id: branchId })
-        .eq('id', user.id);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       
-      if (error) throw error;
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
       
-      // Update will happen automatically through subscription
-      
-      return true;
-    } catch (err) {
-      console.error('Error updating user branch:', err);
-      return false;
-    }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    return await supabase.auth.signInWithPassword({ email, password });
   };
-  
-  // Map Supabase user to our User type
-  const mappedUser: AppUser | null = user && profile ? {
-    id: user.id,
-    email: user.email ?? profile.email ?? '',
-    name: profile.full_name ?? '',
-    role: profile.role || 'member',
-    branchId: profile.branch_id,
-    avatar: profile.avatar_url,
-    phone: profile.phone,
-    isBranchManager: profile.is_branch_manager || false,
-    branchIds: profile.accessible_branch_ids || []
-  } : null;
-  
-  const isLoading = authStateLoading || authActionsLoading || isLoadingProfile;
-  
-  return (
-    <AuthContext.Provider
-      value={{
-        user: mappedUser,
-        userRole: profile?.role || null,
-        isAuthenticated,
-        isLoading,
-        login,
-        logout,
-        register,
-        changePassword,
-        forgotPassword,
-        profile,
-        updateUserBranch
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+  };
+
+  const getCurrentSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  };
+
+  const value = {
+    user,
+    session,
+    isLoading,
+    isAdmin,
+    isTrainer,
+    isMember,
+    isStaff,
+    signIn,
+    signOut,
+    getCurrentSession,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

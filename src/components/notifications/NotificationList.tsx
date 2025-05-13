@@ -1,287 +1,213 @@
-import React, { useState, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import notificationService, { Notification } from "@/services/notificationService";
-import { Loader2 } from "lucide-react";
 
-export interface NotificationListProps {
-  userId?: string;
-  refreshTrigger?: number;
-  filterStatus?: 'all' | 'read' | 'unread';
-  filterTypes?: string[];
-  categoryTypes?: string[];
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardFooter 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Check, Bell, Info, AlertTriangle, XCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  created_at: string;
+  read: boolean;
+  user_id: string;
 }
 
-const NotificationList: React.FC<NotificationListProps> = ({ 
-  userId, 
-  refreshTrigger = 0,
-  filterStatus = 'all',
-  filterTypes = [],
-  categoryTypes = []
-}) => {
+export const NotificationList = () => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch notifications
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!userId) return;
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast.error('Failed to load notifications');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+
+      if (error) throw error;
       
-      setLoading(true);
-      try {
-        const data = await notificationService.getNotifications(userId);
-        setNotifications(data);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === id ? { ...notif, read: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast.error('Failed to update notification');
+    }
+  };
 
-    fetchNotifications();
-    
-    // Set up a polling interval for now - we'll implement real-time later
-    const intervalId = setInterval(fetchNotifications, 10000); // Check every 10 seconds
-    
-    return () => clearInterval(intervalId);
-  }, [userId, refreshTrigger]);
+  const markAllAsRead = async () => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user?.id)
+        .eq('read', false);
 
-  // Apply filters  // Filter notifications based on status, type, and category
-  useEffect(() => {
-    let filtered = [...notifications];
-    
-    // Apply status filter
-    if (filterStatus === 'read') {
-      filtered = filtered.filter(n => n.read);
-    } else if (filterStatus === 'unread') {
-      filtered = filtered.filter(n => !n.read);
+      if (error) throw error;
+      
+      // Refresh the notifications after marking all as read
+      const { data, error: fetchError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) throw fetchError;
+      setNotifications(data || []);
+      
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error('Failed to update notifications');
     }
-    
-    // Apply search filter
-    if (searchQuery) {
-      const searchLower = searchQuery.toLowerCase();
-      filtered = filtered.filter(n => {
-        // Check if notification matches the search query
-        return (
-          n.title?.toLowerCase().includes(searchLower) ||
-          n.message?.toLowerCase().includes(searchLower)
-        );
-      });
-    }
-    
-    // Apply type filters if any are specified
-    if (filterTypes && filterTypes.length > 0) {
-      filtered = filtered.filter(n => {
-        // Check if notification type or source matches any of the filter types
-        return filterTypes.includes(n.type || '') || 
-               filterTypes.includes(n.source || '') ||
-               (n.id.startsWith('follow-up-') && filterTypes.includes('follow-up'));
-      });
-    }
-    
-    // Apply category filters if any are specified
-    if (categoryTypes && categoryTypes.length > 0) {
-      // If 'all' is included, don't filter by category
-      if (categoryTypes.includes('all')) {
-        // No filtering needed
-      } else {
-        result = result.filter(n => {
-          const notificationCategory = n.category || '';
-          
-          // First check if the notification has a category that matches
-          if (categoryTypes.includes(notificationCategory)) {
-            return true;
-          }
-          
-          // If no category is specified, check type and content for matching
-          const type = n.type || '';
-          const title = (n.title || '').toLowerCase();
-          const message = (n.message || '').toLowerCase();
-          
-          // Check for member category
-          if (categoryTypes.includes('member') && (
-            type === 'member' ||
-            title.includes('member') ||
-            message.includes('member') ||
-            title.includes('payment') ||
-            message.includes('payment') ||
-            type === 'payment' ||
-            title.includes('check-in') ||
-            message.includes('check-in') ||
-            type === 'checkin' ||
-            (n.source === 'follow-up' || n.id.startsWith('follow-up-'))
-          )) {
-            return true;
-          }
-          
-          // Check for staff category
-          if (categoryTypes.includes('staff') && (
-            type === 'staff' ||
-            title.includes('staff') ||
-            message.includes('staff') ||
-            title.includes('task') ||
-            message.includes('task') ||
-            type === 'task'
-          )) {
-            return true;
-          }
-          
-          // Check for trainer category
-          if (categoryTypes.includes('trainer') && (
-            type === 'trainer' ||
-            title.includes('trainer') ||
-            message.includes('trainer') ||
-            title.includes('session') ||
-            message.includes('session') ||
-            title.includes('program') ||
-            message.includes('program')
-          )) {
-            return true;
-          }
-          
-          // Check for gym category (general notifications)
-          if (categoryTypes.includes('gym') && (
-            type === 'system' ||
-            type === 'announcement' ||
-            !notificationCategory // If no category is specified, it might be a general notification
-          )) {
-            return true;
-          }
-          
-          return false;
-        });
-      }
-    }
-    
-    setFilteredNotifications(filtered);
-  }, [notifications, filterStatus, filterTypes, categoryTypes]);
-  
-  // Function to get notification icon based on type
-  const getNotificationIcon = (notification: Notification): string => {
-    const type = notification.type || '';
-    const source = notification.source || '';
-    
-    // First check if it's a follow-up notification
-    if (source === 'follow-up' || notification.id.startsWith('follow-up-')) {
-      return 'F';
-    }
-    
-    // Then check other types
+  };
+
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'task':
-        return 'T';
-      case 'payment':
-        return 'P';
-      case 'checkin':
-        return 'C';
-      case 'membership':
-        return 'M';
-      case 'system':
-        return 'S';
-      default:
-        return 'N';
-    }
-  };
-  
-  // Function to get notification color based on type
-  const getNotificationColor = (notification: Notification): string => {
-    const type = notification.type || '';
-    const source = notification.source || '';
-    
-    if (source === 'follow-up' || notification.id.startsWith('follow-up-')) {
-      return 'bg-amber-100 text-amber-700';
-    }
-    
-    switch (type) {
-      case 'task':
-        return 'bg-purple-100 text-purple-700';
-      case 'payment':
-        return 'bg-green-100 text-green-700';
-      case 'checkin':
-        return 'bg-blue-100 text-blue-700';
-      case 'membership':
-        return 'bg-indigo-100 text-indigo-700';
-      case 'system':
-        return 'bg-gray-100 text-gray-700';
-      default:
-        return 'bg-primary-100 text-primary-700';
+      case 'info': return <Info className="h-4 w-4 text-blue-500" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'error': return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'success': return <Check className="h-4 w-4 text-green-500" />;
+      default: return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  const handleNotificationClick = async (id: string, notification: Notification) => {
-    // For follow-up notifications, navigate to the lead detail page
-    if (notification.source === 'follow-up' || notification.id.startsWith('follow-up-')) {
-      if (notification.link) {
-        window.location.href = notification.link;
-      }
-      return;
-    }
-    
-    // For regular notifications, mark as read
-    await notificationService.markAsRead(id);
-    setNotifications(prevNotifications => 
-      prevNotifications.map(n => 
-        n.id === id ? { ...n, read: true } : n
-      )
-    );
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin">
+              <Bell className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+            <h3 className="text-lg font-medium">No notifications</h3>
+            <p className="text-muted-foreground">You're all caught up!</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <ScrollArea className="h-[300px] px-4">
-      <div className="space-y-4 py-4">
-        {filteredNotifications.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No notifications match your filters</p>
-          </div>
-        ) : (
-          filteredNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={cn(
-                "flex items-start gap-4 rounded-lg p-2 transition-colors hover:bg-accent/50 cursor-pointer",
-                !notification.read && "bg-accent/25"
-              )}
-              onClick={() => handleNotificationClick(notification.id, notification)}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>
+            {notifications.filter(n => !n.read).length} unread notifications
+          </CardDescription>
+        </div>
+        {notifications.some(n => !n.read) && (
+          <Button variant="outline" size="sm" onClick={markAllAsRead}>
+            Mark all as read
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {notifications.map((notification) => (
+            <div 
+              key={notification.id} 
+              className={`p-4 hover:bg-muted/50 ${!notification.read ? 'bg-muted/20' : ''}`}
             >
-              <Avatar className={`h-9 w-9 ${getNotificationColor(notification)}`}>
-                <AvatarImage src="/placeholder.svg" alt="Notification" />
-                <AvatarFallback>{getNotificationIcon(notification)}</AvatarFallback>
-              </Avatar>
-              <div className="space-y-1 flex-1">
-                <div className="flex justify-between items-start">
-                  <p className="text-sm font-medium">{notification.title}</p>
-                  {!notification.read && (
-                    <span className="inline-flex h-2 w-2 rounded-full bg-primary-500 ml-2"></span>
-                  )}
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  {getNotificationIcon(notification.type)}
                 </div>
-                <p className="text-sm text-muted-foreground">{notification.message}</p>
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-medium">{notification.title}</h4>
+                    {!notification.read && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {notification.message}
                   </p>
-                  {notification.link && (
-                    <span className="text-xs text-primary-500">View details</span>
-                  )}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                    </span>
+                    {!notification.read && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-xs"
+                        onClick={() => markAsRead(notification.id)}
+                      >
+                        Mark as read
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
-    </ScrollArea>
+          ))}
+        </div>
+      </CardContent>
+      {notifications.length > 5 && (
+        <CardFooter className="border-t p-4">
+          <Button variant="outline" size="sm" className="mx-auto">
+            View all notifications
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 };
-
-export default NotificationList;

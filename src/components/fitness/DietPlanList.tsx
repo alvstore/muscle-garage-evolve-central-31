@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import { DietPlan } from "@/types";
+import { DietPlan } from "@/types/diet";
 import { toast } from "sonner";
 
 interface DietPlanListProps {
@@ -12,6 +12,11 @@ interface DietPlanListProps {
   onDelete?: (planId: string) => void;
   onAdd?: () => void;
   readOnly?: boolean;
+  onPlanCreated?: (plan: DietPlan) => void;
+  onPlanUpdated?: (plan: DietPlan) => void;
+  onPlanDeleted?: (planId: string) => void;
+  isLoading?: boolean;
+  canCreateGlobal?: boolean;
 }
 
 export const DietPlanList: React.FC<DietPlanListProps> = ({
@@ -19,7 +24,12 @@ export const DietPlanList: React.FC<DietPlanListProps> = ({
   onEdit,
   onDelete,
   onAdd,
-  readOnly = false
+  readOnly = false,
+  onPlanCreated,
+  onPlanUpdated,
+  onPlanDeleted,
+  isLoading = false,
+  canCreateGlobal = false
 }) => {
   const handleDelete = (plan: DietPlan) => {
     if (window.confirm(`Are you sure you want to delete the diet plan "${plan.name}"?`)) {

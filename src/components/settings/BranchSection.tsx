@@ -1,109 +1,80 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, Building2, Settings, ExternalLink, Cpu } from "lucide-react";
-import { useBranch } from '@/hooks/use-branch';
-import { useNavigate } from 'react-router-dom';
-import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { Badge } from "@/components/ui/badge";
+import { Branch } from '@/types/branch';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, MapPin, Phone, Mail, XCircle } from 'lucide-react';
 
-const BranchSection = () => {
-  const { branches, currentBranch } = useBranch();
-  const navigate = useNavigate();
-  
+interface BranchSectionProps {
+  branch: Branch;
+  onEdit: (branch: Branch) => void;
+  onDelete: (branchId: string) => void;
+}
+
+const BranchSection: React.FC<BranchSectionProps> = ({ branch, onEdit, onDelete }) => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-muted/50">
+        <div className="flex justify-between items-start">
           <div>
-            <CardTitle>Branch Management</CardTitle>
-            <CardDescription>Manage your gym locations</CardDescription>
+            <CardTitle>{branch.name}</CardTitle>
+            <CardDescription>{branch.branch_code || 'No code'}</CardDescription>
           </div>
-          <PermissionGuard permission="manage_branches">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/settings/branches')}
-            >
-              <Building2 className="mr-2 h-4 w-4" />
-              Manage Branches
-            </Button>
-          </PermissionGuard>
+          <Badge variant={branch.is_active ? "outline" : "secondary"}>
+            {branch.is_active ? 'Active' : 'Inactive'}
+          </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-md">
-            <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <div className="flex-1">
-              <p className="font-medium">Current Branch</p>
-              <p className="text-sm text-muted-foreground">{currentBranch?.name || 'No branch selected'}</p>
+      <CardContent className="p-4 space-y-4">
+        <div className="text-sm space-y-2">
+          {branch.address && (
+            <div className="flex items-start">
+              <MapPin className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+              <div>
+                <p>{branch.address}</p>
+                <p>{[branch.city, branch.state, branch.country].filter(Boolean).join(', ')}</p>
+              </div>
             </div>
-            <PermissionGuard permission="manage_branches">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/settings/branches/integration')}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Configure
-              </Button>
-            </PermissionGuard>
-          </div>
+          )}
           
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <p className="font-medium">Active Branches: {branches.filter(b => b.isActive).length}</p>
-              <Badge variant="outline" className="text-xs">{branches.length} total</Badge>
+          {branch.phone && (
+            <div className="flex items-center">
+              <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+              <p>{branch.phone}</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {branches.slice(0, 4).map(branch => (
-                <div key={branch.id} className="flex items-center justify-between p-2 border rounded-md">
-                  <div className="flex items-center">
-                    <Building2 className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
-                    <span className="text-sm">{branch.name}</span>
-                  </div>
-                  {branch.isActive ? (
-                    <Badge variant="default" className="bg-green-500 text-white text-xs">Active</Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-xs">Inactive</Badge>
-                  )}
-                </div>
-              ))}
-              {branches.length > 4 && (
-                <div className="flex items-center justify-center p-2 border rounded-md bg-muted">
-                  <span className="text-sm text-muted-foreground">+{branches.length - 4} more branches</span>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
           
-          <div className="grid grid-cols-2 gap-2">
-            <PermissionGuard permission="manage_branches">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => navigate('/settings/branches')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Branch
-              </Button>
-            </PermissionGuard>
-            
-            <PermissionGuard permission="manage_branches">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => navigate('/settings/branches/devices')}
-              >
-                <Cpu className="mr-2 h-4 w-4" />
-                Device Mapping
-              </Button>
-            </PermissionGuard>
-          </div>
+          {branch.email && (
+            <div className="flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+              <p>{branch.email}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {branch.is_active ? (
+            <div className="flex items-center text-green-600">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              <p>Active</p>
+            </div>
+          ) : (
+            <div className="flex items-center text-red-500">
+              <XCircle className="h-4 w-4 mr-1" />
+              <p>Inactive</p>
+            </div>
+          )}
         </div>
       </CardContent>
+      <CardFooter className="bg-muted/30 px-4 py-3 flex justify-between">
+        <Button variant="outline" size="sm" onClick={() => onEdit(branch)}>
+          Edit
+        </Button>
+        <Button variant="destructive" size="sm" onClick={() => onDelete(branch.id)}>
+          Delete
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

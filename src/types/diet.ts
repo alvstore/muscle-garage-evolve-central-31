@@ -1,31 +1,41 @@
 
-export interface MacroNutrients {
-  protein: number;
-  carbs: number;
-  fats: number;
+export interface DietPlan {
+  id: string;
+  name: string;
+  description: string;
+  trainer_id: string;
+  member_id?: string; 
+  diet_type?: string;
+  daily_calories?: number;
+  goal?: string;
+  notes?: string;
+  is_global: boolean;
+  is_custom: boolean;
+  created_at: string;
+  updated_at: string;
+  // Reference to meal plans
+  mealPlans?: MealPlan[];
 }
 
 export interface MealPlan {
   id: string;
   name: string;
-  time: string;
-  items: string[];
-  macros?: MacroNutrients;
+  time?: string;
+  diet_plan_id: string;
+  created_at: string;
+  updated_at: string;
+  // Reference to meal items
+  items?: MealItem[];
 }
 
-export interface DietPlan {
+export interface MealItem {
   id: string;
   name: string;
-  description?: string;
-  diet_type?: string;
-  daily_calories?: number;
-  trainer_id: string;
-  memberId: string;
-  mealPlans: MealPlan[];
-  notes?: string;
-  goal?: string;
-  is_global?: boolean;
-  is_custom?: boolean;
-  updatedAt: string;
-  createdAt: string;
+  meal_plan_id: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fats?: number;
+  created_at: string;
+  updated_at: string;
 }
