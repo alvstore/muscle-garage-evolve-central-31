@@ -1,445 +1,507 @@
-import React, { useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { 
-  UserPlus, 
-  Search, 
-  Filter, 
-  Download, 
-  MoreVertical, 
-  FileEdit, 
-  Trash2, 
-  Mail, 
-  Phone, 
-  Eye,
-  LayoutGrid,
-  LayoutList
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { 
-  DropdownMenu, 
-  DropdownMenuTrigger, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator 
-} from '@/components/ui/dropdown-menu';
+import { useMemo, useState } from 'react';
+import { useMembershipPlans } from '@/hooks/use-membership';
+import type { Member } from '@/hooks/use-members';
+import { Users, UserCheck, UserSearch, Crown, Monitor, PieChart, Edit, UserPlus as UserPlusIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
+  DialogHeader,
 } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-import { useMembers, Member } from '@/hooks/use-members';
-import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Container } from '@/components/ui/container';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Eye,
+  FileEdit,
+  Trash2,
+  MoreVertical,
+  UserPlus,
+  Search,
+  Filter,
+  Download,
+  Mail,
+  Phone,
+  LayoutGrid,
+  LayoutList,
+} from 'lucide-react';
+
+// Services
 import { useBranch } from '@/hooks/use-branch';
+import { useMembers } from '@/hooks/use-members';
 
-const MembersListPage: React.FC = () => {
+type ViewMode = 'list' | 'grid';
+
+
+
+const getStatusColor = (status: string | undefined) => {
+  switch (status?.toLowerCase()) {
+    case 'active': return 'bg-success';
+    case 'inactive': return 'bg-secondary';
+    case 'expired': return 'bg-error';
+    case 'pending': return 'bg-warning';
+    default: return 'bg-secondary';
+  }
+};
+
+const calculateMemberStats = (members: Member[]) => {
+  const now = new Date();
+  const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+  // Current stats
+  const totalMembers = members.length;
+  const activeMembers = members.filter(m => m.status === 'active' && m.membership_end_date && new Date(m.membership_end_date) > now).length;
+  const expiredMembers = members.filter(m => m.membership_end_date && new Date(m.membership_end_date) < now).length;
+  const pendingMembers = members.filter(m => m.status === 'pending').length;
+  const newMembers = members.filter(m => m.created_at && new Date(m.created_at) > oneMonthAgo).length;
+
+  // Calculate month-over-month changes
+  const lastMonthMembers = members.filter(m => m.created_at && new Date(m.created_at) < oneMonthAgo).length;
+  const totalChange = lastMonthMembers ? ((totalMembers - lastMonthMembers) / lastMonthMembers) * 100 : 0;
+  const activeChange = activeMembers ? ((activeMembers - (lastMonthMembers * 0.7)) / (lastMonthMembers * 0.7)) * 100 : 0;
+  const expiredChange = expiredMembers ? ((expiredMembers - (lastMonthMembers * 0.2)) / (lastMonthMembers * 0.2)) * 100 : 0;
+  const newMembersLastMonth = members.filter(m => 
+    m.created_at && new Date(m.created_at) > new Date(oneMonthAgo.getFullYear(), oneMonthAgo.getMonth() - 1, oneMonthAgo.getDate()) &&
+    m.created_at && new Date(m.created_at) < oneMonthAgo
+  ).length;
+  const newMembersChange = newMembersLastMonth ? ((newMembers - newMembersLastMonth) / newMembersLastMonth) * 100 : 0;
+
+  return [
+    { 
+      title: 'Total Members', 
+      value: totalMembers.toString(), 
+      change: Math.round(totalChange), 
+      desc: 'All registered members', 
+      icon: Users, 
+      color: 'primary' 
+    },
+    { 
+      title: 'Active Members', 
+      value: activeMembers.toString(), 
+      change: Math.round(activeChange), 
+      desc: 'Current active memberships', 
+      icon: UserCheck, 
+      color: 'success' 
+    },
+    { 
+      title: 'Expired Members', 
+      value: expiredMembers.toString(), 
+      change: Math.round(expiredChange), 
+      desc: 'Memberships needing renewal', 
+      icon: UserPlusIcon, 
+      color: 'destructive' 
+    },
+    { 
+      title: 'New Members', 
+      value: newMembers.toString(), 
+      change: Math.round(newMembersChange), 
+      desc: 'Joined this month', 
+      icon: UserSearch, 
+      color: 'warning' 
+    },
+  ];
+};
+
+const roles = [
+  { title: 'Admin', value: 'admin' },
+  { title: 'Author', value: 'author' },
+  { title: 'Editor', value: 'editor' },
+  { title: 'Maintainer', value: 'maintainer' },
+  { title: 'Subscriber', value: 'subscriber' },
+];
+
+const plans = [
+  { title: 'Basic', value: 'basic' },
+  { title: 'Company', value: 'company' },
+  { title: 'Enterprise', value: 'enterprise' },
+  { title: 'Team', value: 'team' },
+];
+
+const status = [
+  { title: 'Pending', value: 'pending' },
+  { title: 'Active', value: 'active' },
+  { title: 'Inactive', value: 'inactive' },
+];
+
+const resolveUserRoleVariant = (role: string) => {
+  const roleLowerCase = role.toLowerCase();
+  if (roleLowerCase === 'subscriber') return { color: 'success', icon: 'user' };
+  if (roleLowerCase === 'author') return { color: 'destructive', icon: Monitor };
+  if (roleLowerCase === 'maintainer') return { color: 'info', icon: PieChart };
+  if (roleLowerCase === 'editor') return { color: 'warning', icon: Edit };
+  if (roleLowerCase === 'admin') return { color: 'primary', icon: Crown };
+  return { color: 'primary', icon: 'user' };
+};
+
+const resolveUserStatusVariant = (stat: string) => {
+  const statLowerCase = stat.toLowerCase();
+  if (statLowerCase === 'pending') return 'warning';
+  if (statLowerCase === 'active') return 'success';
+  if (statLowerCase === 'inactive') return 'secondary';
+  return 'primary';
+};
+
+const MembersListPage = (): JSX.Element => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const { members, isLoading, fetchMembers, deleteMember } = useMembers();
   const { currentBranch } = useBranch();
+  const { members, isLoading, fetchMembers, deleteMember } = useMembers();
+  const { membershipPlans } = useMembershipPlans();
 
-  const handleDelete = async () => {
-    if (!deletingMemberId) return;
-    
-    const success = await deleteMember(deletingMemberId);
-    if (success) {
-      setDeletingMemberId(null);
-    }
+  // Get membership plan name
+  const getMembershipPlanName = (planId: string | null) => {
+    if (!planId) return 'No Plan';
+    const plan = membershipPlans?.find(p => p.id === planId);
+    return plan?.name || 'Unknown Plan';
   };
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = 
-      member.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.phone?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'all' ||
-      (filterStatus === 'active' && member.status === 'active') ||
-      (filterStatus === 'inactive' && member.status === 'inactive') ||
-      (filterStatus === 'expiring' && member.membership_end_date && 
-        new Date(member.membership_end_date) < new Date(new Date().setDate(new Date().getDate() + 30)));
-    
-    return matchesSearch && matchesFilter;
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const exportToCSV = () => {
+  const filteredMembers = useMemo(() => {
+    if (!members) return [];
+    
+    return members
+      .filter(member => 
+        (searchQuery === '' ||
+         member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         member.phone.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+      .filter(member => 
+        filterStatus === 'all' ||
+        filterStatus === member.status.toLowerCase()
+      );
+  }, [members, searchQuery, filterStatus]);
+
+  const handleDelete = async (id: string) => {
     try {
-      // Create CSV header row
-      const headers = ['Name', 'Email', 'Phone', 'Status', 'Membership Status', 'Membership End Date'];
-      
-      // Convert members to CSV rows
-      const csvData = filteredMembers.map(member => [
-        member.name,
-        member.email || '',
-        member.phone || '',
-        member.status || '',
-        member.membership_status || '',
-        member.membership_end_date ? format(new Date(member.membership_end_date), 'yyyy-MM-dd') : ''
-      ]);
-      
-      // Combine header and data
-      const csvContent = [headers, ...csvData]
-        .map(row => row.map(cell => `"${cell}"`).join(','))
-        .join('\n');
-      
-      // Create and trigger download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `members_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success('Members data exported successfully');
+      await deleteMember(id);
+      toast.success('Member deleted successfully');
+      setDeletingMemberId(null);
+      setIsDeleteDialogOpen(false);
+      fetchMembers();
     } catch (error) {
-      console.error('Error exporting members:', error);
-      toast.error('Failed to export members data');
+      toast.error('Failed to delete member');
     }
   };
 
-  // Function to create initials from name
-  const getInitials = (name: string) => {
-    if (!name) return '';
-    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return format(date, 'PP');
+    } catch {
+      return '';
+    }
   };
 
-  // Function to get status color
-  const getStatusColor = (status: string | undefined) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'bg-green-500';
-      case 'inactive': return 'bg-gray-400';
-      case 'expired': return 'bg-red-500';
-      case 'pending': return 'bg-yellow-500';
-      default: return 'bg-gray-400';
-    }
+  const handleExport = () => {
+    if (!members?.length) return;
+
+    const csvContent = [
+      ['Name', 'Email', 'Phone', 'Status', 'Membership ID', 'Joined Date'],
+      ...members.map(member => [
+        member.name,
+        member.email,
+        member.phone,
+        member.status,
+        member.membership_id,
+        formatDate(member.created_at)
+      ])
+    ].map(row => row.join(','));
+
+    const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `members-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
     <Container>
-      <div className="py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Members</h1>
-            <p className="text-muted-foreground">Manage your gym members and their profiles.</p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search members..."
-                className="pl-9 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="sm:w-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => setViewMode('list')}
-                aria-pressed={viewMode === 'list'}
-              >
-                <LayoutList className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="sm:w-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => setViewMode('grid')}
-                aria-pressed={viewMode === 'grid'}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              className="sm:w-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+      <div className="flex flex-col space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {calculateMemberStats(members || []).map((data, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-y-1">
+                    <div className="text-base font-medium text-muted-foreground">{data.title}</div>
+                    <div className="flex items-center gap-x-2">
+                      <h4 className="text-2xl font-semibold">{data.value}</h4>
+                      <div className={`text-sm ${data.change > 0 ? 'text-success' : 'text-destructive'}`}>
+                        ({data.change > 0 ? '+' : ''}{data.change}%)
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">{data.desc}</div>
+                  </div>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg bg-${data.color}/20`}>
+                    <data.icon className={`h-6 w-6 text-${data.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Members</h1>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
             >
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
+              {viewMode === 'list' ? <LayoutGrid size={20} /> : <LayoutList size={20} />}
             </Button>
-            
-            <Button 
-              variant="outline" 
-              className="sm:w-auto bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" 
-              onClick={exportToCSV}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
+            <Button onClick={() => navigate('/members/new')}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add Member
             </Button>
-            
-            <Link to="/members/new">
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-medium">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Member
-              </Button>
-            </Link>
           </div>
         </div>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Members Directory</CardTitle>
-            <Tabs defaultValue="all" onValueChange={setFilterStatus}>
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="inactive">Inactive</TabsTrigger>
-                <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : !currentBranch ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Please select a branch to view members</p>
-              </div>
-            ) : filteredMembers.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No members found matching your search</p>
-              </div>
-            ) : (
-              viewMode === 'list' ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Member</TableHead>
-                      <TableHead className="hidden md:table-cell">Contact</TableHead>
-                      <TableHead className="hidden md:table-cell">Membership</TableHead>
-                      <TableHead className="hidden md:table-cell">Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Expires</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMembers.map((member) => (
-                      <TableRow 
-                        key={member.id} 
-                        className="cursor-pointer hover:bg-accent/50" 
-                        onClick={() => navigate(`/members/${member.id}`)}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              {member.avatar ? (
-                                <AvatarImage src={member.avatar} alt={member.name} />
-                              ) : (
-                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{member.name}</div>
-                              <div className="text-sm text-muted-foreground md:hidden">{member.email}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex flex-col text-sm">
-                            {member.email && (
-                              <div className="flex items-center gap-1">
-                                <Mail className="h-3 w-3 text-muted-foreground" />
-                                <span>{member.email}</span>
-                              </div>
-                            )}
-                            {member.phone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3 text-muted-foreground" />
-                                <span>{member.phone}</span>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="hidden md:table-cell">
-                          {member.membership_id ? (
-                            <Badge variant="outline" className="font-normal bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
-                              {member.membership_id}
-                            </Badge>
+
+        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex space-x-4">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        </div>
+
+        {viewMode === 'list' ? (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Membership ID</TableHead>
+                  <TableHead>Joined Date</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          {member.avatar ? (
+                            <AvatarImage src={member.avatar} alt={member.name} />
                           ) : (
-                            <Badge variant="outline" className="text-muted-foreground font-normal bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                              No Plan
-                            </Badge>
+                            <AvatarFallback>
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
                           )}
-                        </TableCell>
-                        
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${getStatusColor(member.status)}`}></div>
-                            <span className="capitalize">{member.status || 'Unknown'}</span>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="hidden md:table-cell">
-                          {member.membership_end_date ? (
-                            format(new Date(member.membership_end_date), 'dd MMM yyyy')
-                          ) : (
-                            <span className="text-muted-foreground">N/A</span>
-                          )}
-                        </TableCell>
-                        
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                              <Button 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              >
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/members/${member.id}`);
-                              }}>
-                                <Eye className="mr-2 h-4 w-4" /> View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/members/${member.id}/edit`);
-                              }}>
-                                <FileEdit className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeletingMemberId(member.id);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                  {filteredMembers.map((member) => (
-                    <Card 
-                      key={member.id} 
-                      className="cursor-pointer hover:bg-accent/50 transition-colors" 
-                      onClick={() => navigate(`/members/${member.id}`)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center text-center gap-3 mb-3 pt-3">
-                          <Avatar className="h-16 w-16">
-                            {member.avatar ? (
-                              <AvatarImage src={member.avatar} alt={member.name} />
-                            ) : (
-                              <AvatarFallback className="text-lg">{getInitials(member.name)}</AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-lg">{member.name}</div>
-                            <div className="text-sm text-muted-foreground">{member.email}</div>
-                            {member.phone && (
-                              <div className="text-sm text-muted-foreground">{member.phone}</div>
-                            )}
-                          </div>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{member.name}</div>
                         </div>
-                        
-                        <div className="flex justify-between items-center mt-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${getStatusColor(member.status)}`}></div>
-                            <span className="capitalize text-sm">{member.status || 'Unknown'}</span>
-                          </div>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                              <Button 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              >
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/members/${member.id}`);
-                              }}>
-                                <Eye className="mr-2 h-4 w-4" /> View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/members/${member.id}/edit`);
-                              }}>
-                                <FileEdit className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeletingMemberId(member.id);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center">
+                          <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                          {member.email}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )
-            )}
-          </CardContent>
-        </Card>
+                        <div className="flex items-center">
+                          <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                          {member.phone}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={getStatusColor(member.status)}>
+                        {member.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{getMembershipPlanName(member.membership_id)}</span>
+                        {member.membership_end_date && (
+                          <span className="text-sm text-muted-foreground">
+                            Expires: {formatDate(member.membership_end_date)}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(member.created_at)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/members/${member.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/members/edit/${member.id}`)}>
+                            <FileEdit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setDeletingMemberId(member.id);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredMembers.map((member) => (
+              <Card key={member.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        {member.avatar ? (
+                          <AvatarImage src={member.avatar} alt={member.name} />
+                        ) : (
+                          <AvatarFallback>
+                            {member.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-muted-foreground">{member.membership_id}</div>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate(`/members/${member.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/members/edit/${member.id}`)}>
+                          <FileEdit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => {
+                            setDeletingMemberId(member.id);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center text-sm">
+                      <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {member.email}
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {member.phone}
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <Badge variant="secondary" className={getStatusColor(member.status)}>
+                      {member.status}
+                    </Badge>
+                    <div className="text-sm text-muted-foreground">
+                      Joined {formatDate(member.created_at)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deletingMemberId} onOpenChange={(open) => !open && setDeletingMemberId(null)}>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogTitle>Delete Member</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the member
-              and all associated data from your database.
+              Are you sure you want to delete this member? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setDeletingMemberId(null)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button
+              variant="destructive"
+              onClick={() => deletingMemberId && handleDelete(deletingMemberId)}
+            >
               Delete
             </Button>
           </DialogFooter>

@@ -157,11 +157,11 @@ const UnifiedSettingsPage = () => {
               to="/settings/integrations/payment"
             />
             <SettingCard
-              title="Invoice Settings"
-              description="Customize invoice templates and settings"
-              icon={<CreditCard className="h-4 w-4 text-primary" />}
-              to="/finance/invoices"
-            />
+  title="Invoice Settings"
+  description="Customize invoice templates and settings"
+  icon={<CreditCard className="h-4 w-4 text-primary" />}
+  to="/settings/invoice"
+/>
             <SettingCard
               title="Store Settings"
               description="Configure online store and product settings"

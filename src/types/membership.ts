@@ -13,6 +13,9 @@ export interface MembershipPlan {
   benefits: string[];
   allowedClasses: ClassType;
   status: MembershipPlanStatus;
+  memberCount: number;
+  features?: string[];
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }

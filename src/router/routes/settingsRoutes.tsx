@@ -2,6 +2,7 @@
 import React from 'react';
 import { AppRoute } from '@/types/route';
 import UnifiedSettingsPage from '@/pages/settings/UnifiedSettingsPage';
+import InvoiceSettingsPage from '@/pages/settings/InvoiceSettingsPage';
 import IntegrationsPage from '@/pages/settings/IntegrationsPage';
 import AccessControlIntegrationPage from '@/pages/settings/AccessControlIntegrationPage';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
@@ -39,6 +40,16 @@ export const settingsRoutes: AppRoute[] = [
       breadcrumb: 'Settings',
       permission: 'access_settings',
       icon: <Settings className="h-5 w-5" />
+    }
+  },
+  {
+    path: '/settings/invoice',
+    element: <InvoiceSettingsPage />,
+    meta: {
+      title: 'Invoice Settings',
+      breadcrumb: 'Invoice Settings',
+      permission: 'manage_settings',
+      icon: <FileText className="h-5 w-5" />
     }
   },
   {
