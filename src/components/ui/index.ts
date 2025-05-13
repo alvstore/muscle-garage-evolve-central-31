@@ -21,3 +21,4 @@ export {
   BreadcrumbSeparator
 } from './breadcrumb';
 export { Badge } from './badge';
+export { Separator } from './separator';
