@@ -1,131 +1,226 @@
-
-import { useState, useEffect, createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { AuthUser, UserRole } from '@/types';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
-type AuthUser = User & {
-  role?: string;
+interface Profile {
+  id: string;
+  email?: string;
+  name?: string;
+  role?: UserRole;
   branch_id?: string;
-};
-
-interface AuthContextType {
-  user: AuthUser | null;
-  session: Session | null;
-  isLoading: boolean;
-  isAdmin: boolean;
-  isTrainer: boolean;
-  isMember: boolean;
-  isStaff: boolean;
-  signIn: (email: string, password: string) => Promise<{
-    error: Error | null;
-    data: { user: User | null; session: Session | null } | null;
-  }>;
-  signOut: () => Promise<void>;
-  getCurrentSession: () => Promise<Session | null>;
+  accessible_branch_ids?: string[];
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Extended AuthUser that includes name
+interface ExtendedAuthUser extends AuthUser {
+  name?: string;
+  email: string;
+  branch_id?: string;
+}
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+type AuthContextType = {
+  user: ExtendedAuthUser | null;
+  userRole: UserRole | null;
+  profile: Profile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean, message?: string }>;
+  logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean, message?: string }>;
+  loadProfile: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  userRole: null,
+  profile: null,
+  isLoading: true,
+  isAuthenticated: false,
+  login: async () => ({ success: false }),
+  logout: async () => {},
+  changePassword: async () => ({ success: false }),
+  loadProfile: async () => {},
+});
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<ExtendedAuthUser | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const isAdmin = user?.role === 'admin';
-  const isTrainer = user?.role === 'trainer';
-  const isMember = user?.role === 'member';
-  const isStaff = user?.role === 'staff';
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserProfile = async (userId: string) => {
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          return;
-        }
-
-        if (profile) {
-          setUser(currentUser => 
-            currentUser ? { ...currentUser, ...profile } : null
-          );
-        }
-      } catch (error) {
-        console.error('Error in profile fetch:', error);
-      }
-    };
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          fetchUserProfile(session.user.id);
-        }
-        
-        setIsLoading(false);
-      }
-    );
-
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
-      
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password });
+  const loadProfile = async () => {
+    setIsLoading(true);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, role, branch_id, accessible_branch_ids, email')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      setProfile({
+        id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        role: profileData.role as UserRole,
+        branch_id: profileData.branch_id,
+        accessible_branch_ids: profileData.accessible_branch_ids,
+      });
+      setUserRole(profileData.role as UserRole);
+    } catch (error: any) {
+      console.error("Error loading profile:", error);
+      toast.error(`Failed to load profile: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean, message?: string }> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, role, branch_id, accessible_branch_ids, email')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      const extendedUser: ExtendedAuthUser = {
+        id: data.user!.id,
+        email: profileData.email,
+        name: profileData.name,
+        branch_id: profileData.branch_id,
+        role: profileData.role as UserRole,
+        aud: data.user!.aud,
+        iss: data.user!.iss,
+        app_metadata: data.user!.app_metadata,
+        user_metadata: data.user!.user_metadata,
+        created_at: data.user!.created_at,
+        updated_at: data.user!.updated_at,
+      };
+
+      setUser(extendedUser);
+      setUserRole(profileData.role as UserRole);
+      setProfile({
+        id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        role: profileData.role as UserRole,
+        branch_id: profileData.branch_id,
+        accessible_branch_ids: profileData.accessible_branch_ids,
+      });
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(extendedUser));
+      toast.success(`Welcome, ${profileData.name}!`);
+      return { success: true };
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      toast.error(`Login failed: ${error.message}`);
+      return { success: false, message: error.message };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getCurrentSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session;
+  const logout = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+
+      setUser(null);
+      setUserRole(null);
+      setProfile(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('user');
+      toast.success("Logged out successfully.");
+      navigate('/login');
+    } catch (error: any) {
+      console.error("Logout failed:", error);
+      toast.error(`Logout failed: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const value = {
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean, message?: string }> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+        data: {
+          currentPassword: currentPassword,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Password changed successfully!");
+      return { success: true };
+    } catch (error: any) {
+      console.error("Password change failed:", error);
+      toast.error(`Password change failed: ${error.message}`);
+      return { success: false, message: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value: AuthContextType = {
     user,
-    session,
+    userRole,
+    profile,
     isLoading,
-    isAdmin,
-    isTrainer,
-    isMember,
-    isStaff,
-    signIn,
-    signOut,
-    getCurrentSession,
+    isAuthenticated,
+    login,
+    logout,
+    changePassword,
+    loadProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
