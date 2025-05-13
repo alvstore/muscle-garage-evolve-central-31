@@ -9,6 +9,348 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      access_doors: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          device_id: string | null
+          door_name: string
+          door_number: string | null
+          hikvision_door_id: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_name: string
+          door_number?: string | null
+          hikvision_door_id: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_name?: string
+          door_number?: string | null
+          hikvision_door_id?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_doors_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_doors_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "access_doors_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "hikvision_api_settings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_doors_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "access_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_logs: {
+        Row: {
+          created_at: string | null
+          credential_type: string | null
+          credential_value: string | null
+          door_id: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          hikvision_event_id: string | null
+          id: string
+          member_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credential_type?: string | null
+          credential_value?: string | null
+          door_id?: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          hikvision_event_id?: string | null
+          id?: string
+          member_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credential_type?: string | null
+          credential_value?: string | null
+          door_id?: string | null
+          event_id?: string
+          event_time?: string
+          event_type?: string
+          hikvision_event_id?: string | null
+          id?: string
+          member_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_logs_door_id_fkey"
+            columns: ["door_id"]
+            isOneToOne: false
+            referencedRelation: "access_doors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      access_zones: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_zones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_zones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      ai_diet_plans: {
+        Row: {
+          calories_per_day: number | null
+          created_at: string | null
+          created_by: string | null
+          cuisine_type: string | null
+          description: string | null
+          diet_type: string | null
+          goals: string[] | null
+          id: string
+          is_public: boolean | null
+          plan_content: string
+          restrictions: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          calories_per_day?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          diet_type?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content: string
+          restrictions?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          calories_per_day?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          diet_type?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content?: string
+          restrictions?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_diet_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_diet_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      ai_services: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          service_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      ai_workout_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          days_per_week: number | null
+          description: string | null
+          fitness_level: string | null
+          goals: string[] | null
+          id: string
+          is_public: boolean | null
+          plan_content: string
+          restrictions: string[] | null
+          session_duration: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          days_per_week?: number | null
+          description?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content: string
+          restrictions?: string[] | null
+          session_duration?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          days_per_week?: number | null
+          description?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content?: string
+          restrictions?: string[] | null
+          session_duration?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_workout_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_workout_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           author: string | null
@@ -409,45 +751,57 @@ export type Database = {
           address: string | null
           branch_code: string | null
           city: string | null
+          closing_hours: string | null
           country: string | null
           created_at: string | null
           email: string | null
           id: string
           is_active: boolean | null
           manager_id: string | null
+          max_capacity: number | null
           name: string
+          opening_hours: string | null
           phone: string | null
           state: string | null
+          tax_rate: number | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
           branch_code?: string | null
           city?: string | null
+          closing_hours?: string | null
           country?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           manager_id?: string | null
+          max_capacity?: number | null
           name: string
+          opening_hours?: string | null
           phone?: string | null
           state?: string | null
+          tax_rate?: number | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
           branch_code?: string | null
           city?: string | null
+          closing_hours?: string | null
           country?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           manager_id?: string | null
+          max_capacity?: number | null
           name?: string
+          opening_hours?: string | null
           phone?: string | null
           state?: string | null
+          tax_rate?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -487,6 +841,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -570,8 +938,10 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           description: string | null
+          difficulty: string | null
           id: string
           is_active: boolean | null
+          level: string | null
           name: string
           updated_at: string | null
         }
@@ -579,8 +949,10 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name: string
           updated_at?: string | null
         }
@@ -588,8 +960,10 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name?: string
           updated_at?: string | null
         }
@@ -616,13 +990,17 @@ export type Database = {
           capacity: number
           created_at: string | null
           description: string | null
+          difficulty: string | null
           end_time: string
           enrolled: number | null
           id: string
           is_active: boolean | null
+          level: string | null
           location: string | null
           name: string
           recurrence: string | null
+          recurring: boolean | null
+          recurring_pattern: string | null
           start_time: string
           status: Database["public"]["Enums"]["class_status"] | null
           trainer: string | null
@@ -635,13 +1013,17 @@ export type Database = {
           capacity: number
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           end_time: string
           enrolled?: number | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           location?: string | null
           name: string
           recurrence?: string | null
+          recurring?: boolean | null
+          recurring_pattern?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["class_status"] | null
           trainer?: string | null
@@ -654,13 +1036,17 @@ export type Database = {
           capacity?: number
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           end_time?: string
           enrolled?: number | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           location?: string | null
           name?: string
           recurrence?: string | null
+          recurring?: boolean | null
+          recurring_pattern?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["class_status"] | null
           trainer?: string | null
@@ -1319,9 +1705,11 @@ export type Database = {
           lead_id: string | null
           response: string | null
           response_at: string | null
+          scheduled_at: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
+          subject: string | null
           template_id: string | null
           type: string
         }
@@ -1331,9 +1719,11 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
+          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status: string
+          subject?: string | null
           template_id?: string | null
           type: string
         }
@@ -1343,9 +1733,11 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
+          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
+          subject?: string | null
           template_id?: string | null
           type?: string
         }
@@ -1567,6 +1959,39 @@ export type Database = {
           person_id?: string | null
           person_name?: string | null
           processed?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hsn_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string
+          gst_rate: number
+          id: string
+          is_active: boolean
+          is_service: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description: string
+          gst_rate?: number
+          id?: string
+          is_active?: boolean
+          is_service?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string
+          gst_rate?: number
+          id?: string
+          is_active?: boolean
+          is_service?: boolean
           updated_at?: string | null
         }
         Relationships: []
@@ -1798,6 +2223,144 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      invoice_settings: {
+        Row: {
+          branch_id: string | null
+          company_address: string | null
+          company_email: string | null
+          company_gst_number: string | null
+          company_name: string
+          company_phone: string | null
+          company_website: string | null
+          created_at: string | null
+          default_gst_treatment: string
+          default_notes: string | null
+          default_place_of_supply: string | null
+          default_tax_enabled: boolean
+          default_tax_rate: number
+          default_tax_type: string
+          default_terms: string | null
+          id: string
+          last_reset_date: string | null
+          next_number: number
+          number_digits: number
+          number_prefix: string
+          number_suffix: string | null
+          reset_frequency: string
+          show_logo: boolean
+          show_signature: boolean
+          signature_image_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_gst_number?: string | null
+          company_name?: string
+          company_phone?: string | null
+          company_website?: string | null
+          created_at?: string | null
+          default_gst_treatment?: string
+          default_notes?: string | null
+          default_place_of_supply?: string | null
+          default_tax_enabled?: boolean
+          default_tax_rate?: number
+          default_tax_type?: string
+          default_terms?: string | null
+          id?: string
+          last_reset_date?: string | null
+          next_number?: number
+          number_digits?: number
+          number_prefix?: string
+          number_suffix?: string | null
+          reset_frequency?: string
+          show_logo?: boolean
+          show_signature?: boolean
+          signature_image_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_gst_number?: string | null
+          company_name?: string
+          company_phone?: string | null
+          company_website?: string | null
+          created_at?: string | null
+          default_gst_treatment?: string
+          default_notes?: string | null
+          default_place_of_supply?: string | null
+          default_tax_enabled?: boolean
+          default_tax_rate?: number
+          default_tax_type?: string
+          default_terms?: string | null
+          id?: string
+          last_reset_date?: string | null
+          next_number?: number
+          number_digits?: number
+          number_prefix?: string
+          number_suffix?: string | null
+          reset_frequency?: string
+          show_logo?: boolean
+          show_signature?: boolean
+          signature_image_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      invoice_templates: {
+        Row: {
+          created_at: string | null
+          css_content: string | null
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          css_content?: string | null
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          css_content?: string | null
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       invoices: {
         Row: {
@@ -2130,6 +2693,141 @@ export type Database = {
           },
         ]
       }
+      member_access_credentials: {
+        Row: {
+          created_at: string | null
+          credential_type: string | null
+          credential_value: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          issued_at: string | null
+          member_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credential_type?: string | null
+          credential_value: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          issued_at?: string | null
+          member_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credential_type?: string | null
+          credential_value?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          issued_at?: string | null
+          member_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_access_credentials_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_access_credentials_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      member_access_overrides: {
+        Row: {
+          access_type: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          member_id: string | null
+          reason: string | null
+          schedule_days: string[] | null
+          schedule_end_time: string | null
+          schedule_start_time: string | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_access_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_access_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+          {
+            foreignKeyName: "member_access_overrides_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_access_overrides_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+          {
+            foreignKeyName: "member_access_overrides_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "access_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_attendance: {
         Row: {
           access_method: string | null
@@ -2441,6 +3139,57 @@ export type Database = {
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_access_permissions: {
+        Row: {
+          access_type: string | null
+          created_at: string | null
+          id: string
+          membership_id: string | null
+          schedule_days: string[] | null
+          schedule_end_time: string | null
+          schedule_start_time: string | null
+          updated_at: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          created_at?: string | null
+          id?: string
+          membership_id?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          created_at?: string | null
+          id?: string
+          membership_id?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_access_permissions_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_access_permissions_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "access_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -2988,12 +3737,15 @@ export type Database = {
           code: string
           created_at: string | null
           created_by: string | null
+          createdBy: string | null
           current_usage: number | null
           description: string | null
           end_date: string
           id: string
           max_discount_amount: number | null
+          maxDiscountAmount: number | null
           min_purchase_amount: number | null
+          minPurchaseAmount: number | null
           start_date: string
           status: string
           type: string
@@ -3008,12 +3760,15 @@ export type Database = {
           code: string
           created_at?: string | null
           created_by?: string | null
+          createdBy?: string | null
           current_usage?: number | null
           description?: string | null
           end_date: string
           id?: string
           max_discount_amount?: number | null
+          maxDiscountAmount?: number | null
           min_purchase_amount?: number | null
+          minPurchaseAmount?: number | null
           start_date: string
           status: string
           type: string
@@ -3028,12 +3783,15 @@ export type Database = {
           code?: string
           created_at?: string | null
           created_by?: string | null
+          createdBy?: string | null
           current_usage?: number | null
           description?: string | null
           end_date?: string
           id?: string
           max_discount_amount?: number | null
+          maxDiscountAmount?: number | null
           min_purchase_amount?: number | null
+          minPurchaseAmount?: number | null
           start_date?: string
           status?: string
           type?: string
@@ -3074,6 +3832,7 @@ export type Database = {
       }
       referrals: {
         Row: {
+          branch_id: string | null
           converted_at: string | null
           created_at: string | null
           id: string
@@ -3090,6 +3849,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          branch_id?: string | null
           converted_at?: string | null
           created_at?: string | null
           id?: string
@@ -3106,6 +3866,7 @@ export type Database = {
           status: string
         }
         Update: {
+          branch_id?: string | null
           converted_at?: string | null
           created_at?: string | null
           id?: string
@@ -3518,6 +4279,56 @@ export type Database = {
           },
         ]
       }
+      tax_profiles: {
+        Row: {
+          applies_to: string
+          created_at: string | null
+          description: string | null
+          hsn_code: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          tax_rate: number
+          tax_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          applies_to?: string
+          created_at?: string | null
+          description?: string | null
+          hsn_code?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          tax_rate?: number
+          tax_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string | null
+          description?: string | null
+          hsn_code?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          tax_rate?: number
+          tax_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_profiles_hsn_code_fkey"
+            columns: ["hsn_code"]
+            isOneToOne: false
+            referencedRelation: "hsn_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       trainer_assignments: {
         Row: {
           branch_id: string | null
@@ -3620,6 +4431,116 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      trainer_schedules: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          is_available: boolean | null
+          time_slot: string
+          trainer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          is_available?: boolean | null
+          time_slot: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_available?: boolean | null
+          time_slot?: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_schedules_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_schedules_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      trainer_sessions: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          member_id: string | null
+          notes: string | null
+          status: string | null
+          time_slot: string
+          trainer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          status?: string | null
+          time_slot: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          status?: string | null
+          time_slot?: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_sessions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_sessions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+          {
+            foreignKeyName: "trainer_sessions_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_sessions_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -4313,7 +5234,7 @@ export type Database = {
       }
     }
     Enums: {
-      class_status: "active" | "cancelled" | "completed"
+      class_status: "active" | "cancelled" | "completed" | "scheduled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4429,7 +5350,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      class_status: ["active", "cancelled", "completed"],
+      class_status: ["active", "cancelled", "completed", "scheduled"],
     },
   },
 } as const

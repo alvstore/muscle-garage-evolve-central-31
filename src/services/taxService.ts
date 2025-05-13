@@ -1,3 +1,4 @@
+
 import { Invoice, InvoiceItem, TaxDetail, GSTTreatment } from '@/types/finance';
 import { HSNCode, TaxProfile } from '@/types/invoiceSettings';
 import invoiceSettingsService from './invoiceSettingsService';
@@ -269,8 +270,7 @@ export const taxService = {
       return gstin.substring(0, 2);
     }
     return '';
-  }
-};
+  },
 
   /**
    * Get tax profile for an item based on HSN/SAC code
