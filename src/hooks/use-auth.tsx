@@ -1,223 +1,186 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import { createContext, useContext, ReactNode } from 'react';
+import { User } from '@supabase/supabase-js';
+import { User as AppUser, UserRole } from '@/types';
+import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
+import { useAuthActions, LoginResult } from './auth/use-auth-actions';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthUser, UserRole } from '@/types';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
-  email?: string;
-  name?: string;
-  role?: UserRole;
+  full_name?: string;
+  role: UserRole;
   branch_id?: string;
   accessible_branch_ids?: string[];
+  is_branch_manager?: boolean;
+  email?: string;
+  avatar_url?: string;
+  phone?: string;
 }
 
-// Extended AuthUser that includes name
-interface ExtendedAuthUser extends AuthUser {
-  name?: string;
-  email: string;
-  branch_id?: string;
-}
-
-type AuthContextType = {
-  user: ExtendedAuthUser | null;
+interface AuthContextType {
+  user: AppUser | null;
   userRole: UserRole | null;
-  profile: Profile | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean, message?: string }>;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean, message?: string }>;
-  loadProfile: () => Promise<void>;
-};
+  register: (userData: any) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  profile: Profile | null;
+  updateUserBranch: (branchId: string) => Promise<boolean>;
+
+
+
+}
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   userRole: null,
-  profile: null,
-  isLoading: true,
   isAuthenticated: false,
+  isLoading: true,
   login: async () => ({ success: false }),
   logout: async () => {},
-  changePassword: async () => ({ success: false }),
-  loadProfile: async () => {},
+  register: async () => {},
+  changePassword: async () => false,
+  forgotPassword: async () => false,
+  profile: null,
+  updateUserBranch: async () => false,
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<ExtendedAuthUser | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  return (
+    <AuthStateProvider>
+      <AuthProviderInner>{children}</AuthProviderInner>
+    </AuthStateProvider>
+  );
+};
+
+const AuthProviderInner = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, isLoading: authStateLoading } = useAuthState();
+  const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
-
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<Error | null>(null);
+  
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
-
-  const loadProfile = async () => {
-    setIsLoading(true);
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name, role, branch_id, accessible_branch_ids, email')
-        .eq('id', user?.id)
-        .single();
-
-      if (profileError) {
-        throw profileError;
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setProfile(null);
+        return;
       }
+      
+      try {
+        setIsLoadingProfile(true);
+        setProfileError(null);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setProfileError(new Error(error.message));
+          toast.error('Failed to load user profile data');
+        } else if (data) {
+          setProfile(data);
 
-      setProfile({
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
-        role: profileData.role as UserRole,
-        branch_id: profileData.branch_id,
-        accessible_branch_ids: profileData.accessible_branch_ids,
-      });
-      setUserRole(profileData.role as UserRole);
-    } catch (error: any) {
-      console.error("Error loading profile:", error);
-      toast.error(`Failed to load profile: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
+
+        }
+      } catch (err: any) {
+        console.error('Profile fetch error:', err);
+        setProfileError(err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    
+    fetchUserProfile();
+    
+    // Set up real-time subscription for profile changes
+    const profileSubscription = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles',
+        filter: user ? `id=eq.${user.id}` : undefined
+      }, (payload) => {
+        if (payload.new && user && payload.new.id === user.id) {
+          setProfile(payload.new as Profile);
+        }
+      })
+      .subscribe();
+    
+    return () => {
+      profileSubscription.unsubscribe();
+    };
   }, [user]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean, message?: string }> => {
-    setIsLoading(true);
+  const updateUserBranch = async (branchId: string): Promise<boolean> => {
+    if (!user) return false;
+    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      const { data: profileData, error: profileError } = await supabase
+      const { error } = await supabase
         .from('profiles')
-        .select('id, name, role, branch_id, accessible_branch_ids, email')
-        .eq('id', data.user?.id)
-        .single();
+        .update({ branch_id: branchId })
+        .eq('id', user.id);
+      
+      if (error) throw error;
 
-      if (profileError) {
-        throw profileError;
-      }
+      // Update will happen automatically through subscription
 
-      const extendedUser: ExtendedAuthUser = {
-        id: data.user!.id,
-        email: profileData.email,
-        name: profileData.name,
-        branch_id: profileData.branch_id,
-        role: profileData.role as UserRole,
-        aud: data.user!.aud,
-        iss: data.user!.iss,
-        app_metadata: data.user!.app_metadata,
-        user_metadata: data.user!.user_metadata,
-        created_at: data.user!.created_at,
-        updated_at: data.user!.updated_at,
-      };
 
-      setUser(extendedUser);
-      setUserRole(profileData.role as UserRole);
-      setProfile({
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
-        role: profileData.role as UserRole,
-        branch_id: profileData.branch_id,
-        accessible_branch_ids: profileData.accessible_branch_ids,
-      });
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(extendedUser));
-      toast.success(`Welcome, ${profileData.name}!`);
-      return { success: true };
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      toast.error(`Login failed: ${error.message}`);
-      return { success: false, message: error.message };
-    } finally {
-      setIsLoading(false);
+
+      return true;
+    } catch (err) {
+      console.error('Error updating user branch:', err);
+      return false;
     }
+
+
+
+
+
   };
-
-  const logout = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
-
-      setUser(null);
-      setUserRole(null);
-      setProfile(null);
-      setIsAuthenticated(false);
-      localStorage.removeItem('user');
-      toast.success("Logged out successfully.");
-      navigate('/login');
-    } catch (error: any) {
-      console.error("Logout failed:", error);
-      toast.error(`Logout failed: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean, message?: string }> => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword,
-        data: {
-          currentPassword: currentPassword,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success("Password changed successfully!");
-      return { success: true };
-    } catch (error: any) {
-      console.error("Password change failed:", error);
-      toast.error(`Password change failed: ${error.message}`);
-      return { success: false, message: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const value: AuthContextType = {
-    user,
-    userRole,
-    profile,
-    isLoading,
-    isAuthenticated,
-    login,
-    logout,
-    changePassword,
-    loadProfile,
-  };
-
+  
+  // Map Supabase user to our User type
+  const mappedUser: AppUser | null = user && profile ? {
+    id: user.id,
+    email: user.email ?? profile.email ?? '',
+    name: profile.full_name ?? '',
+    role: profile.role || 'member',
+    branchId: profile.branch_id,
+    avatar: profile.avatar_url,
+    phone: profile.phone,
+    isBranchManager: profile.is_branch_manager || false,
+    branchIds: profile.accessible_branch_ids || []
+  } : null;
+  
+  const isLoading = authStateLoading || authActionsLoading || isLoadingProfile;
+  
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user: mappedUser,
+        userRole: profile?.role || null,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        register,
+        changePassword,
+        forgotPassword,
+        profile,
+        updateUserBranch
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

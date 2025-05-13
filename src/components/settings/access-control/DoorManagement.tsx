@@ -53,6 +53,7 @@ interface Door {
   door_name: string;
   zone_id: string;
   device_id: string;
+  hikvision_door_id: string;
   is_active: boolean;
   branch_id: string;
   created_at: string;
@@ -77,6 +78,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
   const [doorDescription, setDoorDescription] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [deviceId, setDeviceId] = useState('');
+  const [hikvisionDoorId, setHikvisionDoorId] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -96,6 +98,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
           door_name,
           zone_id,
           device_id,
+          hikvision_door_id,
           is_active,
           branch_id,
           created_at,
@@ -114,10 +117,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
       // Process the data to ensure it matches our Door interface
       const processedData = (data || []).map(door => ({
         ...door,
+        hikvision_door_id: door.hikvision_door_id || '',
         access_zones: door.access_zones?.[0] || null
       }));
       
-      setDoors(processedData);
+      setDoors(processedData as Door[]);
     } catch (err) {
       console.error('Error fetching doors:', err);
       setError('Failed to load access doors. Please try again later.');
@@ -162,6 +166,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
       setDoorDescription(''); // No description field in database
       setZoneId(door.zone_id);
       setDeviceId(door.device_id || '');
+      setHikvisionDoorId(door.hikvision_door_id || '');
       setIsActive(door.is_active);
     } else {
       setEditingDoor(null);
@@ -169,6 +174,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
       setDoorDescription('');
       setZoneId(zones.length > 0 ? zones[0].id : '');
       setDeviceId('');
+      setHikvisionDoorId('');
       setIsActive(true);
     }
     setOpenDialog(true);
@@ -181,6 +187,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
     setDoorDescription('');
     setZoneId('');
     setDeviceId('');
+    setHikvisionDoorId('');
     setIsActive(true);
   };
 
@@ -201,15 +208,21 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
         return;
       }
       
+      if (!hikvisionDoorId) {
+        toast.error('Hikvision Door ID is required');
+        return;
+      }
+      
       if (editingDoor) {
         // Update existing door
         const { error } = await supabase
           .from('access_doors')
           .update({
-            name: doorName,
+            door_name: doorName,
             description: doorDescription,
             zone_id: zoneId,
             device_id: deviceId,
+            hikvision_door_id: hikvisionDoorId,
             is_active: isActive,
           })
           .eq('id', editingDoor.id);
@@ -224,10 +237,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
         const { error } = await supabase
           .from('access_doors')
           .insert({
-            name: doorName,
+            door_name: doorName,
             description: doorDescription,
             zone_id: zoneId,
             device_id: deviceId,
+            hikvision_door_id: hikvisionDoorId,
             is_active: isActive,
             branch_id: branchId,
           });
@@ -337,6 +351,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
                   <TableHead>Door Name</TableHead>
                   <TableHead>Zone</TableHead>
                   <TableHead>Device ID</TableHead>
+                  <TableHead>Hikvision ID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -347,6 +362,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
                     <TableCell className="font-medium">{door.door_name}</TableCell>
                     <TableCell>{getZoneName(door.zone_id)}</TableCell>
                     <TableCell>{door.device_id || '-'}</TableCell>
+                    <TableCell>{door.hikvision_door_id || '-'}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${door.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                         {door.is_active ? 'Active' : 'Inactive'}
@@ -423,6 +439,17 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
                 value={deviceId}
                 onChange={(e) => setDeviceId(e.target.value)}
                 placeholder="Enter device ID from Hikvision"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="hikvisionDoorId">Hikvision Door ID</Label>
+              <Input
+                id="hikvisionDoorId"
+                value={hikvisionDoorId}
+                onChange={(e) => setHikvisionDoorId(e.target.value)}
+                placeholder="Enter Hikvision Door ID"
+                required
               />
             </div>
             

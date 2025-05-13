@@ -95,6 +95,16 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
+    path: '/settings/attendance-devices',
+    element: <AccessControlPage />,
+    meta: {
+      title: 'Access Control',
+      breadcrumb: 'Access Control',
+      permission: 'manage_integrations',
+      icon: <Lock className="h-5 w-5" />
+    }
+  },
+  {
     path: '/settings/ai-services',
     element: <AIServicesPage />,
     meta: {
