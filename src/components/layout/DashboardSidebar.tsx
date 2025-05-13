@@ -44,18 +44,17 @@ export default function DashboardSidebar({
     <div className="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-br from-indigo-950 to-blue-900 text-white 
                     flex flex-col h-full">
       {/* Mobile Close Button */}
-      {isMobile && (
-        <div className="absolute top-4 right-4 z-50">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-white hover:bg-white/10"
-            onClick={closeSidebar}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
+      <div className="absolute top-4 right-4 z-50">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-white hover:bg-white/10 md:hidden"
+          onClick={closeSidebar}
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
 
       <div className="p-4">
         <div className="flex flex-col gap-3">
