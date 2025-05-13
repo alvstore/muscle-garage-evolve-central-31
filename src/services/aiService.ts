@@ -405,7 +405,7 @@ export const aiService = {
   },
 
   // Build workout plan prompt
-  private buildWorkoutPrompt(params: WorkoutPlanParams): string {
+  buildWorkoutPrompt(params: WorkoutPlanParams): string {
     return `Create a detailed ${params.fitnessLevel} workout plan with the following details:
     - Fitness Level: ${params.fitnessLevel}
     - Goals: ${params.goals.join(', ')}
