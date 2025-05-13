@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           branch_id: string | null
           created_at: string | null
+          description: string | null
           device_id: string | null
           door_name: string
           door_number: string | null
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           created_at?: string | null
+          description?: string | null
           device_id?: string | null
           door_name: string
           door_number?: string | null
@@ -37,6 +39,7 @@ export type Database = {
         Update: {
           branch_id?: string | null
           created_at?: string | null
+          description?: string | null
           device_id?: string | null
           door_name?: string
           door_number?: string | null
@@ -2456,6 +2459,13 @@ export type Database = {
             foreignKeyName: "invoices_membership_plan_id_fkey"
             columns: ["membership_plan_id"]
             isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_membership_plan_id_fkey"
+            columns: ["membership_plan_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -2975,6 +2985,13 @@ export type Database = {
             foreignKeyName: "member_memberships_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_memberships_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -3138,6 +3155,13 @@ export type Database = {
             foreignKeyName: "members_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "members_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -3146,6 +3170,7 @@ export type Database = {
       membership_access_permissions: {
         Row: {
           access_type: string | null
+          branch_id: string | null
           created_at: string | null
           id: string
           membership_id: string | null
@@ -3157,6 +3182,7 @@ export type Database = {
         }
         Insert: {
           access_type?: string | null
+          branch_id?: string | null
           created_at?: string | null
           id?: string
           membership_id?: string | null
@@ -3168,6 +3194,7 @@ export type Database = {
         }
         Update: {
           access_type?: string | null
+          branch_id?: string | null
           created_at?: string | null
           id?: string
           membership_id?: string | null
@@ -3178,6 +3205,27 @@ export type Database = {
           zone_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "membership_access_permissions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_access_permissions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "membership_access_permissions_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "membership_access_permissions_membership_id_fkey"
             columns: ["membership_id"]
@@ -3251,6 +3299,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "membership_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_subscriptions_plan_id_fkey"
@@ -3635,6 +3690,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+          {
+            foreignKeyName: "payments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_membership_id_fkey"
@@ -5119,6 +5181,48 @@ export type Database = {
           },
           {
             foreignKeyName: "members_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      membership_plans: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
