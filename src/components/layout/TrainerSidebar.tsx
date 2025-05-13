@@ -3,13 +3,14 @@ import React, { useState } from "react";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LogOut } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import { trainerNavSections } from "@/data/trainerNavigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TrainerSidebarProps {
   isSidebarOpen: boolean;
@@ -23,6 +24,7 @@ export default function TrainerSidebar({
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { logout } = useAuth();
+  const isMobile = useIsMobile();
   
   const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
@@ -50,6 +52,18 @@ export default function TrainerSidebar({
     <Sidebar className="transition-all duration-300 w-64">
       <SidebarContent className="w-64 p-0 border-none">
         <div className="flex flex-col h-full bg-gradient-to-br from-indigo-950 to-blue-900 text-white">
+          {isMobile && (
+            <div className="absolute top-4 right-4 z-50">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-white hover:bg-white/10"
+                onClick={closeSidebar}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
           <SidebarHeader className="p-4">
             <div className="flex flex-col gap-3">
               <div className="p-1 rounded-md px-[27px] py-[8px] mx-0 my-0 bg-slate-50 overflow-hidden">

@@ -1,176 +1,142 @@
 
-import React, { useState } from 'react';
-import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React from "react";
 import { 
+  Bell, 
+  Menu, 
+  Moon, 
+  Search, 
+  Sun, 
+  User,
+  MessageSquare,
+  Settings
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
-import { useNavigate } from 'react-router-dom';
-import { Notification } from '@/types/notification';
-import NotificationItem from '@/components/notifications/NotificationItem';
-import { Badge } from '@/components/ui/badge';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import ThemeToggle from "@/components/theme/ThemeToggle";
+import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
 
 interface DashboardHeaderProps {
   toggleSidebar: () => void;
   toggleTheme: () => void;
   isDarkMode: boolean;
-  sidebarOpen?: boolean;
+  sidebarOpen: boolean;
 }
 
-const fakeNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'New Member Joined',
-    message: 'John Doe has joined as a new member.',
-    timestamp: new Date().toISOString(),
-    read: false,
-    type: 'member'
-  },
-  {
-    id: '2',
-    title: 'Membership Expiring',
-    message: 'Sarah Smith\'s membership expires in 3 days.',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    read: false,
-    type: 'alert'
-  }
-];
-
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  toggleSidebar,
-  toggleTheme,
+const DashboardHeader = ({ 
+  toggleSidebar, 
+  toggleTheme, 
   isDarkMode,
   sidebarOpen
-}) => {
+}: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [notifications] = React.useState<Notification[]>(fakeNotifications);
-  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
+  const isMobile = useIsMobile();
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  const markAllAsRead = () => {
-    // In a real app, this would call an API to mark notifications as read
-    setUnreadCount(0);
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
   };
   
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 shadow-sm">
-      <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+      <div className="flex items-center gap-4 lg:gap-6">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleSidebar}
+          className="lg:hidden"
+          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="hidden md:flex items-center relative w-full max-w-md">
+          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search..."
+            className="w-full pl-8 bg-background"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 md:gap-4">
         <Button 
           variant="ghost" 
           size="icon"
-          className="flex md:flex" 
-          onClick={toggleSidebar}
+          className="md:hidden"
+          onClick={() => {
+            const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+            if (searchInput) {
+              searchInput.focus();
+            }
+          }}
         >
-          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          <span className="sr-only">Toggle Menu</span>
+          <Search className="h-5 w-5" />
         </Button>
-      </div>
-      
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          <span className="sr-only">Toggle Theme</span>
+        <ThemeToggle />
+        <Button variant="ghost" size="icon">
+          <Bell className="h-5 w-5" />
         </Button>
-        
+        <Button variant="ghost" size="icon" asChild>
+          <Link to="/messages">
+            <MessageSquare className="h-5 w-5" />
+          </Link>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs p-0"
-                >
-                  {unreadCount}
-                </Badge>
-              )}
-              <span className="sr-only">Notifications</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full overflow-hidden"
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage 
+                  src={user?.avatar_url || undefined} 
+                  alt={user?.full_name || "User"} 
+                />
+                <AvatarFallback>
+                  {getInitials(user?.full_name || "")}
+                </AvatarFallback>
+              </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[300px]">
-            <div className="flex items-center justify-between py-2 px-3">
-              <h3 className="font-semibold">Notifications</h3>
-              {unreadCount > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-auto py-1 px-2 text-xs"
-                  onClick={markAllAsRead}
-                >
-                  Mark all as read
-                </Button>
-              )}
-            </div>
-            <DropdownMenuSeparator />
-            <div className="max-h-[300px] overflow-auto">
-              {notifications.length > 0 ? (
-                notifications.map((notification) => (
-                  <NotificationItem key={notification.id} notification={notification} />
-                ))
-              ) : (
-                <div className="py-4 px-3 text-center text-muted-foreground">
-                  No notifications
-                </div>
-              )}
-            </div>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.full_name}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email}
+                </p>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a className="w-full text-center cursor-pointer" href="/notifications">
-                View all notifications
-              </a>
+              <Link to="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
-                <AvatarFallback>
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <div className="flex items-center justify-start gap-2 p-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
-                <AvatarFallback>
-                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
-              Profile Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings')}>
-              Account Settings
+            <DropdownMenuItem asChild>
+              <Link to="/settings" className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              Log Out
+            <DropdownMenuItem 
+              onClick={logout}
+              className="cursor-pointer"
+            >
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

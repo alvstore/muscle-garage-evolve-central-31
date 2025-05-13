@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +11,7 @@ import NavigationSections from "@/components/navigation/NavigationSections";
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -24,6 +26,7 @@ export default function DashboardSidebar({
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { logout, user } = useAuth();
   const { sections, expandedSections, toggleSection } = useNavigation();
+  const isMobile = useIsMobile();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -39,19 +42,20 @@ export default function DashboardSidebar({
 
   return (
     <div className="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-br from-indigo-950 to-blue-900 text-white 
-                    transform transition-transform duration-300 ease-in-out md:translate-x-0
                     flex flex-col h-full">
       {/* Mobile Close Button */}
-      <div className="md:hidden absolute top-4 right-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:bg-indigo-800/50"
-          onClick={closeSidebar}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+      {isMobile && (
+        <div className="absolute top-4 right-4 z-50">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-white hover:bg-white/10"
+            onClick={closeSidebar}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
 
       <div className="p-4">
         <div className="flex flex-col gap-3">
@@ -59,11 +63,6 @@ export default function DashboardSidebar({
             <div className="w-36 truncate">
               <Logo variant="default" />
             </div>
-
-
-
-
-
           </div>
           {user?.role === "admin" && (
             <PermissionGuard permission="view_branch_data">

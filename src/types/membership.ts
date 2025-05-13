@@ -5,24 +5,10 @@ export interface Membership {
   description?: string;
   price: number;
   duration_days: number;
-  features?: any;
-  branch_id?: string;
+  duration_months?: number;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  plan_name?: string;
-}
-
-export interface MembershipPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration_days: number;
-  memberCount: number;
-  features?: string[];
-  benefits?: string[];
-  status: string;
-  created_at: string;
-  updated_at: string;
+  features?: any[];
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }

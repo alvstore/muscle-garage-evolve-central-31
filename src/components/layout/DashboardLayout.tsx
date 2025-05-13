@@ -1,6 +1,6 @@
 
 import { useState, useEffect, ReactNode } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import DashboardSidebar from "./DashboardSidebar";
@@ -41,6 +41,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const closeSidebar = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
   const toggleTheme = () => {
     const newDarkMode = !darkMode;
     setDarkMode(newDarkMode);
@@ -71,13 +77,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
-      <div 
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${
-          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`} 
-        onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
-      ></div>
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        ></div>
+      )}
       
       {/* Sidebar */}
       <div 
@@ -85,7 +91,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
+        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
       </div>
       
       {/* Main content */}
