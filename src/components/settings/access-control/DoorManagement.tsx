@@ -51,7 +51,6 @@ interface DoorManagementProps {
 interface Door {
   id: string;
   door_name: string;
-  description: string;
   zone_id: string;
   device_id: string;
   is_active: boolean;
@@ -95,7 +94,6 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
         .select(`
           id,
           door_name,
-          description,
           zone_id,
           device_id,
           is_active,
@@ -161,7 +159,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
     if (door) {
       setEditingDoor(door);
       setDoorName(door.door_name);
-      setDoorDescription(door.description || '');
+      setDoorDescription(''); // No description field in database
       setZoneId(door.zone_id);
       setDeviceId(door.device_id || '');
       setIsActive(door.is_active);
@@ -467,7 +465,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the door "{doorToDelete?.name}". This action cannot be undone.
+              This will permanently delete the door "{doorToDelete?.door_name}". This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
