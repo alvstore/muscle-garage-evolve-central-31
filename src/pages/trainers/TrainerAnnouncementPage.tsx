@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/use-announcements';
-import { AnnouncementsList } from '@/components/communication/AnnouncementsList';
-import TrainerAnnouncementForm from '@/components/communication/TrainerAnnouncementForm';
+import { AnnouncementsList } from '@/components/communication/announcements/AnnouncementsList';
+import TrainerAnnouncementForm from '@/components/communication/announcements/TrainerAnnouncementForm';
 import { toast } from 'sonner';
 
 const TrainerAnnouncementPage: React.FC = () => {

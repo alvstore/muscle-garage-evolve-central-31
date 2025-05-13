@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import FeedbackTabs from "@/components/communication/feedback/FeedbackTabs";
-import FeedbackForm from "@/components/communication/FeedbackForm";
+import FeedbackForm from "@/components/communication/feedback/FeedbackForm";
 import { useFeedback } from "@/hooks/use-feedback";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

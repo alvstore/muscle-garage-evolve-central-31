@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, addDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   Form, 
   FormControl, 
@@ -31,21 +32,32 @@ import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Announcement, NotificationChannel } from "@/types/notification";
 import { UserRole } from "@/types";
+import { useBranch } from "@/hooks/use-branch";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   content: z.string().min(10, "Content must be at least 10 characters"),
   targetRoles: z.array(z.string()).min(1, "Select at least one role"),
   channels: z.array(z.string()).min(1, "Select at least one channel"),
+  priority: z.enum(["low", "medium", "high"]).default("low"),
   expiresAt: z.date().optional(),
   sendNow: z.boolean().default(true),
   scheduledDate: z.date().optional(),
+  showPreview: z.boolean().default(false),
 });
 
 interface AnnouncementFormProps {
   editAnnouncement?: Announcement | null;
   onComplete: () => void;
 }
+
+const priorities = [
+  { value: "low", label: "Low Priority", description: "Regular announcements" },
+  { value: "medium", label: "Medium Priority", description: "Important updates" },
+  { value: "high", label: "High Priority", description: "Urgent announcements" },
+] as const;
 
 const userRoles: { value: UserRole; label: string }[] = [
   { value: "admin", label: "Administrators" },
@@ -63,6 +75,8 @@ const notificationChannels: { value: string; label: string }[] = [
 
 const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentBranch } = useBranch();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,8 +85,10 @@ const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProp
       content: "",
       targetRoles: [],
       channels: ["in-app"],
+      priority: "low",
       sendNow: true,
       scheduledDate: addDays(new Date(), 1),
+      showPreview: false,
     },
   });
 
@@ -95,23 +111,47 @@ const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProp
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      console.log("Submitting announcement:", values);
-      
-      // In a real app, this would be an API call to save the announcement
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!user?.id) {
+        throw new Error("You must be logged in to create announcements");
+      }
+
+      // Convert form data to match database schema
+      const announcementData = {
+        title: values.title,
+        content: values.content,
+        priority: values.priority,
+        author_id: user.id,
+        author_name: user.email?.split('@')[0] || 'Unknown',
+        target_roles: values.targetRoles,
+        channels: values.channels,
+        expires_at: values.expiresAt?.toISOString(),
+        branch_id: currentBranch?.id,
+      };
+
+      if (!currentBranch?.id) {
+        throw new Error("Please select a branch first");
+      }
+
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert(announcementData)
+        .select()
+        .single();
+
+      if (error) throw error;
       
       toast.success(
         editAnnouncement 
-          ? "Announcement updated successfully" 
-          : "Announcement created successfully"
+          ? "🔄 Announcement updated successfully" 
+          : "✨ New announcement " + (values.sendNow ? "published" : "scheduled")
       );
       
       form.reset();
       onComplete();
     } catch (error) {
       console.error("Error submitting announcement:", error);
-      toast.error("There was a problem saving the announcement");
+      toast.error("⚠️ Failed to " + (editAnnouncement ? "update" : "create") + " announcement");
     } finally {
       setIsSubmitting(false);
     }
@@ -160,6 +200,79 @@ const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProp
               )}
             />
             
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Priority Level</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a priority level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {priorities.map((priority) => (
+                        <SelectItem key={priority.value} value={priority.value}>
+                          <div className="flex items-center gap-2">
+                            <span>{priority.label}</span>
+                            <span className="text-muted-foreground text-sm">- {priority.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="showPreview"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Show Preview</FormLabel>
+                    <FormDescription>
+                      Preview how the announcement will look to recipients
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("showPreview") && (
+              <Card className="p-6 bg-muted/50">
+                <CardHeader className="p-0 mb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{form.watch("title") || "[Title]"}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Posted by {"[Current User]"} • {format(new Date(), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={form.watch("priority") === "high" ? "destructive" : 
+                             form.watch("priority") === "medium" ? "warning" : "default"}
+                    >
+                      {form.watch("priority")} priority
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <p className="whitespace-pre-wrap">{form.watch("content") || "[Content]"}</p>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid gap-6 sm:grid-cols-2">
               <FormField
                 control={form.control}

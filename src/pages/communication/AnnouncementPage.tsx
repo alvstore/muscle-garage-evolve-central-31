@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnnouncementsList } from "@/components/communication/AnnouncementsList";
-import CreateAnnouncementForm from "@/components/communication/CreateAnnouncementForm";
+import { AnnouncementsList } from "@/components/communication/announcements/AnnouncementsList";
+import AnnouncementForm from "@/components/communication/announcements/AnnouncementForm";
 import { Announcement } from "@/types/notification";
 import { usePermissions } from "@/hooks/use-permissions";
 
@@ -38,8 +38,8 @@ export default function AnnouncementPage() {
           
           {!isMember && (
             <TabsContent value="create" className="space-y-4">
-              <CreateAnnouncementForm 
-                onSuccess={handleSuccess}
+              <AnnouncementForm
+                onComplete={handleSuccess}
               />
             </TabsContent>
           )}
