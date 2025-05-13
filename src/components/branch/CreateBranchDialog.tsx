@@ -30,7 +30,7 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
       country: 'India',
       email: '',
       phone: '',
-      isActive: true,
+      is_active: true,
       branch_code: '',
     },
   });
@@ -46,15 +46,18 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
       }
       
       const createdBranch = await createBranch({
-        name: data.name, // Required field
+        name: data.name,
         address: data.address,
         city: data.city,
         state: data.state,
         country: data.country,
         email: data.email,
         phone: data.phone,
-        isActive: data.isActive,
-        branch_code: data.branch_code
+        is_active: data.is_active,
+        branch_code: data.branch_code,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        manager_id: null
       });
       
       if (createdBranch) {

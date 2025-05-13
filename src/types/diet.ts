@@ -1,130 +1,41 @@
 
-export interface MealPlan {
-  id: string;
-  name: string;
-  time: string;
-  description?: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  food_items: FoodItem[];
-}
-
-export interface FoodItem {
-  id: string;
-  name: string;
-  quantity: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  notes?: string;
-}
-
-export interface DietAssignment {
-  id: string;
-  memberId: string;
-  dietPlanId: string;
-  assignedDate: string;
-  startDate: string;
-  endDate?: string;
-  status: 'active' | 'completed' | 'cancelled';
-  notes?: string;
-  trainerId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface DietPlan {
   id: string;
   name: string;
-  diet_type: string;
-  description?: string;
-  daily_calories: number;
-  protein_ratio: number;
-  carbs_ratio: number;
-  fat_ratio: number;
+  description: string;
+  trainer_id: string;
+  member_id?: string; 
+  diet_type?: string;
+  daily_calories?: number;
+  goal?: string;
   notes?: string;
-  is_custom: boolean;
   is_global: boolean;
-  member_id?: string;
-  trainer_id?: string;
-  branch_id?: string;
-  meal_plans?: MealPlan[];
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
+  // Reference to meal plans
+  mealPlans?: MealPlan[];
 }
 
-export interface DietPlanClient {
+export interface MealPlan {
   id: string;
   name: string;
-  dietType: string;
-  description?: string;
-  dailyCalories: number;
-  proteinRatio: number;
-  carbsRatio: number;
-  fatRatio: number;
-  notes?: string;
-  isCustom: boolean;
-  isGlobal: boolean;
-  memberId?: string;
-  trainerId?: string;
-  branchId?: string;
-  mealPlans: MealPlan[];
-  createdAt: string;
-  updatedAt: string;
+  time?: string;
+  diet_plan_id: string;
+  created_at: string;
+  updated_at: string;
+  // Reference to meal items
+  items?: MealItem[];
 }
 
-export interface DietPlanListProps {
-  plans: DietPlan[];
-  isLoading: boolean;
-  onPlanCreated?: (plan: DietPlan) => void;
-  onPlanUpdated?: (updatedPlan: DietPlan) => void;
-  onPlanDeleted?: (planId: string) => void;
-  canCreateGlobal?: boolean;
-}
-
-export function adaptToDietPlanClient(plan: DietPlan): DietPlanClient {
-  return {
-    id: plan.id,
-    name: plan.name,
-    dietType: plan.diet_type,
-    description: plan.description,
-    dailyCalories: plan.daily_calories,
-    proteinRatio: plan.protein_ratio,
-    carbsRatio: plan.carbs_ratio,
-    fatRatio: plan.fat_ratio,
-    notes: plan.notes,
-    isCustom: plan.is_custom,
-    isGlobal: plan.is_global,
-    memberId: plan.member_id,
-    trainerId: plan.trainer_id,
-    branchId: plan.branch_id,
-    mealPlans: plan.meal_plans || [],
-    createdAt: plan.created_at,
-    updatedAt: plan.updated_at
-  };
-}
-
-export function adaptToDietPlanDb(plan: DietPlanClient): DietPlan {
-  return {
-    id: plan.id,
-    name: plan.name,
-    diet_type: plan.dietType,
-    description: plan.description,
-    daily_calories: plan.dailyCalories,
-    protein_ratio: plan.proteinRatio,
-    carbs_ratio: plan.carbsRatio,
-    fat_ratio: plan.fatRatio,
-    notes: plan.notes,
-    is_custom: plan.isCustom,
-    is_global: plan.isGlobal,
-    member_id: plan.memberId,
-    trainer_id: plan.trainerId,
-    branch_id: plan.branchId,
-    meal_plans: plan.mealPlans,
-    created_at: plan.createdAt,
-    updated_at: plan.updatedAt
-  };
+export interface MealItem {
+  id: string;
+  name: string;
+  meal_plan_id: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fats?: number;
+  created_at: string;
+  updated_at: string;
 }
