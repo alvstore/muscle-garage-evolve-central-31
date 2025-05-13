@@ -1,63 +1,82 @@
 
-export interface WorkoutPlan {
-  id: string;
-  name: string;
-  description: string;
-  trainer_id: string;
-  member_id?: string;
-  workout_days: WorkoutDay[];
-  target_goals?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  is_global: boolean;
-  is_custom: boolean;
-  created_at: string;
-  updated_at: string;
+// Progress tracking metrics
+export interface ProgressMetrics {
+  weight: number;
+  bodyFatPercentage: number; 
+  bmi: number;
+  muscleGain: number;
 }
 
-export interface WorkoutDay {
-  id: string;
-  name: string;
-  description?: string;
-  exercises: Exercise[];
-}
-
+// Workout related types
 export interface Exercise {
   id: string;
   name: string;
   sets: number;
   reps: number;
-  weight?: string | number;
-  rest?: number | string;
+  weight?: number;
+  rest?: number;
+  restTime?: string;
   notes?: string;
-  media_url?: string;
-  muscle_group_tag?: string;
+  mediaUrl?: string;
+  muscleGroupTag?: string;
 }
 
-export interface MemberWorkout {
-  id: string;
-  member_id: string;
-  workout_plan_id: string;
-  is_custom: boolean;
-  assigned_by: string;
-  assigned_at: string;
-}
-
-// For compatibility with database format if needed
-export interface WorkoutPlanDB {
+export interface WorkoutDay {
   id: string;
   name: string;
+  dayLabel?: string;
+  exercises: Exercise[];
+  notes?: string;
+  description?: string;
+
+
+}
+
+// Plan types based on visibility and assignment
+export type PlanType = 'public' | 'assigned' | 'private';
+
+// Base workout plan interface
+export interface WorkoutPlan {
+  id: string;
+  type: PlanType;
+  title: string;
   description: string;
+  days: WorkoutDay[];
+  exercises: Exercise[];
   created_by: string;
-  workout_days: WorkoutDay[];
-  target_goals?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  is_global: boolean;
-  is_custom: boolean;
+  member_id?: string;
+  trainer_id?: string;
+  assigned_by?: string;
   created_at: string;
   updated_at: string;
-  member_id?: string;
-  // Additional fields potentially needed for database format
-  type?: string;
-  title?: string;
-  exercises?: Exercise[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  targetGoals?: string[];
+  notes?: string;
+}
+
+// Interface for workout plan creation
+export type CreateWorkoutPlan = Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>;
+
+// Interface for workout plan updates
+export type UpdateWorkoutPlan = Partial<WorkoutPlan>;
+
+// Interface for workout plan assignment
+export interface WorkoutPlanAssignment {
+  planId: string;
+  memberId: string;
+  assignedBy: string;
+  type: 'assigned' | 'private';
+  trainerId?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+}
+
+// Interface for workout plan filters
+export interface WorkoutPlanFilters {
+  type?: PlanType[];
+  memberId?: string;
+  trainerId?: string;
+  difficulty?: string;
+  search?: string;
 }
