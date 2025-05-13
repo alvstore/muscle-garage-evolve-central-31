@@ -89,6 +89,19 @@ const IntegrationsPage = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <IntegrationCard
+            title="AI Services"
+            description="Configure AI providers for workout and diet plans"
+            icon={<svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>}
+            link="/settings/ai-services"
+            status="not-configured"
+          />
+          
+          <IntegrationCard
             title="Access Control"
             description="Configure Hikvision access control integration"
             icon={<Shield className="h-5 w-5 text-primary" />}

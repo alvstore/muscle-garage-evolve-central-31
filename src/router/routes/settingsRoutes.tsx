@@ -4,7 +4,7 @@ import { AppRoute } from '@/types/route';
 import UnifiedSettingsPage from '@/pages/settings/UnifiedSettingsPage';
 import InvoiceSettingsPage from '@/pages/settings/InvoiceSettingsPage';
 import IntegrationsPage from '@/pages/settings/IntegrationsPage';
-import AccessControlIntegrationPage from '@/pages/settings/AccessControlIntegrationPage';
+import AccessControlPage from '@/pages/settings/access-control';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
 import PushNotificationSettingsPage from '@/pages/settings/PushNotificationSettingsPage';
 import EmailSettingsPage from '@/pages/settings/EmailSettingsPage';
@@ -17,6 +17,7 @@ import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
 import RolePermissionsPage from '@/components/settings/permissions/pages/RolePermissionsPage';
 import GlobalSettingsPage from '@/pages/settings/GlobalSettingsPage';
 import BranchManagementPage from '@/pages/settings/BranchManagementPage';
+import AIServicesPage from '@/pages/settings/ai-services';
 import { 
   Settings, 
   Webhook, 
@@ -85,10 +86,20 @@ export const settingsRoutes: AppRoute[] = [
   },
   {
     path: '/settings/integrations/access-control',
-    element: <AccessControlIntegrationPage />,
+    element: <AccessControlPage />,
     meta: {
-      title: 'Access Control Integration',
+      title: 'Access Control Management',
       breadcrumb: 'Access Control',
+      permission: 'manage_integrations',
+      hideInNav: true
+    }
+  },
+  {
+    path: '/settings/ai-services',
+    element: <AIServicesPage />,
+    meta: {
+      title: 'AI Services Configuration',
+      breadcrumb: 'AI Services',
       permission: 'manage_integrations',
       hideInNav: true
     }

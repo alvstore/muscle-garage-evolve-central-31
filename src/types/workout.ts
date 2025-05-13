@@ -15,7 +15,7 @@ export interface Exercise {
   reps: number;
   weight?: number;
   rest?: number;
-  restTime?: string; // Added restTime property
+  restTime?: string;
   notes?: string;
   mediaUrl?: string;
   muscleGroupTag?: string;
@@ -30,43 +30,51 @@ export interface WorkoutDay {
   description?: string;
 }
 
+// Plan types based on visibility and assignment
+export type PlanType = 'public' | 'assigned' | 'private';
+
+// Base workout plan interface
 export interface WorkoutPlan {
   id: string;
-  name: string;
-  description?: string;
-  trainerId: string;
-  workoutDays: WorkoutDay[];
-  targetGoals?: string[];
+  type: PlanType;
+  title: string;
+  description: string;
+  days: WorkoutDay[];
+  exercises: Exercise[];
+  created_by: string;
+  member_id?: string;
+  trainer_id?: string;
+  assigned_by?: string;
+  created_at: string;
+  updated_at: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  isGlobal: boolean;
-  createdAt: string;
-  updatedAt: string;
-  memberId: string;
-  createdBy?: string;
-  days?: WorkoutDay[];
-  isCommon?: boolean;
-  isCustom?: boolean;
+  targetGoals?: string[];
   notes?: string;
 }
 
-export interface MemberWorkout {
-  id: string;
-  memberId: string;
-  workoutPlanId: string;
-  isCustom: boolean;
-  customDays?: WorkoutDay[];
-  assignedBy: string;
-  assignedAt: string;
-}
+// Interface for workout plan creation
+export type CreateWorkoutPlan = Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>;
 
-// Add WorkoutAssignment interface
-export interface WorkoutAssignment {
-  id: string;
+// Interface for workout plan updates
+export type UpdateWorkoutPlan = Partial<WorkoutPlan>;
+
+// Interface for workout plan assignment
+export interface WorkoutPlanAssignment {
   planId: string;
   memberId: string;
-  trainerId: string;
-  assignedAt: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
+  assignedBy: string;
+  type: 'assigned' | 'private';
+  trainerId?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+}
+
+// Interface for workout plan filters
+export interface WorkoutPlanFilters {
+  type?: PlanType[];
+  memberId?: string;
+  trainerId?: string;
+  difficulty?: string;
+  search?: string;
 }
