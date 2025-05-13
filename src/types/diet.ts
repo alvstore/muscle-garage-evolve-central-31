@@ -3,59 +3,51 @@ export interface DietPlan {
   id: string;
   title: string;
   description?: string;
-  type: string; 
-  diet_type?: string;
-  daily_calories?: number;
-  macronutrients?: Macronutrients;
-  meals: DietMeal[];
-  is_common: boolean;
-  branch_id?: string;
-  trainer_id?: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
-  trainerId?: string;
-  isCustom?: boolean;
+  is_template: boolean;
+  member_id?: string;
+  branch_id: string;
+  days: DietDay[];
 }
 
-export interface Macronutrients {
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber?: number;
+export interface DietDay {
+  id: string;
+  day_number: number;
+  meals: DietMeal[];
 }
 
 export interface DietMeal {
-  id?: string;
+  id: string;
   name: string;
-  time: string;
-  foods: DietFood[];
-  calories: number;
-  macros?: Macronutrients;
-  notes?: string;
-}
-
-export interface DietFood {
-  id?: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  calories: number;
-  protein?: number;
+  time?: string;
+  description?: string;
+  calories?: number;
+  proteins?: number;
   carbs?: number;
-  fat?: number;
-  fiber?: number;
+  fats?: number;
+  items: DietItem[];
+}
+
+export interface DietItem {
+  id: string;
+  name: string;
+  quantity?: string;
+  calories?: number;
+  proteins?: number;
+  carbs?: number;
+  fats?: number;
   notes?: string;
 }
 
-export interface MemberDietPlan {
+export interface NutritionGoal {
   id: string;
   member_id: string;
-  diet_plan_id: string;
-  is_active: boolean;
-  start_date: string;
-  end_date?: string;
-  assigned_by: string;
-  notes?: string;
+  daily_calories: number;
+  protein_percentage: number;
+  carbs_percentage: number;
+  fats_percentage: number;
   created_at: string;
   updated_at: string;
 }
