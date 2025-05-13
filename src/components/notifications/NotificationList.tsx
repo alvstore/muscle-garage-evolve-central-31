@@ -24,6 +24,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch notifications
   useEffect(() => {
@@ -49,20 +50,32 @@ const NotificationList: React.FC<NotificationListProps> = ({
     return () => clearInterval(intervalId);
   }, [userId, refreshTrigger]);
 
-  // Apply filters whenever notifications or filter settings change
+  // Apply filters  // Filter notifications based on status, type, and category
   useEffect(() => {
-    let result = [...notifications];
+    let filtered = [...notifications];
     
     // Apply status filter
     if (filterStatus === 'read') {
-      result = result.filter(n => n.read);
+      filtered = filtered.filter(n => n.read);
     } else if (filterStatus === 'unread') {
-      result = result.filter(n => !n.read);
+      filtered = filtered.filter(n => !n.read);
+    }
+    
+    // Apply search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter(n => {
+        // Check if notification matches the search query
+        return (
+          n.title?.toLowerCase().includes(searchLower) ||
+          n.message?.toLowerCase().includes(searchLower)
+        );
+      });
     }
     
     // Apply type filters if any are specified
     if (filterTypes && filterTypes.length > 0) {
-      result = result.filter(n => {
+      filtered = filtered.filter(n => {
         // Check if notification type or source matches any of the filter types
         return filterTypes.includes(n.type || '') || 
                filterTypes.includes(n.source || '') ||
@@ -144,7 +157,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
       }
     }
     
-    setFilteredNotifications(result);
+    setFilteredNotifications(filtered);
   }, [notifications, filterStatus, filterTypes, categoryTypes]);
   
   // Function to get notification icon based on type

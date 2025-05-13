@@ -14,23 +14,113 @@ export interface Notification {
   link?: string;
   source?: 'system' | 'follow-up';
   related_id?: string;
-  category?: 'gym' | 'member' | 'staff' | 'trainer' | string;
+  category?: 'announcement' | 'feedback' | 'system' | 'gym' | 'member' | 'staff' | 'trainer' | 'motivation' | 'fitness' | 'nutrition' | 'wellness' | string;
+  author?: string;
+  tags?: string[];
 }
 
 export const notificationService = {
   async getNotifications(userId: string, includeFallowUps: boolean = true): Promise<Notification[]> {
+    // Get user role first
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+    const userRole = userProfile?.role || 'member';
     try {
-      // Get system notifications from the database
-      const { data, error } = await supabase
+      // Get system notifications
+      const { data: systemData, error: systemError } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
+      if (systemError) throw systemError;
+
+      // Get announcements
+      const { data: announcements, error: announcementError } = await supabase
+        .from('announcements')
+        .select('*')
+        .contains('target_roles', [userId])
+        .order('created_at', { ascending: false });
+
+      if (announcementError) throw announcementError;
+
+      // Get feedback
+      const { data: feedback, error: feedbackError } = await supabase
+        .from('feedback')
+        .select('*')
+        .eq('member_id', userId) // feedback table uses member_id instead of user_id
+        .order('created_at', { ascending: false });
+
+      if (feedbackError) throw feedbackError;
+
+
+
+      // Convert announcements to notifications format
+      const announcementNotifications = (announcements || []).map(announcement => ({
+        id: `announcement-${announcement.id}`,
+        user_id: userId,
+        title: announcement.title,
+        message: announcement.content,
+        type: 'announcement',
+        read: false,
+        created_at: announcement.created_at,
+        category: 'announcement',
+        priority: announcement.priority
+      }));
+
+      // Convert feedback to notifications format
+      const feedbackNotifications = (feedback || []).map(item => ({
+        id: `feedback-${item.id}`,
+        user_id: userId,
+        title: item.subject || 'New Feedback',
+        message: item.message || item.description || '',
+        type: 'feedback',
+        read: false,
+        created_at: item.created_at,
+        category: 'feedback',
+        branch_id: item.branch_id,
+        source: 'feedback'
+      }));
+
+      // Get motivational messages
+      const { data: motivationalMessages, error: motivationalError } = await supabase
+        .from('motivational_messages')
+        .select('id, title, content, author, category, tags, created_at')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+
+      if (motivationalError) throw motivationalError;
+
+      // Convert motivational messages to notifications format
+      const motivationalNotifications = (motivationalMessages || []).map(message => ({
+        id: `motivational-${message.id}`,
+        user_id: userId,
+        title: message.title,
+        message: message.content,
+        type: 'motivational',
+        read: false,
+        created_at: message.created_at,
+        category: message.category,
+        source: 'motivational',
+        author: message.author,
+        tags: message.tags
+      }));
+
+      // Combine all notifications
+      const allNotifications = [
+        ...(systemData || []),
+        ...announcementNotifications,
+        ...feedbackNotifications,
+        ...motivationalNotifications
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
       // Assign categories to system notifications if they don't have one
-      let notifications = (data || []).map(notification => {
+      let notifications = allNotifications.map(notification => {
         if (notification.category) return notification;
         
         // Determine category based on notification type and content
