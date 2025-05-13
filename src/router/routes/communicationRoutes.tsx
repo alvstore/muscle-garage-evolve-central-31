@@ -13,6 +13,14 @@ import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const communicationRoutes: RouteObject[] = [
   {
+    path: '/notifications',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <NotificationsPage />
+      </PrivateRoute>
+    )
+  },
+  {
     path: '/communication/feedback',
     element: (
       <PrivateRoute>
