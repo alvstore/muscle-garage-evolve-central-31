@@ -108,13 +108,12 @@ const AccessControlPage = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="zones" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="zones">Zones</TabsTrigger>
                 <TabsTrigger value="doors">Doors</TabsTrigger>
                 <TabsTrigger value="membership-rules">Membership Rules</TabsTrigger>
                 <TabsTrigger value="member-overrides">Member Overrides</TabsTrigger>
-                <TabsTrigger value="hikvision-settings">Hikvision</TabsTrigger>
-                <TabsTrigger value="essl-settings">ESSL</TabsTrigger>
+                <TabsTrigger value="device-integrations">Device Integrations</TabsTrigger>
               </TabsList>
               
               <TabsContent value="zones" className="mt-6">
@@ -133,12 +132,33 @@ const AccessControlPage = () => {
                 {branchId && <MemberAccessOverrides branchId={branchId} />}
               </TabsContent>
               
-              <TabsContent value="hikvision-settings" className="mt-6">
-                {branchId && <HikvisionSettings branchId={branchId} />}
-              </TabsContent>
-              
-              <TabsContent value="essl-settings" className="mt-6">
-                {branchId && <ESSLSettings branchId={branchId} />}
+              <TabsContent value="device-integrations" className="mt-6">
+                {branchId && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Access Control Device Integrations</CardTitle>
+                      <CardDescription>
+                        Configure and manage access control device integrations
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Tabs defaultValue="hikvision" className="w-full">
+                        <TabsList className="mb-4">
+                          <TabsTrigger value="hikvision">Hikvision</TabsTrigger>
+                          <TabsTrigger value="essl">ESSL</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="hikvision">
+                          <HikvisionSettings branchId={branchId} />
+                        </TabsContent>
+                        
+                        <TabsContent value="essl">
+                          <ESSLSettings branchId={branchId} />
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

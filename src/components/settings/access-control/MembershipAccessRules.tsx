@@ -116,7 +116,7 @@ const MembershipAccessRules = ({ branchId }: MembershipAccessRulesProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('membership_plans')
+        .from('memberships')
         .select('id, name, description')
         .eq('branch_id', branchId)
         .order('name');
@@ -157,11 +157,10 @@ const MembershipAccessRules = ({ branchId }: MembershipAccessRulesProps) => {
     try {
       setLoading(true);
       
-      // First get the permissions
+      // First get the permissions - note: membership_access_permissions doesn't have branch_id
       const { data, error } = await supabase
         .from('membership_access_permissions')
-        .select('*')
-        .eq('branch_id', branchId);
+        .select('*');
         
       if (error) throw error;
       
@@ -169,7 +168,7 @@ const MembershipAccessRules = ({ branchId }: MembershipAccessRulesProps) => {
       const permissionsWithNames = await Promise.all((data || []).map(async (permission) => {
         // Get membership name
         const { data: membershipData } = await supabase
-          .from('membership_plans')
+          .from('memberships')
           .select('name')
           .eq('id', permission.membership_id)
           .single();

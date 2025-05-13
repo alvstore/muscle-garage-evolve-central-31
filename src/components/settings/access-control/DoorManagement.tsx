@@ -50,13 +50,17 @@ interface DoorManagementProps {
 
 interface Door {
   id: string;
-  name: string;
+  door_name: string;
   description: string;
   zone_id: string;
   device_id: string;
   is_active: boolean;
   branch_id: string;
   created_at: string;
+  access_zones?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface Zone {
@@ -89,20 +93,33 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
       const { data, error } = await supabase
         .from('access_doors')
         .select(`
-          *,
+          id,
+          door_name,
+          description,
+          zone_id,
+          device_id,
+          is_active,
+          branch_id,
+          created_at,
           access_zones (
             id,
             name
           )
         `)
         .eq('branch_id', branchId)
-        .order('name');
+        .order('door_name');
         
       if (error) {
         throw error;
       }
       
-      setDoors(data || []);
+      // Process the data to ensure it matches our Door interface
+      const processedData = (data || []).map(door => ({
+        ...door,
+        access_zones: door.access_zones?.[0] || null
+      }));
+      
+      setDoors(processedData);
     } catch (err) {
       console.error('Error fetching doors:', err);
       setError('Failed to load access doors. Please try again later.');
@@ -143,7 +160,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
   const handleOpenDialog = (door?: Door) => {
     if (door) {
       setEditingDoor(door);
-      setDoorName(door.name);
+      setDoorName(door.door_name);
       setDoorDescription(door.description || '');
       setZoneId(door.zone_id);
       setDeviceId(door.device_id || '');
@@ -329,7 +346,7 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
               <TableBody>
                 {doors.map((door) => (
                   <TableRow key={door.id}>
-                    <TableCell className="font-medium">{door.name}</TableCell>
+                    <TableCell className="font-medium">{door.door_name}</TableCell>
                     <TableCell>{getZoneName(door.zone_id)}</TableCell>
                     <TableCell>{door.device_id || '-'}</TableCell>
                     <TableCell>
