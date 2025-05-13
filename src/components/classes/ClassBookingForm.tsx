@@ -91,14 +91,14 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-full max-w-[425px] p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Book Class: {gymClass.name}</DialogTitle>
           <DialogDescription>
             Complete the form below to book this class.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-2 sm:py-4">
           {/* Only show member selection for admin/staff users */}
           {user?.role !== 'member' && (
             <div className="space-y-2">
@@ -107,7 +107,7 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
                 <SelectTrigger>
                   <SelectValue placeholder="Select a member" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px]">
                   {isLoadingMembers ? (
                     <div className="flex items-center justify-center p-2">
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -132,9 +132,9 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           <div className="space-y-2">
             <label className="text-sm font-medium">Class Details</label>
             <div className="rounded-md bg-accent/20 p-3 text-sm">
-              <p><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
-              <p><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
-              <p className={gymClass.enrolled >= gymClass.capacity ? "text-red-500 font-medium" : ""}>
+              <p className="mb-1"><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
+              <p className="mb-1"><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
+              <p className={`mb-1 ${gymClass.enrolled >= gymClass.capacity ? "text-red-500 font-medium" : ""}`}>
                 <strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled
                 {gymClass.enrolled >= gymClass.capacity && " (Class Full)"}
               </p>
@@ -145,20 +145,21 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           <div className="space-y-2">
             <label className="text-sm font-medium">Notes (Optional)</label>
             <textarea 
-              className="w-full rounded-md border p-2 min-h-[80px]"
+              className="w-full rounded-md border p-2 min-h-[80px] resize-none"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special requirements or notes"
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
+          <Button type="button" variant="outline" onClick={onClose} className="mt-2 sm:mt-0">
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isPending || gymClass.enrolled >= gymClass.capacity || new Date(gymClass.startTime) < new Date()}
+            className="w-full sm:w-auto"
           >
             {isPending ? "Booking..." : "Confirm Booking"}
           </Button>

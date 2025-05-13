@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -125,16 +124,16 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl font-bold">Motivational Messages</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Message
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="w-[95%] max-w-[600px] p-4 sm:p-6">
             <MotivationalMessageForm 
               onSubmit={handleCreateMessage}
               isSubmitting={isSubmitting}
@@ -143,94 +142,96 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
         </Dialog>
       </div>
       
-      <Tabs 
-        defaultValue={activeCategory} 
-        onValueChange={(value) => setActiveCategory(value as MotivationalCategory | 'all')}
-      >
-        <TabsList className="grid grid-cols-8">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="fitness">Fitness</TabsTrigger>
-          <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-          <TabsTrigger value="mindfulness">Mindfulness</TabsTrigger>
-          <TabsTrigger value="recovery">Recovery</TabsTrigger>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="motivation">Motivation</TabsTrigger>
-          <TabsTrigger value="wellness">Wellness</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value={activeCategory} className="mt-6">
-          {filteredMessages.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center p-6">
-                <p className="text-gray-500 mb-4">No messages found in this category.</p>
-                <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
-                  Create New Message
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {filteredMessages.map((message) => (
-                <Card key={message.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-center">
-                      <CardTitle>{message.title}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-sm ${message.active ? 'text-green-600' : 'text-red-600'}`}>
-                          {message.active ? (
-                            <Check className="h-4 w-4 inline-block mr-1" />
-                          ) : (
-                            <X className="h-4 w-4 inline-block mr-1" />
+      <div className="overflow-x-auto">
+        <Tabs 
+          defaultValue={activeCategory} 
+          onValueChange={(value) => setActiveCategory(value as MotivationalCategory | 'all')}
+        >
+          <TabsList className="w-full flex flex-wrap h-auto py-1">
+            <TabsTrigger value="all" className="flex-grow">All</TabsTrigger>
+            <TabsTrigger value="fitness" className="flex-grow">Fitness</TabsTrigger>
+            <TabsTrigger value="nutrition" className="flex-grow">Nutrition</TabsTrigger>
+            <TabsTrigger value="mindfulness" className="flex-grow">Mindful</TabsTrigger>
+            <TabsTrigger value="recovery" className="flex-grow">Recovery</TabsTrigger>
+            <TabsTrigger value="general" className="flex-grow">General</TabsTrigger>
+            <TabsTrigger value="motivation" className="flex-grow">Motivation</TabsTrigger>
+            <TabsTrigger value="wellness" className="flex-grow">Wellness</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeCategory} className="mt-6">
+            {filteredMessages.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6">
+                  <p className="text-gray-500 mb-4">No messages found in this category.</p>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+                    Create New Message
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredMessages.map((message) => (
+                  <Card key={message.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <CardTitle className="text-base sm:text-lg">{message.title}</CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-sm ${message.active ? 'text-green-600' : 'text-red-600'}`}>
+                            {message.active ? (
+                              <Check className="h-4 w-4 inline-block mr-1" />
+                            ) : (
+                              <X className="h-4 w-4 inline-block mr-1" />
+                            )}
+                            {message.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-700 dark:text-gray-300 mb-4">{message.content}</p>
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center text-sm text-gray-500 gap-2">
+                        <span>By {message.author || 'Unknown'} • <span className="capitalize">{message.category}</span></span>
+                        <span>{message.created_at && formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+                      </div>
+                      {(onEdit || onDelete || onToggleActive) && (
+                        <div className="flex flex-wrap justify-end gap-2 mt-4">
+                          {onToggleActive && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleToggleActive(message.id, !message.active)}
+                            >
+                              {message.active ? 'Deactivate' : 'Activate'}
+                            </Button>
                           )}
-                          {message.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700 dark:text-gray-300 mb-4">{message.content}</p>
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>By {message.author || 'Unknown'} • Category: <span className="capitalize">{message.category}</span></span>
-                      <span>{message.created_at && formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
-                    </div>
-                    {(onEdit || onDelete || onToggleActive) && (
-                      <div className="flex justify-end gap-2 mt-4">
-                        {onToggleActive && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleToggleActive(message.id, !message.active)}
-                          >
-                            {message.active ? 'Deactivate' : 'Activate'}
-                          </Button>
-                        )}
-                        {onEdit && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => onEdit(message)}
-                          >
-                            Edit
-                          </Button>
-                        )}
-                        {onDelete && (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleDeleteMessage(message.id)}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                          {onEdit && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => onEdit(message)}
+                            >
+                              Edit
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteMessage(message.id)}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

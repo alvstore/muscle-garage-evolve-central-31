@@ -159,14 +159,14 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
           />
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="trigger-type">Trigger Type</Label>
             <Select value={triggerType} onValueChange={setTriggerType}>
               <SelectTrigger>
                 <SelectValue placeholder="Select trigger" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 <SelectItem value="days_before_expiry">Days Before Membership Expiry</SelectItem>
                 <SelectItem value="days_after_joining">Days After Joining</SelectItem>
                 <SelectItem value="days_of_absence">Days of Absence</SelectItem>
@@ -223,7 +223,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
         
         <div>
           <Label className="mb-2 block">Communication Channels</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
             {availableChannels.map((channel) => (
               <div key={channel.id} className="flex items-center space-x-2">
                 <Checkbox 
@@ -247,8 +247,8 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
         </div>
       </div>
       
-      <div className="flex justify-end space-x-2">
-        <Button type="submit" disabled={isSubmitting}>
+      <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-2">
+        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
           {isSubmitting ? 'Saving...' : editRule ? 'Update Rule' : 'Create Rule'}
         </Button>
       </div>

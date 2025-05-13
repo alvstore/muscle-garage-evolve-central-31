@@ -101,22 +101,22 @@ const MemberDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your Muscle Garage dashboard</p>
         </div>
-        <Button variant="outline" className="h-10">
+        <Button variant="outline" className="h-10 w-full md:w-auto">
           Today
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <Card className="overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-start space-x-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                <CalendarCheck className="h-10 w-10 text-blue-500" />
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 md:p-3 rounded-lg shrink-0">
+                <CalendarCheck className="h-8 w-8 md:h-10 md:w-10 text-blue-500" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Upcoming Classes</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Stay active and book your next class</p>
-                <Button variant="ghost" className="mt-3 px-0 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-transparent" asChild>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold mb-1 truncate">Upcoming Classes</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">Stay active and book your next class</p>
+                <Button variant="ghost" className="mt-2 md:mt-3 px-0 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-transparent" asChild>
                   <a href="/classes">View Schedule</a>
                 </Button>
               </div>
@@ -125,15 +125,15 @@ const MemberDashboard = () => {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-start space-x-4">
-              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                <TrendingUp className="h-10 w-10 text-green-500" />
+              <div className="bg-green-50 dark:bg-green-900/20 p-2 md:p-3 rounded-lg shrink-0">
+                <TrendingUp className="h-8 w-8 md:h-10 md:w-10 text-green-500" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Fitness Goals</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Track your progress and stay motivated</p>
-                <Button variant="ghost" className="mt-3 px-0 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-transparent" asChild>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold mb-1 truncate">Fitness Goals</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">Track your progress and stay motivated</p>
+                <Button variant="ghost" className="mt-2 md:mt-3 px-0 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-transparent" asChild>
                   <a href="/fitness/progress">See Progress</a>
                 </Button>
               </div>
@@ -142,15 +142,15 @@ const MemberDashboard = () => {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-start space-x-4">
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
-                <Utensils className="h-10 w-10 text-orange-500" />
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-2 md:p-3 rounded-lg shrink-0">
+                <Utensils className="h-8 w-8 md:h-10 md:w-10 text-orange-500" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Diet Recommendations</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Fuel your body with the right nutrition</p>
-                <Button variant="ghost" className="mt-3 px-0 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-transparent" asChild>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold mb-1 truncate">Diet Recommendations</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">Fuel your body with the right nutrition</p>
+                <Button variant="ghost" className="mt-2 md:mt-3 px-0 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-transparent" asChild>
                   <a href="/fitness/diet">Explore Plans</a>
                 </Button>
               </div>
@@ -161,8 +161,8 @@ const MemberDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle>Upcoming Classes</CardTitle>
               <Button variant="outline" size="sm" asChild>
                 <a href="/classes">View All</a>
@@ -176,8 +176,8 @@ const MemberDashboard = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle>Fitness Goals</CardTitle>
             </div>
             <CardDescription>Track your fitness journey</CardDescription>
@@ -194,8 +194,8 @@ const MemberDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle>Diet Recommendations</CardTitle>
             </div>
             <CardDescription>Personalized diet tips for you</CardDescription>
@@ -218,8 +218,8 @@ const MemberDashboard = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle>Recent Announcements</CardTitle>
               <Button variant="outline" size="sm" asChild>
                 <a href="/communication/announcements">View All</a>
