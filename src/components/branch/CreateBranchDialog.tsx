@@ -30,7 +30,7 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
       country: 'India',
       email: '',
       phone: '',
-      isActive: true,
+      is_active: true,
       branch_code: '',
     },
   });
@@ -53,7 +53,7 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
         country: data.country,
         email: data.email,
         phone: data.phone,
-        isActive: data.isActive,
+        is_active: data.is_active,
         branch_code: data.branch_code
       });
       

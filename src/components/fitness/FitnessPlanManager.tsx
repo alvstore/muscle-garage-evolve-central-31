@@ -45,7 +45,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
   const handleSaveWorkoutPlan = (plan: WorkoutPlan) => {
     setWorkoutPlans(prev => ({
       ...prev,
-      [plan.memberId]: plan
+      [plan.member_id]: plan
     }));
     setEditingWorkoutPlan(false);
     toast.success("Workout plan saved successfully");
@@ -196,7 +196,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
             {workoutPlan ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">{workoutPlan.workoutDays.length} Day Split</h3>
+                  <h3 className="text-lg font-medium">{workoutPlan.workout_days.length} Day Split</h3>
                   {!readOnly && (
                     <div className="space-x-2">
                       <Button 
@@ -212,7 +212,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
                 </div>
                 
                 <div className="space-y-4">
-                  {workoutPlan.workoutDays.map((day, index) => (
+                  {workoutPlan.workout_days.map((day, index) => (
                     <div key={day.id} className="border rounded-lg p-4">
                       <h4 className="font-medium mb-2">Day {index + 1}: {day.name}</h4>
                       
@@ -239,7 +239,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  <p>Last updated: {new Date(workoutPlan.updatedAt).toLocaleDateString()}</p>
+                  <p>Last updated: {new Date(workoutPlan.updated_at).toLocaleDateString()}</p>
                 </div>
               </div>
             ) : (

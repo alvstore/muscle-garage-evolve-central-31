@@ -32,7 +32,7 @@ const EditBranchDialog: React.FC<EditBranchDialogProps> = ({ open, onOpenChange,
       country: branch.country || 'India',
       email: branch.email || '',
       phone: branch.phone || '',
-      isActive: branch.isActive ?? true,
+      is_active: branch.is_active ?? true,
       branch_code: branch.branch_code || '',
     }
   });
@@ -47,7 +47,7 @@ const EditBranchDialog: React.FC<EditBranchDialogProps> = ({ open, onOpenChange,
       country: branch.country || 'India',
       email: branch.email || '',
       phone: branch.phone || '',
-      isActive: branch.isActive ?? true,
+      is_active: branch.is_active ?? true,
       branch_code: branch.branch_code || '',
     });
   }, [branch, form]);
@@ -147,11 +147,11 @@ const EditBranchDialog: React.FC<EditBranchDialogProps> = ({ open, onOpenChange,
 
             <div className="flex items-center space-x-2">
               <Switch 
-                id="isActive"
-                checked={form.watch("isActive")}
-                onCheckedChange={(checked) => form.setValue('isActive', checked)}
+                id="is_active"
+                checked={form.watch("is_active")}
+                onCheckedChange={(checked) => form.setValue('is_active', checked)}
               />
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="is_active">Active</Label>
             </div>
           </div>
 

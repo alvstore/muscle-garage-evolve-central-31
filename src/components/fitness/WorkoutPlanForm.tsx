@@ -25,15 +25,15 @@ export function WorkoutPlanForm({
   onSave,
   onCancel
 }: WorkoutPlanFormProps) {
-  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'createdAt' | 'updatedAt'>>({
+  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: existingPlan?.name || '',
     description: existingPlan?.description || '',
-    trainerId,
-    workoutDays: existingPlan?.workoutDays || [createEmptyWorkoutDay()],
-    targetGoals: existingPlan?.targetGoals || [],
+    trainer_id: trainerId,
+    workout_days: existingPlan?.workout_days || [createEmptyWorkoutDay()],
+    target_goals: existingPlan?.target_goals || [],
     difficulty: existingPlan?.difficulty || 'beginner',
-    isGlobal: existingPlan?.isGlobal || false,
-    memberId: existingPlan?.memberId || member.id
+    is_global: existingPlan?.is_global || false,
+    member_id: existingPlan?.member_id || member.id
   });
 
   function createEmptyWorkoutDay(): WorkoutDay {
@@ -57,55 +57,55 @@ export function WorkoutPlanForm({
   const handleAddWorkoutDay = () => {
     setFormData({
       ...formData,
-      workoutDays: [...formData.workoutDays, createEmptyWorkoutDay()]
+      workout_days: [...formData.workout_days, createEmptyWorkoutDay()]
     });
   };
 
   const handleRemoveWorkoutDay = (index: number) => {
     setFormData({
       ...formData,
-      workoutDays: formData.workoutDays.filter((_, i) => i !== index)
+      workout_days: formData.workout_days.filter((_, i) => i !== index)
     });
   };
 
   const handleWorkoutDayChange = (index: number, field: keyof WorkoutDay, value: any) => {
-    const updatedWorkoutDays = [...formData.workoutDays];
+    const updatedWorkoutDays = [...formData.workout_days];
     updatedWorkoutDays[index] = {
       ...updatedWorkoutDays[index],
       [field]: value
     };
     setFormData({
       ...formData,
-      workoutDays: updatedWorkoutDays
+      workout_days: updatedWorkoutDays
     });
   };
 
   const handleAddExercise = (dayIndex: number) => {
-    const updatedWorkoutDays = [...formData.workoutDays];
+    const updatedWorkoutDays = [...formData.workout_days];
     updatedWorkoutDays[dayIndex] = {
       ...updatedWorkoutDays[dayIndex],
       exercises: [...updatedWorkoutDays[dayIndex].exercises, createEmptyExercise()]
     };
     setFormData({
       ...formData,
-      workoutDays: updatedWorkoutDays
+      workout_days: updatedWorkoutDays
     });
   };
 
   const handleRemoveExercise = (dayIndex: number, exerciseIndex: number) => {
-    const updatedWorkoutDays = [...formData.workoutDays];
+    const updatedWorkoutDays = [...formData.workout_days];
     updatedWorkoutDays[dayIndex] = {
       ...updatedWorkoutDays[dayIndex],
       exercises: updatedWorkoutDays[dayIndex].exercises.filter((_, i) => i !== exerciseIndex)
     };
     setFormData({
       ...formData,
-      workoutDays: updatedWorkoutDays
+      workout_days: updatedWorkoutDays
     });
   };
 
   const handleExerciseChange = (dayIndex: number, exerciseIndex: number, field: keyof Exercise, value: any) => {
-    const updatedWorkoutDays = [...formData.workoutDays];
+    const updatedWorkoutDays = [...formData.workout_days];
     const updatedExercises = [...updatedWorkoutDays[dayIndex].exercises];
     updatedExercises[exerciseIndex] = {
       ...updatedExercises[exerciseIndex],
@@ -117,7 +117,7 @@ export function WorkoutPlanForm({
     };
     setFormData({
       ...formData,
-      workoutDays: updatedWorkoutDays
+      workout_days: updatedWorkoutDays
     });
   };
 
@@ -126,14 +126,14 @@ export function WorkoutPlanForm({
       id: existingPlan?.id || uuidv4(),
       name: formData.name,
       description: formData.description,
-      trainerId,
-      workoutDays: formData.workoutDays,
-      targetGoals: formData.targetGoals,
+      trainer_id: trainerId,
+      workout_days: formData.workout_days,
+      target_goals: formData.target_goals,
       difficulty: formData.difficulty,
-      isGlobal: formData.isGlobal,
-      createdAt: existingPlan?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      memberId: formData.memberId
+      is_global: formData.is_global,
+      created_at: existingPlan?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      member_id: formData.member_id
     };
     
     onSave(finalPlan);
@@ -205,7 +205,7 @@ export function WorkoutPlanForm({
             </Button>
           </div>
 
-          {formData.workoutDays.map((day, dayIndex) => (
+          {formData.workout_days.map((day, dayIndex) => (
             <Card key={day.id} className="border border-gray-200">
               <CardHeader className="py-3 px-4 bg-gray-50">
                 <div className="flex justify-between items-center">
@@ -350,8 +350,8 @@ export function WorkoutPlanForm({
           <input
             type="checkbox"
             id="workout-plan-global"
-            checked={formData.isGlobal}
-            onChange={(e) => setFormData({...formData, isGlobal: e.target.checked})}
+            checked={formData.is_global}
+            onChange={(e) => setFormData({...formData, is_global: e.target.checked})}
             className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           />
           <Label htmlFor="workout-plan-global" className="cursor-pointer">
