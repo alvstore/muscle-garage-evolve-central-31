@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Branch, BranchContextType } from '@/types/branch';
 import { useAuth } from './use-auth';
@@ -120,6 +119,8 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCurrentBranch(data as Branch);
         localStorage.setItem('currentBranchId', (data as Branch).id);
       }
+      
+      return data as Branch;
     } catch (err: any) {
       console.error('Error adding branch:', err);
       
@@ -129,9 +130,14 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         variant: 'destructive',
       });
       
-      throw err;
+      return null;
     }
   }, [branches, toast]);
+  
+  // Alias for addBranch to match usage in components
+  const createBranch = useCallback(async (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
+    return addBranch(branch);
+  }, [addBranch]);
   
   // Update branch
   const updateBranch = useCallback(async (id: string, updates: Partial<Branch>) => {
@@ -158,6 +164,8 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         title: 'Branch updated',
         description: `${updates.name || 'Branch'} has been updated successfully`,
       });
+      
+      return data as Branch;
     } catch (err: any) {
       console.error('Error updating branch:', err);
       
@@ -167,7 +175,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         variant: 'destructive',
       });
       
-      throw err;
+      return null;
     }
   }, [currentBranch, toast]);
   
@@ -197,6 +205,8 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         title: 'Branch deleted',
         description: 'The branch has been deleted successfully',
       });
+      
+      return true;
     } catch (err: any) {
       console.error('Error deleting branch:', err);
       
@@ -206,7 +216,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         variant: 'destructive',
       });
       
-      throw err;
+      return false;
     }
   }, [currentBranch, branches, toast]);
   
@@ -245,6 +255,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchBranches,
     switchBranch,
     addBranch,
+    createBranch,
     updateBranch,
     deleteBranch,
   }), [
@@ -255,6 +266,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchBranches,
     switchBranch,
     addBranch,
+    createBranch,
     updateBranch,
     deleteBranch,
   ]);

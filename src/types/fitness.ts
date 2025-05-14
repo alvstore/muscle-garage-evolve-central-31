@@ -84,7 +84,7 @@ export interface MemberWorkout {
   isCustom: boolean;
   assignedBy: string;
   assignedAt: string;
-  type?: "assigned" | "private";
+  type: "assigned" | "private";
   trainerId?: string;
 }
 
@@ -99,6 +99,7 @@ export interface DietPlan {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  createdAt?: string;
   updatedAt?: string;
   mealPlans: MealPlan[];
 }

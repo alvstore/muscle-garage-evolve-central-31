@@ -1,41 +1,28 @@
-
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface User extends SupabaseUser {
+  // Add missing properties
   fullName?: string;
-  name?: string;
+  avatar?: string;
   photoURL?: string;
   avatarUrl?: string;
-  role?: UserRole;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
   branch_id?: string;
+  role?: string;
+  email?: string;
+  id: string;
 }
-
-export type UserRole = 'admin' | 'staff' | 'trainer' | 'member';
-
-export type AuthStatus = 'authenticated' | 'unauthenticated' | 'loading';
 
 export interface AuthContextType {
   user: User | null;
-  role: UserRole | null;
-  userRole?: UserRole | null;
-  status: AuthStatus;
-  isAdmin: () => boolean;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, data?: any) => Promise<any>;
-  refreshSession: () => Promise<void>;
-  updateProfile: (data: Partial<User>) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
-}
-
-export interface AuthState {
-  user: User | null;
-  status: AuthStatus;
-  role: UserRole | null;
-  userRole?: UserRole | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, data?: any) => Promise<any>;
+  signOut: () => Promise<any>;
+  loading: boolean;
+  error: string | null;
+  isAdmin?: boolean;
+  resetPassword?: (email: string) => Promise<any>;
 }

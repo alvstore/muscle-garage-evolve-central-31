@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export interface Branch {
@@ -14,7 +15,13 @@ export interface Branch {
   manager_id?: string | null;
   created_at: string;
   updated_at: string;
-  // Add other required fields
+  // Added missing properties
+  max_capacity?: number;
+  opening_hours?: string;
+  closing_hours?: string;
+  region?: string;
+  tax_rate?: number;
+  timezone?: string;
 }
 
 export const BranchSchema = z.object({
@@ -56,12 +63,12 @@ export const normalizeBranch = (branch: any): Branch => {
     created_at: branch.created_at,
     updated_at: branch.updated_at,
     // Extended fields
-    ...(branch.max_capacity !== undefined && { max_capacity: branch.max_capacity }),
-    ...(branch.opening_hours !== undefined && { opening_hours: branch.opening_hours }),
-    ...(branch.closing_hours !== undefined && { closing_hours: branch.closing_hours }),
-    ...(branch.region !== undefined && { region: branch.region }),
-    ...(branch.tax_rate !== undefined && { tax_rate: branch.tax_rate }),
-    ...(branch.timezone !== undefined && { timezone: branch.timezone })
+    max_capacity: branch.max_capacity,
+    opening_hours: branch.opening_hours,
+    closing_hours: branch.closing_hours,
+    region: branch.region,
+    tax_rate: branch.tax_rate,
+    timezone: branch.timezone
   };
 };
 
@@ -72,7 +79,9 @@ export interface BranchContextType {
   error: string | null;
   fetchBranches: () => Promise<void>;
   switchBranch: (branchId: string) => void;
-  addBranch: (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateBranch: (id: string, updates: Partial<Branch>) => Promise<void>;
-  deleteBranch: (id: string) => Promise<void>;
+  addBranch: (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => Promise<Branch | null>;
+  updateBranch: (id: string, updates: Partial<Branch>) => Promise<Branch | null>;
+  deleteBranch: (id: string) => Promise<boolean>;
+  // Added createBranch to match implementation in hooks/use-branch.tsx
+  createBranch: (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => Promise<Branch | null>;
 }

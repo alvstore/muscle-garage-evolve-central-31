@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
         return;
       }
       
-      const createdBranch = await createBranch({
+      const result = await createBranch({
         name: data.name,
         address: data.address,
         city: data.city,
@@ -55,12 +54,10 @@ const CreateBranchDialog: React.FC<CreateBranchDialogProps> = ({ open, onOpenCha
         phone: data.phone,
         is_active: data.is_active,
         branch_code: data.branch_code,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
         manager_id: null
       });
       
-      if (createdBranch) {
+      if (result) {
         toast.success("Branch created successfully");
         form.reset();
         if (onComplete) {

@@ -1,611 +1,341 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { WorkoutPlan, WorkoutDay, Exercise, MemberWorkout } from "@/types/class";
-import { Member, Trainer } from "@/types";
-import { workoutService } from "@/services/workoutService";
-import { trainerService } from "@/services/trainerService";
-import { useAuth } from "@/hooks/use-auth";
-import { toast } from "sonner";
-import { Plus, Edit, Trash2, Copy, Dumbbell, Users, Check, X } from "lucide-react";
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { WorkoutDay } from "@/types/fitness"
+import { useAuth } from '@/hooks/use-auth';
+import { useBranch } from '@/hooks/use-branch';
+import { supabase } from '@/integrations/supabase/client';
+import { WorkoutPlanDB, MemberWorkout } from '@/types/fitness';
+import { useToast } from '@/components/ui/use-toast';
 
 interface WorkoutPlansManagerProps {
-  members?: Member[];
-  trainerId?: string;
   forMemberId?: string;
 }
 
-const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
-  members = [],
-  trainerId,
-  forMemberId
-}) => {
-  const {
-    user
-  } = useAuth();
-  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [selectedMemberId, setSelectedMemberId] = useState<string>(forMemberId || "");
-  const [memberWorkouts, setMemberWorkouts] = useState<MemberWorkout[]>([]);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const isMember = user?.role === 'member';
+const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }) => {
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlanDB[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isCommon, setIsCommon] = useState<boolean>(false);
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { user } = useAuth();
+  const { currentBranch } = useBranch();
+  const { toast } = useToast();
 
-  // Form state for creating/editing workout plans
-  const [formData, setFormData] = useState<{
-    name: string;
-    description: string;
-    isCommon: boolean;
-    days: WorkoutDay[];
-  }>({
-    name: "",
-    description: "",
-    isCommon: true,
-    days: []
-  });
-
-  // Convert between different workout plan formats
-  const convertToWorkoutPlan = (dbPlan: any): any => {
-    return {
-      id: dbPlan.id,
-      name: dbPlan.name || '',
-      description: dbPlan.description || '',
-      trainer_id: dbPlan.trainer_id || '',
-      isCommon: dbPlan.isCommon || false,
-      createdBy: dbPlan.createdBy || '',
-      createdAt: dbPlan.createdAt || dbPlan.created_at || '',
-      updatedAt: dbPlan.updatedAt || dbPlan.updated_at || '',
-      days: dbPlan.days || [],
-      workout_days: dbPlan.workout_days || dbPlan.days || [],
-      difficulty: dbPlan.difficulty || 'beginner',
-    };
-  };
-
-  // Load workout plans
   useEffect(() => {
-    const fetchWorkoutPlans = async () => {
-      const plans = await workoutService.getWorkoutPlans();
-      // Convert fetched plans to the expected format
-      setWorkoutPlans(plans.map(convertToWorkoutPlan));
-    };
-    const fetchTrainers = async () => {
-      const trainersList = await trainerService.getTrainers();
-      setTrainers(trainersList);
-    };
     fetchWorkoutPlans();
-    fetchTrainers();
-  }, []);
+    fetchMembers();
+  }, [currentBranch]);
 
-  // Load member workouts if a member is selected
-  useEffect(() => {
-    if (selectedMemberId) {
-      const fetchMemberWorkouts = async () => {
-        const workouts = await workoutService.getMemberWorkouts(selectedMemberId);
-        // Convert from DB format to component format
-        const convertedWorkouts = workouts.map((workout: any) => ({
-          id: workout.id,
-          memberId: workout.member_id || workout.memberId,
-          workoutPlanId: workout.workout_plan_id || workout.workoutPlanId,
-          isCustom: workout.is_custom || false,
-          assignedBy: workout.assigned_by || '',
-          assignedAt: workout.assigned_at || new Date().toISOString()
-        }));
-        setMemberWorkouts(convertedWorkouts);
-      };
-      fetchMemberWorkouts();
-    } else {
-      setMemberWorkouts([]);
-    }
-  }, [selectedMemberId]);
+  const fetchWorkoutPlans = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase
+        .from('workout_plans')
+        .select('*')
+        .eq('branch_id', currentBranch?.id);
 
-  // Initialize form data when editing
-  useEffect(() => {
-    if (selectedPlan && isEditing) {
-      setFormData({
-        name: selectedPlan.name,
-        description: selectedPlan.description,
-        isCommon: selectedPlan.isCommon,
-        days: [...selectedPlan.days]
-      });
-    }
-  }, [selectedPlan, isEditing]);
-
-  const handleCreatePlan = () => {
-    setIsCreating(true);
-    setFormData({
-      name: "",
-      description: "",
-      isCommon: true,
-      days: [createNewDay()]
-    });
-  };
-  
-  const handleEditPlan = (plan: WorkoutPlan) => {
-    setSelectedPlan(plan);
-    setIsEditing(true);
-  };
-  
-  const handleDeletePlan = async (planId: string) => {
-    if (window.confirm("Are you sure you want to delete this workout plan?")) {
-      const success = await workoutService.deleteWorkoutPlan(planId);
-      if (success) {
-        setWorkoutPlans(prev => prev.filter(p => p.id !== planId));
+      if (forMemberId) {
+        query = query.eq('member_id', forMemberId);
       }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setWorkoutPlans(data || []);
+    } catch (error: any) {
+      console.error('Error fetching workout plans:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to fetch workout plans',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  const handleAssignPlan = (plan: WorkoutPlan) => {
-    setSelectedPlan(plan);
-    setIsAssigning(true);
-  };
-  
-  const createNewDay = (): WorkoutDay => ({
-    id: uuidv4(),
-    dayLabel: `Day ${formData.days.length + 1}`,
-    exercises: []
-  });
-  
-  const createNewExercise = (): Exercise => ({
-    id: uuidv4(),
-    name: "",
-    sets: 3,
-    reps: 10,
-    weight: 0,
-    rest: 60,
-    notes: "",
-    muscleGroupTag: ""
-  });
-  
-  const handleAddDay = () => {
-    setFormData(prev => ({
-      ...prev,
-      days: [...prev.days, createNewDay()]
-    }));
-  };
-  
-  const handleRemoveDay = (dayId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      days: prev.days.filter(day => day.id !== dayId)
-    }));
-  };
-  
-  const handleDayChange = (dayId: string, field: keyof WorkoutDay, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      days: prev.days.map(day => day.id === dayId ? {
-        ...day,
-        [field]: value
-      } : day)
-    }));
-  };
-  
-  const handleAddExercise = (dayId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      days: prev.days.map(day => day.id === dayId ? {
-        ...day,
-        exercises: [...day.exercises, createNewExercise()]
-      } : day)
-    }));
-  };
-  
-  const handleRemoveExercise = (dayId: string, exerciseId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      days: prev.days.map(day => day.id === dayId ? {
-        ...day,
-        exercises: day.exercises.filter(ex => ex.id !== exerciseId)
-      } : day)
-    }));
-  };
-  
-  const handleExerciseChange = (dayId: string, exerciseId: string, field: keyof Exercise, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      days: prev.days.map(day => day.id === dayId ? {
-        ...day,
-        exercises: day.exercises.map(ex => ex.id === exerciseId ? {
-          ...ex,
-          [field]: value
-        } : ex)
-      } : day)
-    }));
   };
 
-  // Update handleSubmitPlan to convert between formats
-  const handleSubmitPlan = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Please enter a name for the workout plan");
-      return;
+  const fetchMembers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('branch_id', currentBranch?.id);
+
+      if (error) throw error;
+
+      setMembers(data || []);
+    } catch (error: any) {
+      console.error('Error fetching members:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to fetch members',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    if (formData.days.length === 0) {
-      toast.error("Please add at least one day to the workout plan");
+  };
+
+  const createWorkoutPlan = async (planData: { 
+    createdBy: string; 
+    name: string; 
+    description: string; 
+    isCommon: boolean; 
+    days: WorkoutDay[]; 
+  }) => {
+    try {
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .insert({
+          created_by: planData.createdBy,
+          name: planData.name,
+          title: planData.name, // Add required field
+          type: planData.isCommon ? 'common' : 'custom', // Add required field
+          description: planData.description,
+          exercises: [] // Add required field
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error creating workout plan:', error);
+      toast.error('Failed to create workout plan');
+      return null;
+    }
+  };
+
+  const assignWorkoutPlanToMember = async (assignmentData: Omit<MemberWorkout, "id" | "assignedAt">) => {
+    try {
+      const { data, error } = await supabase
+        .from('member_workout_assignments')
+        .insert({
+          member_id: assignmentData.memberId,
+          workout_plan_id: assignmentData.workoutPlanId,
+          plan_id: assignmentData.workoutPlanId, // Set planId from workoutPlanId
+          is_custom: assignmentData.isCustom,
+          assigned_by: assignmentData.assignedBy,
+          type: 'assigned', // Add the required type field
+          trainer_id: assignmentData.trainerId
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error assigning workout plan:', error);
+      toast.error('Failed to assign workout plan');
+      return null;
+    }
+  };
+
+  const handleCreatePlan = async () => {
+    if (!name || !description) {
+      toast.error('Please fill in all fields.');
       return;
     }
 
-    // Validate that all days have exercises
-    for (const day of formData.days) {
-      if (day.exercises.length === 0) {
-        toast.error(`Please add at least one exercise to ${day.dayLabel}`);
+    setIsLoading(true);
+    try {
+      if (!user) {
+        toast.error('User not authenticated.');
         return;
       }
 
-      // Validate that all exercises have names
-      for (const exercise of day.exercises) {
-        if (!exercise.name.trim()) {
-          toast.error(`Please enter a name for all exercises in ${day.dayLabel}`);
-          return;
-        }
-      }
-    }
-    const planData = {
-      ...formData,
-      createdBy: user?.id || ""
-    };
-    if (isEditing && selectedPlan) {
-      const updatedPlan = await workoutService.updateWorkoutPlan(selectedPlan.id, planData);
-      if (updatedPlan) {
-        setWorkoutPlans(prev => prev.map(p => p.id === updatedPlan.id ? convertToWorkoutPlan(updatedPlan) : p));
-        setIsEditing(false);
-        setSelectedPlan(null);
-      }
-    } else {
-      const newPlan = await workoutService.createWorkoutPlan(planData);
+      const newPlan = await createWorkoutPlan({
+        createdBy: user.id,
+        name,
+        description,
+        isCommon,
+        days: [],
+      });
+
       if (newPlan) {
-        setWorkoutPlans(prev => [...prev, convertToWorkoutPlan(newPlan)]);
-        setIsCreating(false);
+        toast.success('Workout plan created successfully!');
+        fetchWorkoutPlans();
+        setName('');
+        setDescription('');
+        setIsCommon(false);
       }
+    } catch (error: any) {
+      console.error('Error creating workout plan:', error);
+      toast.error(error.message || 'Failed to create workout plan');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAssignSubmit = async () => {
-    if (!selectedPlan || !selectedMemberId) {
-      toast.error("Please select both a plan and a member");
+  const handleAssignPlan = async () => {
+    if (!selectedMemberId || !selectedPlanId) {
+      toast.error('Please select a member and a workout plan.');
       return;
     }
-    const memberWorkout: Omit<MemberWorkout, 'id' | 'assignedAt'> = {
-      memberId: selectedMemberId,
-      workoutPlanId: selectedPlan.id,
-      isCustom: false,
-      assignedBy: user?.id || ""
-    };
-    const result = await workoutService.assignWorkoutPlan(memberWorkout);
-    if (result) {
-      toast.success(`Plan assigned to member successfully`);
-      setIsAssigning(false);
-      setSelectedPlan(null);
+
+    setIsLoading(true);
+    try {
+      if (!user) {
+        toast.error('User not authenticated.');
+        return;
+      }
+
+      const assignmentData: Omit<MemberWorkout, "id" | "assignedAt"> = {
+        memberId: selectedMemberId,
+        workoutPlanId: selectedPlanId,
+        isCustom: false,
+        assignedBy: user.id,
+        trainerId: user.id
+      };
+
+      const assignment = await assignWorkoutPlanToMember(assignmentData);
+
+      if (assignment) {
+        toast.success('Workout plan assigned successfully!');
+        setSelectedMemberId(null);
+        setSelectedPlanId(null);
+      }
+    } catch (error: any) {
+      console.error('Error assigning workout plan:', error);
+      toast.error(error.message || 'Failed to assign workout plan');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getTrainerName = (trainerId: string) => {
-    const trainer = trainers.find(t => t.id === trainerId);
-    return trainer ? trainer.name : 'Unknown Trainer';
-  };
-
-  const renderPlanForm = () => <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="planName">Plan Name</Label>
-          <Input id="planName" value={formData.name} onChange={e => setFormData(prev => ({
-          ...prev,
-          name: e.target.value
-        }))} placeholder="e.g., Beginner Strength Training" />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="planDescription">Description</Label>
-          <Textarea id="planDescription" value={formData.description} onChange={e => setFormData(prev => ({
-          ...prev,
-          description: e.target.value
-        }))} placeholder="Describe the workout plan and its goals" rows={3} />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="planType">Plan Type</Label>
-          <Select value={formData.isCommon ? "common" : "private"} onValueChange={value => setFormData(prev => ({
-          ...prev,
-          isCommon: value === "common"
-        }))}>
-            <SelectTrigger id="planType">
-              <SelectValue placeholder="Select plan type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="common">Common (available to all trainers)</SelectItem>
-              <SelectItem value="private">Private (only visible to you)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-4 mt-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Workout Days</h3>
-          <Button size="sm" onClick={handleAddDay}>
-            <Plus className="w-4 h-4 mr-1" /> Add Day
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Workout Plans</CardTitle>
+        <CardDescription>Manage workout plans for members.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div>
+            <Label htmlFor="planName">Plan Name</Label>
+            <Input
+              id="planName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter plan name"
+            />
+          </div>
+          <div>
+            <Label htmlFor="planDescription">Description</Label>
+            <Input
+              id="planDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter description"
+            />
+          </div>
+          <div>
+            <Label htmlFor="isCommon">Common Plan</Label>
+            <Input
+              id="isCommon"
+              type="checkbox"
+              checked={isCommon}
+              onChange={(e) => setIsCommon(e.target.checked)}
+            />
+          </div>
+          <Button onClick={handleCreatePlan} disabled={isLoading}>
+            Create Plan
           </Button>
         </div>
 
-        {formData.days.map((day, dayIndex) => <Card key={day.id} className="overflow-hidden">
-            <CardHeader className="bg-muted/50 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <Input value={day.dayLabel} onChange={e => handleDayChange(day.id, 'dayLabel', e.target.value)} placeholder="Day Label" className="font-medium" />
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => handleRemoveDay(day.id)} className="ml-2 text-destructive">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {day.exercises.length > 0 ? <div className="space-y-3">
-                    {day.exercises.map((exercise, exIndex) => <div key={exercise.id} className="grid grid-cols-12 gap-2 items-center border-b pb-3">
-                        <div className="col-span-4">
-                          <Label htmlFor={`ex-name-${exercise.id}`} className="sr-only">Exercise Name</Label>
-                          <Input id={`ex-name-${exercise.id}`} value={exercise.name} onChange={e => handleExerciseChange(day.id, exercise.id, 'name', e.target.value)} placeholder="Exercise name" />
-                        </div>
-                        <div className="col-span-2">
-                          <Label htmlFor={`ex-sets-${exercise.id}`} className="sr-only">Sets</Label>
-                          <Input id={`ex-sets-${exercise.id}`} type="number" value={exercise.sets} onChange={e => handleExerciseChange(day.id, exercise.id, 'sets', parseInt(e.target.value) || 0)} placeholder="Sets" />
-                        </div>
-                        <div className="col-span-2">
-                          <Label htmlFor={`ex-reps-${exercise.id}`} className="sr-only">Reps</Label>
-                          <Input id={`ex-reps-${exercise.id}`} type="number" value={exercise.reps} onChange={e => handleExerciseChange(day.id, exercise.id, 'reps', parseInt(e.target.value) || 0)} placeholder="Reps" />
-                        </div>
-                        <div className="col-span-3">
-                          <Label htmlFor={`ex-muscle-${exercise.id}`} className="sr-only">Target Muscle</Label>
-                          <Input id={`ex-muscle-${exercise.id}`} value={exercise.muscleGroupTag || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'muscleGroupTag', e.target.value)} placeholder="Target muscle" />
-                        </div>
-                        <div className="col-span-1 flex justify-end">
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveExercise(day.id, exercise.id)} className="text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="col-span-12">
-                          <Label htmlFor={`ex-media-${exercise.id}`}>Media URL (optional)</Label>
-                          <Input id={`ex-media-${exercise.id}`} value={exercise.mediaUrl || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'mediaUrl', e.target.value)} placeholder="GIF or video URL showing proper form" className="mt-1" />
-                        </div>
-                        <div className="col-span-12">
-                          <Label htmlFor={`ex-notes-${exercise.id}`}>Notes (optional)</Label>
-                          <Textarea id={`ex-notes-${exercise.id}`} value={exercise.notes || ''} onChange={e => handleExerciseChange(day.id, exercise.id, 'notes', e.target.value)} placeholder="Additional instructions or tips" className="mt-1" rows={2} />
-                        </div>
-                      </div>)}
-                  </div> : <div className="text-center py-4 text-muted-foreground">
-                    No exercises added yet
-                  </div>}
-                
-                <Button variant="outline" size="sm" onClick={() => handleAddExercise(day.id)} className="w-full">
-                  <Plus className="w-4 h-4 mr-1" /> Add Exercise
-                </Button>
-              </div>
-            </CardContent>
-          </Card>)}
-      </div>
-
-      <div className="flex justify-end space-x-2 mt-6">
-        <Button variant="outline" onClick={() => {
-        setIsCreating(false);
-        setIsEditing(false);
-        setSelectedPlan(null);
-      }}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmitPlan}>
-          {isEditing ? 'Update Plan' : 'Create Plan'}
-        </Button>
-      </div>
-    </div>;
-    
-  const renderAssignForm = () => <div className="space-y-4">
-      {!forMemberId && <div className="space-y-2">
+        <div className="mt-8">
           <Label htmlFor="memberSelect">Select Member</Label>
-          <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-            <SelectTrigger id="memberSelect">
-              <SelectValue placeholder="Choose a member" />
+          <Select onValueChange={(value) => setSelectedMemberId(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a member" />
             </SelectTrigger>
             <SelectContent>
-              {members.map(member => <SelectItem key={member.id} value={member.id}>
+              {members.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
                   {member.name}
-                </SelectItem>)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        </div>}
+        </div>
 
-      {selectedPlan && <div className="mt-4">
-          <h3 className="font-medium">Selected Plan:</h3>
-          <div className="bg-muted p-3 rounded-md mt-2">
-            <h4 className="font-medium">{selectedPlan.name}</h4>
-            <p className="text-sm text-muted-foreground">{selectedPlan.description}</p>
-            <p className="text-xs mt-1">Days: {selectedPlan.days.length} | Exercises: {selectedPlan.days.reduce((total, day) => total + day.exercises.length, 0)}</p>
-          </div>
-        </div>}
+        <div className="mt-4">
+          <Label htmlFor="planSelect">Select Workout Plan</Label>
+          <Select onValueChange={(value) => setSelectedPlanId(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a workout plan" />
+            </SelectTrigger>
+            <SelectContent>
+              {workoutPlans.map((plan) => (
+                <SelectItem key={plan.id} value={plan.id}>
+                  {plan.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="flex justify-end space-x-2 mt-6">
-        <Button variant="outline" onClick={() => {
-        setIsAssigning(false);
-        setSelectedPlan(null);
-      }}>
-          Cancel
+        <Button onClick={handleAssignPlan} disabled={isLoading} className="mt-4">
+          Assign Plan to Member
         </Button>
-        <Button onClick={handleAssignSubmit} disabled={!selectedPlan || !selectedMemberId}>
-          Assign Plan
-        </Button>
-      </div>
-    </div>;
 
-  // If we're creating, editing, or assigning, show the appropriate form
-  if (isCreating || isEditing) {
-    return <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? "Edit Workout Plan" : "Create New Workout Plan"}</CardTitle>
-          <CardDescription>
-            {isEditing ? "Modify the details of this workout plan" : "Define a new workout plan with exercises and instructions"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {renderPlanForm()}
-        </CardContent>
-      </Card>;
-  }
-  if (isAssigning) {
-    return <Card>
-        <CardHeader>
-          <CardTitle>Assign Workout Plan</CardTitle>
-          <CardDescription>
-            Assign this workout plan to a member
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {renderAssignForm()}
-        </CardContent>
-      </Card>;
-  }
-
-  // Default view - list of plans and/or member's assigned plans
-  return <Card>
-      <CardHeader>
-        <CardTitle>Workout Plans</CardTitle>
-        <CardDescription>
-          {isMember ? "View your assigned workout plans" : "Manage and assign workout plans to members"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue={forMemberId ? "assigned" : "all"}>
-          <TabsList>
-            <TabsTrigger value="all">All Plans</TabsTrigger>
-            {forMemberId && <TabsTrigger value="assigned">Assigned Plans</TabsTrigger>}
-          </TabsList>
-          
-          <TabsContent value="all" className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Available Workout Plans</h3>
-              {!isMember && (
-                <Button onClick={handleCreatePlan}>
-                  <Plus className="w-4 h-4 mr-1" /> Create Plan
-                </Button>
-              )}
-            </div>
-            
-            {workoutPlans.length > 0 ? <div className="grid gap-4 md:grid-cols-2">
-                {workoutPlans.map(plan => <Card key={plan.id} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-base">{plan.name}</CardTitle>
-                          <CardDescription>{plan.isCommon ? "Common Plan" : "Private Plan"}</CardDescription>
-                        </div>
-                        {!isMember && (
-                          <div className="flex space-x-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPlan(plan)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeletePlan(plan.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <p className="text-sm mb-2">{plan.description}</p>
-                      <div className="text-sm text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Days: {plan.days.length}</span>
-                          <span>Exercises: {plan.days.reduce((sum, day) => sum + day.exercises.length, 0)}</span>
-                        </div>
-                        <div className="mt-1">
-                          Created by: {getTrainerName(plan.createdBy)}
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-end">
-                      {!isMember && !forMemberId && (
-                        <Button variant="outline" size="sm" onClick={() => handleAssignPlan(plan)}>
-                          <Users className="w-4 h-4 mr-1" /> Assign to Member
-                        </Button>
-                      )}
-                    </CardFooter>
-                  </Card>)}
-              </div> : <div className="text-center py-8 border rounded-lg">
-                <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-2 text-lg font-medium">No Workout Plans</h3>
-                <p className="text-muted-foreground">
-                  {isMember 
-                    ? "No workout plans are available yet." 
-                    : "Create your first workout plan to get started"}
-                </p>
-                {!isMember && (
-                  <Button onClick={handleCreatePlan} className="mt-4">
-                    <Plus className="w-4 h-4 mr-1" /> Create Plan
-                  </Button>
-                )}
-              </div>}
-          </TabsContent>
-          
-          {forMemberId && <TabsContent value="assigned" className="space-y-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Assigned Workout Plans</h3>
-              </div>
-              
-              {memberWorkouts.length > 0 ? <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Plan Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Assigned By</TableHead>
-                      <TableHead>Assigned On</TableHead>
-                      {!isMember && <TableHead>Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {memberWorkouts.map(memberWorkout => {
-                const plan = workoutPlans.find(p => p.id === memberWorkout.workoutPlanId);
-                if (!plan) return null;
-                return <TableRow key={memberWorkout.id}>
-                          <TableCell className="font-medium">{plan.name}</TableCell>
-                          <TableCell>{memberWorkout.isCustom ? "Custom" : "Standard"}</TableCell>
-                          <TableCell>{getTrainerName(memberWorkout.assignedBy)}</TableCell>
-                          <TableCell>{new Date(memberWorkout.assignedAt).toLocaleDateString()}</TableCell>
-                          {!isMember && (
-                            <TableCell>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>;
-              })}
-                  </TableBody>
-                </Table> : <div className="text-center py-8 border rounded-lg">
-                  <Dumbbell className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-lg font-medium">No Assigned Plans</h3>
-                  <p className="text-muted-foreground">
-                    {isMember 
-                      ? "You don't have any workout plans assigned yet." 
-                      : "Assign a workout plan to this member"}
-                  </p>
-                  {!isMember && (
-                    <Button variant="outline" onClick={() => setSelectedMemberId(forMemberId)} className="mt-4">
-                      <Plus className="w-4 h-4 mr-1" /> Assign Plan
-                    </Button>
-                  )}
-                </div>}
-            </TabsContent>}
-        </Tabs>
+        <div className="mt-8">
+          <CardTitle>Existing Workout Plans</CardTitle>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Created By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workoutPlans.map((plan) => (
+                <TableRow key={plan.id}>
+                  <TableCell>{plan.name}</TableCell>
+                  <TableCell>{plan.description}</TableCell>
+                  <TableCell>{plan.created_by}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
 
 export default WorkoutPlansManager;

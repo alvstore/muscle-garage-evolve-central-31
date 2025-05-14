@@ -27,6 +27,11 @@ export interface MembershipPlan {
   classAccess?: ClassType[];
   created_at?: string;
   updated_at?: string;
+  updated_at_str?: string;
+  updatedAt?: string;
+  durationLabel?: string;
+  allowedClasses?: ClassType[];
+  benefits?: string[];
 }
 
 export enum MembershipDuration {
