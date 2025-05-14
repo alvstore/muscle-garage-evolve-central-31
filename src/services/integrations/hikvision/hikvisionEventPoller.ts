@@ -1,5 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import api from "@/services/api";
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 interface EventPayload {
   deviceSn: string;
@@ -14,6 +17,9 @@ let isPolling = false;
 
 // Poll interval in milliseconds (default 30 seconds)
 const POLL_INTERVAL = 30 * 1000;
+
+// Supabase Edge Function URL
+const EDGE_FUNCTION_URL = "https://rnqgpucxlvubwqpkgstc.supabase.co/functions/v1/hikvision-proxy";
 
 // Start polling for events from all devices
 export const startPolling = () => {
@@ -82,12 +88,7 @@ const pollEvents = async () => {
   }
 };
 
-// Poll events for a branch using its API settings
-// Add these imports if needed
-import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
-
-// Add this new method to subscribe to events
+// Subscribe to events using Edge Function
 async function subscribeToEvents(branchId: string): Promise<string | null> {
   try {
     // Get API settings
@@ -103,46 +104,26 @@ async function subscribeToEvents(branchId: string): Promise<string | null> {
       return null;
     }
     
-    // Authenticate
-    const authResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/token/get`, {
+    // Call Edge Function to subscribe to events
+    const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        action: 'subscribe',
         appKey: settings.app_key,
-        secretKey: settings.app_secret
-      })
-    });
-    
-    if (!authResponse.ok) {
-      throw new Error(`Authentication failed: ${authResponse.statusText}`);
-    }
-    
-    const authData = await authResponse.json();
-    const accessToken = authData.accessToken;
-    
-    if (!accessToken) {
-      throw new Error('No access token received');
-    }
-    
-    // Subscribe to events
-    const subscribeResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/mq/subscribe`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
+        secretKey: settings.app_secret,
+        apiUrl: settings.api_url,
         eventTypes: ['acs.event.door_access']
       })
     });
     
-    if (!subscribeResponse.ok) {
-      throw new Error(`Failed to subscribe to events: ${subscribeResponse.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to subscribe to events: ${response.statusText}`);
     }
     
-    const subscribeData = await subscribeResponse.json();
+    const subscribeData = await response.json();
     const subscriptionId = subscribeData.subscriptionId;
     
     if (!subscriptionId) {
@@ -178,10 +159,10 @@ async function subscribeToEvents(branchId: string): Promise<string | null> {
   }
 }
 
-// Modify the pollEventsForBranch function
+// Poll events for a branch using its API settings
 const pollEventsForBranch = async (apiSetting: any) => {
   try {
-    const { branch_id, api_url, app_key, app_secret, subscription_id } = apiSetting;
+    const { branch_id, subscription_id } = apiSetting;
     console.log(`Polling events for branch ${branch_id} using Hikvision API`);
     
     // Get or create subscription
@@ -193,7 +174,7 @@ const pollEventsForBranch = async (apiSetting: any) => {
       }
     }
     
-    // Poll for messages
+    // Poll for messages using Edge Function
     const events = await pollMessages(branch_id, currentSubscriptionId);
     
     // Process each event
@@ -295,7 +276,7 @@ const processEvent = async (event: EventPayload, context: { branch_id: string })
   }
 };
 
-// Add this method to poll for messages
+// Poll for messages using Edge Function
 async function pollMessages(branchId: string, subscriptionId: string): Promise<EventPayload[]> {
   try {
     // Get API settings
@@ -311,29 +292,6 @@ async function pollMessages(branchId: string, subscriptionId: string): Promise<E
       return [];
     }
     
-    // Authenticate
-    const authResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/token/get`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        appKey: settings.app_key,
-        secretKey: settings.app_secret
-      })
-    });
-    
-    if (!authResponse.ok) {
-      throw new Error(`Authentication failed: ${authResponse.statusText}`);
-    }
-    
-    const authData = await authResponse.json();
-    const accessToken = authData.accessToken;
-    
-    if (!accessToken) {
-      throw new Error('No access token received');
-    }
-    
     // Get last offset from database
     const { data: offsetData } = await supabase
       .from('hikvision_api_settings')
@@ -343,25 +301,28 @@ async function pollMessages(branchId: string, subscriptionId: string): Promise<E
     
     const lastOffset = offsetData?.last_offset || null;
     
-    // Poll for messages
-    const messagesResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/mq/messages`, {
+    // Call Edge Function to poll for messages
+    const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        action: 'pollMessages',
+        appKey: settings.app_key,
+        secretKey: settings.app_secret,
+        apiUrl: settings.api_url,
         subscriptionId,
         offset: lastOffset,
         maxReturnNum: 20
       })
     });
     
-    if (!messagesResponse.ok) {
-      throw new Error(`Failed to poll messages: ${messagesResponse.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to poll messages: ${response.statusText}`);
     }
     
-    const messagesData = await messagesResponse.json();
+    const messagesData = await response.json();
     const messages = messagesData.messages || [];
     
     if (messages.length > 0) {
@@ -372,8 +333,8 @@ async function pollMessages(branchId: string, subscriptionId: string): Promise<E
         .update({ last_offset: newOffset })
         .eq('branch_id', branchId);
       
-      // Acknowledge the offset
-      await acknowledgeOffset(branchId, subscriptionId, newOffset, settings.api_url, accessToken);
+      // Acknowledge the offset using Edge Function
+      await acknowledgeOffset(branchId, subscriptionId, newOffset, settings);
     }
     
     // Transform messages to EventPayload format
@@ -407,16 +368,19 @@ async function pollMessages(branchId: string, subscriptionId: string): Promise<E
   }
 }
 
-// Helper function to acknowledge message offset
-async function acknowledgeOffset(branchId: string, subscriptionId: string, offset: string, apiUrl: string, accessToken: string): Promise<boolean> {
+// Helper function to acknowledge message offset using Edge Function
+async function acknowledgeOffset(branchId: string, subscriptionId: string, offset: string, settings: any): Promise<boolean> {
   try {
-    const response = await fetch(`${apiUrl}/api/hpcgw/v1/mq/offset`, {
+    const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        action: 'acknowledgeOffset',
+        appKey: settings.app_key,
+        secretKey: settings.app_secret,
+        apiUrl: settings.api_url,
         subscriptionId,
         offset
       })
