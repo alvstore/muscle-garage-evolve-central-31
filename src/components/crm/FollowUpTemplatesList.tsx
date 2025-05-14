@@ -38,56 +38,46 @@ import { toast } from "sonner";
 const mockTemplates: FollowUpTemplate[] = [
   {
     id: "1",
-    name: "Initial Follow-up",
     title: "Initial Follow-up",
     type: "email",
     content: "Hello {{name}},\n\nThank you for your interest in our gym. We would love to have you visit us for a free trial session.\n\nPlease let me know when would be a convenient time for you.\n\nBest regards,\n{{staffName}}",
     variables: ["name", "staffName"],
-    created_by: "Admin",
     created_at: "2023-05-15T10:00:00Z",
     isDefault: true
   },
   {
     id: "2",
-    name: "Follow-up After Trial",
     title: "Follow-up After Trial",
     type: "email",
     content: "Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}",
     variables: ["name", "trialDate", "staffName"],
-    created_by: "Admin",
     created_at: "2023-05-16T11:30:00Z",
     isDefault: false
   },
   {
     id: "3",
-    name: "Membership Reminder",
     title: "Membership Reminder",
     type: "sms",
     content: "Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.",
     variables: ["name", "gymPhone"],
-    created_by: "Admin",
     created_at: "2023-05-17T09:15:00Z",
     isDefault: false
   },
   {
     id: "4",
-    name: "WhatsApp Introduction",
     title: "WhatsApp Introduction",
     type: "whatsapp",
     content: "Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.",
     variables: ["name", "staffName"],
-    created_by: "Admin",
     created_at: "2023-05-20T14:20:00Z",
     isDefault: false
   },
   {
     id: "5",
-    name: "Special Offer",
     title: "Special Offer",
     type: "email",
     content: "Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}",
     variables: ["name", "discountAmount", "expiryDate", "staffName"],
-    created_by: "Admin",
     created_at: "2023-05-22T13:40:00Z",
     isDefault: false
   }
@@ -98,7 +88,6 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '1',
     title: 'Welcome Email',
-    name: 'Welcome Email',
     type: 'email',
     content: 'Dear {{name}},\n\nThank you for your interest in our fitness center. We would love to have you join our community!\n\nBest regards,\nThe Team',
     variables: ['name'],
@@ -108,7 +97,6 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '2',
     title: 'Follow-up After Trial',
-    name: 'Follow-up After Trial',
     type: 'email',
     content: 'Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}',
     variables: ['name', 'trialDate', 'staffName'],
@@ -118,7 +106,6 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '3',
     title: 'Membership Reminder',
-    name: 'Membership Reminder',
     type: 'sms',
     content: 'Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.',
     variables: ['name', 'gymPhone'],
@@ -128,9 +115,8 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '4',
     title: 'WhatsApp Introduction',
-    name: 'WhatsApp Introduction',
     type: 'whatsapp',
-    content: 'Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.',
+    content: 'Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We\'re offering a special promotion for new members this month.',
     variables: ['name', 'staffName'],
     isDefault: false,
     created_at: '2023-01-04T00:00:00Z'
@@ -138,9 +124,8 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '5',
     title: 'Special Offer',
-    name: 'Special Offer',
     type: 'email',
-    content: 'Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}',
+    content: 'Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we\'re offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}',
     variables: ['name', 'discountAmount', 'expiryDate', 'staffName'],
     isDefault: false,
     created_at: '2023-01-05T00:00:00Z'
@@ -184,7 +169,6 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
     const newTemplate: FollowUpTemplate = {
       ...template,
       id: `copy-${template.id}`,
-      name: `Copy of ${template.name}`,
       title: `Copy of ${template.title}`,
       created_at: new Date().toISOString(),
       isDefault: false
@@ -219,8 +203,7 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
 
   const handleEditTemplate = (template: FollowUpTemplate) => {
     setEditingTemplate({
-      ...template,
-      name: template.title || template.name
+      ...template
     });
     setIsEditDialogOpen(true);
   };
@@ -313,7 +296,7 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell>{template.created_by}</TableCell>
+                    <TableCell>Admin</TableCell>
                     <TableCell>{formatDate(template.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
