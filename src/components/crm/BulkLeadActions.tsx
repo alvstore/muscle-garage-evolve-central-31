@@ -21,7 +21,7 @@ import { leadService } from '@/services/leadService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDescription } from "@/components/ui/form";
 import { useAuth } from '@/hooks/use-auth';
-import { User } from '@/types';
+import { User } from '@/types/user';
 
 interface BulkLeadActionsProps {
   selectedLeads: string[];
@@ -47,9 +47,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
   const availableFunnelStages: FunnelStage[] = ['cold', 'warm', 'hot', 'won', 'lost'];
   
   const availableUsers: User[] = [
-    { id: '1', name: 'John Doe', email: 'john.doe@example.com' },
-    { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com' },
-    { id: '3', name: 'Alice Johnson', email: 'alice.johnson@example.com' },
+    { id: '1', name: 'John Doe', email: 'john.doe@example.com', role: 'staff' },
+    { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'staff' },
+    { id: '3', name: 'Alice Johnson', email: 'alice.johnson@example.com', role: 'staff' },
   ];
 
   const updateLeadStatus = (status: LeadStatus) => {
@@ -63,7 +63,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast({
+        toast.success({
           title: "Success",
           description: `Status updated for ${selectedLeads.length} lead(s)`
         });
@@ -72,10 +72,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error updating lead status:', error);
-        toast({
+        toast.error({
           title: "Error",
-          description: 'Failed to update lead status',
-          variant: "destructive"
+          description: 'Failed to update lead status'
         });
       })
       .finally(() => setIsLoading(false));
@@ -92,7 +91,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast({
+        toast.success({
           title: "Success",
           description: `Funnel stage updated for ${selectedLeads.length} lead(s)`
         });
@@ -101,10 +100,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error updating funnel stage:', error);
-        toast({
+        toast.error({
           title: "Error",
-          description: 'Failed to update funnel stage',
-          variant: "destructive"
+          description: 'Failed to update funnel stage'
         });
       })
       .finally(() => setIsLoading(false));
@@ -121,7 +119,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast({
+        toast.success({
           title: "Success",
           description: `Assigned ${selectedLeads.length} lead(s) to user`
         });
@@ -130,10 +128,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error assigning leads:', error);
-        toast({
+        toast.error({
           title: "Error",
-          description: 'Failed to assign leads',
-          variant: "destructive"
+          description: 'Failed to assign leads'
         });
       })
       .finally(() => setIsLoading(false));
@@ -154,7 +151,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast({
+        toast.success({
           title: "Success",
           description: `Tags added to ${selectedLeads.length} lead(s)`
         });
@@ -163,10 +160,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error adding tags:', error);
-        toast({
+        toast.error({
           title: "Error",
-          description: 'Failed to add tags',
-          variant: "destructive"
+          description: 'Failed to add tags'
         });
       })
       .finally(() => setIsLoading(false));
@@ -181,7 +177,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(deletePromises)
       .then(() => {
-        toast({
+        toast.success({
           title: "Success",
           description: `Deleted ${selectedLeads.length} lead(s)`
         });
@@ -190,10 +186,9 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error deleting leads:', error);
-        toast({
+        toast.error({
           title: "Error",
-          description: 'Failed to delete leads',
-          variant: "destructive"
+          description: 'Failed to delete leads'
         });
       })
       .finally(() => setIsLoading(false));

@@ -1,4 +1,3 @@
-
 // Add this component only if it doesn't exist
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmitSuccess, allowedTyp
       anonymous,
       memberId: user?.id,
       memberName: anonymous ? undefined : user?.name,
-      branchId: user?.branchId
+      branch_id: user?.branch_id || null
     };
     
     try {
