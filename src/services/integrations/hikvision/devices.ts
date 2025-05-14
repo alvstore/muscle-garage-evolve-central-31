@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/integrations/supabase/client';
-import hikvisionAccessControlService from '@/services/integrations/hikvisionAccessControlService';
+import hikvisionAccessControlService from '@/services/integrations/hikvision/hikvisionAccessControlService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Check if user is authenticated

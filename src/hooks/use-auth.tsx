@@ -1,189 +1,240 @@
 
-import { createContext, useContext, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { User as AppUser, UserRole } from '@/types';
-import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
-import { useAuthActions, LoginResult } from './auth/use-auth-actions';
-import { useEffect, useState } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
-interface Profile {
+// Extend the User type to include properties used in the app
+export interface User {
   id: string;
-  full_name?: string;
-  role: UserRole;
-  branch_id?: string;
-  accessible_branch_ids?: string[];
-  is_branch_manager?: boolean;
   email?: string;
-  avatar_url?: string;
-  phone?: string;
+  name?: string;
+  fullName?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  role?: string;
+  branch_id?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    role?: string;
+  };
+  photoURL?: string;
 }
 
-interface AuthContextType {
-  user: AppUser | null;
-  userRole: UserRole | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<LoginResult>;
+export interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+  userRole?: string;
   forgotPassword: (email: string) => Promise<boolean>;
-  profile: Profile | null;
-  updateUserBranch: (branchId: string) => Promise<boolean>;
-
-
-
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  userRole: null,
-  isAuthenticated: false,
-  isLoading: true,
-  login: async () => ({ success: false }),
+  login: async () => {},
   logout: async () => {},
-  register: async () => {},
-  changePassword: async () => false,
+  loading: false,
+  error: null,
+  isAuthenticated: false,
   forgotPassword: async () => false,
-  profile: null,
-  updateUserBranch: async () => false,
+  signOut: async () => {},
 });
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  return (
-    <AuthStateProvider>
-      <AuthProviderInner>{children}</AuthProviderInner>
-    </AuthStateProvider>
-  );
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
-const AuthProviderInner = ({ children }: { children: ReactNode }) => {
-  const { user, isAuthenticated, isLoading: authStateLoading } = useAuthState();
-  const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [profileError, setProfileError] = useState<Error | null>(null);
-  
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-      
+    // Check active sessions and sets the user
+    const getSession = async () => {
       try {
-        setIsLoadingProfile(true);
-        setProfileError(null);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        setLoading(true);
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error fetching profile:', error);
-          setProfileError(new Error(error.message));
-          toast.error('Failed to load user profile data');
-        } else if (data) {
-          setProfile(data);
-
-
-
+          throw error;
         }
-      } catch (err: any) {
-        console.error('Profile fetch error:', err);
-        setProfileError(err);
+        
+        const session = data.session;
+        
+        if (session) {
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (userError && userError.code !== 'PGRST116') {
+            throw userError;
+          }
+          
+          const userWithMetadata: User = {
+            id: session.user.id,
+            email: session.user.email,
+            fullName: userData?.full_name || session.user.email?.split('@')[0] || 'User',
+            name: userData?.name || session.user.email?.split('@')[0] || 'User',
+            avatar: userData?.avatar_url,
+            avatarUrl: userData?.avatar_url,
+            photoURL: userData?.avatar_url,
+            role: userData?.role || 'member',
+            branch_id: userData?.branch_id,
+            user_metadata: {
+              full_name: userData?.full_name,
+              avatar_url: userData?.avatar_url,
+              role: userData?.role
+            }
+          };
+          
+          setUser(userWithMetadata);
+          setUserRole(userData?.role);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (error: any) {
+        console.error('Error getting session:', error);
+        setError(error.message);
       } finally {
-        setIsLoadingProfile(false);
+        setLoading(false);
       }
     };
     
-    fetchUserProfile();
+    getSession();
     
-    // Set up real-time subscription for profile changes
-    const profileSubscription = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles',
-        filter: user ? `id=eq.${user.id}` : undefined
-      }, (payload) => {
-        if (payload.new && user && payload.new.id === user.id) {
-          setProfile(payload.new as Profile);
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          try {
+            const { data: userData, error: userError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (userError && userError.code !== 'PGRST116') {
+              throw userError;
+            }
+            
+            const userWithMetadata: User = {
+              id: session.user.id,
+              email: session.user.email,
+              fullName: userData?.full_name || session.user.email?.split('@')[0] || 'User',
+              name: userData?.name || session.user.email?.split('@')[0] || 'User',
+              avatar: userData?.avatar_url,
+              avatarUrl: userData?.avatar_url,
+              photoURL: userData?.avatar_url,
+              role: userData?.role || 'member',
+              branch_id: userData?.branch_id,
+              user_metadata: {
+                full_name: userData?.full_name,
+                avatar_url: userData?.avatar_url,
+                role: userData?.role
+              }
+            };
+            
+            setUser(userWithMetadata);
+            setUserRole(userData?.role);
+            setIsAuthenticated(true);
+          } catch (error: any) {
+            console.error('Error getting user data:', error);
+            setError(error.message);
+          }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
         }
-      })
-      .subscribe();
-    
+      }
+    );
+
     return () => {
-      profileSubscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
-  }, [user]);
+  }, []);
 
-  const updateUserBranch = async (branchId: string): Promise<boolean> => {
-    if (!user) return false;
-    
+  const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ branch_id: branchId })
-        .eq('id', user.id);
-      
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-
-      // Update will happen automatically through subscription
-
-
-
-      return true;
-    } catch (err) {
-      console.error('Error updating user branch:', err);
-      return false;
+      return data;
+    } catch (error: any) {
+      console.error('Error logging in:', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
     }
-
-
-
-
-
   };
-  
-  // Map Supabase user to our User type
-  const mappedUser: AppUser | null = user && profile ? {
-    id: user.id,
-    email: user.email ?? profile.email ?? '',
-    name: profile.full_name ?? '',
-    role: profile.role || 'member',
-    branchId: profile.branch_id,
-    avatar: profile.avatar_url,
-    phone: profile.phone,
-    isBranchManager: profile.is_branch_manager || false,
-    branchIds: profile.accessible_branch_ids || []
-  } : null;
-  
-  const isLoading = authStateLoading || authActionsLoading || isLoadingProfile;
-  
+
+  const logout = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error: any) {
+      console.error('Error logging out:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Alias for logout to maintain compatibility
+  const signOut = logout;
+
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      console.error('Error sending password reset:', error);
+      setError(error.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: mappedUser,
-        userRole: profile?.role || null,
-        isAuthenticated,
-        isLoading,
-        login,
-        logout,
-        register,
-        changePassword,
-        forgotPassword,
-        profile,
-        updateUserBranch
-      }}
-    >
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loading, 
+      error,
+      isAuthenticated,
+      userRole,
+      forgotPassword,
+      signOut
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export default useAuth;
