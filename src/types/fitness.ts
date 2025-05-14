@@ -12,8 +12,8 @@ export interface WorkoutPlan {
   created_at: string;
   updated_at: string;
   workout_days?: WorkoutDay[];
-  targetGoals?: string[];
   target_goals?: string[];
+  targetGoals?: string[];
 }
 
 export interface WorkoutDay {

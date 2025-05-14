@@ -3,9 +3,9 @@ import React, { useState, useEffect, ReactNode } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
-import DashboardSidebar from "./DashboardSidebar";
-import MemberSidebar from "./MemberSidebar";
-import TrainerSidebar from "./TrainerSidebar";
+import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import MemberSidebar from "@/components/layout/MemberSidebar";
+import TrainerSidebar from "@/components/layout/TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";
 
