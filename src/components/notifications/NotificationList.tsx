@@ -5,7 +5,7 @@ import { CheckCircle, Circle, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 
 interface Notification {
   id: string;
@@ -26,23 +26,26 @@ const NotificationList: React.FC = () => {
     queryKey: ['notifications'],
     queryFn: async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching notifications:", error);
+        if (error) throw error;
+        
+        setLoading(false);
+        return data as Notification[];
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
         toast({
           title: "Error",
           description: "Failed to fetch notifications",
           variant: "destructive"
         });
         setLoading(false);
-        return [];
+        throw err; // Let React Query handle the error state
       }
-      setLoading(false);
-      return data as Notification[];
     },
     initialData: [],
   });
@@ -140,7 +143,7 @@ const NotificationList: React.FC = () => {
           <CardDescription>Error loading notifications</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-red-500">Error: {error?.message}</div>
+          <div className="text-red-500">Error loading notifications. Please try again later.</div>
         </CardContent>
       </Card>
     );

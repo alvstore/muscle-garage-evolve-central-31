@@ -1,6 +1,8 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Branch } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface BranchContextType {
   currentBranch: Branch | null;
@@ -31,120 +33,208 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock function to fetch branches - replace with actual implementation
-  const fetchBranches = async (): Promise<Branch[]> => {
+  // Fetch branches from Supabase
+  const fetchBranches = useCallback(async (): Promise<Branch[]> => {
     setIsLoading(true);
     try {
-      // Implement actual API call here
-      const branchesData: Branch[] = [
-        {
-          id: '1',
-          name: 'Main Branch',
-          address: '123 Main St',
-          city: 'New York',
-          state: 'NY',
-          country: 'USA',
-          email: 'main@example.com',
-          phone: '123-456-7890',
-          is_active: true,
-          manager_id: 'user1',
-          branch_code: 'MB001',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      // Transform the data to match the Branch type if needed
+      const branchesData: Branch[] = data.map(branch => ({
+        id: branch.id,
+        name: branch.name,
+        address: branch.address || '',
+        city: branch.city || '',
+        state: branch.state || '',
+        country: branch.country || 'India',
+        email: branch.email || '',
+        phone: branch.phone || '',
+        is_active: branch.is_active ?? true,
+        manager_id: branch.manager_id || '',
+        branch_code: branch.branch_code || '',
+        opening_hours: branch.opening_hours || '',
+        closing_hours: branch.closing_hours || '',
+        tax_rate: branch.tax_rate || 0,
+        max_capacity: branch.max_capacity || 0,
+        created_at: branch.created_at || new Date().toISOString(),
+        updated_at: branch.updated_at || new Date().toISOString()
+      }));
+
       setBranches(branchesData);
+
+      // If no current branch is set and we have branches, set the first one as current
+      if (!currentBranch && branchesData.length > 0) {
+        setCurrentBranch(branchesData[0]);
+      }
+
       return branchesData;
     } catch (error) {
       console.error('Error fetching branches:', error);
+      toast.error('Failed to fetch branches');
       return [];
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentBranch]);
 
-  // Mock function to create a branch
+  // Create a branch
   const createBranch = async (branchData: Partial<Branch>): Promise<Branch | null> => {
-    setIsLoading(true);
     try {
-      // In a real app, this would be an API call
+      const { data, error } = await supabase
+        .from('branches')
+        .insert([{
+          name: branchData.name,
+          address: branchData.address,
+          city: branchData.city,
+          state: branchData.state,
+          country: branchData.country || 'India',
+          email: branchData.email,
+          phone: branchData.phone,
+          is_active: branchData.is_active !== undefined ? branchData.is_active : true,
+          manager_id: branchData.manager_id,
+          branch_code: branchData.branch_code,
+          opening_hours: branchData.opening_hours,
+          closing_hours: branchData.closing_hours,
+          tax_rate: branchData.tax_rate,
+          max_capacity: branchData.max_capacity
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       const newBranch: Branch = {
-        id: Math.random().toString(),
-        name: branchData.name || 'New Branch',
-        address: branchData.address || '',
-        city: branchData.city || '',
-        state: branchData.state || '',
-        country: branchData.country || 'USA',
-        email: branchData.email || '',
-        phone: branchData.phone || '',
-        is_active: branchData.is_active !== undefined ? branchData.is_active : true,
-        manager_id: branchData.manager_id || null,
-        branch_code: branchData.branch_code || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        id: data.id,
+        name: data.name,
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        country: data.country || 'India',
+        email: data.email || '',
+        phone: data.phone || '',
+        is_active: data.is_active ?? true,
+        manager_id: data.manager_id || '',
+        branch_code: data.branch_code || '',
+        opening_hours: data.opening_hours || '',
+        closing_hours: data.closing_hours || '',
+        tax_rate: data.tax_rate || 0,
+        max_capacity: data.max_capacity || 0,
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
       };
-      
-      setBranches([...branches, newBranch]);
+
+      setBranches(prev => [...prev, newBranch]);
+      toast.success('Branch created successfully');
       return newBranch;
     } catch (error) {
       console.error('Error creating branch:', error);
+      toast.error('Failed to create branch');
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Mock function to update a branch
+  // Update a branch
   const updateBranch = async (id: string, branchData: Partial<Branch>): Promise<Branch | null> => {
-    setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      const updatedBranches = branches.map(branch => {
-        if (branch.id === id) {
-          return {
-            ...branch,
-            ...branchData,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return branch;
-      });
-      
-      setBranches(updatedBranches);
-      const updatedBranch = updatedBranches.find(branch => branch.id === id);
-      return updatedBranch || null;
+      const { data, error } = await supabase
+        .from('branches')
+        .update({
+          name: branchData.name,
+          address: branchData.address,
+          city: branchData.city,
+          state: branchData.state,
+          country: branchData.country,
+          email: branchData.email,
+          phone: branchData.phone,
+          is_active: branchData.is_active,
+          manager_id: branchData.manager_id,
+          branch_code: branchData.branch_code,
+          opening_hours: branchData.opening_hours,
+          closing_hours: branchData.closing_hours,
+          tax_rate: branchData.tax_rate,
+          max_capacity: branchData.max_capacity,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedBranch: Branch = {
+        id: data.id,
+        name: data.name,
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        country: data.country || 'India',
+        email: data.email || '',
+        phone: data.phone || '',
+        is_active: data.is_active ?? true,
+        manager_id: data.manager_id || '',
+        branch_code: data.branch_code || '',
+        opening_hours: data.opening_hours || '',
+        closing_hours: data.closing_hours || '',
+        tax_rate: data.tax_rate || 0,
+        max_capacity: data.max_capacity || 0,
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
+      };
+
+      setBranches(prev =>
+        prev.map(branch =>
+          branch.id === id ? updatedBranch : branch
+        )
+      );
+
+      // Update current branch if it's the one being updated
+      if (currentBranch?.id === id) {
+        setCurrentBranch(updatedBranch);
+      }
+
+      toast.success('Branch updated successfully');
+      return updatedBranch;
     } catch (error) {
       console.error('Error updating branch:', error);
+      toast.error('Failed to update branch');
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Mock function to delete a branch
+  // Delete a branch
   const deleteBranch = async (id: string): Promise<boolean> => {
-    setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      const filteredBranches = branches.filter(branch => branch.id !== id);
-      setBranches(filteredBranches);
-      
+      const { error } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setBranches(prev => prev.filter(branch => branch.id !== id));
+
+      // Reset current branch if it's the one being deleted
       if (currentBranch?.id === id) {
-        setCurrentBranch(filteredBranches[0] || null);
+        setCurrentBranch(branches.length > 1 ? branches[0] : null);
       }
-      
+
+      toast.success('Branch deleted successfully');
       return true;
     } catch (error) {
       console.error('Error deleting branch:', error);
+      toast.error('Failed to delete branch');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchBranches();
-  }, []);
+  }, [fetchBranches]);
 
   useEffect(() => {
     // Set the first branch as current if available and none is selected
