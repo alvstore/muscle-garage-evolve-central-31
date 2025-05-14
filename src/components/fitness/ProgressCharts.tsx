@@ -14,7 +14,7 @@ export interface ProgressChartsProps {
   isLoading: boolean;
 }
 
-export const ProgressCharts: React.FC<ProgressChartsProps> = ({
+const ProgressCharts: React.FC<ProgressChartsProps> = ({
   measurements,
   timeframe,
   onTimeframeChange,

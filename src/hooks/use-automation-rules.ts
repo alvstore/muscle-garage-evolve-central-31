@@ -1,163 +1,105 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import { AutomationRule } from '@/types/crm';
 
 export const useAutomationRules = () => {
-  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [rules, setRules] = useState<AutomationRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [error, setError] = useState<Error | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
-  const { toast } = useToast();
-  
-  const fetchAutomationRules = useCallback(async () => {
-    if (!currentBranch?.id) {
-      setAutomationRules([]);
-      setIsLoading(false);
-      return;
-    }
-    
+
+  const fetchRules = async () => {
     setIsLoading(true);
-    setError(null);
-    
     try {
-      const { data, error } = await supabase
-        .from('automation_rules')
-        .select('*')
-        .eq('branch_id', currentBranch.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      setAutomationRules(data as AutomationRule[]);
+      const data = await settingsService.getAutomationRules(currentBranch?.id);
+      setRules(data);
     } catch (err: any) {
-      console.error('Error fetching automation rules:', err);
-      setError('Failed to load automation rules');
-      
-      toast({
-        title: 'Error',
-        description: 'Failed to load automation rules',
-        variant: 'destructive',
-      });
+      setError(err);
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch?.id, toast]);
-  
-  const createAutomationRule = useCallback(async (rule: Omit<AutomationRule, 'id' | 'created_at' | 'updated_at'>) => {
+  };
+
+  const saveRule = async (rule: Omit<AutomationRule, 'id'> & { id?: string }) => {
+    setIsSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('automation_rules')
-        .insert([{ ...rule, branch_id: currentBranch?.id }])
-        .select()
-        .single();
+      // Ensure the branch_id is set
+      const ruleToSave = {
+        ...rule,
+        branch_id: currentBranch?.id,
+      };
       
-      if (error) throw error;
-      
-      setAutomationRules(prev => [data as AutomationRule, ...prev]);
-      
-      toast({
-        title: 'Rule created',
-        description: 'Automation rule has been created successfully',
-      });
-      
-      return data as AutomationRule;
+      const result = await settingsService.saveAutomationRule(ruleToSave as AutomationRule);
+      if (result) {
+        await fetchRules(); // Refresh the rules list
+        return true;
+      }
+      return false;
     } catch (err: any) {
-      console.error('Error creating automation rule:', err);
-      
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to create automation rule',
-        variant: 'destructive',
-      });
-      
-      throw err;
+      setError(err);
+      return false;
+    } finally {
+      setIsSaving(false);
     }
-  }, [currentBranch?.id, toast]);
-  
-  const updateAutomationRule = useCallback(async (id: string, updates: Partial<AutomationRule>) => {
+  };
+
+  const deleteRule = async (ruleId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('automation_rules')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setAutomationRules(prev =>
-        prev.map(rule => (rule.id === id ? (data as AutomationRule) : rule))
-      );
-      
-      toast({
-        title: 'Rule updated',
-        description: 'Automation rule has been updated successfully',
-      });
-      
-      return data as AutomationRule;
+      const success = await settingsService.deleteAutomationRule(ruleId);
+      if (success) {
+        setRules(rules.filter(rule => rule.id !== ruleId));
+      }
+      return success;
     } catch (err: any) {
-      console.error('Error updating automation rule:', err);
-      
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to update automation rule',
-        variant: 'destructive',
-      });
-      
-      throw err;
+      setError(err);
+      return false;
     }
-  }, [toast]);
-  
-  const deleteAutomationRule = useCallback(async (id: string) => {
+  };
+
+  const toggleRuleStatus = async (ruleId: string, isActive: boolean) => {
+    const ruleToUpdate = rules.find(rule => rule.id === ruleId);
+    if (!ruleToUpdate) {
+      toast.error("Rule not found");
+      return false;
+    }
+
     try {
-      const { error } = await supabase
-        .from('automation_rules')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      setAutomationRules(prev => prev.filter(rule => rule.id !== id));
-      
-      toast({
-        title: 'Rule deleted',
-        description: 'Automation rule has been deleted successfully',
+      const result = await saveRule({
+        ...ruleToUpdate,
+        is_active: isActive
       });
       
-      return true;
-    } catch (err: any) {
-      console.error('Error deleting automation rule:', err);
+      if (result) {
+        setRules(rules.map(rule => 
+          rule.id === ruleId ? { ...rule, is_active: isActive } : rule
+        ));
+      }
       
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to delete automation rule',
-        variant: 'destructive',
-      });
-      
-      throw err;
+      return result;
+    } catch (err) {
+      console.error("Error toggling rule status:", err);
+      return false;
     }
-  }, [toast]);
-  
-  const toggleAutomationRule = useCallback(async (id: string, isActive: boolean) => {
-    return updateAutomationRule(id, { is_active: isActive });
-  }, [updateAutomationRule]);
-  
+  };
+
   useEffect(() => {
-    fetchAutomationRules();
-  }, [fetchAutomationRules]);
-  
+    if (currentBranch?.id) {
+      fetchRules();
+    }
+  }, [currentBranch?.id]);
+
   return {
-    automationRules,
+    rules,
     isLoading,
     error,
-    fetchAutomationRules,
-    createAutomationRule,
-    updateAutomationRule,
-    deleteAutomationRule,
-    toggleAutomationRule,
+    isSaving,
+    fetchRules,
+    saveRule,
+    deleteRule,
+    toggleRuleStatus,
   };
 };

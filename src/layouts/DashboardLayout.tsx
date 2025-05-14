@@ -1,109 +1,43 @@
+import React, { useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import Sidebar from './Sidebar'
+import { useTheme } from '@/providers/ThemeProvider'
+import ThemeCustomizer from '@/components/theme/ThemeCustomizer'
+import DashboardNavbar from '@/components/layout/DashboardNavbar'
+import { useAuth } from '@/hooks/use-auth'
 
-import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
-import MemberSidebar from "@/components/layout/MemberSidebar";
-import TrainerSidebar from "@/components/layout/TrainerSidebar";
-import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
-import { Toaster } from "sonner";
-
-const DashboardLayout = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const [darkMode, setDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
-
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-
-  useEffect(() => {
-    // Apply or remove dark mode class based on state
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
-  useEffect(() => {
-    // Close sidebar on mobile by default
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  }, [isMobile]);
-
+const DashboardLayout = () => {
+  const { isDark } = useTheme()
+  const { user } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  };
-
-  const toggleTheme = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="h-8 w-8 rounded-full border-4 border-t-primary animate-spin"></div>
-      </div>
-    );
+    setSidebarOpen(!sidebarOpen)
   }
-
-  let SidebarComponent;
-  switch(user?.role) {
-    case 'member':
-      SidebarComponent = MemberSidebar;
-      break;
-    case 'trainer':
-      SidebarComponent = TrainerSidebar;
-      break;
-    default:
-      SidebarComponent = DashboardSidebar;
-  }
-
+  
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-30 bg-black/50 transition-opacity duration-300"
-          onClick={closeSidebar}
-          aria-hidden="true"
+    <div className="flex h-screen bg-[hsl(var(--body-bg))]">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main content */}
+      <div className="flex flex-col flex-1 overflow-hidden transition-all duration-300 ml-0 md:ml-64">
+        {/* Navbar */}
+        <DashboardNavbar 
+          user={user || { id: '0', name: 'Guest User', email: 'guest@example.com', role: 'member' }} 
+          onToggleSidebar={toggleSidebar} 
         />
-      )}
-
-      <div className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:inset-y-0 lg:z-0 lg:translate-x-0`}>
-        <SidebarComponent 
-          isSidebarOpen={sidebarOpen}
-          closeSidebar={closeSidebar}
-        />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader 
-          toggleSidebar={toggleSidebar}
-          toggleTheme={toggleTheme}
-          isDarkMode={darkMode}
-          sidebarOpen={sidebarOpen}
-        />
-          
-        <main className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-6">
-          {children || <Outlet />}
+        
+        {/* Main content area */}
+        <main className="flex-1 overflow-auto p-6">
+          <Outlet />
         </main>
       </div>
       
-      <Toaster position="top-right" />
+      {/* Theme customizer */}
+      <ThemeCustomizer />
     </div>
-  );
-};
+  )
+}
 
-export default DashboardLayout;
+export default DashboardLayout

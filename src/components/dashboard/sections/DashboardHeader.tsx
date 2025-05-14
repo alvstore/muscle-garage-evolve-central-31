@@ -1,173 +1,176 @@
 
 import React, { useState } from 'react';
-import { 
-  Bell, 
-  ChevronDown, 
-  Menu, 
-  MessageSquare, 
-  Settings, 
-  User as UserIcon,
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { Notification } from '@/types/notification';
+import NotificationItem from '@/components/notifications/NotificationItem';
+import { Badge } from '@/components/ui/badge';
 
 interface DashboardHeaderProps {
-  onMobileMenuToggle?: () => void;
-  pendingNotificationsCount?: number;
-  toggleSidebar?: () => void;
-  toggleTheme?: () => void;
-  isDarkMode?: boolean;
+  toggleSidebar: () => void;
+  toggleTheme: () => void;
+  isDarkMode: boolean;
   sidebarOpen?: boolean;
 }
 
-export const DashboardHeader = ({ 
-  onMobileMenuToggle, 
-  pendingNotificationsCount = 0,
+const fakeNotifications: Notification[] = [
+  {
+    id: '1',
+    title: 'New Member Joined',
+    message: 'John Doe has joined as a new member.',
+    timestamp: new Date().toISOString(),
+    read: false,
+    type: 'member'
+  },
+  {
+    id: '2',
+    title: 'Membership Expiring',
+    message: 'Sarah Smith\'s membership expires in 3 days.',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    read: false,
+    type: 'alert'
+  }
+];
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   toggleSidebar,
   toggleTheme,
   isDarkMode,
   sidebarOpen
-}: DashboardHeaderProps) => {
+}) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const handleSignOut = async () => {
+  const [notifications] = React.useState<Notification[]>(fakeNotifications);
+  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
+  
+  const handleLogout = async () => {
     try {
       await logout();
-      navigate('/auth/login');
+      navigate('/login');
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Logout failed:', error);
     }
   };
 
-  // Handle user name and avatar display with fallbacks
-  const getUserName = () => {
-    if (user?.fullName) return user.fullName;
-    if (user?.name) return user.name;
-    if (user?.email) return user.email;
-    return 'User';
+  const markAllAsRead = () => {
+    // In a real app, this would call an API to mark notifications as read
+    setUnreadCount(0);
   };
-
-  const getUserAvatar = () => {
-    if (user?.avatar) return user.avatar;
-    if (user?.avatarUrl) return user.avatarUrl; 
-    return '';
-  };
-
-  const userInitials = getUserName()
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
-
-  const userEmail = user?.email || '';
-
+  
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4">
+    <header className="sticky top-0 z-30 flex h-16 items-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 shadow-sm">
       <div className="flex items-center gap-2">
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar || onMobileMenuToggle}
-            className="md:hidden"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-        )}
-
-        <div className="relative md:w-64">
-          <Input
-            placeholder="Search..."
-            className="w-full pl-8"
-          />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="flex md:flex" 
+          onClick={toggleSidebar}
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Toggle Menu</span>
+        </Button>
       </div>
-
-      <div className="flex items-center gap-4">
+      
+      <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          <span className="sr-only">Toggle Theme</span>
+        </Button>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              {pendingNotificationsCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  {pendingNotificationsCount > 9 ? '9+' : pendingNotificationsCount}
-                </span>
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-xs p-0"
+                >
+                  {unreadCount}
+                </Badge>
               )}
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-[300px]">
+            <div className="flex items-center justify-between py-2 px-3">
+              <h3 className="font-semibold">Notifications</h3>
+              {unreadCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-auto py-1 px-2 text-xs"
+                  onClick={markAllAsRead}
+                >
+                  Mark all as read
+                </Button>
+              )}
+            </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>No new notifications</DropdownMenuItem>
+            <div className="max-h-[300px] overflow-auto">
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <NotificationItem key={notification.id} notification={notification} />
+                ))
+              ) : (
+                <div className="py-4 px-3 text-center text-muted-foreground">
+                  No notifications
+                </div>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a className="w-full text-center cursor-pointer" href="/notifications">
+                View all notifications
+              </a>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <Button variant="ghost" size="icon">
-          <MessageSquare className="h-5 w-5" />
-          <span className="sr-only">Messages</span>
-        </Button>
-
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 px-2 py-1.5"
-            >
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={getUserAvatar()} />
-                <AvatarFallback>{userInitials}</AvatarFallback>
+            <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+                <AvatarFallback>
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
               </Avatar>
-              <div className="hidden flex-col text-left md:flex">
-                <span className="text-sm font-medium">{getUserName()}</span>
-                <span className="text-xs text-muted-foreground">{userEmail}</span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent align="end">
+            <div className="flex items-center justify-start gap-2 p-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.avatar} alt={user?.name || 'User'} />
+                <AvatarFallback>
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-0.5">
+                <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <UserIcon className="mr-2 h-4 w-4" />
-              Profile
+              Profile Settings
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+              Account Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              Sign Out
+            <DropdownMenuItem onClick={handleLogout}>
+              Log Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

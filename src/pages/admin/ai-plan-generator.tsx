@@ -1,139 +1,236 @@
-
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { aiService, WorkoutPlanParams, DietPlanParams } from '@/services/aiService';
+import AdminLayout from '@/layouts/AdminLayout';
 import { useAuth } from '@/hooks/use-auth';
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles, CheckCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePermissions } from '@/hooks/use-permissions';
-import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import ReactMarkdown from 'react-markdown';
 
-const AIplanGenerator = () => {
-  const { user } = useAuth();
-  const { isAdmin, isSuperAdmin } = usePermissions();
-  const { toast } = useToast();
-  
-  const [planType, setPlanType] = useState<'workout' | 'diet'>('workout');
-  const [planDetails, setPlanDetails] = useState('');
-  const [fitnessLevel, setFitnessLevel] = useState('intermediate');
-  const [dietType, setDietType] = useState('balanced');
-  const [sessionDuration, setSessionDuration] = useState('60');
+// Common goals for both workout and diet plans
+const commonGoals = [
+  { id: 'weight-loss', label: 'Weight Loss' },
+  { id: 'muscle-gain', label: 'Muscle Gain' },
+  { id: 'strength', label: 'Strength' },
+  { id: 'endurance', label: 'Endurance' },
+  { id: 'flexibility', label: 'Flexibility' },
+  { id: 'general-fitness', label: 'General Fitness' },
+  { id: 'athletic-performance', label: 'Athletic Performance' },
+];
+
+// Common dietary restrictions
+const dietaryRestrictions = [
+  { id: 'gluten-free', label: 'Gluten Free' },
+  { id: 'dairy-free', label: 'Dairy Free' },
+  { id: 'nut-free', label: 'Nut Free' },
+  { id: 'low-carb', label: 'Low Carb' },
+  { id: 'low-fat', label: 'Low Fat' },
+  { id: 'low-sodium', label: 'Low Sodium' },
+  { id: 'diabetic-friendly', label: 'Diabetic Friendly' },
+];
+
+export default function AIPlanGeneratorPage() {
+  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState<'workout' | 'diet'>('workout');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<string | null>(null);
-  const [planTitle, setPlanTitle] = useState('');
   
-  const handleGenerate = async () => {
-    if (!planDetails.trim()) {
-      toast({
-        title: "Missing details",
-        description: "Please provide information about the plan you want to generate",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsGenerating(true);
-    
+  // Workout plan form
+  const workoutForm = useForm<WorkoutPlanParams>({
+    defaultValues: {
+      title: '',
+      description: '',
+      fitnessLevel: 'intermediate',
+      goals: [],
+      restrictions: [],
+      daysPerWeek: 4,
+      sessionDuration: 60,
+      isPublic: true,
+    },
+  });
+
+  // Diet plan form
+  const dietForm = useForm<DietPlanParams>({
+    defaultValues: {
+      title: '',
+      description: '',
+      dietType: 'vegetarian',
+      cuisineType: 'indian',
+      caloriesPerDay: 2000,
+      goals: [],
+      restrictions: [],
+      isPublic: true,
+    },
+  });
+
+  // Redirect non-admin users
+  if (user && !isAdmin) {
+    toast.error('Only administrators can access this page');
+    navigate('/dashboard');
+    return null;
+  }
+
+  const generateWorkoutPlan = async (data: WorkoutPlanParams) => {
     try {
-      // Simulate API call
-      setTimeout(() => {
-        const plan = planType === 'workout' 
-          ? generateMockWorkoutPlan(fitnessLevel, parseInt(sessionDuration))
-          : generateMockDietPlan(dietType);
-        
-        setGeneratedPlan(plan);
-        setIsGenerating(false);
-      }, 3000);
+      setIsGenerating(true);
+      setGeneratedPlan(null);
       
+      const plan = await aiService.generateWorkoutPlan(data);
+      if (plan) {
+        setGeneratedPlan(plan);
+        toast.success('Workout plan generated successfully');
+      }
     } catch (error) {
-      console.error('Error generating plan:', error);
-      toast({
-        title: "Generation failed",
-        description: "Failed to generate the plan. Please try again later.",
-        variant: "destructive"
-      });
+      console.error('Error generating workout plan:', error);
+      toast.error('Failed to generate workout plan');
+    } finally {
       setIsGenerating(false);
     }
   };
-  
-  const handleSavePlan = () => {
-    if (!planTitle.trim()) {
-      toast({
-        title: "Missing title",
-        description: "Please provide a title for your plan",
-        variant: "destructive"
-      });
-      return;
+
+  const generateDietPlan = async (data: DietPlanParams) => {
+    try {
+      setIsGenerating(true);
+      setGeneratedPlan(null);
+      
+      const plan = await aiService.generateDietPlan(data);
+      if (plan) {
+        setGeneratedPlan(plan);
+        toast.success('Diet plan generated successfully');
+      }
+    } catch (error) {
+      console.error('Error generating diet plan:', error);
+      toast.error('Failed to generate diet plan');
+    } finally {
+      setIsGenerating(false);
     }
-    
-    // Logic to save the plan would go here
-    toast({
-      title: "Plan saved",
-      description: `Your ${planType} plan has been saved successfully.`
-    });
-    
-    // Reset form
-    setGeneratedPlan(null);
-    setPlanDetails('');
-    setPlanTitle('');
   };
-  
-  if (!isAdmin()) {
-    return (
-      <Container>
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access this page.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </Container>
-    );
-  }
-  
+
+  const saveWorkoutPlan = async () => {
+    try {
+      if (!generatedPlan) {
+        toast.error('No plan to save. Please generate a plan first.');
+        return;
+      }
+      
+      setIsSaving(true);
+      const data = workoutForm.getValues();
+      await aiService.saveWorkoutPlan(data, generatedPlan);
+      
+      // Reset form and generated plan after successful save
+      workoutForm.reset({
+        title: '',
+        description: '',
+        fitnessLevel: 'intermediate',
+        goals: [],
+        restrictions: [],
+        daysPerWeek: 4,
+        sessionDuration: 60,
+        isPublic: true,
+      });
+      setGeneratedPlan(null);
+    } catch (error) {
+      console.error('Error saving workout plan:', error);
+      toast.error('Failed to save workout plan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveDietPlan = async () => {
+    try {
+      if (!generatedPlan) {
+        toast.error('No plan to save. Please generate a plan first.');
+        return;
+      }
+      
+      setIsSaving(true);
+      const data = dietForm.getValues();
+      await aiService.saveDietPlan(data, generatedPlan);
+      
+      // Reset form and generated plan after successful save
+      dietForm.reset({
+        title: '',
+        description: '',
+        dietType: 'vegetarian',
+        cuisineType: 'indian',
+        caloriesPerDay: 2000,
+        goals: [],
+        restrictions: [],
+        isPublic: true,
+      });
+      setGeneratedPlan(null);
+    } catch (error) {
+      console.error('Error saving diet plan:', error);
+      toast.error('Failed to save diet plan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <Container>
-      <div className="py-6">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>AI Plan Generator</CardTitle>
-            <CardDescription>
-              Generate workout or diet plans using AI. Describe your requirements and the AI will create a plan for you.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="planType">Plan Type</Label>
-                <Select 
-                  value={planType} 
-                  onValueChange={(value: 'workout' | 'diet') => setPlanType(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select plan type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="workout">Workout Plan</SelectItem>
-                    <SelectItem value="diet">Diet Plan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {planType === 'workout' && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium">AI Plan Generator</h3>
+          <p className="text-sm text-muted-foreground">
+            Generate personalized workout and diet plans using AI
+          </p>
+        </div>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value as 'workout' | 'diet');
+            setGeneratedPlan(null);
+          }}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="workout">Workout Plan</TabsTrigger>
+            <TabsTrigger value="diet">Diet Plan</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="workout" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Workout Plan</CardTitle>
+                <CardDescription>
+                  Configure the parameters for the AI-generated workout plan
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="Enter plan title"
+                      {...workoutForm.register('title', { required: true })}
+                    />
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="fitnessLevel">Fitness Level</Label>
-                    <Select 
-                      value={fitnessLevel} 
-                      onValueChange={setFitnessLevel}
+                    <Select
+                      value={workoutForm.watch('fitnessLevel')}
+                      onValueChange={(value) => workoutForm.setValue('fitnessLevel', value as any)}
                     >
-                      <SelectTrigger id="fitnessLevel">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select fitness level" />
                       </SelectTrigger>
                       <SelectContent>
@@ -143,254 +240,316 @@ const AIplanGenerator = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter plan description"
+                    {...workoutForm.register('description')}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="daysPerWeek">Days Per Week</Label>
+                    <Input
+                      id="daysPerWeek"
+                      type="number"
+                      min={1}
+                      max={7}
+                      {...workoutForm.register('daysPerWeek', {
+                        required: true,
+                        valueAsNumber: true,
+                        min: 1,
+                        max: 7,
+                      })}
+                    />
+                  </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="sessionDuration">Session Duration (minutes)</Label>
                     <Input
                       id="sessionDuration"
                       type="number"
-                      value={sessionDuration}
-                      onChange={(e) => setSessionDuration(e.target.value)}
-                      min="20"
-                      max="180"
+                      min={15}
+                      max={180}
+                      step={5}
+                      {...workoutForm.register('sessionDuration', {
+                        required: true,
+                        valueAsNumber: true,
+                        min: 15,
+                        max: 180,
+                      })}
                     />
                   </div>
                 </div>
-              )}
-              
-              {planType === 'diet' && (
+
                 <div className="space-y-2">
-                  <Label htmlFor="dietType">Diet Type</Label>
-                  <Select 
-                    value={dietType} 
-                    onValueChange={setDietType}
-                  >
-                    <SelectTrigger id="dietType">
-                      <SelectValue placeholder="Select diet type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="balanced">Balanced</SelectItem>
-                      <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                      <SelectItem value="vegan">Vegan</SelectItem>
-                      <SelectItem value="keto">Keto</SelectItem>
-                      <SelectItem value="lowCarb">Low Carb</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Goals</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {commonGoals.map((goal) => (
+                      <div key={goal.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`workout-goal-${goal.id}`}
+                          checked={workoutForm.watch('goals').includes(goal.label)}
+                          onCheckedChange={(checked) => {
+                            const currentGoals = workoutForm.watch('goals');
+                            if (checked) {
+                              workoutForm.setValue('goals', [...currentGoals, goal.label]);
+                            } else {
+                              workoutForm.setValue(
+                                'goals',
+                                currentGoals.filter((g) => g !== goal.label)
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`workout-goal-${goal.id}`}>{goal.label}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="planDetails">
-                  Plan Requirements & Goals
-                </Label>
-                <Textarea
-                  id="planDetails"
-                  value={planDetails}
-                  onChange={(e) => setPlanDetails(e.target.value)}
-                  placeholder={
-                    planType === 'workout' 
-                      ? "Describe the workout plan you need, goals, available equipment, and any specific requirements..."
-                      : "Describe dietary preferences, goals, allergies, and any specific requirements for your meal plan..."
-                  }
-                  rows={6}
-                />
-              </div>
-              
-              <Button 
-                className="w-full" 
-                onClick={handleGenerate} 
-                disabled={isGenerating || !planDetails.trim()}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate {planType === 'workout' ? 'Workout' : 'Diet'} Plan
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
+
+                <div className="space-y-2">
+                  <Label>Restrictions/Limitations</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {['Lower Back Pain', 'Knee Issues', 'Shoulder Pain', 'Limited Equipment', 'Home Workout Only'].map((restriction) => (
+                      <div key={restriction} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`workout-restriction-${restriction}`}
+                          checked={workoutForm.watch('restrictions').includes(restriction)}
+                          onCheckedChange={(checked) => {
+                            const currentRestrictions = workoutForm.watch('restrictions');
+                            if (checked) {
+                              workoutForm.setValue('restrictions', [...currentRestrictions, restriction]);
+                            } else {
+                              workoutForm.setValue(
+                                'restrictions',
+                                currentRestrictions.filter((r) => r !== restriction)
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`workout-restriction-${restriction}`}>{restriction}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="workout-is-public"
+                    checked={workoutForm.watch('isPublic')}
+                    onCheckedChange={(checked) => workoutForm.setValue('isPublic', checked)}
+                  />
+                  <Label htmlFor="workout-is-public">Make this plan public</Label>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={() => generateWorkoutPlan(workoutForm.getValues())}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate Plan'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="diet" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Diet Plan</CardTitle>
+                <CardDescription>
+                  Configure the parameters for the AI-generated Indian diet plan
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="diet-title">Title</Label>
+                    <Input
+                      id="diet-title"
+                      placeholder="Enter plan title"
+                      {...dietForm.register('title', { required: true })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dietType">Diet Type</Label>
+                    <Select
+                      value={dietForm.watch('dietType')}
+                      onValueChange={(value) => dietForm.setValue('dietType', value as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select diet type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                        <SelectItem value="non-vegetarian">Non-Vegetarian</SelectItem>
+                        <SelectItem value="vegan">Vegan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="diet-description">Description</Label>
+                  <Textarea
+                    id="diet-description"
+                    placeholder="Enter plan description"
+                    {...dietForm.register('description')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="caloriesPerDay">Calories Per Day</Label>
+                  <Input
+                    id="caloriesPerDay"
+                    type="number"
+                    min={1000}
+                    max={4000}
+                    step={100}
+                    {...dietForm.register('caloriesPerDay', {
+                      required: true,
+                      valueAsNumber: true,
+                      min: 1000,
+                      max: 4000,
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Goals</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {commonGoals.map((goal) => (
+                      <div key={goal.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`diet-goal-${goal.id}`}
+                          checked={dietForm.watch('goals').includes(goal.label)}
+                          onCheckedChange={(checked) => {
+                            const currentGoals = dietForm.watch('goals');
+                            if (checked) {
+                              dietForm.setValue('goals', [...currentGoals, goal.label]);
+                            } else {
+                              dietForm.setValue(
+                                'goals',
+                                currentGoals.filter((g) => g !== goal.label)
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`diet-goal-${goal.id}`}>{goal.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Dietary Restrictions</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {dietaryRestrictions.map((restriction) => (
+                      <div key={restriction.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`diet-restriction-${restriction.id}`}
+                          checked={dietForm.watch('restrictions').includes(restriction.label)}
+                          onCheckedChange={(checked) => {
+                            const currentRestrictions = dietForm.watch('restrictions');
+                            if (checked) {
+                              dietForm.setValue('restrictions', [...currentRestrictions, restriction.label]);
+                            } else {
+                              dietForm.setValue(
+                                'restrictions',
+                                currentRestrictions.filter((r) => r !== restriction.label)
+                              );
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`diet-restriction-${restriction.id}`}>{restriction.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="diet-is-public"
+                    checked={dietForm.watch('isPublic')}
+                    onCheckedChange={(checked) => dietForm.setValue('isPublic', checked)}
+                  />
+                  <Label htmlFor="diet-is-public">Make this plan public</Label>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={() => generateDietPlan(dietForm.getValues())}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate Plan'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
         {generatedPlan && (
           <Card>
-            <CardHeader>
-              <CardTitle>Generated {planType === 'workout' ? 'Workout' : 'Diet'} Plan</CardTitle>
-              <CardDescription>
-                Review the plan and make any necessary adjustments before saving.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Generated Plan</CardTitle>
+                <CardDescription>
+                  {activeTab === 'workout' ? 'Workout' : 'Diet'} plan generated by AI
+                </CardDescription>
+              </div>
+              <Badge variant="outline">
+                {activeTab === 'workout' ? workoutForm.watch('fitnessLevel') : dietForm.watch('dietType')}
+              </Badge>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="planTitle">Plan Title</Label>
-                <Input
-                  id="planTitle"
-                  value={planTitle}
-                  onChange={(e) => setPlanTitle(e.target.value)}
-                  placeholder="Enter a name for this plan"
-                  className="w-full"
-                />
+              <div className="bg-muted p-4 rounded-md max-h-[500px] overflow-y-auto">
+                <ReactMarkdown>{generatedPlan}</ReactMarkdown>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="generatedContent">Plan Content</Label>
-                <div className="border rounded-md p-4 whitespace-pre-wrap bg-muted/20">
-                  {generatedPlan}
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setGeneratedPlan(null)}>
-                  Discard
-                </Button>
-                <Button onClick={handleSavePlan}>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Save Plan
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={activeTab === 'workout' ? saveWorkoutPlan : saveDietPlan}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Plan'
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
-    </Container>
+    </AdminLayout>
   );
-};
-
-// Mock plan generation functions
-function generateMockWorkoutPlan(fitnessLevel: string, duration: number): string {
-  if (fitnessLevel === "beginner") {
-    return `# Beginner Workout Plan (${duration} minute sessions)
-
-## Day 1: Full Body
-- Bodyweight Squats: 3 sets of 10 reps
-- Push-ups (or knee push-ups): 3 sets of 8 reps
-- Dumbbell Rows: 3 sets of 10 reps per arm
-- Plank: 3 sets of 20 seconds
-
-## Day 2: Rest or Light Cardio
-
-## Day 3: Full Body
-- Lunges: 3 sets of 8 reps per leg
-- Dumbbell Shoulder Press: 3 sets of 10 reps
-- Glute Bridges: 3 sets of 12 reps
-- Bird-dogs: 3 sets of 8 reps per side
-
-## Day 4: Rest or Light Cardio
-
-## Day 5: Full Body
-- Step-ups: 3 sets of 10 reps per leg
-- Dumbbell Chest Press: 3 sets of 10 reps
-- Standing Dumbbell Curls: 3 sets of 10 reps
-- Side Planks: 3 sets of 15 seconds per side`;
-  } else {
-    return `# ${fitnessLevel.charAt(0).toUpperCase() + fitnessLevel.slice(1)} Workout Plan (${duration} minute sessions)
-
-## Day 1: Push (Chest, Shoulders, Triceps)
-- Bench Press: 4 sets of 8-10 reps
-- Overhead Press: 4 sets of 8-10 reps
-- Incline Dumbbell Press: 3 sets of 10-12 reps
-- Lateral Raises: 3 sets of 12-15 reps
-- Tricep Pushdowns: 3 sets of 12-15 reps
-- Overhead Tricep Extensions: 3 sets of 12-15 reps
-
-## Day 2: Pull (Back, Biceps)
-- Deadlifts: 4 sets of 8-10 reps
-- Pull-ups or Lat Pulldowns: 4 sets of 8-10 reps
-- Barbell Rows: 3 sets of 10-12 reps
-- Face Pulls: 3 sets of 12-15 reps
-- Barbell Curls: 3 sets of 10-12 reps
-- Hammer Curls: 3 sets of 10-12 reps
-
-## Day 3: Rest or Light Cardio
-
-## Day 4: Legs
-- Squats: 4 sets of 8-10 reps
-- Romanian Deadlifts: 4 sets of 8-10 reps
-- Leg Press: 3 sets of 10-12 reps
-- Leg Extensions: 3 sets of 12-15 reps
-- Leg Curls: 3 sets of 12-15 reps
-- Calf Raises: 4 sets of 15-20 reps
-
-## Day 5: Upper Body
-- Incline Bench Press: 4 sets of 8-10 reps
-- Cable Rows: 4 sets of 8-10 reps
-- Dips: 3 sets of 10-12 reps
-- Pull-ups: 3 sets of 8-10 reps
-- Lateral Raises: 3 sets of 12-15 reps
-- Tricep Pushdowns: 3 sets of 12-15 reps
-
-## Day 6: Rest or Light Cardio
-
-## Day 7: Rest`;
-  }
 }
-
-function generateMockDietPlan(dietType: string): string {
-  if (dietType === "vegetarian") {
-    return `# Vegetarian Diet Plan
-
-## Daily Macros
-- Calories: 1800-2200 (adjust based on weight goals)
-- Protein: 100-120g
-- Carbs: 200-250g
-- Fats: 50-65g
-
-## Breakfast Options
-- Greek yogurt with berries, honey and granola
-- Vegetable omelette with whole grain toast
-- Overnight oats with nuts and fruit
-
-## Lunch Options
-- Quinoa bowl with roasted vegetables and feta
-- Black bean and sweet potato burrito
-- Lentil soup with side salad
-
-## Dinner Options
-- Chickpea curry with brown rice
-- Veggie stir fry with tofu and brown rice
-- Eggplant parmesan with side salad
-
-## Snacks
-- Apple with almond butter
-- Cottage cheese with fruits
-- Hummus with vegetable sticks
-- Trail mix or mixed nuts`;
-  } else {
-    return `# ${dietType.charAt(0).toUpperCase() + dietType.slice(1)} Diet Plan
-
-## Daily Macros
-${dietType === "keto" ? "- Calories: 1800-2200 (adjust based on weight goals)\n- Protein: 100-120g\n- Carbs: 20-30g\n- Fats: 130-150g" :
-  dietType === "lowCarb" ? "- Calories: 1800-2200 (adjust based on weight goals)\n- Protein: 120-140g\n- Carbs: 50-100g\n- Fats: 80-100g" :
-  "- Calories: 1800-2200 (adjust based on weight goals)\n- Protein: 100-120g\n- Carbs: 180-220g\n- Fats: 60-70g"}
-
-## Breakfast Options
-${dietType === "keto" ? "- Avocado and bacon omelette\n- Greek yogurt with berries and nuts\n- Keto smoothie with almond milk, avocado, and protein powder" :
-  dietType === "lowCarb" ? "- Eggs with avocado and turkey bacon\n- Greek yogurt with berries and nuts\n- Protein smoothie with spinach and almond milk" :
-  "- Oatmeal with fruit and nuts\n- Whole grain toast with avocado and eggs\n- Smoothie bowl with granola and fruit"}
-
-## Lunch Options
-${dietType === "keto" ? "- Cobb salad with ranch dressing\n- Tuna salad lettuce wraps\n- Zucchini noodles with pesto and chicken" :
-  dietType === "lowCarb" ? "- Grilled chicken salad with olive oil dressing\n- Turkey and cheese lettuce wraps\n- Cauliflower rice bowl with protein" :
-  dietType === "vegan" ? "- Quinoa bowl with roasted vegetables\n- Chickpea and vegetable curry\n- Lentil soup with side salad" :
-  "- Chicken breast with sweet potato and vegetables\n- Quinoa bowl with lean protein and vegetables\n- Turkey sandwich on whole grain bread"}
-
-## Dinner Options
-${dietType === "keto" ? "- Steak with asparagus and butter\n- Baked salmon with broccoli\n- Chicken thighs with cheesy cauliflower mash" :
-  dietType === "lowCarb" ? "- Baked cod with roasted vegetables\n- Steak with asparagus\n- Turkey burger (no bun) with side salad" :
-  dietType === "vegan" ? "- Lentil bolognese with zucchini noodles\n- Stuffed bell peppers with beans and rice\n- Tofu stir fry with vegetables" :
-  "- Grilled fish with quinoa and vegetables\n- Lean beef stir fry with brown rice\n- Chicken breast with roasted vegetables"}
-
-## Snacks
-${dietType === "keto" ? "- Cheese slices\n- Hard-boiled eggs\n- Almonds or macadamia nuts\n- Beef jerky" :
-  dietType === "lowCarb" ? "- Greek yogurt\n- Protein shake\n- Handful of nuts\n- Celery with almond butter" :
-  dietType === "vegan" ? "- Apple with almond butter\n- Hummus with vegetable sticks\n- Trail mix or mixed nuts\n- Edamame" :
-  "- Apple with nut butter\n- Greek yogurt\n- Protein bar\n- Vegetable sticks with hummus"}`;
-  }
-}
-
-export default AIplanGenerator;

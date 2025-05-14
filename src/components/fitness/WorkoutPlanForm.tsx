@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +24,13 @@ export function WorkoutPlanForm({
   trainerId,
   onSave,
   onCancel
-}) {
-  // Modify to match the expected types
-  const [formData, setFormData] = useState<any>({
+}: WorkoutPlanFormProps) {
+  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: existingPlan?.name || '',
     description: existingPlan?.description || '',
     trainer_id: trainerId,
     workout_days: existingPlan?.workout_days || [createEmptyWorkoutDay()],
-    targetGoals: existingPlan?.targetGoals || existingPlan?.target_goals || [],
+    target_goals: existingPlan?.target_goals || [],
     difficulty: existingPlan?.difficulty || 'beginner',
     is_global: existingPlan?.is_global || false,
     member_id: existingPlan?.member_id || member.id
@@ -124,14 +122,13 @@ export function WorkoutPlanForm({
   };
 
   const handleSubmit = () => {
-    const finalPlan = {
+    const finalPlan: WorkoutPlan = {
       id: existingPlan?.id || uuidv4(),
       name: formData.name,
       description: formData.description,
       trainer_id: trainerId,
       workout_days: formData.workout_days,
-      targetGoals: formData.targetGoals,
-      target_goals: formData.targetGoals, // Include both properties for compatibility
+      target_goals: formData.target_goals,
       difficulty: formData.difficulty,
       is_global: formData.is_global,
       created_at: existingPlan?.created_at || new Date().toISOString(),

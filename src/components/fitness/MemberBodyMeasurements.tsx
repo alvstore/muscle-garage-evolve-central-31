@@ -13,7 +13,7 @@ interface MemberBodyMeasurementsProps {
   onSaveMeasurements: (measurements: Partial<BodyMeasurement>) => void;
 }
 
-export const MemberBodyMeasurements: React.FC<MemberBodyMeasurementsProps> = ({ 
+const MemberBodyMeasurements: React.FC<MemberBodyMeasurementsProps> = ({ 
   memberId, 
   currentUser,
   onSaveMeasurements

@@ -114,7 +114,6 @@ const BranchDeviceManager = () => {
     ipAddress: "",
   });
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Simulate fetching branches from an API
@@ -122,33 +121,6 @@ const BranchDeviceManager = () => {
       setBranches(MockBranches);
     }, 500);
   }, []);
-
-  const fetchBranches = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*');
-      
-      if (error) throw error;
-      
-      // Normalize branch data to ensure it has all required properties
-      const normalizedBranches = data.map(branch => ({
-        ...branch,
-        isActive: branch.is_active, // Add for backward compatibility
-        is_active: branch.is_active || branch.isActive || false,
-        created_at: branch.created_at || new Date().toISOString(),
-        updated_at: branch.updated_at || new Date().toISOString(),
-      }));
-      
-      setBranches(normalizedBranches);
-    } catch (error) {
-      console.error('Error fetching branches:', error);
-      toast.error('Failed to fetch branches');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleBranchChange = (branchId: string) => {
     setSelectedBranch(branchId);

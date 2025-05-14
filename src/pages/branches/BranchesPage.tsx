@@ -9,7 +9,6 @@ import { useBranch } from '@/hooks/use-branch';
 import { usePermissions } from '@/hooks/use-permissions';
 import BranchForm from '@/components/branch/BranchForm';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';
-import { Table, TableHeader, TableRow, TableBody, TableCell } from '@/components/ui/table';
 
 const BranchesPage = () => {
   const { branches, isLoading } = useBranch();
@@ -17,8 +16,6 @@ const BranchesPage = () => {
   const [selectedTab, setSelectedTab] = useState('all');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   
   const handleAddBranch = () => {
     setSelectedBranch(null);
@@ -34,18 +31,8 @@ const BranchesPage = () => {
     setIsEditModalOpen(false);
   };
   
-  const filteredBranches = branches.filter((branch) => {
-    const matchesSearch = !searchTerm || branch.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = 
-      (statusFilter === 'all') || 
-      (statusFilter === 'active' && branch.is_active) || 
-      (statusFilter === 'inactive' && !branch.is_active);
-    
-    return matchesSearch && matchesStatus;
-  });
-  
-  const activeBranches = filteredBranches.filter(branch => branch.is_active);
-  const inactiveBranches = filteredBranches.filter(branch => !branch.is_active);
+  const activeBranches = branches.filter(branch => branch.isActive);
+  const inactiveBranches = branches.filter(branch => !branch.isActive);
   
   return (
     <Container>
@@ -69,7 +56,7 @@ const BranchesPage = () => {
           
           <TabsContent value="all">
             <BranchList 
-              branches={filteredBranches} 
+              branches={branches} 
               isLoading={isLoading} 
               onEdit={handleEditBranch} 
               showEditOptions={can('manage_branches')}
@@ -136,11 +123,11 @@ const BranchList = ({ branches, isLoading, onEdit, showEditOptions }: BranchList
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {branches.map((branch) => (
-        <Card key={branch.id} className={`overflow-hidden ${!branch.is_active ? 'border-dashed border-gray-300' : ''}`}>
+        <Card key={branch.id} className={`overflow-hidden ${!branch.isActive ? 'border-dashed border-gray-300' : ''}`}>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
               <CardTitle className="truncate">{branch.name}</CardTitle>
-              {branch.is_active ? (
+              {branch.isActive ? (
                 <span className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Active

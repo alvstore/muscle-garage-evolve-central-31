@@ -1,137 +1,137 @@
 
-import React, { useState } from 'react';
-import { WorkoutPlan } from '@/types/fitness';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import React from 'react';
+import { WorkoutPlan } from '@/types/workout';
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash, Copy, Users } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { format } from 'date-fns';
 
 interface WorkoutPlanListProps {
   plans: WorkoutPlan[];
-  onSelectPlan?: (plan: WorkoutPlan) => void;
-  onCreatePlan?: () => void;
-  onEditPlan?: (plan: WorkoutPlan) => void;
-  onDeletePlan?: (planId: string) => void;
-  viewOnly?: boolean;
+  onEdit: (planId: string) => void;
+  onDelete: (planId: string) => void;
 }
 
-export const WorkoutPlanList = ({
-  plans,
-  onSelectPlan,
-  onCreatePlan,
-  onEditPlan,
-  onDeletePlan,
-  viewOnly = false
-}: WorkoutPlanListProps) => {
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Workout Plans</h2>
-        {!viewOnly && onCreatePlan && (
-          <Button onClick={onCreatePlan}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Plan
-          </Button>
-        )}
+export const WorkoutPlanList: React.FC<WorkoutPlanListProps> = ({ 
+  plans, 
+  onEdit,
+  onDelete 
+}) => {
+  if (plans.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No workout plans found</p>
       </div>
-
-      {plans.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">No workout plans found</p>
-          {!viewOnly && onCreatePlan && (
-            <Button onClick={onCreatePlan}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Your First Plan
+    );
+  }
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {plans.map((plan) => (
+        <Card key={plan.id} className="flex flex-col">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-semibold text-lg">{plan.name}</h3>
+              <Badge variant={plan.difficulty === 'beginner' ? 'outline' : plan.difficulty === 'intermediate' ? 'secondary' : 'destructive'}>
+                {plan.difficulty?.charAt(0).toUpperCase() + plan.difficulty?.slice(1) || 'All Levels'}
+              </Badge>
+            </div>
+            
+            <p className="text-sm text-muted-foreground mb-4">
+              {plan.description || 'No description provided'}
+            </p>
+            
+            <div className="space-y-1 mb-4">
+              <div className="text-sm">
+                <span className="font-medium">Days:</span> {plan.workout_days.length}
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Exercises:</span> {plan.workout_days.reduce((acc, day) => acc + day.exercises.length, 0)}
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Last Updated:</span> {format(new Date(plan.updated_at), 'MMM d, yyyy')}
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-1 mt-2">
+              {plan.target_goals?.map((goal, idx) => (
+                <Badge key={idx} variant="outline" className="bg-muted">
+                  {goal}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between mt-auto pt-4 border-t">
+            <Button variant="outline" size="sm" onClick={() => onEdit(plan.id)}>
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
             </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plans.map((plan) => (
-            <Card 
-              key={plan.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => onSelectPlan && onSelectPlan(plan)}
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle>{plan.name || 'Unnamed Plan'}</CardTitle>
-                  <div className="flex space-x-1">
-                    {plan.is_custom && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Custom
-                      </Badge>
-                    )}
-                    {plan.is_global && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        Global
-                      </Badge>
-                    )}
-                    {plan.difficulty && (
-                      <Badge variant="outline" className="capitalize">
-                        {plan.difficulty}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <CardDescription>
-                  {plan.description || 'No description provided'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  <p>Workout Days: {plan.workout_days?.length || 0}</p>
-                  {plan.target_goals && plan.target_goals.length > 0 && (
-                    <div className="mt-2">
-                      <p className="font-medium mb-1">Goals:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {plan.target_goals.map((goal, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {goal}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              {!viewOnly && (
-                <CardFooter className="flex justify-end space-x-2">
-                  {onEditPlan && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditPlan(plan);
-                      }}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                  )}
-                  {onDeletePlan && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeletePlan(plan.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                  )}
-                </CardFooter>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive">
+                  <Trash className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Deletion</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete the workout plan "{plan.name}"? 
+                    This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => onDelete(plan.id)}
+                  >
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-1" />
+                  Assign
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Assign Workout Plan</DialogTitle>
+                  <DialogDescription>
+                    This feature will be available in the member assignment page.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                  <DialogClose asChild>
+                    <Button>Close</Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardFooter>
+        </Card>
+      ))}
     </div>
   );
 };
-
-export default WorkoutPlanList;

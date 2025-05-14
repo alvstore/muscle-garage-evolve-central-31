@@ -47,7 +47,7 @@ export const followUpService = {
   /**
    * Create a new follow-up history entry
    */
-  async createFollowUpHistory(followUp: Omit<FollowUpHistory, "id" | "sent_at">): Promise<FollowUpHistory | null> {
+  async createFollowUpHistory(followUp: Omit<FollowUpHistory, 'id' | 'sent_at'>): Promise<FollowUpHistory | null> {
     try {
       const { data, error } = await supabase
         .from('follow_up_history')
@@ -353,65 +353,6 @@ export const followUpService = {
     } catch (error: any) {
       console.error('Error in deleteScheduledFollowUp:', error);
       toast.error('Failed to delete scheduled follow-up');
-      return false;
-    }
-  },
-
-  /**
-   * Schedule a follow-up for a lead
-   */
-  async scheduleFollowUp(leadId: string, followUpData: Omit<FollowUpHistory, "id" | "sent_at">): Promise<FollowUpHistory | null> {
-    try {
-      const { data, error } = await supabase
-        .from('follow_up_history')
-        .insert([followUpData])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error scheduling follow-up:', error);
-        throw error;
-      }
-      
-      toast.success('Follow-up scheduled successfully');
-      return data as FollowUpHistory;
-    } catch (error: any) {
-      console.error('Error in scheduleFollowUp:', error);
-      toast.error('Failed to schedule follow-up');
-      return null;
-    }
-  },
-  
-  /**
-   * Schedule bulk follow-ups for multiple leads
-   */
-  async scheduleBulkFollowUps(leadIds: string[], followUpData: any): Promise<boolean> {
-    try {
-      const followUps = leadIds.map(leadId => ({
-        lead_id: leadId,
-        type: followUpData.type,
-        content: followUpData.content,
-        subject: followUpData.subject,
-        status: 'scheduled',
-        scheduled_at: followUpData.scheduledFor.toISOString(),
-        notes: followUpData.content,
-        user_id: followUpData.assignedTo
-      }));
-
-      const { error } = await supabase
-        .from('follow_up_history')
-        .insert(followUps);
-      
-      if (error) {
-        console.error('Error scheduling bulk follow-ups:', error);
-        throw error;
-      }
-      
-      toast.success('Bulk follow-ups scheduled successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Error in scheduleBulkFollowUps:', error);
-      toast.error('Failed to schedule bulk follow-ups');
       return false;
     }
   }

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,7 +91,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
     setIsSubmitting(true);
     try {
       // Prepare branch data with all required fields
-      const branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'> = {
+      const branchData: Omit<Branch, 'id'> = {
         name: values.name,
         address: values.address,
         phone: values.phone || null,
@@ -101,6 +102,8 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         city: values.city || null,
         state: values.state || null,
         country: values.country || 'India',
+        created_at: branch?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         // Extended fields
         ...(values.max_capacity && { max_capacity: parseInt(values.max_capacity) }),
         ...(values.opening_hours && { opening_hours: values.opening_hours }),
@@ -110,15 +113,17 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         ...(values.timezone && { timezone: values.timezone })
       };
       
-      let result = null;
+      let success = false;
       
       if (isEditMode && branch) {
-        result = await updateBranch(branch.id, branchData);
+        const result = await updateBranch(branch.id, branchData);
+        success = !!result;
       } else {
-        result = await createBranch(branchData);
+        const result = await createBranch(branchData);
+        success = !!result;
       }
       
-      if (result) {
+      if (success) {
         form.reset();
         onComplete();
         toast.success(`Branch ${isEditMode ? 'updated' : 'created'} successfully`);

@@ -1,20 +1,32 @@
-
 import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { 
   Table, 
   TableBody, 
@@ -22,148 +34,254 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
-import { format } from 'date-fns';
-import { MoreHorizontal, Plus } from 'lucide-react';
-import { DietPlan } from '@/types/fitness';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { DietPlan } from "@/types/diet";
+import { AlertCircle, MoreVertical, Edit, Trash, Copy, Eye } from "lucide-react";
+import { formatDistance } from 'date-fns';
 
 interface DietPlanListProps {
-  plans?: DietPlan[];
-  onAdd?: () => void;
+  plans: DietPlan[];
   onEdit?: (plan: DietPlan) => void;
   onDelete?: (planId: string) => void;
+  onDuplicate?: (plan: DietPlan) => void;
+  onView?: (plan: DietPlan) => void;
+  onPlanCreated?: (plan: DietPlan) => void; // Add missing prop
+  onPlanUpdated?: (updatedPlan: DietPlan) => void; // Add missing prop
+  onPlanDeleted?: (planId: string) => void; // Add missing prop
+  canCreateGlobal?: boolean; // Add missing prop
+  emptyState?: React.ReactNode;
   isLoading?: boolean;
+  showActions?: boolean;
+  showFilters?: boolean;
 }
 
-const DietPlanList: React.FC<DietPlanListProps> = ({
-  plans = [],
-  onAdd,
+export const DietPlanList = ({
+  plans,
   onEdit,
   onDelete,
+  onDuplicate,
+  onView,
+  onPlanCreated,
+  onPlanUpdated,
+  onPlanDeleted,
+  canCreateGlobal,
+  emptyState,
   isLoading = false,
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  showActions = true,
+  showFilters = true,
+}: DietPlanListProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [showGlobalOnly, setShowGlobalOnly] = useState(false);
+  const [showCustomOnly, setShowCustomOnly] = useState(false);
 
-  const filteredPlans = searchTerm
-    ? plans.filter(plan => 
-        plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (plan.description && plan.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (plan.dietType && plan.dietType.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : plans;
-
-  const formatDate = (date?: string) => {
-    if (!date) return 'N/A';
-    try {
-      return format(new Date(date), 'MMM d, yyyy');
-    } catch (e) {
-      return date;
-    }
+  const handleDeleteClick = (planId: string) => {
+    setPlanToDelete(planId);
+    setShowConfirmDelete(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this diet plan?')) {
-      onDelete && onDelete(id);
+  const confirmDelete = () => {
+    if (planToDelete && onDelete) {
+      onDelete(planToDelete);
     }
+    setShowConfirmDelete(false);
+    setPlanToDelete(null);
   };
+
+  // Filter plans based on search query and filters
+  const filteredPlans = plans.filter(plan => {
+    const matchesSearch = plan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          plan.diet_type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (showGlobalOnly && !plan.is_global) return false;
+    if (showCustomOnly && !plan.is_custom) return false;
+    
+    return matchesSearch;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-2">
+          <div className="h-8 w-8 bg-muted rounded-full"></div>
+          <div className="h-4 w-32 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="w-full rounded-lg border border-dashed p-8 flex flex-col items-center justify-center">
+        {emptyState || (
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">No Diet Plans</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You haven't created any diet plans yet.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Diet Plans</CardTitle>
-            <CardDescription>Manage diet plans for members</CardDescription>
+    <div className="space-y-6">
+      {showFilters && (
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex-1">
+            <Input
+              placeholder="Search diet plans..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+            />
           </div>
-          {onAdd && (
-            <Button onClick={onAdd}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Plan
-            </Button>
-          )}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="global-only" 
+                checked={showGlobalOnly} 
+                onCheckedChange={(checked) => setShowGlobalOnly(checked === true)}
+              />
+              <Label htmlFor="global-only">Global Plans</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="custom-only" 
+                checked={showCustomOnly} 
+                onCheckedChange={(checked) => setShowCustomOnly(checked === true)}
+              />
+              <Label htmlFor="custom-only">Custom Plans</Label>
+            </div>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4">
-          <Input
-            placeholder="Search diet plans..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Loading diet plans...
-                  </TableCell>
-                </TableRow>
-              ) : filteredPlans.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No diet plans found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredPlans.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">{plan.name}</TableCell>
-                    <TableCell>{plan.description || 'No description'}</TableCell>
-                    <TableCell>
-                      {plan.dietType ? (
-                        <Badge variant="outline">{plan.dietType}</Badge>
-                      ) : (
-                        'Standard'
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredPlans.map((plan) => (
+          <Card key={plan.id} className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {plan.diet_type} • {plan.daily_calories} calories
+                  </CardDescription>
+                </div>
+                {showActions && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {onView && (
+                        <DropdownMenuItem onClick={() => onView(plan)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </DropdownMenuItem>
                       )}
-                    </TableCell>
-                    <TableCell>{formatDate(plan.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {onEdit && (
-                            <DropdownMenuItem onClick={() => onEdit(plan)}>
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          {onDelete && (
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(plan.id)}
-                              className="text-destructive"
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                      {onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(plan)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
+                      {onDuplicate && (
+                        <DropdownMenuItem onClick={() => onDuplicate(plan)}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
+                      )}
+                      {onDelete && (
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(plan.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+              <div className="flex gap-2 mt-2">
+                {plan.is_global && <Badge variant="outline">Global</Badge>}
+                {plan.is_custom && <Badge variant="outline">Custom</Badge>}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div>
+                  <h4 className="text-sm font-medium">Meals</h4>
+                  <p className="text-sm text-muted-foreground">{plan.meal_plans?.length || 0} meals planned</p>
+                </div>
+                <Separator />
+
+
+
+
+                <div>
+                  <h4 className="text-sm font-medium">Last Updated</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {plan.updated_at ? 
+                      formatDistance(new Date(plan.updated_at), new Date(), { addSuffix: true }) : 
+                      'Never updated'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-muted/50 pt-3">
+              <div className="w-full flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">
+                  {plan.meal_plans?.length || 0} meals • {plan.daily_calories} cal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                </div>
+                {onView && (
+                  <Button variant="ghost" size="sm" onClick={() => onView(plan)}>
+                    View Plan
+                  </Button>
+                )}
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this diet plan? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

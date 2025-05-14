@@ -55,9 +55,8 @@ const EditBranchDialog: React.FC<EditBranchDialogProps> = ({ open, onOpenChange,
   const onSubmit = async (data: BranchFormValues) => {
     setIsSubmitting(true);
     try {
-      const result = await updateBranch(branch.id, data);
-      
-      if (result) {
+      const updatedBranch = await updateBranch(branch.id, data);
+      if (updatedBranch) {
         toast.success("Branch updated successfully");
         if (onComplete) {
           onComplete();

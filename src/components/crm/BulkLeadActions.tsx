@@ -1,210 +1,341 @@
-
 import React, { useState } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Copy, Edit, Trash2, Plus, UserPlus, Send, Calendar } from "lucide-react"
-import { Lead, FollowUpType } from '@/types/crm';
-import { useToast } from "@/components/ui/use-toast"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { DatePicker } from "@/components/ui/date-picker"
-import { format, addDays } from 'date-fns';
+import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { leadService } from '@/services/leadService';
 import { followUpService } from '@/services/followUpService';
-import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Loader2, Users, Tag, Calendar } from 'lucide-react';
+import { FollowUpType } from '@/types/crm';
 
 interface BulkLeadActionsProps {
-  leads: Lead[];
   selectedLeads: string[];
-  onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, updates: Partial<Lead>) => Promise<void>;
   onActionComplete?: () => void;
 }
 
 const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ 
-  leads, 
   selectedLeads, 
-  onDelete, 
-  onUpdate,
   onActionComplete 
 }) => {
-  const { toast } = useToast()
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [showFollowUpForm, setShowFollowUpForm] = useState(false);
+  const queryClient = useQueryClient();
+  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
+  const [showTagDialog, setShowTagDialog] = useState(false);
+  const [showStageDialog, setShowStageDialog] = useState(false);
+  
+  // Follow-up form state
   const [followUpData, setFollowUpData] = useState({
     type: 'call' as FollowUpType,
-    scheduledFor: addDays(new Date(), 1),
-    subject: 'Follow-up',
-    content: '',
+    scheduledFor: new Date(),
+    subject: '',
+    content: ''
   });
-  const { user } = useAuth();
+  
+  // Tag form state
+  const [tagData, setTagData] = useState({
+    tags: ''
+  });
+  
+  // Stage form state
+  const [stageData, setStageData] = useState({
+    stage: 'cold' as 'cold' | 'warm' | 'hot' | 'won' | 'lost'
+  });
 
-  const handleDeleteSelected = () => {
-    setShowDeleteAlert(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      await Promise.all(selectedLeads.map(id => onDelete(id)));
-      toast({
-        title: "Success",
-        description: "Selected leads deleted successfully.",
-      })
-      if (onActionComplete) onActionComplete();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete leads.",
-        variant: "destructive",
-      })
-    } finally {
-      setShowDeleteAlert(false);
-    }
-  };
-
-  const cancelDelete = () => {
-    setShowDeleteAlert(false);
-  };
-
-  const handleScheduleFollowUp = () => {
-    setShowFollowUpForm(true);
-  };
-
-  const handleFollowUpInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFollowUpData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFollowUpDateChange = (date: Date | undefined) => {
-    if (date) {
-      setFollowUpData(prev => ({ ...prev, scheduledFor: date }));
-    }
-  };
-
-  const handleSubmitFollowUp = async () => {
-    try {
-      const selectedLeadObjects = leads.filter(lead => selectedLeads.includes(lead.id));
-      
-      // Use the new method we added to followUpService
-      const success = await followUpService.scheduleBulkFollowUps(
-        selectedLeads,
-        { 
-          ...followUpData, 
-          assignedTo: user?.id 
-        }
+  // Bulk update stage mutation
+  const updateStageMutation = useMutation({
+    mutationFn: async () => {
+      const promises = selectedLeads.map(leadId => 
+        leadService.updateLead(leadId, { funnel_stage: stageData.stage })
       );
-      
-      if (success) {
-        toast({
-          title: "Success",
-          description: "Follow-ups scheduled successfully.",
-        });
-        setShowFollowUpForm(false);
-        if (onActionComplete) onActionComplete();
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to schedule follow-ups.",
-        variant: "destructive",
-      });
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success(`${selectedLeads.length} leads moved to ${stageData.stage} stage`);
+      setShowStageDialog(false);
+      if (onActionComplete) onActionComplete();
+    },
+    onError: () => {
+      toast.error('Failed to update lead stages');
     }
+  });
+
+  // Bulk add tags mutation
+  const addTagsMutation = useMutation({
+    mutationFn: async () => {
+      const newTags = tagData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      const promises = selectedLeads.map(async (leadId) => {
+        const lead = await leadService.getLeadById(leadId);
+        if (!lead) return null;
+        
+        const currentTags = lead.tags || [];
+        const updatedTags = [...new Set([...currentTags, ...newTags])];
+        
+        return leadService.updateLead(leadId, { tags: updatedTags });
+      });
+      
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success(`Tags added to ${selectedLeads.length} leads`);
+      setShowTagDialog(false);
+      if (onActionComplete) onActionComplete();
+    },
+    onError: () => {
+      toast.error('Failed to add tags');
+    }
+  });
+
+  // Bulk schedule follow-up mutation
+  const scheduleFollowUpMutation = useMutation({
+    mutationFn: async () => {
+      const promises = selectedLeads.map(leadId => 
+        followUpService.createFollowUpHistory({
+          lead_id: leadId,
+          type: followUpData.type,
+          content: followUpData.content,
+          subject: followUpData.subject,
+          status: 'scheduled',
+          scheduled_at: followUpData.scheduledFor.toISOString()
+        })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followUpHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
+      toast.success(`Follow-ups scheduled for ${selectedLeads.length} leads`);
+      setShowFollowUpDialog(false);
+      if (onActionComplete) onActionComplete();
+    },
+    onError: () => {
+      toast.error('Failed to schedule follow-ups');
+    }
+  });
+
+  const handleFollowUpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    scheduleFollowUpMutation.mutate();
+  };
+
+  const handleTagSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addTagsMutation.mutate();
+  };
+
+  const handleStageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateStageMutation.mutate();
   };
 
   return (
-    <div>
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" disabled={selectedLeads.length === 0}>
-            Bulk Actions <MoreHorizontal className="ml-2 h-4 w-4" />
+            Bulk Actions ({selectedLeads.length})
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleScheduleFollowUp} disabled={selectedLeads.length === 0}>
-            <Calendar className="mr-2 h-4 w-4" /> Schedule Follow-up
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => setShowStageDialog(true)}>
+            Move to Stage
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDeleteSelected} disabled={selectedLeads.length === 0}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
+          <DropdownMenuItem onClick={() => setShowTagDialog(true)}>
+            Add Tags
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowFollowUpDialog(true)}>
+            Schedule Follow-up
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Delete Confirmation Alert */}
-      {showDeleteAlert && (
-        <Alert variant="destructive">
-          <AlertTitle>Are you sure?</AlertTitle>
-          <AlertDescription>
-            This action will permanently delete the selected leads.
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="ghost" onClick={cancelDelete}>Cancel</Button>
-              <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+      {/* Stage Dialog */}
+      <Dialog open={showStageDialog} onOpenChange={setShowStageDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move Leads to Stage</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleStageSubmit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="stage">Select Stage</Label>
+              <Select
+                value={stageData.stage}
+                onValueChange={(value: 'cold' | 'warm' | 'hot' | 'won' | 'lost') => 
+                  setStageData({ ...stageData, stage: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cold">Cold</SelectItem>
+                  <SelectItem value="warm">Warm</SelectItem>
+                  <SelectItem value="hot">Hot</SelectItem>
+                  <SelectItem value="won">Won</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </AlertDescription>
-        </Alert>
-      )}
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                disabled={updateStageMutation.isPending}
+              >
+                {updateStageMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Moving...
+                  </>
+                ) : (
+                  <>
+                    <Users className="mr-2 h-4 w-4" />
+                    Move {selectedLeads.length} Leads
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {/* Schedule Follow-up Form */}
-      {showFollowUpForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Schedule Follow-up</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Input
-                  id="type"
-                  name="type"
+      {/* Tags Dialog */}
+      <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tags to Leads</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleTagSubmit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input
+                id="tags"
+                value={tagData.tags}
+                onChange={(e) => setTagData({ ...tagData, tags: e.target.value })}
+                placeholder="e.g. VIP, Interested in Yoga, Follow up"
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                disabled={addTagsMutation.isPending || !tagData.tags.trim()}
+              >
+                {addTagsMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Tag className="mr-2 h-4 w-4" />
+                    Add Tags to {selectedLeads.length} Leads
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Follow-up Dialog */}
+      <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Schedule Follow-up for Leads</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleFollowUpSubmit} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Follow-up Type</Label>
+                <Select
                   value={followUpData.type}
-                  onChange={handleFollowUpInputChange}
-                  className="mt-1"
-                />
+                  onValueChange={(value: FollowUpType) => 
+                    setFollowUpData({ ...followUpData, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="call">Call</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="meeting">Meeting</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Scheduled For</Label>
                 <DatePicker
                   date={followUpData.scheduledFor}
-                  setDate={handleFollowUpDateChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  name="subject"
-                  value={followUpData.subject}
-                  onChange={handleFollowUpInputChange}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  name="content"
-                  value={followUpData.content}
-                  onChange={handleFollowUpInputChange}
-                  className="mt-1"
+                  setDate={(date) => date && setFollowUpData({ ...followUpData, scheduledFor: date })}
                 />
               </div>
             </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="ghost" onClick={() => setShowFollowUpForm(false)}>Cancel</Button>
-              <Button onClick={handleSubmitFollowUp}>Schedule</Button>
+            <div className="space-y-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                value={followUpData.subject}
+                onChange={(e) => setFollowUpData({ ...followUpData, subject: e.target.value })}
+                placeholder="Follow-up subject"
+              />
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Message</Label>
+              <Textarea
+                id="content"
+                value={followUpData.content}
+                onChange={(e) => setFollowUpData({ ...followUpData, content: e.target.value })}
+                placeholder="Follow-up message or notes"
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                disabled={
+                  scheduleFollowUpMutation.isPending || 
+                  !followUpData.subject.trim() || 
+                  !followUpData.content.trim()
+                }
+              >
+                {scheduleFollowUpMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Schedule for {selectedLeads.length} Leads
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

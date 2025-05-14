@@ -1,3 +1,4 @@
+
 // Backup of DashboardLayout.tsx as of sidebar-ui-cleanup-backup
 
 import { useState, useEffect } from "react";
@@ -10,7 +11,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
-import { DashboardHeader } from "@/components/dashboard/sections/DashboardHeader";
+import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";
 
 const DashboardLayout = () => {

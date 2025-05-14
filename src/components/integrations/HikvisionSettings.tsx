@@ -12,9 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { hikvisionService } from '@/services/integrations/hikvisionService';
-import { hikvisionPartnerService } from '@/services/integrations/hikvision/hikvisionPartnerService';
+import { hikvisionPartnerService } from '@/services/integrations/hikvisionPartnerService';
 import { hikvisionPollingService } from '@/services/integrations/hikvisionPollingService';
-import { hikvisionWebhookService } from '@/services/integrations/hikvision/hikvisionWebhookService';
+import { hikvisionWebhookService } from '@/services/integrations/hikvisionWebhookService';
 
 export function HikvisionSettings() {
   const [apiUrl, setApiUrl] = useState('');
