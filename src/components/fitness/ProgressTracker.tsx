@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, Camera, Save, Plus, Loader2 } from "lucide-react";
 import { ProgressMetrics } from "@/types/class";
-import { Member } from "@/types";
+import { Member } from '@/types'; 
 import { toast } from "sonner";
 import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { supabase } from '@/services/supabaseClient';

@@ -23,6 +23,10 @@ const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
     subject: item.subject || "",
     content: item.content || "",
     status: item.status,
+    createdAt: new Date().toISOString(), // Add missing required field
+    lead: {
+      name: item.lead_name || "Unknown Lead"
+    }
   };
 };
 

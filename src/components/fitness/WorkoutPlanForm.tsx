@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Member } from "@/types";
-import { WorkoutPlan, WorkoutDay, Exercise } from "@/types/workout";
+import { WorkoutPlan, WorkoutDay, Exercise } from "@/types/index";
 import { v4 as uuidv4 } from 'uuid';
 
 interface WorkoutPlanFormProps {

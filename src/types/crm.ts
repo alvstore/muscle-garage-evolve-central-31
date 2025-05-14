@@ -30,7 +30,7 @@ export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
 
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'other';
 
-export type FollowUpType = 'email' | 'call' | 'sms' | 'meeting' | 'whatsapp';
+export type FollowUpType = 'email' | 'call' | 'sms' | 'meeting' | 'whatsapp' | 'other';
 
 export interface FollowUp {
   id: string;
@@ -66,7 +66,7 @@ export interface ScheduledFollowUp {
   scheduledFor: string;
   subject: string;
   content: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'overdue';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'overdue' | 'sent';
 }
 
 export interface FollowUpScheduled {
@@ -88,12 +88,14 @@ export interface FollowUpScheduled {
 export interface FollowUpTemplate {
   id: string;
   title: string;
+  name: string; // Added to fix errors in FollowUpTemplatesList.tsx
   content: string;
   type: FollowUpType;
   variables: string[];
   isDefault?: boolean;
   created_at?: string;
   updated_at?: string;
+  created_by?: string; // Added to fix error in FollowUpTemplatesList.tsx
 }
 
 export interface LeadConversion {

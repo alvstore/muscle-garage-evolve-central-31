@@ -78,5 +78,10 @@ export const leadService = {
     }
     
     return true;
+  },
+  
+  // Add refetch method to fix error in LeadsList.tsx
+  refetch: async () => {
+    return await leadService.getLeads();
   }
 };

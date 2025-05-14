@@ -60,14 +60,17 @@ export const followUpService = {
       
       return data.map(item => ({
         id: item.id,
-        lead_id: item.lead_id,
-        lead_name: item.leads?.name || "Unknown Lead",
+        leadId: item.lead_id,
+        scheduledBy: item.sent_by || "",
+        scheduledDate: item.scheduled_at || "",
         type: item.type,
-        scheduled_for: item.scheduled_at,
         subject: item.subject || "",
         content: item.content,
         status: item.status,
-        sent_by: item.sent_by,
+        createdAt: new Date().toISOString(), // Add missing field to match interface
+        lead: {
+          name: item.leads?.name || "Unknown Lead",
+        }
       })) || [];
     } catch (error) {
       console.error('Error fetching scheduled follow-ups:', error);

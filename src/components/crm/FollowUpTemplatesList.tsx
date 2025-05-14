@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -93,6 +92,55 @@ const mockTemplates: FollowUpTemplate[] = [
   }
 ];
 
+// Hard-coded examples
+const defaultTemplates: FollowUpTemplate[] = [
+  {
+    id: '1',
+    title: 'Welcome Email',
+    name: 'Welcome Email',  // Added name field
+    type: 'email',
+    content: 'Dear {{name}},\n\nThank you for your interest in our fitness center. We would love to have you join our community!\n\nBest regards,\nThe Team',
+    variables: ['name'],
+    isDefault: true
+  },
+  {
+    id: '2',
+    title: 'Follow-up After Trial',
+    name: 'Follow-up After Trial',
+    type: 'email',
+    content: 'Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}',
+    variables: ['name', 'trialDate', 'staffName'],
+    isDefault: false
+  },
+  {
+    id: '3',
+    title: 'Membership Reminder',
+    name: 'Membership Reminder',
+    type: 'sms',
+    content: 'Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.',
+    variables: ['name', 'gymPhone'],
+    isDefault: false
+  },
+  {
+    id: '4',
+    title: 'WhatsApp Introduction',
+    name: 'WhatsApp Introduction',
+    type: 'whatsapp',
+    content: 'Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.',
+    variables: ['name', 'staffName'],
+    isDefault: false
+  },
+  {
+    id: '5',
+    title: 'Special Offer',
+    name: 'Special Offer',
+    type: 'email',
+    content: 'Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}',
+    variables: ['name', 'discountAmount', 'expiryDate', 'staffName'],
+    isDefault: false
+  }
+];
+
 interface FollowUpTemplatesListProps {
   onEdit: (template: FollowUpTemplate) => void;
   onAddNew: () => void;
@@ -101,6 +149,8 @@ interface FollowUpTemplatesListProps {
 const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps) => {
   const [templates, setTemplates] = useState<FollowUpTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingTemplate, setEditingTemplate] = useState<FollowUpTemplate | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     // Simulate API call
@@ -159,6 +209,14 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
+  };
+
+  const handleEditTemplate = (template: FollowUpTemplate) => {
+    setEditingTemplate({
+      ...template,
+      name: template.title || template.name, // Handle both possibilities
+    });
+    setIsEditDialogOpen(true);
   };
 
   return (
