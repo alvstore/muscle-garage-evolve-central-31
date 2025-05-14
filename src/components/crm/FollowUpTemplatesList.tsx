@@ -113,7 +113,7 @@ const moreTemplates: FollowUpTemplate[] = [
     name: 'WhatsApp Achievement',
     title: 'WhatsApp Achievement',
     type: 'whatsapp',
-    content: 'Congratulations {{name}}! You've reached your fitness milestone of {{goal}}!',
+    content: 'Congratulations {{name}}! You\'ve reached your fitness milestone of {{goal}}!',
     variables: ['name', 'goal'],
     isDefault: false,
     created_at: '2023-02-15T16:45:00Z'
@@ -159,15 +159,15 @@ export const FollowUpTemplatesList = ({
 
   const getTypeColor = (type: FollowUpType) => {
     switch(type) {
-      case 'email':
+      case "email":
         return 'bg-blue-100 text-blue-800';
-      case 'sms':
+      case "sms":
         return 'bg-green-100 text-green-800';
-      case 'whatsapp':
+      case "whatsapp":
         return 'bg-emerald-100 text-emerald-800';
-      case 'call':
+      case "call":
         return 'bg-amber-100 text-amber-800';
-      case 'meeting':
+      case "meeting":
         return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
