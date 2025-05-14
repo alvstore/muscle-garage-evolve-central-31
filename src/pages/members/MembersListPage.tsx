@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useMembershipPlans } from '@/hooks/use-membership';
+import { useMembershipPlans } from '@/hooks/use-membership-operations';
 import type { Member } from '@/hooks/use-members';
 import { Users, UserCheck, UserSearch, Crown, Monitor, PieChart, Edit, UserPlus as UserPlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

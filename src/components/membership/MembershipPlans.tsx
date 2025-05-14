@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MembershipPlan, MembershipPlanStatus } from '@/types/membership';
-import { useMembershipPlans } from '@/hooks/use-membership';
+import { useMembershipPlans } from '@/hooks/use-membership-operations';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useBranch } from '@/hooks/use-branch';
 import { supabase } from '@/integrations/supabase/client';

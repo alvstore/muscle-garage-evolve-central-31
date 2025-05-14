@@ -37,7 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useBranch } from "@/hooks/use-branch";
-import { useMemberships } from "@/hooks/use-memberships";
+import { useMemberships } from "@/hooks/use-membership-data";
 import { membershipService } from "@/services/membershipService";
 import { CalendarIcon, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";

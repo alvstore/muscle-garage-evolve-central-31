@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { addDays, format } from 'date-fns';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMemberships } from '@/hooks/use-memberships';
+import { useMemberships } from '@/hooks/use-membership-data';
 import { useMembers } from '@/hooks/use-members';
 import { useTrainers } from '@/hooks/use-trainers';
 import { useBranch } from '@/hooks/use-branch';
