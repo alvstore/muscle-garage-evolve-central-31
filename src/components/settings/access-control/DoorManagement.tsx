@@ -251,9 +251,10 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
             hikvision_door_id: hikvisionDoorId,
             door_index: doorIndex,
             door_channel: doorChannel,
-            door_type: doorType,
-            door_lock_type: doorLockType,
-            open_duration: openDuration,
+            // Removing fields that don't exist in the database schema
+            // door_type: doorType,
+            // door_lock_type: doorLockType,
+            // open_duration: openDuration,
             is_active: isActive,
           })
           .eq('id', editingDoor.id);
@@ -275,9 +276,10 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
             hikvision_door_id: hikvisionDoorId,
             door_index: doorIndex,
             door_channel: doorChannel,
-            door_type: doorType,
-            door_lock_type: doorLockType,
-            open_duration: openDuration,
+            // Removing fields that don't exist in the database schema
+            // door_type: doorType,
+            // door_lock_type: doorLockType,
+            // open_duration: openDuration,
             is_active: isActive,
             branch_id: branchId,
           });

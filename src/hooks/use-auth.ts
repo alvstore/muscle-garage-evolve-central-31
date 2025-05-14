@@ -51,7 +51,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthStateProvider>
-      <AuthProviderInner>{children}</AuthProviderInner>
+      <AuthProviderInner>{ children }</AuthProviderInner>
     </AuthStateProvider>
   );
 };
@@ -104,7 +104,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
         event: 'UPDATE', 
         schema: 'public', 
         table: 'profiles',
-        filter: user ? `id=eq.${user.id}` : undefined
+        filter: user ? `id=eq.${user.id}` : ''
       }, (payload) => {
         if (payload.new && user && payload.new.id === user.id) {
           setProfile(payload.new as Profile);
