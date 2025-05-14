@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import MembershipAssignmentForm from '@/components/membership/MembershipAssignmentForm';
 import { useBranch } from '@/hooks/use-branch';
 import { membershipService } from '@/services/membershipService';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 import { formatCurrency } from '@/utils/stringUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AttendanceHistory from "@/components/attendance/AttendanceHistory";
@@ -89,7 +89,7 @@ interface BiometricStatus {
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
+  // Using the toast helper directly from UI components
   const { currentBranch } = useBranch();
   const navigate = useNavigate();
   const [member, setMember] = useState<MemberData | null>(null);
@@ -274,24 +274,22 @@ const MemberProfilePage = () => {
       
       if (result.success) {
         setBiometricRegistrationStatus("Registered");
-        toast({
+        toast.success({
           title: "Success",
-          description: result.message,
+          description: result.message
         });
       } else {
         setBiometricRegistrationStatus("Failed");
-        toast({
+        toast.error({
           title: "Registration failed",
-          description: result.message,
-          variant: "destructive",
+          description: result.message
         });
       }
     } catch (error: any) {
       setBiometricRegistrationStatus("Error");
-      toast({
+      toast.error({
         title: "Error",
-        description: error.message || "An error occurred during biometric registration",
-        variant: "destructive",
+        description: error.message || "An error occurred during biometric registration"
       });
     } finally {
       setIsBiometricRegistering(false);
@@ -1045,7 +1043,7 @@ const MemberProfilePage = () => {
                   // Update the measurements list
                   setMeasurements([newMeasurement, ...measurements]);
                   
-                  toast({
+                  toast.success({
                     title: "Success",
                     description: "Measurement added successfully"
                   });
@@ -1053,10 +1051,9 @@ const MemberProfilePage = () => {
                   setIsAddMeasurementOpen(false);
                 } catch (error: any) {
                   console.error('Error adding measurement:', error);
-                  toast({
+                  toast.error({
                     title: "Error",
-                    description: error.message || "Failed to add measurement",
-                    variant: "destructive"
+                    description: error.message || "Failed to add measurement"
                   });
                 }
               }}

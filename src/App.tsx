@@ -3,12 +3,11 @@ import React, { useEffect, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './router/AppRouter';
 import { ThemeProvider } from './providers/ThemeProvider';
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster, toast } from "@/components/ui/sonner";
 import { ensureStorageBucketsExist } from './services/storageService';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './hooks/use-auth';
 import { BranchProvider } from './hooks/use-branch';
-import { toast } from 'sonner';
 import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 
 // Create a client
