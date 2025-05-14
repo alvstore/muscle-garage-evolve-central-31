@@ -128,7 +128,8 @@ const FunnelBoard = () => {
       
       // Update local state
       movedLead.funnel_stage = newStage;
-      toast.success(`Moved ${movedLead.name} to ${destCol.title}`);
+      const leadName = movedLead.name || `${movedLead.first_name} ${movedLead.last_name}`;
+      toast.success(`Moved ${leadName} to ${destCol.title}`);
     }
     
     // Add the lead to the destination column
@@ -141,11 +142,11 @@ const FunnelBoard = () => {
   };
 
   const handleSendMessage = (lead: Lead) => {
-    toast.info(`Preparing message for ${lead.name}`);
+    toast.info(`Preparing message for ${lead.name || `${lead.first_name} ${lead.last_name}`}`);
   };
 
   const handleCallLead = (lead: Lead) => {
-    toast.info(`Initiating call to ${lead.name}`);
+    toast.info(`Initiating call to ${lead.name || `${lead.first_name} ${lead.last_name}`}`);
   };
 
   return (
@@ -239,7 +240,7 @@ const FunnelBoard = () => {
                                   className="border bg-card rounded-md p-3 shadow-sm hover:shadow-md transition-shadow"
                                 >
                                   <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-medium">{lead.name}</h3>
+                                    <h3 className="font-medium">{lead.name || `${lead.first_name} ${lead.last_name}`}</h3>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8">

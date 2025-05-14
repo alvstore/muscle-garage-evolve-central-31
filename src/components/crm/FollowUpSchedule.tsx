@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Lead, FollowUpType, FollowUpScheduled, ScheduledFollowUp } from '@/types/crm';
+import { FollowUpType, FollowUpScheduled } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { followUpService } from '@/services/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,15 +13,15 @@ import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } fr
 import { toast } from 'sonner';
 
 // Convert the database model to the component model
-const convertToScheduledFollowUp = (item: FollowUpScheduled): ScheduledFollowUp => {
+const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
   return {
     id: item.id,
-    leadId: item.lead_id,
-    leadName: item.lead_name || "Unknown Lead",
+    leadId: item.lead_id || "",
+    scheduledBy: item.sent_by || "",
+    scheduledDate: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
     type: item.type,
-    scheduledFor: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
     subject: item.subject || "",
-    content: item.content,
+    content: item.content || "",
     status: item.status,
   };
 };
@@ -186,12 +186,12 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLo
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium">{followUp.subject}</div>
-                    <div className="text-sm text-muted-foreground">For: {followUp.leadName}</div>
+                    <div className="text-sm text-muted-foreground">For: {followUp.leadId}</div>
                   </div>
                   <div className="flex space-x-1">
                     {getTypeBadge(followUp.type)}
-                    {followUp.status === "sent" && (
-                      <Badge variant="secondary">Sent</Badge>
+                    {followUp.status === "completed" && (
+                      <Badge variant="secondary">Completed</Badge>
                     )}
                   </div>
                 </div>
@@ -201,9 +201,9 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLo
                 <div className="mt-3 flex justify-between items-center">
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4 mr-1" />
-                    <span>{formatDate(followUp.scheduledFor)}</span>
+                    <span>{formatDate(followUp.scheduledDate)}</span>
                     <Clock className="h-4 w-4 ml-3 mr-1" />
-                    <span>{formatTime(followUp.scheduledFor)}</span>
+                    <span>{formatTime(followUp.scheduledDate)}</span>
                   </div>
                   <div className="flex space-x-2">
                     {followUp.type === "call" && (
@@ -212,7 +212,12 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLo
                         Call
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDelete(followUp.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

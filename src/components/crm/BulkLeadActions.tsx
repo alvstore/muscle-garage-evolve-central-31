@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -22,9 +23,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
 import { followUpService } from '@/services/followUpService';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 import { Loader2, Users, Tag, Calendar } from 'lucide-react';
-import { FollowUpType } from '@/types/crm';
+import { FollowUpType, FunnelStage } from '@/types/crm';
 
 interface BulkLeadActionsProps {
   selectedLeads: string[];
@@ -55,7 +55,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({
   
   // Stage form state
   const [stageData, setStageData] = useState({
-    stage: 'cold' as 'cold' | 'warm' | 'hot' | 'won' | 'lost'
+    stage: 'cold' as FunnelStage
   });
 
   // Bulk update stage mutation
@@ -86,6 +86,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({
         const lead = await leadService.getLeadById(leadId);
         if (!lead) return null;
         
+        // Ensure lead.tags is an array
         const currentTags = lead.tags || [];
         const updatedTags = [...new Set([...currentTags, ...newTags])];
         
@@ -179,7 +180,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({
               <Label htmlFor="stage">Select Stage</Label>
               <Select
                 value={stageData.stage}
-                onValueChange={(value: 'cold' | 'warm' | 'hot' | 'won' | 'lost') => 
+                onValueChange={(value: FunnelStage) => 
                   setStageData({ ...stageData, stage: value })
                 }
               >

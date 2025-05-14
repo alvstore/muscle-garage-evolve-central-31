@@ -20,11 +20,17 @@ export interface Lead {
   tags?: string[];
   conversion_date?: string;
   stage?: string;
+  follow_up_date?: string;
+  interests?: string[];
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived' | 'converted';
 
-export type FollowUpType = 'email' | 'call' | 'sms' | 'meeting' | 'whatsapp' | 'other';
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
+
+export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'other';
+
+export type FollowUpType = 'email' | 'call' | 'sms' | 'meeting' | 'whatsapp';
 
 export interface FollowUp {
   id: string;
@@ -37,15 +43,30 @@ export interface FollowUp {
   follow_up_date?: string;
 }
 
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  template_id?: string;
+  sent_by: string;
+  sent_at: string;
+  response_at?: string;
+  scheduled_at?: string;
+  type: FollowUpType;
+  content: string;
+  status: string;
+  response?: string;
+  subject?: string;
+}
+
 export interface ScheduledFollowUp {
   id: string;
   lead_id: string;
-  scheduled_by: string;
-  scheduled_date: string;
+  leadName: string;
   type: FollowUpType;
-  notes?: string;
+  scheduledFor: string;
+  subject: string;
+  content: string;
   status: 'scheduled' | 'completed' | 'cancelled' | 'overdue';
-  created_at: string;
 }
 
 export interface FollowUpScheduled {
@@ -57,6 +78,11 @@ export interface FollowUpScheduled {
   notes?: string;
   status: 'scheduled' | 'completed' | 'cancelled' | 'overdue';
   createdAt: string;
+  subject?: string;
+  content?: string;
+  lead?: {
+    name: string;
+  };
 }
 
 export interface FollowUpTemplate {

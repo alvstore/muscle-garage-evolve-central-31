@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { taskService, Task } from '@/services/taskService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FollowUpScheduled } from '@/types/crm';
 
 const FollowUpReminders = () => {
   const { currentBranch } = useBranch();
@@ -41,10 +43,22 @@ const FollowUpReminders = () => {
     queryKey: ['todaysFollowUps', currentBranch?.id, user?.id],
     queryFn: async () => {
       const allScheduled = await followUpService.getScheduledFollowUps(currentBranch?.id);
-      return allScheduled.filter(followUp => {
-        const scheduledDate = parseISO(followUp.scheduled_for || followUp.scheduled_at || '');
+      const convertedFollowUps = allScheduled.map((item) => ({
+        id: item.id,
+        leadId: item.lead_id,
+        scheduledBy: item.sent_by || "",
+        scheduledDate: item.scheduled_for || item.scheduled_at || "",
+        type: item.type,
+        subject: item.subject || "",
+        content: item.content || "",
+        status: item.status,
+        lead: { name: item.lead_name || "Unknown Lead" }
+      }));
+      
+      return convertedFollowUps.filter(followUp => {
+        const scheduledDate = parseISO(followUp.scheduledDate);
         return (isToday(scheduledDate) || isTomorrow(scheduledDate)) && 
-               (!followUp.sent_by || followUp.sent_by === user?.id);
+               (!followUp.scheduledBy || followUp.scheduledBy === user?.id);
       });
     },
     enabled: !!currentBranch?.id && !!user?.id,
@@ -119,6 +133,7 @@ const FollowUpReminders = () => {
       sent_at: new Date().toISOString()
     }).then(() => {
       toast.success('Follow-up marked as completed');
+      queryClient.invalidateQueries({ queryKey: ['todaysFollowUps'] });
     }).catch(() => {
       toast.error('Failed to update follow-up status');
     });
@@ -134,6 +149,7 @@ const FollowUpReminders = () => {
       scheduled_at: snoozeTime.toISOString()
     }).then(() => {
       toast.success('Follow-up snoozed for 2 hours');
+      queryClient.invalidateQueries({ queryKey: ['todaysFollowUps'] });
     }).catch(() => {
       toast.error('Failed to snooze follow-up');
     });
@@ -194,7 +210,7 @@ const FollowUpReminders = () => {
               <div className="space-y-3">
                 {followUps
                   .slice(0, showAll ? undefined : 5)
-                  .map((followUp) => (
+                  .map((followUp: FollowUpScheduled) => (
                     <div 
                       key={followUp.id}
                       className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/10 transition-colors"
@@ -206,12 +222,12 @@ const FollowUpReminders = () => {
                             <span className="capitalize">{followUp.type}</span>
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            {formatScheduledTime(followUp.scheduled_for || followUp.scheduled_at)}
+                            {formatScheduledTime(followUp.scheduledDate)}
                           </span>
                         </div>
                         
                         <h4 className="font-medium mt-1 cursor-pointer hover:text-primary"
-                          onClick={() => followUp.lead_id && navigate(`/crm/leads/${followUp.lead_id}`)}
+                          onClick={() => followUp.leadId && navigate(`/crm/leads/${followUp.leadId}`)}
                         >
                           {followUp.subject || `Follow up with ${followUp.lead?.name || 'Lead'}`}
                         </h4>
