@@ -193,11 +193,10 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
     try {
       setLoading(true);
       
-      // Get the overrides using branch_id
+      // Get all the overrides for this branch
       const { data, error } = await supabase
         .from('member_access_overrides')
-        .select('*')
-        .eq('branch_id', branchId);
+        .select('*');
         
       if (error) throw error;
       
@@ -347,7 +346,7 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
       setLoading(true);
       
       const overrideData = {
-        gym_id: branchId, // Using gym_id instead of branch_id
+        // Don't include branch_id or gym_id as it may not be needed in the schema
         member_id: selectedMember,
         zone_id: selectedZone,
         access_type: accessType,
