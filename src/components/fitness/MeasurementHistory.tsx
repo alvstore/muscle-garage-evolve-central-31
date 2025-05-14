@@ -11,7 +11,7 @@ export interface MeasurementHistoryProps {
   isLoading: boolean;
 }
 
-const MeasurementHistory: React.FC<MeasurementHistoryProps> = ({ measurements, isLoading }) => {
+export const MeasurementHistory: React.FC<MeasurementHistoryProps> = ({ measurements, isLoading }) => {
   const sortedMeasurements = [...measurements].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );

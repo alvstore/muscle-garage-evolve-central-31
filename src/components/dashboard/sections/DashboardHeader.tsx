@@ -26,11 +26,19 @@ import { useIsMobile } from '@/hooks/use-is-mobile';
 interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void;
   pendingNotificationsCount?: number;
+  toggleSidebar?: () => void;
+  toggleTheme?: () => void;
+  isDarkMode?: boolean;
+  sidebarOpen?: boolean;
 }
 
 export const DashboardHeader = ({ 
   onMobileMenuToggle, 
-  pendingNotificationsCount = 0 
+  pendingNotificationsCount = 0,
+  toggleSidebar,
+  toggleTheme,
+  isDarkMode,
+  sidebarOpen
 }: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -75,7 +83,7 @@ export const DashboardHeader = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onMobileMenuToggle}
+            onClick={toggleSidebar || onMobileMenuToggle}
             className="md:hidden"
           >
             <Menu className="h-5 w-5" />
@@ -167,3 +175,5 @@ export const DashboardHeader = ({
     </header>
   );
 };
+
+export default DashboardHeader;

@@ -21,7 +21,7 @@ interface FitnessPlanManagerProps {
   readOnly?: boolean;
 }
 
-const FitnessPlanManager = ({ members, trainerId, readOnly = false }) => {
+export const FitnessPlanManager = ({ members, trainerId, readOnly = false }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [editingWorkoutPlan, setEditingWorkoutPlan] = useState(false);
   const [editingDietPlan, setEditingDietPlan] = useState(false);

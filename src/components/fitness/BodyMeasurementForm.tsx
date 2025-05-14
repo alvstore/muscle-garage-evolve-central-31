@@ -22,7 +22,7 @@ interface BodyMeasurementFormProps {
   isEditMode?: boolean;
 }
 
-const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
+export const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
   memberId,
   initialData,
   onSave,

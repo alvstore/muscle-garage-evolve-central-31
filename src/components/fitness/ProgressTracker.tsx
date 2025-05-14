@@ -21,7 +21,7 @@ interface ProgressTrackerProps {
   member: Member;
 }
 
-const ProgressTracker = ({ member }: ProgressTrackerProps) => {
+export const ProgressTracker = ({ member }: ProgressTrackerProps) => {
   const { measurements, latestMeasurement, isLoading: measurementsLoading } = useMemberMeasurements(member.id);
   const { progress, isLoading: progressLoading, updateProgress } = useMemberProgress(member.id);
   
