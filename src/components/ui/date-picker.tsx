@@ -12,12 +12,23 @@ import {
 } from "@/components/ui/popover"
 
 export interface DatePickerProps {
-  date?: Date
-  setDate?: (date: Date | undefined) => void
-  className?: string
+  date?: Date;
+  setDate?: (date: Date | undefined) => void;
+  onSelect?: (date: Date | undefined) => void;  // Added onSelect prop
+  className?: string;
 }
 
-export function DatePicker({ date, setDate, className }: DatePickerProps) {
+export function DatePicker({ date, setDate, onSelect, className }: DatePickerProps) {
+  // Support both setDate (common pattern) and onSelect (for backward compatibility)
+  const handleSelect = (selectedDate: Date | undefined) => {
+    if (setDate) {
+      setDate(selectedDate);
+    }
+    if (onSelect) {
+      onSelect(selectedDate);
+    }
+  };
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -38,7 +49,7 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={handleSelect}
             initialFocus
           />
         </PopoverContent>
@@ -46,4 +57,3 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
     </div>
   )
 }
-

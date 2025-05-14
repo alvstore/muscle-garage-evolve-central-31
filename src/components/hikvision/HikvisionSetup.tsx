@@ -222,7 +222,7 @@ const HikvisionSetup = ({ branchId }: { branchId: string }) => {
             
             {settings.devices.length === 0 ? (
               <Alert>
-                <Icon icon="alert-circle" className="h-4 w-4" />
+                <Icon name="AlertCircle" className="text-amber-500" />
                 <AlertTitle>No devices configured</AlertTitle>
                 <AlertDescription>
                   Add at least one device to enable biometric registration.
@@ -341,7 +341,7 @@ const HikvisionSetup = ({ branchId }: { branchId: string }) => {
           
           {testResult && (
             <Alert variant={testResult.success ? "default" : "destructive"}>
-              <Icon icon={testResult.success ? "info-circle" : "alert-circle"} className="h-4 w-4" />
+              <Icon name={testResult.success ? "Check" : "AlertCircle"} className="text-green-500" />
               <AlertTitle>{testResult.success ? "Success" : "Error"}</AlertTitle>
               <AlertDescription>
                 {testResult.message}

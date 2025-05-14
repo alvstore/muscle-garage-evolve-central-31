@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMembershipPlans } from '@/hooks/use-membership-operations';
+import { useMembership } from '@/hooks/use-membership'; // Corrected import
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,15 +30,14 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onConvert, onCanc
   const [additionalDetail, setAdditionalDetail] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentAmount, setPaymentAmount] = useState<string>('0');
-  const { data: membershipPlansData } = useMembershipPlans();
-  const membershipPlans = (membershipPlansData || []) as Array<{ id: string; name: string; price: number; duration_days: number }>;
+  const { memberships, isLoading } = useMembership();
   
   // Handle membership selection change
   const handleMembershipChange = (value: string) => {
     setMembershipId(value);
     
     // Find selected membership
-    const selectedMembership = membershipPlans?.find((m) => m.id === value);
+    const selectedMembership = memberships?.find(m => m.id === value);
     
     if (selectedMembership) {
       // Set payment amount to membership price
@@ -136,10 +135,10 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onConvert, onCanc
                     <SelectValue placeholder="Select membership plan" />
                   </SelectTrigger>
                   <SelectContent>
-                    {!membershipPlans ? (
+                    {isLoading ? (
                       <SelectItem value="loading" disabled>Loading...</SelectItem>
                     ) : (
-                      membershipPlans.map((plan: any) => (
+                      memberships?.map(plan => (
                         <SelectItem key={plan.id} value={plan.id}>
                           {plan.name} - {plan.price}
                         </SelectItem>

@@ -444,3 +444,9 @@ export const mockDashboardSummary: DashboardSummary = {
     }
   ]
 };
+
+const date1 = new Date('2023-01-15');
+const date2 = new Date('2023-02-20');
+
+const createdDate = new Date('2022-12-01');
+const updatedDate = new Date('2023-01-10');
