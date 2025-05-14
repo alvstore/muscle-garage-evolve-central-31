@@ -1,6 +1,6 @@
 
 export type LeadSource = 'website' | 'referral' | 'walk-in' | 'phone' | 'email' | 'social' | 'other';
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'converted' | 'won' | 'lost' | 'archived';
 export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
 export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
 
@@ -19,6 +19,8 @@ export interface Lead {
   last_name: string;
   created_at: string;
   updated_at: string;
+  assigned_to?: string;
+  tags?: string[];
 }
 
 export interface FollowUpTemplate {
@@ -28,7 +30,7 @@ export interface FollowUpTemplate {
   content: string;
   type: FollowUpType;
   variables: string[];
-  subject?: string; // Added subject field
+  subject?: string;
   isDefault: boolean;
   created_at: string;
   updated_at: string;

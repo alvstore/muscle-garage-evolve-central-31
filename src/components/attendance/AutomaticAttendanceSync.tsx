@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Loader2, RefreshCw, Check, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 interface BiometricAttendanceRecord {
   id: string;
@@ -60,10 +62,9 @@ const AutomaticAttendanceSync: React.FC<AutomaticAttendanceSyncProps> = ({
       setLastSyncTime(new Date());
     } catch (error: any) {
       console.error('Error fetching attendance records:', error);
-      toast({
+      toast.error({
         title: 'Error',
-        description: 'Failed to fetch attendance records',
-        variant: 'destructive',
+        description: 'Failed to fetch attendance records'
       });
     } finally {
       setLoading(false);
@@ -76,19 +77,18 @@ const AutomaticAttendanceSync: React.FC<AutomaticAttendanceSyncProps> = ({
       // Simulate API call to biometric system
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      toast({
+      toast.success({
         title: 'Sync Complete',
-        description: 'Attendance data has been synchronized from biometric devices',
+        description: 'Attendance data has been synchronized from biometric devices'
       });
       
       // Refresh attendance records after sync
       await fetchAttendanceRecords();
     } catch (error: any) {
       console.error('Error syncing biometric data:', error);
-      toast({
+      toast.error({
         title: 'Sync Failed',
-        description: error.message || 'Failed to sync attendance data from biometric devices',
-        variant: 'destructive',
+        description: error.message || 'Failed to sync attendance data from biometric devices'
       });
     } finally {
       setSyncing(false);
