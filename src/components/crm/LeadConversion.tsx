@@ -1,224 +1,230 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { useToast } from "@/hooks/use-toast";
-import { Lead } from '@/types/crm';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMembership } from '@/hooks/use-membership';
+import { toast } from 'sonner';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Textarea } from '@/components/ui/textarea';
 import { Membership } from '@/types';
-import { format } from 'date-fns';
 
 interface LeadConversionProps {
-  lead: Lead | null;
-  onConvert?: (conversionData: any) => Promise<void>;
-  onClose: () => void;
+  lead: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  onConvert: (data: any) => void;
+  onCancel: () => void;
 }
 
-// Mock memberships for demonstration
-const mockMemberships = [
-  {
-    id: '1',
-    name: 'Basic',
-    price: '49.99',
-    duration_days: 30,
-    duration_months: 1
-  },
-  {
-    id: '2',
-    name: 'Premium',
-    price: '89.99',
-    duration_days: 30,
-    duration_months: 1
-  },
-  {
-    id: '3',
-    name: 'Gold',
-    price: '149.99',
-    duration_days: 30,
-    duration_months: 1
-  },
-  {
-    id: '4',
-    name: 'Platinum',
-    price: '199.99',
-    duration_days: 30,
-    duration_months: 1
-  },
-];
-
-const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onConvert, onClose }) => {
-  const [conversionData, setConversionData] = useState({
-    membershipId: '',
-    startDate: new Date(),
-    notes: '',
-    paymentMethod: 'cash',
-    paymentAmount: '',
-    paymentDate: new Date()
-  });
+const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onConvert, onCancel }) => {
+  const [membershipId, setMembershipId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date(new Date().setMonth(new Date().getMonth() + 1)));
+  const [notes, setNotes] = useState('');
+  const [additionalDetail, setAdditionalDetail] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentAmount, setPaymentAmount] = useState<string>('0');
+  const { memberships, isLoading } = useMembership();
   
-  const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [selectedMembership, setSelectedMembership] = useState<Membership | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // In a real app, fetch memberships from your API
-    setMemberships(mockMemberships as unknown as Membership[]);
-  }, []);
-
-  const handleMembershipChange = (membershipId: string) => {
-    const membership = memberships.find(m => m.id === membershipId);
-    if (membership) {
-      setSelectedMembership(membership);
-      setConversionData({
-        ...conversionData,
-        membershipId,
-        paymentAmount: membership.price.toString()
-      });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lead) return;
+  // Handle membership selection change
+  const handleMembershipChange = (value: string) => {
+    setMembershipId(value);
     
-    try {
-      // Prepare data for submission
-      const dataToSubmit = {
-        leadId: lead.id,
-        membershipId: conversionData.membershipId,
-        startDate: format(conversionData.startDate, "yyyy-MM-dd"),
-        notes: conversionData.notes,
-        payment: {
-          method: conversionData.paymentMethod,
-          amount: parseFloat(conversionData.paymentAmount),
-          date: format(conversionData.paymentDate, "yyyy-MM-dd")
-        },
-        convertedAt: new Date().toISOString()
-      };
+    // Find selected membership
+    const selectedMembership = memberships?.find(m => m.id === value);
+    
+    if (selectedMembership) {
+      // Set payment amount to membership price
+      setPaymentAmount(selectedMembership.price.toString());
       
-      // Submit conversion data
-      if (onConvert) {
-        await onConvert(dataToSubmit);
+      // Calculate end date based on membership duration if available
+      if (selectedMembership.duration_days && startDate) {
+        const newEndDate = new Date(startDate);
+        newEndDate.setDate(newEndDate.getDate() + selectedMembership.duration_days);
+        setEndDate(newEndDate);
       }
-      
-      toast({
-        title: "Success",
-        description: "Lead converted to member successfully"
-      });
-      
-      onClose();
-    } catch (error) {
-      console.error('Error converting lead:', error);
-      toast({
-        title: "Error",
-        description: "Failed to convert lead to member",
-        variant: "destructive"
-      });
     }
   };
-
-  if (!lead) return null;
-
+  
+  const validateForm = () => {
+    if (!membershipId) {
+      toast.error('Please select a membership plan');
+      return false;
+    }
+    
+    if (!startDate) {
+      toast.error('Please select a start date');
+      return false;
+    }
+    
+    if (!endDate) {
+      toast.error('Please select an end date');
+      return false;
+    }
+    
+    if (isNaN(parseFloat(paymentAmount))) {
+      toast.error('Please enter a valid payment amount');
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    const conversionData = {
+      leadId: lead.id,
+      membershipId,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      paymentMethod,
+      paymentAmount: parseFloat(paymentAmount),
+      notes,
+      additionalDetail,
+    };
+    
+    onConvert(conversionData);
+  };
+  
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Convert Lead to Member</CardTitle>
         <CardDescription>
-          Convert {lead.first_name} {lead.last_name} to a member
+          Convert {lead.name} from lead to active member
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="membership">Membership Plan</Label>
-            <Select 
-              value={conversionData.membershipId} 
-              onValueChange={handleMembershipChange}
-            >
-              <SelectTrigger id="membership">
-                <SelectValue placeholder="Select a membership plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {memberships.map((membership) => (
-                  <SelectItem key={membership.id} value={membership.id}>
-                    {membership.name} (${membership.price})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date</Label>
-              <DatePicker 
-                date={conversionData.startDate} 
-                setDate={(date) => date && setConversionData({...conversionData, startDate: date})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="payment-method">Payment Method</Label>
-              <Select 
-                value={conversionData.paymentMethod} 
-                onValueChange={(value) => setConversionData({...conversionData, paymentMethod: value})}
-              >
-                <SelectTrigger id="payment-method">
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Credit/Debit Card</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="online">Online Payment</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="payment-amount">Payment Amount</Label>
-              <Input
-                id="payment-amount"
-                type="number"
-                step="0.01"
-                value={conversionData.paymentAmount}
-                onChange={(e) => setConversionData({...conversionData, paymentAmount: e.target.value})}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="payment-date">Payment Date</Label>
-              <DatePicker 
-                date={conversionData.paymentDate} 
-                setDate={(date) => date && setConversionData({...conversionData, paymentDate: date})}
-              />
+            <h3 className="text-lg font-medium">Lead Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Name</Label>
+                <Input value={lead.name} disabled />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input value={lead.email} disabled />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <Input value={lead.phone} disabled />
+              </div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={conversionData.notes}
-              onChange={(e) => setConversionData({...conversionData, notes: e.target.value})}
-              placeholder="Any additional notes about this conversion"
-              rows={3}
-            />
+            <h3 className="text-lg font-medium">Membership Details</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="membership">Membership Plan</Label>
+                <Select onValueChange={handleMembershipChange} value={membershipId || ""}>
+                  <SelectTrigger id="membership">
+                    <SelectValue placeholder="Select membership plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoading ? (
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    ) : (
+                      memberships?.map(plan => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {plan.name} - {plan.price}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date</Label>
+                  <DatePicker 
+                    date={startDate} 
+                    setDate={setStartDate} 
+                    className="w-full" 
+                  />
+                </div>
+                <div>
+                  <Label>End Date</Label>
+                  <DatePicker 
+                    date={endDate} 
+                    setDate={setEndDate} 
+                    className="w-full" 
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea 
+                  id="notes" 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  placeholder="Additional notes about this membership"
+                />
+              </div>
+            </div>
           </div>
           
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Convert to Member</Button>
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">Payment Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="payment-method">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger id="payment-method">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="payment-amount">Payment Amount</Label>
+                <Input 
+                  id="payment-amount" 
+                  type="number" 
+                  value={paymentAmount} 
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="additional-detail">Additional Payment Details</Label>
+                <Textarea 
+                  id="additional-detail" 
+                  value={additionalDetail} 
+                  onChange={(e) => setAdditionalDetail(e.target.value)} 
+                  placeholder="Transaction ID, receipt number, etc."
+                />
+              </div>
+            </div>
           </div>
-        </form>
-      </CardContent>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">Convert to Member</Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 };

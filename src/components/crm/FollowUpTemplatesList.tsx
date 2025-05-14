@@ -1,161 +1,175 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Search, Edit, Trash, Copy, Plus } from "lucide-react";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal, Plus, Star, Edit, Trash } from 'lucide-react';
 import { FollowUpTemplate, FollowUpType } from '@/types/crm';
+import FollowUpTemplateForm from './FollowUpTemplateForm';
 
-interface FollowUpTemplatesListProps {
-  templates?: FollowUpTemplate[];
-  isLoading?: boolean;
-  onEdit?: (template: FollowUpTemplate) => void;
-  onDelete?: (templateId: string) => void;
-  onDuplicate?: (template: FollowUpTemplate) => void;
-  onAdd?: () => void;
-}
-
-const defaultTemplates: FollowUpTemplate[] = [
+// Dummy data for templates
+const dummyTemplates: FollowUpTemplate[] = [
   {
     id: '1',
-    name: 'Welcome Email',
     title: 'Welcome Email',
-    type: 'email',
-    content: 'Hello {{name}},\n\nWelcome to our gym! We are excited to have you join our fitness community.',
+    name: 'Welcome Email', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, welcome to our service! We are excited to have you onboard.',
     variables: ['name'],
-    created_at: '2023-01-15T09:30:00Z',
+    created_at: '2023-01-15T10:30:00Z',
     isDefault: true
   },
   {
     id: '2',
-    name: 'Follow-up Email',
     title: 'Follow-up Email',
-    type: 'email',
-    content: 'Hello {{name}},\n\nJust checking in to see how your fitness journey is going. Do you have any questions?',
+    name: 'Follow-up Email', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, we noticed you haven\'t responded to our previous message. Are you still interested?',
     variables: ['name'],
-    created_at: '2023-01-16T10:15:00Z',
+    created_at: '2023-01-20T14:20:00Z',
     isDefault: false
   },
   {
     id: '3',
-    name: 'Reminder SMS',
-    title: 'Reminder SMS',
-    type: 'sms',
-    content: 'Hi {{name}}, this is a reminder about your upcoming appointment at {{time}} tomorrow.',
-    variables: ['name', 'time'],
-    created_at: '2023-01-17T14:20:00Z',
+    title: 'Appointment Reminder',
+    name: 'Appointment Reminder', // Added name property
+    type: 'sms' as FollowUpType,
+    content: 'Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.',
+    variables: ['name', 'date', 'time'],
+    created_at: '2023-01-25T09:15:00Z',
     isDefault: false
   },
   {
     id: '4',
-    name: 'WhatsApp Welcome',
     title: 'WhatsApp Welcome',
-    type: 'whatsapp',
-    content: 'Hello {{name}}! Welcome to our fitness family. Feel free to reach out if you need anything!',
-    variables: ['name'],
-    created_at: '2023-01-18T16:45:00Z',
+    name: 'WhatsApp Welcome', // Added name property
+    type: 'whatsapp' as FollowUpType,
+    content: 'Hello {{name}}! Welcome to {{company}}. We\'re glad to have you with us.',
+    variables: ['name', 'company'],
+    created_at: '2023-02-01T11:00:00Z',
     isDefault: false
   },
   {
     id: '5',
-    name: 'Special Offer',
-    title: 'Special Offer',
-    type: 'email',
-    content: 'Hello {{name}},\n\nWe have a special offer for you! Upgrade your membership and get 20% off.',
+    title: 'Feedback Request',
+    name: 'Feedback Request', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, we value your feedback. Please let us know how we\'re doing.',
     variables: ['name'],
-    created_at: '2023-01-19T11:30:00Z',
+    created_at: '2023-02-10T16:30:00Z',
     isDefault: false
   }
 ];
 
-// Duplicate templates to make the list look more populated
-const moreTemplates: FollowUpTemplate[] = [
+const emailTemplates: FollowUpTemplate[] = [
   {
-    id: '6',
-    name: 'Membership Renewal',
-    title: 'Membership Renewal',
-    type: 'email',
-    content: 'Hello {{name}},\n\nYour membership is expiring soon. Would you like to renew?',
+    id: '1',
+    title: 'Welcome Email',
+    name: 'Welcome Email', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, welcome to our service! We are excited to have you onboard.',
     variables: ['name'],
     isDefault: true,
-    created_at: '2023-02-01T09:30:00Z'
+    created_at: '2023-01-15T10:30:00Z'
   },
   {
-    id: '7',
-    name: 'Class Announcement',
-    title: 'Class Announcement',
-    type: 'email',
-    content: 'Hello {{name}},\n\nWe are launching a new {{class_type}} class starting next week!',
-    variables: ['name', 'class_type'],
-    isDefault: false,
-    created_at: '2023-02-05T10:15:00Z'
-  },
-  {
-    id: '8',
-    name: 'Payment Reminder',
-    title: 'Payment Reminder',
-    type: 'sms',
-    content: 'Hi {{name}}, your payment of ${{amount}} is due on {{date}}.',
-    variables: ['name', 'amount', 'date'],
-    isDefault: false,
-    created_at: '2023-02-10T14:20:00Z'
-  },
-  {
-    id: '9',
-    name: 'WhatsApp Achievement',
-    title: 'WhatsApp Achievement',
-    type: 'whatsapp',
-    content: 'Congratulations {{name}}! You\'ve reached your fitness milestone of {{goal}}!',
-    variables: ['name', 'goal'],
-    isDefault: false,
-    created_at: '2023-02-15T16:45:00Z'
-  },
-  {
-    id: '10',
-    name: 'Feedback Request',
-    title: 'Feedback Request',
-    type: 'email',
-    content: 'Hello {{name}},\n\nWe value your opinion. Please take a moment to provide feedback on your recent experience.',
+    id: '2',
+    title: 'Follow-up Email',
+    name: 'Follow-up Email', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, we noticed you haven\'t responded to our previous message. Are you still interested?',
     variables: ['name'],
     isDefault: false,
-    created_at: '2023-02-20T11:30:00Z'
+    created_at: '2023-01-20T14:20:00Z'
+  },
+  {
+    id: '3',
+    title: 'Appointment Reminder',
+    name: 'Appointment Reminder', // Added name property
+    type: 'sms' as FollowUpType,
+    content: 'Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.',
+    variables: ['name', 'date', 'time'],
+    isDefault: false,
+    created_at: '2023-01-25T09:15:00Z'
+  },
+  {
+    id: '4',
+    title: 'WhatsApp Welcome',
+    name: 'WhatsApp Welcome', // Added name property
+    type: 'whatsapp' as FollowUpType,
+    content: 'Hello {{name}}! Welcome to {{company}}. We\'re glad to have you with us.',
+    variables: ['name', 'company'],
+    isDefault: false,
+    created_at: '2023-02-01T11:00:00Z'
+  },
+  {
+    id: '5',
+    title: 'Feedback Request',
+    name: 'Feedback Request', // Added name property
+    type: 'email' as FollowUpType,
+    content: 'Dear {{name}}, we value your feedback. Please let us know how we\'re doing.',
+    variables: ['name'],
+    isDefault: false,
+    created_at: '2023-02-10T16:30:00Z'
   }
 ];
 
-const allTemplates = [...defaultTemplates, ...moreTemplates];
-
-export const FollowUpTemplatesList = ({
-  templates = allTemplates,
-  isLoading = false,
-  onEdit,
-  onDelete,
-  onDuplicate,
-  onAdd
-}: FollowUpTemplatesListProps) => {
+const FollowUpTemplatesList: React.FC = () => {
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(dummyTemplates);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredTemplates, setFilteredTemplates] = useState<FollowUpTemplate[]>(templates);
+  const [showForm, setShowForm] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<FollowUpTemplate | null>(null);
   
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = templates.filter(
-        template => 
-          template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          template.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          template.content.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredTemplates(filtered);
+  // Filter templates by search term
+  const filteredTemplates = templates.filter(template => 
+    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleAddTemplate = () => {
+    setEditingTemplate(null);
+    setShowForm(true);
+  };
+
+  const handleEditTemplate = (template: FollowUpTemplate) => {
+    setEditingTemplate(template);
+    setShowForm(true);
+  };
+
+  const handleSaveTemplate = (template: FollowUpTemplate) => {
+    if (editingTemplate) {
+      // Update existing template
+      setTemplates(templates.map(t => t.id === template.id ? template : t));
     } else {
-      setFilteredTemplates(templates);
+      // Add new template
+      setTemplates([...templates, template]);
     }
-  }, [searchTerm, templates]);
+    setShowForm(false);
+  };
+
+  const handleDeleteTemplate = (id: string) => {
+    setTemplates(templates.filter(template => template.id !== id));
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingTemplate(null);
+  };
 
   const getTypeColor = (type: FollowUpType) => {
     switch(type) {
@@ -174,103 +188,107 @@ export const FollowUpTemplatesList = ({
     }
   };
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="relative w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search templates..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button onClick={onAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Template
-        </Button>
-      </div>
-
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[250px]">Template Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Preview</TableHead>
-              <TableHead>Variables</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  Loading templates...
-                </TableCell>
-              </TableRow>
-            ) : filteredTemplates.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No templates found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTemplates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell className="font-medium">
-                    {template.title}
-                    {template.isDefault && (
-                      <Badge variant="outline" className="ml-2">Default</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(template.type)}`}>
-                      {template.type}
-                    </span>
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate">
-                    {template.content.substring(0, 50)}...
-                  </TableCell>
-                  <TableCell>
-                    {template.variables.map(variable => (
-                      <Badge key={variable} variant="secondary" className="mr-1">
-                        {variable}
-                      </Badge>
-                    ))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit && onEdit(template)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDuplicate && onDuplicate(template)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete && onDelete(template.id)}
-                      disabled={template.isDefault}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {showForm ? (
+        <FollowUpTemplateForm 
+          template={editingTemplate} 
+          onSave={handleSaveTemplate} 
+          onCancel={handleCancel} 
+        />
+      ) : (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Follow-Up Templates</CardTitle>
+              <CardDescription>Manage your follow-up message templates</CardDescription>
+            </div>
+            <Button onClick={handleAddTemplate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Template
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <Input 
+                placeholder="Search templates..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Template Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Default</TableHead>
+                    <TableHead className="w-[80px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTemplates.length > 0 ? (
+                    filteredTemplates.map((template) => (
+                      <TableRow key={template.id}>
+                        <TableCell className="font-medium">{template.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getTypeColor(template.type)}>
+                            {template.type.charAt(0).toUpperCase() + template.type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(template.created_at)}</TableCell>
+                        <TableCell>
+                          {template.isDefault && <Star className="h-4 w-4 text-yellow-500" />}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                onClick={() => handleEditTemplate(template)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer text-red-600"
+                                onClick={() => handleDeleteTemplate(template.id)}
+                              >
+                                <Trash className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        No templates found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,25 +55,23 @@ const MemberProgressSection = () => {
         if (error) throw error;
         
         if (data) {
-          const mockData = data.map(profile => ({
+          const membersData = data.map(profile => ({
             id: profile.id,
-            name: profile.name,
+            name: profile.full_name || '',  // Use full_name from profile
             email: profile.email,
             role: 'member' as const,
             membershipStatus: 'active' as const,
-            status: profile.status === 'active' || profile.status === 'inactive' || profile.status === 'pending' 
-              ? profile.status 
-              : 'active' as const,
-            membershipId: profile.membershipId,
-            membershipStartDate: profile.membershipStartDate,
-            membershipEndDate: profile.membershipEndDate,
+            status: 'active' as const,  // Set default status as active
+            membershipId: null,
+            membershipStartDate: null,
+            membershipEndDate: null,
           }));
           
-          setMembers(mockData as Member[]);
+          setMembers(membersData);
           
           // Auto-select first member if there are any
-          if (mockData.length > 0 && !selectedMemberId) {
-            setSelectedMemberId(mockData[0].id);
+          if (membersData.length > 0 && !selectedMemberId) {
+            setSelectedMemberId(membersData[0].id);
           }
         }
       } catch (error) {
@@ -86,6 +85,7 @@ const MemberProgressSection = () => {
   }, [currentBranch]);
   
   const getInitials = (name: string) => {
+    if (!name) return "";
     return name
       .split(" ")
       .map((n) => n[0])

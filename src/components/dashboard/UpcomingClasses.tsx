@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,12 +20,12 @@ const UpcomingClasses = ({ classes }: UpcomingClassesProps) => {
 
   // Sort classes by start time
   const sortedClasses = [...classes].sort((a, b) => {
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
   });
 
   // Only show upcoming classes (today and future)
   const upcomingClasses = sortedClasses.filter(
-    (classItem) => new Date(classItem.startTime) >= new Date()
+    (classItem) => new Date(classItem.start_time) >= new Date()
   );
 
   return (
@@ -44,7 +45,7 @@ const UpcomingClasses = ({ classes }: UpcomingClassesProps) => {
                   <div>
                     <h3 className="font-medium">{classItem.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {format(parseISO(classItem.startTime), "EEEE, MMM dd")} ・ {formatClassTime(classItem.startTime, classItem.endTime)}
+                      {format(parseISO(classItem.start_time), "EEEE, MMM dd")} ・ {formatClassTime(classItem.start_time, classItem.end_time)}
                     </p>
                   </div>
                   <Badge variant={classItem.enrolled < classItem.capacity ? "outline" : "secondary"}>

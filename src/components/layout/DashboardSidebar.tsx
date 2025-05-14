@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +11,7 @@ import NavigationSections from "@/components/navigation/NavigationSections";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
 import { useBranch } from '@/hooks/use-branch';
+import BranchSelector from '@/components/branch/BranchSelector';
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;

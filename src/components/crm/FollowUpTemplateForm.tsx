@@ -1,14 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { toast } from '@/hooks/use-toast';
-import { FollowUpTemplate } from '@/types/crm';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { FollowUpTemplate, FollowUpType } from '@/types/crm';
+import { toast } from "sonner";
 
 interface FollowUpTemplateFormProps {
   template?: FollowUpTemplate | null;
@@ -16,124 +21,100 @@ interface FollowUpTemplateFormProps {
   onCancel: () => void;
 }
 
-export const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({
-  template,
-  onSave,
-  onCancel
-}) => {
-  const [formData, setFormData] = useState<Partial<FollowUpTemplate>>({
-    id: '',
-    title: '',
-    name: '',
-    content: '',
-    type: 'email',
-    variables: [],
-    isDefault: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  });
-  
-  const [variableInput, setVariableInput] = useState('');
-  
-  useEffect(() => {
-    if (template) {
-      setFormData({
-        ...template
-      });
-    }
-  }, [template]);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleTypeChange = (value: string) => {
-    setFormData(prev => ({ ...prev, type: value as 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting' }));
-  };
-  
-  const handleDefaultChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, isDefault: checked }));
-  };
-  
-  const addVariable = () => {
-    if (!variableInput.trim()) return;
+const VARIABLE_OPTIONS = [
+  { value: 'name', label: 'Lead Name' },
+  { value: 'email', label: 'Lead Email' },
+  { value: 'phone', label: 'Lead Phone' },
+  { value: 'date', label: 'Current Date' },
+  { value: 'time', label: 'Current Time' },
+  { value: 'company', label: 'Company Name' },
+];
+
+const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, onSave, onCancel }) => {
+  const [title, setTitle] = useState(template?.title || '');
+  const [content, setContent] = useState(template?.content || '');
+  const [type, setType] = useState<FollowUpType>(template?.type || 'email');
+  const [variables, setVariables] = useState<string[]>(template?.variables || []);
+  const [isDefault, setIsDefault] = useState(template?.isDefault || false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isEditMode = !!template;
+
+  const handleVariableInsert = (variable: string) => {
+    const variableText = `{{${variable}}}`;
+    setContent(prev => prev + variableText);
     
-    const variable = variableInput.trim();
-    if (!formData.variables?.includes(variable)) {
-      setFormData(prev => ({
-        ...prev,
-        variables: [...(prev.variables || []), variable]
-      }));
+    // Add to variables list if not already present
+    if (!variables.includes(variable)) {
+      setVariables([...variables, variable]);
     }
-    
-    setVariableInput('');
   };
-  
-  const removeVariable = (variable: string) => {
-    setFormData(prev => ({
-      ...prev,
-      variables: prev.variables?.filter(v => v !== variable) || []
-    }));
-  };
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title || !formData.content || !formData.type) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+    setIsSubmitting(true);
+
+    if (!title.trim()) {
+      toast.error("Template title is required");
+      setIsSubmitting(false);
       return;
     }
-    
-    // Ensure name is set from title if not provided
-    const finalTemplate: FollowUpTemplate = {
-      id: formData.id || crypto.randomUUID(),
-      name: formData.name || formData.title,
-      title: formData.title!,
-      content: formData.content!,
-      type: formData.type!,
-      variables: formData.variables || [],
-      isDefault: formData.isDefault || false,
-      created_at: formData.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    onSave(finalTemplate);
-    toast({
-      title: "Success",
-      description: "Template saved successfully",
-    });
+
+    if (!content.trim()) {
+      toast.error("Template content is required");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const updatedTemplate: FollowUpTemplate = {
+        id: template?.id || Math.random().toString(36).substr(2, 9),
+        title,
+        name: title, // Set name to title to fix property missing issue
+        content,
+        type,
+        variables,
+        isDefault,
+        created_at: template?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      onSave(updatedTemplate);
+      toast.success(`Template ${isEditMode ? 'updated' : 'created'} successfully`);
+    } catch (error) {
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} template`);
+      console.error('Error saving template:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  
+
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>{template ? 'Edit Template' : 'Create New Template'}</CardTitle>
+        <CardTitle>{isEditMode ? 'Edit Template' : 'Create Template'}</CardTitle>
+        <CardDescription>
+          {isEditMode 
+            ? 'Update your follow-up template details' 
+            : 'Create a new follow-up template for your leads'}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Template Name</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="e.g., Welcome Email"
+            <Input 
+              id="title" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              placeholder="Welcome Email"
               required
             />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="type">Template Type</Label>
-            <Select
-              value={formData.type}
-              onValueChange={handleTypeChange}
-            >
+            <Select value={type} onValueChange={(value) => setType(value as FollowUpType)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -148,65 +129,49 @@ export const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleInputChange}
-              rows={10}
-              placeholder="Template content. Use {{variable}} syntax for variables."
+            <Label htmlFor="content">Template Content</Label>
+            <Textarea 
+              id="content" 
+              value={content} 
+              onChange={(e) => setContent(e.target.value)} 
+              placeholder={type === 'email' ? 'Dear {{name}},' : 'Hi {{name}}, we wanted to follow up...'}
+              className="min-h-[150px]"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label>Variables</Label>
-            <div className="flex space-x-2">
-              <Input
-                value={variableInput}
-                onChange={(e) => setVariableInput(e.target.value)}
-                placeholder="e.g., name"
-              />
-              <Button type="button" onClick={addVariable} variant="outline">Add</Button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {formData.variables?.map(variable => (
-                <div key={variable} className="bg-secondary text-secondary-foreground rounded px-3 py-1 text-sm flex items-center">
-                  {variable}
-                  <button
-                    type="button"
-                    onClick={() => removeVariable(variable)}
-                    className="ml-2 text-secondary-foreground/70 hover:text-secondary-foreground"
-                  >
-                    &times;
-                  </button>
-                </div>
+            <Label>Insert Variable</Label>
+            <div className="flex flex-wrap gap-2">
+              {VARIABLE_OPTIONS.map((variable) => (
+                <Button 
+                  key={variable.value} 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleVariableInsert(variable.value)}
+                >
+                  {variable.label}
+                </Button>
               ))}
-              {formData.variables?.length === 0 && (
-                <p className="text-sm text-muted-foreground">No variables added yet.</p>
-              )}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Click a variable to insert it at the current cursor position
+            </p>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={formData.isDefault}
-              onCheckedChange={handleDefaultChange}
-            />
-            <Label htmlFor="isDefault">Make this a default template</Label>
-          </div>
+          {/* Removed isDefault toggle for simplicity */}
           
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              Save Template
-            </Button>
-          </div>
-        </form>
-      </CardContent>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : isEditMode ? 'Update Template' : 'Create Template'}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 };

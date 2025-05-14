@@ -154,6 +154,102 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
     }
   }, [branches]);
 
+  // Add implementation for createBranch
+  const createBranch = async (branchData: Partial<BranchType>): Promise<BranchType | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error: createError } = await supabase
+        .from('branches')
+        .insert([branchData])
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      // Refresh branch list
+      fetchBranches();
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error creating branch:', err);
+      setError(err.message || 'Failed to create branch');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add implementation for updateBranch
+  const updateBranch = async (id: string, branchData: Partial<BranchType>): Promise<BranchType | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error: updateError } = await supabase
+        .from('branches')
+        .update(branchData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) throw updateError;
+      
+      // Refresh branch list
+      fetchBranches();
+      
+      // If we're updating the current branch, update the current branch state
+      if (currentBranch && currentBranch.id === id) {
+        setCurrentBranch({ ...currentBranch, ...branchData });
+      }
+      
+      return data;
+    } catch (err: any) {
+      console.error('Error updating branch:', err);
+      setError(err.message || 'Failed to update branch');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add implementation for deleteBranch
+  const deleteBranch = async (id: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { error: deleteError } = await supabase
+        .from('branches')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) throw deleteError;
+      
+      // Remove branch from state
+      setBranches(branches.filter(branch => branch.id !== id));
+      
+      // If we deleted the current branch, set current branch to the first available branch
+      if (currentBranch && currentBranch.id === id && branches.length > 1) {
+        const newCurrentBranch = branches.find(branch => branch.id !== id);
+        if (newCurrentBranch) {
+          setCurrentBranch(newCurrentBranch);
+        } else {
+          setCurrentBranch(null);
+        }
+      }
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting branch:', err);
+      setError(err.message || 'Failed to delete branch');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       console.log('User authenticated, fetching branches...'); // Add this line
@@ -176,9 +272,9 @@ export const BranchProvider: React.FC<BranchProviderProps> = ({ children }) => {
         refetchBranches: fetchBranches,
         fetchBranches,
         switchBranch,
-        createBranch: async () => null, // Implement or remove from interface
-        updateBranch: async () => null, // Implement or remove from interface
-        deleteBranch: async () => false, // Implement or remove from interface
+        createBranch,
+        updateBranch,
+        deleteBranch,
       }}
     >
       {children}
