@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   DropdownMenu,
@@ -22,13 +23,20 @@ import { useAuth } from '@/hooks/use-auth';
 
 interface BulkLeadActionsProps {
   leads: Lead[];
+  selectedLeads: string[];
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, updates: Partial<Lead>) => Promise<void>;
+  onActionComplete?: () => void;
 }
 
-const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leads, onDelete, onUpdate }) => {
+const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ 
+  leads, 
+  selectedLeads, 
+  onDelete, 
+  onUpdate,
+  onActionComplete 
+}) => {
   const { toast } = useToast()
-  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showFollowUpForm, setShowFollowUpForm] = useState(false);
   const [followUpData, setFollowUpData] = useState({
@@ -38,20 +46,6 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leads, onDelete, onUp
     content: '',
   });
   const { user } = useAuth();
-
-  const handleSelectLead = (leadId: string) => {
-    setSelectedLeads(prev =>
-      prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
-    );
-  };
-
-  const handleSelectAllLeads = () => {
-    if (selectedLeads.length === leads.length) {
-      setSelectedLeads([]);
-    } else {
-      setSelectedLeads(leads.map(lead => lead.id));
-    }
-  };
 
   const handleDeleteSelected = () => {
     setShowDeleteAlert(true);
@@ -64,7 +58,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leads, onDelete, onUp
         title: "Success",
         description: "Selected leads deleted successfully.",
       })
-      setSelectedLeads([]);
+      if (onActionComplete) onActionComplete();
     } catch (error) {
       toast({
         title: "Error",
@@ -95,66 +89,48 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leads, onDelete, onUp
     }
   };
 
-  const scheduleBulkFollowUp = async (leads, followUpData, user) => {
-  try {
-    // Function should have two arguments
-    const result = await followUpService.scheduleBulkFollowUps(
-      leads, 
-      { 
-        ...followUpData, 
-        assignedTo: user?.id 
-      }
-    );
-    return result;
-  } catch (error) {
-    console.error("Error scheduling bulk follow-ups:", error);
-    throw error;
-  }
-};
-
   const handleSubmitFollowUp = async () => {
-  try {
-    const promises = selectedLeads.map(leadId => {
-      return followUpService.scheduleFollowUp(leadId, {
-        lead_id: leadId,
-        type: followUpData.type,
-        content: followUpData.content,
-        subject: followUpData.subject,
-        status: 'scheduled',
-        scheduled_at: followUpData.scheduledFor.toISOString(),
-        notes: followUpData.content, // Add missing property
-        user_id: user?.id || '', // Add missing property
-        created_at: new Date().toISOString() // Add missing property
+    try {
+      const selectedLeadObjects = leads.filter(lead => selectedLeads.includes(lead.id));
+      
+      // Use the new method we added to followUpService
+      const success = await followUpService.scheduleBulkFollowUps(
+        selectedLeads,
+        { 
+          ...followUpData, 
+          assignedTo: user?.id 
+        }
+      );
+      
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Follow-ups scheduled successfully.",
+        });
+        setShowFollowUpForm(false);
+        if (onActionComplete) onActionComplete();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule follow-ups.",
+        variant: "destructive",
       });
-    });
-    
-    await Promise.all(promises);
-    toast({
-      title: "Success",
-      description: "Follow-ups scheduled successfully.",
-    });
-    setShowFollowUpForm(false);
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: "Failed to schedule follow-ups.",
-      variant: "destructive",
-    });
-  }
-};
+    }
+  };
 
   return (
     <div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" disabled={leads.length === 0}>
+          <Button variant="outline" disabled={selectedLeads.length === 0}>
             Bulk Actions <MoreHorizontal className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleScheduleFollowUp}>
+          <DropdownMenuItem onClick={handleScheduleFollowUp} disabled={selectedLeads.length === 0}>
             <Calendar className="mr-2 h-4 w-4" /> Schedule Follow-up
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleDeleteSelected} disabled={selectedLeads.length === 0}>

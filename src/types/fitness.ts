@@ -2,6 +2,7 @@
 export interface WorkoutPlan {
   id: string;
   name: string;
+  title?: string;
   description?: string;
   trainer_id: string;
   member_id?: string;
@@ -12,8 +13,18 @@ export interface WorkoutPlan {
   created_at: string;
   updated_at: string;
   workout_days?: WorkoutDay[];
+  days?: WorkoutDay[];
   target_goals?: string[];
   targetGoals?: string[];
+  // For compatibility with the WorkoutPlanDB interface
+  type?: string;
+  exercises?: any[];
+  created_by?: string;
+  // For compatibility with the UI components
+  isCommon?: boolean;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface WorkoutDay {
@@ -48,23 +59,33 @@ export interface Exercise {
 export interface WorkoutPlanDB {
   id: string;
   name: string;
+  title: string;
   description: string;
   trainer_id: string;
   difficulty?: string;
   days: WorkoutDay[];
+  type: string;
+  exercises: any[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  // UI-friendly properties
   isCommon?: boolean;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface MemberWorkout {
   id: string;
   memberId: string;
   workoutPlanId: string;
+  planId?: string;
   isCustom: boolean;
   assignedBy: string;
   assignedAt: string;
+  type?: "assigned" | "private";
+  trainerId?: string;
 }
 
 export interface DietPlan {

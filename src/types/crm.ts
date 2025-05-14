@@ -115,3 +115,17 @@ export interface LeadConversion {
   membership_id?: string;
   notes?: string;
 }
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description?: string;
+  trigger_type: string;
+  trigger_condition: any;
+  actions: any[];
+  is_active: boolean;
+  branch_id?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}

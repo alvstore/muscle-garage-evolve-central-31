@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -34,7 +35,7 @@ interface LeadsListProps {
 
 const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
   const navigate = useNavigate();
-  const { leads, isLoading, error, fetchLeads } = useLeads();
+  const { leads, isLoading, error, fetchLeads, updateLead, deleteLead } = useLeads();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -132,7 +133,10 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
           <BulkLeadActions 
+            leads={leads}
             selectedLeads={selectedLeads} 
+            onDelete={deleteLead}
+            onUpdate={updateLead}
             onActionComplete={handleBulkActionComplete} 
           />
           <Button onClick={onAddNew}>
@@ -188,8 +192,6 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
                   <TableHead className="w-[40px]">
                     <Checkbox 
                       checked={selectedLeads.length > 0 && selectedLeads.length === filteredLeads.length} 
@@ -197,6 +199,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
                       aria-label="Select all"
                     />
                   </TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Contact</TableHead>
                   <TableHead className="w-[100px]">Status</TableHead>
                   <TableHead>Source</TableHead>
                   <TableHead>Created</TableHead>
@@ -215,7 +219,9 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
                     </TableCell>
                     <TableCell className="font-medium">
                       {lead.name}
-                      <div className="text-sm text-muted-foreground">
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
                         {lead.email || lead.phone || 'No contact info'}
                       </div>
                     </TableCell>
@@ -264,11 +270,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              if (window.confirm(`Are you sure you want to delete ${lead.name}?`)) {
-                                deleteLead(lead.id);
-                              }
-                            }}>
+                            <DropdownMenuItem onClick={() => handleDelete(lead.id)}>
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>

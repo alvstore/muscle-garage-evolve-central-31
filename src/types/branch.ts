@@ -1,33 +1,25 @@
-
 import { z } from 'zod';
 
 export interface Branch {
   id: string;
   name: string;
-  address: string;
-  city: string | null;
-  state: string | null;
+  address?: string;
+  city?: string;
+  state?: string;
   country: string;
-  email: string | null;
-  phone: string | null;
+  email?: string;
+  phone?: string;
   is_active: boolean;
-  manager_id: string | null;
-  branch_code: string | null;
+  branch_code?: string;
+  manager_id?: string | null;
   created_at: string;
   updated_at: string;
-  
-  // Extended fields (not in the base database schema)
-  max_capacity?: number | null;
-  opening_hours?: string | null;
-  closing_hours?: string | null;
-  region?: string | null;
-  tax_rate?: number | null;
-  timezone?: string | null;
+  // Add other required fields
 }
 
 export const BranchSchema = z.object({
   name: z.string().min(1, 'Branch name is required'),
-  address: z.string().min(1, 'Address is required'),
+  address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().default('India'),
@@ -72,3 +64,15 @@ export const normalizeBranch = (branch: any): Branch => {
     ...(branch.timezone !== undefined && { timezone: branch.timezone })
   };
 };
+
+export interface BranchContextType {
+  branches: Branch[];
+  currentBranch: Branch | null;
+  isLoading: boolean;
+  error: string | null;
+  fetchBranches: () => Promise<void>;
+  switchBranch: (branchId: string) => void;
+  addBranch: (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateBranch: (id: string, updates: Partial<Branch>) => Promise<void>;
+  deleteBranch: (id: string) => Promise<void>;
+}

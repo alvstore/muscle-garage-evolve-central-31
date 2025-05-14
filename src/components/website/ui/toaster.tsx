@@ -1,3 +1,5 @@
+
+import { useEffect, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -9,7 +11,23 @@ import {
 } from "@/components/ui/toast"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toast } = useToast()
+  const [toasts, setToasts] = useState<any[]>([])
+  
+  // For compatibility with the sonner toast
+  useEffect(() => {
+    const unsubscribe = toast.onChange((toastData: any) => {
+      if (toastData.type === 'add') {
+        setToasts(prev => [...prev, toastData.toast])
+      } else if (toastData.type === 'remove') {
+        setToasts(prev => prev.filter(t => t.id !== toastData.toast.id))
+      } else if (toastData.type === 'clear') {
+        setToasts([])
+      }
+    })
+    
+    return () => unsubscribe()
+  }, [toast])
 
   return (
     <ToastProvider>

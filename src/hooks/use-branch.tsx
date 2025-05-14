@@ -1,218 +1,187 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Branch } from '@/types/branch';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
+import { Branch, BranchContextType } from '@/types/branch';
 import { useAuth } from './use-auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+import { usePermissions } from './use-permissions';
 
-// Context type definition
-interface BranchContextType {
-  branches: Branch[];
-  currentBranch: Branch | null;
-  isLoading: boolean;
-  error: string;
-  fetchBranches: () => Promise<Branch[]>;
-  fetchBranchById: (id: string) => Promise<Branch | null>;
-  createBranch: (branchData: Omit<Branch, "id">) => Promise<Branch | null>;
-  updateBranch: (id: string, branchUpdates: Partial<Branch>) => Promise<Branch | null>;
-  deleteBranch: (id: string) => Promise<boolean>;
-  switchBranch: (branchId: string) => void;
-}
+// Create context
+const BranchContext = createContext<BranchContextType>({} as BranchContextType);
 
-// Create the context with a default value
-const BranchContext = createContext<BranchContextType>({
-  branches: [],
-  currentBranch: null,
-  isLoading: false,
-  error: '',
-  fetchBranches: async () => [],
-  fetchBranchById: async () => null,
-  createBranch: async () => null,
-  updateBranch: async () => null,
-  deleteBranch: async () => false,
-  switchBranch: () => {},
-});
-
-// Provider Component
-export function BranchProvider({ children }: { children: ReactNode }) {
+export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  
   const { user } = useAuth();
-
-  // Load branches and set current branch on mount
-  useEffect(() => {
-    if (user) {
-      fetchBranches().then(() => {
-        // Get saved branch from localStorage or use the first available
-        const savedBranchId = localStorage.getItem('currentBranchId');
-        if (savedBranchId) {
-          fetchBranchById(savedBranchId).then((branch) => {
-            if (branch) {
-              setCurrentBranch(branch);
-            } else if (branches.length > 0) {
-              setCurrentBranch(branches[0]);
-              localStorage.setItem('currentBranchId', branches[0].id);
-            }
-          });
-        } else if (branches.length > 0) {
-          setCurrentBranch(branches[0]);
-          localStorage.setItem('currentBranchId', branches[0].id);
-        }
-        setIsLoading(false);
-      });
-    } else {
+  const { toast } = useToast();
+  const { canViewAllBranches } = usePermissions();
+  
+  // Fetch branches
+  const fetchBranches = useCallback(async () => {
+    if (!user) {
+      setBranches([]);
+      setCurrentBranch(null);
       setIsLoading(false);
+      return;
     }
-  }, [user]);
-
-  // Fetch all branches
-  const fetchBranches = async (): Promise<Branch[]> => {
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      setError('');
+      let query = supabase.from('branches').select('*');
       
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .order('name', { ascending: true });
-      
-      if (error) {
-        throw error;
+      // If not admin or doesn't have all branch access, filter by user's branch
+      if (!canViewAllBranches()) {
+        if (user.branch_id) {
+          query = query.eq('id', user.branch_id);
+        } else {
+          // If user doesn't have a branch assigned and can't view all branches
+          setBranches([]);
+          setCurrentBranch(null);
+          setIsLoading(false);
+          return;
+        }
       }
       
-      const branchesData = data as Branch[];
-      setBranches(branchesData);
-      return branchesData;
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      const activeBranches = data as Branch[];
+      setBranches(activeBranches);
+      
+      // Set current branch from localStorage or default to first branch
+      const storedBranchId = localStorage.getItem('currentBranchId');
+      
+      // Check if stored branch exists and is in fetched branches
+      if (storedBranchId && activeBranches.some(b => b.id === storedBranchId)) {
+        const branch = activeBranches.find(b => b.id === storedBranchId) || null;
+        setCurrentBranch(branch);
+      } else if (activeBranches.length > 0) {
+        // Default to first branch if no stored branch or stored branch not found
+        setCurrentBranch(activeBranches[0]);
+        localStorage.setItem('currentBranchId', activeBranches[0].id);
+      } else {
+        setCurrentBranch(null);
+      }
+      
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to fetch branches';
-      console.error('Error fetching branches:', errorMessage);
-      setError(errorMessage);
-      return [];
+      console.error('Error fetching branches:', err);
+      setError(err.message || 'Failed to fetch branches');
+      
+      toast({
+        title: 'Error',
+        description: 'Failed to load branch information',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Fetch a specific branch by ID
-  const fetchBranchById = async (id: string): Promise<Branch | null> => {
-    try {
-      setError('');
+  }, [user, canViewAllBranches, toast]);
+  
+  // Switch branch
+  const switchBranch = useCallback((branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    if (branch) {
+      setCurrentBranch(branch);
+      localStorage.setItem('currentBranchId', branchId);
       
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data as Branch;
-    } catch (err: any) {
-      const errorMessage = err.message || `Failed to fetch branch with ID: ${id}`;
-      console.error('Error fetching branch:', errorMessage);
-      setError(errorMessage);
-      return null;
+      toast({
+        title: 'Branch changed',
+        description: `Now viewing ${branch.name}`,
+      });
     }
-  };
-
-  // Create a new branch
-  const createBranch = async (branchData: Omit<Branch, "id">): Promise<Branch | null> => {
+  }, [branches, toast]);
+  
+  // Add branch
+  const addBranch = useCallback(async (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      setError('');
-      
-      // Fix isActive to is_active conversion
-      if ('isActive' in branchData) {
-        (branchData as any).is_active = (branchData as any).isActive;
-        delete (branchData as any).isActive;
-      }
-      
       const { data, error } = await supabase
         .from('branches')
-        .insert(branchData)
+        .insert([branch])
         .select()
         .single();
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      const newBranch = data as Branch;
-      setBranches(prev => [...prev, newBranch]);
-      toast.success('Branch created successfully');
-      return newBranch;
+      setBranches(prev => [...prev, data as Branch]);
+      
+      toast({
+        title: 'Branch added',
+        description: `${branch.name} has been added successfully`,
+      });
+      
+      // If this is the first branch, set it as current
+      if (branches.length === 0) {
+        setCurrentBranch(data as Branch);
+        localStorage.setItem('currentBranchId', (data as Branch).id);
+      }
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create branch';
-      console.error('Error creating branch:', errorMessage);
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
+      console.error('Error adding branch:', err);
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to add branch',
+        variant: 'destructive',
+      });
+      
+      throw err;
     }
-  };
-
-  // Update an existing branch
-  const updateBranch = async (id: string, branchUpdates: Partial<Branch>): Promise<Branch | null> => {
+  }, [branches, toast]);
+  
+  // Update branch
+  const updateBranch = useCallback(async (id: string, updates: Partial<Branch>) => {
     try {
-      setError('');
-      
-      // Fix isActive to is_active conversion
-      if ('isActive' in branchUpdates) {
-        branchUpdates.is_active = branchUpdates.isActive;
-        delete branchUpdates.isActive;
-      }
-      
       const { data, error } = await supabase
         .from('branches')
-        .update(branchUpdates)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      const updatedBranch = data as Branch;
-      setBranches(prev => prev.map(branch => 
-        branch.id === id ? updatedBranch : branch
-      ));
+      setBranches(prev =>
+        prev.map(branch => (branch.id === id ? (data as Branch) : branch))
+      );
       
-      // If updating current branch, update current branch state
+      // Update current branch if it's the one being updated
       if (currentBranch?.id === id) {
-        setCurrentBranch(updatedBranch);
+        setCurrentBranch(data as Branch);
       }
       
-      toast.success('Branch updated successfully');
-      return updatedBranch;
+      toast({
+        title: 'Branch updated',
+        description: `${updates.name || 'Branch'} has been updated successfully`,
+      });
     } catch (err: any) {
-      const errorMessage = err.message || `Failed to update branch with ID: ${id}`;
-      console.error('Error updating branch:', errorMessage);
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return null;
+      console.error('Error updating branch:', err);
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to update branch',
+        variant: 'destructive',
+      });
+      
+      throw err;
     }
-  };
-
-  // Delete a branch
-  const deleteBranch = async (id: string): Promise<boolean> => {
+  }, [currentBranch, toast]);
+  
+  // Delete branch
+  const deleteBranch = useCallback(async (id: string) => {
     try {
-      setError('');
+      const { error } = await supabase.from('branches').delete().eq('id', id);
       
-      const { error } = await supabase
-        .from('branches')
-        .delete()
-        .eq('id', id);
+      if (error) throw error;
       
-      if (error) {
-        throw error;
-      }
-      
+      // Update branches list
       setBranches(prev => prev.filter(branch => branch.id !== id));
       
-      // If deleting current branch, switch to another branch
+      // If current branch is deleted, switch to another branch
       if (currentBranch?.id === id && branches.length > 1) {
         const newCurrentBranch = branches.find(branch => branch.id !== id);
         if (newCurrentBranch) {
@@ -224,51 +193,85 @@ export function BranchProvider({ children }: { children: ReactNode }) {
         }
       }
       
-      toast.success('Branch deleted successfully');
-      return true;
+      toast({
+        title: 'Branch deleted',
+        description: 'The branch has been deleted successfully',
+      });
     } catch (err: any) {
-      const errorMessage = err.message || `Failed to delete branch with ID: ${id}`;
-      console.error('Error deleting branch:', errorMessage);
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
+      console.error('Error deleting branch:', err);
+      
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to delete branch',
+        variant: 'destructive',
+      });
+      
+      throw err;
     }
-  };
-
-  // Switch current branch
-  const switchBranch = (branchId: string) => {
-    const branch = branches.find(b => b.id === branchId);
-    if (branch) {
-      setCurrentBranch(branch);
-      localStorage.setItem('currentBranchId', branchId);
-      toast.success(`Switched to branch: ${branch.name}`);
+  }, [currentBranch, branches, toast]);
+  
+  // Initial fetch on mount or auth change
+  useEffect(() => {
+    if (user) {
+      fetchBranches();
     } else {
-      toast.error('Branch not found');
+      setBranches([]);
+      setCurrentBranch(null);
+      setIsLoading(false);
     }
-  };
-
+  }, [user, fetchBranches]);
+  
+  // Listen for branch changes from other windows/tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'currentBranchId' && e.newValue && e.newValue !== currentBranch?.id) {
+        const branch = branches.find(b => b.id === e.newValue);
+        if (branch) {
+          setCurrentBranch(branch);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [branches, currentBranch]);
+  
+  // Context value
+  const value = useMemo(() => ({
+    branches,
+    currentBranch,
+    isLoading,
+    error,
+    fetchBranches,
+    switchBranch,
+    addBranch,
+    updateBranch,
+    deleteBranch,
+  }), [
+    branches,
+    currentBranch,
+    isLoading,
+    error,
+    fetchBranches,
+    switchBranch,
+    addBranch,
+    updateBranch,
+    deleteBranch,
+  ]);
+  
   return (
-    <BranchContext.Provider
-      value={{
-        branches,
-        currentBranch,
-        isLoading,
-        error,
-        fetchBranches,
-        fetchBranchById,
-        createBranch,
-        updateBranch,
-        deleteBranch,
-        switchBranch
-      }}
-    >
+    <BranchContext.Provider value={value}>
       {children}
     </BranchContext.Provider>
   );
-}
+};
 
-// Custom hook to use the branch context
-export const useBranch = () => useContext(BranchContext);
-
-// Default export for the context itself
-export default BranchContext;
+export const useBranch = () => {
+  const context = useContext(BranchContext);
+  
+  if (!context) {
+    throw new Error('useBranch must be used within a BranchProvider');
+  }
+  
+  return context;
+};

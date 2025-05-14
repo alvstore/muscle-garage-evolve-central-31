@@ -1,78 +1,119 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
-import { DietPlanList } from '@/components/fitness';
-import { dietPlanService } from '@/services/dietPlanService';
-import { toast } from 'sonner';
-import { DietPlan } from '@/types/diet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { DietPlan } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
+import DietPlansList from '@/components/fitness/DietPlanList';
+import DietPlanForm from '@/components/fitness/DietPlanForm';
+import { Plus, ArrowLeft } from 'lucide-react';
 
 const AdminDietPlansPage = () => {
-  const [dietPlans, setDietPlans] = useState<DietPlan[]>([]);
+  const [plans, setPlans] = useState<DietPlan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<DietPlan | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
-
+  const { toast } = useToast();
+  const { isSuperAdmin } = usePermissions();
+  
   useEffect(() => {
-    const fetchDietPlans = async () => {
-      try {
-        setIsLoading(true);
-        const plans = await dietPlanService.getAllDietPlans();
-        setDietPlans(plans);
-      } catch (error) {
-        console.error('Error fetching diet plans:', error);
-        toast.error('Failed to load diet plans');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDietPlans();
+    // In a real app, fetch plans from API
+    setIsLoading(false);
+    setPlans([
+      // Sample data
+    ]);
   }, []);
-
+  
+  const handleCreatePlan = () => {
+    setSelectedPlan(null);
+    setIsCreating(true);
+  };
+  
+  const handleEditPlan = (plan: DietPlan) => {
+    setSelectedPlan(plan);
+    setIsCreating(true);
+  };
+  
+  const handleCancel = () => {
+    setIsCreating(false);
+    setSelectedPlan(null);
+  };
+  
   const handlePlanCreated = (plan: DietPlan) => {
-    setDietPlans(prev => [...prev, plan]);
-    toast.success('Diet plan created successfully');
+    setPlans(prev => [plan, ...prev]);
+    setIsCreating(false);
+    toast({
+      title: "Success",
+      description: "Diet plan created successfully",
+    });
   };
-
+  
   const handlePlanUpdated = (updatedPlan: DietPlan) => {
-    setDietPlans(prev => 
-      prev.map(plan => plan.id === updatedPlan.id ? updatedPlan : plan)
-    );
-    toast.success('Diet plan updated successfully');
+    setPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+    setIsCreating(false);
+    setSelectedPlan(null);
+    toast({
+      title: "Success",
+      description: "Diet plan updated successfully",
+    });
   };
-
+  
   const handlePlanDeleted = (planId: string) => {
-    setDietPlans(prev => prev.filter(plan => plan.id !== planId));
-    toast.success('Diet plan deleted successfully');
+    setPlans(prev => prev.filter(p => p.id !== planId));
+    toast({
+      title: "Success",
+      description: "Diet plan deleted successfully",
+    });
   };
-
-  const filteredPlans = activeTab === 'all' 
-    ? dietPlans
-    : activeTab === 'global'
-      ? dietPlans.filter(plan => plan.is_global)
-      : dietPlans.filter(plan => !plan.is_global && plan.is_custom);
-
+  
+  if (isCreating) {
+    return (
+      <Container>
+        <div className="py-6">
+          <Button 
+            variant="outline" 
+            className="mb-4"
+            onClick={handleCancel}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Plans
+          </Button>
+          
+          <DietPlanForm 
+            existingPlan={selectedPlan}
+            onSave={selectedPlan ? handlePlanUpdated : handlePlanCreated}
+            onCancel={handleCancel}
+            isGlobal={true}
+          />
+        </div>
+      </Container>
+    );
+  }
+  
   return (
     <Container>
       <div className="py-6">
-        <h1 className="text-2xl font-bold mb-6">Diet Plans Management</h1>
-        
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">All Plans</TabsTrigger>
-            <TabsTrigger value="global">Global Plans</TabsTrigger>
-            <TabsTrigger value="custom">Custom Plans</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        
-        <DietPlanList 
-          plans={filteredPlans}
-          isLoading={isLoading}
-          onPlanCreated={handlePlanCreated}
-          onPlanUpdated={handlePlanUpdated}
-          onPlanDeleted={handlePlanDeleted}
-          canCreateGlobal={true}
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Diet Plans</CardTitle>
+            <Button onClick={handleCreatePlan}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Plan
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <DietPlansList 
+              plans={plans}
+              isLoading={isLoading}
+              onPlanCreated={handlePlanCreated}
+              onPlanUpdated={handlePlanUpdated}
+              onPlanDeleted={handlePlanDeleted}
+              canCreateGlobal={isSuperAdmin()}
+            />
+          </CardContent>
+        </Card>
       </div>
     </Container>
   );

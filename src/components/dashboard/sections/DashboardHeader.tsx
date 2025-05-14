@@ -1,160 +1,186 @@
-import React from "react";
-import { 
-  Bell, 
-  Menu, 
-  Moon, 
-  Search, 
-  Sun, 
-  User,
-  MessageSquare,
-  Settings
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import ThemeToggle from "@/components/theme/ThemeToggle";
-import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Link } from "react-router-dom";
+} from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Bell, Menu, X, Search, Moon, Sun, Settings } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { useNavigate } from "react-router-dom"
+import { useBranch } from "@/hooks/use-branch"
+import BranchSelector from "@/components/branch/BranchSelector"
+import NotificationsPanel from "@/components/notifications/NotificationsPanel"
 
 interface DashboardHeaderProps {
-  toggleSidebar: () => void;
-  toggleTheme: () => void;
-  isDarkMode: boolean;
-  sidebarOpen: boolean;
+  toggleSidebar?: () => void;
+  toggleTheme?: () => void;
+  isDarkMode?: boolean;
+  sidebarOpen?: boolean;
 }
 
-const DashboardHeader = ({ 
-  toggleSidebar, 
-  toggleTheme, 
+const DashboardHeader = ({
+  toggleSidebar,
+  toggleTheme,
   isDarkMode,
   sidebarOpen
 }: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
-  const isMobile = useIsMobile();
-  
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
+  const navigate = useNavigate();
+  const { currentBranch } = useBranch();
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
-  // Safely access user properties
-  const displayName = user ? (
-    user.full_name ||
-    user.name || 
-    (user.user_metadata ? user.user_metadata.full_name : null) ||
-    user.email ||
-    'User'
-  ) : 'User';
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  // Get user display name
+  const displayName = user?.fullName || user?.name || user?.email?.split('@')[0] || 'User';
   
-  const avatarUrl = user ? (
-    user.avatar_url || 
-    (user.user_metadata ? user.user_metadata.avatar_url : null) ||
-    user.avatar ||
-    null
-  ) : null;
-  
+  // Get avatar URL
+  const avatarUrl = user?.avatarUrl || user?.photoURL || undefined;
+
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
-      <div className="flex items-center gap-4 lg:gap-6">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleSidebar}
-          className="md:flex"
-          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <div className="hidden md:flex items-center relative w-full max-w-md">
-          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full pl-8 bg-background"
-          />
-        </div>
+    <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-4">
+      <div className="flex items-center gap-2 lg:hidden">
+        {toggleSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        )}
       </div>
-      <div className="flex items-center gap-2 md:gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="md:hidden"
-          onClick={() => {
-            const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
-            if (searchInput) {
-              searchInput.focus();
-            }
-          }}
-        >
-          <Search className="h-5 w-5" />
-        </Button>
-        <ThemeToggle />
-        <Button variant="ghost" size="icon">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/messages">
-            <MessageSquare className="h-5 w-5" />
-          </Link>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full overflow-hidden"
+      
+      <div className="flex flex-1 items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center">
+            <BranchSelector />
+          </div>
+
+          {/* Desktop Search */}
+          <div className="hidden md:flex items-center">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="w-64 pl-8 md:w-80 lg:w-96"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Toggle */}
+        {showMobileSearch ? (
+          <div className="absolute inset-x-0 top-0 z-50 flex h-16 items-center gap-2 bg-background px-4 md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowMobileSearch(false)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage 
-                  src={avatarUrl} 
-                  alt={displayName} 
-                />
-                <AvatarFallback>
-                  {getInitials(displayName)}
-                </AvatarFallback>
-              </Avatar>
+              <X className="h-5 w-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{displayName}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {userEmail}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings" className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={logout}
-              className="cursor-pointer"
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="flex-1"
+              autoFocus
+            />
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Search"
+            className="md:hidden"
+            onClick={() => setShowMobileSearch(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          <Sheet open={showNotifications} onOpenChange={setShowNotifications}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Notifications">
+                <Bell className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <NotificationsPanel onClose={() => setShowNotifications(false)} />
+            </SheetContent>
+          </Sheet>
+
+          {toggleTheme && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
             >
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-9 w-9 rounded-full"
+                aria-label="User menu"
+              >
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={avatarUrl} alt={displayName} />
+                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );
