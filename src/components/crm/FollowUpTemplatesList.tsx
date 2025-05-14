@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -97,11 +98,12 @@ const defaultTemplates: FollowUpTemplate[] = [
   {
     id: '1',
     title: 'Welcome Email',
-    name: 'Welcome Email',  // Added name field
+    name: 'Welcome Email',
     type: 'email',
     content: 'Dear {{name}},\n\nThank you for your interest in our fitness center. We would love to have you join our community!\n\nBest regards,\nThe Team',
     variables: ['name'],
-    isDefault: true
+    isDefault: true,
+    created_at: '2023-01-01T00:00:00Z'
   },
   {
     id: '2',
@@ -110,7 +112,8 @@ const defaultTemplates: FollowUpTemplate[] = [
     type: 'email',
     content: 'Hello {{name}},\n\nI hope you enjoyed your trial session at our gym on {{trialDate}}. I wanted to follow up and see if you had any questions about our membership options.\n\nWe currently have a special offer that might interest you.\n\nLooking forward to hearing from you,\n{{staffName}}',
     variables: ['name', 'trialDate', 'staffName'],
-    isDefault: false
+    isDefault: false,
+    created_at: '2023-01-02T00:00:00Z'
   },
   {
     id: '3',
@@ -119,7 +122,8 @@ const defaultTemplates: FollowUpTemplate[] = [
     type: 'sms',
     content: 'Hi {{name}}! Just a reminder that your trial period ends soon. Call us at {{gymPhone}} to discuss membership options and take advantage of our current promotions.',
     variables: ['name', 'gymPhone'],
-    isDefault: false
+    isDefault: false,
+    created_at: '2023-01-03T00:00:00Z'
   },
   {
     id: '4',
@@ -128,7 +132,8 @@ const defaultTemplates: FollowUpTemplate[] = [
     type: 'whatsapp',
     content: 'Hello {{name}}, this is {{staffName}} from Fitness Gym 👋 Thanks for your interest in our services! Would you like to schedule a visit to see our facilities? We're offering a special promotion for new members this month.',
     variables: ['name', 'staffName'],
-    isDefault: false
+    isDefault: false,
+    created_at: '2023-01-04T00:00:00Z'
   },
   {
     id: '5',
@@ -137,7 +142,8 @@ const defaultTemplates: FollowUpTemplate[] = [
     type: 'email',
     content: 'Hello {{name}},\n\nWe miss seeing you at the gym! As a valued lead, we're offering you an exclusive discount: {{discountAmount}} off your first month when you sign up before {{expiryDate}}.\n\nHope to see you soon,\n{{staffName}}',
     variables: ['name', 'discountAmount', 'expiryDate', 'staffName'],
-    isDefault: false
+    isDefault: false,
+    created_at: '2023-01-05T00:00:00Z'
   }
 ];
 
@@ -214,7 +220,7 @@ const FollowUpTemplatesList = ({ onEdit, onAddNew }: FollowUpTemplatesListProps)
   const handleEditTemplate = (template: FollowUpTemplate) => {
     setEditingTemplate({
       ...template,
-      name: template.title || template.name, // Handle both possibilities
+      name: template.title || template.name
     });
     setIsEditDialogOpen(true);
   };
