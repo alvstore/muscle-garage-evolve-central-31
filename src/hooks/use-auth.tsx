@@ -6,10 +6,11 @@ import { supabase } from '@/integrations/supabase/client';
 export interface User {
   id: string;
   email?: string;
-  name?: string;
   fullName?: string;
+  name?: string;
   avatar?: string;
   avatarUrl?: string;
+  photoURL?: string;
   role?: string;
   branch_id?: string;
   user_metadata?: {
@@ -17,26 +18,28 @@ export interface User {
     avatar_url?: string;
     role?: string;
   };
-  photoURL?: string;
 }
 
 export interface AuthContextType {
   user: User | null;
+  userRole: string | null;
   login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   loading: boolean;
+  isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  userRole?: string;
   forgotPassword: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  userRole: null,
   login: async () => {},
   logout: async () => {},
   loading: false,
+  isLoading: false,
   error: null,
   isAuthenticated: false,
   forgotPassword: async () => false,
@@ -82,6 +85,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             throw userError;
           }
           
+          // Log the raw user data from the profile
+          console.log('Raw user data from profile:', userData);
+          
           const userWithMetadata: User = {
             id: session.user.id,
             email: session.user.email,
@@ -98,6 +104,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               role: userData?.role
             }
           };
+          
+          console.log('Constructed user with metadata:', userWithMetadata);
           
           setUser(userWithMetadata);
           setUserRole(userData?.role);
@@ -221,17 +229,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      loading, 
-      error,
-      isAuthenticated,
-      userRole,
-      forgotPassword,
-      signOut
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userRole,
+        login,
+        logout,
+        loading,
+        isLoading: loading,
+        error,
+        isAuthenticated,
+        forgotPassword,
+        signOut: logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -14,9 +14,12 @@ const Dashboard = () => {
   
   useEffect(() => {
     if (user) {
-      console.log("User role in dashboard:", user.role);
+      console.log("Dashboard - Full user object:", user);
+      console.log("Dashboard - User role from user object:", user.role);
+      console.log("Dashboard - User role from context:", userRole);
+      console.log("Dashboard - Effective role being used:", userRole || user.role);
     }
-  }, [user]);
+  }, [user, userRole]);
 
   if (isLoading) {
     return (
@@ -33,7 +36,7 @@ const Dashboard = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const renderDashboard = (role: UserRole) => {
+  const renderDashboard = (role: UserRole | string | undefined) => {
     switch (role) {
       case "admin":
         return <AdminDashboard />;
@@ -44,14 +47,15 @@ const Dashboard = () => {
       case "member":
         return <MemberDashboard />;
       default:
+        console.error("Unknown or undefined user role:", role);
         return <Navigate to="/unauthorized" replace />;
     }
   };
 
   // Use userRole from the fetched profile, falling back to user.role if needed
-  const effectiveRole = userRole || user.role as UserRole;
+  const effectiveRole = userRole || user.role;
   
-  return renderDashboard(effectiveRole);
+  return renderDashboard(effectiveRole as UserRole);
 };
 
 export default Dashboard;
