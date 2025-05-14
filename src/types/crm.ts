@@ -3,21 +3,26 @@ export interface Lead {
   id: string;
   first_name: string;
   last_name: string;
+  name?: string;
   email: string;
   phone: string;
   status: LeadStatus;
   source: string;
   note: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
   branch_id: string;
   assigned_to?: string;
   score?: number;
   last_contacted_at?: string;
+  funnel_stage?: string;
+  tags?: string[];
+  conversion_date?: string;
   stage?: string;
 }
 
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived' | 'converted';
 
 export type FollowUpType = 'email' | 'call' | 'sms' | 'meeting' | 'whatsapp' | 'other';
 

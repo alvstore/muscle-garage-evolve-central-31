@@ -3,11 +3,11 @@ import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { FileUploader } from "@/components/ui/file-uploader";
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { BackupLogEntry } from '@/types/notification';
+import { toast } from 'sonner';
 
 interface ImportDataSectionProps {
   onImportComplete?: () => void;
@@ -17,18 +17,13 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const handleFileChange = (selectedFile: File | null) => {
     if (!selectedFile) return;
 
     if (selectedFile.type !== 'application/json') {
-      toast({
-        title: "Invalid file type",
-        description: "Please select a JSON file",
-        variant: "destructive",
-      });
+      toast.error("Please select a JSON file");
       return;
     }
 
@@ -37,11 +32,7 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
 
   const handleImport = async () => {
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a JSON file to import",
-        variant: "destructive",
-      });
+      toast.error("Please select a JSON file to import");
       return;
     }
 
@@ -120,11 +111,7 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
       
       await supabase.from('backup_logs').insert([logEntry]);
       
-      toast({
-        title: "Import completed",
-        description: `Successfully imported ${successCount} of ${totalRecords} records`,
-        variant: successCount === totalRecords ? "default" : "destructive",
-      });
+      toast.success(`Successfully imported ${successCount} of ${totalRecords} records`);
       
       // Reset file input
       if (fileInputRef.current) {
@@ -137,11 +124,7 @@ const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
       }
     } catch (error: any) {
       console.error('Import failed:', error);
-      toast({
-        title: "Import failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error.message || "An unexpected error occurred");
     } finally {
       setIsUploading(false);
     }
