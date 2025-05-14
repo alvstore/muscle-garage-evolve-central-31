@@ -66,14 +66,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BranchProvider>
-          <PermissionsProvider>
+        <PermissionsProvider>
+          <BranchProvider>
             <ThemeProvider>
               <AppRouter />
               <Toaster />
             </ThemeProvider>
-          </PermissionsProvider>
-        </BranchProvider>
+          </BranchProvider>
+        </PermissionsProvider>
       </AuthProvider>
       {showDevtools && (
         <Suspense fallback={null}>

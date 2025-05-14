@@ -3,7 +3,6 @@ import { Branch, BranchContextType } from '@/types/branch';
 import { useAuth } from './use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
-import { usePermissions } from './use-permissions';
 
 // Create context
 const BranchContext = createContext<BranchContextType>({} as BranchContextType);
@@ -16,7 +15,11 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const { canViewAllBranches } = usePermissions();
+  // Check user role directly instead of using usePermissions to avoid circular dependency
+  // Using useMemo to stabilize this value and prevent unnecessary re-renders
+  const canViewAllBranches = useMemo(() => {
+    return user?.role === 'admin' || user?.role === 'superadmin';
+  }, [user?.role]);
   
   // Fetch branches
   const fetchBranches = useCallback(async () => {
@@ -34,7 +37,7 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       let query = supabase.from('branches').select('*');
       
       // If not admin or doesn't have all branch access, filter by user's branch
-      if (!canViewAllBranches()) {
+      if (!canViewAllBranches) {
         if (user.branch_id) {
           query = query.eq('id', user.branch_id);
         } else {
@@ -80,7 +83,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setIsLoading(false);
     }
-  }, [user, canViewAllBranches, toast]);
+  // Using stable references to avoid infinite loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.branch_id, canViewAllBranches]);
   
   // Switch branch
   const switchBranch = useCallback((branchId: string) => {
@@ -229,7 +234,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setCurrentBranch(null);
       setIsLoading(false);
     }
-  }, [user, fetchBranches]);
+  // Using stable references to avoid infinite loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, fetchBranches]);
   
   // Listen for branch changes from other windows/tabs
   useEffect(() => {
