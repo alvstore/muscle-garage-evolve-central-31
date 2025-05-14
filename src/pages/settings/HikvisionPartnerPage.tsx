@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, Plus, RefreshCw, Trash, Settings2, User, Clock, Link, CameraOff, Camera } from 'lucide-react';
 import { toast } from 'sonner';
-import { hikvisionPartnerService, HikvisionDeviceWithStatus } from '@/services/integrations/hikvisionPartnerService';
+import { hikvisionPartnerService, HikvisionDeviceWithStatus } from '@/services/integrations/hikvision/hikvisionPartnerService';
 import { usePermissions } from '@/hooks/use-permissions';
 
 const HikvisionPartnerPage = () => {
