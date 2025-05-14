@@ -78,8 +78,10 @@ export interface AccessEvent {
 }
 
 class HikvisionAccessControlService {
-  // Cache for access tokens
+  // Cache for access tokens with improved structure
   private tokenCache: Map<string, { token: string, expires: number }> = new Map();
+  private refreshQueue: Set<string> = new Set();
+  private refreshThreshold = 24 * 60 * 60 * 1000; // 24 hours
   
   /**
    * Get API settings for a branch
@@ -114,16 +116,47 @@ class HikvisionAccessControlService {
       const cacheKey = `branch_${branchId}`;
       const cachedToken = this.tokenCache.get(cacheKey);
       
-      // If token exists but is close to expiry (within 24 hours), refresh it
-      if (cachedToken && cachedToken.expires > Date.now()) {
-        // If token is not close to expiry, return it
-        if (cachedToken.expires - Date.now() > 24 * 60 * 60 * 1000) {
-          return cachedToken.token;
-        }
-        // Otherwise, continue to refresh the token
-        console.log('Token close to expiry, refreshing...');
+      // Valid token that's not near expiry
+      if (cachedToken && cachedToken.expires > Date.now() + this.refreshThreshold) {
+        return cachedToken.token;
       }
       
+      // Valid token but near expiry - return it but queue a background refresh
+      if (cachedToken && cachedToken.expires > Date.now()) {
+        if (!this.refreshQueue.has(cacheKey)) {
+          this.refreshQueue.add(cacheKey);
+          this.refreshTokenInBackground(branchId).finally(() => {
+            this.refreshQueue.delete(cacheKey);
+          });
+        }
+        return cachedToken.token;
+      }
+      
+      // No valid token - get a new one
+      return this.refreshToken(branchId);
+    } catch (error) {
+      console.error('Error in authenticate:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Refresh token in background without blocking the current request
+   */
+  private async refreshTokenInBackground(branchId: string): Promise<void> {
+    try {
+      await this.refreshToken(branchId);
+      console.log(`Background token refresh completed for branch ${branchId}`);
+    } catch (error) {
+      console.error(`Background token refresh failed for branch ${branchId}:`, error);
+    }
+  }
+  
+  /**
+   * Get a fresh token from the API
+   */
+  private async refreshToken(branchId: string): Promise<string | null> {
+    try {
       const settings = await this.getApiSettings(branchId);
       if (!settings) {
         throw new Error('API settings not found for branch');
@@ -139,7 +172,7 @@ class HikvisionAccessControlService {
         .update(signString)
         .digest('hex');
       
-      console.log(`Authenticating with Hikvision API for branch ${branchId}`);
+      console.log(`Refreshing token for branch ${branchId}`);
       
       const response = await axios.post(
         `${settings.api_url}/api/hpcgw/v1/token/get`,
@@ -164,37 +197,40 @@ class HikvisionAccessControlService {
         const token = response.data.accessToken;
         const expiresIn = response.data.expiresIn || 604800; // Default to 7 days if not specified
         
+        const cacheKey = `branch_${branchId}`;
         // Store in cache with expiry time
         this.tokenCache.set(cacheKey, {
           token,
           expires: Date.now() + (expiresIn * 1000)
         });
         
-        console.log(`Successfully obtained Hikvision token for branch ${branchId}, expires in ${expiresIn} seconds`);
+        // Also store in database for persistence across restarts
+        await supabase
+          .from('hikvision_tokens')
+          .upsert({
+            branch_id: branchId,
+            access_token: token,
+            expire_time: Date.now() + (expiresIn * 1000),
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'branch_id'
+          });
+        
+        console.log(`Successfully refreshed token for branch ${branchId}, expires in ${expiresIn} seconds`);
         return token;
       }
       
       throw new Error('Failed to obtain access token');
     } catch (error) {
-      console.error('Error authenticating with Hikvision API:', error);
+      console.error('Error refreshing token:', error);
       
       // Clear token cache for this branch in case of authentication error
-      this.tokenCache.delete(`branch_${branchId}`);
+      const cacheKey = `branch_${branchId}`;
+      this.tokenCache.delete(cacheKey);
       
       // Provide more detailed error message
       if (axios.isAxiosError(error)) {
-        const statusCode = error.response?.status;
-        const responseData = error.response?.data;
-        
-        console.error(`Hikvision API authentication error: Status ${statusCode}`, responseData);
-        
-        if (statusCode === 401 || statusCode === 403) {
-          throw new Error('Invalid API credentials. Please check your appKey and secretKey.');
-        } else if (statusCode === 429) {
-          throw new Error('Rate limit exceeded. Please try again later.');
-        } else if (statusCode >= 500) {
-          throw new Error('Hikvision API server error. Please try again later.');
-        }
+        this.logAuthenticationError(error, branchId);
       }
       
       return null;
@@ -202,13 +238,35 @@ class HikvisionAccessControlService {
   }
   
   /**
+   * Log detailed authentication errors
+   */
+  private logAuthenticationError(error: any, branchId: string): void {
+    const statusCode = error.response?.status;
+    const responseData = error.response?.data;
+    
+    console.error(`Hikvision API authentication error: Status ${statusCode}`, responseData);
+    
+    // Log to database for monitoring
+    supabase.from('hikvision_sync_log').insert({
+      id: crypto.randomUUID(),
+      branch_id: branchId,
+      event_type: 'error',
+      message: 'Authentication failed',
+      details: `Status: ${statusCode}, Message: ${JSON.stringify(responseData)}`,
+      status: 'error',
+      created_at: new Date().toISOString()
+    }).then(() => {}).catch(err => console.error('Error logging auth failure:', err));
+  }
+  
+  /**
    * Make an authenticated API call to Hikvision
    */
   async apiCall(branchId: string, endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', data?: any): Promise<any> {
-    const maxRetries = 2;
-    let retryCount = 0;
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError: any = null;
     
-    const makeRequest = async (): Promise<any> => {
+    while (attempt < maxRetries) {
       try {
         const token = await this.authenticate(branchId);
         if (!token) {
@@ -222,7 +280,7 @@ class HikvisionAccessControlService {
         
         const url = `${settings.api_url}${endpoint}`;
         
-        console.log(`Making Hikvision API call: ${method} ${endpoint}`);
+        console.log(`Making Hikvision API call: ${method} ${endpoint} (Attempt ${attempt + 1}/${maxRetries})`);
         
         const response = await axios({
           method,
@@ -243,65 +301,153 @@ class HikvisionAccessControlService {
         });
         
         // Handle common error codes
-        if (response.data && !response.data.success) {
+        if (response.data && response.data.code !== '0' && response.data.code !== 0) {
           const errorCode = response.data.code;
+          const errorMessage = response.data.message || response.data.msg || 'Unknown API error';
+          
+          // Log the error for monitoring
+          await this.logApiError(branchId, endpoint, method, errorCode, errorMessage, attempt);
+          
           switch(errorCode) {
             case 'TOKEN_EXPIRED':
               // Clear token cache and retry
-              if (retryCount < maxRetries) {
+              if (attempt < maxRetries - 1) {
                 console.log('Token expired, clearing cache and retrying...');
                 this.tokenCache.delete(`branch_${branchId}`);
-                retryCount++;
-                return makeRequest();
+                attempt++;
+                continue;
               }
-              throw new Error('Token expired and retry limit reached');
+              throw new Error(`Token expired: ${errorMessage}`);
+              
             case 'PERSON_NOT_FOUND':
-              throw new Error('Member not found in Hikvision system');
+              throw new Error(`Member not found in Hikvision system: ${errorMessage}`);
+              
             case 'DEVICE_OFFLINE':
-              throw new Error('Hikvision device is offline');
+              throw new Error(`Hikvision device is offline: ${errorMessage}`);
+              
             default:
-              throw new Error(`Hikvision API error: ${response.data.message || errorCode}`);
+              throw new Error(`Hikvision API error (${errorCode}): ${errorMessage}`);
           }
         }
         
         return response.data;
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error(`Hikvision API error (${method} ${endpoint}):`, {
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.message
-          });
-          
-          // Handle specific HTTP errors
-          if (error.response?.status === 401) {
-            // Token might be invalid, clear it and retry if we haven't reached the limit
-            if (retryCount < maxRetries) {
-              console.log('Authentication failed, clearing token and retrying...');
-              this.tokenCache.delete(`branch_${branchId}`);
-              retryCount++;
-              return makeRequest();
-            }
-          } else if (error.response?.status === 429) {
-            // Rate limited, wait and retry
-            if (retryCount < maxRetries) {
-              const delay = (retryCount + 1) * 2000; // Exponential backoff
-              console.log(`Rate limited, waiting ${delay}ms before retry...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              retryCount++;
-              return makeRequest();
-            }
-          } else if (error.code === 'ECONNABORTED') {
-            throw new Error('Hikvision API request timed out');
-          }
-        }
+        lastError = error;
+        attempt++;
         
-        console.error(`Hikvision API unexpected error:`, error);
-        throw error;
+        // Detailed error logging with context
+        console.error(`Hikvision API error (${method} ${endpoint}) - Attempt ${attempt}/${maxRetries}:`, {
+          branchId,
+          errorType: error.name,
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
+        
+        // Determine if we should retry
+        const shouldRetry = this.shouldRetryError(error, attempt, maxRetries);
+        if (!shouldRetry) break;
+        
+        // Exponential backoff
+        const delay = this.calculateBackoff(attempt);
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    };
+    }
     
-    return makeRequest();
+    // If we've exhausted all retries, throw the last error
+    throw this.enhanceError(lastError, endpoint, method, branchId);
+  }
+  
+  /**
+   * Determine if an error should trigger a retry
+   */
+  private shouldRetryError(error: any, attempt: number, maxRetries: number): boolean {
+    // Don't retry if we've reached the max
+    if (attempt >= maxRetries) return false;
+    
+    // Always retry on network errors
+    if (error.code === 'ECONNABORTED' || error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+      return true;
+    }
+    
+    // Retry on rate limits
+    if (axios.isAxiosError(error) && error.response?.status === 429) {
+      return true;
+    }
+    
+    // Retry on authentication errors (might be fixed with a new token)
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      return true;
+    }
+    
+    // Retry on server errors
+    if (axios.isAxiosError(error) && error.response?.status >= 500) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Calculate backoff time for retries
+   */
+  private calculateBackoff(attempt: number): number {
+    // Exponential backoff with jitter
+    const baseDelay = 1000; // 1 second
+    const maxDelay = 30000; // 30 seconds
+    
+    // Calculate exponential backoff: 2^attempt * baseDelay
+    const expBackoff = Math.min(maxDelay, Math.pow(2, attempt) * baseDelay);
+    
+    // Add jitter (±20%)
+    const jitter = expBackoff * 0.2 * (Math.random() * 2 - 1);
+    
+    return Math.floor(expBackoff + jitter);
+  }
+  
+  /**
+   * Enhance error with more context
+   */
+  private enhanceError(error: any, endpoint: string, method: string, branchId: string): Error {
+    // Create a more informative error message
+    let message = `Hikvision API error (${method} ${endpoint}): `;
+    
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        message += `Status ${error.response.status} - ${error.response.data?.message || error.message}`;
+      } else if (error.request) {
+        message += `No response received - ${error.message}`;
+      } else {
+        message += `Request setup failed - ${error.message}`;
+      }
+    } else {
+      message += error.message || 'Unknown error';
+    }
+    
+    // Log the enhanced error
+    this.logApiError(branchId, endpoint, method, 'ENHANCED_ERROR', message, -1);
+    
+    return new Error(message);
+  }
+  
+  /**
+   * Log API errors to the database
+   */
+  private async logApiError(branchId: string, endpoint: string, method: string, errorCode: string, errorMessage: string, attempt: number): Promise<void> {
+    try {
+      await supabase.from('hikvision_sync_log').insert({
+        id: crypto.randomUUID(),
+        branch_id: branchId,
+        event_type: 'error',
+        message: `API Error: ${method} ${endpoint}`,
+        details: `Code: ${errorCode}, Message: ${errorMessage}, Attempt: ${attempt + 1}`,
+        status: 'error',
+        created_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Failed to log API error:', err);
+    }
   }
   
   /**

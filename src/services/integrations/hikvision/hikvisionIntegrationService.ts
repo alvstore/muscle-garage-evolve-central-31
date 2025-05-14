@@ -73,14 +73,14 @@ class HikvisionIntegrationService {
   }
 
   /**
-   * Synchronize a member with Hikvision system with progress tracking
+   * Synchronize a member with Hikvision system with real progress tracking
    */
   async syncMemberWithProgress(
     memberId: string, 
     branchId: string, 
     memberName: string
   ): Promise<{success: boolean, progress: number}> {
-    // Log the start of synchronization
+    // Create a sync job record
     const logId = await this.logEvent(
       branchId,
       'sync',
@@ -92,81 +92,108 @@ class HikvisionIntegrationService {
         entityName: memberName
       }
     );
-
+  
     try {
-      // Get member details
+      // Define sync steps with weights
+      const steps = [
+        { name: 'fetch_member', weight: 5, status: 'pending' },
+        { name: 'create_person', weight: 20, status: 'pending' },
+        { name: 'register_credentials', weight: 30, status: 'pending' },
+        { name: 'assign_access', weight: 20, status: 'pending' },
+        { name: 'verify_sync', weight: 25, status: 'pending' }
+      ];
+      
+      let currentProgress = 0;
+      
+      // Step 1: Fetch member details
       const { data: member, error: memberError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', memberId)
         .single();
-
+  
       if (memberError || !member) {
         throw new Error('Member not found');
       }
-
-      // Start synchronization
-      const syncStarted = await hikvisionAccessControlService.syncMemberAccess(memberId, branchId);
       
-      if (!syncStarted) {
-        throw new Error('Failed to start member synchronization');
+      // Update progress
+      steps[0].status = 'completed';
+      currentProgress += steps[0].weight;
+      await this.updateSyncProgress(logId, currentProgress, `Fetched member details for ${memberName}`);
+      
+      // Step 2: Get or create person in Hikvision
+      const personId = await this.getOrCreatePerson(member, branchId);
+      if (!personId) {
+        throw new Error('Failed to create or update person in Hikvision');
       }
-
-      // Update log with progress
+      
+      // Update progress
+      steps[1].status = 'completed';
+      currentProgress += steps[1].weight;
+      await this.updateSyncProgress(logId, currentProgress, `Created/updated person in Hikvision: ${personId}`);
+      
+      // Step 3: Register credentials
+      const { data: credentials, error: credentialsError } = await supabase
+        .from('member_access_credentials')
+        .select('*')
+        .eq('member_id', memberId)
+        .eq('is_active', true);
+        
+      if (credentialsError) {
+        throw new Error(`Failed to fetch credentials: ${credentialsError.message}`);
+      }
+      
+      // Register each credential
+      if (credentials && credentials.length > 0) {
+        for (const credential of credentials) {
+          await this.syncCredential(personId, credential, branchId);
+        }
+      }
+      
+      // Update progress
+      steps[2].status = 'completed';
+      currentProgress += steps[2].weight;
+      await this.updateSyncProgress(logId, currentProgress, `Registered ${credentials?.length || 0} credentials`);
+      
+      // Step 4: Configure access privileges
+      const accessConfigured = await hikvisionAccessControlService.syncMemberAccess(memberId, branchId);
+      if (!accessConfigured) {
+        throw new Error('Failed to configure access privileges');
+      }
+      
+      // Update progress
+      steps[3].status = 'completed';
+      currentProgress += steps[3].weight;
+      await this.updateSyncProgress(logId, currentProgress, 'Configured access privileges');
+      
+      // Step 5: Verify synchronization
+      const verificationResult = await this.verifySync(personId, branchId);
+      
+      // Update progress
+      steps[4].status = verificationResult ? 'completed' : 'warning';
+      currentProgress += steps[4].weight;
+      await this.updateSyncProgress(
+        logId, 
+        100, 
+        verificationResult 
+          ? 'Member synchronized successfully' 
+          : 'Member synchronized with warnings'
+      );
+      
+      // Log completion
       await this.logEvent(
         branchId,
-        'info',
-        `Member synchronization in progress: ${memberName}`,
-        'pending',
+        'sync',
+        `Member synchronization completed: ${memberName}`,
+        verificationResult ? 'success' : 'warning',
         {
           entityType: 'member',
           entityId: memberId,
-          entityName: memberName,
-          details: 'Synchronizing member data with access control devices'
+          entityName: memberName
         }
       );
-
-      // Poll for sync progress (simulated for now)
-      let progress = 0;
-      const pollInterval = 2000; // 2 seconds
-      const maxPolls = 15; // Maximum 30 seconds
-      let pollCount = 0;
-      
-      while (progress < 100 && pollCount < maxPolls) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        pollCount++;
-        
-        // In a real implementation, you would check the actual progress
-        // For now, we'll simulate progress
-        progress = Math.min(100, Math.round((pollCount / maxPolls) * 100));
-        
-        // Update log with final status
-        if (progress >= 100) {
-          await supabase
-            .from('hikvision_sync_log')
-            .update({
-              status: 'success',
-              message: `Member synchronized successfully: ${memberName}`,
-              details: 'Member data synchronized with all access control devices'
-            })
-            .eq('id', logId);
-            
-          // Log completion
-          await this.logEvent(
-            branchId,
-            'sync',
-            `Member synchronization completed: ${memberName}`,
-            'success',
-            {
-              entityType: 'member',
-              entityId: memberId,
-              entityName: memberName
-            }
-          );
-        }
-      }
-
-      return { success: progress >= 100, progress };
+  
+      return { success: true, progress: 100 };
     } catch (error) {
       console.error('Error in syncMemberWithProgress:', error);
       
@@ -194,7 +221,143 @@ class HikvisionIntegrationService {
         }
       );
       
-      return { success: false, progress: 0 };
+      return { success: false, progress: currentProgress };
+    }
+  }
+
+  /**
+   * Update sync progress in the database
+   */
+  private async updateSyncProgress(logId: string, progress: number, message: string): Promise<void> {
+    try {
+      await supabase
+        .from('hikvision_sync_log')
+        .update({
+          message,
+          details: `Synchronization progress: ${progress}%`,
+          progress_percentage: progress
+        })
+        .eq('id', logId);
+    } catch (error) {
+      console.error('Error updating sync progress:', error);
+    }
+  }
+
+  /**
+   * Get or create a person in Hikvision
+   */
+  private async getOrCreatePerson(member: any, branchId: string): Promise<string | null> {
+    try {
+      // Check if person already exists in Hikvision
+      const { data: hikvisionMap } = await supabase
+        .from('hikvision_map')
+        .select('person_id')
+        .eq('member_id', member.id)
+        .eq('branch_id', branchId)
+        .maybeSingle();
+      
+      if (hikvisionMap?.person_id) {
+        // Person exists, update it
+        await hikvisionAccessControlService.apiCall(
+          branchId,
+          '/api/hpcgw/v1/person/update',
+          'POST',
+          {
+            personId: hikvisionMap.person_id,
+            name: `${member.first_name} ${member.last_name}`.trim(),
+            gender: member.gender || 'unknown',
+            phoneNo: member.phone || '',
+            email: member.email || ''
+          }
+        );
+        
+        return hikvisionMap.person_id;
+      } else {
+        // Create new person
+        const response = await hikvisionAccessControlService.apiCall(
+          branchId,
+          '/api/hpcgw/v1/person/add',
+          'POST',
+          {
+            employeeNo: member.id,
+            name: `${member.first_name} ${member.last_name}`.trim(),
+            gender: member.gender || 'unknown',
+            phoneNo: member.phone || '',
+            email: member.email || '',
+            type: 2 // Visitor (gym member)
+          }
+        );
+        
+        if (response && response.personId) {
+          // Store the mapping
+          await supabase.from('hikvision_map').insert({
+            member_id: member.id,
+            person_id: response.personId,
+            branch_id: branchId,
+            created_at: new Date().toISOString()
+          });
+          
+          return response.personId;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in getOrCreatePerson:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Sync a credential to Hikvision
+   */
+  private async syncCredential(personId: string, credential: any, branchId: string): Promise<boolean> {
+    try {
+      if (credential.credential_type === 'card') {
+        await hikvisionAccessControlService.apiCall(
+          branchId,
+          '/api/hpcgw/v1/person/card/bind',
+          'POST',
+          {
+            personId,
+            cardNo: credential.credential_value
+          }
+        );
+      } else if (credential.credential_type === 'face') {
+        await hikvisionAccessControlService.apiCall(
+          branchId,
+          '/api/hpcgw/v1/person/face/bind',
+          'POST',
+          {
+            personId,
+            faceData: credential.credential_value
+          }
+        );
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error syncing ${credential.credential_type}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Verify synchronization was successful
+   */
+  private async verifySync(personId: string, branchId: string): Promise<boolean> {
+    try {
+      // Verify person exists in Hikvision
+      const response = await hikvisionAccessControlService.apiCall(
+        branchId,
+        `/api/hpcgw/v1/person/get?personId=${personId}`,
+        'GET'
+      );
+      
+      return !!response && !!response.personId;
+    } catch (error) {
+      console.error('Error verifying sync:', error);
+      return false;
     }
   }
 
