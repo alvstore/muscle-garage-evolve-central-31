@@ -1,4 +1,3 @@
-
 // User Types
 export type UserRole = "admin" | "manager" | "staff" | "trainer" | "member";
 
@@ -18,19 +17,17 @@ export interface User {
 export interface Branch {
   id: string;
   name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  phone?: string;
-  email?: string;
-  is_active?: boolean;
-  manager_id?: string;
-  tax_rate?: number;
-  max_capacity?: number;
-  opening_hours?: string;
-  closing_hours?: string;
-  created_at?: string;
-  updated_at?: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  manager_id: string;
+  branch_code: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Membership Types

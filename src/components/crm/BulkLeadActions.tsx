@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -8,15 +9,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from 'sonner';
+import { TagsInput } from "@/components/ui/tags-input"
+import { toast } from '@/hooks/use-toast';
 import { LeadStatus, FunnelStage } from '@/types/crm';
 import { leadService } from '@/services/leadService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FormDescription } from "@/components/ui/form"
 import { useAuth } from '@/hooks/use-auth';
 import { User } from '@/types';
 
@@ -59,13 +61,20 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success(`Status updated for ${selectedLeads.length} lead(s)`);
+        toast({
+          title: "Success",
+          description: `Status updated for ${selectedLeads.length} lead(s)`
+        });
         onSuccess();
         onClose();
       })
       .catch(error => {
         console.error('Error updating lead status:', error);
-        toast.error('Failed to update lead status');
+        toast({
+          title: "Error",
+          description: 'Failed to update lead status',
+          variant: "destructive"
+        });
       })
       .finally(() => setIsLoading(false));
   };
@@ -81,13 +90,20 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success(`Funnel stage updated for ${selectedLeads.length} lead(s)`);
+        toast({
+          title: "Success",
+          description: `Funnel stage updated for ${selectedLeads.length} lead(s)`
+        });
         onSuccess();
         onClose();
       })
       .catch(error => {
         console.error('Error updating funnel stage:', error);
-        toast.error('Failed to update funnel stage');
+        toast({
+          title: "Error",
+          description: 'Failed to update funnel stage',
+          variant: "destructive"
+        });
       })
       .finally(() => setIsLoading(false));
   };
@@ -103,13 +119,20 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success(`Assigned ${selectedLeads.length} lead(s) to user`);
+        toast({
+          title: "Success",
+          description: `Assigned ${selectedLeads.length} lead(s) to user`
+        });
         onSuccess();
         onClose();
       })
       .catch(error => {
         console.error('Error assigning leads:', error);
-        toast.error('Failed to assign leads');
+        toast({
+          title: "Error",
+          description: 'Failed to assign leads',
+          variant: "destructive"
+        });
       })
       .finally(() => setIsLoading(false));
   };
@@ -129,13 +152,20 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success(`Tags added to ${selectedLeads.length} lead(s)`);
+        toast({
+          title: "Success",
+          description: `Tags added to ${selectedLeads.length} lead(s)`
+        });
         onSuccess();
         onClose();
       })
       .catch(error => {
         console.error('Error adding tags:', error);
-        toast.error('Failed to add tags');
+        toast({
+          title: "Error",
+          description: 'Failed to add tags',
+          variant: "destructive"
+        });
       })
       .finally(() => setIsLoading(false));
   };
@@ -149,13 +179,20 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(deletePromises)
       .then(() => {
-        toast.success(`Deleted ${selectedLeads.length} lead(s)`);
+        toast({
+          title: "Success",
+          description: `Deleted ${selectedLeads.length} lead(s)`
+        });
         onSuccess();
         onClose();
       })
       .catch(error => {
         console.error('Error deleting leads:', error);
-        toast.error('Failed to delete leads');
+        toast({
+          title: "Error",
+          description: 'Failed to delete leads',
+          variant: "destructive"
+        });
       })
       .finally(() => setIsLoading(false));
   };
@@ -189,13 +226,13 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Update Lead Status</AlertDialogTitle>
-            <AlertDialogDescription>
+            <FormDescription>
               Select a new status for the selected leads.
-            </AlertDialogDescription>
+            </FormDescription>
           </AlertDialogHeader>
-          <AlertDialogDescription>
+          <div className="py-4">
             <Select onValueChange={(value) => setSelectedStatus(value as LeadStatus)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a status" />
               </SelectTrigger>
               <SelectContent>
@@ -204,7 +241,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
                 ))}
               </SelectContent>
             </Select>
-          </AlertDialogDescription>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => updateLeadStatus(selectedStatus)} disabled={isLoading}>
@@ -221,13 +258,13 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Update Funnel Stage</AlertDialogTitle>
-            <AlertDialogDescription>
+            <FormDescription>
               Select a new funnel stage for the selected leads.
-            </AlertDialogDescription>
+            </FormDescription>
           </AlertDialogHeader>
-          <AlertDialogDescription>
+          <div className="py-4">
             <Select onValueChange={(value) => setSelectedFunnelStage(value as FunnelStage)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a funnel stage" />
               </SelectTrigger>
               <SelectContent>
@@ -236,7 +273,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
                 ))}
               </SelectContent>
             </Select>
-          </AlertDialogDescription>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => updateFunnelStage(selectedFunnelStage)} disabled={isLoading}>
@@ -253,13 +290,13 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Assign Leads</AlertDialogTitle>
-            <AlertDialogDescription>
+            <FormDescription>
               Select a user to assign the selected leads to.
-            </AlertDialogDescription>
+            </FormDescription>
           </AlertDialogHeader>
-          <AlertDialogDescription>
+          <div className="py-4">
             <Select onValueChange={(value) => setSelectedUser(value)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a user" />
               </SelectTrigger>
               <SelectContent>
@@ -268,7 +305,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
                 ))}
               </SelectContent>
             </Select>
-          </AlertDialogDescription>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => assignLeads(selectedUser || '')} disabled={isLoading}>
@@ -285,20 +322,18 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Add Tags</AlertDialogTitle>
-            <AlertDialogDescription>
+            <FormDescription>
               Enter tags to add to the selected leads.
-            </AlertDialogDescription>
+            </FormDescription>
           </AlertDialogHeader>
-          <AlertDialogDescription>
-            <div className="grid gap-2">
-              <Label htmlFor="tags">Tags</Label>
-              <Input
-                id="tags"
-                placeholder="Enter tags, separated by commas"
-                onChange={(e) => setNewTags(e.target.value.split(',').map(tag => tag.trim()))}
-              />
-            </div>
-          </AlertDialogDescription>
+          <div className="grid gap-2 py-4">
+            <Label htmlFor="tags">Tags</Label>
+            <TagsInput 
+              value={newTags}
+              onChange={setNewTags}
+              placeholder="Add tags and press Enter"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => addTags(newTags)} disabled={isLoading}>

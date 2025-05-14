@@ -54,20 +54,25 @@ const MemberProgressSection = () => {
         if (error) throw error;
         
         if (data) {
-          const formattedMembers = data.map(member => ({
-            id: member.id,
-            name: member.full_name || 'Unknown',
-            email: member.email || '',
+          const mockData = data.map(profile => ({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
             role: 'member' as const,
             membershipStatus: 'active' as const,
-            status: 'active' // Add the required status property
+            status: profile.status === 'active' || profile.status === 'inactive' || profile.status === 'pending' 
+              ? profile.status 
+              : 'active' as const,
+            membershipId: profile.membershipId,
+            membershipStartDate: profile.membershipStartDate,
+            membershipEndDate: profile.membershipEndDate,
           }));
           
-          setMembers(formattedMembers);
+          setMembers(mockData as Member[]);
           
           // Auto-select first member if there are any
-          if (formattedMembers.length > 0 && !selectedMemberId) {
-            setSelectedMemberId(formattedMembers[0].id);
+          if (mockData.length > 0 && !selectedMemberId) {
+            setSelectedMemberId(mockData[0].id);
           }
         }
       } catch (error) {

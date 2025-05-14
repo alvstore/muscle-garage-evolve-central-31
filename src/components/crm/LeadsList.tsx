@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -32,14 +32,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useToast } from "@/components/ui/use-toast"
-import { useLeads as useLeadsHook } from '@/hooks/use-leads';
-import { LeadForm } from './LeadForm';
-import { useBranch } from '@/hooks/use-branch';
-import { crmService } from '@/services/crmService';
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from '@/components/ui/skeleton';
+import LeadForm from './LeadForm';
 import { BulkLeadActions } from './BulkLeadActions';
+import { useBranch } from '@/hooks/use-branch';
+import { leadService } from '@/services/leadService';
 
+// Creating a hook for leads outside of the component
 export const useLeads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,7 @@ export const useLeads = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await crmService.getLeads(currentBranch?.id);
+      const data = await leadService.getLeads(currentBranch?.id);
       setLeads(data as Lead[]);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch leads');
@@ -60,11 +60,9 @@ export const useLeads = () => {
     }
   };
 
-  const refetch = fetchLeads;
-
   const addLead = async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const newLead = await crmService.createLead(lead);
+      const newLead = await leadService.createLead(lead);
       if (newLead) {
         setLeads(prevLeads => [newLead, ...prevLeads]);
         return newLead;
@@ -80,7 +78,7 @@ export const useLeads = () => {
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {
     try {
-      const updatedLead = await crmService.updateLead(id, updates);
+      const updatedLead = await leadService.updateLead(id, updates);
       if (updatedLead) {
         setLeads(prevLeads =>
           prevLeads.map(lead => (lead.id === id ? { ...lead, ...updatedLead } : lead))
@@ -98,7 +96,7 @@ export const useLeads = () => {
 
   const deleteLead = async (id: string) => {
     try {
-      await crmService.deleteLead(id);
+      await leadService.deleteLead(id);
       setLeads(prevLeads => prevLeads.filter(lead => lead.id !== id));
     } catch (err: any) {
       setError(err.message || 'Failed to delete lead');
@@ -106,6 +104,8 @@ export const useLeads = () => {
       throw err;
     }
   };
+
+  const refetch = fetchLeads;
 
   useEffect(() => {
     if (currentBranch?.id) {
@@ -119,10 +119,11 @@ export const useLeads = () => {
 interface LeadsListProps {
   onEdit?: (lead: Lead) => void;
   onView?: (lead: Lead) => void;
+  onAddNew?: () => void;
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView }) => {
-  const { leads, isLoading, error, fetchLeads, deleteLead } = useLeads();
+const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView, onAddNew }) => {
+  const { leads, isLoading, error, deleteLead, refetch } = useLeads();
   const { toast } = useToast();
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
@@ -154,31 +155,6 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView }) => {
         description: error.message || "Failed to delete lead.",
         variant: "destructive",
       })
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedLeads.length === 0) {
-      toast({
-        title: "Warning",
-        description: "No leads selected for deletion.",
-      });
-      return;
-    }
-
-    try {
-      await Promise.all(selectedLeads.map(id => deleteLead(id)));
-      toast({
-        title: "Success",
-        description: "Selected leads deleted successfully.",
-      });
-      setSelectedLeads([]);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete selected leads.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -246,9 +222,6 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView }) => {
   return (
     <>
       <Table>
-        <TableCaption>
-          A list of your leads.
-        </TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">
@@ -309,12 +282,17 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView }) => {
         </div>
       )}
 
-      <BulkLeadActions
-        isOpen={isBulkActionsOpen}
-        onClose={() => setIsBulkActionsOpen(false)}
-        selectedLeads={selectedLeads}
-        onSuccess={fetchLeads}
-      />
+      {isBulkActionsOpen && (
+        <BulkLeadActions
+          selectedLeads={selectedLeads}
+          onSuccess={() => {
+            refetch();
+            setSelectedLeads([]);
+            setIsBulkActionsOpen(false);
+          }}
+          onClose={() => setIsBulkActionsOpen(false)}
+        />
+      )}
     </>
   );
 };

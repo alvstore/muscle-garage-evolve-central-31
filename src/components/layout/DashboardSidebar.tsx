@@ -7,9 +7,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
-import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
+import { useBranch } from '@/hooks/use-branch';
 
 interface DashboardSidebarProps {
   isSidebarOpen: boolean;
@@ -24,6 +24,7 @@ export default function DashboardSidebar({
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const { logout, user } = useAuth();
   const { sections, expandedSections, toggleSection } = useNavigation();
+  const { branches = [] } = useBranch();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,16 +60,14 @@ export default function DashboardSidebar({
             <div className="w-36 truncate">
               <Logo variant="default" />
             </div>
-
-
-
-
-
           </div>
           {user?.role === "admin" && (
             <PermissionGuard permission="view_branch_data">
               <div className="max-w-full">
-                <BranchSelector />
+                <BranchSelector 
+                  branches={branches} 
+                  onSelect={(branch) => console.log('Selected branch:', branch)} 
+                />
               </div>
             </PermissionGuard>
           )}

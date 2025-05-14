@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,18 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Lead } from '@/types/crm';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadConversionService } from '@/services/leadConversionService';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { useMemberships } from '@/hooks/use-memberships';
+
+// Define Membership type since it's referenced but not available
+interface Membership {
+  id: string;
+  name: string;
+  price: string;
+  duration_days?: number;
+}
 
 interface LeadConversionProps {
   lead: Lead;
@@ -44,11 +53,18 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onSuccess, onCanc
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['members'] });
-      toast.success('Lead successfully converted to member');
+      toast({
+        title: 'Success',
+        description: 'Lead successfully converted to member'
+      });
       if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
-      toast.error(`Failed to convert lead: ${error.message}`);
+      toast({
+        title: 'Error',
+        description: `Failed to convert lead: ${error.message}`,
+        variant: 'destructive'
+      });
     }
   });
 

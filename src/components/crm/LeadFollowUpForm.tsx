@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,13 +10,13 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Lead, FollowUpType } from '@/types/crm';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { leadConversionService } from '@/services/leadConversionService';
-import { followUpService } from '@/services/followUpService';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { format, addDays } from 'date-fns';
 import { Loader2, Calendar, MessageCircle, Mail, Phone, User } from 'lucide-react';
 import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
+import { FormDescription } from '@/components/ui/form';
 
 interface LeadFollowUpFormProps {
   lead: Lead;
@@ -74,11 +75,18 @@ const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({
       queryClient.invalidateQueries({ queryKey: ['followUpHistory', lead.id] });
       queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate tasks to refresh the task list
-      toast.success('Follow-up scheduled and task created successfully');
+      toast({
+        title: "Success", 
+        description: "Follow-up scheduled and task created successfully"
+      });
       if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
-      toast.error(`Failed to schedule follow-up: ${error.message}`);
+      toast({
+        title: "Error", 
+        description: `Failed to schedule follow-up: ${error.message}`,
+        variant: "destructive"
+      });
     }
   });
 
@@ -123,6 +131,9 @@ const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({
     <Card>
       <CardHeader>
         <CardTitle>Schedule Follow-up</CardTitle>
+        <FormDescription>
+          Create a scheduled follow-up for this lead
+        </FormDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -65,48 +65,42 @@ const mockDevices: Device[] = [
   },
 ];
 
-const MockBranches = [
+const branches = [
   {
-    id: 'br1',
-    name: 'Main Branch',
-    address: '123 Main Street',
-    city: 'New York',
-    state: 'NY',
-    country: 'USA',
-    email: 'main@example.com',
-    phone: '+1234567890',
-    isActive: true,
-    branch_code: 'NYC001'
+    id: "1",
+    name: "Main Branch",
+    address: "123 Main St",
+    city: "New York",
+    state: "NY",
+    country: "USA",
+    email: "main@example.com",
+    phone: "123-456-7890",
+    is_active: true,
+    branch_code: "MAIN-001",
+    manager_id: "manager-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
-    id: 'br2',
-    name: 'Downtown Branch',
-    address: '456 Market Street',
-    city: 'San Francisco',
-    state: 'CA',
-    country: 'USA',
-    email: 'downtown@example.com',
-    phone: '+1987654321',
-    isActive: true,
-    branch_code: 'SFO002'
-  },
-  {
-    id: 'br3',
-    name: 'Suburban Branch',
-    address: '789 Park Avenue',
-    city: 'Chicago',
-    state: 'IL',
-    country: 'USA',
-    email: 'suburban@example.com',
-    phone: '+1456789123',
-    isActive: false,
-    branch_code: 'CHI003'
+    id: "2",
+    name: "Downtown Branch",
+    address: "456 Downtown Blvd",
+    city: "Los Angeles",
+    state: "CA",
+    country: "USA",
+    email: "downtown@example.com",
+    phone: "123-456-7890",
+    is_active: true,
+    branch_code: "DOWN-002",
+    manager_id: "manager-2",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
 const BranchDeviceManager = () => {
   const [devices, setDevices] = useState<Device[]>(mockDevices);
-  const [branches, setBranches] = useState<Branch[]>(MockBranches);
+  const [branches, setBranches] = useState<Branch[]>(branches);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [newDevice, setNewDevice] = useState<{ name: string; type: string; ipAddress: string }>({
     name: "",
@@ -118,7 +112,7 @@ const BranchDeviceManager = () => {
   useEffect(() => {
     // Simulate fetching branches from an API
     setTimeout(() => {
-      setBranches(MockBranches);
+      setBranches(branches);
     }, 500);
   }, []);
 

@@ -1,4 +1,3 @@
-
 // Backup of DashboardSidebar.tsx as of sidebar-ui-cleanup-backup
 
 import React, { useState } from "react";
@@ -13,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import { adminNavSections } from "@/data/adminNavigation";
+import { useBranch } from '@/hooks/use-branch';
 import BranchSelector from "@/components/branch/BranchSelector";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
@@ -53,6 +53,9 @@ export default function DashboardSidebar({
     }
   };
 
+  // Get the branches
+  const { branches = [] } = useBranch();
+
   return (
     <Sidebar className={cn("transition-all duration-300", isSidebarOpen ? "w-64" : "w-0")}>
       <SidebarContent className="w-64 p-0 border-none">
@@ -67,7 +70,10 @@ export default function DashboardSidebar({
               {/* Branch selector for admin users */}
               {user?.role === 'admin' && (
                 <PermissionGuard permission="view_branch_data">
-                  <BranchSelector />
+                  <BranchSelector 
+                    branches={branches} 
+                    onSelect={(branch) => console.log('Selected branch:', branch)} 
+                  />
                 </PermissionGuard>
               )}
             </div>
