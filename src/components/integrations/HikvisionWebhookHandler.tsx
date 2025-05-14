@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -183,26 +182,26 @@ const HikvisionWebhookHandler = ({
             ) : events.length > 0 ? (
               <div className="space-y-3">
                 {events
-                  .filter(event => event.eventType !== 'denied')
+                  .filter(event => event.event_type !== 'denied')
                   .map(event => (
-                    <div key={event.eventId} className="flex items-center justify-between border-b pb-3">
+                    <div key={event.event_id} className="flex items-center justify-between border-b pb-3">
                       <div>
-                        <p className="font-medium">{event.personName || 'Unknown Person'}</p>
+                        <p className="font-medium">{event.person_name || 'Unknown Person'}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>
-                            {format(new Date(event.eventTime), 'h:mm a, MMM d')}
+                            {format(new Date(event.event_time), 'h:mm a, MMM d')}
                           </span>
                           <span>
-                            {event.doorName || `Door ${event.doorId}`}
+                            {event.door_name || `Door ${event.door_id}`}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={getEventBadgeVariant(event.eventType) as any}>
-                          {event.eventType === 'entry' ? 'Entry' : 'Exit'}
+                        <Badge variant={getEventBadgeVariant(event.event_type) as any}>
+                          {event.event_type === 'entry' ? 'Entry' : 'Exit'}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {event.cardNo ? `Card: ${event.cardNo}` : 'Face Recognition'}
+                          {event.card_no ? `Card: ${event.card_no}` : 'Face Recognition'}
                         </span>
                       </div>
                     </div>
@@ -220,20 +219,20 @@ const HikvisionWebhookHandler = ({
               <div className="flex justify-center py-10">
                 <div className="h-8 w-8 rounded-full border-4 border-t-accent animate-spin"></div>
               </div>
-            ) : events.filter(event => event.eventType === 'denied').length > 0 ? (
+            ) : events.filter(event => event.event_type === 'denied').length > 0 ? (
               <div className="space-y-3">
                 {events
-                  .filter(event => event.eventType === 'denied')
+                  .filter(event => event.event_type === 'denied')
                   .map(event => (
-                    <div key={event.eventId} className="flex items-center justify-between border-b pb-3">
+                    <div key={event.event_id} className="flex items-center justify-between border-b pb-3">
                       <div>
-                        <p className="font-medium">{event.personName || 'Unknown Person'}</p>
+                        <p className="font-medium">{event.person_name || 'Unknown Person'}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>
-                            {format(new Date(event.eventTime), 'h:mm a, MMM d')}
+                            {format(new Date(event.event_time), 'h:mm a, MMM d')}
                           </span>
                           <span>
-                            {event.doorName || `Door ${event.doorId}`}
+                            {event.door_name || `Door ${event.door_id}`}
                           </span>
                         </div>
                       </div>
@@ -242,7 +241,7 @@ const HikvisionWebhookHandler = ({
                           Access Denied
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {event.cardNo ? `Card: ${event.cardNo}` : 'Face Recognition'}
+                          {event.card_no ? `Card: ${event.card_no}` : 'Face Recognition'}
                         </span>
                       </div>
                     </div>

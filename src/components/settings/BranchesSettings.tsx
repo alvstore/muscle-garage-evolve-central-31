@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,7 @@ const BranchForm = ({
       country: branch.country || "India",
       phone: branch.phone || "",
       email: branch.email || "",
-      is_active: branch.isActive
+      is_active: branch.is_active
     } : {
       name: "",
       address: "",
@@ -319,7 +318,7 @@ const BranchesSettings = () => {
                       {branch.phone || branch.email || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {branch.isActive || branch.is_active ? (
+                      {branch.is_active || branch.is_active ? (
                         <span className="flex items-center text-green-600">
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Active

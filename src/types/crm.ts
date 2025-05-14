@@ -1,108 +1,46 @@
 
+export type LeadSource = 'website' | 'referral' | 'walk-in' | 'phone' | 'email' | 'social' | 'other';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
+export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
+
 export interface Lead {
   id: string;
-  first_name: string;
-  last_name: string;
-  name?: string;
+  name: string;
   email: string;
   phone: string;
+  source: LeadSource;
   status: LeadStatus;
-  source: string;
+  funnel_stage: FunnelStage;
+  notes: string;
+  branch_id: string;
   note: string;
-  notes?: string;
+  first_name: string;
+  last_name: string;
   created_at: string;
   updated_at: string;
-  branch_id: string;
-  assigned_to?: string;
-  score?: number;
-  last_contacted_at?: string;
-  funnel_stage?: string;
-  tags?: string[];
-  conversion_date?: string;
-  stage?: string;
-  follow_up_date?: string;
-  interests?: string[];
-}
-
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived' | 'converted';
-
-export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
-
-export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'other';
-
-export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting' | 'other';
-
-export interface FollowUp {
-  id: string;
-  lead_id: string;
-  user_id: string;
-  type: FollowUpType;
-  notes: string;
-  created_at: string;
-  status: 'pending' | 'completed' | 'cancelled';
-  follow_up_date?: string;
-}
-
-export interface FollowUpHistory {
-  id: string;
-  lead_id: string;
-  template_id?: string;
-  sent_by: string;
-  sent_at: string;
-  response_at?: string;
-  scheduled_at?: string;
-  type: FollowUpType;
-  content: string;
-  status: string;
-  response?: string;
-  subject?: string;
-}
-
-export interface ScheduledFollowUp {
-  id: string;
-  lead_id: string;
-  leadName: string;
-  type: FollowUpType;
-  scheduledFor: string;
-  subject: string;
-  content: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'overdue' | 'sent';
-}
-
-export interface FollowUpScheduled {
-  id: string;
-  leadId: string;
-  scheduledBy: string;
-  scheduledDate: string;
-  type: FollowUpType;
-  notes?: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'overdue';
-  createdAt: string;
-  subject?: string;
-  content?: string;
-  lead?: {
-    name: string;
-  };
 }
 
 export interface FollowUpTemplate {
   id: string;
-  title: string;
   name: string;
+  title: string;
   content: string;
   type: FollowUpType;
   variables: string[];
-  isDefault?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
+  subject?: string; // Added subject field
+  isDefault: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface LeadConversion {
+export interface AutomationRule {
   id: string;
-  lead_id: string;
-  converted_by: string;
-  converted_at: string;
-  membership_id?: string;
-  notes?: string;
+  name: string;
+  trigger_type: string;
+  trigger_conditions: any;
+  actions: any[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }

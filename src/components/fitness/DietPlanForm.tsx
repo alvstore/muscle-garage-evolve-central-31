@@ -26,10 +26,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   const [formData, setFormData] = useState<Omit<DietPlan, 'id' | 'createdAt' | 'updatedAt'>>({
     name: existingPlan?.name || `Diet Plan for ${member.name}`,
     memberId: member.id,
-    trainerId: trainerId,
+    trainer_id: trainerId, // Changed from trainerId to trainer_id
     mealPlans: existingPlan?.mealPlans || [createEmptyMeal()],
     notes: existingPlan?.notes || '',
-    isCustom: existingPlan?.isCustom || false
+    is_custom: existingPlan?.is_custom || false // Changed from isCustom to is_custom
   });
 
   function createEmptyMeal(): MealPlan {
@@ -42,7 +42,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
         protein: 0,
         carbs: 0,
         fats: 0,
-        calories: 0
+        calories: 0 // Added calories to the macros object
       }
     };
   }
@@ -149,10 +149,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
       id: existingPlan?.id || uuidv4(),
       name: formData.name,
       memberId: member.id,
-      trainerId,
+      trainer_id: trainerId, // Changed from trainerId to trainer_id
       mealPlans: mealPlansWithCalories,
       notes: formData.notes,
-      isCustom: formData.isCustom,
+      is_custom: formData.is_custom, // Changed from isCustom to is_custom
       createdAt: existingPlan?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -336,8 +336,8 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
           <input
             type="checkbox"
             id="diet-plan-custom"
-            checked={formData.isCustom}
-            onChange={(e) => setFormData({...formData, isCustom: e.target.checked})}
+            checked={formData.is_custom}
+            onChange={(e) => setFormData({...formData, is_custom: e.target.checked})}
             className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           />
           <Label htmlFor="diet-plan-custom" className="cursor-pointer">

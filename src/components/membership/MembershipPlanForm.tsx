@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -37,13 +36,13 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     name: '',
     description: '',
     price: 0,
-    durationDays: 30,
-    durationLabel: '1-month',
+    duration_days: 30,  // Changed from durationDays to duration_days
+    duration_label: '1-month', // Added field
     benefits: [] as string[],
-    allowedClasses: 'basic-only',
+    allowed_classes: 'basic-only', // Changed from allowedClasses to allowed_classes
     status: 'active',
-    createdAt: '',
-    updatedAt: '',
+    created_at: '', // Changed from createdAt to created_at
+    updated_at: '', // Changed from updatedAt to updated_at
   });
 
   useEffect(() => {
@@ -66,7 +65,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     setFormData({ ...formData, [name]: value });
 
     // Set duration days based on selected duration label
-    if (name === 'durationLabel') {
+    if (name === 'duration_label') { // Changed from durationLabel to duration_label
       const durationMap: Record<MembershipDuration, number> = {
         '1-month': 30,
         '3-month': 90,
@@ -75,7 +74,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
       };
       setFormData(prev => ({
         ...prev,
-        durationDays: durationMap[value as MembershipDuration]
+        duration_days: durationMap[value as MembershipDuration]
       }));
     }
   };
@@ -95,7 +94,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     onSave({
       ...formData,
       price: Number(formData.price),
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(), // Changed from updatedAt to updated_at
     });
   };
 
@@ -108,6 +107,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
+            {/* Keep existing form fields but update property names */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Plan Name</Label>
@@ -146,10 +146,10 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="durationLabel">Duration</Label>
+                <Label htmlFor="duration_label">Duration</Label>
                 <Select
-                  value={formData.durationLabel}
-                  onValueChange={(value) => handleSelectChange('durationLabel', value)}
+                  value={formData.duration_label}
+                  onValueChange={(value) => handleSelectChange('duration_label', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select duration" />
@@ -164,10 +164,10 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="allowedClasses">Classes Access</Label>
+                <Label htmlFor="allowed_classes">Classes Access</Label>
                 <Select
-                  value={formData.allowedClasses}
-                  onValueChange={(value) => handleSelectChange('allowedClasses', value as ClassType)}
+                  value={formData.allowed_classes}
+                  onValueChange={(value) => handleSelectChange('allowed_classes', value as ClassType)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select class access" />

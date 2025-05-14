@@ -1,301 +1,264 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { useQuery } from 'react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MoreVertical, Pencil, Trash2, PlusCircle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { Branch } from '@/types/branch';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Branch } from '@/types';
 
 interface Device {
   id: string;
   name: string;
   type: string;
-  ipAddress: string;
-  branchId: string;
-  status: 'online' | 'offline';
+  branch_id: string;
+  is_active: boolean;
 }
 
-const mockDevices: Device[] = [
-  {
-    id: "1",
-    name: "Main Entrance Scanner",
-    type: "Access Control",
-    ipAddress: "192.168.1.100",
-    branchId: "1",
-    status: "online",
-  },
-  {
-    id: "2",
-    name: "Gym Floor Camera",
-    type: "Surveillance",
-    ipAddress: "192.168.1.101",
-    branchId: "1",
-    status: "offline",
-  },
-  {
-    id: "3",
-    name: "Pool Area Scanner",
-    type: "Access Control",
-    ipAddress: "192.168.1.102",
-    branchId: "2",
-    status: "online",
-  },
-];
-
-const branches = [
-  {
-    id: "1",
-    name: "Main Branch",
-    address: "123 Main St",
-    city: "New York",
-    state: "NY",
-    country: "USA",
-    email: "main@example.com",
-    phone: "123-456-7890",
-    is_active: true,
-    branch_code: "MAIN-001",
-    manager_id: "manager-1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    name: "Downtown Branch",
-    address: "456 Downtown Blvd",
-    city: "Los Angeles",
-    state: "CA",
-    country: "USA",
-    email: "downtown@example.com",
-    phone: "123-456-7890",
-    is_active: true,
-    branch_code: "DOWN-002",
-    manager_id: "manager-2",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-const BranchDeviceManager = () => {
-  const [devices, setDevices] = useState<Device[]>(mockDevices);
-  const [branches, setBranches] = useState<Branch[]>(branches);
-  const [selectedBranch, setSelectedBranch] = useState<string>("");
-  const [newDevice, setNewDevice] = useState<{ name: string; type: string; ipAddress: string }>({
-    name: "",
-    type: "",
-    ipAddress: "",
-  });
-  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+export function BranchDeviceManager() {
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [newDeviceName, setNewDeviceName] = useState('');
+  const [newDeviceType, setNewDeviceType] = useState('access_control');
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isDeviceActive, setIsDeviceActive] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching branches from an API
-    setTimeout(() => {
-      setBranches(branches);
-    }, 500);
+    const fetchDevices = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('devices')
+          .select('*')
+          .eq('branch_id', selectedBranchId);
+
+        if (error) {
+          console.error('Error fetching devices:', error);
+          toast.error('Failed to load devices');
+        } else {
+          setDevices(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+        toast.error('Failed to load devices');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (selectedBranchId) {
+      fetchDevices();
+    }
+  }, [selectedBranchId]);
+
+  useEffect(() => {
+    const storedBranchId = localStorage.getItem('selected_branch_id');
+    if (storedBranchId) {
+      setSelectedBranchId(storedBranchId);
+    }
   }, []);
 
+  useEffect(() => {
+    if (selectedDeviceId) {
+      const device = devices.find(d => d.id === selectedDeviceId);
+      setIsDeviceActive(device?.is_active || false);
+    }
+  }, [selectedDeviceId, devices]);
+
   const handleBranchChange = (branchId: string) => {
-    setSelectedBranch(branchId);
+    setSelectedBranchId(branchId);
+    localStorage.setItem('selected_branch_id', branchId);
+    setDevices([]);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewDevice(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddDevice = () => {
-    if (!selectedBranch) {
-      toast.error("Please select a branch first.");
+  const handleCreateDevice = async () => {
+    if (!newDeviceName || !selectedBranchId) {
+      toast.error('Device name and branch are required');
       return;
     }
 
-    const newDeviceToAdd: Device = {
-      id: `device-${Date.now()}`,
-      name: newDevice.name,
-      type: newDevice.type,
-      ipAddress: newDevice.ipAddress,
-      branchId: selectedBranch,
-      status: "online",
-    };
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('devices')
+        .insert([{
+          name: newDeviceName,
+          type: newDeviceType,
+          branch_id: selectedBranchId,
+          is_active: isDeviceActive,
+        }])
+        .select('*')
+        .single();
 
-    setDevices([...devices, newDeviceToAdd]);
-    setNewDevice({ name: "", type: "", ipAddress: "" });
-    toast.success("Device added successfully!");
+      if (error) {
+        console.error('Error creating device:', error);
+        toast.error('Failed to create device');
+      } else {
+        setDevices([...devices, data]);
+        setNewDeviceName('');
+        toast.success('Device created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating device:', error);
+      toast.error('Failed to create device');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditDevice = (device: Device) => {
-    setEditingDevice(device);
-    setNewDevice({ name: device.name, type: device.type, ipAddress: device.ipAddress });
-    setSelectedBranch(device.branchId);
+  const handleDeviceSelection = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
   };
 
-  const handleUpdateDevice = () => {
-    if (!editingDevice) return;
+  const handleDeviceStatusChange = async (checked: boolean) => {
+    setIsDeviceActive(checked);
 
-    const updatedDevices = devices.map(device =>
-      device.id === editingDevice.id
-        ? { ...device, name: newDevice.name, type: newDevice.type, ipAddress: newDevice.ipAddress }
-        : device
-    );
+    if (!selectedDeviceId) {
+      toast.error('No device selected');
+      return;
+    }
 
-    setDevices(updatedDevices);
-    setEditingDevice(null);
-    setNewDevice({ name: "", type: "", ipAddress: "" });
-    toast.success("Device updated successfully!");
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('devices')
+        .update({ is_active: checked })
+        .eq('id', selectedDeviceId);
+
+      if (error) {
+        console.error('Error updating device status:', error);
+        toast.error('Failed to update device status');
+      } else {
+        setDevices(devices.map(device =>
+          device.id === selectedDeviceId ? { ...device, is_active: checked } : device
+        ));
+        toast.success('Device status updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating device status:', error);
+      toast.error('Failed to update device status');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteDevice = (id: string) => {
-    setDevices(devices.filter(device => device.id !== id));
-    toast.success("Device deleted successfully!");
-  };
+  const deviceTypes = [
+    { value: 'access_control', label: 'Access Control' },
+    { value: 'camera', label: 'Camera' },
+    { value: 'sensor', label: 'Sensor' },
+  ];
 
-  const filteredDevices = selectedBranch
-    ? devices.filter(device => device.branchId === selectedBranch)
-    : devices;
+  // First define the variable before using it
+  const branches = useQuery({
+    queryKey: ['branches'],
+    queryFn: async () => {
+      // Fetch branches logic
+      return []; // Mock return for now
+    }
+  }).data || [];
+
+  // Then use the branches variable
+  const selectedBranch = branches.find(branch => branch.id === selectedBranchId);
 
   return (
-    <div className="container mx-auto py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle>Branch Device Management</CardTitle>
-          <CardDescription>
-            Manage devices associated with each branch
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="branch">Select Branch</Label>
-              <Select onValueChange={handleBranchChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map(branch => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Branch Device Management</CardTitle>
+        <CardDescription>
+          Manage devices associated with each branch
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="branch">Select Branch</Label>
+          <Select onValueChange={handleBranchChange} value={selectedBranchId || ""}>
+            <SelectTrigger id="branch">
+              <SelectValue placeholder="Select a branch" />
+            </SelectTrigger>
+            <SelectContent>
+              {branches.map(branch => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="deviceName">Device Name</Label>
-              <Input
-                type="text"
-                id="deviceName"
-                name="name"
-                value={newDevice.name}
-                onChange={handleInputChange}
+        {selectedBranch && (
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">
+              Devices in {selectedBranch.name}
+            </h3>
+            <ul className="list-none pl-0">
+              {devices.map(device => (
+                <li
+                  key={device.id}
+                  className={`p-2 rounded-md cursor-pointer hover:bg-accent ${selectedDeviceId === device.id ? 'bg-accent' : ''}`}
+                  onClick={() => handleDeviceSelection(device.id)}
+                >
+                  {device.name} ({device.type})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="new-device-name">New Device Name</Label>
+          <Input
+            id="new-device-name"
+            placeholder="Enter device name"
+            value={newDeviceName}
+            onChange={(e) => setNewDeviceName(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="new-device-type">Device Type</Label>
+          <Select onValueChange={setNewDeviceType} value={newDeviceType}>
+            <SelectTrigger id="new-device-type">
+              <SelectValue placeholder="Select device type" />
+            </SelectTrigger>
+            <SelectContent>
+              {deviceTypes.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button onClick={handleCreateDevice} disabled={isLoading}>
+          {isLoading ? 'Creating...' : 'Create Device'}
+        </Button>
+
+        {selectedDeviceId && (
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">Device Settings</h3>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="device-status">Device Active</Label>
+              <Switch
+                id="device-status"
+                checked={isDeviceActive}
+                onCheckedChange={handleDeviceStatusChange}
+                disabled={isLoading}
               />
             </div>
-            <div>
-              <Label htmlFor="deviceType">Device Type</Label>
-              <Input
-                type="text"
-                id="deviceType"
-                name="type"
-                value={newDevice.type}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div>
-              <Label htmlFor="ipAddress">IP Address</Label>
-              <Input
-                type="text"
-                id="ipAddress"
-                name="ipAddress"
-                value={newDevice.ipAddress}
-                onChange={handleInputChange}
-              />
-            </div>
           </div>
-
-          <div className="flex justify-end">
-            {editingDevice ? (
-              <Button onClick={handleUpdateDevice}>Update Device</Button>
-            ) : (
-              <Button onClick={handleAddDevice}>Add Device</Button>
-            )}
-          </div>
-
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Device List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>IP Address</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredDevices.map(device => (
-                      <TableRow key={device.id}>
-                        <TableCell>{device.name}</TableCell>
-                        <TableCell>{device.type}</TableCell>
-                        <TableCell>{device.ipAddress}</TableCell>
-                        <TableCell>{device.status}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditDevice(device)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeleteDevice(device.id)}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
-};
-
-export default BranchDeviceManager;
+}

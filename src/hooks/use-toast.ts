@@ -1,55 +1,40 @@
 
-import { toast as sonnerToast, ToastT } from "sonner";
+import { toast as sonnerToast, type ToastT, type ToastToDismiss, ExternalToast } from 'sonner';
+import { ReactElement, ReactNode, JSXElementConstructor } from 'react';
 
-type ToastProps = {
-  title?: string;
-  description?: string;
+type Toast = {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   action?: React.ReactNode;
   variant?: "default" | "destructive";
 };
 
-export const useToast = () => {
+export function useToast() {
+  // Store toast instances to be displayed
+  const toasts: Toast[] = [];
+
   const toast = {
-    error: (message: string) => {
-      sonnerToast.error(message);
+    // Direct pass-through to sonner toast methods
+    success: sonnerToast.success,
+    error: sonnerToast.error,
+    info: sonnerToast.info,
+    warning: sonnerToast.warning,
+    loading: sonnerToast.loading,
+    
+    // Custom toast function
+    toast: (props: Toast) => {
+      sonnerToast(props.title as string, {
+        description: props.description,
+      });
     },
-    success: (message: string) => {
-      sonnerToast.success(message);
-    },
-    info: (message: string) => {
-      sonnerToast(message);
-    },
-    // For backward compatibility with the object API
-    toast: (props: ToastProps) => {
-      if (props.variant === "destructive") {
-        sonnerToast.error(props.title, {
-          description: props.description,
-          action: props.action
-        });
-      } else {
-        sonnerToast(props.title, {
-          description: props.description,
-          action: props.action
-        });
-      }
-    }
+    
+    // For compatibility with older code that expects the toasts array
+    toasts
   };
 
   return toast;
-};
+}
 
-// Export a compatible toast object for direct imports
-export const toast = {
-  error: (message: string) => {
-    sonnerToast.error(message);
-  },
-  success: (message: string) => {
-    sonnerToast.success(message);
-  },
-  info: (message: string) => {
-    sonnerToast(message);
-  },
-  // Legacy/direct call support
-  ...sonnerToast
-};
-
+// Re-export the toast function for convenience
+export { sonnerToast as toast };
