@@ -54,9 +54,15 @@ interface Door {
   zone_id: string;
   device_id: string;
   hikvision_door_id: string;
+  door_index?: number; // Door index in the Hikvision system
+  door_channel?: number; // Door channel in the Hikvision system
+  door_type?: 'access_control' | 'entrance' | 'exit' | 'emergency' | 'other';
+  door_lock_type?: 'electromagnetic' | 'electric_strike' | 'electric_bolt' | 'other';
+  open_duration?: number; // Door open duration in seconds
   is_active: boolean;
   branch_id: string;
   created_at: string;
+  description?: string;
   access_zones?: {
     id: string;
     name: string;
@@ -79,6 +85,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
   const [zoneId, setZoneId] = useState('');
   const [deviceId, setDeviceId] = useState('');
   const [hikvisionDoorId, setHikvisionDoorId] = useState('');
+  const [doorIndex, setDoorIndex] = useState<number | undefined>(undefined);
+  const [doorChannel, setDoorChannel] = useState<number | undefined>(undefined);
+  const [doorType, setDoorType] = useState<'access_control' | 'entrance' | 'exit' | 'emergency' | 'other'>('access_control');
+  const [doorLockType, setDoorLockType] = useState<'electromagnetic' | 'electric_strike' | 'electric_bolt' | 'other'>('electromagnetic');
+  const [openDuration, setOpenDuration] = useState<number>(5); // Default 5 seconds
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -163,10 +174,15 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
     if (door) {
       setEditingDoor(door);
       setDoorName(door.door_name);
-      setDoorDescription(''); // No description field in database
+      setDoorDescription(door.description || '');
       setZoneId(door.zone_id);
       setDeviceId(door.device_id || '');
       setHikvisionDoorId(door.hikvision_door_id || '');
+      setDoorIndex(door.door_index);
+      setDoorChannel(door.door_channel);
+      setDoorType(door.door_type || 'access_control');
+      setDoorLockType(door.door_lock_type || 'electromagnetic');
+      setOpenDuration(door.open_duration || 5);
       setIsActive(door.is_active);
     } else {
       setEditingDoor(null);
@@ -175,6 +191,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
       setZoneId(zones.length > 0 ? zones[0].id : '');
       setDeviceId('');
       setHikvisionDoorId('');
+      setDoorIndex(undefined);
+      setDoorChannel(undefined);
+      setDoorType('access_control');
+      setDoorLockType('electromagnetic');
+      setOpenDuration(5);
       setIsActive(true);
     }
     setOpenDialog(true);
@@ -188,6 +209,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
     setZoneId('');
     setDeviceId('');
     setHikvisionDoorId('');
+    setDoorIndex(undefined);
+    setDoorChannel(undefined);
+    setDoorType('access_control');
+    setDoorLockType('electromagnetic');
+    setOpenDuration(5);
     setIsActive(true);
   };
 
@@ -223,6 +249,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
             zone_id: zoneId,
             device_id: deviceId,
             hikvision_door_id: hikvisionDoorId,
+            door_index: doorIndex,
+            door_channel: doorChannel,
+            door_type: doorType,
+            door_lock_type: doorLockType,
+            open_duration: openDuration,
             is_active: isActive,
           })
           .eq('id', editingDoor.id);
@@ -242,6 +273,11 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
             zone_id: zoneId,
             device_id: deviceId,
             hikvision_door_id: hikvisionDoorId,
+            door_index: doorIndex,
+            door_channel: doorChannel,
+            door_type: doorType,
+            door_lock_type: doorLockType,
+            open_duration: openDuration,
             is_active: isActive,
             branch_id: branchId,
           });
@@ -432,25 +468,100 @@ const DoorManagement = ({ branchId }: DoorManagementProps) => {
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="deviceId">Device ID</Label>
-              <Input
-                id="deviceId"
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-                placeholder="Enter device ID from Hikvision"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="deviceId">Device ID</Label>
+                <Input
+                  id="deviceId"
+                  value={deviceId}
+                  onChange={(e) => setDeviceId(e.target.value)}
+                  placeholder="Enter device ID from Hikvision"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hikvisionDoorId">Hikvision Door ID</Label>
+                <Input
+                  id="hikvisionDoorId"
+                  value={hikvisionDoorId}
+                  onChange={(e) => setHikvisionDoorId(e.target.value)}
+                  placeholder="Enter Hikvision Door ID"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="doorIndex">Door Index</Label>
+                <Input
+                  id="doorIndex"
+                  type="number"
+                  value={doorIndex !== undefined ? doorIndex.toString() : ''}
+                  onChange={(e) => setDoorIndex(e.target.value ? parseInt(e.target.value) : undefined)}
+                  placeholder="Door index in Hikvision system"
+                />
+                <p className="text-xs text-muted-foreground">The index of the door in the Hikvision system</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="doorChannel">Door Channel</Label>
+                <Input
+                  id="doorChannel"
+                  type="number"
+                  value={doorChannel !== undefined ? doorChannel.toString() : ''}
+                  onChange={(e) => setDoorChannel(e.target.value ? parseInt(e.target.value) : undefined)}
+                  placeholder="Door channel in Hikvision system"
+                />
+                <p className="text-xs text-muted-foreground">The channel of the door in the Hikvision system</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="doorType">Door Type</Label>
+                <Select value={doorType} onValueChange={(value) => setDoorType(value as any)}>
+                  <SelectTrigger id="doorType">
+                    <SelectValue placeholder="Select door type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="access_control">Access Control</SelectItem>
+                    <SelectItem value="entrance">Entrance</SelectItem>
+                    <SelectItem value="exit">Exit</SelectItem>
+                    <SelectItem value="emergency">Emergency</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="doorLockType">Lock Type</Label>
+                <Select value={doorLockType} onValueChange={(value) => setDoorLockType(value as any)}>
+                  <SelectTrigger id="doorLockType">
+                    <SelectValue placeholder="Select lock type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="electromagnetic">Electromagnetic</SelectItem>
+                    <SelectItem value="electric_strike">Electric Strike</SelectItem>
+                    <SelectItem value="electric_bolt">Electric Bolt</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="hikvisionDoorId">Hikvision Door ID</Label>
+              <Label htmlFor="openDuration">Open Duration (seconds)</Label>
               <Input
-                id="hikvisionDoorId"
-                value={hikvisionDoorId}
-                onChange={(e) => setHikvisionDoorId(e.target.value)}
-                placeholder="Enter Hikvision Door ID"
-                required
+                id="openDuration"
+                type="number"
+                min="1"
+                max="60"
+                value={openDuration.toString()}
+                onChange={(e) => setOpenDuration(parseInt(e.target.value) || 5)}
+                placeholder="Door open duration in seconds"
               />
+              <p className="text-xs text-muted-foreground">How long the door should remain unlocked after access is granted</p>
             </div>
             
             <div className="space-y-2">

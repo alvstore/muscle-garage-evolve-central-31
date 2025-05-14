@@ -141,15 +141,25 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
     if (!branchId) return;
     
     try {
+      // The members table uses branch_id instead of gym_id
       const { data, error } = await supabase
         .from('members')
-        .select('id, first_name, last_name, email')
+        .select('id, name, email')
         .eq('branch_id', branchId)
-        .order('last_name');
+        .order('name');
         
       if (error) throw error;
       
-      setMembers(data || []);
+      // Map the data to match our expected format
+      const processedMembers = (data || []).map(member => ({
+        id: member.id,
+        // Split the name into first and last name for display purposes
+        first_name: member.name?.split(' ')[0] || '',
+        last_name: member.name?.split(' ').slice(1).join(' ') || '',
+        email: member.email
+      }));
+      
+      setMembers(processedMembers);
     } catch (err) {
       console.error('Error fetching members:', err);
       setError('Failed to load members');
@@ -183,7 +193,7 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
     try {
       setLoading(true);
       
-      // First get the overrides
+      // Get the overrides using branch_id
       const { data, error } = await supabase
         .from('member_access_overrides')
         .select('*')
@@ -196,7 +206,7 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
         // Get member name
         const { data: memberData } = await supabase
           .from('members')
-          .select('first_name, last_name')
+          .select('name')
           .eq('id', override.member_id)
           .single();
           
@@ -207,9 +217,13 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
           .eq('id', override.zone_id)
           .single();
           
+        // Split the name into first and last name for display purposes
+        const firstName = memberData?.name?.split(' ')[0] || '';
+        const lastName = memberData?.name?.split(' ').slice(1).join(' ') || '';
+        
         return {
           ...override,
-          member_name: memberData ? `${memberData.first_name} ${memberData.last_name}` : 'Unknown Member',
+          member_name: memberData?.name ? memberData.name : 'Unknown Member',
           zone_name: zoneData?.name || 'Unknown Zone'
         };
       }));
@@ -333,7 +347,7 @@ const MemberAccessOverrides = ({ branchId }: MemberAccessOverridesProps) => {
       setLoading(true);
       
       const overrideData = {
-        branch_id: branchId,
+        gym_id: branchId, // Using gym_id instead of branch_id
         member_id: selectedMember,
         zone_id: selectedZone,
         access_type: accessType,
