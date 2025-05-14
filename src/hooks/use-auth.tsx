@@ -32,9 +32,6 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<boolean>;
   profile: Profile | null;
   updateUserBranch: (branchId: string) => Promise<boolean>;
-
-
-
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -89,9 +86,6 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
           toast.error('Failed to load user profile data');
         } else if (data) {
           setProfile(data);
-
-
-
         }
       } catch (err: any) {
         console.error('Profile fetch error:', err);
@@ -135,19 +129,11 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       // Update will happen automatically through subscription
-
-
-
       return true;
     } catch (err) {
       console.error('Error updating user branch:', err);
       return false;
     }
-
-
-
-
-
   };
   
   // Map Supabase user to our User type
