@@ -1,257 +1,211 @@
 
-import React from 'react';
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { X, Plus, Save } from 'lucide-react';
-import { FollowUpTemplate, FollowUpType } from '@/types/crm';
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
+import { toast } from '@/hooks/use-toast';
+import { FollowUpTemplate } from '@/types/crm';
 
 interface FollowUpTemplateFormProps {
-  template?: FollowUpTemplate;
-  onComplete: () => void;
+  template?: FollowUpTemplate | null;
+  onSave: (template: FollowUpTemplate) => void;
+  onCancel: () => void;
 }
 
-// Variables that can be used in templates
-const availableVariables = [
-  { id: "leadName", label: "Lead Name" },
-  { id: "gymName", label: "Gym Name" },
-  { id: "staffName", label: "Staff Name" },
-  { id: "date", label: "Date" },
-  { id: "time", label: "Time" },
-  { id: "membershipPlans", label: "Membership Plans" },
-  { id: "personalTrainingOptions", label: "Personal Training Options" },
-  { id: "gymLocation", label: "Gym Location" },
-  { id: "gymPhone", label: "Gym Phone" },
-  { id: "gymEmail", label: "Gym Email" },
-];
-
-const templateSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  type: z.enum(["email", "call", "sms", "meeting", "whatsapp"]),
-  content: z.string().min(10, { message: "Content must be at least 10 characters" }),
-  isDefault: z.boolean().default(false),
-});
-
-const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, onComplete }) => {
-  const [selectedVariables, setSelectedVariables] = React.useState<string[]>(
-    template?.variables || []
-  );
-  
-  const form = useForm<z.infer<typeof templateSchema>>({
-    resolver: zodResolver(templateSchema),
-    defaultValues: {
-      title: template?.title || "",
-      type: template?.type || "email",
-      content: template?.content || "",
-      isDefault: template?.isDefault || false,
-    },
+export const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({
+  template,
+  onSave,
+  onCancel
+}) => {
+  const [formData, setFormData] = useState<Partial<FollowUpTemplate>>({
+    id: '',
+    title: '',
+    name: '',
+    content: '',
+    type: 'email',
+    variables: [],
+    isDefault: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
   
-  const addVariable = (variableId: string) => {
-    if (!selectedVariables.includes(variableId)) {
-      setSelectedVariables([...selectedVariables, variableId]);
-      
-      // Insert the variable placeholder at cursor position in content
-      const contentField = form.getValues("content");
-      const cursorPosition = (document.querySelector("textarea[name='content']") as HTMLTextAreaElement)?.selectionStart || contentField.length;
-      const variablePlaceholder = `{{${variableId}}}`;
-      
-      const newContent = 
-        contentField.substring(0, cursorPosition) + 
-        variablePlaceholder + 
-        contentField.substring(cursorPosition);
-      
-      form.setValue("content", newContent);
+  const [variableInput, setVariableInput] = useState('');
+  
+  useEffect(() => {
+    if (template) {
+      setFormData({
+        ...template
+      });
     }
+  }, [template]);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const removeVariable = (variableId: string) => {
-    setSelectedVariables(selectedVariables.filter(v => v !== variableId));
-    
-    // Remove all occurrences of the variable from content
-    const contentField = form.getValues("content");
-    const variablePlaceholder = `{{${variableId}}}`;
-    const newContent = contentField.replace(new RegExp(variablePlaceholder, "g"), "");
-    
-    form.setValue("content", newContent);
+  const handleTypeChange = (value: string) => {
+    setFormData(prev => ({ ...prev, type: value as 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting' }));
   };
   
-  const onSubmit = (values: z.infer<typeof templateSchema>) => {
-    try {
-      const newTemplate: FollowUpTemplate = {
-        id: template?.id || uuidv4(),
-        title: values.title,
-        content: values.content,
-        type: values.type as FollowUpType,
-        variables: selectedVariables,
-        isDefault: values.isDefault,
-        created_at: template?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      // In a real app, this would be an API call
-      console.log("Template data:", newTemplate);
-      toast.success(`Template ${template ? "updated" : "created"} successfully`);
-      onComplete();
-    } catch (error) {
-      console.error("Error saving template:", error);
-      toast.error("Error saving template");
-    }
+  const handleDefaultChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, isDefault: checked }));
   };
-
+  
+  const addVariable = () => {
+    if (!variableInput.trim()) return;
+    
+    const variable = variableInput.trim();
+    if (!formData.variables?.includes(variable)) {
+      setFormData(prev => ({
+        ...prev,
+        variables: [...(prev.variables || []), variable]
+      }));
+    }
+    
+    setVariableInput('');
+  };
+  
+  const removeVariable = (variable: string) => {
+    setFormData(prev => ({
+      ...prev,
+      variables: prev.variables?.filter(v => v !== variable) || []
+    }));
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title || !formData.content || !formData.type) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Ensure name is set from title if not provided
+    const finalTemplate: FollowUpTemplate = {
+      id: formData.id || crypto.randomUUID(),
+      name: formData.name || formData.title,
+      title: formData.title!,
+      content: formData.content!,
+      type: formData.type!,
+      variables: formData.variables || [],
+      isDefault: formData.isDefault || false,
+      created_at: formData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    onSave(finalTemplate);
+    toast({
+      title: "Success",
+      description: "Template saved successfully",
+    });
+  };
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{template ? "Edit" : "Create"} Follow-up Template</CardTitle>
-        <CardDescription>
-          Create reusable templates for your lead follow-ups
-        </CardDescription>
+        <CardTitle>{template ? 'Edit Template' : 'Create New Template'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Template Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Initial Contact" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Follow-up Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="sms">SMS</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                        <SelectItem value="call">Call Script</SelectItem>
-                        <SelectItem value="meeting">Meeting Agenda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium">Available Variables</label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {availableVariables.map(variable => (
-                  <Badge 
-                    key={variable.id}
-                    variant="outline" 
-                    className="cursor-pointer hover:bg-primary/10"
-                    onClick={() => addVariable(variable.id)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    {variable.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            {selectedVariables.length > 0 && (
-              <div>
-                <label className="text-sm font-medium">Selected Variables</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedVariables.map(variableId => {
-                    const variable = availableVariables.find(v => v.id === variableId);
-                    return (
-                      <Badge 
-                        key={variableId}
-                        variant="secondary" 
-                        className="cursor-pointer"
-                      >
-                        {variable?.label || variableId}
-                        <X 
-                          className="h-3 w-3 ml-1 hover:text-destructive" 
-                          onClick={() => removeVariable(variableId)}
-                        />
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            <FormField
-              control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="title">Template Name</Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="e.g., Welcome Email"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="type">Template Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={handleTypeChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                <SelectItem value="call">Call Script</SelectItem>
+                <SelectItem value="meeting">Meeting Agenda</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <Textarea
+              id="content"
               name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Template Content</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter your template content here. Use variables from above by clicking on them."
-                      className="min-h-[200px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              value={formData.content}
+              onChange={handleInputChange}
+              rows={10}
+              placeholder="Template content. Use {{variable}} syntax for variables."
+              required
             />
-            
-            <FormField
-              control={form.control}
-              name="isDefault"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Set as Default Template</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Make this the default template for {form.watch("type")} follow-ups
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" type="button" onClick={onComplete}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                <Save className="h-4 w-4 mr-2" />
-                {template ? "Update" : "Save"} Template
-              </Button>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Variables</Label>
+            <div className="flex space-x-2">
+              <Input
+                value={variableInput}
+                onChange={(e) => setVariableInput(e.target.value)}
+                placeholder="e.g., name"
+              />
+              <Button type="button" onClick={addVariable} variant="outline">Add</Button>
             </div>
-          </form>
-        </Form>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {formData.variables?.map(variable => (
+                <div key={variable} className="bg-secondary text-secondary-foreground rounded px-3 py-1 text-sm flex items-center">
+                  {variable}
+                  <button
+                    type="button"
+                    onClick={() => removeVariable(variable)}
+                    className="ml-2 text-secondary-foreground/70 hover:text-secondary-foreground"
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              {formData.variables?.length === 0 && (
+                <p className="text-sm text-muted-foreground">No variables added yet.</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.isDefault}
+              onCheckedChange={handleDefaultChange}
+            />
+            <Label htmlFor="isDefault">Make this a default template</Label>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Save Template
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

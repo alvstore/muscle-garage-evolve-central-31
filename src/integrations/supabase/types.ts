@@ -1966,6 +1966,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hikvision_tokens: {
+        Row: {
+          access_token: string
+          area_domain: string | null
+          branch_id: string
+          created_at: string
+          expire_time: number
+          id: string
+        }
+        Insert: {
+          access_token: string
+          area_domain?: string | null
+          branch_id: string
+          created_at?: string
+          expire_time: number
+          id?: string
+        }
+        Update: {
+          access_token?: string
+          area_domain?: string | null
+          branch_id?: string
+          created_at?: string
+          expire_time?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hikvision_tokens_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hikvision_tokens_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       hsn_codes: {
         Row: {
           code: string

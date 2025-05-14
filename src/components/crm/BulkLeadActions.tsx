@@ -9,16 +9,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { TagsInput } from "@/components/ui/tags-input"
-import { toast } from '@/hooks/use-toast';
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TagsInput } from "@/components/ui/tags-input";
+import { useToast } from '@/hooks/use-toast';
 import { LeadStatus, FunnelStage } from '@/types/crm';
 import { leadService } from '@/services/leadService';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FormDescription } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormDescription } from "@/components/ui/form";
 import { useAuth } from '@/hooks/use-auth';
 import { User } from '@/types';
 
@@ -39,6 +40,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
   const [selectedFunnelStage, setSelectedFunnelStage] = useState<FunnelStage>('cold');
   const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
+  const { toast } = useToast();
   const { user } = useAuth();
   
   const availableStatuses: LeadStatus[] = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost', 'archived', 'converted'];
@@ -48,7 +50,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     { id: '1', name: 'John Doe', email: 'john.doe@example.com' },
     { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com' },
     { id: '3', name: 'Alice Johnson', email: 'alice.johnson@example.com' },
-  ]
+  ];
 
   const updateLeadStatus = (status: LeadStatus) => {
     if (selectedLeads.length === 0) return;
@@ -200,9 +202,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
   return (
     <>
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" disabled={isLoading}>Delete Leads</Button>
-        </AlertDialogTrigger>
+        <Button onClick={() => setIsDeleteDialogOpen(true)} variant="destructive" disabled={isLoading}>Delete Leads</Button>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -220,9 +220,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       </AlertDialog>
       
       <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" disabled={isLoading}>Update Status</Button>
-        </AlertDialogTrigger>
+        <Button onClick={() => setIsStatusDialogOpen(true)} variant="outline" disabled={isLoading}>Update Status</Button>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Update Lead Status</AlertDialogTitle>
@@ -252,9 +250,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       </AlertDialog>
       
       <AlertDialog open={isFunnelStageDialogOpen} onOpenChange={setIsFunnelStageDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" disabled={isLoading}>Update Funnel Stage</Button>
-        </AlertDialogTrigger>
+        <Button onClick={() => setIsFunnelStageDialogOpen(true)} variant="outline" disabled={isLoading}>Update Funnel Stage</Button>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Update Funnel Stage</AlertDialogTitle>
@@ -284,9 +280,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       </AlertDialog>
       
       <AlertDialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" disabled={isLoading}>Assign Leads</Button>
-        </AlertDialogTrigger>
+        <Button onClick={() => setIsAssignDialogOpen(true)} variant="outline" disabled={isLoading}>Assign Leads</Button>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Assign Leads</AlertDialogTitle>
@@ -316,9 +310,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       </AlertDialog>
       
       <AlertDialog open={isAddTagsDialogOpen} onOpenChange={setIsAddTagsDialogOpen}>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" disabled={isLoading}>Add Tags</Button>
-        </AlertDialogTrigger>
+        <Button onClick={() => setIsAddTagsDialogOpen(true)} variant="outline" disabled={isLoading}>Add Tags</Button>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Add Tags</AlertDialogTitle>

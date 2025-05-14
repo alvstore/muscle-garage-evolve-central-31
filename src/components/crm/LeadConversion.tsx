@@ -1,268 +1,224 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useToast } from "@/hooks/use-toast";
 import { Lead } from '@/types/crm';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { leadConversionService } from '@/services/leadConversionService';
-import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { format, addMonths } from 'date-fns';
-import { useMemberships } from '@/hooks/use-memberships';
-
-// Define Membership type since it's referenced but not available
-interface Membership {
-  id: string;
-  name: string;
-  price: string;
-  duration_days?: number;
-}
+import { Membership } from '@/types';
+import { format } from 'date-fns';
 
 interface LeadConversionProps {
-  lead: Lead;
-  onSuccess?: () => void;
-  onCancel?: () => void;
+  lead: Lead | null;
+  onConvert?: (conversionData: any) => Promise<void>;
+  onClose: () => void;
 }
 
-const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onSuccess, onCancel }) => {
-  const queryClient = useQueryClient();
-  const { memberships, isLoading: loadingMemberships } = useMemberships();
+// Mock memberships for demonstration
+const mockMemberships = [
+  {
+    id: '1',
+    name: 'Basic',
+    price: '49.99',
+    duration_days: 30,
+    duration_months: 1
+  },
+  {
+    id: '2',
+    name: 'Premium',
+    price: '89.99',
+    duration_days: 30,
+    duration_months: 1
+  },
+  {
+    id: '3',
+    name: 'Gold',
+    price: '149.99',
+    duration_days: 30,
+    duration_months: 1
+  },
+  {
+    id: '4',
+    name: 'Platinum',
+    price: '199.99',
+    duration_days: 30,
+    duration_months: 1
+  },
+];
+
+const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onConvert, onClose }) => {
+  const [conversionData, setConversionData] = useState({
+    membershipId: '',
+    startDate: new Date(),
+    notes: '',
+    paymentMethod: 'cash',
+    paymentAmount: '',
+    paymentDate: new Date()
+  });
   
-  const [formData, setFormData] = useState({
-    email: lead.email || '',
-    full_name: lead.name,
-    phone: lead.phone || '',
-    branch_id: lead.branch_id || '',
-    membership_id: '',
-    membership_start_date: format(new Date(), 'yyyy-MM-dd'),
-    membership_end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
-    membership_status: 'active',
-    address: '',
-    emergency_contact: '',
-    notes: lead.notes || '',
-    password: '',
-  });
+  const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [selectedMembership, setSelectedMembership] = useState<Membership | null>(null);
+  const { toast } = useToast();
 
-  const convertMutation = useMutation({
-    mutationFn: () => leadConversionService.convertLeadToMember(lead.id, formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['members'] });
-      toast({
-        title: 'Success',
-        description: 'Lead successfully converted to member'
-      });
-      if (onSuccess) onSuccess();
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: `Failed to convert lead: ${error.message}`,
-        variant: 'destructive'
+  useEffect(() => {
+    // In a real app, fetch memberships from your API
+    setMemberships(mockMemberships as unknown as Membership[]);
+  }, []);
+
+  const handleMembershipChange = (membershipId: string) => {
+    const membership = memberships.find(m => m.id === membershipId);
+    if (membership) {
+      setSelectedMembership(membership);
+      setConversionData({
+        ...conversionData,
+        membershipId,
+        paymentAmount: membership.price.toString()
       });
     }
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // If membership changed, update end date based on duration
-    if (name === 'membership_id' && memberships) {
-      const selectedMembership = memberships.find(m => m.id === value);
-      if (selectedMembership && selectedMembership.duration_days) {
-        const startDate = new Date(formData.membership_start_date);
-        const endDate = calculateEndDate(startDate, selectedMembership);
-        setFormData(prev => ({
-          ...prev,
-          membership_end_date: format(endDate, 'yyyy-MM-dd')
-        }));
-      }
-    }
-  };
-
-  const handleDateChange = (name: string, date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, [name]: format(date, 'yyyy-MM-dd') }));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    convertMutation.mutate();
+    if (!lead) return;
+    
+    try {
+      // Prepare data for submission
+      const dataToSubmit = {
+        leadId: lead.id,
+        membershipId: conversionData.membershipId,
+        startDate: format(conversionData.startDate, "yyyy-MM-dd"),
+        notes: conversionData.notes,
+        payment: {
+          method: conversionData.paymentMethod,
+          amount: parseFloat(conversionData.paymentAmount),
+          date: format(conversionData.paymentDate, "yyyy-MM-dd")
+        },
+        convertedAt: new Date().toISOString()
+      };
+      
+      // Submit conversion data
+      if (onConvert) {
+        await onConvert(dataToSubmit);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Lead converted to member successfully"
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Error converting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert lead to member",
+        variant: "destructive"
+      });
+    }
   };
 
-  const calculateEndDate = (startDate: Date, membership: Membership | null) => {
-    if (!membership) return startDate;
-    
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + (membership.duration_days || 30));
-    return endDate;
-  };
-
-  const formattedPlanDuration = (membership: Membership | null) => {
-    if (!membership) return '';
-    
-    const days = membership.duration_days || 0;
-    const months = Math.floor(days / 30);
-    
-    return months <= 1 ? `${days} days` : `${months} months`;
-  };
+  if (!lead) return null;
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
+    <Card>
       <CardHeader>
         <CardTitle>Convert Lead to Member</CardTitle>
         <CardDescription>
-          Create a new gym membership for {lead.name}
+          Convert {lead.first_name} {lead.last_name} to a member
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Temporary Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Leave empty for auto-generated password"
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label htmlFor="membership_id">Membership Plan</Label>
-            <Select
-              value={formData.membership_id}
-              onValueChange={(value) => handleSelectChange('membership_id', value)}
-              disabled={loadingMemberships}
+            <Label htmlFor="membership">Membership Plan</Label>
+            <Select 
+              value={conversionData.membershipId} 
+              onValueChange={handleMembershipChange}
             >
-              <SelectTrigger>
+              <SelectTrigger id="membership">
                 <SelectValue placeholder="Select a membership plan" />
               </SelectTrigger>
               <SelectContent>
-                {memberships?.map(membership => (
+                {memberships.map((membership) => (
                   <SelectItem key={membership.id} value={membership.id}>
-                    {membership.name} - {membership.price}
+                    {membership.name} (${membership.price})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Start Date</Label>
-              <DatePicker
-                date={new Date(formData.membership_start_date)}
-                setDate={(date) => handleDateChange('membership_start_date', date)}
+              <Label htmlFor="start-date">Start Date</Label>
+              <DatePicker 
+                date={conversionData.startDate} 
+                setDate={(date) => date && setConversionData({...conversionData, startDate: date})}
               />
             </div>
+            
             <div className="space-y-2">
-              <Label>End Date</Label>
-              <DatePicker
-                date={new Date(formData.membership_end_date)}
-                setDate={(date) => handleDateChange('membership_end_date', date)}
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select 
+                value={conversionData.paymentMethod} 
+                onValueChange={(value) => setConversionData({...conversionData, paymentMethod: value})}
+              >
+                <SelectTrigger id="payment-method">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Credit/Debit Card</SelectItem>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="online">Online Payment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Payment Amount</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                value={conversionData.paymentAmount}
+                onChange={(e) => setConversionData({...conversionData, paymentAmount: e.target.value})}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="payment-date">Payment Date</Label>
+              <DatePicker 
+                date={conversionData.paymentDate} 
+                setDate={(date) => date && setConversionData({...conversionData, paymentDate: date})}
               />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="emergency_contact">Emergency Contact</Label>
-            <Input
-              id="emergency_contact"
-              name="emergency_contact"
-              value={formData.emergency_contact}
-              onChange={handleChange}
-            />
-          </div>
-
+          
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
+              value={conversionData.notes}
+              onChange={(e) => setConversionData({...conversionData, notes: e.target.value})}
+              placeholder="Any additional notes about this conversion"
               rows={3}
             />
           </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit">Convert to Member</Button>
+          </div>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSubmit} 
-          disabled={convertMutation.isPending || !formData.membership_id}
-        >
-          {convertMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Converting...
-            </>
-          ) : (
-            'Convert to Member'
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

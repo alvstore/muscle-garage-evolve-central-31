@@ -1,68 +1,73 @@
 
-import React, { useState, KeyboardEvent, ChangeEvent } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Input } from './input';
+import { Badge } from './badge';
 
 interface TagsInputProps {
   value: string[];
-  onChange: (value: string[]) => void;
+  onChange: (tags: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
+  maxTags?: number;
 }
 
-export function TagsInput({ value, onChange, placeholder = "Add tag...", disabled = false }: TagsInputProps) {
+export const TagsInput: React.FC<TagsInputProps> = ({
+  value = [],
+  onChange,
+  placeholder = 'Add tags...',
+  disabled = false,
+  maxTags,
+}) => {
   const [inputValue, setInputValue] = useState('');
 
-  const handleAddTag = () => {
-    if (inputValue.trim() !== '') {
-      const newTag = inputValue.trim();
-      if (!value.includes(newTag)) {
-        onChange([...value, newTag]);
-      }
-      setInputValue('');
-    }
-  };
-
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault();
-      handleAddTag();
-    } else if (e.key === 'Backspace' && inputValue === '' && value.length > 0) {
+      
+      // Check if max tags has been reached
+      if (maxTags !== undefined && value.length >= maxTags) {
+        return;
+      }
+      
+      // Check if tag already exists
+      if (!value.includes(inputValue.trim())) {
+        onChange([...value, inputValue.trim()]);
+      }
+      
+      setInputValue('');
+    } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
       onChange(value.slice(0, -1));
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
+  const removeTag = (tag: string) => {
+    onChange(value.filter((t) => t !== tag));
   };
 
   return (
-    <div className="flex flex-wrap gap-2 p-2 border rounded-md focus-within:border-primary">
-      {value.map((tag, index) => (
-        <Badge key={`${tag}-${index}`} variant="secondary" className="gap-1">
+    <div className="flex flex-wrap gap-2 p-2 bg-background border rounded-md focus-within:ring-1 focus-within:ring-ring">
+      {value.map((tag) => (
+        <Badge key={tag} variant="secondary" className="flex items-center gap-1">
           {tag}
-          <button
-            type="button"
-            onClick={() => handleRemoveTag(tag)}
-            className="rounded-full hover:bg-muted"
-            disabled={disabled}
-          >
-            <X className="h-3 w-3" />
-            <span className="sr-only">Remove {tag}</span>
-          </button>
+          {!disabled && (
+            <X
+              size={14}
+              className="cursor-pointer hover:text-destructive"
+              onClick={() => removeTag(tag)}
+            />
+          )}
         </Badge>
       ))}
       <Input
         type="text"
         value={inputValue}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+        onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={handleAddTag}
         placeholder={value.length === 0 ? placeholder : ''}
-        className="flex-1 border-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-        disabled={disabled}
+        disabled={disabled || (maxTags !== undefined && value.length >= maxTags)}
+        className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-6 min-w-[120px]"
       />
     </div>
   );
-}
+};

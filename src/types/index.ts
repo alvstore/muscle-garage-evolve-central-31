@@ -1,3 +1,4 @@
+
 // User Types
 export type UserRole = "admin" | "manager" | "staff" | "trainer" | "member";
 
@@ -35,9 +36,9 @@ export interface Membership {
   id: string;
   name: string;
   description?: string;
-  price: number;
+  price: string;
   duration_days: number;
-  duration_months?: number; // Added to fix LeadConversion.tsx errors
+  duration_months?: number; 
   features?: any;
   is_active?: boolean;
   branch_id?: string;
