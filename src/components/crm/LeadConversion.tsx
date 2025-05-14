@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,9 +63,9 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onSuccess, onCanc
     // If membership changed, update end date based on duration
     if (name === 'membership_id' && memberships) {
       const selectedMembership = memberships.find(m => m.id === value);
-      if (selectedMembership && selectedMembership.duration_months) {
+      if (selectedMembership && selectedMembership.duration_days) {
         const startDate = new Date(formData.membership_start_date);
-        const endDate = addMonths(startDate, selectedMembership.duration_months);
+        const endDate = calculateEndDate(startDate, selectedMembership);
         setFormData(prev => ({
           ...prev,
           membership_end_date: format(endDate, 'yyyy-MM-dd')
@@ -83,6 +83,23 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onSuccess, onCanc
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     convertMutation.mutate();
+  };
+
+  const calculateEndDate = (startDate: Date, membership: Membership | null) => {
+    if (!membership) return startDate;
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + (membership.duration_days || 30));
+    return endDate;
+  };
+
+  const formattedPlanDuration = (membership: Membership | null) => {
+    if (!membership) return '';
+    
+    const days = membership.duration_days || 0;
+    const months = Math.floor(days / 30);
+    
+    return months <= 1 ? `${days} days` : `${months} months`;
   };
 
   return (

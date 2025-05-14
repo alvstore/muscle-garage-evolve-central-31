@@ -1,95 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { followUpService } from '@/services/followUpService';
-import { useBranch } from '@/hooks/use-branch';
-import { useAuth } from '@/hooks/use-auth';
+import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FollowUpType, FollowUpScheduled } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { followUpService } from '@/services/followUpService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useBranch } from '@/hooks/use-branch';
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
 import { toast } from 'sonner';
-import { 
-  Calendar, 
-  Clock, 
-  Mail, 
-  MessageCircle, 
-  Phone, 
-  CheckCircle, 
-  Bell, 
-  BellOff,
-  User,
-  CheckSquare,
-  AlertCircle,
-  ArrowUpRight
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { taskService, Task } from '@/services/taskService';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const FollowUpReminders = () => {
+// Convert the database model to the component model
+const convertToFollowUpScheduled = (item: any): FollowUpScheduled => {
+  return {
+    id: item.id,
+    leadId: item.lead_id || "",
+    scheduledBy: item.sent_by || "",
+    scheduledDate: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
+    type: item.type,
+    subject: item.subject || "",
+    content: item.content || "",
+    status: item.status,
+    createdAt: new Date().toISOString(), // Add missing required field
+    lead: {
+      name: item.lead_name || "Unknown Lead"
+    }
+  };
+};
+
+interface FollowUpRemindersProps {
+  isLoading?: boolean;
+}
+
+const FollowUpReminders: React.FC<FollowUpRemindersProps> = ({ isLoading: propIsLoading = false }) => {
   const { currentBranch } = useBranch();
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showAll, setShowAll] = useState(false);
-  const [activeTab, setActiveTab] = useState('followups');
-
-  // Fetch today's follow-ups
-  const { data: followUps, isLoading } = useQuery({
-    queryKey: ['todaysFollowUps', currentBranch?.id, user?.id],
-    queryFn: async () => {
-      const allScheduled = await followUpService.getScheduledFollowUps(currentBranch?.id);
-      return allScheduled.filter(followUp => {
-        const scheduledDate = parseISO(followUp.scheduled_for || followUp.scheduled_at || '');
-        return (isToday(scheduledDate) || isTomorrow(scheduledDate)) && 
-               (!followUp.sent_by || followUp.sent_by === user?.id);
-      });
-    },
-    enabled: !!currentBranch?.id && !!user?.id,
+  const [filter, setFilter] = useState<'all' | 'today' | 'upcoming'>('all');
+  
+  // Fetch scheduled follow-ups from Supabase
+  const { data: scheduledFollowUpsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ['scheduledFollowUps', currentBranch?.id],
+    queryFn: () => followUpService.getScheduledFollowUps(currentBranch?.id),
+    enabled: !!currentBranch?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Fetch lead-related tasks
-  const { data: leadTasks, isLoading: isLoadingTasks } = useQuery({
-    queryKey: ['leadTasks', currentBranch?.id, user?.id],
-    queryFn: async () => {
-      if (!currentBranch?.id) return [];
-      
-      const tasks = await taskService.getTasks(currentBranch.id);
-      return tasks.filter(task => 
-        task.related_to === 'lead' && 
-        task.status !== 'completed' && 
-        (!task.assigned_to || task.assigned_to === user?.id)
-      );
-    },
-    enabled: !!currentBranch?.id && !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-  
-  // Update task status mutation
-  const updateTaskMutation = useMutation({
-    mutationFn: (params: { id: string, status: string }) => 
-      taskService.updateTask(params.id, { status: params.status }),
+  // Delete follow-up mutation
+  const deleteFollowUpMutation = useMutation({
+    mutationFn: (id: string) => followUpService.deleteScheduledFollowUp(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leadTasks'] });
-      toast.success('Task status updated');
+      queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
+      toast.success('Follow-up deleted successfully');
     },
-    onError: () => {
-      toast.error('Failed to update task status');
+    onError: (error: any) => {
+      toast.error(`Failed to delete follow-up: ${error.message}`);
     }
   });
+  
+  // Convert to component model
+  const scheduledFollowUps = scheduledFollowUpsData
+    ? scheduledFollowUpsData.map(convertToFollowUpScheduled)
+    : [];
 
-  // Get icon based on follow-up type
-  const getFollowUpIcon = (type: string) => {
+  // Format date to readable format
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  // Format time to readable format
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Get badge for follow-up type
+  const getTypeBadge = (type: FollowUpType) => {
     switch (type) {
-      case 'call':
-        return <Phone className="h-4 w-4" />;
+      case "email":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Email</Badge>;
+      case "sms":
+        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">SMS</Badge>;
+      case "whatsapp":
+        return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">WhatsApp</Badge>;
+      case "call":
+        return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Call</Badge>;
+      case "meeting":
+        return <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">Meeting</Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
+  };
+
+  // Get icon for follow-up type
+  const getTypeIcon = (type: FollowUpType) => {
+    switch (type) {
       case 'email':
         return <Mail className="h-4 w-4" />;
-      case 'meeting':
-        return <Calendar className="h-4 w-4" />;
+      case 'sms':
+        return <MessageCircle className="h-4 w-4" />;
+      case 'call':
+        return <Phone className="h-4 w-4" />;
       case 'whatsapp':
         return <MessageCircle className="h-4 w-4" />;
       default:
@@ -97,297 +107,117 @@ const FollowUpReminders = () => {
     }
   };
 
-  // Format the scheduled time
-  const formatScheduledTime = (dateString?: string) => {
-    if (!dateString) return 'Not scheduled';
-    
-    const date = parseISO(dateString);
-    
-    if (isToday(date)) {
-      return `Today at ${format(date, 'h:mm a')}`;
-    } else if (isTomorrow(date)) {
-      return `Tomorrow at ${format(date, 'h:mm a')}`;
-    } else {
-      return format(date, 'MMM dd, yyyy h:mm a');
+  // Handle delete follow-up
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this follow-up?')) {
+      deleteFollowUpMutation.mutate(id);
     }
-  };
-
-  // Handle mark as complete
-  const handleMarkComplete = (id: string) => {
-    followUpService.updateFollowUpHistory(id, {
-      status: 'sent',
-      sent_at: new Date().toISOString()
-    }).then(() => {
-      toast.success('Follow-up marked as completed');
-    }).catch(() => {
-      toast.error('Failed to update follow-up status');
-    });
-  };
-
-  // Handle snooze
-  const handleSnooze = (id: string) => {
-    // Snooze for 2 hours
-    const snoozeTime = new Date();
-    snoozeTime.setHours(snoozeTime.getHours() + 2);
-    
-    followUpService.updateFollowUpHistory(id, {
-      scheduled_at: snoozeTime.toISOString()
-    }).then(() => {
-      toast.success('Follow-up snoozed for 2 hours');
-    }).catch(() => {
-      toast.error('Failed to snooze follow-up');
-    });
-  };
-
-  // Navigate to lead detail
-  const navigateToLead = (leadId: string) => {
-    navigate(`/crm/leads/${leadId}`);
   };
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-medium">
-            Follow-up & Task Reminders
-          </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll ? (
-              <>
-                <BellOff className="h-4 w-4 mr-2" />
-                Hide
-              </>
-            ) : (
-              <>
-                <Bell className="h-4 w-4 mr-2" />
-                Show All
-              </>
-            )}
-          </Button>
+          <CardTitle>Scheduled Follow-ups</CardTitle>
+          <div className="flex gap-2">
+            <div className="flex rounded-md border overflow-hidden">
+              <Button 
+                variant={filter === 'all' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('all')}
+                className="rounded-none"
+              >
+                All
+              </Button>
+              <Button 
+                variant={filter === 'today' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('today')}
+                className="rounded-none"
+              >
+                Today
+              </Button>
+              <Button 
+                variant={filter === 'upcoming' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setFilter('upcoming')}
+                className="rounded-none"
+              >
+                Upcoming
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              <span>Refresh</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 w-full">
-            <TabsTrigger value="followups" className="flex-1">
-              <Calendar className="h-4 w-4 mr-2" />
-              Follow-ups
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex-1">
-              <CheckSquare className="h-4 w-4 mr-2" />
-              Tasks
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="followups">
-            {isLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
               </div>
-            ) : followUps && followUps.length > 0 ? (
-              <div className="space-y-3">
-                {followUps
-                  .slice(0, showAll ? undefined : 5)
-                  .map((followUp) => (
-                    <div 
-                      key={followUp.id}
-                      className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/10 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="flex gap-1 items-center">
-                            {getFollowUpIcon(followUp.type)}
-                            <span className="capitalize">{followUp.type}</span>
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatScheduledTime(followUp.scheduled_for || followUp.scheduled_at)}
-                          </span>
-                        </div>
-                        
-                        <h4 className="font-medium mt-1 cursor-pointer hover:text-primary"
-                          onClick={() => followUp.lead_id && navigate(`/crm/leads/${followUp.lead_id}`)}
-                        >
-                          {followUp.subject || `Follow up with ${followUp.lead?.name || 'Lead'}`}
-                        </h4>
-                        
-                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                          {followUp.content}
-                        </p>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost"
-                                onClick={() => handleMarkComplete(followUp.id)}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Mark as completed</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost"
-                                onClick={() => handleSnooze(followUp.id)}
-                              >
-                                <Clock className="h-4 w-4 text-amber-500" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Snooze for 2 hours</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+            ))}
+          </div>
+        ) : scheduledFollowUps.length === 0 ? (
+          <div className="text-center py-6">
+            <MessageCircle className="h-12 w-12 mx-auto text-gray-400" />
+            <h3 className="mt-2 text-lg font-medium">No scheduled follow-ups</h3>
+            <p className="text-sm text-gray-500 mt-1">Create a follow-up task to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {scheduledFollowUps.map((followUp: FollowUpScheduled) => (
+              <div key={followUp.id} className="border rounded-lg p-3 mb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-semibold">{followUp.subject || 'Follow-up'}</div>
+                    <div className="text-xs text-muted-foreground">
+                      For: {followUp.lead?.name || "Unknown lead"}
                     </div>
-                  ))}
-                
-                {followUps.length > 5 && !showAll && (
-                  <Button 
-                    variant="ghost" 
-                    className="w-full text-xs" 
-                    onClick={() => setShowAll(true)}
-                  >
-                    Show {followUps.length - 5} more
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>No follow-ups scheduled for today</p>
-                <Button 
-                  variant="link" 
-                  className="mt-2"
-                  onClick={() => navigate('/crm/follow-up')}
-                >
-                  Schedule a follow-up
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="tasks">
-            {isLoadingTasks ? (
-              <div className="space-y-3">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            ) : leadTasks && leadTasks.length > 0 ? (
-              <div className="space-y-3">
-                {leadTasks
-                  .slice(0, showAll ? undefined : 5)
-                  .map((task) => (
-                    <div 
-                      key={task.id}
-                      className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/10 transition-colors"
+                  </div>
+                  <div>{getTypeBadge(followUp.type)}</div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm line-clamp-2">{followUp.content}</p>
+                </div>
+                <div className="mt-3 flex justify-between items-center">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>{formatDate(followUp.scheduledDate)}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDelete(followUp.id)}
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={task.priority === 'high' ? 'destructive' : 
-                                   task.priority === 'medium' ? 'default' : 'outline'}
-                            className="flex gap-1 items-center"
-                          >
-                            {task.priority === 'high' ? (
-                              <AlertCircle className="h-3 w-3" />
-                            ) : task.priority === 'medium' ? (
-                              <Clock className="h-3 w-3" />
-                            ) : (
-                              <Calendar className="h-3 w-3" />
-                            )}
-                            <span className="capitalize">{task.priority} Priority</span>
-                          </Badge>
-                          {task.due_date && (
-                            <span className="text-xs text-muted-foreground">
-                              Due: {formatScheduledTime(task.due_date)}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-1">
-                          <h4 className="font-medium mt-1">{task.title}</h4>
-                          {task.related_id && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-5 w-5 ml-1" 
-                              onClick={() => navigate(`/crm/leads/${task.related_id}`)}
-                            >
-                              <ArrowUpRight className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                        
-                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                          {task.description}
-                        </p>
-                      </div>
-                      
-                      <div className="flex gap-1">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                size="icon" 
-                                variant="ghost"
-                                onClick={() => updateTaskMutation.mutate({ id: task.id, status: 'completed' })}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Mark as completed</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </div>
-                  ))}
-                
-                {leadTasks.length > 5 && !showAll && (
-                  <Button 
-                    variant="ghost" 
-                    className="w-full text-xs" 
-                    onClick={() => setShowAll(true)}
-                  >
-                    Show {leadTasks.length - 5} more
-                  </Button>
-                )}
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckSquare className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>No lead-related tasks</p>
-                <Button 
-                  variant="link" 
-                  className="mt-2"
-                  onClick={() => navigate('/crm/leads')}
-                >
-                  View leads
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

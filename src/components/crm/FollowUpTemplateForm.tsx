@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -36,7 +37,7 @@ const availableVariables = [
 
 const templateSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  type: z.enum(["email", "sms", "whatsapp", "call", "meeting"]),
+  type: z.enum(["email", "call", "sms", "meeting", "whatsapp"]),
   content: z.string().min(10, { message: "Content must be at least 10 characters" }),
   isDefault: z.boolean().default(false),
 });
@@ -89,15 +90,13 @@ const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, o
     try {
       const newTemplate: FollowUpTemplate = {
         id: template?.id || uuidv4(),
-        name: values.title, 
         title: values.title,
         content: values.content,
         type: values.type as FollowUpType,
         variables: selectedVariables,
-        created_by: template?.created_by || "current-user-id",
+        isDefault: values.isDefault,
         created_at: template?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        isDefault: values.isDefault,
       };
       
       // In a real app, this would be an API call

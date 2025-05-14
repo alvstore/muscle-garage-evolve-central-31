@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AttendanceFormProps {
   memberId: string;
@@ -27,7 +28,6 @@ type AttendanceRecord = {
 };
 
 const AttendanceForm: React.FC<AttendanceFormProps> = ({ memberId, onSuccess, onCancel }) => {
-  const { toast } = useToast();
   const [date, setDate] = useState<Date>(new Date());
   const [checkInTime, setCheckInTime] = useState<string>(format(new Date(), 'HH:mm'));
   const [checkOutTime, setCheckOutTime] = useState<string>('');
@@ -69,21 +69,14 @@ const AttendanceForm: React.FC<AttendanceFormProps> = ({ memberId, onSuccess, on
         throw error;
       }
 
-      toast({
-        title: 'Attendance Recorded',
-        description: 'The attendance record has been saved successfully.',
-      });
+      toast.success('Attendance Recorded');
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
       console.error('Error recording attendance:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to record attendance',
-        variant: 'destructive',
-      });
+      toast.error(`Failed to record attendance: ${error.message}`);
     } finally {
       setLoading(false);
     }

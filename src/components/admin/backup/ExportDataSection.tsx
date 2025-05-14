@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,7 +31,6 @@ interface Module {
 
 const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   
   const [modules, setModules] = useState<Module[]>([
@@ -62,11 +61,7 @@ const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete 
     const selectedModules = modules.filter(m => m.selected).map(m => m.id);
     
     if (selectedModules.length === 0) {
-      toast({
-        title: "No modules selected",
-        description: "Please select at least one module to export",
-        variant: "destructive",
-      });
+      toast.error("No modules selected. Please select at least one module to export.");
       return;
     }
 
@@ -82,11 +77,7 @@ const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete 
           
         if (error) {
           console.error(`Error exporting ${module}:`, error);
-          toast({
-            title: `Error exporting ${module}`,
-            description: error.message,
-            variant: "destructive",
-          });
+          toast.error(`Error exporting ${module}: ${error.message}`);
         } else if (data) {
           exportData[module] = data;
         }
@@ -112,21 +103,14 @@ const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete 
         }
       ]);
       
-      toast({
-        title: "Export completed",
-        description: `Successfully exported data to ${fileName}`,
-      });
+      toast.success(`Successfully exported data to ${fileName}`);
       
       if (onExportComplete) {
         onExportComplete();
       }
     } catch (error: any) {
       console.error('Export failed:', error);
-      toast({
-        title: "Export failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error.message || "An unexpected error occurred during export");
     } finally {
       setIsExporting(false);
     }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -89,7 +90,7 @@ const CRMDashboard = () => {
     if (!leads) return 0;
     
     const totalLeads = leads.length;
-    const convertedLeads = leads.filter(lead => lead.status === 'converted' || lead.status === 'won').length;
+    const convertedLeads = leads.filter(lead => lead.status === 'won' || lead.status === 'converted').length;
     
     return totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0;
   }, [leads]);
@@ -244,13 +245,17 @@ const CRMDashboard = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {leads?.filter(lead => lead.status === 'converted')
-                  .sort((a, b) => new Date(b.conversion_date || '').getTime() - new Date(a.conversion_date || '').getTime())
+                {leads?.filter(lead => lead.status === 'converted' || lead.status === 'won')
+                  .sort((a, b) => {
+                    const dateA = a.conversion_date ? new Date(a.conversion_date).getTime() : 0;
+                    const dateB = b.conversion_date ? new Date(b.conversion_date).getTime() : 0;
+                    return dateB - dateA;
+                  })
                   .slice(0, 5)
                   .map(lead => (
                     <div key={lead.id} className="flex justify-between items-center p-2 border-b">
                       <div>
-                        <div className="font-medium">{lead.name}</div>
+                        <div className="font-medium">{lead.name || `${lead.first_name} ${lead.last_name}`}</div>
                         <div className="text-sm text-muted-foreground">{lead.email}</div>
                       </div>
                       <div className="text-sm">
@@ -258,7 +263,7 @@ const CRMDashboard = () => {
                       </div>
                     </div>
                   ))}
-                {(leads?.filter(lead => lead.status === 'converted').length || 0) === 0 && (
+                {(leads?.filter(lead => lead.status === 'converted' || lead.status === 'won').length || 0) === 0 && (
                   <div className="text-center py-4 text-muted-foreground">No conversions yet</div>
                 )}
               </div>

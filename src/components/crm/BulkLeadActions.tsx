@@ -1,342 +1,312 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { leadService } from '@/services/leadService';
-import { followUpService } from '@/services/followUpService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { Loader2, Users, Tag, Calendar } from 'lucide-react';
-import { FollowUpType } from '@/types/crm';
+import { LeadStatus, FunnelStage } from '@/types/crm';
+import { leadService } from '@/services/leadService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from '@/hooks/use-auth';
+import { User } from '@/types';
 
 interface BulkLeadActionsProps {
   selectedLeads: string[];
-  onActionComplete?: () => void;
+  onSuccess: () => void;
+  onClose: () => void;
 }
 
-const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ 
-  selectedLeads, 
-  onActionComplete 
-}) => {
-  const queryClient = useQueryClient();
-  const [showFollowUpDialog, setShowFollowUpDialog] = useState(false);
-  const [showTagDialog, setShowTagDialog] = useState(false);
-  const [showStageDialog, setShowStageDialog] = useState(false);
+export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadActionsProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isFunnelStageDialogOpen, setIsFunnelStageDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isAddTagsDialogOpen, setIsAddTagsDialogOpen] = useState(false);
+  const [newTags, setNewTags] = useState<string[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
+  const [selectedFunnelStage, setSelectedFunnelStage] = useState<FunnelStage>('cold');
+  const [selectedUser, setSelectedUser] = useState<string | undefined>(undefined);
+  const { user } = useAuth();
   
-  // Follow-up form state
-  const [followUpData, setFollowUpData] = useState({
-    type: 'call' as FollowUpType,
-    scheduledFor: new Date(),
-    subject: '',
-    content: ''
-  });
+  const availableStatuses: LeadStatus[] = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost', 'archived', 'converted'];
+  const availableFunnelStages: FunnelStage[] = ['cold', 'warm', 'hot', 'won', 'lost'];
   
-  // Tag form state
-  const [tagData, setTagData] = useState({
-    tags: ''
-  });
-  
-  // Stage form state
-  const [stageData, setStageData] = useState({
-    stage: 'cold' as 'cold' | 'warm' | 'hot' | 'won' | 'lost'
-  });
+  const availableUsers: User[] = [
+    { id: '1', name: 'John Doe', email: 'john.doe@example.com' },
+    { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com' },
+    { id: '3', name: 'Alice Johnson', email: 'alice.johnson@example.com' },
+  ]
 
-  // Bulk update stage mutation
-  const updateStageMutation = useMutation({
-    mutationFn: async () => {
-      const promises = selectedLeads.map(leadId => 
-        leadService.updateLead(leadId, { funnel_stage: stageData.stage })
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      toast.success(`${selectedLeads.length} leads moved to ${stageData.stage} stage`);
-      setShowStageDialog(false);
-      if (onActionComplete) onActionComplete();
-    },
-    onError: () => {
-      toast.error('Failed to update lead stages');
-    }
-  });
-
-  // Bulk add tags mutation
-  const addTagsMutation = useMutation({
-    mutationFn: async () => {
-      const newTags = tagData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-      
-      const promises = selectedLeads.map(async (leadId) => {
-        const lead = await leadService.getLeadById(leadId);
-        if (!lead) return null;
-        
-        const currentTags = lead.tags || [];
-        const updatedTags = [...new Set([...currentTags, ...newTags])];
-        
-        return leadService.updateLead(leadId, { tags: updatedTags });
-      });
-      
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      toast.success(`Tags added to ${selectedLeads.length} leads`);
-      setShowTagDialog(false);
-      if (onActionComplete) onActionComplete();
-    },
-    onError: () => {
-      toast.error('Failed to add tags');
-    }
-  });
-
-  // Bulk schedule follow-up mutation
-  const scheduleFollowUpMutation = useMutation({
-    mutationFn: async () => {
-      const promises = selectedLeads.map(leadId => 
-        followUpService.createFollowUpHistory({
-          lead_id: leadId,
-          type: followUpData.type,
-          content: followUpData.content,
-          subject: followUpData.subject,
-          status: 'scheduled',
-          scheduled_at: followUpData.scheduledFor.toISOString()
-        })
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['followUpHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
-      toast.success(`Follow-ups scheduled for ${selectedLeads.length} leads`);
-      setShowFollowUpDialog(false);
-      if (onActionComplete) onActionComplete();
-    },
-    onError: () => {
-      toast.error('Failed to schedule follow-ups');
-    }
-  });
-
-  const handleFollowUpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    scheduleFollowUpMutation.mutate();
+  const updateLeadStatus = (status: LeadStatus) => {
+    if (selectedLeads.length === 0) return;
+    
+    setIsLoading(true);
+    
+    const updatePromises = selectedLeads.map(id => 
+      leadService.updateLead(id, { status })
+    );
+    
+    Promise.all(updatePromises)
+      .then(() => {
+        toast.success(`Status updated for ${selectedLeads.length} lead(s)`);
+        onSuccess();
+        onClose();
+      })
+      .catch(error => {
+        console.error('Error updating lead status:', error);
+        toast.error('Failed to update lead status');
+      })
+      .finally(() => setIsLoading(false));
   };
 
-  const handleTagSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    addTagsMutation.mutate();
+  const updateFunnelStage = (funnel_stage: FunnelStage) => {
+    if (selectedLeads.length === 0) return;
+    
+    setIsLoading(true);
+    
+    const updatePromises = selectedLeads.map(id => 
+      leadService.updateLead(id, { funnel_stage })
+    );
+    
+    Promise.all(updatePromises)
+      .then(() => {
+        toast.success(`Funnel stage updated for ${selectedLeads.length} lead(s)`);
+        onSuccess();
+        onClose();
+      })
+      .catch(error => {
+        console.error('Error updating funnel stage:', error);
+        toast.error('Failed to update funnel stage');
+      })
+      .finally(() => setIsLoading(false));
   };
 
-  const handleStageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateStageMutation.mutate();
+  const assignLeads = (userId: string) => {
+    if (!userId || selectedLeads.length === 0) return;
+    
+    setIsLoading(true);
+    
+    const updatePromises = selectedLeads.map(id => 
+      leadService.updateLead(id, { assigned_to: userId })
+    );
+    
+    Promise.all(updatePromises)
+      .then(() => {
+        toast.success(`Assigned ${selectedLeads.length} lead(s) to user`);
+        onSuccess();
+        onClose();
+      })
+      .catch(error => {
+        console.error('Error assigning leads:', error);
+        toast.error('Failed to assign leads');
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const addTags = (newTags: string[]) => {
+    if (!newTags.length || selectedLeads.length === 0) return;
+    
+    setIsLoading(true);
+    
+    const updatePromises = selectedLeads.map(async (leadId) => {
+      const lead = await leadService.getLeadById(leadId);
+      const currentTags = lead.tags || [];
+      const uniqueTags = [...new Set([...currentTags, ...newTags])];
+      
+      return leadService.updateLead(leadId, { tags: uniqueTags });
+    });
+    
+    Promise.all(updatePromises)
+      .then(() => {
+        toast.success(`Tags added to ${selectedLeads.length} lead(s)`);
+        onSuccess();
+        onClose();
+      })
+      .catch(error => {
+        console.error('Error adding tags:', error);
+        toast.error('Failed to add tags');
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const deleteLeads = () => {
+    if (selectedLeads.length === 0) return;
+    
+    setIsLoading(true);
+    
+    const deletePromises = selectedLeads.map(id => leadService.deleteLead(id));
+    
+    Promise.all(deletePromises)
+      .then(() => {
+        toast.success(`Deleted ${selectedLeads.length} lead(s)`);
+        onSuccess();
+        onClose();
+      })
+      .catch(error => {
+        console.error('Error deleting leads:', error);
+        toast.error('Failed to delete leads');
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" disabled={selectedLeads.length === 0}>
-            Bulk Actions ({selectedLeads.length})
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => setShowStageDialog(true)}>
-            Move to Stage
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowTagDialog(true)}>
-            Add Tags
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowFollowUpDialog(true)}>
-            Schedule Follow-up
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Stage Dialog */}
-      <Dialog open={showStageDialog} onOpenChange={setShowStageDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Move Leads to Stage</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleStageSubmit} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="stage">Select Stage</Label>
-              <Select
-                value={stageData.stage}
-                onValueChange={(value: 'cold' | 'warm' | 'hot' | 'won' | 'lost') => 
-                  setStageData({ ...stageData, stage: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cold">Cold</SelectItem>
-                  <SelectItem value="warm">Warm</SelectItem>
-                  <SelectItem value="hot">Hot</SelectItem>
-                  <SelectItem value="won">Won</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={updateStageMutation.isPending}
-              >
-                {updateStageMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Moving...
-                  </>
-                ) : (
-                  <>
-                    <Users className="mr-2 h-4 w-4" />
-                    Move {selectedLeads.length} Leads
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Tags Dialog */}
-      <Dialog open={showTagDialog} onOpenChange={setShowTagDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Tags to Leads</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleTagSubmit} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" disabled={isLoading}>Delete Leads</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected leads from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteLeads} disabled={isLoading}>
+              {isLoading ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" disabled={isLoading}>Update Status</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Lead Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a new status for the selected leads.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            <Select onValueChange={(value) => setSelectedStatus(value as LeadStatus)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a status" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => updateLeadStatus(selectedStatus)} disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isFunnelStageDialogOpen} onOpenChange={setIsFunnelStageDialogOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" disabled={isLoading}>Update Funnel Stage</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Funnel Stage</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a new funnel stage for the selected leads.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            <Select onValueChange={(value) => setSelectedFunnelStage(value as FunnelStage)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a funnel stage" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableFunnelStages.map((stage) => (
+                  <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => updateFunnelStage(selectedFunnelStage)} disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" disabled={isLoading}>Assign Leads</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Assign Leads</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a user to assign the selected leads to.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            <Select onValueChange={(value) => setSelectedUser(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a user" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => assignLeads(selectedUser || '')} disabled={isLoading}>
+              {isLoading ? 'Assigning...' : 'Assign'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isAddTagsDialogOpen} onOpenChange={setIsAddTagsDialogOpen}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" disabled={isLoading}>Add Tags</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add Tags</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter tags to add to the selected leads.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            <div className="grid gap-2">
+              <Label htmlFor="tags">Tags</Label>
               <Input
                 id="tags"
-                value={tagData.tags}
-                onChange={(e) => setTagData({ ...tagData, tags: e.target.value })}
-                placeholder="e.g. VIP, Interested in Yoga, Follow up"
+                placeholder="Enter tags, separated by commas"
+                onChange={(e) => setNewTags(e.target.value.split(',').map(tag => tag.trim()))}
               />
             </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={addTagsMutation.isPending || !tagData.tags.trim()}
-              >
-                {addTagsMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Tag className="mr-2 h-4 w-4" />
-                    Add Tags to {selectedLeads.length} Leads
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Follow-up Dialog */}
-      <Dialog open={showFollowUpDialog} onOpenChange={setShowFollowUpDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Schedule Follow-up for Leads</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleFollowUpSubmit} className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Follow-up Type</Label>
-                <Select
-                  value={followUpData.type}
-                  onValueChange={(value: FollowUpType) => 
-                    setFollowUpData({ ...followUpData, type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Scheduled For</Label>
-                <DatePicker
-                  date={followUpData.scheduledFor}
-                  setDate={(date) => date && setFollowUpData({ ...followUpData, scheduledFor: date })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Input
-                id="subject"
-                value={followUpData.subject}
-                onChange={(e) => setFollowUpData({ ...followUpData, subject: e.target.value })}
-                placeholder="Follow-up subject"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">Message</Label>
-              <Textarea
-                id="content"
-                value={followUpData.content}
-                onChange={(e) => setFollowUpData({ ...followUpData, content: e.target.value })}
-                placeholder="Follow-up message or notes"
-                rows={4}
-              />
-            </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                disabled={
-                  scheduleFollowUpMutation.isPending || 
-                  !followUpData.subject.trim() || 
-                  !followUpData.content.trim()
-                }
-              >
-                {scheduleFollowUpMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Scheduling...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Schedule for {selectedLeads.length} Leads
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => addTags(newTags)} disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
-};
-
-export default BulkLeadActions;
+}

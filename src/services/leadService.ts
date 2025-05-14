@@ -1,128 +1,87 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { Lead } from '@/types/crm';
 
 export const leadService = {
-  async getLeadById(leadId: string, branchId: string): Promise<Lead | null> {
-    try {
-      if (!branchId) {
-        console.warn('No branch ID provided for getLeadById');
-        return null;
-      }
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', leadId)
-        .eq('branch_id', branchId)
-        .single();
-
-      if (error) {
-        console.error('Supabase error fetching lead:', error);
-        throw error;
-      }
-      
-      return data as Lead;
-    } catch (error: any) {
-      console.error('Error fetching lead:', error);
-      toast.error('Failed to load lead details');
-      return null;
+  getLeads: async (branchId?: string) => {
+    let query = supabase.from('leads').select('*');
+    
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
     }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching leads:', error);
+      throw error;
+    }
+    
+    return data || [];
   },
   
-  async getLeads(branchId: string | undefined): Promise<Lead[]> {
-    try {
-      if (!branchId) {
-        console.warn('No branch ID provided for getLeads');
-        return [];
-      }
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('branch_id', branchId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Supabase error fetching leads:', error);
-        throw error;
-      }
-      
-      return data as Lead[];
-    } catch (error: any) {
-      console.error('Error fetching leads:', error);
-      toast.error('Failed to load leads');
-      return [];
+  getLeadById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching lead:', error);
+      throw error;
     }
+    
+    return data;
   },
-
-  async createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>): Promise<Lead | null> {
-    try {
-      if (!lead.branch_id) {
-        toast.error('Branch ID is required to create a lead');
-        return null;
-      }
-      
-      const leadWithTimestamps = {
-        ...lead,
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .insert([leadWithTimestamps])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      toast.success('Lead created successfully');
-      return data as Lead;
-    } catch (error: any) {
+  
+  createLead: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([lead])
+      .select()
+      .single();
+    
+    if (error) {
       console.error('Error creating lead:', error);
-      toast.error(`Failed to create lead: ${error.message}`);
-      return null;
+      throw error;
     }
+    
+    return data;
   },
-
-  async updateLead(id: string, updates: Partial<Lead>): Promise<Lead | null> {
-    try {
-      const { data, error } = await supabase
-        .from('leads')
-        .update({...updates, updated_at: new Date().toISOString()})
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      toast.success('Lead updated successfully');
-      return data as Lead;
-    } catch (error: any) {
+  
+  updateLead: async (id: string, updates: Partial<Lead>) => {
+    const { data, error } = await supabase
+      .from('leads')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
       console.error('Error updating lead:', error);
-      toast.error(`Failed to update lead: ${error.message}`);
-      return null;
+      throw error;
     }
+    
+    return data;
   },
-
-  async deleteLead(id: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      toast.success('Lead deleted successfully');
-      return true;
-    } catch (error: any) {
+  
+  deleteLead: async (id: string) => {
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
       console.error('Error deleting lead:', error);
-      toast.error(`Failed to delete lead: ${error.message}`);
-      return false;
+      throw error;
     }
+    
+    return true;
+  },
+  
+  // Add refetch method to fix error in LeadsList.tsx
+  refetch: async () => {
+    return await leadService.getLeads();
   }
 };
-
-export default leadService;
