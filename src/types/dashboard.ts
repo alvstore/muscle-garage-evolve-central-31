@@ -1,23 +1,47 @@
 
-export interface Announcement {
-  id: string;
+// Dashboard specific types
+
+export interface StatCard {
   title: string;
-  content: string;
-  author_id: string;
-  author_name: string;
-  audience: string[];
-  is_pinned: boolean;
-  created_at: string;
-  updated_at: string;
+  value: string | number;
+  change: number;
+  trend: 'up' | 'down' | 'neutral';
 }
 
-export interface DashboardSummary {
-  total_members: number;
-  active_members: number;
-  new_members_this_month: number;
-  revenue_this_month: number;
-  revenue_last_month: number;
-  attendance_today: number;
-  upcoming_renewals: number;
-  expiring_this_week: number;
+export interface ActivityItem {
+  id: string;
+  type: 'check-in' | 'check-out' | 'payment' | 'membership' | 'class' | 'other';
+  title: string;
+  description?: string;
+  timestamp: string;
+  member?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  metadata?: Record<string, any>;
+}
+
+export interface RenewalItem {
+  id: string;
+  member_id: string;
+  member_name: string;
+  member_avatar?: string;
+  plan_name: string;
+  expiry_date: string;
+  days_remaining: number;
+  amount: number;
+  status: 'upcoming' | 'overdue' | 'renewed';
+}
+
+export interface Payment {
+  id: string;
+  member_id?: string;
+  member_name?: string;
+  amount: number;
+  date: string;
+  status: 'pending' | 'completed' | 'failed';
+  method?: string;
+  description?: string;
+  invoice_id?: string;
 }

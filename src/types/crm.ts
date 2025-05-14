@@ -1,48 +1,63 @@
 
-export type LeadSource = 'website' | 'referral' | 'walk-in' | 'phone' | 'email' | 'social' | 'other';
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'converted' | 'won' | 'lost' | 'archived';
-export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
-export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
+// Define core CRM types
+
+export type FollowUpType = 'email' | 'call' | 'meeting' | 'text' | 'other';
 
 export interface Lead {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  source: LeadSource;
-  status: LeadStatus;
-  funnel_stage: FunnelStage;
-  notes: string;
-  branch_id: string;
-  note: string;
-  first_name: string;
-  last_name: string;
-  created_at: string;
-  updated_at: string;
-  assigned_to?: string;
+  email?: string;
+  phone?: string;
+  status: string;
+  funnel_stage: string;
+  source: string;
+  notes?: string;
+  follow_up_date?: string;
+  last_contact_date?: string;
+  conversion_date?: string;
+  conversion_value?: number;
   tags?: string[];
+  interests?: string[];
+  branch_id?: string;
+  assigned_to?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FollowUpTemplate {
   id: string;
   name: string;
   title: string;
-  content: string;
   type: FollowUpType;
+  content: string;
   variables: string[];
-  subject?: string;
-  isDefault: boolean;
   created_at: string;
   updated_at: string;
+  isDefault?: boolean;
 }
 
-export interface AutomationRule {
+export interface FollowUpHistory {
   id: string;
-  name: string;
-  trigger_type: string;
-  trigger_conditions: any;
-  actions: any[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  lead_id?: string;
+  template_id?: string;
+  subject?: string;
+  content: string;
+  sent_at?: string;
+  sent_by?: string;
+  response?: string;
+  response_at?: string;
+  status: string;
+  type: string;
+  scheduled_at?: string;
+}
+
+export interface FollowUpScheduled {
+  id: string;
+  lead_id?: string;
+  template_id?: string;
+  scheduled_at: string;
+  type: FollowUpType;
+  subject?: string;
+  content: string;
+  status: 'scheduled' | 'sent' | 'failed' | 'cancelled';
 }
