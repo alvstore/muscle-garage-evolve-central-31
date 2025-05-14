@@ -193,64 +193,37 @@ const pollEventsForBranch = async (apiSetting: any) => {
       }
     }
     
-    // Get events from the Hikvision API
-    try {
-      // 1. Authenticate with the API
-      const authResponse = await fetch(`${api_url}/api/hpcgw/v1/token/get`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          appKey: app_key,
-          secretKey: app_secret
-        })
-      });
-      
-      if (!authResponse.ok) {
-        throw new Error(`Authentication failed: ${authResponse.statusText}`);
-      }
-      
-      const authData = await authResponse.json();
-      const accessToken = authData.accessToken;
-      
-      if (!accessToken) {
-        throw new Error('No access token received');
-      }
-      
-      // 2. Get events (this would be replaced with actual API call)
-      // For now we just simulate receiving events
-      const events: EventPayload[] = [];
-      
-      // 3. Process each event
-      for (const event of events) {
-        await processEvent(event, { branch_id });
-      }
-      
-      // 4. Update last sync time
-      await supabase
-        .from('hikvision_api_settings')
-        .update({ last_sync: new Date().toISOString() })
-        .eq('id', apiSetting.id);
-      
-      return { branch_id, success: true };
-    } catch (apiError) {
-      console.error(`API error for branch ${branch_id}:`, apiError);
-      
-      // Update sync status to failed
-      await supabase
-        .from('hikvision_api_settings')
-        .update({ 
-          last_sync: new Date().toISOString(),
-          last_sync_status: 'failed',
-          last_sync_error: apiError.message
-        })
-        .eq('id', apiSetting.id);
-        
-      throw apiError;
+    // Poll for messages
+    const events = await pollMessages(branch_id, currentSubscriptionId);
+    
+    // Process each event
+    for (const event of events) {
+      await processEvent(event, { branch_id });
     }
+    
+    // Update last sync time
+    await supabase
+      .from('hikvision_api_settings')
+      .update({ 
+        last_sync: new Date().toISOString(),
+        last_sync_status: 'success'
+      })
+      .eq('id', apiSetting.id);
+    
+    return { branch_id, success: true };
   } catch (error) {
     console.error(`Error polling events for branch ${apiSetting.branch_id}:`, error);
+    
+    // Update sync status to failed
+    await supabase
+      .from('hikvision_api_settings')
+      .update({ 
+        last_sync: new Date().toISOString(),
+        last_sync_status: 'failed',
+        last_sync_error: error.message
+      })
+      .eq('id', apiSetting.id);
+      
     return { branch_id: apiSetting.branch_id, success: false, error };
   }
 };
@@ -321,3 +294,153 @@ const processEvent = async (event: EventPayload, context: { branch_id: string })
     return false;
   }
 };
+
+// Add this method to poll for messages
+async function pollMessages(branchId: string, subscriptionId: string): Promise<EventPayload[]> {
+  try {
+    // Get API settings
+    const { data: settings, error } = await supabase
+      .from('hikvision_api_settings')
+      .select('*')
+      .eq('branch_id', branchId)
+      .eq('is_active', true)
+      .single();
+    
+    if (error || !settings) {
+      console.error('Error fetching API settings:', error);
+      return [];
+    }
+    
+    // Authenticate
+    const authResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/token/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        appKey: settings.app_key,
+        secretKey: settings.app_secret
+      })
+    });
+    
+    if (!authResponse.ok) {
+      throw new Error(`Authentication failed: ${authResponse.statusText}`);
+    }
+    
+    const authData = await authResponse.json();
+    const accessToken = authData.accessToken;
+    
+    if (!accessToken) {
+      throw new Error('No access token received');
+    }
+    
+    // Get last offset from database
+    const { data: offsetData } = await supabase
+      .from('hikvision_api_settings')
+      .select('last_offset')
+      .eq('branch_id', branchId)
+      .single();
+    
+    const lastOffset = offsetData?.last_offset || null;
+    
+    // Poll for messages
+    const messagesResponse = await fetch(`${settings.api_url}/api/hpcgw/v1/mq/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        subscriptionId,
+        offset: lastOffset,
+        maxReturnNum: 20
+      })
+    });
+    
+    if (!messagesResponse.ok) {
+      throw new Error(`Failed to poll messages: ${messagesResponse.statusText}`);
+    }
+    
+    const messagesData = await messagesResponse.json();
+    const messages = messagesData.messages || [];
+    
+    if (messages.length > 0) {
+      // Update last offset
+      const newOffset = messages[messages.length - 1].offset;
+      await supabase
+        .from('hikvision_api_settings')
+        .update({ last_offset: newOffset })
+        .eq('branch_id', branchId);
+      
+      // Acknowledge the offset
+      await acknowledgeOffset(branchId, subscriptionId, newOffset, settings.api_url, accessToken);
+    }
+    
+    // Transform messages to EventPayload format
+    return messages.map(msg => ({
+      deviceSn: msg.data?.deviceSn || '',
+      eventType: mapEventType(msg.data?.eventType),
+      eventTime: msg.data?.eventTime || new Date().toISOString(),
+      eventData: {
+        doorId: msg.data?.doorIndexCode,
+        doorName: msg.data?.doorName,
+        personId: msg.data?.personId,
+        personName: msg.data?.personName,
+        cardNo: msg.data?.cardNo
+      }
+    }));
+  } catch (error) {
+    console.error(`Error polling messages for branch ${branchId}:`, error);
+    
+    // Log error
+    await supabase.from('hikvision_sync_log').insert({
+      id: uuidv4(),
+      branch_id: branchId,
+      event_type: 'error',
+      message: 'Failed to poll messages',
+      details: error.message || 'Unknown error',
+      status: 'error',
+      created_at: new Date().toISOString()
+    });
+    
+    return [];
+  }
+}
+
+// Helper function to acknowledge message offset
+async function acknowledgeOffset(branchId: string, subscriptionId: string, offset: string, apiUrl: string, accessToken: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${apiUrl}/api/hpcgw/v1/mq/offset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        subscriptionId,
+        offset
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to acknowledge offset: ${response.statusText}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error acknowledging offset for branch ${branchId}:`, error);
+    return false;
+  }
+}
+
+// Helper function to map Hikvision event types to our system
+function mapEventType(eventType: string): string {
+  // Map Hikvision event types to our system
+  // Common event types: doorOpen, doorClose, cardVerify, faceVerify
+  if (eventType === 'doorOpen' || eventType === 'cardVerify' || eventType === 'faceVerify') {
+    return 'entry';
+  } else if (eventType === 'doorClose') {
+    return 'exit';
+  }
+  return eventType || 'unknown';
+}
