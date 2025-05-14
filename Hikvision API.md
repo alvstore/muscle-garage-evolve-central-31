@@ -186,3 +186,60 @@ Use this to track member check-ins via access logs.
 ---
 
 For full parameter definitions and workflows, refer to the official Hik-Partner Pro OpenAPI Developer Guide (v2.11.800).
+
+Here's a breakdown of the API guidelines based on your requirements, incorporating information from the Hik-Partner Pro OpenAPI Developer Guide:
+
+***Detail Guide****
+Here's an enhanced version of the API guidelines, with detailed information on error codes to help with debugging:
+1. Get Token with Domain Area
+(Same as before - API Key, Get Token API, Domain Area)
+2. Handle Token in 7 Days
+(Same as before - Token Expiration, Token Refresh, Recommendation)
+3. Person Management
+(Same as before - Add Person, Update Person, Delete Person, Apply/Delete Person Info to/from Device, Synchronize Person Information, etc.)
+4. Person Pre Villages
+(Same as before - Site Management, Person Assignment to Sites, Workflow Suggestion)
+5. Everything to Handle API Request
+(Same as before - Base URL, Content Type, Authentication, Request Methods, Request Parameters, Response Format)
+Error Handling (Enhanced):
+Check the errorCode in the response to determine if the request was successful.
+Device-Specific Error Codes: Pay close attention to error codes that are specific to device operations. These often provide granular details about failures.
+Refer to "Appendix A.1 Status or Error Code" and "A.7 Error Codes Categorized by Functional Modules" in the document for comprehensive lists.
+Implement detailed error logging and handling based on these codes.
+Provide informative error messages to the user when appropriate.
+Example Error Scenarios and Codes (from the document):
+EVZ20002: Device does not exist. [cite: 60]
+EVZ20007: The device is offline. [cite: 61]
+EVZ0012: Adding device failed.
+EVZ20014: Incorrect device serial No. [cite: 63]
+0x400019F1: The maximum number of devices reached. [cite: 332]
+Sub Status Codes: Some APIs, like POST /api/hpcgw/v1/acs/privilege/status (for access control privilege status), may return a subStatus code within the error field for more specific errors. [cite: 603] Handle these with the same care as errorCode.
+0x30000010: Searching in the database failed. [cite: 83]
+0x30001000: HBP Exception. [cite: 86]
+Error Code Categories (with examples): The document categorizes error codes by functional modules. Here are some examples to illustrate how this can help you in your code:
+Time Function Module (0x00300001 to 0x003007FF):
+0x00300001: Time synchronization failed.
+0x00300002: Invalid NTP server address.
+0x00300003: Incorrect time format.
+Network Function Module (0x00400001 to 0x00400FFF):
+0x00400001: Parsing domain name failed.
+0x00400004: IP addresses of devices conflicted.
+0x00400006: Uploading failed.
+Device Function Module (0x01400001 to 0x01400FFF):
+0x01400003: Certificates mismatched.
+0x01400004: Device is not activated.
+0x01400006: IP address is banned.
+Face Management Module (0x40001000 to 0x40001FFF):
+0x4000109C: The library name already exists.
+0x4000109D: No record found.
+Security Control Module (0x40008000 to 0x40008FFF):
+0x40008000: Arming failed.
+0x40008001: Disarming failed.
+0x40008007: Registering timed out.
+(Same as before - OTAP, Important Notes)
+Additional Notes on Error Handling
+Retry Logic: For certain errors (e.g., network errors), consider implementing retry logic with exponential backoff.
+Rate Limiting: Be aware of API rate limits and handle errors related to exceeding those limits (e.g., EVZ10029: The API calling frequency exceeded limit). [cite: 60]
+Logging: Log API requests, responses, and errors thoroughly for debugging and monitoring. Include relevant details like timestamps, request parameters, and error codes.
+User Feedback: Translate error codes into user-friendly messages, but avoid exposing sensitive technical details.
+By incorporating this detailed error handling, your Windsurf API integration will be more stable, reliable, and easier to maintain. Use the error code categories and specific examples to structure your error handling code. Always refer to the latest "Hik-Partner Pro OpenAPI Developer Guide" for the most accurate and complete list of error codes.

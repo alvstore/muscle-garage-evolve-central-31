@@ -93,6 +93,8 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
   const fetchSettings = async () => {
     if (!branchId) return;
     
+    console.log('Fetching Hikvision settings for branch:', branchId);
+    
     try {
       setLoading(true);
       setError(null);
@@ -136,6 +138,8 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
   
   const fetchDevices = async () => {
     if (!branchId) return;
+    
+    console.log('Fetching Hikvision devices for branch:', branchId);
     
     try {
       // Get API settings which contains devices as a JSON field
@@ -202,6 +206,8 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
         settingsData['app_secret'] = appSecret;
       }
       
+      console.log('Saving Hikvision settings:', settingsData);
+      
       let result;
       
       if (settings) {
@@ -230,99 +236,182 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
     }
   };
   
+  // Helper function to handle successful connection
+  const handleSuccessfulConnection = async (data: any, baseUrl: string) => {
+    console.log('Hikvision API response:', data);
+    
+    if (data && data.accessToken) {
+      // Connection successful
+      setTestResult({
+        success: true,
+        message: 'Connection successful! API credentials are valid.'
+      });
+      toast.success('Hikvision API connection successful');
+      
+      // Store token in hikvision_tokens table
+      await supabase.from('hikvision_tokens').upsert({
+        branch_id: branchId!,
+        access_token: data.accessToken,
+        expires_at: new Date(Date.now() + (data.expiresIn * 1000)).toISOString(),
+        created_at: new Date().toISOString()
+      });
+      
+      // Update the API settings in the database
+      if (settings) {
+        // Update existing settings
+        await supabase
+          .from('hikvision_api_settings')
+          .update({
+            api_url: baseUrl,
+            app_key: appKey,
+            app_secret: appSecret || settings.app_secret,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', settings.id);
+      } else {
+        // Create new settings
+        await supabase
+          .from('hikvision_api_settings')
+          .insert({
+            branch_id: branchId,
+            api_url: baseUrl,
+            app_key: appKey,
+            app_secret: appSecret,
+            is_active: true,
+            devices: []
+          });
+      }
+      
+      // Refresh settings
+      fetchSettings();
+    } else {
+      throw new Error('Invalid response from Hikvision API');
+    }
+  };
+
   const handleTestConnection = async () => {
-    if (!branchId) return;
+    if (!branchId) {
+      toast.error('Please select a branch first');
+      return;
+    }
     
     try {
       setTestingConnection(true);
       setTestResult(null);
       
-      // Test the connection using a simulated approach to avoid CORS issues
-      try {
-        // Clean the API URL to remove any spaces and ensure it's properly formatted
-        const cleanApiUrl = apiUrl.trim();
-        
-        // Make sure the URL doesn't have trailing slashes
-        const baseUrl = cleanApiUrl.endsWith('/') ? cleanApiUrl.slice(0, -1) : cleanApiUrl;
-        
-        console.log('Testing connection with Hikvision API');
-        
-        // Instead of directly calling the Hikvision API (which would cause CORS issues),
-        // we'll simulate a successful connection for now
-        // In a production environment, you would need a backend proxy to handle this
-        
-        // Simulate API response
-        const simulatedResponse = {
-          data: {
-            accessToken: 'simulated-token-' + Date.now(),
-            expiresIn: 604800 // 7 days in seconds
-          }
-        };
-        
-        // In a real implementation, you would use a backend proxy like this:
-        // const response = await axios.post('/api/proxy/hikvision/token', {
-        //   apiUrl: baseUrl,
-        //   appKey,
-        //   secretKey: appSecret || (settings?.app_secret || '')
-        // });
-        
-        const response = simulatedResponse; // Using simulated response
-        
-        if (response.data && response.data.accessToken) {
-          // Connection successful
-          setTestResult({
-            success: true,
-            message: 'Connection successful! API credentials are valid.'
-          });
-          toast.success('Hikvision API connection successful');
-          
-          // Update the API settings in the database
-          if (settings) {
-            // Update existing settings
-            await supabase
-              .from('hikvision_api_settings')
-              .update({
-                api_url: apiUrl,
-                app_key: appKey,
-                app_secret: appSecret || settings.app_secret,
-                is_active: true,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', settings.id);
-          } else {
-            // Create new settings
-            await supabase
-              .from('hikvision_api_settings')
-              .insert({
-                branch_id: branchId,
-                api_url: apiUrl,
-                app_key: appKey,
-                app_secret: appSecret,
-                is_active: true,
-                devices: []
-              });
-          }
-          
-          // Refresh settings
-          fetchSettings();
-        } else {
-          throw new Error('Invalid response from Hikvision API');
-        }
-      } catch (apiError) {
-        console.error('Error connecting to Hikvision API:', apiError);
-        setTestResult({
-          success: false,
-          message: `Connection failed: ${apiError.message || 'Unable to connect to Hikvision API'}`
-        });
-        toast.error('Hikvision API connection failed');
+      // Clean the API URL to remove any spaces and ensure it's properly formatted
+      const cleanApiUrl = apiUrl.trim();
+      const baseUrl = cleanApiUrl.endsWith('/') ? cleanApiUrl.slice(0, -1) : cleanApiUrl;
+      
+      if (!baseUrl) {
+        throw new Error('API URL is required');
       }
-    } catch (err) {
+      
+      if (!appKey) {
+        throw new Error('App Key is required');
+      }
+      
+      const secret = appSecret || settings?.app_secret;
+      if (!secret) {
+        throw new Error('App Secret is required');
+      }
+      
+      console.log('Testing connection with Hikvision API');
+      
+      // Try direct connection if in development mode
+      if (process.env.NODE_ENV === 'development') {
+        const timestamp = new Date().getTime().toString();
+        const nonce = Math.random().toString(36).substring(2, 15);
+        
+        // In a real implementation, you would generate the signature here
+        // const signature = generateSignature(baseUrl, appKey, secret, timestamp, nonce);
+        
+        const response = await axios.post(`${baseUrl}/api/hpcgw/v1/token/get`, {
+          appKey,
+          secretKey: secret
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Ca-Key': appKey,
+            'X-Ca-Timestamp': timestamp,
+            'X-Ca-Nonce': nonce,
+            // 'X-Ca-Signature': signature
+          },
+          timeout: 10000 // 10 second timeout
+        });
+        
+        return handleSuccessfulConnection(response.data, baseUrl);
+      } else {
+        // Use Supabase Edge Function in production
+        const response = await axios.post('/api/proxy/hikvision/token', {
+          apiUrl: baseUrl,
+          appKey,
+          secretKey: secret
+        }, {
+          timeout: 10000 // 10 second timeout
+        });
+        
+        return handleSuccessfulConnection(response.data, baseUrl);
+      }
+      
+    } catch (err: any) {
       console.error('Error testing Hikvision connection:', err);
+      
+      let errorMessage = 'Connection failed';
+      let errorCode = '';
+      
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        // Handle network errors
+        errorMessage = 'Unable to connect to the Hikvision API. Please check your internet connection and API URL.';
+        if (process.env.NODE_ENV === 'development') {
+          errorMessage += ' (Local development server may not be running)';
+        }
+      } else if (err.response && err.response.data) {
+        // Handle API errors
+        const hikvisionError = err.response.data;
+        errorCode = hikvisionError.errorCode || '';
+        
+        // Map error codes to user-friendly messages
+        switch(errorCode) {
+          case 'EVZ20002':
+            errorMessage = 'Device does not exist';
+            break;
+          case 'EVZ20007':
+            errorMessage = 'The device is offline';
+            break;
+          case 'EVZ0012':
+            errorMessage = 'Adding device failed';
+            break;
+          case 'EVZ20014':
+            errorMessage = 'Incorrect device serial number';
+            break;
+          case '0x400019F1':
+            errorMessage = 'The maximum number of devices reached';
+            break;
+          case '0x30000010':
+            errorMessage = 'Database search failed';
+            break;
+          case '0x30001000':
+            errorMessage = 'HBP Exception';
+            break;
+          default:
+            errorMessage = hikvisionError.message || 'Unknown error occurred';
+        }
+        
+        errorMessage = errorCode ? `${errorMessage} (Error code: ${errorCode})` : errorMessage;
+      } else if (err.message) {
+        // Handle other errors
+        errorMessage = err.message;
+      }
+      
       setTestResult({
         success: false,
-        message: 'Connection failed. Please check your API credentials and network settings.'
+        message: errorMessage
       });
-      toast.error('Hikvision API connection test failed');
+      
+      console.log(`Hikvision API error: ${errorMessage} (${errorCode})`);
+      toast.error(`Hikvision API connection failed: ${errorMessage}`);
     } finally {
       setTestingConnection(false);
     }
@@ -405,6 +494,8 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
         location,
       };
       
+      console.log('Saving Hikvision device:', deviceData);
+      
       // Only include these fields for locally managed devices
       if (managementType === 'local') {
         deviceData.ip_address = ipAddress;
@@ -473,38 +564,43 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
         throw new Error('Device not found');
       }
       
+      // Get the current access token
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('hikvision_tokens')
+        .select('access_token, expires_at')
+        .eq('branch_id', branchId)
+        .single();
+      
+      if (tokenError || !tokenData) {
+        throw new Error('Access token not found. Please test API connection first.');
+      }
+      
+      // Check if token is expired
+      const expiresAt = new Date(tokenData.expires_at);
+      if (expiresAt < new Date()) {
+        throw new Error('Access token expired. Please test API connection to refresh.');
+      }
+      
       // Different testing logic based on management type
       if (device.management_type === 'cloud') {
         // For cloud devices, we test using the Hikvision Partner API
-        // In development, we'll simulate a successful response
-        if (process.env.NODE_ENV === 'development') {
-          // Simulate API response in development
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+        console.log(`Testing cloud device: ${device.name} (${device.device_id})`);
+        
+        const response = await axios.post('/api/proxy/hikvision/test-device', {
+          deviceId: device.device_id,
+          accessToken: tokenData.access_token
+        });
+        
+        console.log('Device test response:', response.data);
+        
+        if (response.data.success) {
           setDeviceTestResult({
             success: true,
-            message: 'Cloud device connection simulated successfully!'
+            message: 'Cloud device connection successful!'
           });
-          toast.success('Cloud device connection test successful');
+          toast.success('Cloud device connection successful');
         } else {
-          // In production, we would call the backend API to test the device
-          const response = await axios.post('/api/access-control/hikvision/test-device', {
-            deviceId: device.id,
-            apiSettings: {
-              api_url: settings.api_url,
-              app_key: settings.app_key
-            }
-          });
-          
-          if (response.data.success) {
-            setDeviceTestResult({
-              success: true,
-              message: 'Cloud device connection successful!'
-            });
-            toast.success('Cloud device connection successful');
-          } else {
-            throw new Error(response.data.message || 'Cloud device connection failed');
-          }
+          throw new Error(response.data.message || 'Cloud device connection failed');
         }
       } else {
         // For local devices, test direct connection using IP, port, username, password
@@ -512,34 +608,25 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
           throw new Error('Missing connection details for local device');
         }
         
-        // In development, we'll simulate a successful response
-        if (process.env.NODE_ENV === 'development') {
-          // Simulate API response in development
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+        console.log(`Testing local device: ${device.name} (${device.ip_address}:${device.port})`);
+        
+        const response = await axios.post('/api/proxy/hikvision/test-local-device', {
+          ip: device.ip_address,
+          port: device.port,
+          username: device.username,
+          password: device.password
+        });
+        
+        console.log('Local device test response:', response.data);
+        
+        if (response.data.success) {
           setDeviceTestResult({
             success: true,
-            message: 'Local device connection simulated successfully!'
+            message: 'Local device connection successful!'
           });
-          toast.success('Local device connection test successful');
+          toast.success('Local device connection successful');
         } else {
-          // In production, we would call the backend API to test the device
-          const response = await axios.post('/api/access-control/hikvision/test-local-device', {
-            ip: device.ip_address,
-            port: device.port,
-            username: device.username,
-            password: device.password
-          });
-          
-          if (response.data.success) {
-            setDeviceTestResult({
-              success: true,
-              message: 'Local device connection successful!'
-            });
-            toast.success('Local device connection successful');
-          } else {
-            throw new Error(response.data.message || 'Local device connection failed');
-          }
+          throw new Error(response.data.message || 'Local device connection failed');
         }
       }
       
@@ -569,12 +656,44 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
       
     } catch (err) {
       console.error('Error testing Hikvision device:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      
+      // Extract error code and message from Hikvision API response
+      let errorMessage = 'Device test failed';
+      let errorCode = '';
+      
+      if (err.response && err.response.data) {
+        const hikvisionError = err.response.data;
+        errorCode = hikvisionError.errorCode || '';
+        
+        // Map error codes to user-friendly messages
+        switch(errorCode) {
+          case 'EVZ20002':
+            errorMessage = 'Device does not exist';
+            break;
+          case 'EVZ20007':
+            errorMessage = 'The device is offline';
+            break;
+          case 'EVZ0012':
+            errorMessage = 'Adding device failed';
+            break;
+          case 'EVZ20014':
+            errorMessage = 'Incorrect device serial number';
+            break;
+          default:
+            errorMessage = hikvisionError.message || 'Unknown error occurred';
+        }
+        
+        errorMessage += errorCode ? ` (Error code: ${errorCode})` : '';
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
       
       setDeviceTestResult({
         success: false,
         message: errorMessage
       });
+      
+      console.log(`Hikvision device test error: ${errorMessage} (${errorCode})`);
       toast.error(`Device test failed: ${errorMessage}`);
       
       if (settings) {
