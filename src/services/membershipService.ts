@@ -33,6 +33,10 @@ export const membershipService = {
     data?: any;
     error?: string;
     invoiceId?: string;
+    biometricRegistration?: {
+      success: boolean;
+      message: string;
+    };
   }> {
     try {
       const {
@@ -200,10 +204,22 @@ export const membershipService = {
         if (transactionError) console.error('Error recording transaction:', transactionError);
       }
 
+      // 5. Register member in biometric devices if enabled for the branch
+      const biometricResult = await this.registerInBiometricDevices(
+        { id: memberId, name: memberData.name, phone: memberData.phone || '' },
+        branchId
+      );
+
+      if (!biometricResult.success) {
+        console.warn('Biometric device registration warning:', biometricResult.message);
+        // Don't fail the membership assignment, just log the warning
+      }
+
       return { 
         success: true, 
         data: assignment,
-        invoiceId: invoice.id 
+        invoiceId: invoice.id,
+        biometricRegistration: biometricResult
       };
     } catch (error: any) {
       console.error('Error assigning membership:', error);
