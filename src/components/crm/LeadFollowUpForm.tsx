@@ -23,6 +23,9 @@ interface LeadFollowUpFormProps {
   onCancel?: () => void;
 }
 
+const followUpTypes = ['call', 'email', 'meeting', 'whatsapp', 'sms'] as const;
+type SafeFollowUpType = typeof followUpTypes[number];
+
 const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({ 
   lead, 
   onSuccess, 
@@ -32,7 +35,7 @@ const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({
   const { currentBranch } = useBranch();
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    type: 'call' as FollowUpType,
+    type: 'call' as SafeFollowUpType, // Explicitly type as safe
     scheduledFor: addDays(new Date(), 1),
     subject: `Follow-up with ${lead.name}`,
     content: `Scheduled follow-up with ${lead.name} regarding membership options.`,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -35,7 +34,7 @@ interface LeadsListProps {
 
 const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
   const navigate = useNavigate();
-  const { leads, isLoading, error, deleteLead, refetch } = useLeads();
+  const { leads, isLoading, error, fetchLeads } = useLeads();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -55,10 +54,8 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, onView }) => {
   });
 
   // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await refetch();
-    setIsRefreshing(false);
+  const handleRefresh = () => {
+    fetchLeads();
   };
 
   // Handle select all

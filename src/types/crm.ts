@@ -74,7 +74,7 @@ export interface ScheduledFollowUp {
 
 export interface FollowUpScheduled {
   id: string;
-  leadId: string;
+  leadId?: string;
   lead_id?: string;
   scheduledBy: string;
   scheduledDate: string;

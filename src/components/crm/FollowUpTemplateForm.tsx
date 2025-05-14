@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,10 +36,13 @@ const availableVariables = [
 
 const templateSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  type: z.enum(["email", "sms", "whatsapp", "call", "meeting"]),
+  type: z.enum(["email", "call", "sms", "meeting", "whatsapp"]),
   content: z.string().min(10, { message: "Content must be at least 10 characters" }),
   isDefault: z.boolean().default(false),
 });
+
+const typeOptions = ['email', 'call', 'sms', 'meeting', 'whatsapp'] as const;
+type SafeFollowUpType = typeof typeOptions[number];
 
 const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, onComplete }) => {
   const [selectedVariables, setSelectedVariables] = React.useState<string[]>(
@@ -92,7 +95,7 @@ const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, o
         name: values.title, 
         title: values.title,
         content: values.content,
-        type: values.type as FollowUpType,
+        type: values.type as SafeFollowUpType,
         variables: selectedVariables,
         created_by: template?.created_by || "current-user-id",
         created_at: template?.created_at || new Date().toISOString(),
@@ -150,10 +153,10 @@ const FollowUpTemplateForm: React.FC<FollowUpTemplateFormProps> = ({ template, o
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="sms">SMS</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
                         <SelectItem value="call">Call Script</SelectItem>
+                        <SelectItem value="sms">SMS</SelectItem>
                         <SelectItem value="meeting">Meeting Agenda</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

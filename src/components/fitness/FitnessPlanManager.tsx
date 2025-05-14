@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +20,7 @@ interface FitnessPlanManagerProps {
   readOnly?: boolean;
 }
 
-const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPlanManagerProps) => {
+const FitnessPlanManager = ({ members, trainerId, readOnly = false }) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [editingWorkoutPlan, setEditingWorkoutPlan] = useState(false);
   const [editingDietPlan, setEditingDietPlan] = useState(false);
@@ -196,7 +195,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
             {workoutPlan ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">{workoutPlan.workout_days.length} Day Split</h3>
+                  <h3 className="text-lg font-medium">{getWorkoutDays(workoutPlan).length} Day Split</h3>
                   {!readOnly && (
                     <div className="space-x-2">
                       <Button 
@@ -212,7 +211,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
                 </div>
                 
                 <div className="space-y-4">
-                  {workoutPlan.workout_days.map((day, index) => (
+                  {getWorkoutDays(workoutPlan).map((day, index) => (
                     <div key={day.id} className="border rounded-lg p-4">
                       <h4 className="font-medium mb-2">Day {index + 1}: {day.name}</h4>
                       

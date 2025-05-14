@@ -16,13 +16,16 @@ import { toast } from 'sonner';
 const convertToScheduledFollowUp = (item: FollowUpScheduled): ScheduledFollowUp => {
   return {
     id: item.id,
-    leadId: item.lead_id,
+    lead_id: item.lead_id || item.leadId || "", // Fix property access
     leadName: item.lead_name || "Unknown Lead",
     type: item.type,
     scheduledFor: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
     subject: item.subject || "",
-    content: item.content,
+    content: item.content || "",
     status: item.status,
+    scheduledBy: item.scheduledBy,
+    scheduledDate: item.scheduledDate,
+    createdAt: item.createdAt
   };
 };
 

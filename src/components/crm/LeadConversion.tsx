@@ -63,9 +63,19 @@ const LeadConversion: React.FC<LeadConversionProps> = ({ lead, onSuccess, onCanc
     // If membership changed, update end date based on duration
     if (name === 'membership_id' && memberships) {
       const selectedMembership = memberships.find(m => m.id === value);
-      if (selectedMembership && selectedMembership.duration_months) {
+      if (selectedMembership) {
+        let months = 1; // Default to 1 month if duration_months not available
+        
+        if (selectedMembership.duration_months) {
+          months = selectedMembership.duration_months;
+        } else if (selectedMembership.duration_days) {
+          // Calculate approximate months from days if duration_months is missing
+          months = Math.round(selectedMembership.duration_days / 30);
+        }
+        
         const startDate = new Date(formData.membership_start_date);
-        const endDate = addMonths(startDate, selectedMembership.duration_months);
+        const endDate = addMonths(startDate, months);
+        
         setFormData(prev => ({
           ...prev,
           membership_end_date: format(endDate, 'yyyy-MM-dd')

@@ -55,11 +55,29 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     days: []
   });
 
+  // Convert between different workout plan formats
+  const convertToWorkoutPlan = (dbPlan: any): any => {
+    return {
+      id: dbPlan.id,
+      name: dbPlan.name || '',
+      description: dbPlan.description || '',
+      trainer_id: dbPlan.trainer_id || '',
+      isCommon: dbPlan.isCommon || false,
+      createdBy: dbPlan.createdBy || '',
+      createdAt: dbPlan.createdAt || dbPlan.created_at || '',
+      updatedAt: dbPlan.updatedAt || dbPlan.updated_at || '',
+      days: dbPlan.days || [],
+      workout_days: dbPlan.workout_days || dbPlan.days || [],
+      difficulty: dbPlan.difficulty || 'beginner',
+    };
+  };
+
   // Load workout plans
   useEffect(() => {
     const fetchWorkoutPlans = async () => {
       const plans = await workoutService.getWorkoutPlans();
-      setWorkoutPlans(plans);
+      // Convert fetched plans to the expected format
+      setWorkoutPlans(plans.map(convertToWorkoutPlan));
     };
     const fetchTrainers = async () => {
       const trainersList = await trainerService.getTrainers();
@@ -74,7 +92,16 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     if (selectedMemberId) {
       const fetchMemberWorkouts = async () => {
         const workouts = await workoutService.getMemberWorkouts(selectedMemberId);
-        setMemberWorkouts(workouts);
+        // Convert from DB format to component format
+        const convertedWorkouts = workouts.map((workout: any) => ({
+          id: workout.id,
+          memberId: workout.member_id || workout.memberId,
+          workoutPlanId: workout.workout_plan_id || workout.workoutPlanId,
+          isCustom: workout.is_custom || false,
+          assignedBy: workout.assigned_by || '',
+          assignedAt: workout.assigned_at || new Date().toISOString()
+        }));
+        setMemberWorkouts(convertedWorkouts);
       };
       fetchMemberWorkouts();
     } else {
@@ -197,6 +224,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     }));
   };
 
+  // Update handleSubmitPlan to convert between formats
   const handleSubmitPlan = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter a name for the workout plan");
@@ -229,14 +257,14 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({
     if (isEditing && selectedPlan) {
       const updatedPlan = await workoutService.updateWorkoutPlan(selectedPlan.id, planData);
       if (updatedPlan) {
-        setWorkoutPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+        setWorkoutPlans(prev => prev.map(p => p.id === updatedPlan.id ? convertToWorkoutPlan(updatedPlan) : p));
         setIsEditing(false);
         setSelectedPlan(null);
       }
     } else {
       const newPlan = await workoutService.createWorkoutPlan(planData);
       if (newPlan) {
-        setWorkoutPlans(prev => [...prev, newPlan]);
+        setWorkoutPlans(prev => [...prev, convertToWorkoutPlan(newPlan)]);
         setIsCreating(false);
       }
     }

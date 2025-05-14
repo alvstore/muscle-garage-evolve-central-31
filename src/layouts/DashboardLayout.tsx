@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, ReactNode } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
@@ -9,20 +9,16 @@ import TrainerSidebar from "@/components/layout/TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";
 
-interface DashboardLayoutProps {
-  children?: ReactNode;
-}
-
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children }) => {
   const { user, isLoading } = useAuth();
-  
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
+
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  
+
   useEffect(() => {
     // Apply or remove dark mode class based on state
     if (darkMode) {
@@ -31,7 +27,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
-  
+
   useEffect(() => {
     // Close sidebar on mobile by default
     if (isMobile) {
@@ -54,7 +50,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     setDarkMode(newDarkMode);
     localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -62,10 +58,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
     );
   }
-  
+
   let SidebarComponent;
-  
-  switch (user?.role) {
+  switch(user?.role) {
     case 'member':
       SidebarComponent = MemberSidebar;
       break;
@@ -75,28 +70,24 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     default:
       SidebarComponent = DashboardSidebar;
   }
-  
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* Mobile sidebar backdrop */}
       {isMobile && sidebarOpen && (
         <div 
           className="fixed inset-0 z-30 bg-black/50 transition-opacity duration-300"
           onClick={closeSidebar}
           aria-hidden="true"
-        ></div>
+        />
       )}
-      
-      {/* Sidebar */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:relative lg:inset-y-0 lg:z-0 lg:translate-x-0`}
-      >
-        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={closeSidebar} />
+
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:inset-y-0 lg:z-0 lg:translate-x-0`}>
+        <SidebarComponent 
+          isSidebarOpen={sidebarOpen}
+          closeSidebar={closeSidebar}
+        />
       </div>
-      
-      {/* Main content */}
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
           toggleSidebar={toggleSidebar}
@@ -104,7 +95,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           isDarkMode={darkMode}
           sidebarOpen={sidebarOpen}
         />
-        
+          
         <main className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-6">
           {children || <Outlet />}
         </main>
