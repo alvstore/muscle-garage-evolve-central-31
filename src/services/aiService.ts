@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -429,7 +430,7 @@ export const aiService = {
   },
 
   // Build diet plan prompt
-  private buildDietPrompt(params: DietPlanParams): string {
+  buildDietPrompt(params: DietPlanParams): string {
     return `Create a detailed ${params.dietType} Indian diet plan with the following details:
     - Diet Type: ${params.dietType}
     - Cuisine: Indian
