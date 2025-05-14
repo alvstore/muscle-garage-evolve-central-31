@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -32,7 +33,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBranch } from '@/hooks/use-branch';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutPlanDB, MemberWorkout } from '@/types/fitness';
-import { useToast } from '@/components/ui/use-toast';
 
 interface WorkoutPlansManagerProps {
   forMemberId?: string;
@@ -49,7 +49,6 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { user } = useAuth();
   const { currentBranch } = useBranch();
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchWorkoutPlans();
@@ -75,11 +74,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       setWorkoutPlans(data || []);
     } catch (error: any) {
       console.error('Error fetching workout plans:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to fetch workout plans',
-        variant: 'destructive',
-      });
+      toast.error('Failed to fetch workout plans: ' + (error.message || ''));
     } finally {
       setIsLoading(false);
     }
@@ -98,11 +93,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       setMembers(data || []);
     } catch (error: any) {
       console.error('Error fetching members:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to fetch members',
-        variant: 'destructive',
-      });
+      toast.error('Failed to fetch members: ' + (error.message || ''));
     } finally {
       setIsLoading(false);
     }
@@ -121,10 +112,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
         .insert({
           created_by: planData.createdBy,
           name: planData.name,
-          title: planData.name, // Add required field
-          type: planData.isCommon ? 'common' : 'custom', // Add required field
+          title: planData.name,
+          type: planData.isCommon ? 'common' : 'custom',
           description: planData.description,
-          exercises: [] // Add required field
+          exercises: []
         })
         .select()
         .single();
@@ -132,9 +123,9 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       if (error) throw error;
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating workout plan:', error);
-      toast.error('Failed to create workout plan');
+      toast.error('Failed to create workout plan: ' + (error.message || ''));
       return null;
     }
   };
@@ -146,10 +137,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
         .insert({
           member_id: assignmentData.memberId,
           workout_plan_id: assignmentData.workoutPlanId,
-          plan_id: assignmentData.workoutPlanId, // Set planId from workoutPlanId
+          plan_id: assignmentData.workoutPlanId,
           is_custom: assignmentData.isCustom,
           assigned_by: assignmentData.assignedBy,
-          type: 'assigned', // Add the required type field
+          type: 'assigned',
           trainer_id: assignmentData.trainerId
         })
         .select()
@@ -157,9 +148,9 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
 
       if (error) throw error;
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error assigning workout plan:', error);
-      toast.error('Failed to assign workout plan');
+      toast.error('Failed to assign workout plan: ' + (error.message || ''));
       return null;
     }
   };
@@ -194,7 +185,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       }
     } catch (error: any) {
       console.error('Error creating workout plan:', error);
-      toast.error(error.message || 'Failed to create workout plan');
+      toast.error('Failed to create workout plan: ' + (error.message || ''));
     } finally {
       setIsLoading(false);
     }
@@ -216,8 +207,10 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       const assignmentData: Omit<MemberWorkout, "id" | "assignedAt"> = {
         memberId: selectedMemberId,
         workoutPlanId: selectedPlanId,
+        planId: selectedPlanId,
         isCustom: false,
         assignedBy: user.id,
+        type: 'assigned',
         trainerId: user.id
       };
 
@@ -230,7 +223,7 @@ const WorkoutPlansManager: React.FC<WorkoutPlansManagerProps> = ({ forMemberId }
       }
     } catch (error: any) {
       console.error('Error assigning workout plan:', error);
-      toast.error(error.message || 'Failed to assign workout plan');
+      toast.error('Failed to assign workout plan: ' + (error.message || ''));
     } finally {
       setIsLoading(false);
     }

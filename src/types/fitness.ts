@@ -80,7 +80,7 @@ export interface MemberWorkout {
   id: string;
   memberId: string;
   workoutPlanId: string;
-  planId?: string;
+  planId: string;
   isCustom: boolean;
   assignedBy: string;
   assignedAt: string;
@@ -94,11 +94,9 @@ export interface DietPlan {
   description?: string;
   trainer_id?: string;
   memberId: string;
-  diet_type?: string;
+  dietType?: string;
   is_custom?: boolean;
   notes?: string;
-  created_at?: string;
-  updated_at?: string;
   createdAt?: string;
   updatedAt?: string;
   mealPlans: MealPlan[];

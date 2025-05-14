@@ -1,72 +1,81 @@
 
-import { useState, useEffect } from 'react';
-import { useBranch } from './use-branch';
+import { useState } from 'react';
 import { Lead } from '@/types/crm';
-import leadService from '@/services/leadService';
+import { crmService } from '@/services/crmService';
+import { useBranch } from '@/hooks/use-branch';
 
 export const useLeads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
   const { currentBranch } = useBranch();
 
   const fetchLeads = async () => {
-    if (!currentBranch?.id) {
-      setLeads([]);
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
-    setError(null);
-
+    setError('');
     try {
-      const data = await leadService.getLeads(currentBranch.id);
-      setLeads(data);
-    } catch (err) {
-      console.error('Error fetching leads:', err);
-      setError('Failed to load leads');
+      const fetchedLeads = await crmService.getLeads(currentBranch?.id);
+      setLeads(fetchedLeads);
+      return { data: fetchedLeads, error: null };
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch leads');
+      return { data: null, error: err };
     } finally {
       setIsLoading(false);
     }
   };
 
   const addLead = async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!currentBranch?.id) {
-      throw new Error('No branch selected');
+    setIsLoading(true);
+    try {
+      const leadWithBranchId = {
+        ...lead,
+        branch_id: currentBranch?.id || ''
+      };
+      const newLead = await crmService.createLead(leadWithBranchId);
+      if (newLead) {
+        setLeads(prev => [newLead, ...prev]);
+      }
+      return newLead;
+    } catch (err: any) {
+      setError(err.message || 'Failed to add lead');
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-    
-    const leadWithBranch = {
-      ...lead,
-      branch_id: currentBranch.id
-    };
-    
-    const newLead = await leadService.createLead(leadWithBranch);
-    if (newLead) {
-      setLeads(prev => [newLead, ...prev]);
-    }
-    return newLead;
   };
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {
-    const updatedLead = await leadService.updateLead(id, updates);
-    if (updatedLead) {
-      setLeads(prev => prev.map(lead => lead.id === id ? updatedLead : lead));
+    setIsLoading(true);
+    try {
+      const updatedLead = await crmService.updateLead(id, updates);
+      if (updatedLead) {
+        setLeads(prev => prev.map(lead => lead.id === id ? updatedLead : lead));
+      }
+      return updatedLead;
+    } catch (err: any) {
+      setError(err.message || 'Failed to update lead');
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-    return updatedLead;
   };
 
   const deleteLead = async (id: string) => {
-    const success = await leadService.deleteLead(id);
-    if (success) {
-      setLeads(prev => prev.filter(lead => lead.id !== id));
+    setIsLoading(true);
+    try {
+      const success = await crmService.deleteLead(id);
+      if (success) {
+        setLeads(prev => prev.filter(lead => lead.id !== id));
+      }
+      return success;
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete lead');
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-    return success;
   };
-
-  useEffect(() => {
-    fetchLeads();
-  }, [currentBranch?.id]);
 
   return {
     leads,

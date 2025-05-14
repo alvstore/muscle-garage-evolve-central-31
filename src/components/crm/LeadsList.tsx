@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
@@ -7,7 +8,6 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,37 +25,42 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface LeadsListProps {
-  initialData: Lead[];
+  onEdit?: (lead: Lead) => void;
+  onAddNew?: () => void;
+  initialData?: Lead[];
 }
 
-const LeadsList: React.FC<LeadsListProps> = ({ initialData }) => {
+const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onAddNew, initialData = [] }) => {
   const [leads, setLeads] = useState<Lead[]>(initialData);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [isBulkActionsOpen, setIsBulkActionsOpen] = useState(false);
-
+  
+  const { fetchLeads, deleteLead, updateLead } = useLeads();
   const columns = React.useMemo(() => LeadsColumn, []);
 
-  const fetchLeads = useCallback(async () => {
+  const handleFetchLeads = useCallback(async () => {
     try {
-      const leadsData = await useLeads().getLeads();
-      setLeads(leadsData);
+      const { data, error } = await fetchLeads();
+      if (!error && data) {
+        setLeads(data);
+      }
     } catch (error) {
       console.error('Error fetching leads:', error);
       toast.error('Failed to fetch leads');
     }
-  }, []);
+  }, [fetchLeads]);
 
   useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
+    handleFetchLeads();
+  }, [handleFetchLeads]);
 
   const filteredLeads = React.useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     return leads.filter(lead =>
       lead.name.toLowerCase().includes(lowerCaseQuery) ||
-      lead.email.toLowerCase().includes(lowerCaseQuery) ||
-      lead.phone.toLowerCase().includes(lowerCaseQuery)
+      (lead.email && lead.email.toLowerCase().includes(lowerCaseQuery)) ||
+      (lead.phone && lead.phone.toLowerCase().includes(lowerCaseQuery))
     );
   }, [searchQuery, leads]);
 
@@ -88,29 +93,33 @@ const LeadsList: React.FC<LeadsListProps> = ({ initialData }) => {
 
   const handleDeleteLead = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this lead?')) {
-      await useLeads().deleteLead(id);
-      toast.success('Lead deleted successfully');
-      fetchLeads();
+      try {
+        await deleteLead(id);
+        toast.success('Lead deleted successfully');
+        handleFetchLeads();
+      } catch (error) {
+        console.error('Error deleting lead:', error);
+        toast.error('Failed to delete lead');
+      }
     }
-  };
-
-  const deleteLeadFunction = async (id: string) => {
-    await useLeads().deleteLead(id);
-    toast.success('Lead deleted successfully');
-    fetchLeads();
   };
 
   const handleBulkActionComplete = () => {
     setSelectedLeads([]);
     setIsBulkActionsOpen(false);
-    fetchLeads();
+    handleFetchLeads();
   };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Leads</CardTitle>
-        <CardDescription>Manage your leads here</CardDescription>
+        <div>
+          <CardTitle>Leads</CardTitle>
+          <CardDescription>Manage your leads here</CardDescription>
+        </div>
+        {onAddNew && (
+          <Button onClick={onAddNew}>Add New Lead</Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex flex-col space-y-4">
@@ -182,7 +191,12 @@ const LeadsList: React.FC<LeadsListProps> = ({ initialData }) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => deleteLeadFunction(lead.id)}>
+                            {onEdit && (
+                              <DropdownMenuItem onClick={() => onEdit(lead)}>
+                                Edit
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleDeleteLead(lead.id)}>
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>

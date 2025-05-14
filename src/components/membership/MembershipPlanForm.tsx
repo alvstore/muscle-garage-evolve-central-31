@@ -18,12 +18,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { 
-  MembershipPlan, 
-  MembershipDuration, 
-  ClassType, 
-  MembershipPlanStatus 
-} from "@/types/membership";
+import { MembershipPlan, MembershipDuration, ClassType, MembershipPlanStatus } from "@/types/membership";
 
 interface MembershipPlanFormProps {
   plan: MembershipPlan | null;
@@ -38,12 +33,13 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     description: '',
     price: 0,
     durationDays: 30,
-    durationLabel: '1-month',
+    duration: MembershipDuration.MONTHLY,
+    durationLabel: MembershipDuration.ONE_MONTH,
     benefits: [] as string[],
-    allowedClasses: 'basic-only',
-    status: 'active',
-    createdAt: '',
-    updatedAt: '',
+    allowedClasses: [ClassType.BASIC_ONLY],
+    status: MembershipPlanStatus.ACTIVE,
+    created_at: '',
+    updated_at: '',
   });
 
   useEffect(() => {
@@ -67,15 +63,16 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
 
     // Set duration days based on selected duration label
     if (name === 'durationLabel') {
-      const durationMap: Record<MembershipDuration, number> = {
-        '1-month': 30,
-        '3-month': 90,
-        '6-month': 180,
-        '12-month': 365,
+      const durationMap: Record<string, number> = {
+        [MembershipDuration.ONE_MONTH]: 30,
+        [MembershipDuration.THREE_MONTH]: 90,
+        [MembershipDuration.SIX_MONTH]: 180,
+        [MembershipDuration.TWELVE_MONTH]: 365,
       };
       setFormData(prev => ({
         ...prev,
-        durationDays: durationMap[value as MembershipDuration]
+        durationDays: durationMap[value] || 30,
+        duration: value as MembershipDuration
       }));
     }
   };
@@ -95,7 +92,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
     onSave({
       ...formData,
       price: Number(formData.price),
-      updatedAt: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
   };
 
@@ -148,17 +145,17 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
               <div className="space-y-2">
                 <Label htmlFor="durationLabel">Duration</Label>
                 <Select
-                  value={formData.durationLabel}
+                  value={formData.durationLabel?.toString() || MembershipDuration.ONE_MONTH}
                   onValueChange={(value) => handleSelectChange('durationLabel', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1-month">1 Month</SelectItem>
-                    <SelectItem value="3-month">3 Months</SelectItem>
-                    <SelectItem value="6-month">6 Months</SelectItem>
-                    <SelectItem value="12-month">12 Months</SelectItem>
+                    <SelectItem value={MembershipDuration.ONE_MONTH}>1 Month</SelectItem>
+                    <SelectItem value={MembershipDuration.THREE_MONTH}>3 Months</SelectItem>
+                    <SelectItem value={MembershipDuration.SIX_MONTH}>6 Months</SelectItem>
+                    <SelectItem value={MembershipDuration.TWELVE_MONTH}>12 Months</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -166,16 +163,16 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
               <div className="space-y-2">
                 <Label htmlFor="allowedClasses">Classes Access</Label>
                 <Select
-                  value={formData.allowedClasses}
-                  onValueChange={(value) => handleSelectChange('allowedClasses', value as ClassType)}
+                  value={formData.allowedClasses ? formData.allowedClasses[0] : ClassType.BASIC_ONLY}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, allowedClasses: [value as ClassType] }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select class access" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    <SelectItem value="group-only">Group Classes Only</SelectItem>
-                    <SelectItem value="basic-only">Basic Classes Only</SelectItem>
+                    <SelectItem value={ClassType.ALL}>All Classes</SelectItem>
+                    <SelectItem value={ClassType.GROUP_ONLY}>Group Classes Only</SelectItem>
+                    <SelectItem value={ClassType.BASIC_ONLY}>Basic Classes Only</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -185,7 +182,7 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
               <Label htmlFor="benefits">Benefits (one per line)</Label>
               <Textarea
                 id="benefits"
-                value={formData.benefits.join('\n')}
+                value={(formData.benefits || []).join('\n')}
                 onChange={handleBenefitsChange}
                 rows={4}
               />
@@ -195,14 +192,14 @@ const MembershipPlanForm = ({ plan, onSave, onCancel }: MembershipPlanFormProps)
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleSelectChange('status', value as MembershipPlanStatus)}
+                onValueChange={(value) => handleSelectChange('status', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value={MembershipPlanStatus.ACTIVE}>Active</SelectItem>
+                  <SelectItem value={MembershipPlanStatus.INACTIVE}>Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -32,14 +32,14 @@ export const DashboardHeader = ({
   onMobileMenuToggle, 
   pendingNotificationsCount = 0 
 }: DashboardHeaderProps) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       navigate('/auth/login');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -48,18 +48,16 @@ export const DashboardHeader = ({
 
   // Handle user name and avatar display with fallbacks
   const getUserName = () => {
-    return user?.fullName || 
-           user?.user_metadata?.full_name || 
-           user?.email || 
-           'User';
+    if (user?.fullName) return user.fullName;
+    if (user?.name) return user.name;
+    if (user?.email) return user.email;
+    return 'User';
   };
 
   const getUserAvatar = () => {
-    return user?.avatarUrl || 
-           user?.avatar || 
-           user?.photoURL || 
-           user?.user_metadata?.avatar_url || 
-           '';
+    if (user?.avatar) return user.avatar;
+    if (user?.avatarUrl) return user.avatarUrl; 
+    return '';
   };
 
   const userInitials = getUserName()
