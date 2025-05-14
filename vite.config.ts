@@ -8,6 +8,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/proxy/hikvision': {
+        target: 'http://localhost:54321/functions/v1/hikvision-proxy',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/proxy\/hikvision/, '')
+      }
+    }
   },
   plugins: [
     react(),
