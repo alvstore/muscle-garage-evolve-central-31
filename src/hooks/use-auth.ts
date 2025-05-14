@@ -11,6 +11,13 @@ export interface User {
   avatar?: string;
   avatarUrl?: string;
   role?: string;
+  branch_id?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    role?: string;
+  };
+  photoURL?: string;
 }
 
 export interface AuthContextType {
@@ -19,6 +26,10 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   loading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
+  userRole?: string;
+  forgotPassword: (email: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +38,9 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   loading: false,
   error: null,
+  isAuthenticated: false,
+  forgotPassword: async () => false,
+  signOut: async () => {},
 });
 
 export const useAuth = () => {
@@ -39,8 +53,10 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -66,17 +82,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             throw userError;
           }
           
-          setUser({
+          const userWithMetadata: User = {
             id: session.user.id,
             email: session.user.email,
             fullName: userData?.full_name || session.user.email?.split('@')[0] || 'User',
             name: userData?.name || session.user.email?.split('@')[0] || 'User',
             avatar: userData?.avatar_url,
             avatarUrl: userData?.avatar_url,
+            photoURL: userData?.avatar_url,
             role: userData?.role || 'member',
-          });
+            branch_id: userData?.branch_id,
+            user_metadata: {
+              full_name: userData?.full_name,
+              avatar_url: userData?.avatar_url,
+              role: userData?.role
+            }
+          };
+          
+          setUser(userWithMetadata);
+          setUserRole(userData?.role);
+          setIsAuthenticated(true);
         } else {
           setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (error: any) {
         console.error('Error getting session:', error);
@@ -103,21 +131,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               throw userError;
             }
             
-            setUser({
+            const userWithMetadata: User = {
               id: session.user.id,
               email: session.user.email,
               fullName: userData?.full_name || session.user.email?.split('@')[0] || 'User',
               name: userData?.name || session.user.email?.split('@')[0] || 'User',
               avatar: userData?.avatar_url,
               avatarUrl: userData?.avatar_url,
+              photoURL: userData?.avatar_url,
               role: userData?.role || 'member',
-            });
+              branch_id: userData?.branch_id,
+              user_metadata: {
+                full_name: userData?.full_name,
+                avatar_url: userData?.avatar_url,
+                role: userData?.role
+              }
+            };
+            
+            setUser(userWithMetadata);
+            setUserRole(userData?.role);
+            setIsAuthenticated(true);
           } catch (error: any) {
             console.error('Error getting user data:', error);
             setError(error.message);
           }
         } else {
           setUser(null);
+          setIsAuthenticated(false);
         }
       }
     );
@@ -150,6 +190,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       setUser(null);
+      setIsAuthenticated(false);
     } catch (error: any) {
       console.error('Error logging out:', error);
       setError(error.message);
@@ -158,8 +199,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Alias for logout to maintain compatibility
+  const signOut = logout;
+
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
+      console.error('Error sending password reset:', error);
+      setError(error.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, error }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loading, 
+      error,
+      isAuthenticated,
+      userRole,
+      forgotPassword,
+      signOut
+    }}>
       {children}
     </AuthContext.Provider>
   );
