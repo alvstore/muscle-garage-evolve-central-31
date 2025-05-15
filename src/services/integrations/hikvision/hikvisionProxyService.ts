@@ -1,6 +1,6 @@
 
 import api from '../api';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Service for proxying requests to the Hikvision Partner Pro API
@@ -51,9 +51,27 @@ class HikvisionProxyService {
       }
 
       // Validate response format
-      if (!response.data || typeof response.data !== 'object') {
+      if (!response.data) {
+        console.error('Empty response from Hikvision API');
+        throw new Error('Empty response from Hikvision API');
+      }
+      
+      // Check if the response is HTML instead of JSON
+      if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE html>')) {
+        console.error('Received HTML response instead of JSON from Hikvision API');
+        throw new Error('Invalid response format from Hikvision API (received HTML instead of JSON)');
+      }
+
+      // Check if response data is not an object (might be a string or other type)
+      if (typeof response.data !== 'object') {
         console.error('Invalid response format from Hikvision API:', response.data);
-        throw new Error('Invalid response from Hikvision API');
+        try {
+          // Try to parse string response as JSON
+          const parsedData = JSON.parse(response.data);
+          return parsedData;
+        } catch (parseError) {
+          throw new Error('Invalid JSON response from Hikvision API');
+        }
       }
 
       return response.data;

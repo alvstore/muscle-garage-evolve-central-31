@@ -31,7 +31,12 @@ export function useToast() {
 
 // Export a compatible toast function 
 export const toast = {
-  // Standard toast
+  // Standard toast method
+  default: (title: string, options?: any) => {
+    return sonnerToast(title, options);
+  },
+  
+  // Variants
   success: (title: string, options?: any) => {
     return sonnerToast.success(title, options);
   },
@@ -56,5 +61,3 @@ export const toast = {
     return sonnerToast.error(title, options);
   }
 };
-
-export default { useToast, toast };

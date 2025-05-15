@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { getHikvisionToken } from '@/services/hikvisionTokenService';
 import { HikvisionCredentials } from '@/types/integrations';
 
@@ -23,7 +23,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
   const [settings, setSettings] = useState<HikvisionSettings | null>(null);
 
   // Fetch the current settings
-  const fetchSettings = async (branch?: string): Promise<HikvisionSettings | null> => {
+  const fetchSettings = useCallback(async (branch?: string): Promise<HikvisionSettings | null> => {
     try {
       setIsLoading(true);
       const targetBranchId = branch || branchId;
@@ -60,16 +60,16 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       
       setSettings(formattedSettings);
       return formattedSettings;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in fetchSettings:', error);
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [branchId]);
 
   // Save settings
-  const saveSettings = async (settings: HikvisionCredentials, branch?: string): Promise<boolean> => {
+  const saveSettings = async (credentials: HikvisionCredentials, branch?: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const targetBranchId = branch || branchId;
@@ -79,7 +79,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
         return false;
       }
       
-      const { apiUrl, appKey, secretKey } = settings;
+      const { apiUrl, appKey, secretKey } = credentials;
       
       if (!apiUrl || !appKey || !secretKey) {
         toast.error('Missing required credential fields');
@@ -87,7 +87,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       }
       
       // First test the connection
-      const testResult = await testConnection(settings, targetBranchId);
+      const testResult = await testConnection(credentials, targetBranchId);
       
       if (!testResult.success) {
         toast.error(`Connection test failed: ${testResult.message}`);
@@ -118,7 +118,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       toast.success('Hikvision settings saved successfully');
       await fetchSettings(targetBranchId);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in saveSettings:', error);
       toast.error('An unexpected error occurred');
       return false;
@@ -166,6 +166,16 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       }
       
       console.log('Hikvision test response:', data);
+      
+      // Check if we received HTML instead of JSON
+      if (data && data.responseText && typeof data.responseText === 'string' && 
+          data.responseText.includes('<!DOCTYPE html>')) {
+        setIsConnected(false);
+        return { 
+          success: false, 
+          message: 'Received HTML instead of JSON. Please check the API URL and credentials.' 
+        };
+      }
       
       if (!data || (data.code !== '0' && data.errorCode !== '0')) {
         const errorMsg = data?.msg || data?.message || 'Unknown error';

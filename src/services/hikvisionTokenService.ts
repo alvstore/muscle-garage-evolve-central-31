@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import axios from 'axios';
+import { toast } from '@/hooks/use-toast';
 
 // Table to store tokens
 const HIKVISION_TOKENS_TABLE = 'hikvision_tokens';
@@ -82,6 +83,12 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
       
       console.log('Edge function response:', edgeData);
       
+      // Check if we received HTML instead of JSON
+      if (edgeData && edgeData.responseText && typeof edgeData.responseText === 'string' && 
+          edgeData.responseText.includes('<!DOCTYPE html>')) {
+        throw new Error('Received HTML instead of JSON from API. Check the API URL and credentials.');
+      }
+      
       if (edgeData && (edgeData.code === '0' || edgeData.errorCode === '0') && edgeData.data) {
         return handleTokenResponse(edgeData, branchId);
       }
@@ -103,6 +110,14 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
         timeout: 10000 // 10 seconds timeout
       });
       
+      // Check content type to make sure we got JSON
+      const contentType = response.headers['content-type'];
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Received non-JSON response:', response.data);
+        toast.error('API returned an invalid response format. Please check the API URL.');
+        return null;
+      }
+      
       console.log('Token direct API response:', response.data);
       return handleTokenResponse(response.data, branchId);
     } catch (axiosError: any) {
@@ -110,11 +125,18 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
       if (axiosError.response) {
         console.error('Response data:', axiosError.response.data);
         console.error('Response status:', axiosError.response.status);
+        
+        // Check if the response might be HTML
+        if (typeof axiosError.response.data === 'string' && 
+            axiosError.response.data.includes('<!DOCTYPE html>')) {
+          toast.error('Received HTML instead of JSON from API. Check the API URL and credentials.');
+        }
       }
       return null;
     }
   } catch (error: any) {
     console.error('Error in getHikvisionToken:', error);
+    toast.error(`Error getting token: ${error.message}`);
     return null;
   }
 };
@@ -126,6 +148,7 @@ async function handleTokenResponse(responseData: TokenResponse, branchId: string
   try {
     if ((responseData.code !== '0' && responseData.errorCode !== '0') || !responseData.data) {
       console.error('Error getting Hikvision token:', responseData);
+      toast.error(`API error: ${responseData.msg || 'Unknown error'}`);
       return null;
     }
     
@@ -149,8 +172,9 @@ async function handleTokenResponse(responseData: TokenResponse, branchId: string
     }
     
     return accessToken;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error handling token response:', error);
+    toast.error(`Error processing token: ${error.message}`);
     return null;
   }
 }
