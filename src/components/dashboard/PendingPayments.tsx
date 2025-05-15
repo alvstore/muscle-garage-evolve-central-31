@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO } from "date-fns";
 import { Payment } from "@/types/dashboard";
+import { formatCurrency } from '@/utils/stringUtils';
 
 interface PendingPaymentsProps {
   payments: Payment[];
@@ -71,7 +72,7 @@ const PendingPayments = ({ payments }: PendingPaymentsProps) => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">${payment.amount}</span>
+                  <span className="text-sm font-medium">{formatCurrency(payment.amount)}</span>
                   <Button variant="secondary" size="sm">
                     Remind
                   </Button>

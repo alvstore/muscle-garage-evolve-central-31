@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Clock, DollarSign, Calendar } from "lucide-react";
 import { DashboardSummary } from '@/hooks/use-dashboard';
+import { formatCurrency } from '@/utils/stringUtils';
 
 interface StaffStatsOverviewProps {
   isLoading: boolean;
@@ -10,15 +11,6 @@ interface StaffStatsOverviewProps {
 }
 
 const StaffStatsOverview: React.FC<StaffStatsOverviewProps> = ({ isLoading, dashboardData }) => {
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
   
   if (isLoading) {
     return (
