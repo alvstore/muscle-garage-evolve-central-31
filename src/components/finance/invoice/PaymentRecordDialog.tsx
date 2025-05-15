@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -216,7 +215,7 @@ const PaymentRecordDialog = ({
                 </Select>
               </div>
               
-              {paymentMethod === "razorpay" && (
+              {paymentMethod === 'razorpay' && (
                 <div className="p-3 bg-blue-50 rounded-md text-sm">
                   <p>This will generate a payment link that can be sent to the customer.</p>
                 </div>

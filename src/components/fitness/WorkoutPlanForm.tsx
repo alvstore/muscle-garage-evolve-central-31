@@ -37,18 +37,21 @@ export function WorkoutPlanForm({
   });
 
   function createEmptyWorkoutDay(): WorkoutDay {
+    const id = uuidv4();
     return {
-      id: uuidv4(),
+      id: id,
       name: '',
       description: '',
-      exercises: [createEmptyExercise()]
+      workout_plan_id: '', // Will be set when saving
+      exercises: [createEmptyExercise(id)]
     };
   }
 
-  function createEmptyExercise(): Exercise {
+  function createEmptyExercise(dayId: string): Exercise {
     return {
       id: uuidv4(),
       name: '',
+      workout_day_id: dayId, // Set to the parent workout day id
       sets: 3,
       reps: 10
     };
@@ -84,7 +87,7 @@ export function WorkoutPlanForm({
     const updatedWorkoutDays = [...formData.workout_days];
     updatedWorkoutDays[dayIndex] = {
       ...updatedWorkoutDays[dayIndex],
-      exercises: [...updatedWorkoutDays[dayIndex].exercises, createEmptyExercise()]
+      exercises: [...updatedWorkoutDays[dayIndex].exercises, createEmptyExercise(updatedWorkoutDays[dayIndex].id)]
     };
     setFormData({
       ...formData,

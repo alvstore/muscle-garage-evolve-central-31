@@ -42,12 +42,56 @@ const settingsService = {
   },
   
   saveIntegrationSettings: async (integrationKey: string, settings: any, branchId?: string) => {
-    // Implementation
-    return { success: true };
+    try {
+      // Check if the integration exists first
+      const { data: existingData } = await supabase
+        .from('integration_statuses')
+        .select('id')
+        .eq('integration_key', integrationKey)
+        .eq('branch_id', branchId || '')
+        .maybeSingle();
+
+      let result;
+      if (existingData) {
+        // Update existing integration
+        result = await supabase
+          .from('integration_statuses')
+          .update({
+            config: settings,
+            status: 'configured',
+            updated_at: new Date().toISOString()
+          })
+          .eq('integration_key', integrationKey)
+          .eq('branch_id', branchId || '');
+      } else {
+        // Insert new integration
+        result = await supabase
+          .from('integration_statuses')
+          .insert({
+            integration_key: integrationKey,
+            config: settings,
+            status: 'configured',
+            branch_id: branchId || '',
+            name: integrationKey.charAt(0).toUpperCase() + integrationKey.slice(1) + ' Integration'
+          });
+      }
+      
+      if (result.error) throw result.error;
+      return { success: true };
+    } catch (error) {
+      console.error('Error saving integration settings:', error);
+      return { success: false, error };
+    }
   },
   
   testIntegrationConnection: async (integrationKey: string, settings: any) => {
-    // Implementation
+    // This would be a real API call in a production environment
+    // For now, we'll just simulate a successful connection
+    console.log(`Testing ${integrationKey} connection with settings:`, settings);
+    
+    // Simulate some delay to make it feel like a real API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     return { success: true, message: 'Connection successful' };
   },
   

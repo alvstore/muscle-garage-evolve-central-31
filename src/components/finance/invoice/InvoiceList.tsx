@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,13 +11,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Invoice, InvoiceStatus } from '@/types/finance';
 
 const statusColors: Record<InvoiceStatus, string> = {
+  'draft': 'bg-gray-100 text-gray-800',
+  'sent': 'bg-blue-100 text-blue-800',
   'paid': 'bg-green-100 text-green-800',
-  'pending': 'bg-yellow-100 text-yellow-800',
   'overdue': 'bg-red-100 text-red-800',
   'cancelled': 'bg-gray-100 text-gray-800',
-  'draft': 'bg-blue-100 text-blue-800',
-  'sent': 'bg-purple-100 text-purple-800',
-  'partially_paid': 'bg-indigo-100 text-indigo-800'
+  'pending': 'bg-yellow-100 text-yellow-800',
+  'partially_paid': 'bg-emerald-100 text-emerald-800'
 };
 
 interface InvoiceListProps {

@@ -49,12 +49,19 @@ export interface ReminderRule {
   title: string;
   description?: string;
   trigger_type: string;
+  triggerType?: string; // For backward compatibility
   trigger_value?: number;
+  triggerValue?: number; // For backward compatibility
   message?: string;
   notification_channel?: string;
   send_via: string[];
+  sendVia?: string[]; // For backward compatibility
+  channels?: string[]; // For backward compatibility
   is_active: boolean;
+  isActive?: boolean; // For backward compatibility
+  active?: boolean; // For backward compatibility
   target_roles: string[];
+  targetRoles?: string[]; // For backward compatibility
   conditions: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -83,6 +90,9 @@ export interface Announcement {
   branchId?: string;
   branch_id?: string;
 }
+
+// Export InvoiceStatus from finance.ts here for components that need it
+export { InvoiceStatus } from './finance';
 
 // Invoice for notifications - simpler version of finance Invoice
 export interface Invoice {
@@ -137,12 +147,19 @@ export const adaptReminderRuleFromDB = (data: any): ReminderRule => {
     title: data.title,
     description: data.description,
     trigger_type: data.trigger_type,
+    triggerType: data.trigger_type, // For backward compatibility
     trigger_value: data.trigger_value,
+    triggerValue: data.trigger_value, // For backward compatibility
     message: data.message,
     notification_channel: data.notification_channel,
     send_via: data.send_via || [],
+    sendVia: data.send_via || [], // For backward compatibility
+    channels: data.send_via || [], // For backward compatibility
     is_active: data.is_active,
+    isActive: data.is_active, // For backward compatibility
+    active: data.is_active, // For backward compatibility
     target_roles: data.target_roles || [],
+    targetRoles: data.target_roles || [], // For backward compatibility
     conditions: data.conditions || {},
     created_at: data.created_at,
     updated_at: data.updated_at

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -69,14 +68,14 @@ export const useReminderRules = () => {
       const dbRule = {
         title: rule.title,
         description: rule.description,
-        trigger_type: rule.trigger_type || rule.triggerType,
-        trigger_value: rule.trigger_value || rule.triggerValue,
+        trigger_type: rule.trigger_type,
+        trigger_value: rule.trigger_value,
         conditions: rule.conditions || {},
         message: rule.message,
-        notification_channel: rule.notification_channel || rule.notificationChannel,
-        is_active: rule.is_active ?? rule.isActive ?? rule.active ?? true,
-        send_via: rule.send_via || rule.sendVia || rule.channels || [],
-        target_roles: rule.target_roles || rule.targetRoles || []
+        notification_channel: rule.notification_channel,
+        is_active: rule.is_active,
+        send_via: rule.send_via,
+        target_roles: rule.target_roles
       };
 
       let response;

@@ -42,16 +42,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <CardContent className="space-y-4">
           <InvoiceMemberFields
             memberId={formData.member_id}
-            memberName={formData.member_name}
+            memberName={formData.memberName}
             onChange={handleChange}
           />
           
           <InvoiceDetailsFields
-            description={formData.description}
+            description={formData.description || ''}
             amount={formData.amount}
             status={formData.status}
-            dueDate={formData.due_date}
-            paymentMethod={formData.payment_method}
+            dueDate={formData.dueDate}
+            paymentMethod={formData.payment_method || ''}
             onChange={handleChange}
             onStatusChange={handleStatusChange}
             onPaymentMethodChange={handlePaymentMethodChange}
