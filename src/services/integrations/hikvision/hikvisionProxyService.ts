@@ -33,6 +33,8 @@ class HikvisionProxyService {
       // Construct full URL
       const url = `${this.baseUrl}${endpoint}`;
 
+      console.log(`Sending ${method} request to ${url}`, data);
+
       let response;
       switch (method) {
         case 'GET':
@@ -46,6 +48,12 @@ class HikvisionProxyService {
           break;
         default: // POST
           response = await api.post(url, data, requestConfig);
+      }
+
+      // Validate response format
+      if (!response.data || typeof response.data !== 'object') {
+        console.error('Invalid response format from Hikvision API:', response.data);
+        throw new Error('Invalid response from Hikvision API');
       }
 
       return response.data;
@@ -69,7 +77,7 @@ class HikvisionProxyService {
   async testProxyConnection(): Promise<boolean> {
     try {
       const response = await api.get(`${this.baseUrl}/status`);
-      return response.data.success === true;
+      return response.data?.success === true;
     } catch (error) {
       console.error('Hikvision proxy connection test failed:', error);
       return false;

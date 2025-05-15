@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -33,10 +32,11 @@ serve(async (req) => {
       offset,
       eventTypes,
       topics,
-      maxReturnNum
+      maxReturnNum,
+      branchId
     } = requestData
     
-    console.log(`Processing ${action} request`)
+    console.log(`Processing ${action} request for branch: ${branchId || 'unknown'}`)
     
     // Create a Supabase client with the Auth context of the user that called the function
     const supabaseClient = createClient(
@@ -48,7 +48,7 @@ serve(async (req) => {
     // Get user data to verify permissions
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: userError }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       })
@@ -64,7 +64,7 @@ serve(async (req) => {
       ),
       status: 'pending',
       created_at: new Date().toISOString()
-    }).select()
+    })
     
     // Handle different actions
     switch (action) {
@@ -72,62 +72,159 @@ serve(async (req) => {
         // Get token from Hikvision API
         console.log(`Getting token from ${apiUrl}/api/hpcgw/v1/token/get`)
         
-        const response = await fetch(`${apiUrl}/api/hpcgw/v1/token/get`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ appKey, secretKey }),
-        })
-        
-        const responseText = await response.text()
-        console.log(`Hikvision token response status: ${response.status}`)
-        
         try {
-          const data = JSON.parse(responseText)
+          const response = await fetch(`${apiUrl}/api/hpcgw/v1/token/get`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ appKey, secretKey }),
+          })
+          
+          console.log(`Hikvision token response status: ${response.status}`)
+          
+          // Check if response is JSON
+          const contentType = response.headers.get('content-type')
+          if (!contentType || !contentType.includes('application/json')) {
+            const responseText = await response.text()
+            console.error('Received non-JSON response:', responseText.substring(0, 200))
+            
+            // Save error in database
+            await supabaseClient.from('hikvision_sync_log').insert({
+              branch_id: branchId || null,
+              event_type: 'error',
+              message: 'Invalid API response: Not JSON',
+              details: responseText.substring(0, 1000),
+              status: 'failed',
+              created_at: new Date().toISOString()
+            })
+            
+            return new Response(JSON.stringify({ 
+              code: 'ERROR',
+              msg: 'Invalid API response: Not JSON',
+              error: 'INVALID_RESPONSE_FORMAT'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            })
+          }
+          
+          // Parse JSON response
+          const data = await response.json()
           console.log(`Hikvision token response: ${JSON.stringify(data, null, 2)}`)
+          
+          // Save successful response
+          if (data.code === '0') {
+            await supabaseClient.from('hikvision_sync_log').insert({
+              branch_id: branchId || null,
+              event_type: 'success',
+              message: 'Token retrieved successfully',
+              details: JSON.stringify({ tokenReceived: true }),
+              status: 'complete',
+              created_at: new Date().toISOString()
+            })
+          } else {
+            // Save error in database
+            await supabaseClient.from('hikvision_sync_log').insert({
+              branch_id: branchId || null,
+              event_type: 'error',
+              message: `API error: ${data.msg || 'Unknown error'}`,
+              details: JSON.stringify(data),
+              status: 'failed',
+              created_at: new Date().toISOString()
+            })
+          }
           
           return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: response.status,
+            status: 200,
           })
         } catch (e) {
-          console.error(`Error parsing token response: ${e.message}`)
-          console.error(`Raw response: ${responseText}`)
+          console.error(`Error in token action: ${e.message}`)
+          
+          // Save error in database
+          await supabaseClient.from('hikvision_sync_log').insert({
+            branch_id: branchId || null,
+            event_type: 'error',
+            message: `Error in token action: ${e.message}`,
+            details: e.stack,
+            status: 'failed',
+            created_at: new Date().toISOString()
+          })
           
           return new Response(JSON.stringify({ 
-            error: 'Failed to parse token response',
-            rawResponse: responseText,
-            errorCode: 'PARSE_ERROR'
+            code: 'ERROR',
+            msg: `Error in token action: ${e.message}`,
+            error: 'INTERNAL_ERROR'
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500,
+            status: 200,
           })
         }
       }
       
       case 'test-device': {
         // Test device connection using Hikvision API
-        console.log(`Testing device connection for deviceId: ${deviceId}`)
+        console.log(`Testing device connection for deviceId: ${deviceId || deviceSn}`)
         
-        const response = await fetch(`${apiUrl}/api/hpcgw/v1/device/status`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ deviceId: deviceId || deviceSn }),
-        })
+        // Check if we have a valid access token
+        if (!accessToken) {
+          return new Response(JSON.stringify({ 
+            code: 'ERROR',
+            msg: 'Access token not found. Please test API connection first.'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
         
-        const data = await response.json()
-        console.log(`Hikvision device test response: ${JSON.stringify(data, null, 2)}`)
-        
-        return new Response(JSON.stringify(data), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: response.status,
-        })
+        try {
+          const response = await fetch(`${apiUrl}/api/hpcgw/v1/device/status`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ deviceId: deviceId || deviceSn }),
+          })
+          
+          // Check if response is JSON
+          const contentType = response.headers.get('content-type')
+          if (!contentType || !contentType.includes('application/json')) {
+            const responseText = await response.text()
+            console.error('Received non-JSON response:', responseText.substring(0, 200))
+            
+            return new Response(JSON.stringify({ 
+              code: 'ERROR',
+              msg: 'Invalid API response: Not JSON',
+              error: 'INVALID_RESPONSE_FORMAT'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            })
+          }
+          
+          const data = await response.json()
+          console.log(`Hikvision device test response: ${JSON.stringify(data, null, 2)}`)
+          
+          return new Response(JSON.stringify(data), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        } catch (e) {
+          console.error(`Error testing device: ${e.message}`)
+          
+          return new Response(JSON.stringify({ 
+            code: 'ERROR',
+            msg: `Error testing device: ${e.message}`,
+            error: 'DEVICE_TEST_ERROR'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
       }
       
       case 'test-local-device': {

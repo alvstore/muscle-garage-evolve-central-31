@@ -1,94 +1,75 @@
 
-// Lead Status and Funnel Stage enums
-export enum LeadStatus {
-  NEW = 'new',
-  CONTACTED = 'contacted',
-  QUALIFIED = 'qualified',
-  PROPOSAL = 'proposal',
-  NEGOTIATION = 'negotiation',
-  WON = 'won',
-  LOST = 'lost',
-  DORMANT = 'dormant'
+// CRM types
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived' | 'converted';
+
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
+
+export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'email' | 'other';
+
+export type FollowUpType = 'email' | 'phone' | 'meeting' | 'other';
+
+export type FollowUpStatus = 'scheduled' | 'completed' | 'overdue' | 'cancelled';
+
+export interface Lead {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  source: LeadSource;
+  status: LeadStatus;
+  funnel_stage: FunnelStage;
+  assigned_to?: string;
+  branch_id?: string;
+  conversion_value?: number;
+  conversion_date?: string;
+  last_contact_date?: string;
+  follow_up_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  notes?: string;
+  tags?: string[];
+  interests?: string[];
 }
-
-export enum FunnelStage {
-  LEAD = 'lead',
-  PROSPECT = 'prospect',
-  OPPORTUNITY = 'opportunity',
-  CUSTOMER = 'customer',
-  LOST = 'lost'
-}
-
-// Follow-up related types
-export type FollowUpType = 'email' | 'call' | 'meeting' | 'sms' | 'whatsapp';
-
-export type FollowUpStatus = 'scheduled' | 'sent' | 'failed' | 'cancelled';
 
 export interface FollowUpTemplate {
   id: string;
-  title: string;
   name: string;
+  title: string;
   type: FollowUpType;
   content: string;
   variables: string[];
   created_at: string;
   updated_at: string;
+  created_by?: string;
   isDefault?: boolean;
 }
 
 export interface FollowUpScheduled {
   id: string;
   lead_id: string;
-  scheduled_at: string;
+  template_id?: string;
+  subject?: string;
   content: string;
   type: FollowUpType;
   status: FollowUpStatus;
-  template_id?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  lead?: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-}
-
-export interface FollowUpHistory {
-  id: string;
-  lead_id: string;
-  follow_up_type: FollowUpType;
-  notes: string;
-  created_by: string;
-  created_at: string;
-  contact_medium?: string;
+  scheduled_at: string;
   response?: string;
-  next_follow_up?: string;
-  scheduled_id?: string;
+  response_at?: string;
+  sent_by?: string;
+  sent_at?: string;
 }
 
-export interface Lead {
-  id: string;
+export interface LeadData {
+  id: string; 
   name: string;
   email: string;
   phone: string;
-  source: string;
-  status: LeadStatus;
-  funnel_stage: FunnelStage;
-  assigned_to?: string;
-  created_at: string;
-  updated_at: string;
-  notes?: string;
-  interested_in?: string[];
-  branch_id: string;
-  last_contact?: string;
-  next_follow_up?: string;
-  budget?: number;
-  probability?: number;
-  tags?: string[];
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
+}
+
+export interface AssignedStaff {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  role?: string;
+  email?: string;
 }

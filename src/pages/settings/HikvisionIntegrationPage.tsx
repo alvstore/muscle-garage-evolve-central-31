@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,123 +13,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, RefreshCw, Clock, UserCheck, Lock, Download, UploadCloud, Server, Shield } from 'lucide-react';
-import { hikvisionService, HikvisionCredentials, HikvisionEvent } from '@/services/integrations/hikvisionService';
 import { usePermissions } from '@/hooks/use-permissions';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import HikvisionDeviceManager from '@/components/integrations/HikvisionDeviceManager';
 import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
+import { useBranch } from '@/hooks/use-branch';
+import { useHikvision } from '@/hooks/use-hikvision';
 
 const hikvisionCredentialsSchema = z.object({
   apiUrl: z.string().url({ message: "Please enter a valid API URL" }),
-  clientId: z.string().min(1, { message: "Client ID is required" }),
-  clientSecret: z.string().min(1, { message: "Client Secret is required" }),
+  appKey: z.string().min(1, { message: "App Key is required" }),
+  secretKey: z.string().min(1, { message: "Secret Key is required" }),
 });
 
 const HikvisionIntegrationPage = () => {
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'testing'>('disconnected');
-  const [autoSync, setAutoSync] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [events, setEvents] = useState<HikvisionEvent[]>([]);
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [attendanceProcessed, setAttendanceProcessed] = useState(0);
-  const { can } = usePermissions();
   const [activeTab, setActiveTab] = useState('settings');
   const [errorLogs, setErrorLogs] = useState<Array<{time: string, message: string, code: string}>>([]);
+  const [autoSync, setAutoSync] = useState(false);
+  const { can } = usePermissions();
+  const { currentBranch } = useBranch();
+  
+  const { 
+    isLoading, 
+    isConnected, 
+    settings, 
+    fetchSettings, 
+    saveSettings, 
+    testConnection 
+  } = useHikvision({ 
+    branchId: currentBranch?.id 
+  });
 
-  const form = useForm<HikvisionCredentials>({
+  const form = useForm<z.infer<typeof hikvisionCredentialsSchema>>({
     resolver: zodResolver(hikvisionCredentialsSchema),
     defaultValues: {
       apiUrl: '',
-      clientId: '',
-      clientSecret: '',
+      appKey: '',
+      secretKey: '',
     },
   });
 
   useEffect(() => {
-    const savedCredentials = localStorage.getItem('hikvisionCredentials');
-    if (savedCredentials) {
-      try {
-        const parsed = JSON.parse(savedCredentials);
-        form.reset(parsed);
-        testConnection(parsed);
-      } catch (error) {
-        console.error('Failed to parse saved credentials:', error);
-        setErrorLogs(prev => [...prev, {
-          time: new Date().toISOString(),
-          message: 'Failed to parse saved credentials',
-          code: 'CONFIG_PARSE_ERROR'
-        }]);
-      }
+    if (currentBranch?.id) {
+      fetchSettings().then(settings => {
+        if (settings) {
+          form.reset({
+            apiUrl: settings.apiUrl,
+            appKey: settings.appKey,
+            secretKey: settings.appSecret,
+          });
+          
+          // Set connected state based on existing settings
+          if (isConnected === null) {
+            testConnection({
+              apiUrl: settings.apiUrl,
+              appKey: settings.appKey,
+              secretKey: settings.appSecret,
+            });
+          }
+        }
+      });
     }
-    
-    setErrorLogs([
-      {
-        time: new Date(Date.now() - 86400000).toISOString(),
-        message: 'Failed to connect to device AC2023002',
-        code: 'CONNECTION_TIMEOUT'
-      },
-      {
-        time: new Date(Date.now() - 43200000).toISOString(),
-        message: 'Authentication failed for API request',
-        code: 'AUTH_ERROR'
-      },
-      {
-        time: new Date(Date.now() - 3600000).toISOString(),
-        message: 'Invalid webhook payload format',
-        code: 'WEBHOOK_FORMAT_ERROR'
-      }
-    ]);
-  }, []);
+  }, [currentBranch?.id]);
 
-  const testConnection = async (credentials: HikvisionCredentials) => {
-    setConnectionStatus('testing');
-    try {
-      const success = await hikvisionService.testConnection(credentials);
-      if (success) {
-        setConnectionStatus('connected');
-        toast.success('Successfully connected to Hikvision API');
-        return true;
-      } else {
-        setConnectionStatus('disconnected');
-        toast.error('Failed to connect to Hikvision API');
-        
-        setErrorLogs(prev => [...prev, {
-          time: new Date().toISOString(),
-          message: 'API connection test failed',
-          code: 'CONNECTION_FAILED'
-        }]);
-        
-        return false;
-      }
-    } catch (error: any) {
-      console.error('Connection test error:', error);
-      setConnectionStatus('disconnected');
-      toast.error('Error testing connection to Hikvision API');
+  const handleTestConnection = async () => {
+    const formData = form.getValues();
+    const result = await testConnection(formData);
+    
+    if (result.success) {
+      toast.success('Successfully connected to Hikvision API');
+    } else {
+      toast.error(`Connection test failed: ${result.message}`);
       
       setErrorLogs(prev => [...prev, {
         time: new Date().toISOString(),
-        message: error.message || 'Unknown connection error',
-        code: error.code || 'API_ERROR'
+        message: result.message || 'Connection test failed',
+        code: 'CONNECTION_FAILED'
       }]);
-      
-      return false;
     }
   };
 
-  const onSubmit = async (data: HikvisionCredentials) => {
-    try {
-      const success = await testConnection(data);
-      if (success) {
-        localStorage.setItem('hikvisionCredentials', JSON.stringify(data));
-      }
-    } catch (error: any) {
-      console.error('Submit error:', error);
-      toast.error('An unexpected error occurred while saving credentials');
-      
+  const onSubmit = async (data: z.infer<typeof hikvisionCredentialsSchema>) => {
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch');
+      return;
+    }
+    
+    const success = await saveSettings(data);
+    
+    if (!success) {
       setErrorLogs(prev => [...prev, {
         time: new Date().toISOString(),
-        message: error.message || 'Unexpected error during credential save',
-        code: error.code || 'SAVE_ERROR'
+        message: 'Failed to save Hikvision settings',
+        code: 'SAVE_FAILED'
       }]);
     }
   };
@@ -145,6 +122,19 @@ const HikvisionIntegrationPage = () => {
     setErrorLogs([]);
     toast.success('Error logs cleared');
   };
+
+  if (!currentBranch?.id) {
+    return (
+      <div className="container py-6 mx-auto">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <h2 className="text-xl font-semibold">No Branch Selected</h2>
+            <p className="text-muted-foreground mt-2">Please select a branch to configure Hikvision integration</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6">
@@ -180,11 +170,11 @@ const HikvisionIntegrationPage = () => {
               <CardContent>
                 <div className="mb-6 flex items-center space-x-2">
                   <div className="font-medium">Connection Status:</div>
-                  {connectionStatus === 'connected' ? (
+                  {isConnected === true ? (
                     <Badge variant="outline" className="flex items-center gap-1 bg-green-100 text-green-800">
                       <CheckCircle className="h-4 w-4" /> Connected
                     </Badge>
-                  ) : connectionStatus === 'testing' ? (
+                  ) : isLoading ? (
                     <Badge variant="outline" className="flex items-center gap-1">
                       <RefreshCw className="h-4 w-4 animate-spin" /> Testing Connection
                     </Badge>
@@ -216,12 +206,12 @@ const HikvisionIntegrationPage = () => {
 
                     <FormField
                       control={form.control}
-                      name="clientId"
+                      name="appKey"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client ID</FormLabel>
+                          <FormLabel>App Key</FormLabel>
                           <FormControl>
-                            <Input placeholder="client-id" {...field} />
+                            <Input placeholder="Your Hikvision App Key" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -230,10 +220,10 @@ const HikvisionIntegrationPage = () => {
 
                     <FormField
                       control={form.control}
-                      name="clientSecret"
+                      name="secretKey"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Secret</FormLabel>
+                          <FormLabel>Secret Key</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>
@@ -243,19 +233,18 @@ const HikvisionIntegrationPage = () => {
                     />
 
                     <div className="flex items-center space-x-2">
-                      <Button type="submit" disabled={connectionStatus === 'testing'}>
-                        {connectionStatus === 'connected' ? 'Update Connection' : 'Connect to Hikvision'}
+                      <Button type="submit" disabled={isLoading}>
+                        {isConnected === true ? 'Update Connection' : 'Connect to Hikvision'}
                       </Button>
                       
-                      {connectionStatus === 'connected' && (
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => testConnection(form.getValues())}
-                        >
-                          Test Connection
-                        </Button>
-                      )}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleTestConnection}
+                        disabled={isLoading}
+                      >
+                        Test Connection
+                      </Button>
                     </div>
                   </form>
                 </Form>
@@ -281,7 +270,7 @@ const HikvisionIntegrationPage = () => {
                     <Switch 
                       checked={autoSync} 
                       onCheckedChange={setAutoSync} 
-                      disabled={connectionStatus !== 'connected'} 
+                      disabled={isConnected !== true} 
                     />
                   </div>
 

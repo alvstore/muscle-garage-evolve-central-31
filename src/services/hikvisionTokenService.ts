@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import axios from 'axios';
 
@@ -5,12 +6,14 @@ import axios from 'axios';
 const HIKVISION_TOKENS_TABLE = 'hikvision_tokens';
 
 interface TokenResponse {
+  code?: string;
+  errorCode?: string;
+  msg?: string;
   data?: {
     accessToken: string;
     expireTime: number;
     areaDomain: string;
   };
-  errorCode: string;
 }
 
 /**
@@ -47,7 +50,7 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
       .maybeSingle();
     
     if (settingsError || !apiSettings) {
-      console.error('Error fetching Hikvision API settings:', settingsError);
+      console.error('Error fetching Hikvision API settings:', settingsError || 'No active settings found');
       return null;
     }
     
@@ -59,20 +62,16 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
     };
     
     console.log('Requesting new Hikvision token from:', tokenUrl);
-    console.log('Token request data:', JSON.stringify(requestData));
     
     try {
       // Try using the edge function first
       console.log('Attempting to use edge function for token request');
       const { data: edgeData, error: edgeError } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
-          url: tokenUrl,
-          method: 'POST',
-          data: requestData,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+          action: 'token',
+          apiUrl: apiSettings.api_url,
+          appKey: apiSettings.app_key,
+          secretKey: apiSettings.app_secret
         }
       });
       
@@ -83,28 +82,38 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
       
       console.log('Edge function response:', edgeData);
       
-      if (edgeData && edgeData.data) {
+      if (edgeData && (edgeData.code === '0' || edgeData.errorCode === '0') && edgeData.data) {
         return handleTokenResponse(edgeData, branchId);
       }
       
       // If edge function doesn't work, try direct API call
-      console.log('Edge function failed, trying direct API call');
+      console.log('Edge function returned invalid response, trying direct API call');
     } catch (edgeErr) {
       console.warn('Edge function failed:', edgeErr);
       console.log('Falling back to direct API call');
     }
     
     // Direct API call as fallback
-    const response = await axios.post<TokenResponse>(tokenUrl, requestData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+    try {
+      const response = await axios.post<TokenResponse>(tokenUrl, requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 10000 // 10 seconds timeout
+      });
+      
+      console.log('Token direct API response:', response.data);
+      return handleTokenResponse(response.data, branchId);
+    } catch (axiosError: any) {
+      console.error('Direct API call failed:', axiosError.message);
+      if (axiosError.response) {
+        console.error('Response data:', axiosError.response.data);
+        console.error('Response status:', axiosError.response.status);
       }
-    });
-    
-    console.log('Token response:', response.data);
-    return handleTokenResponse(response.data, branchId);
-  } catch (error) {
+      return null;
+    }
+  } catch (error: any) {
     console.error('Error in getHikvisionToken:', error);
     return null;
   }
@@ -115,7 +124,7 @@ export const getHikvisionToken = async (branchId: string): Promise<string | null
  */
 async function handleTokenResponse(responseData: TokenResponse, branchId: string): Promise<string | null> {
   try {
-    if (responseData.errorCode !== '0' || !responseData.data) {
+    if ((responseData.code !== '0' && responseData.errorCode !== '0') || !responseData.data) {
       console.error('Error getting Hikvision token:', responseData);
       return null;
     }
