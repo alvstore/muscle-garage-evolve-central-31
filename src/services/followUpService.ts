@@ -112,4 +112,5 @@ export const followUpService = {
   }
 };
 
+// Export as default for backward compatibility
 export default followUpService;

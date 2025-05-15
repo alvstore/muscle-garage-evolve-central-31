@@ -12,5 +12,5 @@ export * from './use-company';
 export * from './use-leads';
 
 // Fix for default exports - if any hooks are exported as default, export them explicitly here
-// For example:
-// export { default as useAuth } from './use-auth';
+export { default as leadService } from '@/services/leadService';
+export { default as followUpService } from '@/services/followUpService';

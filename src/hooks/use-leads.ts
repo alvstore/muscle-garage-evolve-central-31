@@ -1,80 +1,70 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBranch } from './use-branch';
+import { leadService } from '@/services/leadService';
 import { Lead } from '@/types/crm';
-import leadService from '@/services/leadService';
+import { toast } from 'sonner';
 
 export const useLeads = () => {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { currentBranch } = useBranch();
+  const queryClient = useQueryClient();
 
-  const fetchLeads = async () => {
-    if (!currentBranch?.id) {
-      setLeads([]);
-      setIsLoading(false);
-      return;
-    }
+  const { 
+    data: leads = [], 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['leads', currentBranch?.id],
+    queryFn: () => leadService.getLeads(currentBranch?.id),
+    enabled: !!currentBranch?.id
+  });
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await leadService.getLeads(currentBranch.id);
-      setLeads(data);
-    } catch (err) {
-      console.error('Error fetching leads:', err);
-      setError('Failed to load leads');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const addLead = async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!currentBranch?.id) {
-      throw new Error('No branch selected');
-    }
-    
-    const leadWithBranch = {
+  const createLeadMutation = useMutation({
+    mutationFn: (lead: Partial<Lead>) => leadService.createLead({
       ...lead,
-      branch_id: currentBranch.id
-    };
-    
-    const newLead = await leadService.createLead(leadWithBranch);
-    if (newLead) {
-      setLeads(prev => [newLead, ...prev]);
+      branch_id: currentBranch?.id
+    }),
+    onSuccess: () => {
+      toast.success('Lead created successfully');
+      queryClient.invalidateQueries({ queryKey: ['leads', currentBranch?.id] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create lead: ${error.message}`);
     }
-    return newLead;
-  };
+  });
 
-  const updateLead = async (id: string, updates: Partial<Lead>) => {
-    const updatedLead = await leadService.updateLead(id, updates);
-    if (updatedLead) {
-      setLeads(prev => prev.map(lead => lead.id === id ? updatedLead : lead));
+  const updateLeadMutation = useMutation({
+    mutationFn: ({ id, lead }: { id: string, lead: Partial<Lead> }) => 
+      leadService.updateLead(id, lead),
+    onSuccess: () => {
+      toast.success('Lead updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['leads', currentBranch?.id] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to update lead: ${error.message}`);
     }
-    return updatedLead;
-  };
+  });
 
-  const deleteLead = async (id: string) => {
-    const success = await leadService.deleteLead(id);
-    if (success) {
-      setLeads(prev => prev.filter(lead => lead.id !== id));
+  const deleteLeadMutation = useMutation({
+    mutationFn: (id: string) => leadService.deleteLead(id),
+    onSuccess: () => {
+      toast.success('Lead deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['leads', currentBranch?.id] });
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete lead: ${error.message}`);
     }
-    return success;
-  };
-
-  useEffect(() => {
-    fetchLeads();
-  }, [currentBranch?.id]);
+  });
 
   return {
     leads,
     isLoading,
     error,
-    fetchLeads,
-    addLead,
-    updateLead,
-    deleteLead
+    createLead: createLeadMutation.mutate,
+    updateLead: updateLeadMutation.mutate,
+    deleteLead: deleteLeadMutation.mutate,
+    isCreating: createLeadMutation.isPending,
+    isUpdating: updateLeadMutation.isPending,
+    isDeleting: deleteLeadMutation.isPending
   };
 };

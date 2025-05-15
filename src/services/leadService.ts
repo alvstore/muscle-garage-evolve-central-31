@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Lead, FollowUpScheduled } from '@/types/crm';
 
-// Export as named export instead of default
+// Export as named export
 export const leadService = {
   getLeads: async (branchId?: string) => {
     try {
@@ -111,4 +111,5 @@ export const leadService = {
   }
 };
 
+// Export as default for backward compatibility
 export default leadService;
