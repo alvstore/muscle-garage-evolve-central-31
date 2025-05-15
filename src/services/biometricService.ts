@@ -14,6 +14,109 @@ interface RegisterMemberParams {
 }
 
 /**
+ * Checks the status of biometric devices for a branch
+ * @param branchId - The ID of the branch to check devices for
+ * @returns Status information about configured devices
+ */
+export async function checkBiometricDeviceStatus(branchId: string): Promise<{
+  hasDevices: boolean;
+  hikvision?: {
+    configured: boolean;
+    online: boolean;
+    lastCheck: string | null;
+    deviceCount: number;
+  };
+  essl?: {
+    configured: boolean;
+    online: boolean;
+    lastCheck: string | null;
+    deviceCount: number;
+  };
+}> {
+  try {
+    // Check for Hikvision devices
+    const { data: hikvisionSettings } = await supabase
+      .from('hikvision_api_settings')
+      .select('*')
+      .eq('branch_id', branchId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    // Check for ESSL devices
+    const { data: esslSettings } = await supabase
+      .from('essl_device_settings')
+      .select('*')
+      .eq('branch_id', branchId)
+      .eq('is_active', true)
+      .maybeSingle();
+      
+    // Get device mapping count for Hikvision
+    const { data: hikvisionDevices, error: hikError } = await supabase
+      .from('device_mappings')
+      .select('id')
+      .eq('branch_id', branchId)
+      .eq('device_type', 'hikvision')
+      .eq('is_active', true);
+      
+    // Get device mapping count for ESSL
+    const { data: esslDevices, error: esslError } = await supabase
+      .from('device_mappings')
+      .select('id')
+      .eq('branch_id', branchId)
+      .eq('device_type', 'essl')
+      .eq('is_active', true);
+      
+    // Get latest status check
+    const { data: latestHikStatus } = await supabase
+      .from('integration_statuses')
+      .select('created_at, is_online')
+      .eq('branch_id', branchId)
+      .eq('integration_type', 'hikvision')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+      
+    const { data: latestEsslStatus } = await supabase
+      .from('integration_statuses')
+      .select('created_at, is_online')
+      .eq('branch_id', branchId)
+      .eq('integration_type', 'essl')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const result: ReturnType<typeof checkBiometricDeviceStatus> = {
+      hasDevices: Boolean(hikvisionSettings || esslSettings)
+    };
+    
+    if (hikvisionSettings) {
+      result.hikvision = {
+        configured: true,
+        online: latestHikStatus?.is_online ?? false,
+        lastCheck: latestHikStatus?.created_at || null,
+        deviceCount: hikvisionDevices?.length || 0
+      };
+    }
+    
+    if (esslSettings) {
+      result.essl = {
+        configured: true,
+        online: latestEsslStatus?.is_online ?? false,
+        lastCheck: latestEsslStatus?.created_at || null,
+        deviceCount: esslDevices?.length || 0
+      };
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error checking biometric device status:', error);
+    return { 
+      hasDevices: false 
+    };
+  }
+}
+
+/**
  * Register a member in a biometric device
  */
 export async function registerMemberInBiometricDevice(params: RegisterMemberParams): Promise<{

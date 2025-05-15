@@ -5305,6 +5305,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      check_user_branch_access: {
+        Args: { check_branch_id: string }
+        Returns: boolean
+      }
       get_all_website_content: {
         Args: Record<PropertyKey, never>
         Returns: {
