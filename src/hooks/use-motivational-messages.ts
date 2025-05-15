@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { MotivationalMessage, adaptMotivationalMessageFromDB } from '@/types';
+import { MotivationalMessage } from '@/types';
 import { toast } from 'sonner';
 
 export const useMotivationalMessages = () => {
@@ -18,7 +18,18 @@ export const useMotivationalMessages = () => {
       
       if (error) throw error;
       
-      const adaptedMessages = data.map(msg => adaptMotivationalMessageFromDB(msg));
+      const adaptedMessages = data.map(msg => ({
+        id: msg.id,
+        title: msg.title,
+        content: msg.content,
+        author: msg.author,
+        category: msg.category,
+        tags: msg.tags || [],
+        active: msg.active,
+        created_at: msg.created_at,
+        updated_at: msg.updated_at
+      }));
+      
       setMessages(adaptedMessages);
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
