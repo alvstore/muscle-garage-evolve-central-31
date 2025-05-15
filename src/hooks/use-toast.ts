@@ -1,262 +1,116 @@
 
-import * as React from "react";
-import { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { toast as sonnerToast } from "sonner";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+type ToastMessage = string;
 
-export type ToasterToast = ToastProps & {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
+type ToastOptions = {
+  title?: string;
+  description?: string;
+  duration?: number;
+  action?: React.ReactNode;
 };
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const;
+type ToastProps = ToastMessage | ToastOptions;
 
-let count = 0;
-
-function generateId() {
-  count = (count + 1) % Number.MAX_VALUE;
-  return count.toString();
+function isToastOptions(props: ToastProps): props is ToastOptions {
+  return typeof props === 'object' && props !== null;
 }
 
-type ActionType = typeof actionTypes;
-
-type Action =
-  | {
-      type: ActionType["ADD_TOAST"];
-      toast: ToasterToast;
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToasterToast>;
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
-
-interface State {
-  toasts: ToasterToast[];
-}
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
-
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return;
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId);
-    dispatch({
-      type: actionTypes.REMOVE_TOAST,
-      toastId: toastId,
-    });
-  }, TOAST_REMOVE_DELAY);
-
-  toastTimeouts.set(toastId, timeout);
-};
-
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case actionTypes.ADD_TOAST:
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      };
-
-    case actionTypes.UPDATE_TOAST:
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      };
-
-    case actionTypes.DISMISS_TOAST: {
-      const { toastId } = action;
-
-      if (toastId) {
-        addToRemoveQueue(toastId);
+export const useToast = () => {
+  const toast = {
+    success: (props: ToastProps) => {
+      if (isToastOptions(props)) {
+        return sonnerToast.success(props.title || "", {
+          description: props.description,
+          duration: props.duration,
+          action: props.action,
+        });
       } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
-        });
+        return sonnerToast.success(props);
       }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      };
+    },
+    error: (props: ToastProps) => {
+      if (isToastOptions(props)) {
+        return sonnerToast.error(props.title || "", {
+          description: props.description,
+          duration: props.duration,
+          action: props.action,
+        });
+      } else {
+        return sonnerToast.error(props);
+      }
+    },
+    warning: (props: ToastProps) => {
+      if (isToastOptions(props)) {
+        return sonnerToast.warning(props.title || "", {
+          description: props.description,
+          duration: props.duration,
+          action: props.action,
+        });
+      } else {
+        return sonnerToast.warning(props);
+      }
+    },
+    info: (props: ToastProps) => {
+      if (isToastOptions(props)) {
+        return sonnerToast.info(props.title || "", {
+          description: props.description,
+          duration: props.duration,
+          action: props.action,
+        });
+      } else {
+        return sonnerToast.info(props);
+      }
     }
+  };
 
-    case actionTypes.REMOVE_TOAST:
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        };
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      };
-    default:
-      return state;
-  }
+  return { toast };
 };
 
-const listeners: Array<(state: State) => void> = [];
-
-let memoryState: State = { toasts: [] };
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action);
-  listeners.forEach((listener) => {
-    listener(memoryState);
-  });
-}
-
-export function useToast() {
-  const [state, setState] = React.useState<State>(memoryState);
-
-  React.useEffect(() => {
-    listeners.push(setState);
-    return () => {
-      const index = listeners.indexOf(setState);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    };
-  }, [state]);
-
-  return {
-    ...state,
-    toast: (props: Omit<ToasterToast, "id">) => {
-      const id = generateId();
-
-      const update = (props: Partial<ToasterToast>) =>
-        dispatch({
-          type: actionTypes.UPDATE_TOAST,
-          toast: { ...props, id },
-        });
-      const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
-
-      dispatch({
-        type: actionTypes.ADD_TOAST,
-        toast: {
-          ...props,
-          id,
-          open: true,
-          onOpenChange: (open: boolean) => {
-            if (!open) dismiss();
-          },
-        },
+// Export toast directly for convenience
+export const toast = {
+  success: (props: ToastProps) => {
+    if (isToastOptions(props)) {
+      return sonnerToast.success(props.title || "", {
+        description: props.description,
+        duration: props.duration,
+        action: props.action,
       });
-
-      return {
-        id: id,
-        dismiss,
-        update,
-      };
-    },
-    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
-  };
-}
-
-export const toast = (props: Omit<ToasterToast, "id">) => {
-  const id = generateId();
-
-  dispatch({
-    type: actionTypes.ADD_TOAST,
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open: boolean) => {
-        if (!open) {
-          dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
-        }
-      },
-    },
-  });
-
-  return {
-    id: id,
-    dismiss: () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id }),
-    update: (props: Partial<ToasterToast>) =>
-      dispatch({
-        type: actionTypes.UPDATE_TOAST,
-        toast: { ...props, id },
-      }),
-  };
-};
-
-// Helper toast methods for different variants
-toast.success = (props: string | Omit<ToasterToast, "id">) => {
-  const toastProps = typeof props === "string" 
-    ? { description: props }
-    : props;
-  
-  return toast({
-    variant: "default",
-    ...toastProps
-  });
-};
-
-toast.error = (props: string | Omit<ToasterToast, "id">) => {
-  const toastProps = typeof props === "string" 
-    ? { description: props }
-    : props;
-  
-  return toast({
-    variant: "destructive",
-    ...toastProps
-  });
-};
-
-toast.warning = (props: string | Omit<ToasterToast, "id">) => {
-  const toastProps = typeof props === "string" 
-    ? { description: props }
-    : props;
-  
-  return toast({
-    variant: "default",
-    ...toastProps
-  });
-};
-
-toast.info = (props: string | Omit<ToasterToast, "id">) => {
-  const toastProps = typeof props === "string" 
-    ? { description: props }
-    : props;
-  
-  return toast({
-    variant: "default",
-    ...toastProps
-  });
-};
-
-type ToastApiReturnType = {
-  id: string;
-  dismiss: () => void;
-  update: (props: Partial<ToasterToast>) => void;
+    } else {
+      return sonnerToast.success(props);
+    }
+  },
+  error: (props: ToastProps) => {
+    if (isToastOptions(props)) {
+      return sonnerToast.error(props.title || "", {
+        description: props.description,
+        duration: props.duration,
+        action: props.action,
+      });
+    } else {
+      return sonnerToast.error(props);
+    }
+  },
+  warning: (props: ToastProps) => {
+    if (isToastOptions(props)) {
+      return sonnerToast.warning(props.title || "", {
+        description: props.description,
+        duration: props.duration,
+        action: props.action,
+      });
+    } else {
+      return sonnerToast.warning(props);
+    }
+  },
+  info: (props: ToastProps) => {
+    if (isToastOptions(props)) {
+      return sonnerToast.info(props.title || "", {
+        description: props.description,
+        duration: props.duration,
+        action: props.action,
+      });
+    } else {
+      return sonnerToast.info(props);
+    }
+  }
 };

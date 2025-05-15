@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
@@ -68,14 +69,17 @@ export const ensureStorageBucketsExist = async (): Promise<void> => {
       return;
     }
     
-    // Just check if buckets exist but don't try to create them
-    // since bucket creation requires admin privileges
+    // Check if buckets exist without trying to create them
     for (const bucket of requiredBuckets) {
       const exists = await bucketExists(bucket);
       if (!exists) {
-        console.warn(`Storage bucket ${bucket} does not exist. Admin needs to create it.`);
+        console.warn(`Storage bucket ${bucket} does not exist or is not accessible.`);
+        toast(`Storage bucket ${bucket} not accessible. Contact administrator.`, {
+          description: "Some file upload features may not work correctly.",
+          duration: 5000,
+        });
       } else {
-        console.info(`Storage bucket ${bucket} exists.`);
+        console.info(`Storage bucket ${bucket} exists and is accessible.`);
       }
     }
     console.info('Storage bucket verification complete');
