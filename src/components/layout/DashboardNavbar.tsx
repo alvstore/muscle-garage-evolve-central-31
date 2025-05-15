@@ -347,10 +347,7 @@ const DashboardNavbar = ({
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="p-2 cursor-pointer">
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>Billing</span>
-              </DropdownMenuItem>
+              
             </div>
             <div className="p-2 border-t">
               <Button variant="destructive" className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600" onClick={handleLogout}>
