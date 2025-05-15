@@ -48,7 +48,7 @@ export interface Announcement {
   targetRoles?: string[]; // For backward compatibility
 }
 
-export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment' | 'service';
+export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment' | 'fitness-plan' | 'service';
 
 export interface Feedback {
   id: string;
@@ -119,7 +119,7 @@ export interface Invoice {
   memberName?: string; // For backward compatibility
   amount: number;
   description?: string;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft';
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent' | 'void';
   due_date: string;
   payment_date?: string;
   payment_method?: string;
@@ -221,7 +221,7 @@ export function notificationToFinanceInvoice(invoice: Invoice): any {
   return {
     id: invoice.id,
     member_id: invoice.member_id,
-    memberName: invoice.member_name,
+    memberName: invoice.member_name || invoice.memberName,
     amount: invoice.amount,
     description: invoice.description || '',
     status: invoice.status,
@@ -231,6 +231,7 @@ export function notificationToFinanceInvoice(invoice: Invoice): any {
     items: [],
     branch_id: '',
     created_at: invoice.created_at,
-    updated_at: invoice.updated_at
+    updated_at: invoice.updated_at,
+    paid_date: invoice.paid_date || invoice.payment_date
   };
 }

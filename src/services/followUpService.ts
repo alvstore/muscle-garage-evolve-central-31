@@ -1,116 +1,30 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { FollowUpHistory, FollowUpScheduled } from '@/types/crm';
+import { FollowUpHistory } from '@/types/crm';
+import { supabase } from './supabaseClient';
 
-export const followUpService = {
-  async getFollowUpHistory(branchId?: string): Promise<FollowUpHistory[]> {
+class FollowUpService {
+  async getFollowUpHistory(branchId?: string) {
     try {
       let query = supabase
         .from('follow_up_history')
-        .select('*')
-        .order('scheduled_date', { ascending: false });
-        
+        .select(`
+          *,
+          leads(*)
+        `);
+      
       if (branchId) {
-        // If we have lead information with branch IDs, we would join or filter here
-        // This is a simplified version without branch filtering
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
+        query = query.eq('leads.branch_id', branchId);
       }
       
+      const { data, error } = await query.order('scheduled_at', { ascending: false });
+      
+      if (error) throw error;
       return data as FollowUpHistory[];
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching follow-up history:', error);
-      toast.error('Failed to load follow-ups');
       return [];
-    }
-  },
-
-  async getScheduledFollowUps(branchId?: string): Promise<FollowUpScheduled[]> {
-    try {
-      let query = supabase
-        .from('follow_up_history')
-        .select('*')
-        .eq('status', 'scheduled')
-        .order('scheduled_date', { ascending: true });
-        
-      if (branchId) {
-        // Filter by branch ID if provided
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-      
-      return data as FollowUpScheduled[];
-    } catch (error: any) {
-      console.error('Error fetching scheduled follow-ups:', error);
-      toast.error('Failed to load scheduled follow-ups');
-      return [];
-    }
-  },
-
-  async deleteScheduledFollowUp(id: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('follow_up_history')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      toast.success('Follow-up deleted successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting follow-up:', error);
-      toast.error(`Failed to delete follow-up: ${error.message}`);
-      return false;
-    }
-  },
-
-  async scheduleFollowUp(followUp: Partial<FollowUpHistory>): Promise<FollowUpHistory | null> {
-    try {
-      const { data, error } = await supabase
-        .from('follow_up_history')
-        .insert([followUp])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      toast.success('Follow-up scheduled successfully');
-      return data as FollowUpHistory;
-    } catch (error: any) {
-      console.error('Error scheduling follow-up:', error);
-      toast.error(`Failed to schedule follow-up: ${error.message}`);
-      return null;
-    }
-  },
-
-  async updateFollowUpStatus(id: string, status: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('follow_up_history')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      toast.success('Follow-up status updated');
-      return true;
-    } catch (error: any) {
-      console.error('Error updating follow-up status:', error);
-      toast.error(`Failed to update follow-up: ${error.message}`);
-      return false;
     }
   }
-};
+}
 
-// Export as default for backward compatibility
-export default followUpService;
+export const followUpService = new FollowUpService();

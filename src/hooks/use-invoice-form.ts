@@ -1,115 +1,87 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { useToast } from '@/hooks/use-toast';
-import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/integrations/supabase/client';
-import { InvoiceItem } from '@/types/invoice';
+import { Invoice } from '@/types/notification';
 
-const invoiceFormSchema = z.object({
-  member_id: z.string().min(1, {
-    message: "Please select a member.",
-  }),
-  issue_date: z.date(),
-  due_date: z.date(),
-  status: z.enum(['draft', 'pending', 'paid', 'overdue', 'void']),
-  notes: z.string().optional(),
-  items: z.array(
-    z.object({
-      description: z.string().min(1, {
-        message: "Description is required.",
-      }),
-      quantity: z.number().min(1, {
-        message: "Quantity must be at least 1.",
-      }),
-      unit_price: z.number().min(0, {
-        message: "Unit price must be at least 0.",
-      }),
-    })
-  ).optional(),
-  total_amount: z.number().optional(),
-  branch_id: z.string().optional(),
-  invoice_number: z.string().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-})
-
-export const useInvoiceForm = () => {
+export const useInvoiceForm = (
+  initialInvoice: Invoice | null, 
+  onComplete?: (invoice?: Invoice) => void,
+  onSave?: (invoice: Invoice) => void
+) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const { currentBranch } = useBranch();
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
-
-  type InvoiceFormType = z.infer<typeof invoiceFormSchema>
-
-  const form = useForm<InvoiceFormType>({
-    resolver: zodResolver(invoiceFormSchema),
-    defaultValues: {
-      member_id: '',
-      issue_date: new Date(),
-      due_date: new Date(),
-      status: 'draft',
-      notes: '',
-      items: [],
-      total_amount: 0,
-      branch_id: currentBranch?.id,
-      invoice_number: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
+  
+  // Set default values based on the initial invoice
+  const defaultValues = initialInvoice || {
+    member_id: '',
+    member_name: '',
+    amount: 0,
+    description: '',
+    status: 'pending' as const,
+    due_date: new Date().toISOString(),
+    payment_method: '',
+    notes: '',
+    created_at: new Date().toISOString(),
+  };
+  
+  const form = useForm({
+    defaultValues
   });
-
-  const onSubmit = async (values: InvoiceFormType) => {
+  
+  // Form values for simpler access in components
+  const [formValues, setFormValues] = useState(defaultValues);
+  
+  // Handler functions
+  const handleChange = (field: string, value: any) => {
+    setFormValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  const handleStatusChange = (status: string) => {
+    setFormValues(prev => ({
+      ...prev,
+      status: status as any
+    }));
+  };
+  
+  const handlePaymentMethodChange = (method: string) => {
+    setFormValues(prev => ({
+      ...prev,
+      payment_method: method
+    }));
+  };
+  
+  const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const adaptedValues = adaptInvoiceToServerFormat(values);
-      const { data, error } = await supabase
-        .from('invoices')
-        .insert([adaptedValues])
-        .select();
-
-      if (error) {
-        console.error('Error creating invoice:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to create invoice',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: 'Invoice created successfully',
-        });
-        form.reset();
+      // Merge form values with any data directly from the form
+      const invoiceData = {
+        ...formValues,
+        ...data,
+      };
+      
+      if (onSave) {
+        await onSave(invoiceData);
+      }
+      
+      if (onComplete) {
+        onComplete(invoiceData);
       }
     } catch (error) {
-      console.error('Unexpected error creating invoice:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      console.error('Error saving invoice:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const adaptInvoiceToServerFormat = (invoice: any) => {
-    return {
-      member_id: invoice.member_id,
-      issue_date: invoice.issue_date.toISOString(),
-      due_date: invoice.due_date.toISOString(),
-      status: invoice.status,
-      notes: invoice.notes,
-      items: invoice.items,
-      total_amount: invoice.total_amount,
-      branch_id: currentBranch?.id,
-      invoice_number: invoice.invoice_number,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  
+  return {
+    form,
+    isSubmitting,
+    formValues,
+    handleChange,
+    handleStatusChange,
+    handlePaymentMethodChange,
+    onSubmit
   };
-
-  return { form, onSubmit, isSubmitting, invoiceItems, setInvoiceItems };
 };

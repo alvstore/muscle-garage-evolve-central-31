@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Menu, Bell, X, Moon, Sun, ChevronDown, Search, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,14 +46,16 @@ const mockNotifications = [
   }
 ];
 
-const adaptedNotifications = notifications.map(notification => ({
+// Convert mock notifications to the expected Notification type
+const adaptedNotifications: Notification[] = mockNotifications.map(notification => ({
   id: notification.id,
   title: notification.title,
   message: notification.message,
   is_read: notification.read ?? false,
+  read: notification.read ?? false, // For compatibility
   created_at: notification.created_at || notification.timestamp || new Date().toISOString(),
   user_id: notification.user_id,
-  link: notification.link,
+  link: undefined,
   type: notification.type
 }));
 
@@ -64,8 +67,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [notifications] = React.useState<Notification[]>(mockNotifications);
-  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
+  const [notifications] = React.useState<Notification[]>(adaptedNotifications);
+  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.is_read).length);
   
   const handleLogout = async () => {
     try {

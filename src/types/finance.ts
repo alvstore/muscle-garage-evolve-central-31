@@ -1,5 +1,5 @@
 
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent';
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent' | 'void';
 export type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'wallet' | 'other' | 'razorpay' | 'credit_card';
 export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 export type TransactionType = 'income' | 'expense';

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
@@ -231,16 +230,7 @@ const FunnelBoard = () => {
 
   useEffect(() => {
     if (leadsData) {
-      // Convert the response to Lead[] type
-      let processedLeads: Lead[] = [];
-      
-      if (Array.isArray(leadsData)) {
-        processedLeads = leadsData as Lead[];
-      } else if (leadsData.data && Array.isArray(leadsData.data)) {
-        processedLeads = leadsData.data as Lead[];
-      }
-      
-      setLeads(processedLeads);
+      setLeads(leadsData);
     }
   }, [leadsData]);
 

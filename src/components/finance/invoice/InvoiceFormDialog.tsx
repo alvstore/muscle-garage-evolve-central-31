@@ -28,9 +28,9 @@ const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
 }) => {
   const isEditing = Boolean(invoice);
 
-  // Make sure we have a valid FinanceInvoice type
-  const normalizedInvoice = invoice ? 
-    ('items' in invoice ? invoice : notificationToFinanceInvoice(invoice as any)) : 
+  // Convert to notification invoice format for the form
+  const notificationInvoice = invoice ? 
+    (('items' in invoice) ? financeToNotificationInvoice(invoice) : invoice) : 
     null;
 
   const handleComplete = () => {
@@ -53,7 +53,7 @@ const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <InvoiceForm 
-          invoice={normalizedInvoice}
+          invoice={notificationInvoice}
           onComplete={handleComplete}
         />
       </DialogContent>
