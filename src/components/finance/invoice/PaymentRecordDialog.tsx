@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -16,7 +17,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Invoice, PaymentMethod, InvoiceStatus } from "@/types/finance"; // Add InvoiceStatus import
+import { Invoice, PaymentMethod, InvoiceStatus } from "@/types/finance"; 
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from '@/hooks/use-auth';
@@ -158,13 +159,13 @@ const PaymentRecordDialog = ({
                 <div>
                   <p className="text-sm font-medium">Invoice #{invoice.id?.substring(0, 8)}...</p>
                   <p className="text-sm text-muted-foreground">
-                    {invoice.memberName} - {format(new Date(invoice.issuedDate || invoice.issued_date || new Date()), "MMM d, yyyy")}
+                    {invoice.memberName} - {format(new Date(invoice.issued_date || invoice.issuedDate || new Date()), "MMM d, yyyy")}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">Total: {formatCurrency(invoice.amount)}</p>
                   <p className="text-sm text-muted-foreground">
-                    Due by: {format(new Date(invoice.dueDate || invoice.due_date || new Date()), "MMM d, yyyy")}
+                    Due by: {format(new Date(invoice.due_date || invoice.dueDate || new Date()), "MMM d, yyyy")}
                   </p>
                 </div>
               </div>
@@ -208,7 +209,7 @@ const PaymentRecordDialog = ({
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                     <SelectItem value="razorpay">Razorpay</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>

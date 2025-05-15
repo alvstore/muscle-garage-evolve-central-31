@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import {
@@ -37,19 +38,19 @@ const FunnelBoard = () => {
   // Initial column structure
   const [columns, setColumns] = useState<FunnelColumn[]>([
     {
-      id: "cold",
+      id: "cold" as FunnelStage,
       title: "Cold Leads",
       description: "New and unqualified leads",
       leads: []
     },
     {
-      id: "warm",
+      id: "warm" as FunnelStage,
       title: "Warm Leads",
       description: "Contacted and showing interest",
       leads: []
     },
     {
-      id: "hot",
+      id: "hot" as FunnelStage,
       title: "Hot Leads",
       description: "Ready to convert",
       leads: []
@@ -127,7 +128,7 @@ const FunnelBoard = () => {
       
       // Update local state
       movedLead.funnel_stage = newStage;
-      const leadName = movedLead.name || `${movedLead.first_name} ${movedLead.last_name}`;
+      const leadName = movedLead.name || `${movedLead.first_name || ''} ${movedLead.last_name || ''}`.trim();
       toast.success(`Moved ${leadName} to ${destCol.title}`);
     }
     
@@ -141,11 +142,13 @@ const FunnelBoard = () => {
   };
 
   const handleSendMessage = (lead: Lead) => {
-    toast.info(`Preparing message for ${lead.name || `${lead.first_name} ${lead.last_name}`}`);
+    const leadName = lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim();
+    toast.info(`Preparing message for ${leadName}`);
   };
 
   const handleCallLead = (lead: Lead) => {
-    toast.info(`Initiating call to ${lead.name || `${lead.first_name} ${lead.last_name}`}`);
+    const leadName = lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim();
+    toast.info(`Initiating call to ${leadName}`);
   };
 
   return (
@@ -239,7 +242,7 @@ const FunnelBoard = () => {
                                   className="border bg-card rounded-md p-3 shadow-sm hover:shadow-md transition-shadow"
                                 >
                                   <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-medium">{lead.name || `${lead.first_name} ${lead.last_name}`}</h3>
+                                    <h3 className="font-medium">{lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || 'Unnamed Lead'}</h3>
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8">

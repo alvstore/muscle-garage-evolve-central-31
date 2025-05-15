@@ -12,6 +12,11 @@ export interface AutomationRule {
   updated_at: string;
   branch_id?: string;
   created_by?: string;
+  
+  // For backward compatibility
+  triggerType?: string;
+  triggerValue?: number;
+  isActive?: boolean;
 }
 
 export interface Lead {
@@ -33,6 +38,7 @@ export interface Lead {
   created_at: string;
   updated_at?: string;
   branch_id?: string;
+  
   // Add these for backward compatibility with components
   first_name?: string;
   last_name?: string;
@@ -64,7 +70,7 @@ export interface FollowUpHistory {
   sent_at?: string;
   response?: string;
   response_at?: string;
-  scheduled_at?: string;
+  scheduled_date?: string;
   template_id?: string;
 }
 
@@ -79,8 +85,9 @@ export interface FollowUpScheduled {
   created_by: string;
   created_at: string;
   template_id?: string;
+  lead?: Lead;
 }
 
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'other';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'unqualified' | 'converted' | 'lost';
-export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost' | 'cold' | 'warm' | 'hot';

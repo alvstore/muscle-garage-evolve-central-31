@@ -1,132 +1,176 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  FollowUpHistory, 
-  FollowUpScheduled, 
-  FollowUpType
-} from '@/types/crm';
+import { FollowUpScheduled, FollowUpHistory, FollowUpType, FollowUpTemplate } from '@/types/crm';
 
-export interface FollowUpHistoryCreateParams {
-  lead_id: string;
-  type: FollowUpType;
-  content: string;
-  status: string;
-  subject?: string;
-  scheduled_at?: string;
-}
+class FollowUpService {
+  async getScheduledFollowUps(branchId?: string) {
+    try {
+      let query = supabase
+        .from('follow_up_scheduled')
+        .select(`
+          *,
+          leads:lead_id (id, name, email, phone)
+        `);
 
-export const followUpService = {
-  getFollowUpHistory: async (leadId?: string, branchId?: string) => {
-    let query = supabase.from('follow_up_history').select('*');
-    
-    if (leadId) {
-      query = query.eq('lead_id', leadId);
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching scheduled follow-ups:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching scheduled follow-ups:', error);
+      return [];
     }
-    
-    // Branch ID filtering would be applied here if implemented
-    
-    const { data, error } = await query.order('sent_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching follow-up history:', error);
-      throw error;
+  }
+
+  async createScheduledFollowUp(followUp: Partial<FollowUpScheduled>) {
+    try {
+      const { data, error } = await supabase
+        .from('follow_up_scheduled')
+        .insert([{
+          lead_id: followUp.lead_id,
+          scheduled_date: followUp.scheduled_date,
+          type: followUp.type,
+          content: followUp.content,
+          subject: followUp.subject,
+          status: followUp.status || 'pending',
+          created_by: followUp.created_by,
+          template_id: followUp.template_id,
+          branch_id: followUp.branch_id,
+        }])
+        .select();
+
+      if (error) {
+        console.error('Error creating scheduled follow-up:', error);
+        return null;
+      }
+
+      return data[0];
+    } catch (error) {
+      console.error('Unexpected error creating scheduled follow-up:', error);
+      return null;
     }
-    
-    return data || [];
-  },
-  
-  getScheduledFollowUps: async (branchId?: string) => {
+  }
+
+  async deleteScheduledFollowUp(id: string) {
+    try {
+      const { error } = await supabase
+        .from('follow_up_scheduled')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting scheduled follow-up:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Unexpected error deleting scheduled follow-up:', error);
+      return false;
+    }
+  }
+
+  async getFollowUpHistory(leadId: string) {
     try {
       const { data, error } = await supabase
         .from('follow_up_history')
-        .select(`
-          id,
-          lead_id,
-          type,
-          content,
-          status,
-          scheduled_at,
-          subject,
-          sent_by,
-          leads:lead_id (name)
-        `)
-        .eq('status', 'scheduled')
-        .order('scheduled_at', { ascending: true });
-      
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('sent_at', { ascending: false });
+
       if (error) {
-        throw error;
+        console.error('Error fetching follow-up history:', error);
+        return [];
       }
-      
-      return data.map(item => ({
-        id: item.id,
-        lead_id: item.lead_id,
-        scheduledBy: item.sent_by || "",
-        scheduled_at: item.scheduled_at || "",
-        type: item.type as FollowUpType,
-        subject: item.subject || "",
-        content: item.content,
-        status: item.status,
-        createdAt: new Date().toISOString(), // Add missing field to match interface
-        lead: {
-          name: item.leads?.name || "Unknown Lead",
-        }
-      })) || [];
+
+      return data || [];
     } catch (error) {
-      console.error('Error fetching scheduled follow-ups:', error);
+      console.error('Unexpected error fetching follow-up history:', error);
       return [];
     }
-  },
-  
-  createFollowUpHistory: async (params: FollowUpHistoryCreateParams) => {
-    const { data, error } = await supabase
-      .from('follow_up_history')
-      .insert([{
-        lead_id: params.lead_id,
-        type: params.type,
-        content: params.content,
-        subject: params.subject,
-        status: params.status,
-        scheduled_at: params.scheduled_at,
-        sent_by: (await supabase.auth.getUser()).data.user?.id,
-      }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating follow-up history:', error);
-      throw error;
-    }
-    
-    return data;
-  },
-  
-  updateFollowUpHistory: async (id: string, updates: Partial<FollowUpHistory>) => {
-    const { data, error } = await supabase
-      .from('follow_up_history')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating follow-up history:', error);
-      throw error;
-    }
-    
-    return data;
-  },
-  
-  deleteScheduledFollowUp: async (id: string) => {
-    const { error } = await supabase
-      .from('follow_up_history')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting scheduled follow-up:', error);
-      throw error;
-    }
-    
-    return true;
   }
-};
+
+  async getFollowUpTemplates(type?: FollowUpType) {
+    try {
+      let query = supabase
+        .from('follow_up_templates')
+        .select('*');
+
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching follow-up templates:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error fetching follow-up templates:', error);
+      return [];
+    }
+  }
+
+  async saveFollowUpTemplate(template: Partial<FollowUpTemplate>) {
+    try {
+      if (template.id) {
+        // Update existing template
+        const { data, error } = await supabase
+          .from('follow_up_templates')
+          .update({
+            name: template.name,
+            title: template.title,
+            content: template.content,
+            type: template.type,
+            variables: template.variables,
+            isDefault: template.isDefault,
+          })
+          .eq('id', template.id)
+          .select();
+
+        if (error) {
+          console.error('Error updating follow-up template:', error);
+          return null;
+        }
+
+        return data[0];
+      } else {
+        // Create new template
+        const { data, error } = await supabase
+          .from('follow_up_templates')
+          .insert([{
+            name: template.name,
+            title: template.title,
+            content: template.content,
+            type: template.type,
+            variables: template.variables,
+            isDefault: template.isDefault,
+          }])
+          .select();
+
+        if (error) {
+          console.error('Error creating follow-up template:', error);
+          return null;
+        }
+
+        return data[0];
+      }
+    } catch (error) {
+      console.error('Unexpected error saving follow-up template:', error);
+      return null;
+    }
+  }
+}
+
+export const followUpService = new FollowUpService();

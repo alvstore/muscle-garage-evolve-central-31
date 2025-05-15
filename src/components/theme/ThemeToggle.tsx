@@ -1,21 +1,32 @@
+
 import React from 'react';
-import { useTheme } from '@/providers/ThemeProvider';
+import { Button } from '@/components/ui/button';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+
 interface ThemeToggleProps {
   className?: string;
 }
-const ThemeToggle: React.FC<ThemeToggleProps> = ({
-  className = ''
-}) => {
-  const {
-    settings,
-    updateSettings
-  } = useTheme();
+
+const ThemeToggle: React.FC<ThemeToggleProps> = ({ className }) => {
+  const { theme, setTheme } = useTheme();
+
   const toggleTheme = () => {
-    const newMode = settings.mode === 'light' ? 'dark' : 'light';
-    updateSettings({
-      mode: newMode
-    });
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-  return;
+
+  return (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onClick={toggleTheme}
+      className={className}
+    >
+      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
+  );
 };
+
 export default ThemeToggle;

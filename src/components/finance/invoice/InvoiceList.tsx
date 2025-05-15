@@ -48,6 +48,11 @@ const InvoiceList = ({ onView, onEdit, onDelete, onPayment }: InvoiceListProps) 
     // Implement PDF generation and download functionality
   };
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    return format(new Date(dateStr), 'PPP');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -84,7 +89,7 @@ const InvoiceList = ({ onView, onEdit, onDelete, onPayment }: InvoiceListProps) 
                     </TableCell>
                     <TableCell>{invoice.memberName}</TableCell>
                     <TableCell>₹{invoice.amount.toLocaleString()}</TableCell>
-                    <TableCell>{format(new Date(invoice.issuedDate || invoice.issued_date || new Date()), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{formatDate(invoice.issued_date || invoice.issuedDate)}</TableCell>
                     <TableCell>
                       <Badge className={`${statusColors[invoice.status]} border-none`}>
                         {invoice.status}

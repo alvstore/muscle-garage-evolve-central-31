@@ -7,15 +7,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Invoice as NotificationInvoice } from '@/types/notification';
-import { Invoice as FinanceInvoice } from '@/types/finance';
+import { Invoice } from '@/types/finance';
 import InvoiceForm from '../InvoiceForm';
 import { notificationToFinanceInvoice } from '@/utils/invoiceTypeConverters';
 
 export interface InvoiceFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoice?: FinanceInvoice | NotificationInvoice | null;
+  invoice?: Invoice | null;
   onComplete?: () => void;
   onSuccess?: () => void;
 }
@@ -31,7 +30,7 @@ const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
 
   // Convert invoice to FinanceInvoice type if needed
   const normalizedInvoice = invoice ? 
-    ('items' in invoice ? invoice as FinanceInvoice : notificationToFinanceInvoice(invoice as NotificationInvoice)) : 
+    ('items' in invoice ? invoice as Invoice : notificationToFinanceInvoice(invoice)) : 
     null;
 
   const handleComplete = () => {

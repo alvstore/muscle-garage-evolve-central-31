@@ -21,7 +21,7 @@ const convertToFollowUpScheduled = (item: any): FollowUpScheduled => {
     subject: item.subject || "",
     content: item.content || "",
     status: item.status,
-    scheduled_at: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
+    scheduled_date: item.scheduled_for || item.scheduled_date || new Date().toISOString(),
     lead: {
       id: item.lead_id || "",
       name: item.lead_name || "Unknown Lead",
@@ -29,7 +29,10 @@ const convertToFollowUpScheduled = (item: any): FollowUpScheduled => {
       source: "website",
       created_at: new Date().toISOString(),
       funnel_stage: "cold"
-    } as Lead
+    } as Lead,
+    created_by: item.created_by || "",
+    created_at: item.created_at || new Date().toISOString(),
+    template_id: item.template_id
   };
 };
 
@@ -205,7 +208,7 @@ const FollowUpReminders: React.FC<FollowUpRemindersProps> = ({ isLoading: propIs
                 <div className="mt-3 flex justify-between items-center">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatDate(followUp.scheduled_at)}</span>
+                    <span>{formatDate(followUp.scheduled_date)}</span>
                   </div>
                   <div className="flex space-x-2">
                     <Button 

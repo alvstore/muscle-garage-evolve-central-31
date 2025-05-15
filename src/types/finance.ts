@@ -1,6 +1,6 @@
 
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent';
-export type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'wallet' | 'other';
+export type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'wallet' | 'other' | 'razorpay' | 'credit_card';
 export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 export type TransactionType = 'income' | 'expense';
 export type RecurringPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
@@ -15,6 +15,7 @@ export interface Invoice {
   due_date: string;
   dueDate?: string; // For backward compatibility
   issued_date?: string;
+  issuedDate?: string; // For backward compatibility
   paid_date?: string;
   payment_method?: PaymentMethod;
   items: InvoiceItem[];
@@ -27,6 +28,8 @@ export interface Invoice {
   created_by?: string;
   // Add for backward compatibility
   memberId?: string;
+  membership_plan_id?: string;
+  membershipPlanId?: string;
 }
 
 export interface InvoiceItem {
@@ -53,12 +56,14 @@ export interface Transaction {
   updated_at?: string;
   // Adding for backward compatibility
   transaction_id?: string;
+  recurring?: boolean; // Added for compatibility
 }
 
 export interface Payment {
   id: string;
   amount: number;
   payment_date: string;
+  date?: string; // For backward compatibility
   payment_method: PaymentMethod;
   status: PaymentStatus;
   member_id?: string;
@@ -73,7 +78,6 @@ export interface Payment {
   updated_at?: string;
   contactInfo?: string; // Adding this to fix the errors
   // Adding for backward compatibility
-  date?: string;
   member_name?: string;
   membership_plan?: string;
 }

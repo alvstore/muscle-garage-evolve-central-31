@@ -1,108 +1,103 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { TransactionType, FinancialTransaction } from '@/types/finance';
+import { Transaction, FinancialTransaction } from '@/types/finance';
 
-interface MemberTransactionHistoryProps {
-  memberId: string;
+interface TransactionHistoryProps {
+  transactions: Transaction[];
+  isLoading?: boolean;
 }
 
-const MemberTransactionHistory = ({ memberId }: MemberTransactionHistoryProps) => {
-  // This would normally fetch data from an API or database
-  const transactions: FinancialTransaction[] = [
-    {
-      id: '1',
-      type: 'income',
-      amount: 5000,
-      description: 'Monthly membership fee',
-      transaction_date: new Date().toISOString(),
-      payment_method: 'credit_card',
-      recorded_by: 'John Doe',
-      branch_id: 'branch-1',
-      category_id: 'cat-1',
-      reference_id: null,
-      recurring: false,
-      recurring_period: null,
-      transaction_id: 'txn-123'
-    },
-    {
-      id: '2',
-      type: 'income',
-      amount: 1500,
-      description: 'Personal training session',
-      transaction_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      payment_method: 'cash',
-      recorded_by: 'Sarah Smith',
-      branch_id: 'branch-1',
-      category_id: 'cat-2',
-      reference_id: null,
-      recurring: false,
-      recurring_period: null,
-      transaction_id: 'txn-124'
-    },
-    {
-      id: '3',
-      type: 'expense',
-      amount: -250,
-      description: 'Refund - unused sessions',
-      transaction_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      payment_method: 'card',
-      recorded_by: 'Mike Johnson',
-      branch_id: 'branch-1',
-      category_id: 'cat-3',
-      reference_id: null,
-      recurring: false,
-      recurring_period: null,
-      transaction_id: 'txn-125'
-    }
-  ];
+// Sample transactions if none provided
+const sampleTransactions: Transaction[] = [
+  {
+    id: '1',
+    type: 'income',
+    amount: 5000,
+    description: 'Membership Payment',
+    transaction_date: new Date().toISOString(),
+    payment_method: 'card',
+  },
+  {
+    id: '2',
+    type: 'income',
+    amount: 1200,
+    description: 'Personal Training Session',
+    transaction_date: new Date(Date.now() - 86400000 * 7).toISOString(),
+    payment_method: 'cash',
+  },
+  {
+    id: '3',
+    type: 'income',
+    amount: 800,
+    description: 'Supplement Purchase',
+    transaction_date: new Date(Date.now() - 86400000 * 14).toISOString(),
+    payment_method: 'online',
+  }
+];
 
+const MemberTransactionHistory: React.FC<TransactionHistoryProps> = ({ 
+  transactions = [], 
+  isLoading = false 
+}) => {
+  
+  // Use sample data if no transactions are provided (for demo purposes only)
+  const displayTransactions = transactions.length > 0 ? transactions : sampleTransactions;
+  
+  // Format date
+  const formatDate = (date: string) => {
+    return format(new Date(date), 'PP');
+  };
+  
+  // Format transaction type
+  const getTypeColor = (type: 'income' | 'expense') => {
+    return type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+  };
+  
+  // Format amount with currency symbol
+  const formatAmount = (amount: number, type: 'income' | 'expense') => {
+    return `${type === 'income' ? '+' : '-'} ₹${amount.toLocaleString()}`;
+  };
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Transaction History</CardTitle>
+        <CardTitle className="text-lg">Transaction History</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Type</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>
-                    {format(new Date(transaction.transaction_date), 'PP')}
-                  </TableCell>
-                  <TableCell>{transaction.description}</TableCell>
-                  <TableCell className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                    {transaction.type === 'income' ? '+' : '-'} ₹{Math.abs(transaction.amount).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="capitalize">{transaction.payment_method}</TableCell>
-                  <TableCell className="capitalize">
-                    <span className={`px-2 py-1 rounded-full text-xs ${transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {transaction.type}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                  No transaction history found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-6">Loading transactions...</div>
+          ) : displayTransactions.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              No transactions found for this member.
+            </div>
+          ) : (
+            displayTransactions.map((transaction) => (
+              <div 
+                key={transaction.id || transaction.transaction_id} 
+                className="p-3 border rounded-lg hover:bg-accent/5 transition-colors"
+              >
+                <div className="flex justify-between">
+                  <div>
+                    <p className="font-medium">{transaction.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(transaction.transaction_date)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{formatAmount(transaction.amount, transaction.type)}</p>
+                    <Badge variant="outline" className={`text-xs ${getTypeColor(transaction.type)}`}>
+                      {transaction.payment_method || 'Unknown'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </CardContent>
     </Card>
   );

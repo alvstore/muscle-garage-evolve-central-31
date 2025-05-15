@@ -21,7 +21,7 @@ const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
     subject: item.subject || "",
     content: item.content || "",
     status: item.status,
-    scheduled_at: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
+    scheduled_date: item.scheduled_for || item.scheduled_date || new Date().toISOString(),
     lead: {
       id: item.lead_id || "",
       name: item.leads?.name || "Unknown Lead",
@@ -29,7 +29,10 @@ const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
       source: "website",
       created_at: new Date().toISOString(),
       funnel_stage: "cold"
-    } as Lead
+    } as Lead,
+    created_by: item.created_by || "",
+    created_at: item.created_at || new Date().toISOString(),
+    template_id: item.template_id
   };
 };
 
@@ -208,9 +211,9 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLo
                 <div className="mt-3 flex justify-between items-center">
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4 mr-1" />
-                    <span>{formatDate(followUp.scheduled_at)}</span>
+                    <span>{formatDate(followUp.scheduled_date)}</span>
                     <Clock className="h-4 w-4 ml-3 mr-1" />
-                    <span>{formatTime(followUp.scheduled_at)}</span>
+                    <span>{formatTime(followUp.scheduled_date)}</span>
                   </div>
                   <div className="flex space-x-2">
                     {followUp.type === "call" && (

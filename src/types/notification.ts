@@ -1,6 +1,7 @@
 
 // Assuming this file exists and we're just updating it
 import { InvoiceStatus } from './finance';
+import { Invoice as FinanceInvoice } from './finance';
 
 export interface Notification {
   id: string;
@@ -88,6 +89,8 @@ export interface Announcement {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type Invoice = FinanceInvoice;
 
 // Helper functions
 export function adaptReminderRuleFromDB(data: any): ReminderRule {
