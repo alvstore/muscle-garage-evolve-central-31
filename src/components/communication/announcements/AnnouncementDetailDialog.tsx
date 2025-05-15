@@ -49,11 +49,11 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
-            {announcement.expiresAt && (
+            {announcement.expires_at && (
               <div>
                 <p className="font-medium">Expires</p>
                 <p className="text-muted-foreground">
-                  {format(parseISO(announcement.expiresAt), "MMM dd, yyyy")}
+                  {format(parseISO(announcement.expires_at), "MMM dd, yyyy")}
                 </p>
               </div>
             )}

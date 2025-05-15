@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { BackupLogEntry } from '@/types/notification';
+import { BackupLogEntry } from '@/types/backup';
 
 interface BackupLogsTableProps {
   logs: BackupLogEntry[];
@@ -35,7 +35,7 @@ const BackupLogsTable: React.FC<BackupLogsTableProps> = ({ logs, loading }) => {
         {logs.map((log) => (
           <TableRow key={log.id}>
             <TableCell className="font-medium">
-              {log.action === 'backup' ? 'Backup' : 'Restore'}
+              {log.action === 'export' ? 'Export' : 'Import'}
             </TableCell>
             <TableCell>{log.user_name || 'System'}</TableCell>
             <TableCell>

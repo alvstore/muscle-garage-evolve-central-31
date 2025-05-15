@@ -31,7 +31,7 @@ const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp' 
 
 // Function to get backup logs
 const getBackupLogs = async (filters?: {
-  action?: 'backup' | 'restore';
+  action?: 'export' | 'import';
   startDate?: string;
   endDate?: string;
   success?: boolean;
@@ -154,7 +154,7 @@ const createFullBackup = async (
 
     // Create backup log
     await createBackupLog({
-      action: 'backup',
+      action: 'export',
       user_id: userId,
       user_name: userName,
       modules: includeModules,
@@ -176,7 +176,7 @@ const createFullBackup = async (
     
     // Log the failure
     await createBackupLog({
-      action: 'backup',
+      action: 'export',
       user_id: userId,
       user_name: userName,
       modules: includeModules,
@@ -226,7 +226,7 @@ const restoreFromBackup = async (
 
     // Create restore log
     await createBackupLog({
-      action: 'restore',
+      action: 'import',
       user_id: userId,
       user_name: userName,
       modules,
@@ -247,7 +247,7 @@ const restoreFromBackup = async (
     
     // Log the failure
     await createBackupLog({
-      action: 'restore',
+      action: 'import',
       user_id: userId,
       user_name: userName,
       modules,

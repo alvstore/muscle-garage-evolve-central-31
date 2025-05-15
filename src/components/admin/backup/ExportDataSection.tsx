@@ -1,171 +1,123 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { saveAs } from 'file-saver';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Download, FileText } from 'lucide-react';
+import backupService from '@/services/backupService';
 
 interface ExportDataSectionProps {
   onExportComplete: () => void;
 }
 
-type ModuleType = 
-  | 'members' 
-  | 'classes' 
-  | 'profiles' 
-  | 'announcements' 
-  | 'reminder_rules' 
-  | 'motivational_messages'
-  | 'feedback';
-
-interface Module {
-  id: ModuleType;
-  label: string;
-  selected: boolean;
-}
-
 const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete }) => {
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
-  const [isExporting, setIsExporting] = useState(false);
-  
-  const [modules, setModules] = useState<Module[]>([
-    { id: 'members', label: 'Members', selected: true },
-    { id: 'classes', label: 'Classes', selected: true },
-    { id: 'profiles', label: 'Staff & Trainers', selected: true },
-    { id: 'announcements', label: 'Announcements', selected: true },
-    { id: 'reminder_rules', label: 'Reminder Rules', selected: true },
-    { id: 'motivational_messages', label: 'Motivational Messages', selected: true },
-    { id: 'feedback', label: 'Feedback', selected: true },
-  ]);
 
-  const toggleModule = (id: ModuleType) => {
-    setModules(modules.map(module => 
-      module.id === id ? { ...module, selected: !module.selected } : module
-    ));
+  const handleModuleSelect = (module: string) => {
+    setSelectedModules((prev) =>
+      prev.includes(module) ? prev.filter((m) => m !== module) : [...prev, module]
+    );
   };
 
-  const selectAll = () => {
-    setModules(modules.map(module => ({ ...module, selected: true })));
-  };
-
-  const deselectAll = () => {
-    setModules(modules.map(module => ({ ...module, selected: false })));
-  };
+  const modules = [
+    'members', 'announcements', 'branches', 'backup_logs',
+    'body_measurements', 'class_bookings', 'classes',
+    'class_schedules', 'diet_plans', 'email_settings',
+    'exercises', 'expense_categories', 'feedback',
+    'global_settings', 'income_categories', 'inventory_items',
+    'invoices', 'meal_items', 'meal_plans',
+    'measurements', 'member_attendance', 'member_memberships',
+    'member_progress', 'memberships', 'motivational_messages',
+    'orders', 'payment_gateway_settings', 'payment_settings',
+    'payments', 'profiles', 'promo_codes',
+    'referrals', 'reminder_rules', 'staff_attendance',
+    'store_products', 'trainer_assignments', 'transactions',
+    'webhook_logs', 'workout_days', 'workout_plans'
+  ];
 
   const handleExport = async () => {
-    const selectedModules = modules.filter(m => m.selected).map(m => m.id);
-    
     if (selectedModules.length === 0) {
-      toast.error("No modules selected. Please select at least one module to export.");
+      toast.error('Please select at least one module to export');
       return;
     }
 
-    setIsExporting(true);
-    const exportData: Record<string, any[]> = {};
-    
+    setExporting(true);
+
     try {
-      for (const module of selectedModules) {
-        // Use the module as a type safe string for the query
-        const { data, error } = await supabase
-          .from(module)
-          .select('*');
-          
-        if (error) {
-          console.error(`Error exporting ${module}:`, error);
-          toast.error(`Error exporting ${module}: ${error.message}`);
-        } else if (data) {
-          exportData[module] = data;
-        }
-      }
-      
-      // Create and download the JSON file
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `gym-backup-${timestamp}.json`;
-      const fileContent = JSON.stringify(exportData, null, 2);
-      const blob = new Blob([fileContent], { type: 'application/json' });
-      saveAs(blob, fileName);
-      
-      // Log the export activity
-      await supabase.from('backup_logs').insert([
-        {
-          action: 'export',
-          user_id: user?.id,
-          user_name: user?.name || 'Unknown',
-          timestamp: new Date().toISOString(),
-          modules: selectedModules,
-          success: true,
-          total_records: Object.values(exportData).flat().length,
-        }
-      ]);
-      
-      toast.success(`Successfully exported data to ${fileName}`);
-      
-      if (onExportComplete) {
+      const result = await backupService.createFullBackup(
+        user?.id || '',
+        user?.full_name || user?.name || 'System',
+        selectedModules
+      );
+
+      if (result.success) {
+        const backupData = JSON.stringify(result.data);
+        const blob = new Blob([backupData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup-${new Date().toISOString()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.success('Data exported successfully');
         onExportComplete();
+      } else {
+        toast.error('Failed to create backup');
       }
-    } catch (error: any) {
-      console.error('Export failed:', error);
-      toast.error(error.message || "An unexpected error occurred during export");
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('An error occurred during export');
     } finally {
-      setIsExporting(false);
+      setExporting(false);
     }
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <Label className="text-base font-medium">Select modules to export</Label>
-            <div className="space-x-2">
-              <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
-              <Button variant="outline" size="sm" onClick={deselectAll}>Deselect All</Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-            {modules.map((module) => (
-              <div key={module.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`module-${module.id}`}
-                  checked={module.selected}
-                  onCheckedChange={() => toggleModule(module.id)}
-                />
-                <Label
-                  htmlFor={`module-${module.id}`}
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  {module.label}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <Button
-          onClick={handleExport}
-          disabled={isExporting || modules.every(m => !m.selected)}
-          className="w-full"
-        >
-          {isExporting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Exporting...
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              Export Data
-            </>
-          )}
-        </Button>
-      </CardContent>
-    </Card>
+    <CardContent className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {modules.map((module) => (
+          <Card key={module} className="shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="flex items-center justify-between p-3">
+              <label
+                htmlFor={module}
+                className="font-medium text-sm text-gray-700 cursor-pointer"
+              >
+                {module}
+              </label>
+              <Checkbox
+                id={module}
+                checked={selectedModules.includes(module)}
+                onCheckedChange={() => handleModuleSelect(module)}
+              />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Button
+        onClick={handleExport}
+        disabled={exporting}
+        className="w-full"
+      >
+        {exporting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Exporting...
+          </>
+        ) : (
+          <>
+            <Download className="mr-2 h-4 w-4" />
+            Export Data
+          </>
+        )}
+      </Button>
+    </CardContent>
   );
 };
 

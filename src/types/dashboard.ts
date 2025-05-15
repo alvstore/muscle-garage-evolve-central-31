@@ -1,31 +1,42 @@
 
-// Dashboard specific types
+import { User } from './user';
+import { Member } from './member';
 
-export interface StatCard {
-  title: string;
-  value: string | number;
-  change: number;
-  trend: 'up' | 'down' | 'neutral';
+export interface DashboardSummary {
+  activeMembers: number;
+  totalMembers: number;
+  todayCheckIns: number;
+  upcomingRenewals: number;
+  revenue: {
+    daily: number;
+    weekly: number;
+    monthly: number;
+    yearly: number;
+  };
 }
 
 export interface ActivityItem {
   id: string;
-  type: 'check-in' | 'check-out' | 'payment' | 'membership' | 'class' | 'other';
   title: string;
-  description?: string;
+  description: string;
+  type: string;
   timestamp: string;
-  user?: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  member?: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  metadata?: Record<string, any>;
   time?: string;
+  member?: Member;
+  member_id?: string;
+  user_id?: string;
+}
+
+export interface Payment {
+  id: string;
+  member_id: string;
+  member_name: string;
+  member_avatar?: string;
+  membership_plan?: string;
+  amount: number;
+  status: string;
+  due_date?: string;
+  paid_date?: string;
 }
 
 export interface RenewalItem {
@@ -33,32 +44,21 @@ export interface RenewalItem {
   member_id: string;
   member_name: string;
   member_avatar?: string;
-  plan_name: string;
+  membership_plan?: string;
+  renewal_amount?: number;
+  status: 'upcoming' | 'overdue' | 'renewed';
   expiry_date: string;
-  days_remaining: number;
-  amount: number;
-  status: 'upcoming' | 'overdue' | 'renewed' | 'active' | 'expired';
-  memberName?: string;
-  memberAvatar?: string;
-  membershipPlan?: string;
-  expiryDate?: string;
-  renewalAmount?: number;
+  days_left?: number;
 }
 
-export interface Payment {
+export interface Announcement {
   id: string;
-  member_id?: string;
-  member_name?: string;
-  memberId?: string;
-  memberName?: string;
-  amount: number;
-  date: string;
-  status: 'pending' | 'completed' | 'failed' | 'overdue';
-  method?: string;
-  description?: string;
-  invoice_id?: string;
-  memberAvatar?: string;
-  membershipPlan?: string;
-  dueDate?: string;
-  contactInfo?: string;
+  title: string;
+  content: string;
+  authorName?: string;
+  authorId?: string;
+  priority: 'low' | 'medium' | 'high'; 
+  createdAt: string;
+  targetRoles?: string[];
+  channels?: string[];
 }

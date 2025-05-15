@@ -1,163 +1,141 @@
-
 import React, { useState, useRef } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { FileUploader } from "@/components/ui/file-uploader";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/integrations/supabase/client';
-import { BackupLogEntry } from '@/types/notification';
 import { toast } from 'sonner';
+import { Loader2, Upload, FileText } from 'lucide-react';
+import backupService from '@/services/backupService';
 
-interface ImportDataSectionProps {
-  onImportComplete?: () => void;
-}
-
-const ImportDataSection = ({ onImportComplete }: ImportDataSectionProps) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+const ImportDataSection = ({ onImportComplete }: { onImportComplete: () => void }) => {
+  const [importing, setImporting] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [fileContent, setFileContent] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
-  const handleFileChange = (selectedFile: File | null) => {
-    if (!selectedFile) return;
-
-    if (selectedFile.type !== 'application/json') {
-      toast.error("Please select a JSON file");
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      const reader = new FileReader();
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        setFileContent(event.target?.result as string);
+      };
+      reader.readAsText(file);
     }
-
-    setFile(selectedFile);
   };
 
-  const handleImport = async () => {
-    if (!file) {
-      toast.error("Please select a JSON file to import");
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!uploadedFile) {
+      toast.error('Please select a file to import');
       return;
     }
 
+    setImporting(true);
+
     try {
-      setIsUploading(true);
+      const backupData = JSON.parse(fileContent);
       
-      const fileContent = await file.text();
-      let data: Record<string, any[]>;
-      
-      try {
-        data = JSON.parse(fileContent);
-      } catch (error) {
-        throw new Error("Invalid JSON file");
-      }
-      
-      const modules = Object.keys(data);
-      if (modules.length === 0) {
-        throw new Error("No data found in the file");
-      }
-      
-      const validTables = [
-        "members", "classes", "profiles",
-        "announcements", "reminder_rules", "motivational_messages", "feedback"
-      ];
-      
-      // Validate if all modules are valid tables
-      const invalidModules = modules.filter(module => !validTables.includes(module));
-      if (invalidModules.length > 0) {
-        throw new Error(`Invalid modules: ${invalidModules.join(", ")}`);
-      }
-      
-      // Process each module
-      let totalRecords = 0;
-      let successCount = 0;
-      
-      for (const module of modules) {
-        const records = data[module];
-        if (!Array.isArray(records) || records.length === 0) continue;
-        
-        totalRecords += records.length;
-        
-        // Remove ids to let the database generate new ones
-        const preparedRecords = records.map(record => {
-          const { id, ...rest } = record;
-          return {
-            ...rest,
-            imported_at: new Date().toISOString()
-          };
-        });
-        
-        // Use any valid string for the module name
-        const { data: insertedData, error } = await supabase
-          .from(module as any)
-          .insert(preparedRecords)
-          .select();
-          
-        if (error) {
-          console.error(`Error importing ${module}:`, error);
-        } else {
-          successCount += insertedData ? insertedData.length : 0;
+      const result = await backupService.restoreFromBackup(
+        backupData,
+        user?.id || '',
+        user?.full_name || user?.name || 'System',
+        { upsert: true }
+      );
+
+      if (result.success) {
+        toast.success('Data imported successfully');
+        setUploadedFile(null);
+        setFileContent('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''; // Reset the file input
         }
-      }
-      
-      // Log the import activity
-      const logEntry: Omit<BackupLogEntry, "id" | "created_at" | "updated_at"> = {
-        action: 'import',
-        user_id: user?.id,
-        user_name: user?.name || 'Unknown',
-        timestamp: new Date().toISOString(),
-        modules,
-        success: successCount > 0,
-        total_records: totalRecords,
-        success_count: successCount,
-        failed_count: totalRecords - successCount
-      };
-      
-      await supabase.from('backup_logs').insert([logEntry]);
-      
-      toast.success(`Successfully imported ${successCount} of ${totalRecords} records`);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setFile(null);
-      
-      if (onImportComplete) {
         onImportComplete();
+      } else {
+        toast.error('Failed to import backup');
       }
-    } catch (error: any) {
-      console.error('Import failed:', error);
-      toast.error(error.message || "An unexpected error occurred");
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('An error occurred during import');
     } finally {
-      setIsUploading(false);
+      setImporting(false);
     }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Import Data</CardTitle>
-        <CardDescription>
-          Upload a JSON export file to import data.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="file">Select JSON File</Label>
-          <FileUploader
-            ref={fileInputRef}
-            onFileSelected={handleFileChange}
-            accept=".json"
-          />
-        </div>
-        {file && (
-          <div className="text-sm">
-            Selected file: <span className="font-medium">{file.name}</span>
+      <CardContent className="p-6">
+        <form onSubmit={handleImport} className="space-y-4">
+          <div>
+            <label
+              htmlFor="dropzone-file"
+              className="mx-auto cursor-pointer flex w-full max-w-lg flex-col items-center rounded-xl border-2 border-dashed border-blue-400 bg-blue-100 py-8"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-12 text-blue-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6l-2.06-2.06a5 5 0 00-7.17 7.17l1.291 1.29a3 3 0 012.121 2.121l.458.458m0 0l-2.3-2.3M15 12h5.75a.75.75 0 00.75-.75V4.75a.75.75 0 00-.75-.75H15m0 0l3 3m-3-3v11a.75.75 0 01-.75.75H7.75a.75.75 0 01-.75-.75V12"
+                />
+              </svg>
+              <p className="mb-2 text-xl text-blue-500 font-semibold">
+                Upload your file here
+              </p>
+              <p className="text-sm text-blue-500">
+                (Only .json files are supported)
+              </p>
+              <input
+                ref={fileInputRef}
+                id="dropzone-file"
+                type="file"
+                className="hidden"
+                accept=".json"
+                onChange={handleFileChange}
+              />
+            </label>
           </div>
-        )}
-        <Button 
-          onClick={handleImport} 
-          disabled={!file || isUploading}
-        >
-          {isUploading ? "Importing..." : "Import"}
-        </Button>
+
+          {uploadedFile && (
+            <div className="rounded-md p-4 bg-muted text-sm text-muted-foreground flex items-center justify-between">
+              <div className="flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                {uploadedFile.name} - {(uploadedFile.size / 1024).toFixed(2)} KB
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
+                setUploadedFile(null);
+                setFileContent('');
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''; // Reset the file input
+                }
+              }}>
+                Remove
+              </Button>
+            </div>
+          )}
+
+          <Button type="submit" disabled={importing} className="w-full">
+            {importing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Importing...
+              </>
+            ) : (
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Import Data
+              </>
+            )}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

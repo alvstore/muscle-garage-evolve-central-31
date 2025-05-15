@@ -1,11 +1,11 @@
 
 export interface BackupLogEntry {
   id: string;
-  action: 'backup' | 'restore';
+  action: 'export' | 'import';
   user_id?: string;
   user_name?: string;
-  modules: string[];
   timestamp: string;
+  modules: string[];
   success: boolean;
   total_records?: number;
   success_count?: number;

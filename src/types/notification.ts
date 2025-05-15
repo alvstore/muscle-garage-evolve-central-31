@@ -7,6 +7,7 @@ export interface Notification {
   created_at: string;
   type?: string;
   user_id: string;
+  timestamp?: string;
 }
 
 export interface Announcement {
@@ -55,4 +56,67 @@ export interface BackupLogEntry {
   failed_count?: number;
   created_at: string;
   updated_at: string;
+}
+
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'general';
+
+export interface MotivationalMessage {
+  id: string;
+  title: string;
+  content: string;
+  category: MotivationalCategory;
+  tags?: string[];
+  author?: string;
+  active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ReminderRule {
+  id: string;
+  title: string;
+  description?: string;
+  trigger_type: string;
+  trigger_value?: number;
+  conditions: Record<string, any>;
+  target_roles: string[];
+  message?: string;
+  send_via: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type NotificationChannel = 'email' | 'sms' | 'push' | 'in-app' | 'whatsapp';
+
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
+
+export interface InvoiceItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  discount?: number;
+}
+
+export interface Invoice {
+  id: string;
+  member_id: string;
+  memberName?: string;
+  amount: number;
+  status: InvoiceStatus;
+  dueDate: string;
+  issuedDate: string;
+  paidDate?: string;
+  items: InvoiceItem[];
+  branchId?: string;
+  notes?: string;
+  subtotal?: number;
+  discount?: number;
+  tax?: number;
+  total?: number;
+  created_at?: string;
+  updated_at?: string;
 }
