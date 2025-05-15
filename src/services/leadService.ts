@@ -14,10 +14,10 @@ export const leadService = {
       
       if (error) throw error;
       
-      return { data, error: null };
+      return data as Lead[];
     } catch (error) {
       console.error('Error fetching leads:', error);
-      return { data: null, error };
+      return [];
     }
   },
   
@@ -30,10 +30,10 @@ export const leadService = {
       
       if (error) throw error;
       
-      return { data: data[0], error: null };
+      return data[0] as Lead;
     } catch (error) {
       console.error('Error creating lead:', error);
-      return { data: null, error };
+      return null;
     }
   },
   
@@ -47,10 +47,10 @@ export const leadService = {
       
       if (error) throw error;
       
-      return { data: data[0], error: null };
+      return data[0] as Lead;
     } catch (error) {
       console.error('Error updating lead:', error);
-      return { data: null, error };
+      return null;
     }
   },
   
@@ -63,10 +63,10 @@ export const leadService = {
       
       if (error) throw error;
       
-      return { success: true, error: null };
+      return true;
     } catch (error) {
       console.error('Error deleting lead:', error);
-      return { success: false, error };
+      return false;
     }
   },
   
@@ -76,14 +76,14 @@ export const leadService = {
         .from('follow_up_history')
         .select('*')
         .eq('lead_id', leadId)
-        .order('scheduled_at', { ascending: false });
+        .order('scheduled_date', { ascending: false });
       
       if (error) throw error;
       
-      return { data, error: null };
+      return data;
     } catch (error) {
       console.error('Error fetching follow-up history:', error);
-      return { data: null, error };
+      return [];
     }
   },
   
@@ -103,10 +103,10 @@ export const leadService = {
       
       if (error) throw error;
       
-      return { data: data[0], error: null };
+      return data[0];
     } catch (error) {
       console.error('Error scheduling follow-up:', error);
-      return { data: null, error };
+      return null;
     }
   }
 };
