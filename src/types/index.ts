@@ -3,22 +3,31 @@
 import { Branch } from './branch';
 import { User, UserRole } from './user';
 import { Member, Membership } from './member';
-import { DashboardSummary, ActivityItem, Payment, RenewalItem, Announcement } from './dashboard';
+import { DashboardSummary, ActivityItem, Payment, RenewalItem, Announcement as DashboardAnnouncement } from './dashboard';
 import { WorkoutPlan, WorkoutDay, Exercise } from './workout';
 import { DietPlan, MealPlan, ProgressMetrics } from './fitness';
 import { Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus } from './finance';
-import { Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, ReminderRule, NotificationChannel } from './notification';
+import { 
+  Notification, 
+  Feedback, 
+  FeedbackType, 
+  MotivationalMessage, 
+  MotivationalCategory, 
+  ReminderRule, 
+  NotificationChannel,
+  Announcement
+} from './notification';
 import { BackupLogEntry } from './backup';
 
 // Re-export types
 export type { 
   Branch, User, UserRole, Member, Membership, 
-  DashboardSummary, ActivityItem, Payment, RenewalItem, Announcement,
+  DashboardSummary, ActivityItem, Payment, RenewalItem, DashboardAnnouncement,
   WorkoutPlan, WorkoutDay, Exercise,
   DietPlan, MealPlan, ProgressMetrics,
   Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus,
   Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, ReminderRule, NotificationChannel,
-  BackupLogEntry
+  BackupLogEntry, Announcement
 };
 
 // Add any other types needed

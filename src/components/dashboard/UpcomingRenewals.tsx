@@ -1,119 +1,102 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format, parseISO } from "date-fns";
-import { RenewalItem } from "@/types/dashboard";
-import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { formatDistance, parseISO } from 'date-fns';
+import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { RenewalItem } from '@/types/dashboard';
 
 interface UpcomingRenewalsProps {
-  renewals: RenewalItem[];
+  renewals?: RenewalItem[];
+  onViewAll?: () => void;
+  emptyMessage?: string;
 }
 
-const UpcomingRenewals = ({ renewals }: UpcomingRenewalsProps) => {
-  const { toast } = useToast();
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "inactive":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "expired":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
-
-  const handleSendReminder = (memberId: string, memberName: string) => {
-    // In a real app, this would send an API request to trigger a reminder
-    console.log(`Sending renewal reminder to ${memberName} (ID: ${memberId})`);
+const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
+  renewals = [],
+  onViewAll,
+  emptyMessage = 'No upcoming renewals'
+}) => {
+  // Sort renewals - first by status (overdue first), then by expiry date
+  const sortedRenewals = [...renewals].sort((a, b) => {
+    // Status priority: overdue > upcoming > renewed
+    if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+    if (a.status !== 'overdue' && b.status === 'overdue') return 1;
     
-    toast({
-      title: "Reminder Sent",
-      description: `Renewal reminder sent to ${memberName}`,
-    });
-  };
-
-  const handleSendAllReminders = () => {
-    // In a real app, this would send an API request to trigger reminders for all listed members
-    console.log("Sending reminders to all members with upcoming renewals");
-    
-    toast({
-      title: "All Reminders Sent",
-      description: `Sent ${renewals.length} renewal reminders`,
-    });
-  };
-
-  // Sort renewals by expiry date, closest first
-  const sortedRenewals = [...renewals].sort((a, b) => 
-    new Date(a.expiry_date || a.expiryDate || "").getTime() - 
-    new Date(b.expiry_date || b.expiryDate || "").getTime()
-  );
+    // Same status, sort by expiry date
+    const dateA = new Date(a.expiry_date || a.expiryDate || '');
+    const dateB = new Date(b.expiry_date || b.expiryDate || '');
+    return dateA.getTime() - dateB.getTime();
+  });
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <CardTitle>Upcoming Renewals</CardTitle>
-          <CardDescription>Memberships expiring in the next 7 days</CardDescription>
-        </div>
-        {renewals.length > 0 && (
-          <Button variant="outline" size="sm" onClick={handleSendAllReminders}>
-            Send All Reminders
-          </Button>
-        )}
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-md font-medium">Upcoming Renewals</CardTitle>
+        <Button variant="ghost" size="sm" onClick={onViewAll}>
+          View All
+        </Button>
       </CardHeader>
-      <CardContent>
-        {renewals.length === 0 ? (
-          <p className="text-center text-muted-foreground py-6">No upcoming renewals</p>
+
+      <CardContent className="pt-2">
+        {sortedRenewals.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+            <p>{emptyMessage}</p>
+          </div>
         ) : (
           <div className="space-y-4">
-            {sortedRenewals.map((renewal) => (
-              <div key={renewal.id} className="flex items-center justify-between space-x-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={renewal.member_avatar || renewal.memberAvatar} alt={renewal.member_name || renewal.memberName || ""} />
-                    <AvatarFallback>{getInitials(renewal.member_name || renewal.memberName || "")}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium leading-none">{renewal.member_name || renewal.memberName}</p>
-                    <div className="flex items-center pt-1">
-                      <span className="text-xs text-muted-foreground">{renewal.membershipPlan || renewal.plan_name}</span>
-                      <span className="mx-1 text-xs text-muted-foreground">・</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(renewal.status)}`}>
-                        Expires: {format(parseISO(renewal.expiry_date || renewal.expiryDate || ""), "MMM dd")}
-                      </span>
-                    </div>
+            {sortedRenewals.slice(0, 5).map((renewal) => (
+              <div key={renewal.id} className="flex items-center space-x-4">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                  {(renewal.member_avatar || renewal.memberAvatar) ? (
+                    <img 
+                      src={renewal.member_avatar || renewal.memberAvatar} 
+                      className="w-full h-full rounded-full object-cover" 
+                      alt={renewal.member_name || renewal.memberName || "Member"} 
+                    />
+                  ) : (
+                    <span className="font-medium text-xs">
+                      {(renewal.member_name || renewal.memberName || "").substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium truncate">
+                      {renewal.member_name || renewal.memberName}
+                    </p>
+                    <Badge 
+                      variant={renewal.status === 'overdue' ? 'destructive' : 
+                              renewal.status === 'upcoming' ? 'default' : 'outline'}
+                    >
+                      {renewal.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground flex justify-between mt-1">
+                    <span>{renewal.membership_plan || renewal.membershipPlan || renewal.plan_name}</span>
+                    <span>
+                      {renewal.status === 'overdue' ? 'Expired ' : 'Expires '}
+                      {formatDistance(new Date(renewal.expiry_date || renewal.expiryDate || ''), new Date(), { 
+                        addSuffix: true 
+                      })}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">${renewal.renewalAmount || renewal.amount}</span>
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => handleSendReminder(renewal.id, renewal.member_name || renewal.memberName || "")}
-                  >
-                    Remind
+                
+                <div>
+                  <p className="text-sm font-medium">
+                    ₹{(renewal.renewal_amount || renewal.renewalAmount || renewal.amount || 0).toLocaleString()}
+                  </p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Actions for {renewal.member_name || renewal.memberName}</span>
                   </Button>
                 </div>
               </div>
             ))}
-            
-            {renewals.length > 5 && (
-              <Button variant="outline" className="w-full mt-2">
-                View All Renewals
-              </Button>
-            )}
           </div>
         )}
       </CardContent>

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/services/supabaseClient";
 import { BackupLogEntry } from '@/types/backup';
 import { toast } from 'sonner';
@@ -31,7 +30,7 @@ const createBackupLog = async (logData: Omit<BackupLogEntry, 'id' | 'timestamp' 
 
 // Function to get backup logs
 const getBackupLogs = async (filters?: {
-  action?: 'export' | 'import';
+  action?: 'export' | 'import' | 'backup' | 'restore';
   startDate?: string;
   endDate?: string;
   success?: boolean;
@@ -88,7 +87,7 @@ const validTables = [
   'webhook_logs', 'workout_days', 'workout_plans'
 ] as const;
 
-type ValidTable = typeof validTables[number];
+export type ValidTable = typeof validTables[number];
 
 // Function to export data from a specific table
 const exportTableData = async (tableName: ValidTable) => {

@@ -25,6 +25,12 @@ export interface ActivityItem {
   member?: Member;
   member_id?: string;
   user_id?: string;
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+    avatar?: string;
+  };
 }
 
 export interface Payment {
@@ -32,22 +38,34 @@ export interface Payment {
   member_id: string;
   member_name: string;
   member_avatar?: string;
+  memberName?: string; // for backward compatibility
+  memberAvatar?: string; // for backward compatibility
   membership_plan?: string;
+  membershipPlan?: string; // for backward compatibility
   amount: number;
   status: string;
   due_date?: string;
+  dueDate?: string; // for backward compatibility
   paid_date?: string;
+  plan_name?: string; // for backward compatibility
 }
 
 export interface RenewalItem {
   id: string;
   member_id: string;
   member_name: string;
+  memberName?: string; // for backward compatibility
   member_avatar?: string;
+  memberAvatar?: string; // for backward compatibility
   membership_plan?: string;
+  membershipPlan?: string; // for backward compatibility
+  plan_name?: string; // for backward compatibility
   renewal_amount?: number;
-  status: 'upcoming' | 'overdue' | 'renewed';
+  renewalAmount?: number; // for backward compatibility
+  amount?: number; // for backward compatibility
+  status: 'upcoming' | 'overdue' | 'renewed' | 'active' | 'expired';
   expiry_date: string;
+  expiryDate?: string; // for backward compatibility
   days_left?: number;
 }
 

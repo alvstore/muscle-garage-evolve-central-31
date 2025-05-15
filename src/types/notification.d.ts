@@ -2,27 +2,38 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  timestamp: string;
+  timestamp?: string; // Add timestamp for backward compatibility
   read: boolean;
   type?: string;
+  created_at: string;
+  user_id: string;
 }
 
 export interface ReminderRule {
   id: string;
-  name: string;
+  name?: string; // For backward compatibility
   title: string;
   description?: string;
-  triggerType: string;
-  triggerValue: number;
+  triggerType?: string; // For backward compatibility
+  trigger_type: string;
+  triggerValue?: number; // For backward compatibility
+  trigger_value?: number;
   message?: string;
-  notificationChannel?: string;
+  notificationChannel?: string; // For backward compatibility
+  notification_channel?: string;
   conditions?: Record<string, any>;
-  isActive?: boolean;
-  active?: boolean;
-  targetRoles: string[];
-  sendVia: string[];
-  channels: string[];
-  targetType: string;
+  isActive?: boolean; // For backward compatibility
+  active?: boolean; // For backward compatibility
+  is_active: boolean;
+  targetRoles?: string[]; // For backward compatibility
+  target_roles: string[];
+  sendVia?: string[]; // For backward compatibility
+  channels?: string[]; // For backward compatibility
+  send_via: string[];
+  targetType?: string; // For backward compatibility
+  target_type?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface IntegrationStatus {
@@ -70,7 +81,8 @@ export interface Announcement {
   authorName: string;
   authorId?: string;
   createdAt: string;
-  expiresAt?: string;
+  expiresAt?: string; // For backward compatibility
+  expires_at?: string;
   channel?: string;
   branchId?: string;
   targetRoles?: string[];
@@ -166,7 +178,7 @@ export interface MotivationalMessage {
   title: string;
   content: string;
   author?: string;
-  category: string;
+  category: MotivationalCategory;
   tags?: string[];
   active?: boolean;
   created_at?: string;

@@ -1,4 +1,3 @@
-
 export interface Notification {
   id: string;
   title: string;
@@ -24,6 +23,7 @@ export interface Announcement {
   channel?: string;
   branchId?: string;
   expires_at?: string;
+  expiresAt?: string; // Adding for backward compatibility
 }
 
 export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'equipment' | 'service';
@@ -75,16 +75,27 @@ export interface MotivationalMessage {
 export interface ReminderRule {
   id: string;
   title: string;
+  name?: string; // For backward compatibility
   description?: string;
   trigger_type: string;
+  triggerType?: string; // For backward compatibility
   trigger_value?: number;
-  conditions: Record<string, any>;
-  target_roles: string[];
+  triggerValue?: number; // For backward compatibility
+  conditions?: Record<string, any>;
   message?: string;
-  send_via: string[];
+  notification_channel?: string;
+  notificationChannel?: string; // For backward compatibility
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isActive?: boolean; // For backward compatibility
+  active?: boolean; // For backward compatibility
+  target_roles: string[];
+  targetRoles?: string[]; // For backward compatibility
+  send_via: string[];
+  sendVia?: string[]; // For backward compatibility
+  channels?: string[]; // For backward compatibility
+  targetType?: string; // For backward compatibility
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type NotificationChannel = 'email' | 'sms' | 'push' | 'in-app' | 'whatsapp';
@@ -120,3 +131,49 @@ export interface Invoice {
   created_at?: string;
   updated_at?: string;
 }
+
+export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
+  return {
+    id: dbAnnouncement.id,
+    title: dbAnnouncement.title,
+    content: dbAnnouncement.content,
+    priority: dbAnnouncement.priority || 'medium',
+    authorName: dbAnnouncement.author_name,
+    authorId: dbAnnouncement.author_id,
+    createdAt: dbAnnouncement.created_at,
+    expires_at: dbAnnouncement.expires_at,
+    expiresAt: dbAnnouncement.expires_at, // Add for backward compatibility
+    channel: dbAnnouncement.channel,
+    branchId: dbAnnouncement.branch_id,
+    targetRoles: dbAnnouncement.target_roles || [],
+    channels: dbAnnouncement.channels || []
+  };
+};
+
+export const adaptReminderRuleFromDB = (dbRule: any): ReminderRule => {
+  return {
+    id: dbRule.id,
+    title: dbRule.title,
+    name: dbRule.title, // For backward compatibility
+    description: dbRule.description,
+    trigger_type: dbRule.trigger_type,
+    triggerType: dbRule.trigger_type, // For backward compatibility
+    trigger_value: dbRule.trigger_value,
+    triggerValue: dbRule.trigger_value, // For backward compatibility
+    message: dbRule.message,
+    notification_channel: dbRule.notification_channel,
+    notificationChannel: dbRule.notification_channel, // For backward compatibility
+    conditions: dbRule.conditions || {},
+    is_active: dbRule.is_active,
+    isActive: dbRule.is_active, // For backward compatibility
+    active: dbRule.is_active, // For backward compatibility
+    target_roles: dbRule.target_roles || [],
+    targetRoles: dbRule.target_roles || [], // For backward compatibility
+    send_via: dbRule.send_via || [],
+    sendVia: dbRule.send_via || [], // For backward compatibility
+    channels: dbRule.send_via || [], // For backward compatibility
+    targetType: dbRule.target_type || 'all',
+    created_at: dbRule.created_at,
+    updated_at: dbRule.updated_at
+  };
+};

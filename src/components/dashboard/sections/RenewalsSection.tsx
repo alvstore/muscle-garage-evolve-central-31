@@ -37,8 +37,8 @@ const RenewalsSection = ({ renewals = [] }: RenewalsSectionProps) => {
                     <div className="font-medium truncate">{renewal.member_name || renewal.memberName}</div>
                     <Badge
                       variant={
-                        (renewal.status === 'upcoming' || renewal.status === 'active') ? 'default' :
-                        (renewal.status === 'overdue' || renewal.status === 'expired') ? 'destructive' : 'secondary'
+                        renewal.status === 'upcoming' || renewal.status === 'active' ? 'default' :
+                        renewal.status === 'overdue' || renewal.status === 'expired' ? 'destructive' : 'secondary'
                       }
                       className="ml-2"
                     >
@@ -46,8 +46,8 @@ const RenewalsSection = ({ renewals = [] }: RenewalsSectionProps) => {
                     </Badge>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{renewal.membershipPlan || renewal.plan_name}</span>
-                    <span className="font-medium">₹{(renewal.renewalAmount || renewal.amount || 0).toLocaleString()}</span>
+                    <span className="text-muted-foreground">{renewal.membership_plan || renewal.membershipPlan || renewal.plan_name}</span>
+                    <span className="font-medium">₹{(renewal.renewal_amount || renewal.renewalAmount || renewal.amount || 0).toLocaleString()}</span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Expires: {format(parseISO(renewal.expiry_date || renewal.expiryDate || ""), 'dd MMM yyyy')}

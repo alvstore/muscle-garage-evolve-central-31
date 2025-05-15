@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Menu, Bell, X, Moon, Sun } from 'lucide-react';
+import { Menu, Bell, X, Moon, Sun, ChevronDown, Search, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -23,22 +22,26 @@ interface DashboardHeaderProps {
   sidebarOpen?: boolean;
 }
 
-const fakeNotifications: Notification[] = [
+const mockNotifications = [
   {
     id: '1',
     title: 'New Member Joined',
-    message: 'John Doe has joined as a new member.',
-    timestamp: new Date().toISOString(),
+    message: 'John Doe has just registered as a new member.',
     read: false,
-    type: 'member'
+    created_at: new Date().toISOString(),
+    user_id: 'system',
+    type: 'info',
+    timestamp: new Date().toISOString()
   },
   {
     id: '2',
-    title: 'Membership Expiring',
-    message: 'Sarah Smith\'s membership expires in 3 days.',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    title: 'Membership Expiring Soon',
+    message: 'Your membership will expire in 3 days. Please renew to continue access.',
     read: false,
-    type: 'alert'
+    created_at: new Date().toISOString(),
+    user_id: 'system',
+    type: 'warning',
+    timestamp: new Date().toISOString()
   }
 ];
 
@@ -50,7 +53,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [notifications] = React.useState<Notification[]>(fakeNotifications);
+  const [notifications] = React.useState<Notification[]>(mockNotifications);
   const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
   
   const handleLogout = async () => {

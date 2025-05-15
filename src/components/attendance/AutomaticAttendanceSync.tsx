@@ -1,202 +1,238 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Check, AlertCircle, Clock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast-manager';
-import { v4 as uuidv4 } from 'uuid';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { toast } from 'sonner';
+import { CheckCheck, Loader2, RefreshCw } from 'lucide-react';
+import { useCompany } from '@/hooks/use-company';
 
-interface BiometricAttendanceRecord {
-  id: string;
-  member_id: string;
-  timestamp: string;
-  device_id: string;
-  status: 'check-in' | 'check-out';
-}
-
-interface AutomaticAttendanceSyncProps {
-  memberId?: string;
-  showAll?: boolean;
-  limit?: number;
-  className?: string;
-}
-
-const AutomaticAttendanceSync: React.FC<AutomaticAttendanceSyncProps> = ({ 
-  memberId, 
-  showAll = false,
-  limit = 5,
-  className = ''
-}) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-  const [attendanceRecords, setAttendanceRecords] = useState<BiometricAttendanceRecord[]>([]);
-
-  const fetchAttendanceRecords = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('attendance')
-        .select('*')
-        .order('check_in_time', { ascending: false });
-      
-      if (memberId) {
-        query = query.eq('member_id', memberId);
-      }
-      
-      if (!showAll) {
-        query = query.limit(limit);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        throw error;
-      }
-      
-      setAttendanceRecords(data || []);
-      setLastSyncTime(new Date());
-    } catch (error: any) {
-      console.error('Error fetching attendance records:', error);
-      toast.error('Failed to fetch attendance records', {
-        description: error.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const syncBiometricData = async () => {
-    setSyncing(true);
-    try {
-      // Simulate API call to biometric system
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success('Sync Complete', {
-        description: 'Attendance data has been synchronized from biometric devices'
-      });
-      
-      // Refresh attendance records after sync
-      await fetchAttendanceRecords();
-    } catch (error: any) {
-      console.error('Error syncing biometric data:', error);
-      toast.error('Sync Failed', {
-        description: error.message || 'Failed to sync attendance data from biometric devices'
-      });
-    } finally {
-      setSyncing(false);
-    }
-  };
+const AutomaticAttendanceSync: React.FC = () => {
+  const [isHikvisionEnabled, setIsHikvisionEnabled] = useState(false);
+  const [hikvisionConfig, setHikvisionConfig] = useState({
+    ipAddress: '',
+    port: '',
+    username: '',
+    password: '',
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'success' | 'failed' | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { company, updateCompany } = useCompany();
 
   useEffect(() => {
-    fetchAttendanceRecords();
+    if (company?.attendance_settings) {
+      setIsHikvisionEnabled(company.attendance_settings.hikvision_enabled);
+      setHikvisionConfig(company.attendance_settings.device_config || {
+        ipAddress: '',
+        port: '',
+        username: '',
+        password: '',
+      });
+      setLastSync(company.attendance_settings.last_sync ? new Date(company.attendance_settings.last_sync) : null);
+      setSyncStatus(company.attendance_settings.sync_status || null);
+    }
+    setIsLoading(false);
+  }, [company]);
+
+  const syncAttendance = async () => {
+    // Placeholder for actual sync logic
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const success = Math.random() > 0.5;
+        if (success) {
+          setLastSync(new Date());
+          setSyncStatus('success');
+          resolve(true);
+        } else {
+          setSyncStatus('failed');
+          reject(new Error('Sync failed'));
+        }
+      }, 3000);
+    });
+  };
+
+  const triggerSync = async () => {
+    if (!confirm("Are you sure you want to trigger a manual synchronization?")) {
+      return;
+    }
     
-    // Set up polling for automatic sync every 5 minutes
-    const intervalId = setInterval(() => {
-      fetchAttendanceRecords();
-    }, 5 * 60 * 1000);
-    
-    return () => clearInterval(intervalId);
-  }, [memberId, limit, showAll]);
+    setIsSyncing(true);
+    try {
+      await syncAttendance();
+      toast.success("Sync completed successfully");
+    } catch (error) {
+      console.error("Error syncing attendance:", error);
+      toast.error("Failed to sync attendance: " + (error as any)?.description || "Unknown error");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const updateSettings = async () => {
+    setIsLoading(true);
+    try {
+      await updateCompany({
+        attendance_settings: {
+          hikvision_enabled: isHikvisionEnabled,
+          device_config: hikvisionConfig,
+          last_sync: lastSync?.toISOString(),
+          sync_status: syncStatus,
+        }
+      });
+      toast.success("Settings updated successfully");
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      toast.error("Failed to update settings: " + (error as any)?.description || "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetSync = async () => {
+    setIsLoading(true);
+    try {
+      await updateCompany({
+        attendance_settings: {
+          last_sync: null,
+          sync_status: null,
+        }
+      });
+      toast.success("Sync status reset successfully");
+    } catch (error) {
+      console.error("Error resetting sync:", error);
+      toast.error("Failed to reset sync: " + (error as any)?.description || "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-6">Loading settings...</div>;
+  }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
+    <Card>
+      <CardHeader>
+        <CardTitle>Automatic Attendance Sync</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="hikvision-enabled">Enable Hikvision Sync</Label>
+            <Switch
+              id="hikvision-enabled"
+              checked={isHikvisionEnabled}
+              onCheckedChange={(checked) => setIsHikvisionEnabled(checked)}
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Automatically sync attendance data from Hikvision devices.
+          </p>
+        </div>
+
+        {isHikvisionEnabled && (
+          <div className="space-y-4 border rounded-md p-4">
+            <h4 className="text-sm font-medium">Hikvision Device Configuration</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="ip-address">IP Address</Label>
+                <Input
+                  type="text"
+                  id="ip-address"
+                  value={hikvisionConfig.ipAddress}
+                  onChange={(e) => setHikvisionConfig({ ...hikvisionConfig, ipAddress: e.target.value })}
+                  placeholder="Enter IP Address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="port">Port</Label>
+                <Input
+                  type="text"
+                  id="port"
+                  value={hikvisionConfig.port}
+                  onChange={(e) => setHikvisionConfig({ ...hikvisionConfig, port: e.target.value })}
+                  placeholder="Enter Port"
+                />
+              </div>
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  type="text"
+                  id="username"
+                  value={hikvisionConfig.username}
+                  onChange={(e) => setHikvisionConfig({ ...hikvisionConfig, username: e.target.value })}
+                  placeholder="Enter Username"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  type="password"
+                  id="password"
+                  value={hikvisionConfig.password}
+                  onChange={(e) => setHikvisionConfig({ ...hikvisionConfig, password: e.target.value })}
+                  placeholder="Enter Password"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Biometric Attendance</CardTitle>
-            <CardDescription>
-              Automatically synced from biometric devices
-            </CardDescription>
+            <p className="text-sm font-medium">Last Sync</p>
+            {lastSync ? (
+              <p className="text-xs text-muted-foreground">
+                {lastSync.toLocaleString()}
+                {syncStatus === 'success' && (
+                  <CheckCheck className="inline-block h-4 w-4 text-green-500 ml-1" />
+                )}
+                {syncStatus === 'failed' && (
+                  <RefreshCw className="inline-block h-4 w-4 text-red-500 ml-1" />
+                )}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Never</p>
+            )}
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-            onClick={syncBiometricData}
-            disabled={syncing}
+          <Button
+            variant="secondary"
+            disabled={isSyncing}
+            onClick={triggerSync}
           >
-            {syncing ? (
+            {isSyncing ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Syncing...
               </>
             ) : (
               <>
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Sync Now
               </>
             )}
           </Button>
         </div>
-        {lastSyncTime && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Last synced: {format(lastSyncTime, 'MMM dd, yyyy HH:mm:ss')}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : attendanceRecords.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No attendance records found</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {attendanceRecords.map((record) => (
-              <div key={record.id} className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col">
-                    <span className="font-medium">
-                      {format(new Date(record.timestamp), 'MMM dd, yyyy')}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(record.timestamp), 'hh:mm a')}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Device ID: {record.device_id}
-                    </span>
-                  </div>
-                </div>
-                <Badge 
-                  variant="outline" 
-                  className={
-                    record.status === 'check-in'
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-blue-50 text-blue-700 border-blue-200"
-                  }
-                >
-                  {record.status === 'check-in' ? (
-                    <Check className="h-3 w-3 mr-1" />
-                  ) : (
-                    <Clock className="h-3 w-3 mr-1" />
-                  )}
-                  {record.status === 'check-in' ? 'Check In' : 'Check Out'}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-      {showAll && attendanceRecords.length > 0 && (
-        <CardFooter className="flex justify-center pt-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-            onClick={() => fetchAttendanceRecords()}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+
+        <div className="flex justify-between items-center">
+          <Button onClick={updateSettings} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Save Settings"
+            )}
           </Button>
-        </CardFooter>
-      )}
+          <Button variant="destructive" onClick={resetSync} disabled={isLoading}>
+            Reset Sync Status
+          </Button>
+        </div>
+      </CardContent>
     </Card>
   );
 };

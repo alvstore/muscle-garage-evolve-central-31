@@ -1,7 +1,7 @@
 
 export interface BackupLogEntry {
   id: string;
-  action: 'export' | 'import';
+  action: 'export' | 'import' | 'backup' | 'restore';
   user_id?: string;
   user_name?: string;
   timestamp: string;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,19 +25,26 @@ export const useReminderRules = () => {
       const transformedRules: ReminderRule[] = (data || []).map(rule => ({
         id: rule.id,
         title: rule.title,
-        name: rule.title, // Ensure name is always set
+        name: rule.title, // For backward compatibility
         description: rule.description || '',
-        triggerType: rule.trigger_type,
-        triggerValue: rule.trigger_value,
+        trigger_type: rule.trigger_type,
+        triggerType: rule.trigger_type, // For backward compatibility
+        trigger_value: rule.trigger_value,
+        triggerValue: rule.trigger_value, // For backward compatibility
         conditions: rule.conditions || {},
         message: rule.message || '',
-        notificationChannel: rule.notification_channel,
-        isActive: rule.is_active,
-        active: rule.is_active,
-        sendVia: rule.send_via || [],
-        channels: rule.send_via || [],
-        targetRoles: rule.target_roles || [],
-        targetType: 'all_members'
+        notification_channel: rule.notification_channel,
+        notificationChannel: rule.notification_channel, // For backward compatibility
+        is_active: rule.is_active,
+        isActive: rule.is_active, // For backward compatibility
+        active: rule.is_active, // For backward compatibility
+        target_roles: rule.target_roles || [],
+        targetRoles: rule.target_roles || [], // For backward compatibility
+        send_via: rule.send_via || [],
+        sendVia: rule.send_via || [], // For backward compatibility
+        channels: rule.send_via || [], // For backward compatibility
+        created_at: rule.created_at,
+        updated_at: rule.updated_at
       }));
 
       setRules(transformedRules);
@@ -59,16 +67,16 @@ export const useReminderRules = () => {
 
       // Transform frontend fields to match database schema
       const dbRule = {
-        title: rule.title || rule.name,
+        title: rule.title,
         description: rule.description,
-        trigger_type: rule.triggerType,
-        trigger_value: rule.triggerValue,
+        trigger_type: rule.trigger_type || rule.triggerType,
+        trigger_value: rule.trigger_value || rule.triggerValue,
         conditions: rule.conditions || {},
         message: rule.message,
-        notification_channel: rule.notificationChannel,
-        is_active: rule.isActive ?? rule.active ?? true,
-        send_via: rule.sendVia || rule.channels || [],
-        target_roles: rule.targetRoles || []
+        notification_channel: rule.notification_channel || rule.notificationChannel,
+        is_active: rule.is_active ?? rule.isActive ?? rule.active ?? true,
+        send_via: rule.send_via || rule.sendVia || rule.channels || [],
+        target_roles: rule.target_roles || rule.targetRoles || []
       };
 
       let response;
@@ -98,19 +106,26 @@ export const useReminderRules = () => {
         const savedRule: ReminderRule = {
           id: response.id,
           title: response.title,
-          name: response.title, // Ensure name is always set
+          name: response.title, // For backward compatibility
           description: response.description || '',
-          triggerType: response.trigger_type,
-          triggerValue: response.trigger_value,
+          trigger_type: response.trigger_type,
+          triggerType: response.trigger_type, // For backward compatibility
+          trigger_value: response.trigger_value,
+          triggerValue: response.trigger_value, // For backward compatibility
           conditions: response.conditions || {},
           message: response.message || '',
-          notificationChannel: response.notification_channel,
-          isActive: response.is_active,
-          active: response.is_active,
-          sendVia: response.send_via || [],
-          channels: response.send_via || [],
-          targetRoles: response.target_roles || [],
-          targetType: 'all_members'
+          notification_channel: response.notification_channel,
+          notificationChannel: response.notification_channel, // For backward compatibility
+          is_active: response.is_active,
+          isActive: response.is_active, // For backward compatibility
+          active: response.is_active, // For backward compatibility
+          target_roles: response.target_roles || [],
+          targetRoles: response.target_roles || [], // For backward compatibility
+          send_via: response.send_via || [],
+          sendVia: response.send_via || [], // For backward compatibility
+          channels: response.send_via || [], // For backward compatibility
+          created_at: response.created_at,
+          updated_at: response.updated_at
         };
 
         // Update rules array
@@ -124,7 +139,7 @@ export const useReminderRules = () => {
         }
         
         setRules(updatedRules);
-        toast.success(`Reminder rule "${rule.title || rule.name}" saved successfully`);
+        toast.success(`Reminder rule "${rule.title}" saved successfully`);
         return true;
       }
       

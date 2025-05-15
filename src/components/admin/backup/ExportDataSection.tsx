@@ -11,18 +11,61 @@ interface ExportDataSectionProps {
   onExportComplete: () => void;
 }
 
+// Define the valid table types to match the ones in backupService
+type ValidTable = 
+  | 'members' 
+  | 'announcements' 
+  | 'branches' 
+  | 'backup_logs'
+  | 'body_measurements' 
+  | 'class_bookings' 
+  | 'classes'
+  | 'class_schedules' 
+  | 'diet_plans' 
+  | 'email_settings'
+  | 'exercises' 
+  | 'expense_categories' 
+  | 'feedback'
+  | 'global_settings' 
+  | 'income_categories' 
+  | 'inventory_items'
+  | 'invoices' 
+  | 'meal_items' 
+  | 'meal_plans'
+  | 'measurements' 
+  | 'member_attendance' 
+  | 'member_memberships'
+  | 'member_progress' 
+  | 'memberships' 
+  | 'motivational_messages'
+  | 'orders' 
+  | 'payment_gateway_settings' 
+  | 'payment_settings'
+  | 'payments' 
+  | 'profiles' 
+  | 'promo_codes'
+  | 'referrals' 
+  | 'reminder_rules' 
+  | 'staff_attendance'
+  | 'store_products' 
+  | 'trainer_assignments' 
+  | 'transactions'
+  | 'webhook_logs' 
+  | 'workout_days' 
+  | 'workout_plans';
+
 const ExportDataSection: React.FC<ExportDataSectionProps> = ({ onExportComplete }) => {
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [selectedModules, setSelectedModules] = useState<ValidTable[]>([]);
   const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
 
-  const handleModuleSelect = (module: string) => {
+  const handleModuleSelect = (module: ValidTable) => {
     setSelectedModules((prev) =>
       prev.includes(module) ? prev.filter((m) => m !== module) : [...prev, module]
     );
   };
 
-  const modules = [
+  const modules: ValidTable[] = [
     'members', 'announcements', 'branches', 'backup_logs',
     'body_measurements', 'class_bookings', 'classes',
     'class_schedules', 'diet_plans', 'email_settings',

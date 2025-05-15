@@ -1,69 +1,88 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ActivityItem } from "@/types/dashboard";
-import { getInitials } from "@/utils/stringUtils";
+import React from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ActivityItem } from '@/types/dashboard';
 
 interface RecentActivityProps {
   activities: ActivityItem[];
+  isLoading?: boolean;
+  onViewAll?: () => void;
+  emptyMessage?: string;
 }
 
-const RecentActivity = ({ activities }: RecentActivityProps) => {
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "membership":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "check-in":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "payment":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-      case "class":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
+const RecentActivity: React.FC<RecentActivityProps> = ({ 
+  activities = [], 
+  isLoading = false,
+  onViewAll,
+  emptyMessage = 'No recent activities'
+}) => {
+  if (isLoading) {
+    return (
+      <Card className="h-full">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-md font-medium">Recent Activity</CardTitle>
+          <Button variant="ghost" size="sm" disabled>View All</Button>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-48">
+            <p className="text-muted-foreground">Loading activities...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>Latest actions in the gym</CardDescription>
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-md font-medium">Recent Activity</CardTitle>
+        <Button variant="ghost" size="sm" onClick={onViewAll}>View All</Button>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-5">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-start space-x-4">
-              <Avatar className="h-9 w-9">
-                {activity.user && (
-                  <>
-                    <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
-                    <AvatarFallback>{activity.user?.name ? getInitials(activity.user.name) : 'NA'}</AvatarFallback>
-                  </>
-                )}
-                {activity.member && !activity.user && (
-                  <>
-                    <AvatarImage src={activity.member.avatar} alt={activity.member.name} />
-                    <AvatarFallback>{getInitials(activity.member.name)}</AvatarFallback>
-                  </>
-                )}
-              </Avatar>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium leading-none">{activity.title}</p>
-                  <span className="text-xs text-muted-foreground">{activity.time || activity.timestamp}</span>
+      <CardContent className="pt-2">
+        {activities.length === 0 ? (
+          <div className="flex justify-center items-center h-48">
+            <p className="text-muted-foreground">{emptyMessage}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div key={activity.id} className="flex items-start gap-4">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                  {activity.member ? (
+                    <span className="font-medium text-xs">{activity.member.name?.substring(0, 2).toUpperCase() || "ME"}</span>
+                  ) : (
+                    <span className="font-medium text-xs">
+                      {(activity.user?.name || "").substring(0, 2).toUpperCase() || "AC"}
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">{activity.description}</p>
-                <div className="pt-1">
-                  <Badge variant="outline" className={`text-xs py-0 px-2 ${getTypeColor(activity.type)}`}>
-                    {activity.type.replace('-', ' ')}
-                  </Badge>
+
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">{activity.member?.name || activity.user?.name || "Unknown"}</span>
+                    <span className="text-muted-foreground"> {activity.description}</span>
+                  </p>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    {activity.time ? (
+                      format(new Date(activity.time), 'h:mm a')
+                    ) : (
+                      activity.timestamp ? formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true }) : "Recently"
+                    )}
+                  </p>
                 </div>
+
+                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

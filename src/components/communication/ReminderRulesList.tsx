@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,28 +64,28 @@ const ReminderRulesList: React.FC<ReminderRulesListProps> = ({
             <div key={rule.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium">{rule.name || rule.title}</h3>
+                  <h3 className="font-medium">{rule.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{rule.description}</p>
                 </div>
                 <Switch 
-                  checked={rule.isActive || rule.active || false}
-                  onCheckedChange={() => onToggleActive(rule.id!, rule.isActive || rule.active || false)}
+                  checked={rule.is_active || rule.isActive || rule.active || false}
+                  onCheckedChange={() => onToggleActive(rule.id!, rule.is_active || rule.isActive || rule.active || false)}
                 />
               </div>
               
               <div className="mt-4 flex flex-wrap gap-2">
                 <Badge variant="outline" className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
-                  {rule.triggerType.replace(/_/g, ' ')} ({rule.triggerValue})
+                  {(rule.trigger_type || rule.triggerType || '').replace(/_/g, ' ')} ({rule.trigger_value || rule.triggerValue})
                 </Badge>
                 
                 <Badge variant="outline" className="flex items-center">
                   <Users className="h-4 w-4 mr-1" />
-                  {rule.targetRoles.join(', ') || 'All roles'}
+                  {(rule.target_roles || rule.targetRoles || []).join(', ') || 'All roles'}
                 </Badge>
                 
                 <div className="flex gap-1">
-                  {(rule.sendVia || rule.channels || []).map(channel => (
+                  {(rule.send_via || rule.sendVia || rule.channels || []).map(channel => (
                     <Badge key={channel} className="bg-gray-100 text-gray-800">
                       {getChannelIcon(channel)}
                     </Badge>
