@@ -26,7 +26,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
         <div className="flex justify-between items-start">
           <p className="font-medium text-sm">{notification.title}</p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(notification.timestamp), 'PP')}
+            {format(new Date(notification.timestamp || notification.created_at), 'PP')}
           </p>
         </div>
         <p className="text-sm text-muted-foreground">{notification.message}</p>

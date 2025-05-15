@@ -10,6 +10,8 @@ export interface Notification {
   created_at: string;
   type?: string;
   user_id: string;
+  // For backward compatibility in components
+  timestamp?: string;
 }
 
 export type NotificationChannel = 'email' | 'sms' | 'push' | 'in_app';
@@ -48,21 +50,22 @@ export interface ReminderRule {
   title: string;
   description?: string;
   trigger_type: string;
-  triggerType?: string; // For backward compatibility
   trigger_value?: number;
-  triggerValue?: number; // For backward compatibility
   conditions: Record<string, any>;
   message?: string;
   target_roles: string[];
-  targetRoles?: string[]; // For backward compatibility
   send_via: string[];
-  sendVia?: string[]; // For backward compatibility
-  channels?: string[]; // Alternative field name
   is_active: boolean;
-  isActive?: boolean; // For backward compatibility
-  active?: boolean; // Alternative field name
   created_at: string;
   updated_at: string;
+  // For backward compatibility
+  triggerType?: string;
+  triggerValue?: number;
+  targetRoles?: string[];
+  sendVia?: string[];
+  isActive?: boolean;
+  active?: boolean;
+  channels?: string[];
 }
 
 export interface Announcement {
@@ -78,6 +81,12 @@ export interface Announcement {
   branch_id?: string;
   created_at: string;
   updated_at: string;
+  // Add camelCase versions for backward compatibility
+  authorName?: string;
+  targetRoles?: string[];
+  expiresAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Helper functions
@@ -88,12 +97,20 @@ export function adaptReminderRuleFromDB(data: any): ReminderRule {
     triggerValue: data.trigger_value,
     targetRoles: data.target_roles,
     sendVia: data.send_via,
-    isActive: data.is_active
+    isActive: data.is_active,
+    active: data.is_active
   };
 }
 
 export function adaptAnnouncementFromDB(data: any): Announcement {
-  return data;
+  return {
+    ...data,
+    authorName: data.author_name,
+    targetRoles: data.target_roles,
+    expiresAt: data.expires_at,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
 }
 
 export function adaptMotivationalMessageFromDB(data: any): MotivationalMessage {

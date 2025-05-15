@@ -13,9 +13,12 @@ export interface User {
   updated_at?: string;
   branch_id?: string;
   accessible_branch_ids?: string[];
-  address?: string; // Adding missing fields
+  address?: string;
   city?: string;
   state?: string;
   zipCode?: string;
   country?: string;
+  // Add these properties for backward compatibility
+  name?: string;
+  avatar?: string;
 }

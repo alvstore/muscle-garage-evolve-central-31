@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,11 +32,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     // If onComplete is provided without an Invoice, call it without parameters
     if (onComplete) onComplete();
   }, onSave);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
   return (
     <form onSubmit={handleSubmit}>

@@ -25,6 +25,8 @@ export interface Invoice {
   created_at?: string;
   updated_at?: string;
   created_by?: string;
+  // Add for backward compatibility
+  memberId?: string;
 }
 
 export interface InvoiceItem {
@@ -49,6 +51,8 @@ export interface Transaction {
   recorded_by?: string;
   created_at?: string;
   updated_at?: string;
+  // Adding for backward compatibility
+  transaction_id?: string;
 }
 
 export interface Payment {
@@ -68,6 +72,10 @@ export interface Payment {
   created_at?: string;
   updated_at?: string;
   contactInfo?: string; // Adding this to fix the errors
+  // Adding for backward compatibility
+  date?: string;
+  member_name?: string;
+  membership_plan?: string;
 }
 
 // Alias for Transaction to fix MemberTransactionHistory import issue
