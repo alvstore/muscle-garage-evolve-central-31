@@ -18,7 +18,7 @@ export interface WorkoutPlan {
   updatedAt?: string; // For backward compatibility
   notes?: string;
   target_goals?: string[]; // For compatibility with WorkoutPlanForm
-  workout_days?: WorkoutDay[]; // Add this for compatibility with WorkoutPlanForm
+  workout_days?: WorkoutDay[]; // Ensure this field exists
   workoutDays?: WorkoutDay[]; // For backward compatibility
 }
 

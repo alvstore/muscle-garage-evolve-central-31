@@ -25,15 +25,36 @@ export function WorkoutPlanForm({
   onSave,
   onCancel
 }: WorkoutPlanFormProps) {
-  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>>({
-    name: existingPlan?.name || '',
-    description: existingPlan?.description || '',
+  const [formData, setFormData] = useState<Omit<WorkoutPlan, 'id' | 'created_at' | 'updated_at'>>(existingPlan ? {
+    name: existingPlan.name,
+    description: existingPlan.description || '',
     trainer_id: trainerId,
-    workout_days: existingPlan?.workout_days || [createEmptyWorkoutDay()],
-    target_goals: existingPlan?.target_goals || [],
-    difficulty: existingPlan?.difficulty || 'beginner',
-    is_global: existingPlan?.is_global || false,
-    member_id: existingPlan?.member_id || member.id
+    member_id: member?.id,
+    workout_days: existingPlan.workout_days || [],
+    target_goals: existingPlan.target_goals || [],
+    is_custom: existingPlan.is_custom || true,
+    difficulty: existingPlan.difficulty || 'intermediate'
+  } : {
+    name: '',
+    description: '',
+    trainer_id: trainerId,
+    member_id: member?.id,
+    workout_days: [{
+      id: uuidv4(),
+      name: 'Day 1',
+      description: '',
+      workout_plan_id: '', // Will be set when the plan is created
+      exercises: [{
+        id: uuidv4(),
+        name: '',
+        sets: 3,
+        reps: 10,
+        workout_day_id: '' // Will be set when the workout day is created
+      }]
+    }],
+    target_goals: [],
+    is_custom: true,
+    difficulty: 'intermediate'
   });
 
   function createEmptyWorkoutDay(): WorkoutDay {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -100,7 +99,7 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
                   <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
                   <p className="font-medium flex items-center gap-1">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    {member.dateOfBirth ? format(new Date(member.dateOfBirth), "MMMM d, yyyy") : "Not provided"}
+                    {member.date_of_birth ? format(new Date(member.date_of_birth), "MMMM d, yyyy") : "Not provided"}
                   </p>
                 </div>
               </div>
@@ -144,27 +143,27 @@ const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Membership Status</p>
-                <p className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(member.membershipStatus)}`}>
-                  {member.membershipStatus.charAt(0).toUpperCase() + member.membershipStatus.slice(1)}
+                <p className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(member.membership_status)}`}>
+                  {member.membership_status.charAt(0).toUpperCase() + member.membership_status.slice(1)}
                 </p>
               </div>
               
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Membership ID</p>
-                <p className="font-medium">{member.membershipId || "Not assigned"}</p>
+                <p className="font-medium">{member.membership_id || "Not assigned"}</p>
               </div>
               
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Start Date</p>
                 <p className="font-medium">
-                  {member.membershipStartDate ? format(new Date(member.membershipStartDate), "MMMM d, yyyy") : "Not set"}
+                  {member.membership_start_date ? format(new Date(member.membership_start_date), "MMMM d, yyyy") : "Not set"}
                 </p>
               </div>
               
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">End Date</p>
                 <p className="font-medium">
-                  {member.membershipEndDate ? format(new Date(member.membershipEndDate), "MMMM d, yyyy") : "Not set"}
+                  {member.membership_end_date ? format(new Date(member.membership_end_date), "MMMM d, yyyy") : "Not set"}
                 </p>
               </div>
             </div>

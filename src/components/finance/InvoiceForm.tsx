@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +32,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (onComplete) onComplete();
   }, onSave);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       <Card>
@@ -42,7 +46,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <CardContent className="space-y-4">
           <InvoiceMemberFields
             memberId={formData.member_id}
-            memberName={formData.memberName}
+            memberName={formData.member_name}
             onChange={handleChange}
           />
           
@@ -50,7 +54,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             description={formData.description || ''}
             amount={formData.amount}
             status={formData.status}
-            dueDate={formData.dueDate}
+            dueDate={formData.due_date}
             paymentMethod={formData.payment_method || ''}
             onChange={handleChange}
             onStatusChange={handleStatusChange}

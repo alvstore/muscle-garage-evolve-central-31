@@ -11,10 +11,13 @@ export interface Member {
   zipCode?: string; // For backward compatibility
   country?: string;
   date_of_birth?: string;
+  dateOfBirth?: string; // For backward compatibility
   gender?: string;
   membership_id?: string;
+  membershipId?: string; // For backward compatibility
   membership?: string;
   membership_status?: string;
+  membershipStatus?: string; // For backward compatibility
   status?: string;
   membership_start_date?: string;
   membershipStartDate?: string; // For backward compatibility

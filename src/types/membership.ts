@@ -9,10 +9,15 @@ export interface MembershipPlan {
   description: string;
   price: number;
   duration_days: number;
+  durationDays?: number; // For backward compatibility
   duration_label?: MembershipDuration;
   benefits: string[];
+  features?: string[]; // Alternate naming used in some components
   allowed_classes: ClassType;
   status: MembershipPlanStatus;
+  is_active?: boolean; // Used in some components
+  isActive?: boolean; // For backward compatibility
   created_at: string;
   updated_at: string;
+  memberCount?: number; // Used in UI
 }

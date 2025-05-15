@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,13 +111,12 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
     });
   };
 
-  // Fixed the syntax error in this function signature
   const handleMacrosChange = (mealIndex: number, macroField: keyof MealPlan['macros'], value: number) => {
     const updatedMeals = [...(formData.mealPlans || [])];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
       macros: {
-        ...(updatedMeals[mealIndex].macros || {}),
+        ...updatedMeals[mealIndex].macros,
         [macroField]: value
       }
     };
@@ -130,16 +128,18 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
 
   const handleSubmit = () => {
     const mealPlansWithCalories = (formData.mealPlans || []).map(meal => {
-      if (!meal.macros?.calories) {
+      if (!meal.macros.calories) {
         const calculatedCalories = 
-          (meal.macros?.protein || 0) * 4 + 
-          (meal.macros?.carbs || 0) * 4 + 
-          (meal.macros?.fats || 0) * 9;
+          (meal.macros.protein || 0) * 4 + 
+          (meal.macros.carbs || 0) * 4 + 
+          (meal.macros.fats || 0) * 9;
         
         return {
           ...meal,
           macros: {
-            ...(meal.macros || {}),
+            protein: meal.macros.protein || 0,
+            carbs: meal.macros.carbs || 0,
+            fats: meal.macros.fats || 0,
             calories: calculatedCalories
           }
         };

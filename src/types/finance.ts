@@ -1,99 +1,74 @@
 
-export interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  type: 'income' | 'expense';
-  category: string;
-  date: string;
-  payment_method?: string;
-  reference_id?: string;
-  recorded_by?: string;
-  created_at?: string;
-}
-
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending' | 'partially_paid';
-
-export interface InvoiceItem {
-  id: string;
-  name: string;
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  amount: number;
-  discount?: number;
-  price?: number; // Adding price alias for unitPrice
-}
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent';
+export type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'wallet' | 'other';
+export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
+export type TransactionType = 'income' | 'expense';
+export type RecurringPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface Invoice {
   id: string;
   member_id: string;
-  memberId?: string; // For backward compatibility 
-  memberName?: string;
+  memberName?: string; // Derived field for UI
   amount: number;
-  status: InvoiceStatus;
-  dueDate: string;
-  due_date?: string; // For backward compatibility
-  issuedDate: string;
-  issued_date?: string; // For backward compatibility
-  paidDate?: string;
-  paid_date?: string; // For backward compatibility
-  items: InvoiceItem[];
-  branchId?: string;
-  branch_id?: string; // For backward compatibility
-  notes?: string;
-  subtotal?: number;
-  discount?: number;
-  tax?: number;
-  total?: number;
-  created_at?: string;
-  updated_at?: string;
   description?: string;
-  payment_method?: string;
-  membershipPlanId?: string;
-  membership_plan_id?: string;
+  status: InvoiceStatus;
+  due_date: string;
+  dueDate?: string; // For backward compatibility
+  issued_date?: string;
+  paid_date?: string;
+  payment_method?: PaymentMethod;
+  items: InvoiceItem[];
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
+  branch_id?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
 
-export type PaymentMethod = 'cash' | 'card' | 'bank-transfer' | 'razorpay' | 'other';
+export interface InvoiceItem {
+  id?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+}
 
-export type PaymentStatus = 'completed' | 'pending' | 'failed';
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  description?: string;
+  category_id?: string;
+  transaction_date: string;
+  payment_method?: PaymentMethod;
+  reference_id?: string;
+  branch_id?: string;
+  recorded_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface Payment {
   id: string;
-  member_id: string;
-  member_name: string;
-  membership_plan?: string;
   amount: number;
-  payment_method: string;
-  status: PaymentStatus;
   payment_date: string;
-  notes?: string;
+  payment_method: PaymentMethod;
+  status: PaymentStatus;
+  member_id?: string;
+  membership_id?: string;
+  staff_id?: string;
   transaction_id?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  notes?: string;
+  branch_id?: string;
   created_at?: string;
-  contactInfo?: string; // Adding this to fix StaffActivityData errors
-  date?: string; // For backward compatibility
-  dueDate?: string; // For backward compatibility
-  memberAvatar?: string; // Used in some components
+  updated_at?: string;
+  contactInfo?: string; // Adding this to fix the errors
 }
 
-export interface ExpenseCategory {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-export interface IncomeCategory {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-export interface TransactionType {
-  id: string;
-  name: string;
-  isExpense: boolean;
-}
-
-export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+// Alias for Transaction to fix MemberTransactionHistory import issue
+export type FinancialTransaction = Transaction;

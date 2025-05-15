@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,8 +163,8 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <Input
                 id="dateOfBirth"
-                name="dateOfBirth"
-                value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : ""}
+                name="date_of_birth"
+                value={formData.date_of_birth ? new Date(formData.date_of_birth).toLocaleDateString() : ""}
                 readOnly
                 disabled
                 className="bg-muted"
@@ -230,8 +229,8 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               <Label htmlFor="membershipStatus">Membership Status</Label>
               <Input
                 id="membershipStatus"
-                name="membershipStatus"
-                value={formData.membershipStatus}
+                name="membership_status"
+                value={formData.membership_status}
                 readOnly
                 disabled
                 className="bg-muted"
@@ -242,8 +241,8 @@ const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps)
               <Label htmlFor="membershipId">Membership ID</Label>
               <Input
                 id="membershipId"
-                name="membershipId"
-                value={formData.membershipId || ""}
+                name="membership_id"
+                value={formData.membership_id || ""}
                 readOnly
                 disabled
                 className="bg-muted"
