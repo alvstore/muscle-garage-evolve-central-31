@@ -1,656 +1,154 @@
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { SyncLogEntry } from '@/components/integrations/HikvisionSyncLog';
-import hikvisionAccessControlService from './hikvisionAccessControlService';
-import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Service for managing Hikvision integration, logging, and synchronization
- */
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { SyncLogEntry } from '@/components/integrations/HikvisionSyncLog';
+
+const SYNC_LOG_TABLE = 'hikvision_sync_logs';
+
 class HikvisionIntegrationService {
   /**
-   * Log a synchronization or integration event
-   */
-  async logEvent(
-    branchId: string,
-    eventType: 'sync' | 'error' | 'info' | 'warning',
-    message: string,
-    status: 'success' | 'error' | 'pending' | 'warning',
-    options?: {
-      details?: string;
-      entityType?: 'member' | 'device' | 'door' | 'attendance';
-      entityId?: string;
-      entityName?: string;
-    }
-  ): Promise<string> {
-    try {
-      const logEntry = {
-        id: uuidv4(),
-        branch_id: branchId,
-        event_type: eventType,
-        message,
-        details: options?.details || null,
-        status,
-        entity_type: options?.entityType || null,
-        entity_id: options?.entityId || null,
-        entity_name: options?.entityName || null,
-        created_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('hikvision_sync_log')
-        .insert(logEntry);
-
-      if (error) {
-        console.error('Error logging Hikvision event:', error);
-      }
-
-      return logEntry.id;
-    } catch (err) {
-      console.error('Failed to log Hikvision event:', err);
-      return '';
-    }
-  }
-
-  /**
-   * Get synchronization logs for a branch
+   * Get sync logs for Hikvision integration
    */
   async getSyncLogs(branchId: string, limit: number = 50): Promise<SyncLogEntry[]> {
     try {
       const { data, error } = await supabase
-        .from('hikvision_sync_log')
+        .from(SYNC_LOG_TABLE)
         .select('*')
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false })
         .limit(limit);
-
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error fetching Hikvision sync logs:', error);
+        throw error;
+      }
+      
       return data as SyncLogEntry[];
-    } catch (err) {
-      console.error('Error fetching Hikvision sync logs:', err);
-      return [];
+    } catch (error) {
+      console.error('Error in getSyncLogs:', error);
+      throw error;
     }
   }
-
-  /**
-   * Synchronize a member with Hikvision system with real progress tracking
-   */
-  async syncMemberWithProgress(
-    memberId: string, 
-    branchId: string, 
-    memberName: string
-  ): Promise<{success: boolean, progress: number}> {
-    // Create a sync job record
-    const logId = await this.logEvent(
-      branchId,
-      'sync',
-      `Starting member synchronization: ${memberName}`,
-      'pending',
-      {
-        entityType: 'member',
-        entityId: memberId,
-        entityName: memberName
-      }
-    );
   
-    try {
-      // Define sync steps with weights
-      const steps = [
-        { name: 'fetch_member', weight: 5, status: 'pending' },
-        { name: 'create_person', weight: 20, status: 'pending' },
-        { name: 'register_credentials', weight: 30, status: 'pending' },
-        { name: 'assign_access', weight: 20, status: 'pending' },
-        { name: 'verify_sync', weight: 25, status: 'pending' }
-      ];
-      
-      let currentProgress = 0;
-      
-      // Step 1: Fetch member details
-      const { data: member, error: memberError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', memberId)
-        .single();
-  
-      if (memberError || !member) {
-        throw new Error('Member not found');
-      }
-      
-      // Update progress
-      steps[0].status = 'completed';
-      currentProgress += steps[0].weight;
-      await this.updateSyncProgress(logId, currentProgress, `Fetched member details for ${memberName}`);
-      
-      // Step 2: Get or create person in Hikvision
-      const personId = await this.getOrCreatePerson(member, branchId);
-      if (!personId) {
-        throw new Error('Failed to create or update person in Hikvision');
-      }
-      
-      // Update progress
-      steps[1].status = 'completed';
-      currentProgress += steps[1].weight;
-      await this.updateSyncProgress(logId, currentProgress, `Created/updated person in Hikvision: ${personId}`);
-      
-      // Step 3: Register credentials
-      const { data: credentials, error: credentialsError } = await supabase
-        .from('member_access_credentials')
-        .select('*')
-        .eq('member_id', memberId)
-        .eq('is_active', true);
-        
-      if (credentialsError) {
-        throw new Error(`Failed to fetch credentials: ${credentialsError.message}`);
-      }
-      
-      // Register each credential
-      if (credentials && credentials.length > 0) {
-        for (const credential of credentials) {
-          await this.syncCredential(personId, credential, branchId);
-        }
-      }
-      
-      // Update progress
-      steps[2].status = 'completed';
-      currentProgress += steps[2].weight;
-      await this.updateSyncProgress(logId, currentProgress, `Registered ${credentials?.length || 0} credentials`);
-      
-      // Step 4: Configure access privileges
-      const accessConfigured = await hikvisionAccessControlService.syncMemberAccess(memberId, branchId);
-      if (!accessConfigured) {
-        throw new Error('Failed to configure access privileges');
-      }
-      
-      // Update progress
-      steps[3].status = 'completed';
-      currentProgress += steps[3].weight;
-      await this.updateSyncProgress(logId, currentProgress, 'Configured access privileges');
-      
-      // Step 5: Verify synchronization
-      const verificationResult = await this.verifySync(personId, branchId);
-      
-      // Update progress
-      steps[4].status = verificationResult ? 'completed' : 'warning';
-      currentProgress += steps[4].weight;
-      await this.updateSyncProgress(
-        logId, 
-        100, 
-        verificationResult 
-          ? 'Member synchronized successfully' 
-          : 'Member synchronized with warnings'
-      );
-      
-      // Log completion
-      await this.logEvent(
-        branchId,
-        'sync',
-        `Member synchronization completed: ${memberName}`,
-        verificationResult ? 'success' : 'warning',
-        {
-          entityType: 'member',
-          entityId: memberId,
-          entityName: memberName
-        }
-      );
-  
-      return { success: true, progress: 100 };
-    } catch (error) {
-      console.error('Error in syncMemberWithProgress:', error);
-      
-      // Update log with error
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'error',
-          message: `Member synchronization failed: ${memberName}`,
-          details: error.message || 'Unknown error occurred during synchronization'
-        })
-        .eq('id', logId);
-      
-      // Log error
-      await this.logEvent(
-        branchId,
-        'error',
-        `Member synchronization failed: ${memberName}`,
-        'error',
-        {
-          entityType: 'member',
-          entityId: memberId,
-          entityName: memberName,
-          details: error.message || 'Unknown error occurred'
-        }
-      );
-      
-      return { success: false, progress: currentProgress };
-    }
-  }
-
   /**
-   * Update sync progress in the database
+   * Create a sync log entry
    */
-  private async updateSyncProgress(logId: string, progress: number, message: string): Promise<void> {
+  async createSyncLog(log: Partial<SyncLogEntry>): Promise<SyncLogEntry> {
     try {
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          message,
-          details: `Synchronization progress: ${progress}%`,
-          progress_percentage: progress
-        })
-        .eq('id', logId);
-    } catch (error) {
-      console.error('Error updating sync progress:', error);
-    }
-  }
-
-  /**
-   * Get or create a person in Hikvision
-   */
-  private async getOrCreatePerson(member: any, branchId: string): Promise<string | null> {
-    try {
-      // Check if person already exists in Hikvision
-      const { data: hikvisionMap } = await supabase
-        .from('hikvision_map')
-        .select('person_id')
-        .eq('member_id', member.id)
-        .eq('branch_id', branchId)
-        .maybeSingle();
+      const entry = {
+        id: uuidv4(),
+        created_at: new Date().toISOString(),
+        ...log
+      };
       
-      if (hikvisionMap?.person_id) {
-        // Person exists, update it
-        await hikvisionAccessControlService.apiCall(
-          branchId,
-          '/api/hpcgw/v1/person/update',
-          'POST',
-          {
-            personId: hikvisionMap.person_id,
-            name: `${member.first_name} ${member.last_name}`.trim(),
-            gender: member.gender || 'unknown',
-            phoneNo: member.phone || '',
-            email: member.email || ''
-          }
-        );
-        
-        return hikvisionMap.person_id;
-      } else {
-        // Create new person
-        const response = await hikvisionAccessControlService.apiCall(
-          branchId,
-          '/api/hpcgw/v1/person/add',
-          'POST',
-          {
-            employeeNo: member.id,
-            name: `${member.first_name} ${member.last_name}`.trim(),
-            gender: member.gender || 'unknown',
-            phoneNo: member.phone || '',
-            email: member.email || '',
-            type: 2 // Visitor (gym member)
-          }
-        );
-        
-        if (response && response.personId) {
-          // Store the mapping
-          await supabase.from('hikvision_map').insert({
-            member_id: member.id,
-            person_id: response.personId,
-            branch_id: branchId,
-            created_at: new Date().toISOString()
-          });
-          
-          return response.personId;
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error in getOrCreatePerson:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Sync a credential to Hikvision
-   */
-  private async syncCredential(personId: string, credential: any, branchId: string): Promise<boolean> {
-    try {
-      if (credential.credential_type === 'card') {
-        await hikvisionAccessControlService.apiCall(
-          branchId,
-          '/api/hpcgw/v1/person/card/bind',
-          'POST',
-          {
-            personId,
-            cardNo: credential.credential_value
-          }
-        );
-      } else if (credential.credential_type === 'face') {
-        await hikvisionAccessControlService.apiCall(
-          branchId,
-          '/api/hpcgw/v1/person/face/bind',
-          'POST',
-          {
-            personId,
-            faceData: credential.credential_value
-          }
-        );
-      }
-      
-      return true;
-    } catch (error) {
-      console.error(`Error syncing ${credential.credential_type}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Verify synchronization was successful
-   */
-  private async verifySync(personId: string, branchId: string): Promise<boolean> {
-    try {
-      // Verify person exists in Hikvision
-      const response = await hikvisionAccessControlService.apiCall(
-        branchId,
-        `/api/hpcgw/v1/person/get?personId=${personId}`,
-        'GET'
-      );
-      
-      return !!response && !!response.personId;
-    } catch (error) {
-      console.error('Error verifying sync:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Register a member's credential (card or face) with Hikvision
-   */
-  async registerMemberCredential(
-    memberId: string,
-    branchId: string,
-    memberName: string,
-    credentialType: 'card' | 'face' | 'fingerprint',
-    credentialData: string
-  ): Promise<boolean> {
-    // Log the start of credential registration
-    const logId = await this.logEvent(
-      branchId,
-      'sync',
-      `Registering ${credentialType} for member: ${memberName}`,
-      'pending',
-      {
-        entityType: 'member',
-        entityId: memberId,
-        entityName: memberName
-      }
-    );
-
-    try {
-      // Validate credential data
-      if (!credentialData) {
-        throw new Error(`No ${credentialType} data provided`);
-      }
-
-      // For face data, ensure it's a valid base64 image
-      if (credentialType === 'face' && !credentialData.startsWith('data:image/')) {
-        throw new Error('Invalid face image format');
-      }
-
-      // Register credential with Hikvision
-      let success = false;
-      
-      if (credentialType === 'face') {
-        // Extract base64 content if it's a data URL
-        const base64Data = credentialData.includes('base64,') 
-          ? credentialData.split('base64,')[1] 
-          : credentialData;
-          
-        // Call the access control service to register face
-        success = await this.uploadFaceTemplate(memberId, branchId, base64Data);
-      } else if (credentialType === 'card') {
-        // Register card with Hikvision
-        success = await hikvisionAccessControlService.registerCard(memberId, branchId, credentialData);
-      } else {
-        throw new Error(`Credential type ${credentialType} not supported`);
-      }
-
-      if (!success) {
-        throw new Error(`Failed to register ${credentialType}`);
-      }
-
-      // Update log with success
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'success',
-          message: `${credentialType} registered successfully for: ${memberName}`,
-          details: `${credentialType} data registered and synchronized with access control system`
-        })
-        .eq('id', logId);
-        
-      // Log completion
-      await this.logEvent(
-        branchId,
-        'sync',
-        `${credentialType} registration completed for: ${memberName}`,
-        'success',
-        {
-          entityType: 'member',
-          entityId: memberId,
-          entityName: memberName
-        }
-      );
-
-      return true;
-    } catch (error) {
-      console.error(`Error registering ${credentialType}:`, error);
-      
-      // Update log with error
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'error',
-          message: `${credentialType} registration failed for: ${memberName}`,
-          details: error.message || 'Unknown error occurred during registration'
-        })
-        .eq('id', logId);
-      
-      // Log error
-      await this.logEvent(
-        branchId,
-        'error',
-        `${credentialType} registration failed for: ${memberName}`,
-        'error',
-        {
-          entityType: 'member',
-          entityId: memberId,
-          entityName: memberName,
-          details: error.message || 'Unknown error occurred'
-        }
-      );
-      
-      return false;
-    }
-  }
-
-  /**
-   * Upload a face template to Hikvision
-   */
-  async uploadFaceTemplate(
-    memberId: string,
-    branchId: string,
-    imageData: string
-  ): Promise<boolean> {
-    try {
-      // In a real implementation, you would call the Hikvision API to upload the face template
-      // For now, we'll simulate this with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate success
-      return true;
-    } catch (error) {
-      console.error('Error uploading face template:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Process attendance events from Hikvision
-   */
-  async processAttendanceEvents(branchId: string): Promise<number> {
-    // Log the start of attendance processing
-    const logId = await this.logEvent(
-      branchId,
-      'sync',
-      'Processing attendance events',
-      'pending',
-      {
-        entityType: 'attendance'
-      }
-    );
-
-    try {
-      // Process events using the access control service
-      const processedCount = await hikvisionAccessControlService.processEvents(branchId);
-      
-      // Update log with success
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'success',
-          message: `Processed ${processedCount} attendance events`,
-          details: processedCount > 0 
-            ? `Successfully processed ${processedCount} attendance records from access control system`
-            : 'No new attendance events to process'
-        })
-        .eq('id', logId);
-      
-      if (processedCount > 0) {
-        // Log completion
-        await this.logEvent(
-          branchId,
-          'info',
-          `Attendance processing completed`,
-          'success',
-          {
-            entityType: 'attendance',
-            details: `Processed ${processedCount} attendance records`
-          }
-        );
-      }
-
-      return processedCount;
-    } catch (error) {
-      console.error('Error processing attendance events:', error);
-      
-      // Update log with error
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'error',
-          message: 'Attendance processing failed',
-          details: error.message || 'Unknown error occurred during attendance processing'
-        })
-        .eq('id', logId);
-      
-      // Log error
-      await this.logEvent(
-        branchId,
-        'error',
-        'Attendance processing failed',
-        'error',
-        {
-          entityType: 'attendance',
-          details: error.message || 'Unknown error occurred'
-        }
-      );
-      
-      return 0;
-    }
-  }
-
-  /**
-   * Get recent attendance records for a branch
-   */
-  async getRecentAttendance(branchId: string, limit: number = 50): Promise<any[]> {
-    try {
       const { data, error } = await supabase
-        .from('attendance')
-        .select(`
-          id,
-          member_id,
-          check_in,
-          check_out,
-          profiles:member_id (
-            id,
-            first_name,
-            last_name,
-            avatar_url,
-            role
-          )
-        `)
-        .eq('branch_id', branchId)
-        .order('check_in', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      console.error('Error fetching recent attendance:', err);
-      return [];
+        .from(SYNC_LOG_TABLE)
+        .insert(entry)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating Hikvision sync log:', error);
+        throw error;
+      }
+      
+      return data as SyncLogEntry;
+    } catch (error) {
+      console.error('Error in createSyncLog:', error);
+      throw error;
     }
   }
-
+  
   /**
-   * Test connection to Hikvision API
+   * Log a successful operation
    */
-  async testConnection(branchId: string): Promise<boolean> {
-    // Log the start of connection test
-    const logId = await this.logEvent(
-      branchId,
-      'info',
-      'Testing Hikvision API connection',
-      'pending'
-    );
-
-    try {
-      // Get API settings
-      const settings = await hikvisionAccessControlService.getApiSettings(branchId);
-      if (!settings) {
-        throw new Error('API settings not found');
-      }
-
-      // Attempt authentication
-      const token = await hikvisionAccessControlService.authenticate(branchId);
-      if (!token) {
-        throw new Error('Authentication failed');
-      }
-
-      // Update log with success
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'success',
-          message: 'Hikvision API connection successful',
-          details: 'Successfully authenticated with Hikvision API'
-        })
-        .eq('id', logId);
-
-      return true;
-    } catch (error) {
-      console.error('Error testing Hikvision connection:', error);
-      
-      // Update log with error
-      await supabase
-        .from('hikvision_sync_log')
-        .update({
-          status: 'error',
-          message: 'Hikvision API connection failed',
-          details: error.message || 'Unknown error occurred during connection test'
-        })
-        .eq('id', logId);
-      
-      return false;
-    }
+  async logSuccess(
+    branchId: string, 
+    message: string, 
+    details?: string,
+    entityType?: 'member' | 'device' | 'door' | 'attendance',
+    entityId?: string,
+    entityName?: string
+  ): Promise<SyncLogEntry> {
+    return this.createSyncLog({
+      branch_id: branchId,
+      event_type: 'sync',
+      status: 'success',
+      message,
+      details,
+      entity_type: entityType,
+      entity_id: entityId,
+      entity_name: entityName
+    });
+  }
+  
+  /**
+   * Log an error
+   */
+  async logError(
+    branchId: string, 
+    message: string, 
+    details?: string,
+    entityType?: 'member' | 'device' | 'door' | 'attendance',
+    entityId?: string,
+    entityName?: string
+  ): Promise<SyncLogEntry> {
+    return this.createSyncLog({
+      branch_id: branchId,
+      event_type: 'error',
+      status: 'error',
+      message,
+      details,
+      entity_type: entityType,
+      entity_id: entityId,
+      entity_name: entityName
+    });
+  }
+  
+  /**
+   * Log a warning
+   */
+  async logWarning(
+    branchId: string, 
+    message: string, 
+    details?: string,
+    entityType?: 'member' | 'device' | 'door' | 'attendance',
+    entityId?: string,
+    entityName?: string
+  ): Promise<SyncLogEntry> {
+    return this.createSyncLog({
+      branch_id: branchId,
+      event_type: 'warning',
+      status: 'warning',
+      message,
+      details,
+      entity_type: entityType,
+      entity_id: entityId,
+      entity_name: entityName
+    });
+  }
+  
+  /**
+   * Log information
+   */
+  async logInfo(
+    branchId: string, 
+    message: string, 
+    details?: string,
+    entityType?: 'member' | 'device' | 'door' | 'attendance',
+    entityId?: string,
+    entityName?: string
+  ): Promise<SyncLogEntry> {
+    return this.createSyncLog({
+      branch_id: branchId,
+      event_type: 'info',
+      status: 'success',
+      message,
+      details,
+      entity_type: entityType,
+      entity_id: entityId,
+      entity_name: entityName
+    });
   }
 }
 

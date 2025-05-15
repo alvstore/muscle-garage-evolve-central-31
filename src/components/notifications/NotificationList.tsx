@@ -1,53 +1,88 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Circle, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
+import NotificationItem from './NotificationItem';
 
 interface Notification {
   id: string;
   type: string;
   message: string;
+  title: string;
   data: any;
   user_id: string;
   is_read: boolean;
   created_at: string;
+  timestamp: string;
 }
 
-const NotificationList: React.FC = () => {
-  const [loading, setLoading] = useState(true);
+interface NotificationListProps {
+  userId?: string;
+  refreshTrigger?: number;
+  filterStatus?: 'all' | 'read' | 'unread';
+  filterTypes?: string[];
+  categoryTypes?: string[];
+}
+
+const NotificationList: React.FC<NotificationListProps> = ({ 
+  userId, 
+  refreshTrigger = 0, 
+  filterStatus = 'all',
+  filterTypes = [],
+  categoryTypes = []
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const queryClient = useQueryClient();
 
   const { data: notificationsData, isLoading, isError, error } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: ['notifications', userId, refreshTrigger, filterStatus, filterTypes, categoryTypes],
     queryFn: async () => {
-      setLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('notifications')
           .select('*')
+          .eq('user_id', userId || '')
           .order('created_at', { ascending: false });
+
+        // Apply filter based on read status
+        if (filterStatus === 'read') {
+          query = query.eq('read', true);
+        } else if (filterStatus === 'unread') {
+          query = query.eq('read', false);
+        }
+
+        // Apply type filters if any are specified
+        if (filterTypes && filterTypes.length > 0) {
+          query = query.in('type', filterTypes);
+        }
+
+        // We're not filtering by categoryTypes here as it would require a more complex query
+        // This would typically be handled with a join or a more sophisticated database structure
+
+        const { data, error } = await query;
 
         if (error) throw error;
         
-        setLoading(false);
-        return data as Notification[];
+        // Transform data to match the expected Notification interface
+        const transformedData = data.map(notification => ({
+          ...notification,
+          timestamp: notification.created_at,
+          title: notification.title || 'Notification',
+        }));
+        
+        return transformedData as Notification[];
       } catch (err) {
         console.error("Error fetching notifications:", err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch notifications",
-          variant: "destructive"
-        });
-        setLoading(false);
-        throw err; // Let React Query handle the error state
+        toast.error("Failed to fetch notifications");
+        throw err;
       }
     },
-    initialData: [],
+    enabled: !!userId,
   });
 
   useEffect(() => {
@@ -56,11 +91,11 @@ const NotificationList: React.FC = () => {
     }
   }, [notificationsData]);
 
-  const markAsReadMutation = useMutation(
-    async (notificationId: string) => {
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
       const { data, error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ read: true })
         .eq('id', notificationId);
 
       if (error) {
@@ -68,144 +103,86 @@ const NotificationList: React.FC = () => {
       }
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['notifications']);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: "Failed to mark notification as read",
-          variant: "destructive"
-        });
-        console.error("Error marking notification as read:", error);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success("Notification marked as read");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to mark notification as read");
+      console.error("Error marking notification as read:", error);
+    },
+  });
 
-  const markAllAsReadMutation = useMutation(
-    async () => {
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
       const { data, error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .eq('is_read', false);
+        .update({ read: true })
+        .eq('is_read', false)
+        .eq('user_id', userId || '');
 
       if (error) {
         throw new Error(error.message);
       }
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['notifications']);
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: "Failed to mark all notifications as read",
-          variant: "destructive"
-        });
-        console.error("Error marking all notifications as read:", error);
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success("All notifications marked as read");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to mark all notifications as read");
+      console.error("Error marking all notifications as read:", error);
+    },
+  });
 
   const handleMarkAsRead = (notificationId: string) => {
     markAsReadMutation.mutate(notificationId);
   };
 
   const handleMarkAllAsRead = () => {
-    markAllAsReadMutation.mutate();
+    if (userId) {
+      markAllAsReadMutation.mutate();
+    }
   };
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>Loading notifications...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading...
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-4 h-[200px]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <span>Loading notifications...</span>
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>Error loading notifications</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-red-500">Error loading notifications. Please try again later.</div>
-        </CardContent>
-      </Card>
+      <div className="p-4 text-red-500">
+        Error loading notifications. Please try again later.
+      </div>
+    );
+  }
+
+  if (!notifications || notifications.length === 0) {
+    return (
+      <div className="py-8 text-center text-muted-foreground">
+        No notifications to display
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Notifications</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            disabled={markAllAsReadMutation.isLoading || notifications.every(n => n.is_read)}
-          >
-            Mark All as Read
-          </Button>
-        </div>
-        <CardDescription>Your latest updates</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[400px] w-full">
-          <div className="p-4 space-y-4">
-            {notifications.length === 0 ? (
-              <div className="text-center text-muted-foreground">
-                No notifications yet.
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className="flex items-center justify-between p-3 bg-accent/10 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    {notification.is_read ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-gray-400" />
-                    )}
-                    <div>
-                      <h3 className="font-medium">{notification.message}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(notification.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleMarkAsRead(notification.id)}
-                    disabled={notification.is_read || markAsReadMutation.isLoading}
-                  >
-                    {notification.is_read ? "Read" : "Mark as Read"}
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <ScrollArea className="h-full">
+      <div className="space-y-1">
+        {notifications.map((notification) => (
+          <NotificationItem 
+            key={notification.id} 
+            notification={notification} 
+            onClick={() => handleMarkAsRead(notification.id)}
+          />
+        ))}
+      </div>
+    </ScrollArea>
   );
 };
 

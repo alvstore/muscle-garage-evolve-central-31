@@ -4,11 +4,12 @@ import NotificationList from "./NotificationList";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2, Loader2, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import notificationService from "@/services/notificationService";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationsPanelProps {
   onClose?: () => void; // Making this prop optional with "?"
@@ -28,40 +29,79 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onClose, catego
     task: true,
     membership: true
   });
+  const queryClient = useQueryClient();
 
   // Mark all notifications as read
-  const handleMarkAllAsRead = async () => {
-    if (!user?.id || isProcessing) return;
-    
-    setIsProcessing(true);
-    try {
-      await notificationService.markAllAsRead(user.id);
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+      
+      if (error) throw error;
+      return data;
+    },
+    onMutate: () => {
+      setIsProcessing(true);
+    },
+    onSuccess: () => {
       toast.success("All notifications marked as read");
       setRefreshTrigger(prev => prev + 1); // Trigger refresh
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error: any) => {
       console.error("Error marking all notifications as read:", error);
       toast.error("Failed to mark notifications as read");
-    } finally {
+    },
+    onSettled: () => {
       setIsProcessing(false);
     }
-  };
+  });
 
   // Clear all notifications
-  const handleClearAll = async () => {
-    if (!user?.id || isProcessing) return;
-    
-    setIsProcessing(true);
-    try {
-      // This would call a new method we need to add to the notification service
-      await notificationService.clearAllNotifications(user.id);
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data;
+    },
+    onMutate: () => {
+      setIsProcessing(true);
+    },
+    onSuccess: () => {
       toast.success("All notifications cleared");
       setRefreshTrigger(prev => prev + 1); // Trigger refresh
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error: any) => {
       console.error("Error clearing notifications:", error);
       toast.error("Failed to clear notifications");
-    } finally {
+    },
+    onSettled: () => {
       setIsProcessing(false);
     }
+  });
+
+  // Handle mark all as read
+  const handleMarkAllAsRead = () => {
+    if (!user?.id || isProcessing) return;
+    markAllAsReadMutation.mutate();
+  };
+
+  // Handle clear all
+  const handleClearAll = () => {
+    if (!user?.id || isProcessing) return;
+    clearAllMutation.mutate();
   };
 
   // Filter notifications based on active tab, filters, and category
@@ -154,12 +194,32 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onClose, catego
         </div>
         
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="h-8" onClick={handleMarkAllAsRead}>
-            <Check className="h-4 w-4 mr-1" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8" 
+            onClick={handleMarkAllAsRead}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4 mr-1" />
+            )}
             Mark all read
           </Button>
-          <Button variant="ghost" size="sm" className="h-8" onClick={handleClearAll}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8" 
+            onClick={handleClearAll}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4 mr-1" />
+            )}
             Clear all
           </Button>
         </div>
