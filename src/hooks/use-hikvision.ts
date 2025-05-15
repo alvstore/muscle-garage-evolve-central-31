@@ -123,7 +123,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
   }, [branchId]);
 
   // Save settings
-  const saveSettings = async (credentials: HikvisionCredentials, branch?: string): Promise<boolean> => {
+  const saveSettings = async (credentials: HikvisionCredentials, branch?: string) => {
     try {
       setIsLoading(true);
       const targetBranchId = branch || branchId;
@@ -332,9 +332,19 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
             }
           });
           
-          if (siteError || !siteResponse || !siteResponse.siteId) {
-            console.error('Error creating site:', siteError || 'No site ID returned');
-            return null;
+          if (siteError) {
+            console.error('Error creating site:', siteError);
+            throw new Error(`Failed to create site: ${siteError.message || 'Unknown error'}`);
+          }
+          
+          if (!siteResponse || !siteResponse.success) {
+            console.error('Site creation failed:', siteResponse);
+            throw new Error(siteResponse?.message || 'Failed to create site');
+          }
+          
+          if (!siteResponse.siteId) {
+            console.error('No site ID returned:', siteResponse);
+            throw new Error('No site ID returned from site creation');
           }
           
           // Save the site ID to the settings
@@ -410,50 +420,74 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       const devices = existingSettings?.devices || [];
       
       if (existingSettings) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('hikvision_tokens')
-          .update({
-            api_url: apiUrl,
-            app_key: appKey,
-            app_secret: secretKey,
-            is_active: true,
-            devices: devices,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSettings.id);
+        try {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from('hikvision_api_settings')
+            .update({
+              api_url: credentials.apiUrl,
+              app_key: credentials.appKey,
+              app_secret: credentials.secretKey,
+              is_active: true,
+              devices: existingSettings.devices || [],
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSettings.id);
           
-        if (updateError) {
+          if (updateError) {
+            console.error('Error updating Hikvision settings:', updateError);
+            toast({
+              title: "Error",
+              description: 'Failed to save settings',
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return false;
+          }
+        } catch (updateError: any) {
           console.error('Error updating Hikvision settings:', updateError);
           toast({
             title: "Error",
-            description: 'Failed to save settings',
+            description: `Failed to save settings: ${updateError.message || 'Unknown error'}`,
             variant: "destructive",
           });
+          setIsLoading(false);
           return false;
         }
       } else {
         // Create new record
+        try {
         const { error: insertError } = await supabase
           .from('hikvision_api_settings')
           .insert({
             branch_id: targetBranchId,
-            api_url: apiUrl,
-            app_key: appKey,
-            app_secret: secretKey,
+            api_url: credentials.apiUrl,
+            app_key: credentials.appKey,
+            app_secret: credentials.secretKey,
             is_active: true,
-            devices: devices,
+            devices: [],
             updated_at: new Date().toISOString(),
             created_at: new Date().toISOString()
           });
           
-        if (insertError) {
+          if (insertError) {
+            console.error('Error saving Hikvision settings:', insertError);
+            toast({
+              title: "Error",
+              description: 'Failed to save settings',
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return false;
+          }
+        } catch (insertError: any) {
           console.error('Error saving Hikvision settings:', insertError);
           toast({
             title: "Error",
-            description: 'Failed to save settings',
+            description: `Failed to save settings: ${insertError.message || 'Unknown error'}`,
             variant: "destructive",
           });
+          setIsLoading(false);
           return false;
         }
       }
@@ -463,6 +497,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
         description: 'Hikvision settings saved successfully',
       });
       await fetchSettings(targetBranchId);
+      setIsLoading(false);
       return true;
     } catch (error: any) {
       console.error('Error in saveSettings:', error);

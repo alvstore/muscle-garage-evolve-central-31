@@ -39,18 +39,22 @@ serve(async (req) => {
         return await ensureSiteExists(apiUrl, token, branchId, siteName);
       
       case 'check-device-exists':
+        // Using function declaration from below
         return await checkDeviceExists(apiUrl, token, siteId, deviceId);
       
       case 'create-site':
         return await createSite(apiUrl, token, siteName);
       
       case 'test-isup-device':
+        // Using function declaration from below
         return await testIsupDevice(ipAddress, port, username, password);
       
       case 'register-person':
+        // Using function declaration from below
         return await registerPerson(apiUrl, token, personData);
       
       case 'assign-privileges':
+        // Using function declaration from below
         return await assignPrivileges(apiUrl, token, personData?.personId, deviceId);
       
       default:
@@ -361,40 +365,64 @@ async function createSite(apiUrl: string, accessToken: string, siteName: string)
     
     console.log(`Creating site with name: ${siteName}`);
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        siteName: siteName
-      })
-    });
+    console.log(`Making request to ${url} with token ${accessToken.substring(0, 10)}...`);
     
-    const data = await response.json();
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          siteName: siteName
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error: ${response.status} - ${errorText}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `HTTP error: ${response.status}`,
+            details: errorText
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: response.status }
+        );
+      }
+      
+      const data = await response.json();
+      
+      console.log('Site creation response:', data);
     
-    console.log('Site creation response:', data);
-    
-    if (data.code === '0' && data.data?.siteId) {
+      if (data && data.code === '0' && data.data?.siteId) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Site created successfully',
+            siteId: data.data.siteId
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: 'Site created successfully',
-          siteId: data.data.siteId
+          success: false, 
+          message: data.msg || 'Failed to create site',
+          rawResponse: data
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (error) {
+      console.error('Error in fetch operation:', error);
+      return new Response(
+        JSON.stringify({ success: false, message: `Error in fetch operation: ${error.message}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: data.msg || 'Failed to create site',
-        rawResponse: data
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error('Error creating site:', error);
     return new Response(
