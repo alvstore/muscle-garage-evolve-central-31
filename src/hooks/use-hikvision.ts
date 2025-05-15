@@ -17,6 +17,14 @@ export interface HikvisionCredentials {
   secretKey: string;
 }
 
+// Add TokenData interface
+export interface TokenData {
+  accessToken: string;
+  expiresAt: number;
+  areaId?: string;
+  siteId?: string;
+}
+
 export function useHikvision({ branchId }: { branchId?: string }) {
   const [settings, setSettings] = useState<HikvisionSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,6 +100,53 @@ export function useHikvision({ branchId }: { branchId?: string }) {
     }
   };
 
+  // Add missing methods for HikvisionDevices
+  const addDevice = async (deviceInfo: any) => {
+    setIsLoading(true);
+    try {
+      // Mock implementation - in a real app, this would call an API endpoint
+      console.log("Adding device:", deviceInfo);
+      return { success: true };
+    } catch (error) {
+      console.error("Error adding device:", error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeDevice = async (deviceId: string) => {
+    setIsLoading(true);
+    try {
+      // Mock implementation
+      console.log("Removing device:", deviceId);
+      return { success: true };
+    } catch (error) {
+      console.error("Error removing device:", error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getToken = async () => {
+    setIsLoading(true);
+    try {
+      // Mock implementation
+      const token: TokenData = {
+        accessToken: "mock-token",
+        expiresAt: Date.now() + 3600000, // 1 hour from now
+        siteId: "site-1"
+      };
+      return { success: true, token };
+    } catch (error) {
+      console.error("Error getting token:", error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     settings,
     isLoading,
@@ -99,6 +154,9 @@ export function useHikvision({ branchId }: { branchId?: string }) {
     fetchSettings,
     saveSettings,
     testConnection,
-    fetchAvailableSites
+    fetchAvailableSites,
+    addDevice,
+    removeDevice,
+    getToken
   };
 }

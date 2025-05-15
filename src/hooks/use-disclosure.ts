@@ -12,6 +12,7 @@ export interface UseDisclosureReturn {
   onClose: () => void;
   onOpen: () => void;
   onToggle: () => void;
+  onOpenChange: (open: boolean) => void; // Added this property
 }
 
 export function useDisclosure(props: UseDisclosureProps = {}): UseDisclosureReturn {
@@ -33,11 +34,21 @@ export function useDisclosure(props: UseDisclosureProps = {}): UseDisclosureRetu
     action();
   }, [isOpen, onClose, onOpen]);
 
+  // Add onOpenChange for DialogProps compatibility
+  const onOpenChange = useCallback((open: boolean) => {
+    if (open) {
+      onOpen();
+    } else {
+      onClose();
+    }
+  }, [onOpen, onClose]);
+
   return {
     isOpen,
     onOpen,
     onClose,
     onToggle,
+    onOpenChange
   };
 }
 

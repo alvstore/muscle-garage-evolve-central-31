@@ -1,3 +1,4 @@
+
 import { AutomationRule } from '@/types/crm';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -169,6 +170,34 @@ const settingsService = {
         .eq('id', ruleId);
       
       return { success: !error };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+
+  // Email settings methods
+  getEmailSettings: async (branchId?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_settings')
+        .select('*')
+        .eq('branch_id', branchId || '')
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  
+  saveEmailSettings: async (settings: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_settings')
+        .upsert(settings)
+        .select();
+      
+      return { success: !error, data };
     } catch (error) {
       return { success: false, error };
     }

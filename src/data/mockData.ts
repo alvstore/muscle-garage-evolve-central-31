@@ -1,3 +1,4 @@
+
 // Need to import the correct types
 import {
   Member,
@@ -7,6 +8,34 @@ import {
   Class,
   Membership
 } from '@/types/membership';
+
+// Add mockUsers for OTPForm
+export const mockUsers = [
+  {
+    id: "1",
+    email: "admin@example.com",
+    name: "Admin User",
+    role: "admin"
+  },
+  {
+    id: "2",
+    email: "staff@example.com",
+    name: "Staff User",
+    role: "staff"
+  },
+  {
+    id: "3",
+    email: "trainer@example.com",
+    name: "Trainer User",
+    role: "trainer"
+  },
+  {
+    id: "4",
+    email: "member@example.com",
+    name: "Member User",
+    role: "member"
+  }
+];
 
 // Update mock data to use the correct property names
 export const mockMembers: Member[] = [

@@ -4,9 +4,9 @@ export interface MembershipPlan {
   name: string;
   description?: string;
   price: number;
-  duration_days: number; // Add this to match usage in components
+  duration_days: number;
   durationDays?: number; // For backward compatibility
-  features?: string[]; // Add this to match usage
+  features?: string[];
   benefits?: string[]; // For backward compatibility
   is_active?: boolean;
   isActive?: boolean; // For backward compatibility
@@ -14,7 +14,14 @@ export interface MembershipPlan {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+  duration_label?: string; // Added for MembershipPlanForm
+  allowed_classes?: ClassType; // Added for MembershipPlanForm
 }
+
+// Add these missing types
+export type MembershipDuration = '1-month' | '3-month' | '6-month' | '12-month';
+export type ClassType = 'all' | 'group-only' | 'basic-only';
+export type MembershipPlanStatus = 'active' | 'inactive';
 
 export interface Member {
   id: string;
