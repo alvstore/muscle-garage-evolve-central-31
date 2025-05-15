@@ -7,31 +7,44 @@ export interface Member {
   address?: string;
   city?: string;
   state?: string;
-  zipCode?: string;
+  zip_code?: string;
+  zipCode?: string; // For backward compatibility
   country?: string;
-  gender?: 'male' | 'female' | 'other';
-  dateOfBirth?: string;
-  membership?: Membership;
-  membershipStatus?: 'active' | 'expired' | 'pending' | 'cancelled';
-  joinDate?: string;
-  avatar?: string;
-  trainer?: string;
-  goal?: string;
-  profile_picture?: string;
+  date_of_birth?: string;
+  gender?: string;
+  membership_id?: string;
+  membership?: string;
   membership_status?: string;
-  membership_start_date?: string;
-  membership_end_date?: string;
-  branch_id?: string;
-  trainer_id?: string;
   status?: string;
+  membership_start_date?: string;
+  membershipStartDate?: string; // For backward compatibility
+  membership_end_date?: string;
+  membershipEndDate?: string; // For backward compatibility
+  trainer_id?: string;
+  trainerId?: string; // For backward compatibility
+  branch_id?: string;
+  profile_picture?: string;
+  avatar?: string;
+  user_id?: string;
+  goal?: string;
+  occupation?: string;
+  blood_group?: string;
+  id_type?: string;
+  id_number?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Membership {
   id: string;
   name: string;
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'expired' | 'pending' | 'cancelled';
-  price?: number;
-  features?: string[];
+  description?: string;
+  price: number;
+  duration_days: number;
+  features?: Record<string, any>;
+  status?: string;
+  is_active?: boolean;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }

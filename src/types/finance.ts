@@ -1,4 +1,3 @@
-
 export interface Transaction {
   id: string;
   description: string;
@@ -22,6 +21,7 @@ export interface InvoiceItem {
   unitPrice: number;
   amount: number;
   discount?: number;
+  price?: number; // Adding price alias for unitPrice
 }
 
 export interface Invoice {
@@ -72,6 +72,9 @@ export interface Payment {
   transaction_id?: string;
   created_at?: string;
   contactInfo?: string; // Adding this to fix StaffActivityData errors
+  date?: string; // For backward compatibility
+  dueDate?: string; // For backward compatibility
+  memberAvatar?: string; // Used in some components
 }
 
 export interface ExpenseCategory {

@@ -23,13 +23,13 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   onSave,
   onCancel
 }) => {
-  const [formData, setFormData] = useState<Omit<DietPlan, 'id' | 'createdAt' | 'updatedAt'>>({
+  const [formData, setFormData] = useState<Omit<DietPlan, 'id' | 'created_at' | 'updated_at'>>({
     name: existingPlan?.name || `Diet Plan for ${member.name}`,
-    memberId: member.id,
-    trainer_id: trainerId, // Changed from trainerId to trainer_id
+    member_id: member.id,
+    trainer_id: trainerId,
     mealPlans: existingPlan?.mealPlans || [createEmptyMeal()],
     notes: existingPlan?.notes || '',
-    is_custom: existingPlan?.is_custom || false // Changed from isCustom to is_custom
+    is_custom: existingPlan?.is_custom || false
   });
 
   function createEmptyMeal(): MealPlan {
@@ -42,7 +42,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
         protein: 0,
         carbs: 0,
         fats: 0,
-        calories: 0 // Added calories to the macros object
+        calories: 0
       }
     };
   }
@@ -50,19 +50,19 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   const handleAddMeal = () => {
     setFormData({
       ...formData,
-      mealPlans: [...formData.mealPlans, createEmptyMeal()]
+      mealPlans: [...formData.mealPlans!, createEmptyMeal()]
     });
   };
 
   const handleRemoveMeal = (index: number) => {
     setFormData({
       ...formData,
-      mealPlans: formData.mealPlans.filter((_, i) => i !== index)
+      mealPlans: formData.mealPlans!.filter((_, i) => i !== index)
     });
   };
 
   const handleMealChange = (index: number, field: keyof MealPlan, value: any) => {
-    const updatedMeals = [...formData.mealPlans];
+    const updatedMeals = [...formData.mealPlans!];
     updatedMeals[index] = {
       ...updatedMeals[index],
       [field]: value
@@ -74,10 +74,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleAddMealItem = (mealIndex: number) => {
-    const updatedMeals = [...formData.mealPlans];
+    const updatedMeals = [...formData.mealPlans!];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
-      items: [...updatedMeals[mealIndex].items, '']
+      items: [...updatedMeals[mealIndex].items!, '']
     };
     setFormData({
       ...formData,
@@ -86,10 +86,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleRemoveMealItem = (mealIndex: number, itemIndex: number) => {
-    const updatedMeals = [...formData.mealPlans];
+    const updatedMeals = [...formData.mealPlans!];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
-      items: updatedMeals[mealIndex].items.filter((_, i) => i !== itemIndex)
+      items: updatedMeals[mealIndex].items!.filter((_, i) => i !== itemIndex)
     };
     setFormData({
       ...formData,
@@ -98,8 +98,8 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleMealItemChange = (mealIndex: number, itemIndex: number, value: string) => {
-    const updatedMeals = [...formData.mealPlans];
-    const updatedItems = [...updatedMeals[mealIndex].items];
+    const updatedMeals = [...formData.mealPlans!];
+    const updatedItems = [...updatedMeals[mealIndex].items!];
     updatedItems[itemIndex] = value;
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
@@ -111,12 +111,12 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
     });
   };
 
-  const handleMacrosChange = (mealIndex: number, macroField: keyof typeof formData.mealPlans[0]['macros'], value: number) => {
-    const updatedMeals = [...formData.mealPlans];
+  const handleMacrosChange = (mealIndex: number, macroField: keyof typeof formData.mealPlans![0]['macros'], value: number) => {
+    const updatedMeals = [...formData.mealPlans!];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
       macros: {
-        ...updatedMeals[mealIndex].macros,
+        ...updatedMeals[mealIndex].macros!,
         [macroField]: value
       }
     };
@@ -127,17 +127,17 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleSubmit = () => {
-    const mealPlansWithCalories = formData.mealPlans.map(meal => {
-      if (!meal.macros.calories) {
+    const mealPlansWithCalories = formData.mealPlans!.map(meal => {
+      if (!meal.macros!.calories) {
         const calculatedCalories = 
-          meal.macros.protein * 4 + 
-          meal.macros.carbs * 4 + 
-          meal.macros.fats * 9;
+          meal.macros!.protein * 4 + 
+          meal.macros!.carbs * 4 + 
+          meal.macros!.fats * 9;
         
         return {
           ...meal,
           macros: {
-            ...meal.macros,
+            ...meal.macros!,
             calories: calculatedCalories
           }
         };
@@ -148,13 +148,13 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
     const finalPlan: DietPlan = {
       id: existingPlan?.id || uuidv4(),
       name: formData.name,
-      memberId: member.id,
-      trainer_id: trainerId, // Changed from trainerId to trainer_id
+      member_id: member.id,
+      trainer_id: trainerId,
       mealPlans: mealPlansWithCalories,
       notes: formData.notes,
-      is_custom: formData.is_custom, // Changed from isCustom to is_custom
-      createdAt: existingPlan?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      is_custom: formData.is_custom,
+      created_at: existingPlan?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
     onSave(finalPlan);

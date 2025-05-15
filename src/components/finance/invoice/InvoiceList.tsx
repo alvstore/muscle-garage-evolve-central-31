@@ -9,7 +9,7 @@ import { ChevronDown, Download, Eye, Pencil, MoreHorizontal, Trash2, CreditCard 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInvoices } from '@/hooks/use-invoices';
 import { useToast } from '@/components/ui/use-toast';
-import { Invoice, InvoiceItem, InvoiceStatus } from '@/types/finance';
+import { Invoice, InvoiceStatus } from '@/types/finance';
 
 const statusColors: Record<InvoiceStatus, string> = {
   'paid': 'bg-green-100 text-green-800',
@@ -17,6 +17,7 @@ const statusColors: Record<InvoiceStatus, string> = {
   'overdue': 'bg-red-100 text-red-800',
   'cancelled': 'bg-gray-100 text-gray-800',
   'draft': 'bg-blue-100 text-blue-800',
+  'sent': 'bg-purple-100 text-purple-800',
   'partially_paid': 'bg-indigo-100 text-indigo-800'
 };
 
@@ -84,7 +85,7 @@ const InvoiceList = ({ onView, onEdit, onDelete, onPayment }: InvoiceListProps) 
                     </TableCell>
                     <TableCell>{invoice.memberName}</TableCell>
                     <TableCell>₹{invoice.amount.toLocaleString()}</TableCell>
-                    <TableCell>{format(new Date(invoice.issued_date), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{format(new Date(invoice.issuedDate || invoice.issued_date || new Date()), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
                       <Badge className={`${statusColors[invoice.status]} border-none`}>
                         {invoice.status}

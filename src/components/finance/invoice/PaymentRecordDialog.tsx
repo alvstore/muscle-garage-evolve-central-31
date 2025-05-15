@@ -17,7 +17,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Invoice, PaymentMethod } from "@/types/finance";
+import { Invoice, PaymentMethod, InvoiceStatus } from "@/types/finance"; // Add InvoiceStatus import
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from '@/hooks/use-auth';

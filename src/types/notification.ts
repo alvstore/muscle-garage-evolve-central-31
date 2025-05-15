@@ -1,13 +1,63 @@
 
+// Add any imports if needed
+import { InvoiceItem, InvoiceStatus } from './finance';
+
 export interface Notification {
   id: string;
   title: string;
   message?: string;
-  read: boolean;
-  created_at: string;
+  read?: boolean;
+  created_at?: string;
   type?: string;
   user_id: string;
-  timestamp?: string;
+}
+
+export type FeedbackType = 'general' | 'class' | 'trainer' | 'facility' | 'other';
+
+export interface Feedback {
+  id: string;
+  title: string;
+  type: FeedbackType;
+  rating: number;
+  comments?: string;
+  member_id?: string;
+  branch_id?: string;
+  created_at?: string;
+  anonymous?: boolean;
+  related_id?: string;
+  member_name?: string;
+}
+
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'mental' | 'wellness' | 'general';
+
+export interface MotivationalMessage {
+  id: string;
+  title: string;
+  content: string;
+  category: MotivationalCategory;
+  author?: string;
+  tags?: string[];
+  active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type NotificationChannel = 'email' | 'sms' | 'in-app' | 'whatsapp';
+
+export interface ReminderRule {
+  id: string;
+  title: string;
+  description?: string;
+  trigger_type: string;
+  trigger_value?: number;
+  message?: string;
+  notification_channel?: string;
+  send_via: string[];
+  is_active: boolean;
+  target_roles: string[];
+  conditions: Record<string, any>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Announcement {
@@ -15,104 +65,26 @@ export interface Announcement {
   title: string;
   content: string;
   authorId?: string;
+  author_id?: string;
   authorName?: string;
+  author_name?: string;
   author?: string;
-  createdAt: string;
-  priority: 'low' | 'medium' | 'high';
-  targetRoles: string[];
-  channels: string[];
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+  expiresAt?: string;
+  expires_at?: string;
+  priority: string;
+  targetRoles?: string[];
+  target_roles?: string[];
+  channels?: string[];
   channel?: string;
   branchId?: string;
-  expires_at?: string;
-  expiresAt?: string; // Adding for backward compatibility
-}
-
-export type FeedbackType = 'general' | 'trainer' | 'class' | 'facility' | 'equipment' | 'service';
-
-export interface Feedback {
-  id: string;
-  member_id?: string;
-  type: FeedbackType;
-  title: string;
-  content?: string;
-  comments?: string;
-  rating: number;
-  anonymous: boolean;
-  created_at: string;
-  member_name?: string;
   branch_id?: string;
-  related_id?: string;
 }
 
-export interface BackupLogEntry {
-  id: string;
-  action: 'export' | 'import';
-  user_id?: string;
-  user_name?: string;
-  timestamp: string;
-  modules: string[];
-  success: boolean;
-  total_records?: number;
-  success_count?: number;
-  failed_count?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'general' | 'motivation' | 'recovery' | 'wellness';
-
-export interface MotivationalMessage {
-  id: string;
-  title: string;
-  content: string;
-  category: MotivationalCategory;
-  tags?: string[];
-  author?: string;
-  active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ReminderRule {
-  id: string;
-  title: string;
-  name?: string; // For backward compatibility
-  description?: string;
-  trigger_type: string;
-  triggerType?: string; // For backward compatibility
-  trigger_value?: number;
-  triggerValue?: number; // For backward compatibility
-  conditions?: Record<string, any>;
-  message?: string;
-  notification_channel?: string;
-  notificationChannel?: string; // For backward compatibility
-  is_active: boolean;
-  isActive?: boolean; // For backward compatibility
-  active?: boolean; // For backward compatibility
-  target_roles: string[];
-  targetRoles?: string[]; // For backward compatibility
-  send_via: string[];
-  sendVia?: string[]; // For backward compatibility
-  channels?: string[]; // For backward compatibility
-  targetType?: string; // For backward compatibility
-  created_at?: string;
-  updated_at?: string;
-}
-
-export type NotificationChannel = 'email' | 'sms' | 'push' | 'in-app' | 'whatsapp';
-
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
-
-export interface InvoiceItem {
-  id: string;
-  name: string;
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  amount: number;
-  discount?: number;
-}
-
+// Invoice for notifications - simpler version of finance Invoice
 export interface Invoice {
   id: string;
   member_id: string;
@@ -122,73 +94,71 @@ export interface Invoice {
   dueDate: string;
   issuedDate: string;
   paidDate?: string;
-  items: InvoiceItem[];
+  items?: InvoiceItem[];
   branchId?: string;
   notes?: string;
   subtotal?: number;
   discount?: number;
   tax?: number;
   total?: number;
-  created_at?: string;
-  updated_at?: string;
+  description?: string;
 }
 
-export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
+// Add adapter functions
+export const adaptAnnouncementFromDB = (data: any): Announcement => {
   return {
-    id: dbAnnouncement.id,
-    title: dbAnnouncement.title,
-    content: dbAnnouncement.content,
-    priority: dbAnnouncement.priority || 'medium',
-    authorName: dbAnnouncement.author_name,
-    authorId: dbAnnouncement.author_id,
-    createdAt: dbAnnouncement.created_at,
-    expires_at: dbAnnouncement.expires_at,
-    expiresAt: dbAnnouncement.expires_at, // Add for backward compatibility
-    channel: dbAnnouncement.channel,
-    branchId: dbAnnouncement.branch_id,
-    targetRoles: dbAnnouncement.target_roles || [],
-    channels: dbAnnouncement.channels || []
+    id: data.id,
+    title: data.title,
+    content: data.content,
+    authorId: data.author_id,
+    author_id: data.author_id,
+    authorName: data.author_name,
+    author_name: data.author_name,
+    author: data.author,
+    createdAt: data.created_at,
+    created_at: data.created_at,
+    updatedAt: data.updated_at,
+    updated_at: data.updated_at,
+    expiresAt: data.expires_at,
+    expires_at: data.expires_at,
+    priority: data.priority,
+    targetRoles: data.target_roles,
+    target_roles: data.target_roles,
+    channels: data.channels,
+    channel: data.channel,
+    branchId: data.branch_id,
+    branch_id: data.branch_id
   };
 };
 
-export const adaptReminderRuleFromDB = (dbRule: any): ReminderRule => {
+export const adaptReminderRuleFromDB = (data: any): ReminderRule => {
   return {
-    id: dbRule.id,
-    title: dbRule.title,
-    name: dbRule.title, // For backward compatibility
-    description: dbRule.description,
-    trigger_type: dbRule.trigger_type,
-    triggerType: dbRule.trigger_type, // For backward compatibility
-    trigger_value: dbRule.trigger_value,
-    triggerValue: dbRule.trigger_value, // For backward compatibility
-    message: dbRule.message,
-    notification_channel: dbRule.notification_channel,
-    notificationChannel: dbRule.notification_channel, // For backward compatibility
-    conditions: dbRule.conditions || {},
-    is_active: dbRule.is_active,
-    isActive: dbRule.is_active, // For backward compatibility
-    active: dbRule.is_active, // For backward compatibility
-    target_roles: dbRule.target_roles || [],
-    targetRoles: dbRule.target_roles || [], // For backward compatibility
-    send_via: dbRule.send_via || [],
-    sendVia: dbRule.send_via || [], // For backward compatibility
-    channels: dbRule.send_via || [], // For backward compatibility
-    targetType: dbRule.target_type || 'all',
-    created_at: dbRule.created_at,
-    updated_at: dbRule.updated_at
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    trigger_type: data.trigger_type,
+    trigger_value: data.trigger_value,
+    message: data.message,
+    notification_channel: data.notification_channel,
+    send_via: data.send_via || [],
+    is_active: data.is_active,
+    target_roles: data.target_roles || [],
+    conditions: data.conditions || {},
+    created_at: data.created_at,
+    updated_at: data.updated_at
   };
 };
 
-export const adaptMotivationalMessageFromDB = (dbMessage: any): MotivationalMessage => {
+export const adaptMotivationalMessageFromDB = (data: any): MotivationalMessage => {
   return {
-    id: dbMessage.id,
-    title: dbMessage.title,
-    content: dbMessage.content,
-    author: dbMessage.author,
-    category: dbMessage.category,
-    tags: dbMessage.tags || [],
-    active: dbMessage.active,
-    created_at: dbMessage.created_at,
-    updated_at: dbMessage.updated_at
+    id: data.id,
+    title: data.title,
+    content: data.content,
+    category: data.category,
+    author: data.author,
+    tags: data.tags,
+    active: data.active,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   };
 };
