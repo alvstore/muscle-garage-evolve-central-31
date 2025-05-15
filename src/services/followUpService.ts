@@ -2,8 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   FollowUpHistory, 
-  ScheduledFollowUp, 
-  FollowUpScheduled,
+  FollowUpScheduled, 
   FollowUpType
 } from '@/types/crm';
 
@@ -60,10 +59,10 @@ export const followUpService = {
       
       return data.map(item => ({
         id: item.id,
-        leadId: item.lead_id,
+        lead_id: item.lead_id,
         scheduledBy: item.sent_by || "",
-        scheduledDate: item.scheduled_at || "",
-        type: item.type,
+        scheduled_at: item.scheduled_at || "",
+        type: item.type as FollowUpType,
         subject: item.subject || "",
         content: item.content,
         status: item.status,

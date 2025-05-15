@@ -6,9 +6,9 @@ export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
 
 export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'phone' | 'email' | 'other';
 
-export type FollowUpType = 'email' | 'phone' | 'meeting' | 'other';
+export type FollowUpType = 'email' | 'phone' | 'meeting' | 'other' | 'sms' | 'whatsapp' | 'call';
 
-export type FollowUpStatus = 'scheduled' | 'completed' | 'overdue' | 'cancelled';
+export type FollowUpStatus = 'scheduled' | 'completed' | 'overdue' | 'cancelled' | 'sent' | 'delivered' | 'read' | 'failed';
 
 export interface Lead {
   id: string;
@@ -57,6 +57,25 @@ export interface FollowUpScheduled {
   response_at?: string;
   sent_by?: string;
   sent_at?: string;
+  createdAt: string;
+  lead?: {
+    name: string;
+  };
+}
+
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  type: FollowUpType;
+  content: string;
+  status: FollowUpStatus;
+  sent_at: string;
+  sent_by: string;
+  response?: string;
+  response_at?: string;
+  subject?: string;
+  scheduled_at?: string;
+  template_id?: string;
 }
 
 export interface LeadData {

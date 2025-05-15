@@ -6,4 +6,5 @@ export interface User {
   role: string;
   branch_id?: string;
   full_name?: string;
+  avatar_url?: string;
 }

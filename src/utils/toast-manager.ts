@@ -15,32 +15,71 @@ type ToastOptions = {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
 };
 
+// Simple message or object with title/description
+type ToastMessage = string | { title: string; description?: string };
+
 // Track shown toasts to prevent duplicates in rapid succession
 const recentToasts: Record<string, number> = {};
 const TOAST_DEBOUNCE_TIME = 3000; // 3 seconds
 
 export const toast = {
-  success: (message: string, options?: ToastOptions) => {
-    if (shouldShowToast(message)) {
-      sonnerToast.success(message, options);
+  success: (message: ToastMessage, options?: ToastOptions) => {
+    if (typeof message === 'string') {
+      if (shouldShowToast(message)) {
+        sonnerToast.success(message, options);
+      }
+    } else {
+      if (shouldShowToast(message.title)) {
+        sonnerToast.success(message.title, { 
+          ...options, 
+          description: message.description 
+        });
+      }
     }
   },
   
-  error: (message: string, options?: ToastOptions) => {
-    if (shouldShowToast(message)) {
-      sonnerToast.error(message, options);
+  error: (message: ToastMessage, options?: ToastOptions) => {
+    if (typeof message === 'string') {
+      if (shouldShowToast(message)) {
+        sonnerToast.error(message, options);
+      }
+    } else {
+      if (shouldShowToast(message.title)) {
+        sonnerToast.error(message.title, { 
+          ...options, 
+          description: message.description 
+        });
+      }
     }
   },
   
-  warning: (message: string, options?: ToastOptions) => {
-    if (shouldShowToast(message)) {
-      sonnerToast.warning(message, options);
+  warning: (message: ToastMessage, options?: ToastOptions) => {
+    if (typeof message === 'string') {
+      if (shouldShowToast(message)) {
+        sonnerToast.warning(message, options);
+      }
+    } else {
+      if (shouldShowToast(message.title)) {
+        sonnerToast.warning(message.title, { 
+          ...options, 
+          description: message.description 
+        });
+      }
     }
   },
   
-  info: (message: string, options?: ToastOptions) => {
-    if (shouldShowToast(message)) {
-      sonnerToast.info(message, options);
+  info: (message: ToastMessage, options?: ToastOptions) => {
+    if (typeof message === 'string') {
+      if (shouldShowToast(message)) {
+        sonnerToast.info(message, options);
+      }
+    } else {
+      if (shouldShowToast(message.title)) {
+        sonnerToast.info(message.title, { 
+          ...options, 
+          description: message.description 
+        });
+      }
     }
   },
   

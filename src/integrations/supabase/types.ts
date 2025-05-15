@@ -1970,26 +1970,32 @@ export type Database = {
         Row: {
           access_token: string
           area_domain: string | null
+          available_sites: Json | null
           branch_id: string
           created_at: string
           expire_time: number
           id: string
+          site_id: string
         }
         Insert: {
           access_token: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id: string
           created_at?: string
           expire_time: number
           id?: string
+          site_id?: string
         }
         Update: {
           access_token?: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id?: string
           created_at?: string
           expire_time?: number
           id?: string
+          site_id?: string
         }
         Relationships: [
           {
@@ -3370,6 +3376,7 @@ export type Database = {
           name: string
           plan_name: string | null
           price: number
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3383,6 +3390,7 @@ export type Database = {
           name: string
           plan_name?: string | null
           price: number
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3396,6 +3404,7 @@ export type Database = {
           name?: string
           plan_name?: string | null
           price?: number
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3766,6 +3775,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_branch_manager: boolean | null
+          is_staff: boolean | null
+          is_trainer: boolean | null
           phone: string | null
           rating: number | null
           role: string
@@ -3788,6 +3799,8 @@ export type Database = {
           id: string
           is_active?: boolean | null
           is_branch_manager?: boolean | null
+          is_staff?: boolean | null
+          is_trainer?: boolean | null
           phone?: string | null
           rating?: number | null
           role?: string
@@ -3810,6 +3823,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_branch_manager?: boolean | null
+          is_staff?: boolean | null
+          is_trainer?: boolean | null
           phone?: string | null
           rating?: number | null
           role?: string
@@ -5235,24 +5250,39 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           description: string | null
+          duration_days: number | null
+          features: Json | null
           id: string | null
+          is_active: boolean | null
           name: string | null
+          price: number | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          duration_days?: number | null
+          features?: Json | null
           id?: string | null
+          is_active?: boolean | null
           name?: string | null
+          price?: number | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          duration_days?: number | null
+          features?: Json | null
           id?: string | null
+          is_active?: boolean | null
           name?: string | null
+          price?: number | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
