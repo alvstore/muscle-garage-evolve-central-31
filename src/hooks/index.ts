@@ -9,6 +9,8 @@ export * from './use-message-templates';
 export * from './use-motivational-messages';
 export * from './use-toast';
 export * from './use-company';
+export * from './use-leads';
 
-// Don't use star export for default exports
-// This prevents the "default cannot be resolved by star export entries" error
+// Fix for default exports - if any hooks are exported as default, export them explicitly here
+// For example:
+// export { default as useAuth } from './use-auth';
