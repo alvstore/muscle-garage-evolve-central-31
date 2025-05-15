@@ -51,7 +51,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
   const handleSaveDietPlan = (plan: DietPlan) => {
     setDietPlans(prev => ({
       ...prev,
-      [plan.memberId]: plan
+      [plan.member_id]: plan
     }));
     setEditingDietPlan(false);
     toast.success("Diet plan saved successfully");
@@ -309,7 +309,7 @@ const FitnessPlanManager = ({ members, trainerId, readOnly = false }: FitnessPla
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  <p>Last updated: {new Date(dietPlan.updatedAt).toLocaleDateString()}</p>
+                  <p>Last updated: {new Date(dietPlan.updated_at).toLocaleDateString()}</p>
                 </div>
               </div>
             ) : (

@@ -1,452 +1,321 @@
-import { 
-  User, 
-  Member, 
-  Trainer, 
-  Staff, 
-  Admin, 
-  Class, 
-  Membership,
-  Announcement,
-  DashboardSummary
-} from "@/types";
+// Need to import the correct types
+import {
+  Member,
+  Trainer,
+  Staff,
+  Admin,
+  Class,
+  Membership
+} from '@/types/membership';
 
-// Mock Users
-export const mockUsers: User[] = [
-  {
-    id: "admin1",
-    email: "admin@musclegarage.com",
-    name: "Alex Johnson",
-    role: "admin",
-    avatar: "/placeholder.svg",
-    phone: "+1234567890"
-  },
-  {
-    id: "staff1",
-    email: "staff@musclegarage.com",
-    name: "Taylor Smith",
-    role: "staff",
-    avatar: "/placeholder.svg",
-    phone: "+1234567891"
-  },
-  {
-    id: "trainer1",
-    email: "trainer@musclegarage.com",
-    name: "Chris Rodriguez",
-    role: "trainer",
-    avatar: "/placeholder.svg",
-    phone: "+1234567892"
-  },
-  {
-    id: "member1",
-    email: "member@example.com",
-    name: "Jordan Lee",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567893"
-  }
-];
-
-// Mock Members
+// Update mock data to use the correct property names
 export const mockMembers: Member[] = [
   {
-    id: "member1",
-    email: "member@example.com",
-    name: "Jordan Lee",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567893",
-    dateOfBirth: "1990-05-15",
-    goal: "Weight loss and muscle toning",
-    trainerId: "trainer1",
-    membershipId: "membership1",
-    membershipStatus: "active",
-    membershipStartDate: "2023-01-01",
-    membershipEndDate: "2024-01-01",
-    status: "active"
+    id: "1",
+    name: "John Smith",
+    email: "john@example.com",
+    phone: "+91 9876543210",
+    gender: "male",
+    address: "123 Main St",
+    city: "Mumbai",
+    state: "Maharashtra",
+    country: "India",
+    zipCode: "400001",
+    membership_status: "active",
+    membership_start_date: "2024-01-01",
+    membership_end_date: "2024-12-31",
+    status: "active",
+    avatar: "/testimonial-1.png",
+    goal: "Weight loss",
   },
   {
-    id: "member2",
-    email: "sarahp@example.com",
-    name: "Sarah Parker",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567894",
-    dateOfBirth: "1988-08-22",
-    goal: "Bodybuilding",
-    trainerId: "trainer2",
-    membershipId: "membership2",
-    membershipStatus: "active",
-    membershipStartDate: "2023-02-15",
-    membershipEndDate: "2023-08-15",
-    status: "active"
+    id: "2",
+    name: "Emily Johnson",
+    email: "emily@example.com",
+    phone: "+1 5551234567",
+    gender: "female",
+    address: "456 Oak Ave",
+    city: "New York",
+    state: "NY",
+    country: "USA",
+    zipCode: "10001",
+    membership_status: "inactive",
+    membership_start_date: "2023-05-01",
+    membership_end_date: "2023-12-31",
+    status: "inactive",
+    avatar: "/testimonial-2.jpg",
+    goal: "Muscle gain",
   },
   {
-    id: "member3",
-    email: "michaelw@example.com",
-    name: "Michael Wong",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567895",
-    dateOfBirth: "1995-11-30",
-    goal: "Strength training",
-    trainerId: "trainer1",
-    membershipId: "membership3",
-    membershipStatus: "inactive",
-    membershipStartDate: "2022-10-01",
-    membershipEndDate: "2023-04-01",
-    status: "inactive"
+    id: "3",
+    name: "Ricardo Gomez",
+    email: "ricardo@example.com",
+    phone: "+52 5556789012",
+    gender: "male",
+    address: "789 Pine Ln",
+    city: "Mexico City",
+    state: "CDMX",
+    country: "Mexico",
+    zipCode: "11560",
+    membership_status: "active",
+    membership_start_date: "2024-02-15",
+    membership_end_date: "2025-02-14",
+    status: "active",
+    avatar: "/testimonial-3.jpg",
+    goal: "Endurance training",
   },
   {
-    id: "member4",
-    email: "emilyd@example.com",
-    name: "Emily Davidson",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567896",
-    dateOfBirth: "1992-07-12",
-    goal: "General fitness",
-    trainerId: "trainer3",
-    membershipId: "membership1",
-    membershipStatus: "active",
-    membershipStartDate: "2023-03-01",
-    membershipEndDate: "2024-03-01",
-    status: "active"
+    id: "4",
+    name: "Aisha Khan",
+    email: "aisha@example.com",
+    phone: "+92 5552345678",
+    gender: "female",
+    address: "101 Elm Rd",
+    city: "Karachi",
+    state: "Sindh",
+    country: "Pakistan",
+    zipCode: "75600",
+    membership_status: "active",
+    membership_start_date: "2024-03-01",
+    membership_end_date: "2025-02-28",
+    status: "active",
+    avatar: "/testimonial-4.jpg",
+    goal: "Flexibility",
   },
   {
-    id: "member5",
-    email: "davidm@example.com",
-    name: "David Miller",
-    role: "member",
-    avatar: "/placeholder.svg",
-    phone: "+1234567897",
-    dateOfBirth: "1985-02-28",
-    goal: "Marathon preparation",
-    membershipId: "membership2",
-    membershipStatus: "expired",
-    membershipStartDate: "2022-06-01",
-    membershipEndDate: "2023-06-01",
-    status: "inactive"
-  }
+    id: "5",
+    name: "Kenji Tanaka",
+    email: "kenji@example.com",
+    phone: "+81 5553456789",
+    gender: "male",
+    address: "112 Cherry Blvd",
+    city: "Tokyo",
+    state: "Tokyo",
+    country: "Japan",
+    zipCode: "100-0001",
+    membership_status: "inactive",
+    membership_start_date: "2023-04-01",
+    membership_end_date: "2023-12-31",
+    status: "inactive",
+    avatar: "/testimonial-5.jpg",
+    goal: "Overall fitness",
+  },
 ];
 
-// Mock Trainers
+// Update trainers to use the correct property names
 export const mockTrainers: Trainer[] = [
   {
-    id: "trainer1",
-    email: "trainer@musclegarage.com",
-    name: "Chris Rodriguez",
-    role: "trainer",
-    avatar: "/placeholder.svg",
-    phone: "+1234567892",
-    specialty: "Weight Loss",
-    bio: "Certified personal trainer with 8 years of experience specializing in weight management and functional training.",
-    status: "active",
-    rating: 4.8
+    id: "1",
+    name: "Alex Trainer",
+    email: "alex@example.com",
+    phone: "+91 9876543201",
+    bio: "Certified personal trainer with 5 years experience.",
+    avatar: "/trainer-1.jpg",
+    specialty: "Weight Training",
   },
   {
-    id: "trainer2",
-    email: "sam@musclegarage.com",
-    name: "Sam Johnson",
-    role: "trainer",
-    avatar: "/placeholder.svg",
-    phone: "+1234567898",
-    specialty: "Bodybuilding",
-    bio: "Former competitive bodybuilder with extensive knowledge in muscle hypertrophy and nutrition.",
-    status: "active",
-    rating: 4.9
+    id: "2",
+    name: "Priya Sharma",
+    email: "priya@example.com",
+    phone: "+91 9876543202",
+    bio: "Yoga instructor with 8 years of experience.",
+    avatar: "/trainer-2.jpg",
+    specialty: "Yoga",
   },
   {
-    id: "trainer3",
-    email: "jessica@musclegarage.com",
-    name: "Jessica Wu",
-    role: "trainer",
-    avatar: "/placeholder.svg",
-    phone: "+1234567899",
-    specialty: "Yoga & Flexibility",
-    bio: "Yoga instructor and flexibility coach who focuses on mobility, balance, and mind-body connection.",
-    status: "active",
-    rating: 4.7
-  }
+    id: "3",
+    name: "David Lee",
+    email: "david@example.com",
+    phone: "+1 5559876543",
+    bio: "Cardio and endurance specialist.",
+    avatar: "/trainer-3.jpg",
+    specialty: "Cardio",
+  },
 ];
 
-// Mock Staff
+// Update staff to use the correct property names
 export const mockStaff: Staff[] = [
   {
-    id: "staff1",
-    email: "staff@musclegarage.com",
-    name: "Taylor Smith",
-    role: "staff",
-    avatar: "/placeholder.svg",
-    phone: "+1234567891",
-    position: "Front Desk",
-    status: "active",
-    department: "Operations"
+    id: "1",
+    name: "Sarah Manager",
+    email: "sarah@example.com",
+    phone: "+91 9876543202",
+    department: "Management",
+    avatar: "/testimonial-2.jpg",
   },
   {
-    id: "staff2",
-    email: "robert@musclegarage.com",
-    name: "Robert Garcia",
-    role: "staff",
-    avatar: "/placeholder.svg",
-    phone: "+1234567900",
-    position: "Sales Associate",
-    status: "active",
-    department: "Sales"
-  }
+    id: "2",
+    name: "Raj Patel",
+    email: "raj@example.com",
+    phone: "+91 9876543203",
+    department: "Reception",
+    avatar: "/testimonial-3.jpg",
+  },
 ];
 
-// Mock Admins
+// Update admin to use the correct property names
 export const mockAdmins: Admin[] = [
   {
-    id: "admin1",
-    email: "admin@musclegarage.com",
-    name: "Alex Johnson",
-    role: "admin",
-    avatar: "/placeholder.svg",
-    phone: "+1234567890"
+    id: "1",
+    name: "Admin User",
+    email: "admin@example.com",
   }
 ];
 
-// Mock Classes
+// Update classes to use the correct property names
 export const mockClasses: Class[] = [
   {
-    id: "class1",
-    name: "HIIT Extreme",
-    description: "High-intensity interval training to maximize calorie burn and improve conditioning.",
-    trainer: "Chris Rodriguez",
-    trainerId: "trainer1",
-    capacity: 15,
-    enrolled: 12,
-    startTime: "2023-07-20T08:00:00Z",
-    endTime: "2023-07-20T09:00:00Z",
+    id: "1",
+    name: "Morning Yoga",
+    type: "yoga",
+    description: "Start your day with energizing yoga poses",
+    trainer_id: "1", // Changed from trainerId to trainer_id
+    trainer: "Alex Trainer",
     location: "Studio A",
-    type: "Group"
-  },
-  {
-    id: "class2",
-    name: "Power Yoga",
-    description: "Dynamic yoga practice focused on building strength and flexibility.",
-    trainer: "Jessica Wu",
-    trainerId: "trainer3",
-    capacity: 20,
-    enrolled: 15,
-    startTime: "2023-07-20T10:00:00Z",
-    endTime: "2023-07-20T11:00:00Z",
-    location: "Studio B",
-    type: "Group"
-  },
-  {
-    id: "class3",
-    name: "Muscle Building 101",
-    description: "Learn proper techniques for hypertrophy training.",
-    trainer: "Sam Johnson",
-    trainerId: "trainer2",
-    capacity: 10,
+    capacity: 15,
+    start_time: "2023-06-15T07:00:00Z",
+    end_time: "2023-06-15T08:00:00Z",
+    recurring: true,
+    recurrence: "daily",
+    level: "all",
+    difficulty: "beginner",
     enrolled: 8,
-    startTime: "2023-07-20T17:00:00Z",
-    endTime: "2023-07-20T18:00:00Z",
+    is_active: true,
+    status: "active"
+  },
+  {
+    id: "2",
+    name: "Cardio Blast",
+    type: "cardio",
+    description: "High-intensity cardio workout to burn calories",
+    trainer_id: "3", // Changed from trainerId to trainer_id
+    trainer: "David Lee",
+    location: "Gym Floor",
+    capacity: 20,
+    start_time: "2023-06-16T17:00:00Z",
+    end_time: "2023-06-16T18:00:00Z",
+    recurring: true,
+    recurrence: "weekly",
+    level: "intermediate",
+    difficulty: "moderate",
+    enrolled: 12,
+    is_active: true,
+    status: "active"
+  },
+  {
+    id: "3",
+    name: "Strength Training",
+    type: "strength",
+    description: "Build muscle and increase strength",
+    trainer_id: "1", // Changed from trainerId to trainer_id
+    trainer: "Alex Trainer",
     location: "Weight Room",
-    type: "Workshop"
+    capacity: 10,
+    start_time: "2023-06-17T10:00:00Z",
+    end_time: "2023-06-17T11:00:00Z",
+    recurring: false,
+    recurrence: "none",
+    level: "advanced",
+    difficulty: "hard",
+    enrolled: 7,
+    is_active: true,
+    status: "active"
   },
   {
-    id: "class4",
-    name: "Spin Class",
-    description: "High-energy indoor cycling workout set to motivating music.",
-    trainer: "Chris Rodriguez",
-    trainerId: "trainer1",
-    capacity: 25,
-    enrolled: 20,
-    startTime: "2023-07-21T07:00:00Z",
-    endTime: "2023-07-21T08:00:00Z",
-    location: "Spin Studio",
-    type: "Group"
-  },
-  {
-    id: "class5",
-    name: "Core Crusher",
-    description: "30-minute focused workout for developing core strength and stability.",
-    trainer: "Jessica Wu",
-    trainerId: "trainer3",
-    capacity: 15,
+    id: "4",
+    name: "Pilates Fusion",
+    type: "pilates",
+    description: "Core strengthening and flexibility workout",
+    trainer_id: "2", // Changed from trainerId to trainer_id
+    trainer: "Priya Sharma",
+    location: "Studio B",
+    capacity: 12,
+    start_time: "2023-06-18T14:00:00Z",
+    end_time: "2023-06-18T15:00:00Z",
+    recurring: true,
+    recurrence: "weekly",
+    level: "all",
+    difficulty: "beginner",
     enrolled: 10,
-    startTime: "2023-07-21T12:00:00Z",
-    endTime: "2023-07-21T12:30:00Z",
-    location: "Studio A",
-    type: "Group"
-  }
+    is_active: true,
+    status: "active"
+  },
+  {
+    id: "5",
+    name: "HIIT Express",
+    type: "hiit",
+    description: "30-minute high-intensity interval training",
+    trainer_id: "3", // Changed from trainerId to trainer_id
+    trainer: "David Lee",
+    location: "Gym Floor",
+    capacity: 25,
+    start_time: "2023-06-19T12:00:00Z",
+    end_time: "2023-06-19T12:30:00Z",
+    recurring: true,
+    recurrence: "daily",
+    level: "intermediate",
+    difficulty: "moderate",
+    enrolled: 18,
+    is_active: true,
+    status: "active"
+  },
 ];
 
-// Mock Memberships
+// Update memberships to use the correct property names
 export const mockMemberships: Membership[] = [
   {
-    id: "membership1",
-    name: "Premium Annual",
-    price: 999,
-    duration: 365,
-    durationType: "days",
+    id: "1",
+    name: "Basic",
+    description: "Access to gym during regular hours",
+    price: 1500,
+    duration_days: 30, // Changed from duration to duration_days
     features: [
-      "Unlimited gym access",
-      "Free group classes",
-      "2 personal training sessions/month",
-      "Locker rental",
-      "Spa access"
+      "Gym access",
+      "Locker use"
     ],
-    isActive: true
+    is_active: true,
+    status: "active"
   },
   {
-    id: "membership2",
-    name: "Standard Monthly",
-    price: 99,
-    duration: 30,
-    durationType: "days",
+    id: "2",
+    name: "Premium",
+    description: "Unlimited access to all facilities and classes",
+    price: 2500,
+    duration_days: 90, // Changed from duration to duration_days
     features: [
       "Unlimited gym access",
-      "5 group classes/month",
-      "Fitness assessment"
+      "Access to all classes",
+      "Personal training sessions",
+      "Nutrition consultation"
     ],
-    isActive: true
+    is_active: true,
+    status: "active"
   },
   {
-    id: "membership3",
-    name: "Basic Quarterly",
-    price: 249,
-    duration: 90,
-    durationType: "days",
+    id: "3",
+    name: "Gold",
+    description: "Access to gym and group fitness classes",
+    price: 2000,
+    duration_days: 60, // Changed from duration to duration_days
     features: [
-      "Unlimited gym access",
-      "3 group classes/month"
+      "Gym access",
+      "Group fitness classes",
+      "Sauna and steam room"
     ],
-    isActive: true
+    is_active: true,
+    status: "active"
   },
   {
-    id: "membership4",
-    name: "Student Special",
-    price: 69,
-    duration: 30,
-    durationType: "days",
+    id: "4",
+    name: "Trial",
+    description: "7-day free trial with limited access",
+    price: 0,
+    duration_days: 7, // Changed from duration to duration_days
     features: [
-      "Unlimited gym access",
-      "2 group classes/month",
-      "Valid student ID required"
+      "Limited gym access",
+      "One group fitness class"
     ],
-    isActive: true
+    is_active: true,
+    status: "active"
   },
-  {
-    id: "membership5",
-    name: "Family Plan",
-    price: 199,
-    duration: 30,
-    durationType: "days",
-    features: [
-      "Access for up to 4 family members",
-      "10 group classes to share/month",
-      "Childcare services"
-    ],
-    isActive: true
-  }
 ];
-
-// Mock Announcements
-export const mockAnnouncements: Announcement[] = [
-  {
-    id: "announcement1",
-    title: "New Yoga Class Schedule",
-    content: "We're excited to announce our expanded yoga schedule with 5 new classes per week!",
-    author: "Alex Johnson",
-    authorId: "admin1",
-    date: "2023-07-15T10:00:00Z",
-    targetRoles: ["member", "trainer", "staff", "admin"],
-    expiresAt: "2023-07-30T23:59:59Z",
-    createdBy: "admin1"
-  },
-  {
-    id: "announcement2",
-    title: "Maintenance Notice",
-    content: "The pool area will be closed for maintenance from July 25-27. We apologize for any inconvenience.",
-    author: "Alex Johnson",
-    authorId: "admin1",
-    date: "2023-07-18T15:30:00Z",
-    targetRoles: ["member", "trainer", "staff", "admin"],
-    expiresAt: "2023-07-28T23:59:59Z",
-    createdBy: "admin1"
-  },
-  {
-    id: "announcement3",
-    title: "Staff Meeting",
-    content: "Reminder: Monthly staff meeting this Friday at 2 PM in the conference room.",
-    author: "Alex Johnson",
-    authorId: "admin1",
-    date: "2023-07-19T09:00:00Z",
-    targetRoles: ["trainer", "staff", "admin"],
-    expiresAt: "2023-07-21T23:59:59Z",
-    createdBy: "admin1"
-  }
-];
-
-// Mock Dashboard Summary
-export const mockDashboardSummary: DashboardSummary = {
-  totalMembers: 243,
-  activeMembers: 205,
-  newMembers: 12,
-  todayCheckIns: 87,
-  revenue: {
-    daily: 1250,
-    weekly: 8750,
-    monthly: 35000
-  },
-  pendingPayments: {
-    count: 12,
-    total: 1490
-  },
-  upcomingRenewals: 8,
-  expiringMemberships: 20,
-  attendanceTrend: [
-    { date: "2023-07-14", count: 78 },
-    { date: "2023-07-15", count: 82 },
-    { date: "2023-07-16", count: 65 },
-    { date: "2023-07-17", count: 91 },
-    { date: "2023-07-18", count: 85 },
-    { date: "2023-07-19", count: 93 },
-    { date: "2023-07-20", count: 87 }
-  ],
-  membersByStatus: {
-    active: 205,
-    inactive: 18,
-    expired: 20
-  },
-  recentNotifications: [
-    {
-      id: "notif1",
-      userId: "admin1",
-      title: "Payment Received",
-      message: "John Doe has completed payment for Premium Annual membership.",
-      type: "payment",
-      read: false,
-      createdAt: "2023-07-20T09:45:00Z"
-    },
-    {
-      id: "notif2",
-      userId: "admin1",
-      title: "New Member Registration",
-      message: "Sarah Parker has registered as a new member.",
-      type: "system",
-      read: true,
-      createdAt: "2023-07-19T14:30:00Z"
-    },
-    {
-      id: "notif3",
-      userId: "admin1",
-      title: "Low Inventory Alert",
-      message: "Protein powder (Chocolate) is below reorder level.",
-      type: "system",
-      read: false,
-      createdAt: "2023-07-19T08:15:00Z"
-    }
-  ]
-};
-
-const date1 = new Date('2023-01-15');
-const date2 = new Date('2023-02-20');
-
-const createdDate = new Date('2022-12-01');
-const updatedDate = new Date('2023-01-10');

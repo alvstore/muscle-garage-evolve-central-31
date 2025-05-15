@@ -1,111 +1,236 @@
-
 import { AutomationRule } from '@/types/crm';
 import { supabase } from '@/integrations/supabase/client';
 
-// Add the automation rules related methods
-export const getAutomationRules = async (branchId?: string) => {
-  try {
-    let query = supabase.from('automation_rules').select('*');
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
-    const { data, error } = await query.order('created_at', { ascending: false });
-    return { data, error };
-  } catch (error) {
-    console.error('Error fetching automation rules:', error);
-    return { data: null, error };
-  }
-};
-
-export const saveAutomationRule = async (rule: Partial<AutomationRule>) => {
-  try {
-    if (rule.id) {
-      // Update existing rule
+const settingsService = {
+  // Existing Hikvision methods
+  getHikvisionSettings: async (branchId?: string) => {
+    try {
       const { data, error } = await supabase
-        .from('automation_rules')
-        .update({
-          name: rule.name,
-          description: rule.description,
-          trigger_type: rule.trigger_type,
-          trigger_value: rule.trigger_value,
-          trigger_condition: rule.trigger_condition,
-          actions: rule.actions,
-          is_active: rule.is_active,
-          updated_at: new Date().toISOString()
+        .from('hikvision_api_settings')
+        .select('*')
+        .eq('branch_id', branchId || '')
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  
+  saveHikvisionSettings: async (settings: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('hikvision_api_settings')
+        .upsert({
+          branch_id: settings.branchId,
+          api_url: settings.apiUrl,
+          app_key: settings.appKey,
+          app_secret: settings.secretKey,
+          is_active: true,
         })
-        .eq('id', rule.id);
-      return { success: !error, data, error };
-    } else {
-      // Create new rule
+        .select();
+      
+      return { success: !error, data };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+  
+  testHikvisionConnection: async (settings: any) => {
+    try {
+      // Simulate API call - in a real app, this would call an API endpoint
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if required fields are present
+      if (!settings.apiUrl || !settings.appKey || !settings.secretKey) {
+        return { success: false, message: 'Missing required credentials' };
+      }
+      
+      return { success: true, message: 'Successfully connected to Hikvision API' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Connection test failed' 
+      };
+    }
+  },
+  
+  getHikvisionSites: async (branchId: string) => {
+    try {
+      // In a real app, this would fetch sites from the Hikvision API
+      return { 
+        data: [
+          { id: 'site1', name: 'Main Facility' },
+          { id: 'site2', name: 'Secondary Location' }
+        ], 
+        error: null 
+      };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
+
+  // Add integration methods for the component that's expecting them
+  getIntegrationSettings: async (integration: string, branchId?: string) => {
+    try {
+      if (integration === 'hikvision') {
+        return settingsService.getHikvisionSettings(branchId);
+      }
+      
+      const { data, error } = await supabase
+        .from('integration_statuses')
+        .select('*')
+        .eq('integration_key', integration)
+        .eq('branch_id', branchId || '')
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  
+  saveIntegrationSettings: async (integration: string, settings: any, branchId?: string) => {
+    try {
+      if (integration === 'hikvision') {
+        return settingsService.saveHikvisionSettings({
+          ...settings,
+          branchId
+        });
+      }
+      
+      const { data, error } = await supabase
+        .from('integration_statuses')
+        .upsert({
+          integration_key: integration,
+          branch_id: branchId,
+          name: settings.name || integration,
+          status: settings.enabled ? 'active' : 'inactive',
+          config: settings
+        })
+        .select();
+      
+      return { success: !error, data };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+  
+  testIntegrationConnection: async (integration: string, settings: any) => {
+    try {
+      if (integration === 'hikvision') {
+        return settingsService.testHikvisionConnection(settings);
+      }
+      
+      // Simulate API call for other integrations
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return { success: true, message: `Successfully connected to ${integration}` };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Connection test failed' 
+      };
+    }
+  },
+  
+  // Automation rules methods
+  getAutomationRules: async (branchId?: string) => {
+    try {
       const { data, error } = await supabase
         .from('automation_rules')
-        .insert({
-          ...rule,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      return { success: !error, data, error };
+        .select('*')
+        .eq('branch_id', branchId || '');
+      
+      return { data, error };
+    } catch (error) {
+      return { data: [], error };
     }
-  } catch (error) {
-    console.error('Error saving automation rule:', error);
-    return { success: false, error };
-  }
-};
-
-export const deleteAutomationRule = async (ruleId: string) => {
-  try {
-    const { error } = await supabase
-      .from('automation_rules')
-      .delete()
-      .eq('id', ruleId);
-    return { success: !error, error };
-  } catch (error) {
-    console.error('Error deleting automation rule:', error);
-    return { success: false, error };
-  }
-};
-
-// Export other methods as needed from settingsService
-export const getHikvisionSettings = async (branchId?: string) => {
-  try {
-    let query = supabase.from('hikvision_api_settings').select('*');
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
+  },
+  
+  saveAutomationRule: async (rule: Partial<AutomationRule>) => {
+    try {
+      const { data, error } = await supabase
+        .from('automation_rules')
+        .upsert(rule)
+        .select();
+      
+      return { success: !error, data };
+    } catch (error) {
+      return { success: false, error };
     }
-    const { data, error } = await query.single();
-    return { data, error };
-  } catch (error) {
-    console.error('Error fetching Hikvision settings:', error);
-    return { data: null, error };
+  },
+  
+  deleteAutomationRule: async (ruleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('automation_rules')
+        .delete()
+        .eq('id', ruleId);
+      
+      return { success: !error };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+
+  // Template management methods
+  getTemplates: async (type: 'email' | 'sms' | 'whatsapp', branchId?: string) => {
+    const tableMap: Record<string, string> = {
+      'email': 'email_templates',
+      'sms': 'sms_templates',
+      'whatsapp': 'whatsapp_templates'
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from(tableMap[type])
+        .select('*')
+        .eq('branch_id', branchId || '');
+      
+      return { data, error };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
+
+  saveTemplate: async (type: 'email' | 'sms' | 'whatsapp', template: any) => {
+    const tableMap: Record<string, string> = {
+      'email': 'email_templates',
+      'sms': 'sms_templates',
+      'whatsapp': 'whatsapp_templates'
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from(tableMap[type])
+        .upsert(template)
+        .select();
+      
+      return { success: !error, data };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+
+  deleteTemplate: async (type: 'email' | 'sms' | 'whatsapp', templateId: string) => {
+    const tableMap: Record<string, string> = {
+      'email': 'email_templates',
+      'sms': 'sms_templates',
+      'whatsapp': 'whatsapp_templates'
+    };
+
+    try {
+      const { error } = await supabase
+        .from(tableMap[type])
+        .delete()
+        .eq('id', templateId);
+      
+      return { success: !error };
+    } catch (error) {
+      return { success: false, error };
+    }
   }
 };
 
-export const saveHikvisionSettings = async (settings: any) => {
-  try {
-    // Implementation details...
-    return { success: true };
-  } catch (error) {
-    console.error('Error saving Hikvision settings:', error);
-    return { success: false };
-  }
-};
-
-export const testHikvisionConnection = async (settings: any) => {
-  try {
-    // Implementation details...
-    return { success: true, message: 'Connection successful' };
-  } catch (error) {
-    return { success: false, message: 'Connection failed' };
-  }
-};
-
-// Add other methods as needed for the settingsService
-// Export as default for compatibility
-export default {
-  getAutomationRules,
-  saveAutomationRule,
-  deleteAutomationRule,
-  getHikvisionSettings,
-  saveHikvisionSettings,
-  testHikvisionConnection,
-};
+export default settingsService;

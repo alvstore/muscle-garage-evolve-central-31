@@ -62,10 +62,10 @@ const FollowUpHistoryComponent = () => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  // Fetch follow-up history from Supabase
+  // Fix the incorrect argument count
   const { data: followUpHistory, isLoading, isError, refetch } = useQuery({
     queryKey: ['followUpHistory', currentBranch?.id],
-    queryFn: () => followUpService.getFollowUpHistory(undefined, currentBranch?.id),
+    queryFn: () => followUpService.getFollowUpHistory(currentBranch?.id),
     enabled: !!currentBranch?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

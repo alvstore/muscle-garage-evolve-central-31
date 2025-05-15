@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -31,10 +30,10 @@ const CRMDashboard = () => {
     enabled: !!currentBranch?.id,
   });
 
-  // Fetch follow-ups data
+  // Fetch follow-ups data - Fix the incorrect argument count
   const { data: followUps, isLoading: isLoadingFollowUps } = useQuery({
     queryKey: ['allFollowUps', currentBranch?.id],
-    queryFn: () => followUpService.getFollowUpHistory(undefined, currentBranch?.id),
+    queryFn: () => followUpService.getFollowUpHistory(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
 

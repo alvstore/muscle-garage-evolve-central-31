@@ -1,23 +1,121 @@
 
-export type MembershipDuration = '1-month' | '3-month' | '6-month' | '12-month';
-export type ClassType = 'all' | 'group-only' | 'basic-only';
-export type MembershipPlanStatus = 'active' | 'inactive';
-
 export interface MembershipPlan {
   id: string;
   name: string;
-  description: string;
+  description?: string;
+  price: number;
+  duration_days: number; // Add this to match usage in components
+  durationDays?: number; // For backward compatibility
+  features?: string[]; // Add this to match usage
+  benefits?: string[]; // For backward compatibility
+  is_active?: boolean;
+  isActive?: boolean; // For backward compatibility
+  status?: string;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string;
+  zip_code?: string;
+  role?: string; // Add this for mock data
+  membership_id?: string;
+  membershipId?: string; // For backward compatibility
+  trainer_id?: string;
+  trainerId?: string; // For backward compatibility
+  membership_status?: string;
+  membershipStatus?: string; // For backward compatibility
+  membership_start_date?: string;
+  membership_end_date?: string;
+  status?: string;
+  date_of_birth?: string;
+  dateOfBirth?: string; // For backward compatibility
+  avatar?: string;
+  profile_picture?: string;
+  goal?: string;
+  branch_id?: string;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+  avatar?: string;
+  specialty?: string;
+  rating?: number;
+  status?: string;
+  role?: string; // Add this for mock data
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  position?: string; // Add this for mock data
+  department?: string;
+  phone?: string;
+  avatar?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  id_type?: string;
+  id_number?: string;
+  gender?: string;
+  is_branch_manager?: boolean;
+}
+
+export interface Admin {
+  id: string;
+  name: string;
+  email: string;
+  role?: string; // Add this for mock data
+}
+
+export interface Class {
+  id: string;
+  name: string;
+  type?: string;
+  description?: string;
+  trainer_id?: string;
+  trainerId?: string; // For backward compatibility
+  trainer?: string;
+  location?: string;
+  capacity?: number;
+  start_time?: string;
+  end_time?: string;
+  recurring?: boolean;
+  recurrence?: string;
+  level?: string;
+  difficulty?: string;
+  enrolled?: number;
+  branch_id?: string;
+  is_active?: boolean;
+  status?: string;
+}
+
+export interface Membership {
+  id: string;
+  name: string;
+  description?: string;
   price: number;
   duration_days: number;
-  durationDays?: number; // For backward compatibility
-  duration_label?: MembershipDuration;
-  benefits: string[];
-  features?: string[]; // Alternate naming used in some components
-  allowed_classes: ClassType;
-  status: MembershipPlanStatus;
-  is_active?: boolean; // Used in some components
-  isActive?: boolean; // For backward compatibility
-  created_at: string;
-  updated_at: string;
-  memberCount?: number; // Used in UI
+  duration?: number; // For mock data compatibility
+  features?: any[];
+  is_active?: boolean;
+  status?: string;
+  branch_id?: string;
 }

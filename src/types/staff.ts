@@ -3,32 +3,24 @@ export interface StaffMember {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  role: 'staff';
-  position: string;
-  department: string;
-  gender?: 'male' | 'female' | 'other';
+  phone?: string;
+  role?: string;
+  department?: string;
+  avatar?: string;
+  branch_id?: string;
+  
+  // Add these properties to match usage in EditStaffForm
   address?: string;
   city?: string;
   state?: string;
   country?: string;
-  branchId?: string;
-  status: 'active' | 'inactive';
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
+  id_type?: string;
+  id_number?: string;
+  gender?: string;
+  is_branch_manager?: boolean;
 }
 
-export interface StaffFormData {
-  name: string;
-  email: string;
-  phone: string;
-  position: string;
-  department: string;
-  gender: 'male' | 'female' | 'other';
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  branchId?: string;
+export interface FileOptions {
+  // Add onUploadProgress for backward compatibility
+  onUploadProgress?: (progress: number) => void;
 }
