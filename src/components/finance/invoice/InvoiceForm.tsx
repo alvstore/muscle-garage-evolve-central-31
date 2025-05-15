@@ -21,7 +21,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     member_id: invoice?.member_id || '',
-    member_name: invoice?.memberName || '',  // This field may need to come from another source
+    member_name: invoice?.memberName || '',
     description: invoice?.description || '',
     amount: invoice?.amount || 0,
     status: invoice?.status || 'pending' as InvoiceStatus,
@@ -33,6 +33,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      status: value as InvoiceStatus
+    }));
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      payment_method: value as PaymentMethod
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,20 +89,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleStatusChange = (value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      status: value as InvoiceStatus
-    }));
-  };
-
-  const handlePaymentMethodChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      payment_method: value as PaymentMethod
-    }));
   };
 
   return (

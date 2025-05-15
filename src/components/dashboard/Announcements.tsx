@@ -29,7 +29,7 @@ const Announcements: React.FC<AnnouncementsProps> = ({ announcements }) => {
             <h3 className="font-medium">{announcement.title}</h3>
             <div className="flex items-center">
               <span className="text-xs text-muted-foreground">
-                {format(parseISO(announcement.createdAt), 'MMM dd, yyyy')}
+                {format(parseISO(announcement.created_at), 'MMM dd, yyyy')}
               </span>
             </div>
           </div>

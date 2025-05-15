@@ -45,6 +45,17 @@ const mockNotifications = [
   }
 ];
 
+const adaptedNotifications = notifications.map(notification => ({
+  id: notification.id,
+  title: notification.title,
+  message: notification.message,
+  is_read: notification.read ?? false,
+  created_at: notification.created_at || notification.timestamp || new Date().toISOString(),
+  user_id: notification.user_id,
+  link: notification.link,
+  type: notification.type
+}));
+
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   toggleSidebar,
   toggleTheme,

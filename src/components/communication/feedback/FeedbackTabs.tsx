@@ -21,7 +21,11 @@ const FeedbackTabs = ({ showTabs = true }: FeedbackTabsProps) => {
   return (
     <div className="space-y-4">
       {showTabs && (
-        <Tabs defaultValue="all" value={activeTab} onValueChange={(value) => setActiveTab(value as FeedbackType | 'all')}>
+        <Tabs 
+          defaultValue="all" 
+          value={activeTab} 
+          onValueChange={(value) => setActiveTab(value as FeedbackType | 'all')}
+        >
           <TabsList>
             <TabsTrigger value="all">All Feedback</TabsTrigger>
             <TabsTrigger value="general">General</TabsTrigger>

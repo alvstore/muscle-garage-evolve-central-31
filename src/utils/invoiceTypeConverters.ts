@@ -1,23 +1,41 @@
 
-import { Invoice as FinanceInvoice } from '@/types/finance';
 import { Invoice as NotificationInvoice } from '@/types/notification';
+import { Invoice as FinanceInvoice } from '@/types/finance';
 
-/**
- * Converts an invoice from notification type to finance type
- */
-export const notificationToFinanceInvoice = (invoice: NotificationInvoice): FinanceInvoice => {
+export function notificationToFinanceInvoice(invoice: NotificationInvoice): FinanceInvoice {
   return {
-    ...invoice,
-    items: Array.isArray(invoice.items) ? invoice.items : [],
+    id: invoice.id,
+    member_id: invoice.member_id,
+    amount: invoice.amount,
+    description: invoice.description || '',
+    status: invoice.status,
+    due_date: invoice.due_date,
+    issued_date: invoice.issued_date || invoice.created_at,
+    paid_date: invoice.payment_date || invoice.paid_date,
+    payment_method: invoice.payment_method,
+    notes: invoice.notes || '',
+    created_at: invoice.created_at,
+    updated_at: invoice.updated_at,
+    branch_id: '',
+    items: [],
+    memberName: invoice.member_name || invoice.memberName
   };
-};
+}
 
-/**
- * Converts an invoice from finance type to notification type
- */
-export const financeToNotificationInvoice = (invoice: FinanceInvoice): NotificationInvoice => {
+export function financeToNotificationInvoice(invoice: FinanceInvoice): NotificationInvoice {
   return {
-    ...invoice,
-    items: Array.isArray(invoice.items) ? invoice.items : [],
+    id: invoice.id,
+    member_id: invoice.member_id,
+    member_name: invoice.memberName,
+    amount: invoice.amount,
+    description: invoice.description || '',
+    status: invoice.status,
+    due_date: invoice.due_date,
+    payment_date: invoice.paid_date,
+    payment_method: invoice.payment_method,
+    notes: invoice.notes,
+    created_at: invoice.created_at || new Date().toISOString(),
+    updated_at: invoice.updated_at,
+    issued_date: invoice.issued_date
   };
-};
+}

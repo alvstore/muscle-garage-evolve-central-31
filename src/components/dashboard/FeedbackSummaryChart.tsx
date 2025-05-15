@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   PieChart, 
   Pie, 
@@ -44,6 +43,24 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 const FeedbackSummaryChart = ({ feedback }: FeedbackSummaryChartProps) => {
   const [chartView, setChartView] = useState<"rating" | "type">("rating");
+
+  // Group by feedback type
+  const feedbackByType = useMemo(() => {
+    const byType: Record<string, number> = {};
+    
+    feedback.forEach((item) => {
+      const type = item.type || 'general';
+      if (!byType[type]) {
+        byType[type] = 0;
+      }
+      byType[type]++;
+    });
+    
+    return Object.entries(byType).map(([type, count]) => ({
+      type,
+      count
+    }));
+  }, [feedback]);
 
   // Process feedback data for the rating distribution
   const ratingDistribution = [1, 2, 3, 4, 5].map(rating => {

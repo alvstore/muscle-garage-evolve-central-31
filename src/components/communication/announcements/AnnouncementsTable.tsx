@@ -58,7 +58,7 @@ const AnnouncementsTable = ({
               <TableCell className="font-medium">{announcement.title}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {announcement.targetRoles?.map((role) => (
+                  {announcement.target_roles?.map((role) => (
                     <Badge key={role} variant="outline" className="capitalize">
                       {role}
                     </Badge>
@@ -74,10 +74,10 @@ const AnnouncementsTable = ({
                   ))}
                 </div>
               </TableCell>
-              <TableCell>{format(parseISO(announcement.createdAt), "MMM dd, yyyy")}</TableCell>
+              <TableCell>{format(parseISO(announcement.created_at), "MMM dd, yyyy")}</TableCell>
               <TableCell>
-                {announcement.expiresAt 
-                  ? format(parseISO(announcement.expiresAt), "MMM dd, yyyy")
+                {announcement.expires_at 
+                  ? format(parseISO(announcement.expires_at), "MMM dd, yyyy")
                   : "Never"
                 }
               </TableCell>

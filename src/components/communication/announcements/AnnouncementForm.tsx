@@ -99,10 +99,10 @@ const AnnouncementForm = ({ editAnnouncement, onComplete }: AnnouncementFormProp
       form.reset({
         title: editAnnouncement.title,
         content: editAnnouncement.content,
-        targetRoles: editAnnouncement.targetRoles as string[],
+        targetRoles: editAnnouncement.target_roles as string[],
         channels: editAnnouncement.channels as string[] || ["in-app"],
         sendNow: true,
-        expiresAt: editAnnouncement.expiresAt ? new Date(editAnnouncement.expiresAt) : undefined,
+        expiresAt: editAnnouncement.expires_at ? new Date(editAnnouncement.expires_at) : undefined,
       });
     }
   }, [editAnnouncement, form]);

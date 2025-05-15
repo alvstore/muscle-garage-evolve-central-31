@@ -1,4 +1,4 @@
-// Add this component only if it doesn't exist
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,10 +46,11 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmitSuccess, allowedTyp
       title,
       content,
       type: feedbackType,
+      comment: content,
       rating,
       anonymous,
-      memberId: user?.id,
-      memberName: anonymous ? undefined : user?.name,
+      member_id: user?.id,
+      member_name: anonymous ? undefined : user?.name,
       branch_id: user?.branch_id || null
     };
     
@@ -92,7 +93,10 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({ onSubmitSuccess, allowedTyp
       
       <div>
         <Label htmlFor="feedback-type">Feedback Type</Label>
-        <Select value={feedbackType} onValueChange={(value) => setFeedbackType(value as FeedbackType)}>
+        <Select 
+          value={feedbackType} 
+          onValueChange={(value) => setFeedbackType(value as FeedbackType)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select feedback type" />
           </SelectTrigger>

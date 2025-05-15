@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Invoice } from '@/types/finance';
 import InvoiceForm from '../InvoiceForm';
-import { notificationToFinanceInvoice } from '@/utils/invoiceTypeConverters';
+import { notificationToFinanceInvoice, financeToNotificationInvoice } from '@/utils/invoiceTypeConverters';
 
 export interface InvoiceFormDialogProps {
   open: boolean;
@@ -28,9 +28,9 @@ const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
 }) => {
   const isEditing = Boolean(invoice);
 
-  // Convert invoice to FinanceInvoice type if needed
+  // Make sure we have a valid FinanceInvoice type
   const normalizedInvoice = invoice ? 
-    ('items' in invoice ? invoice as Invoice : notificationToFinanceInvoice(invoice)) : 
+    ('items' in invoice ? invoice : notificationToFinanceInvoice(invoice as any)) : 
     null;
 
   const handleComplete = () => {
