@@ -56,7 +56,8 @@ const UpcomingRenewals = ({ renewals }: UpcomingRenewalsProps) => {
 
   // Sort renewals by expiry date, closest first
   const sortedRenewals = [...renewals].sort((a, b) => 
-    new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
+    new Date(a.expiry_date || a.expiryDate || "").getTime() - 
+    new Date(b.expiry_date || b.expiryDate || "").getTime()
   );
 
   return (
@@ -81,26 +82,26 @@ const UpcomingRenewals = ({ renewals }: UpcomingRenewalsProps) => {
               <div key={renewal.id} className="flex items-center justify-between space-x-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={renewal.memberAvatar} alt={renewal.memberName} />
-                    <AvatarFallback>{getInitials(renewal.memberName)}</AvatarFallback>
+                    <AvatarImage src={renewal.member_avatar || renewal.memberAvatar} alt={renewal.member_name || renewal.memberName || ""} />
+                    <AvatarFallback>{getInitials(renewal.member_name || renewal.memberName || "")}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium leading-none">{renewal.memberName}</p>
+                    <p className="text-sm font-medium leading-none">{renewal.member_name || renewal.memberName}</p>
                     <div className="flex items-center pt-1">
-                      <span className="text-xs text-muted-foreground">{renewal.membershipPlan}</span>
+                      <span className="text-xs text-muted-foreground">{renewal.membershipPlan || renewal.plan_name}</span>
                       <span className="mx-1 text-xs text-muted-foreground">・</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(renewal.status)}`}>
-                        Expires: {format(parseISO(renewal.expiryDate), "MMM dd")}
+                        Expires: {format(parseISO(renewal.expiry_date || renewal.expiryDate || ""), "MMM dd")}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">${renewal.renewalAmount}</span>
+                  <span className="text-sm font-medium">${renewal.renewalAmount || renewal.amount}</span>
                   <Button 
                     variant="secondary" 
                     size="sm"
-                    onClick={() => handleSendReminder(renewal.id, renewal.memberName)}
+                    onClick={() => handleSendReminder(renewal.id, renewal.member_name || renewal.memberName || "")}
                   >
                     Remind
                   </Button>

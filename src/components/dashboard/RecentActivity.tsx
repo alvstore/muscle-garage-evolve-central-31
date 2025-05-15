@@ -36,13 +36,23 @@ const RecentActivity = ({ activities }: RecentActivityProps) => {
           {activities.map((activity) => (
             <div key={activity.id} className="flex items-start space-x-4">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
-                <AvatarFallback>{getInitials(activity.user.name)}</AvatarFallback>
+                {activity.user && (
+                  <>
+                    <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
+                    <AvatarFallback>{activity.user?.name ? getInitials(activity.user.name) : 'NA'}</AvatarFallback>
+                  </>
+                )}
+                {activity.member && !activity.user && (
+                  <>
+                    <AvatarImage src={activity.member.avatar} alt={activity.member.name} />
+                    <AvatarFallback>{getInitials(activity.member.name)}</AvatarFallback>
+                  </>
+                )}
               </Avatar>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium leading-none">{activity.title}</p>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+                  <span className="text-xs text-muted-foreground">{activity.time || activity.timestamp}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">{activity.description}</p>
                 <div className="pt-1">

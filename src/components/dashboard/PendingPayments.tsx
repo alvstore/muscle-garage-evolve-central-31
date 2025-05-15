@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,7 +28,10 @@ const PendingPayments = ({ payments }: PendingPaymentsProps) => {
   const sortedPayments = [...payments].sort((a, b) => {
     if (a.status === "overdue" && b.status !== "overdue") return -1;
     if (a.status !== "overdue" && b.status === "overdue") return 1;
-    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    if (a.dueDate && b.dueDate) {
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    }
+    return 0;
   });
 
   return (
@@ -52,16 +56,16 @@ const PendingPayments = ({ payments }: PendingPaymentsProps) => {
               <div key={payment.id} className="flex items-center justify-between space-x-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={payment.memberAvatar} alt={payment.memberName} />
-                    <AvatarFallback>{getInitials(payment.memberName)}</AvatarFallback>
+                    <AvatarImage src={payment.memberAvatar} alt={payment.member_name || payment.memberName || ""} />
+                    <AvatarFallback>{getInitials(payment.member_name || payment.memberName || "")}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium leading-none">{payment.memberName}</p>
+                    <p className="text-sm font-medium leading-none">{payment.member_name || payment.memberName}</p>
                     <div className="flex items-center pt-1">
                       <span className="text-xs text-muted-foreground">{payment.membershipPlan}</span>
                       <span className="mx-1 text-xs text-muted-foreground">・</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(payment.status)}`}>
-                        {payment.status === "overdue" ? "Overdue" : `Due ${format(parseISO(payment.dueDate), "MMM dd")}`}
+                        {payment.status === "overdue" ? "Overdue" : (payment.dueDate ? `Due ${format(parseISO(payment.dueDate), "MMM dd")}` : "Pending")}
                       </span>
                     </div>
                   </div>

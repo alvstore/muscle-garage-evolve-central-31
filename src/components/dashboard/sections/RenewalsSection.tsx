@@ -30,15 +30,15 @@ const RenewalsSection = ({ renewals = [] }: RenewalsSectionProps) => {
             {renewals.map((renewal) => (
               <div key={renewal.id} className="flex items-center gap-4">
                 <div className="rounded-full w-10 h-10 flex items-center justify-center bg-muted">
-                  <span className="font-medium text-xs">{renewal.memberName.substring(0, 2).toUpperCase()}</span>
+                  <span className="font-medium text-xs">{(renewal.member_name || renewal.memberName || "").substring(0, 2).toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <div className="font-medium truncate">{renewal.memberName}</div>
+                    <div className="font-medium truncate">{renewal.member_name || renewal.memberName}</div>
                     <Badge
                       variant={
-                        renewal.status === 'active' ? 'default' :
-                        renewal.status === 'expired' ? 'destructive' : 'secondary'
+                        (renewal.status === 'upcoming' || renewal.status === 'active') ? 'default' :
+                        (renewal.status === 'overdue' || renewal.status === 'expired') ? 'destructive' : 'secondary'
                       }
                       className="ml-2"
                     >
@@ -46,11 +46,11 @@ const RenewalsSection = ({ renewals = [] }: RenewalsSectionProps) => {
                     </Badge>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{renewal.membershipPlan}</span>
-                    <span className="font-medium">₹{renewal.renewalAmount.toLocaleString()}</span>
+                    <span className="text-muted-foreground">{renewal.membershipPlan || renewal.plan_name}</span>
+                    <span className="font-medium">₹{(renewal.renewalAmount || renewal.amount || 0).toLocaleString()}</span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Expires: {format(parseISO(renewal.expiryDate), 'dd MMM yyyy')}
+                    Expires: {format(parseISO(renewal.expiry_date || renewal.expiryDate || ""), 'dd MMM yyyy')}
                   </div>
                 </div>
               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
@@ -35,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from '@/components/ui/skeleton';
 import LeadForm from './LeadForm';
-import { BulkLeadActions } from './BulkLeadActions';
+import BulkLeadActions from "./BulkLeadActions";
 import { useBranch } from '@/hooks/use-branch';
 import { leadService } from '@/services/leadService';
 

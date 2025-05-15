@@ -7,4 +7,7 @@ export interface User {
   branch_id?: string;
   full_name?: string;
   avatar_url?: string;
+  avatar?: string;
+  phone?: string;
+  department?: string;
 }

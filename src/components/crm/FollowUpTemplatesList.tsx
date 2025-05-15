@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,7 @@ import { FollowUpTemplate, FollowUpType } from '@/types/crm';
 import FollowUpTemplateForm from './FollowUpTemplateForm';
 
 // Dummy data for templates
-const templates: FollowUpTemplate[] = [
+const dummyTemplates: FollowUpTemplate[] = [
   {
     id: "1",
     title: "Welcome Email",
@@ -31,7 +32,7 @@ const templates: FollowUpTemplate[] = [
     content: "Hello {{name}},\n\nWelcome to our gym! We're excited to have you join our community. Your fitness journey starts now!\n\nBest regards,\nThe Gym Team",
     variables: ["name"],
     created_at: "2023-05-01T00:00:00Z",
-    updated_at: "2023-05-01T00:00:00Z", // Add the missing updated_at property
+    updated_at: "2023-05-01T00:00:00Z",
     isDefault: true
   },
   {
@@ -42,7 +43,7 @@ const templates: FollowUpTemplate[] = [
     content: "Dear {{name}}, we noticed you haven't responded to our previous message. Are you still interested?",
     variables: ["name"],
     created_at: "2023-05-02T00:00:00Z",
-    updated_at: "2023-05-02T00:00:00Z", // Add the missing updated_at property
+    updated_at: "2023-05-02T00:00:00Z",
     isDefault: false
   },
   {
@@ -53,7 +54,7 @@ const templates: FollowUpTemplate[] = [
     content: "Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.",
     variables: ["name", "date", "time"],
     created_at: "2023-05-03T00:00:00Z",
-    updated_at: "2023-05-03T00:00:00Z", // Add the missing updated_at property
+    updated_at: "2023-05-03T00:00:00Z",
     isDefault: false
   },
   {
@@ -64,7 +65,7 @@ const templates: FollowUpTemplate[] = [
     content: "Hello {{name}}! Welcome to {{company}}. We're glad to have you with us.",
     variables: ["name", "company"],
     created_at: "2023-05-04T00:00:00Z",
-    updated_at: "2023-05-04T00:00:00Z", // Add the missing updated_at property
+    updated_at: "2023-05-04T00:00:00Z",
     isDefault: false
   },
   {
@@ -75,13 +76,13 @@ const templates: FollowUpTemplate[] = [
     content: "Dear {{name}}, we value your feedback. Please let us know how we're doing.",
     variables: ["name"],
     created_at: "2023-05-05T00:00:00Z",
-    updated_at: "2023-05-05T00:00:00Z", // Add the missing updated_at property
+    updated_at: "2023-05-05T00:00:00Z",
     isDefault: false
   }
 ];
 
 const FollowUpTemplatesList: React.FC = () => {
-  const [templates, setTemplates] = useState<FollowUpTemplate[]>(templates);
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(dummyTemplates);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<FollowUpTemplate | null>(null);

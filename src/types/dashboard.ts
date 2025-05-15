@@ -14,12 +14,18 @@ export interface ActivityItem {
   title: string;
   description?: string;
   timestamp: string;
+  user?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
   member?: {
     id: string;
     name: string;
     avatar?: string;
   };
   metadata?: Record<string, any>;
+  time?: string;
 }
 
 export interface RenewalItem {
@@ -31,17 +37,28 @@ export interface RenewalItem {
   expiry_date: string;
   days_remaining: number;
   amount: number;
-  status: 'upcoming' | 'overdue' | 'renewed';
+  status: 'upcoming' | 'overdue' | 'renewed' | 'active' | 'expired';
+  memberName?: string;
+  memberAvatar?: string;
+  membershipPlan?: string;
+  expiryDate?: string;
+  renewalAmount?: number;
 }
 
 export interface Payment {
   id: string;
   member_id?: string;
   member_name?: string;
+  memberId?: string;
+  memberName?: string;
   amount: number;
   date: string;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'overdue';
   method?: string;
   description?: string;
   invoice_id?: string;
+  memberAvatar?: string;
+  membershipPlan?: string;
+  dueDate?: string;
+  contactInfo?: string;
 }

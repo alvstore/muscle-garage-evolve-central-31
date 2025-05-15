@@ -11,9 +11,11 @@ export const getStaffActivityData = () => {
       user: {
         name: "Sarah Parker",
         avatar: "/placeholder.svg",
+        id: "user1"
       },
       time: "10 minutes ago",
-      type: "membership"
+      type: "membership",
+      timestamp: new Date().toISOString()
     },
     {
       id: "2",
@@ -22,9 +24,11 @@ export const getStaffActivityData = () => {
       user: {
         name: "Michael Wong",
         avatar: "/placeholder.svg",
+        id: "user2"
       },
       time: "30 minutes ago",
-      type: "check-in"
+      type: "check-in",
+      timestamp: new Date().toISOString()
     },
     {
       id: "3",
@@ -33,34 +37,38 @@ export const getStaffActivityData = () => {
       user: {
         name: "Emily Davidson",
         avatar: "/placeholder.svg",
+        id: "user3"
       },
       time: "1 hour ago",
-      type: "payment"
+      type: "payment",
+      timestamp: new Date().toISOString()
     }
   ];
 
   const pendingPayments: Payment[] = [
     {
       id: "payment1",
-      memberId: "member2",
-      memberName: "Sarah Parker",
+      member_id: "member2",
+      member_name: "Sarah Parker",
       memberAvatar: "/placeholder.svg",
       membershipPlan: "Standard Monthly",
       amount: 99,
       dueDate: "2023-07-25T00:00:00Z",
       status: "pending",
       contactInfo: "+1234567894",
+      date: "2023-07-25T00:00:00Z",
     },
     {
       id: "payment2",
-      memberId: "member5",
-      memberName: "David Miller",
+      member_id: "member5",
+      member_name: "David Miller",
       memberAvatar: "/placeholder.svg",
       membershipPlan: "Premium Annual",
       amount: 999,
       dueDate: "2023-07-15T00:00:00Z",
-      status: "overdue",
+      status: "overdue" as any,
       contactInfo: "+1234567897",
+      date: "2023-07-15T00:00:00Z",
     }
   ];
 

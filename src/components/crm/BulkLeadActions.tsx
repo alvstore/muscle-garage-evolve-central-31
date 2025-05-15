@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from '@/hooks/use-toast-manager';
+import { useToast } from '@/hooks/use-toast-manager';
 import { LeadStatus, FunnelStage } from '@/types/crm';
 
 interface BulkLeadActionsProps {
@@ -26,6 +27,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leadIds, onUpdate }) 
   const [status, setStatus] = useState<LeadStatus>('new');
   const [funnelStage, setFunnelStage] = useState<FunnelStage>('cold');
   const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
 
   const updateLeadsStatus = async () => {
     setIsUpdating(true);
@@ -35,17 +37,14 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leadIds, onUpdate }) 
 
       const count = leadIds.length;
 
-      // Make sure the component uses toast correctly:
-      const { toast } = useToast();
-
-      // When showing success toasts:
+      // Show success toast
       toast.success('Leads status updated', {
         description: `${count} leads have been updated to ${status}`
       });
 
       onUpdate();
     } catch (error) {
-      // When showing error toasts:
+      // Show error toast
       toast.error('Update failed', {
         description: 'Failed to update leads status'
       });
@@ -135,7 +134,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leadIds, onUpdate }) 
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
-}
+  );
+};
 
 export default BulkLeadActions;
