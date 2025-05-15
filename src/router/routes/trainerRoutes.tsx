@@ -5,6 +5,7 @@ import TrainerPage from '@/pages/trainers/TrainerPage';
 import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
 import TrainerMemberProgressPage from '@/pages/trainers/TrainerMemberProgressPage';
 import TrainerAllocationPage from '@/pages/trainers/TrainerAllocationPage';
+import TrainerMemberAllocationPage from '@/pages/trainers/TrainerMemberAllocationPage';
 import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
 
 // Placeholder components for routes that don't have specific page components yet
@@ -34,6 +35,10 @@ export const trainerRoutes: RouteObject[] = [
   {
     path: '/trainers/allocation',
     element: <TrainerAllocationPage />
+  },
+  {
+    path: '/trainers/allocate/:id',
+    element: <TrainerMemberAllocationPage />
   },
   {
     path: '/trainers/announcements',

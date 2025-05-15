@@ -623,13 +623,18 @@ const NewMemberPage = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={() => {
+                    <Button variant="outline" onClick={(e) => {
+                      e.preventDefault();
                       const tabButton = document.querySelector('[data-value="personal"]');
                       if (tabButton instanceof HTMLElement) tabButton.click();
                     }}>
                       Previous
                     </Button>
-                    <Button type="button" onClick={() => {
+                    <Button type="button" onClick={(e) => {
+                      e.preventDefault();
+                      // Force form validation before proceeding
+                      form.trigger(['phone', 'email', 'address', 'city', 'state', 'zipCode', 'country']);
+                      // Proceed to next tab even if there are validation errors
                       const tabButton = document.querySelector('[data-value="membership"]');
                       if (tabButton instanceof HTMLElement) tabButton.click();
                     }}>

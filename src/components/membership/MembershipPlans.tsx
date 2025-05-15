@@ -28,7 +28,7 @@ const MembershipPlans = () => {
   const membershipPlans = useMemo(() => rawPlans.map(plan => ({
     ...plan,
     memberCount: 0, // This should be fetched from the backend
-    status: plan.status as MembershipPlanStatus
+    status: plan.isActive ? 'active' : 'inactive' as MembershipPlanStatus
   })), [rawPlans]);
   const { userRole } = usePermissions();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -39,11 +39,12 @@ const MembershipPlans = () => {
     name: '',
     description: '',
     price: 0,
-    duration_days: 30,
-    duration_label: '1-month',
+    durationDays: 30,
+    durationLabel: '1-month',
     benefits: [],
-    allowed_classes: 'all',
+    allowedClasses: 'all',
     status: 'active',
+    memberCount: 0,
   });
 
   const canManagePlans = userRole === 'admin' || userRole === 'staff';

@@ -182,7 +182,11 @@ const updateBookingStatus = async (bookingId: string, status: string, attendance
   }
 };
 
-const ClassBookingsPage: React.FC = () => {
+interface ClassBookingsPageProps {
+  hideHeader?: boolean;
+}
+
+const ClassBookingsPage: React.FC<ClassBookingsPageProps> = ({ hideHeader = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -264,10 +268,11 @@ const ClassBookingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="Class Bookings" 
-        description="Manage all class bookings across your gym" 
-        actions={
+      {!hideHeader && (
+        <PageHeader 
+          title="Class Bookings" 
+          description="Manage all class bookings across your gym" 
+          actions={
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -279,16 +284,16 @@ const ClassBookingsPage: React.FC = () => {
               Refresh
             </Button>
             
-            {can('export_data') && (
+            {can('manage_reports') && (
               <Button variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
             )}
           </div>
-        }
-      />
-
+        }/>
+      )}
+      
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

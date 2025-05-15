@@ -339,11 +339,11 @@ const DashboardNavbar = ({
               </div>
             </div>
             <div className="p-1">
-              <DropdownMenuItem className="p-2 cursor-pointer">
+              <DropdownMenuItem className="p-2 cursor-pointer" onClick={() => navigate('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="p-2 cursor-pointer">
+              <DropdownMenuItem className="p-2 cursor-pointer" onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>

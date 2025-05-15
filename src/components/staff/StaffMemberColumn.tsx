@@ -80,10 +80,11 @@ export const StaffMemberColumn = (onRefresh: () => void): ColumnDef<StaffMember>
     {
       id: 'status',
       header: 'Status',
-      accessorKey: 'is_active',
       cell: ({ row }) => {
+        // Get the staff member object directly
+        const staff = row.original;
         // Default to active if is_active is null or undefined
-        const isActive = row.getValue('is_active') !== false;
+        const isActive = staff.is_active !== false;
         return (
           <Badge variant={isActive ? 'default' : 'secondary'} className={isActive ? 'bg-green-500' : ''}>
             {isActive ? 'Active' : 'Inactive'}

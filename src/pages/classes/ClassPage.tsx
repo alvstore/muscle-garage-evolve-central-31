@@ -1,15 +1,17 @@
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, List, BookOpen, Tag } from "lucide-react";
+import { Plus, Calendar, List, BookOpen, Tag, Loader2 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import ClassSchedulePage from "./ClassSchedulePage";
 import ClassTypesPage from "./ClassTypesPage";
+import ClassListPage from "./ClassListPage";
+import ClassBookingsPage from "./ClassBookingsPage";
 import PageHeader from "@/components/layout/PageHeader";
 
 interface ClassSchedulePageProps {
@@ -98,29 +100,13 @@ const ClassPage: React.FC = () => {
             
             <TabsContent value="list">
               <div className="mt-4">
-                <div className="text-center p-8">
-                  <Button onClick={() => navigate('/classes/list')} variant="default">
-                    <List className="mr-2 h-4 w-4" />
-                    View Full Class List
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    View and manage all classes with advanced filtering and search options
-                  </p>
-                </div>
+                <ClassListPage hideHeader />
               </div>
             </TabsContent>
             
             <TabsContent value="bookings">
               <div className="mt-4">
-                <div className="text-center p-8">
-                  <Button onClick={() => navigate('/classes/bookings')} variant="default">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    View All Bookings
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Manage class bookings, track attendance, and handle cancellations
-                  </p>
-                </div>
+                <ClassBookingsPage hideHeader />
               </div>
             </TabsContent>
             
