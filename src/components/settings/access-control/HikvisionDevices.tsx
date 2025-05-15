@@ -6,13 +6,45 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { useHikvision } from '@/hooks/use-hikvision';
-import { Loader2, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { useHikvision, TokenData } from '@/hooks/use-hikvision';
+import { Loader2, Plus, Trash2, RefreshCw, Cloud, Wifi, Server, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HikvisionDevicesProps {
   branchId: string;
+}
+
+interface HikvisionDevice {
+  id: string;
+  name?: string;
+  device_name?: string;
+  deviceName?: string;
+  device_id?: string;
+  deviceId?: string;
+  device_type?: string;
+  deviceType?: string;
+  location?: string;
+  ip_address?: string;
+  ipAddress?: string;
+  port?: string;
+  username?: string;
+  password?: string;
+  is_active?: boolean;
+  isActive?: boolean;
+  is_cloud_managed?: boolean;
+  isCloudManaged?: boolean;
+  use_isup_fallback?: boolean;
+  useIsupFallback?: boolean;
+  sync_status?: 'success' | 'failed' | 'pending';
+  syncStatus?: 'success' | 'failed' | 'pending';
+  last_sync?: string;
+  lastSync?: string;
+  status?: 'online' | 'offline' | 'unknown';
 }
 
 export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
@@ -25,13 +57,26 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
     getToken
   } = useHikvision({ branchId });
 
-  const [newDevice, setNewDevice] = useState({
+  // Type assertion for getToken to ensure it returns TokenData
+  const getTokenData = getToken as unknown as (branchId: string) => Promise<TokenData | null>;
+
+  const [newDevice, setNewDevice] = useState<any>({
     deviceName: '',
-    deviceType: 'entry',
-    serialNumber: '',
+    deviceType: '',
+    deviceId: '',
+    isCloudManaged: true,
+    useIsupFallback: false,
     ipAddress: '',
-    location: ''
+    port: '80',
+    username: '',
+    password: '',
+    siteId: ''
   });
+  
+  // Using TokenData interface imported from use-hikvision.ts
+  
+  const [availableSites, setAvailableSites] = useState<{siteId: string, siteName: string}[]>([]);
+  
   const [isAddingDevice, setIsAddingDevice] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
@@ -41,8 +86,52 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   useEffect(() => {
     if (branchId) {
       fetchSettings(branchId);
+      fetchAvailableSites();
     }
-  }, [branchId, fetchSettings]);
+  }, [branchId]);
+
+  const fetchAvailableSites = async () => {
+    try {
+      // Get token data directly from the hook which includes available sites
+      const tokenData = await getTokenData(branchId);
+      
+      if (!tokenData) {
+        console.error('Error fetching token data');
+        return;
+      }
+      
+      if (tokenData.availableSites && Array.isArray(tokenData.availableSites)) {
+        // Convert to component format if needed
+        const sites = tokenData.availableSites.map((site: any) => ({
+          siteId: site.siteId || site.site_id,
+          siteName: site.siteName || site.site_name
+        }));
+        setAvailableSites(sites);
+      } else {
+        // Fallback to database query if not available in token data
+        const { data: dbTokenData, error } = await supabase
+          .from('hikvision_tokens')
+          .select('available_sites')
+          .eq('branch_id', branchId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching available sites:', error);
+          return;
+        }
+        
+        if (dbTokenData?.available_sites && Array.isArray(dbTokenData.available_sites)) {
+          const sites = dbTokenData.available_sites.map((site: any) => ({
+            siteId: site.siteId || site.site_id,
+            siteName: site.siteName || site.site_name
+          }));
+          setAvailableSites(sites);
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchAvailableSites:', error);
+    }
+  };
 
   const handleAddDevice = async () => {
     setIsAddingDevice(true);
@@ -56,23 +145,58 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
         });
         return;
       }
+      
+      // If cloud managed but no site ID is provided, get the default site ID
+      if (newDevice.isCloudManaged && !newDevice.siteId) {
+        const tokenData = await getTokenData(branchId);
+        if (tokenData && tokenData.siteId) {
+          newDevice.siteId = tokenData.siteId;
+        }
+      }
+      
+      // Validate ISUP fallback requirements
+      if (newDevice.useIsupFallback && (!newDevice.ipAddress || !newDevice.username || !newDevice.password)) {
+        toast({
+          title: "Error",
+          description: 'IP address, username, and password are required for ISUP fallback',
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const success = await addDevice({
+      const deviceData: any = {
         deviceName: newDevice.deviceName,
         deviceType: newDevice.deviceType,
         serialNumber: newDevice.serialNumber,
-        ipAddress: newDevice.ipAddress || undefined,
-        location: newDevice.location || undefined
-      }, branchId);
+        location: newDevice.location || undefined,
+        isCloudManaged: newDevice.isCloudManaged,
+        useIsupFallback: newDevice.useIsupFallback,
+        siteId: newDevice.siteId || ''
+      };
+      
+      // Add ISUP connection details if needed
+      if (newDevice.useIsupFallback || !newDevice.isCloudManaged) {
+        deviceData.ipAddress = newDevice.ipAddress;
+        deviceData.port = newDevice.port;
+        deviceData.username = newDevice.username;
+        deviceData.password = newDevice.password;
+      }
+
+      const success = await addDevice(deviceData, branchId);
 
       if (success) {
         setDialogOpen(false);
         setNewDevice({
           deviceName: '',
-          deviceType: 'entry',
+          deviceType: 'door_controller',
           serialNumber: '',
           ipAddress: '',
-          location: ''
+          port: '80',
+          username: '',
+          password: '',
+          location: '',
+          isCloudManaged: true,
+          useIsupFallback: false
         });
       }
     } finally {
@@ -86,61 +210,164 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
     }
   };
 
-  const testDevice = async (device: any) => {
+  const testDevice = async (device: HikvisionDevice) => {
     try {
       setIsTestingDevice(true);
-      setDeviceTestStatus(prev => [...prev, { id: device.id, status: 'pending' }]);
+      setSelectedDevice(device.id);
+      setDeviceTestStatus(prev => {
+        const filtered = prev.filter(item => item.id !== device.id);
+        // Add new pending status
+        return [...filtered, { id: device.id, status: 'pending' }];
+      });
       
-      // Get a token
-      const token = await getToken(branchId);
-      if (!token) {
-        toast({
-          title: "Error",
-          description: "Failed to get access token",
-          variant: "destructive",
-        });
-        setDeviceTestStatus(prev => 
-          prev.map(item => item.id === device.id ? { ...item, status: 'error' } : item)
-        );
-        return;
-      }
+      // Extract device properties with fallbacks
+      const deviceId = device.device_id || device.deviceId || '';
+      const isCloudManaged = device.is_cloud_managed || device.isCloudManaged || false;
+      const useIsupFallback = device.use_isup_fallback || device.useIsupFallback || false;
+      const ipAddress = device.ip_address || device.ipAddress || '';
+      const port = device.port || '80';
+      const username = device.username || '';
+      const password = device.password || '';
       
-      // Test device connection
-      const response = await fetch(`${device.ipAddress}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // First try cloud API if device is cloud-managed
+      if (isCloudManaged) {
+        try {
+          // Get a token with site information
+          const tokenData = await getTokenData(branchId);
+          if (!tokenData) {
+            throw new Error("Failed to get access token");
+          }
+          
+          // Now tokenData is properly typed as TokenData
+          const token = tokenData.token;
+          const siteId = tokenData.siteId;
+          console.log('Testing cloud device connection for device:', deviceId);
+          
+          // Make sure we have a site ID
+          if (!siteId) {
+            throw new Error("No site ID available. Please configure a site first.");
+          }
+          
+          // Step 1: Check if device is already added to the site
+          const { data: deviceData, error: deviceError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'check-device-exists',
+              token,
+              siteId,
+              deviceId
+            }
+          });
+          
+          if (deviceError) {
+            throw new Error(deviceError.message || "Failed to check device");
+          }
+          
+          // Step 2: Test device connection
+          const { data: testData, error: testError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'test-device',
+              token,
+              deviceId,
+              siteId
+            }
+          });
+          
+          if (testError) {
+            throw new Error(testError.message || "Failed to test device connection");
+          }
+          
+          if (testData?.status === 'online') {
+            setDeviceTestStatus(prev => {
+              const filtered = prev.filter(item => item.id !== device.id);
+              return [...filtered, { id: device.id, status: 'success' }];
+            });
+            
+            toast({
+              title: "Success",
+              description: deviceData?.exists 
+                ? "Device is online and connected" 
+                : "Device is online but not yet added to site",
+            });
+            return;
+          } else {
+            // Device exists but is offline
+            if (useIsupFallback && ipAddress) {
+              console.log('Device is offline, trying ISUP fallback');
+              // Continue to ISUP testing below
+            } else {
+              throw new Error("Device exists but is offline. Check device power and network connection.");
+            }
+          }
+        } catch (cloudError: any) {
+          console.log('Cloud connection failed:', cloudError);
+          
+          // Only proceed with ISUP fallback if enabled and IP address is available
+          if (!useIsupFallback || !ipAddress) {
+            throw cloudError;
+          }
+          // Otherwise continue to ISUP testing below
         }
-      });
-      
-      if (!response.ok) {
-        console.log('Device test failed:', response.status);
-        setDeviceTestStatus(prev => 
-          prev.map(item => item.id === device.id ? { ...item, status: 'error' } : item)
-        );
-        return;
       }
       
-      setDeviceTestStatus(prev => 
-        prev.map(item => item.id === device.id ? { ...item, status: 'success' } : item)
-      );
-      toast({
-        title: "Success",
-        description: "Device connection successful",
-      });
-    } catch (error) {
+      // Try ISUP protocol for direct device connection
+      if (ipAddress && username && password) {
+        try {
+          console.log('Testing ISUP direct connection for device:', deviceId);
+          
+          // Test ISUP connection via Edge Function
+          const { data: isupData, error: isupError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'test-isup-device',
+              ipAddress,
+              port,
+              username,
+              password
+            }
+          });
+          
+          if (isupError) {
+            throw new Error(isupError.message || "ISUP connection failed");
+          }
+          
+          if (isupData?.success) {
+            setDeviceTestStatus(prev => {
+              const filtered = prev.filter(item => item.id !== device.id);
+              return [...filtered, { id: device.id, status: 'success' }];
+            });
+            
+            toast({
+              title: "Success",
+              description: "ISUP connection successful",
+            });
+            return;
+          } else {
+            throw new Error(isupData?.message || "ISUP connection failed");
+          }
+        } catch (isupError: any) {
+          console.error('ISUP connection failed:', isupError);
+          setDeviceTestStatus(prev => {
+            const filtered = prev.filter(item => item.id !== device.id);
+            return [...filtered, { id: device.id, status: 'error' }];
+          });
+          throw isupError;
+        }
+      } else if (!isCloudManaged) {
+        throw new Error("Missing required ISUP connection details (IP address, username, password)");
+      }
+    } catch (error: any) {
       console.error('Error testing device:', error);
-      setDeviceTestStatus(prev => 
-        prev.map(item => item.id === device.id ? { ...item, status: 'error' } : item)
-      );
+      setDeviceTestStatus(prev => {
+        const filtered = prev.filter(item => item.id !== device.id);
+        return [...filtered, { id: device.id, status: 'error' }];
+      });
       toast({
         title: "Error",
-        description: "Failed to test device connection",
+        description: error.message || "Failed to test device connection",
         variant: "destructive",
       });
     } finally {
       setIsTestingDevice(false);
+      setTimeout(() => setSelectedDevice(null), 3000);
     }
   };
 
@@ -189,32 +416,57 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                       <SelectValue placeholder="Select device type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="entry">Entry Gate</SelectItem>
-                      <SelectItem value="exit">Exit Gate</SelectItem>
-                      <SelectItem value="gym">Gym Access</SelectItem>
-                      <SelectItem value="swimming">Swimming Pool</SelectItem>
-                      <SelectItem value="special">Special Area</SelectItem>
+                      <SelectItem value="door_controller">Door Controller</SelectItem>
+                      <SelectItem value="access_control">Access Control Device</SelectItem>
+                      <SelectItem value="camera">Camera</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
+                {newDevice.isCloudManaged && availableSites.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="site-id">Site</Label>
+                    <Select 
+                      value={newDevice.siteId} 
+                      onValueChange={(value) => setNewDevice({...newDevice, siteId: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a site or leave empty to create new" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Create new site</SelectItem>
+                        {availableSites.map((site) => (
+                          <SelectItem key={site.siteId} value={site.siteId}>
+                            {site.siteName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Select an existing site or leave empty to create a new site
+                    </p>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-2 py-2">
+                  <Switch
+                    id="cloud-managed"
+                    checked={newDevice.isCloudManaged}
+                    onCheckedChange={(checked) => setNewDevice({...newDevice, isCloudManaged: checked})}
+                  />
+                  <Label htmlFor="cloud-managed" className="flex items-center gap-2">
+                    <Cloud className="h-4 w-4" /> Cloud-Managed Device
+                  </Label>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="serial-number">Serial Number</Label>
+                  <Label htmlFor="serial-number">Device ID / Serial Number</Label>
                   <Input 
                     id="serial-number" 
                     value={newDevice.serialNumber} 
                     onChange={(e) => setNewDevice({...newDevice, serialNumber: e.target.value})}
-                    placeholder="DS-K1T341AMFX202201X012345"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ip-address">IP Address (Optional)</Label>
-                  <Input 
-                    id="ip-address" 
-                    value={newDevice.ipAddress} 
-                    onChange={(e) => setNewDevice({...newDevice, ipAddress: e.target.value})}
-                    placeholder="192.168.1.100"
+                    placeholder="DS-K1T343EFW"
                   />
                 </div>
                 
@@ -224,9 +476,74 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                     id="location" 
                     value={newDevice.location} 
                     onChange={(e) => setNewDevice({...newDevice, location: e.target.value})}
-                    placeholder="Front door"
+                    placeholder="Main Floor"
                   />
                 </div>
+                
+                {newDevice.isCloudManaged && (
+                  <div className="flex items-center space-x-2 py-2">
+                    <Switch
+                      id="isup-fallback"
+                      checked={newDevice.useIsupFallback}
+                      onCheckedChange={(checked) => setNewDevice({...newDevice, useIsupFallback: checked})}
+                    />
+                    <Label htmlFor="isup-fallback" className="flex items-center gap-2">
+                      <Server className="h-4 w-4" /> Enable ISUP Protocol Fallback
+                    </Label>
+                  </div>
+                )}
+                
+                {(!newDevice.isCloudManaged || newDevice.useIsupFallback) && (
+                  <div className="mt-4 border rounded-md p-4 bg-muted/20">
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Wifi className="h-4 w-4" /> Direct Connection Details
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="ip-address">IP Address</Label>
+                        <Input 
+                          id="ip-address" 
+                          value={newDevice.ipAddress} 
+                          onChange={(e) => setNewDevice({...newDevice, ipAddress: e.target.value})}
+                          placeholder="192.168.1.100"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="port">Port</Label>
+                          <Input 
+                            id="port" 
+                            value={newDevice.port} 
+                            onChange={(e) => setNewDevice({...newDevice, port: e.target.value})}
+                            placeholder="80"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="username">Username</Label>
+                          <Input 
+                            id="username" 
+                            value={newDevice.username} 
+                            onChange={(e) => setNewDevice({...newDevice, username: e.target.value})}
+                            placeholder="admin"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                          id="password" 
+                          type="password"
+                          value={newDevice.password} 
+                          onChange={(e) => setNewDevice({...newDevice, password: e.target.value})}
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <DialogFooter>
@@ -256,49 +573,102 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
         ) : settings?.devices && settings.devices.length > 0 ? (
           <div className="space-y-4">
             <div className="rounded-md border">
-              <div className="grid grid-cols-6 gap-4 border-b bg-muted p-3 font-medium">
+              <div className="grid grid-cols-7 gap-4 border-b bg-muted p-3 font-medium">
                 <div className="col-span-2">Name</div>
                 <div>Type</div>
                 <div>Serial Number</div>
                 <div>Location</div>
+                <div>Status</div>
                 <div className="text-right">Actions</div>
               </div>
               <div className="divide-y">
-                {settings.devices.map((device: any) => (
-                  <div key={device.id || device.serialNumber} className="grid grid-cols-6 gap-4 p-3">
-                    <div className="col-span-2 flex items-center">
-                      {device.deviceName}
+                {settings.devices.map((device: any) => {
+                  // Get device test status if available
+                  const testStatus = deviceTestStatus.find(status => status.id === device.id);
+                  const deviceName = device.deviceName || device.device_name || device.name || 'Unnamed Device';
+                  const deviceId = device.device_id || device.deviceId || device.serialNumber || 'Unknown ID';
+                  const deviceType = device.deviceType || device.device_type || 'Unknown Type';
+                  const isCloudManaged = device.isCloudManaged || device.is_cloud_managed || false;
+                  const useIsupFallback = device.useIsupFallback || device.use_isup_fallback || false;
+                  const location = device.location || 'Not specified';
+                  
+                  return (
+                    <div key={device.id || deviceId} className="grid grid-cols-7 gap-4 p-3">
+                      <div className="col-span-2 flex items-center">
+                        <div>
+                          <div className="font-medium">{deviceName}</div>
+                          {useIsupFallback && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              ISUP Fallback Enabled
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 truncate font-medium">{deviceType}</div>
+                        <Badge 
+                          variant={isCloudManaged ? "default" : "outline"} 
+                          className="ml-2 flex items-center gap-1"
+                        >
+                          {isCloudManaged ? 
+                            <Cloud className="h-3 w-3" /> : 
+                            <Wifi className="h-3 w-3" />}
+                          {isCloudManaged ? 'Cloud' : 'ISUP'}
+                        </Badge>
+                      </div>
+                      <div className="text-sm flex items-center">
+                        <span className="truncate">{deviceId}</span>
+                      </div>
+                      <div className="text-sm flex items-center">
+                        <span className="truncate">{location}</span>
+                      </div>
+                      <div className="flex items-center">
+                        {testStatus?.status === 'pending' ? (
+                          <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 text-amber-700 border-amber-200">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Testing
+                          </Badge>
+                        ) : testStatus?.status === 'success' ? (
+                          <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
+                            <CheckCircle className="h-3 w-3" /> Connected
+                          </Badge>
+                        ) : testStatus?.status === 'error' ? (
+                          <Badge variant="outline" className="flex items-center gap-1 bg-red-50 text-red-700 border-red-200">
+                            <AlertCircle className="h-3 w-3" /> Error
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="flex items-center gap-1 bg-slate-100 text-slate-700">
+                            <AlertCircle className="h-3 w-3" /> Unknown
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => testDevice(device)}
+                          disabled={isTestingDevice && selectedDevice === device.id}
+                          className="h-8 w-8"
+                          title="Test Connection"
+                        >
+                          {isTestingDevice && selectedDevice === device.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="icon"
+                          onClick={() => handleDelete(device.id || deviceId)}
+                          className="h-8 w-8"
+                          title="Delete Device"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <Badge variant="outline">
-                        {device.deviceType || 'Unknown'}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      {device.serialNumber}
-                    </div>
-                    <div className="flex items-center">
-                      {device.location || '--'}
-                    </div>
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => testDevice(device)}
-                        disabled={isTestingDevice}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="icon"
-                        onClick={() => handleDelete(device.id || device.serialNumber)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

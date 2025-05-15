@@ -14,6 +14,7 @@ export interface BranchContextType {
   createBranch: (branchData: Partial<Branch>) => Promise<Branch | null>;
   updateBranch: (id: string, branchData: Partial<Branch>) => Promise<Branch | null>;
   deleteBranch: (id: string) => Promise<boolean>;
+  switchBranch: (branchId: string) => void;
 }
 
 const BranchContext = createContext<BranchContextType>({
@@ -25,7 +26,8 @@ const BranchContext = createContext<BranchContextType>({
   fetchBranches: async () => [],
   createBranch: async () => null,
   updateBranch: async () => null,
-  deleteBranch: async () => false
+  deleteBranch: async () => false,
+  switchBranch: () => {}
 });
 
 export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -243,6 +245,20 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [branches, currentBranch]);
 
+  // Function to switch to a different branch by ID
+  const switchBranch = useCallback((branchId: string) => {
+    if (!branchId) return;
+    
+    const branch = branches.find(b => b.id === branchId);
+    if (branch) {
+      setCurrentBranch(branch);
+      // Save the selected branch ID to localStorage for persistence
+      localStorage.setItem('selectedBranchId', branchId);
+    } else {
+      console.error(`Branch with ID ${branchId} not found`);
+    }
+  }, [branches, setCurrentBranch]);
+
   return (
     <BranchContext.Provider 
       value={{ 
@@ -254,7 +270,8 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         fetchBranches,
         createBranch,
         updateBranch,
-        deleteBranch
+        deleteBranch,
+        switchBranch
       }}
     >
       {children}

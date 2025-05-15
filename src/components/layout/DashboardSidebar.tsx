@@ -68,7 +68,11 @@ export default function DashboardSidebar({
               <div className="max-w-full">
                 <BranchSelector 
                   branches={branches} 
-                  onSelect={(branch) => console.log('Selected branch:', branch)} 
+                  onSelect={(branch) => {
+                    // The branch selection is already handled by the BranchSelector component
+                    // which calls setCurrentBranch from the useBranch hook
+                    console.log('Selected branch:', branch);
+                  }} 
                 />
               </div>
             </PermissionGuard>

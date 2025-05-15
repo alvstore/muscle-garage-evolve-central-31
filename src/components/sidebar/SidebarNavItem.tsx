@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { NavItem } from "@/types/navigation";
 
 interface SidebarNavItemProps {
@@ -9,20 +9,21 @@ interface SidebarNavItemProps {
 }
 
 const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) => {
-  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = location.pathname === item.href;
   
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate(item.href);
+    // Don't prevent default - let the normal link behavior work
+    // Just handle the sidebar closing
     if (onLinkClick) {
       onLinkClick();
     }
   };
   
   return (
-    <NavLink
+    <Link
       to={item.href}
-      className={({ isActive }) => `
+      className={`
         flex items-center gap-2 py-2 px-3 text-sm rounded-md my-1 transition-colors
         ${isActive 
           ? 'bg-primary-500 text-white' 
@@ -30,14 +31,19 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) =>
       `}
       onClick={handleClick}
     >
-      {item.icon && item.icon}
-      <span>{item.label}</span>
+      {/* Make sure the icon is always clickable with proper sizing */}
+      {item.icon && (
+        <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          {item.icon}
+        </div>
+      )}
+      <span className="truncate">{item.label}</span>
       {item.badge && (
         <span className="ml-auto bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
           {item.badge}
         </span>
       )}
-    </NavLink>
+    </Link>
   );
 };
 

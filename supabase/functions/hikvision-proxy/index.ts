@@ -22,21 +22,36 @@ serve(async (req) => {
   }
 
   try {
-    const { action, apiUrl, appKey, secretKey, accessToken, deviceId, personData, branchId } = await req.json();
+    const { action, apiUrl, appKey, secretKey, token, deviceId, personData, branchId, siteId, siteName, ipAddress, port, username, password } = await req.json();
     
     // Route the request based on the action
     switch (action) {
       case 'token':
-        return await getToken(apiUrl, appKey, secretKey);
+        return await getToken(apiUrl, appKey, secretKey, req);
+      
+      case 'get-token':
+        return await getToken(apiUrl, appKey, secretKey, req);
       
       case 'test-device': 
-        return await testDevice(apiUrl, accessToken, deviceId, branchId);
+        return await testDevice(apiUrl, token, deviceId, siteId);
+      
+      case 'ensure-site-exists':
+        return await ensureSiteExists(apiUrl, token, branchId, siteName);
+      
+      case 'check-device-exists':
+        return await checkDeviceExists(apiUrl, token, siteId, deviceId);
+      
+      case 'create-site':
+        return await createSite(apiUrl, token, siteName);
+      
+      case 'test-isup-device':
+        return await testIsupDevice(ipAddress, port, username, password);
       
       case 'register-person':
-        return await registerPerson(apiUrl, accessToken, personData);
+        return await registerPerson(apiUrl, token, personData);
       
       case 'assign-privileges':
-        return await assignPrivileges(apiUrl, accessToken, personData?.personId, deviceId);
+        return await assignPrivileges(apiUrl, token, personData?.personId, deviceId);
       
       default:
         return new Response(
@@ -54,10 +69,10 @@ serve(async (req) => {
 });
 
 // Function to get a Hikvision token
-async function getToken(apiUrl: string, appKey: string, secretKey: string) {
+async function getToken(apiUrl: string, appKey: string, secretKey: string, request?: Request) {
   try {
     // Form the token URL using the provided API URL
-    const tokenUrl = `${apiUrl}/api/hpcgw/v1/token/get`;
+    const tokenUrl = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/token/get`;
     
     console.log('Requesting token from:', tokenUrl);
     
@@ -95,9 +110,79 @@ async function getToken(apiUrl: string, appKey: string, secretKey: string) {
     
     // Store token in database if successful
     if (data.code === '0' && data.data?.accessToken) {
+      let branchId;
+      let availableSites: Array<{siteId: string, siteName: string}> = [];
+      
+      try {
+        // Try to get branchId from the request body
+        if (request) {
+          const requestData = await request.clone().json();
+          branchId = requestData.branchId;
+        }
+      } catch (e) {
+        console.error('Error parsing request body:', e);
+      }
+      
+      if (branchId) {
+        try {
+          // Get available sites for this token
+          const siteListUrl = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/site/search`;
+          const siteResponse = await fetch(siteListUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.data.accessToken}`
+            },
+            body: JSON.stringify({
+              pageNo: 1,
+              pageSize: 100
+            })
+          });
+          
+          const siteData = await siteResponse.json();
+          
+          if (siteData.code === '0' && siteData.data?.list) {
+            availableSites = siteData.data.list.map((site: any) => ({
+              siteId: site.siteId,
+              siteName: site.siteName
+            }));
+          }
+          
+          // Get the default site ID (first site in the list or empty string)
+          const defaultSiteId = availableSites.length > 0 ? availableSites[0].siteId : '';
+          
+          // Store token, site_id, and available sites in the database
+          const { error: tokenError } = await supabaseClient
+            .from('hikvision_tokens')
+            .upsert({
+              branch_id: branchId,
+              access_token: data.data.accessToken,
+              expire_time: data.data.expireTime,
+              area_domain: data.data.areaDomain,
+              site_id: defaultSiteId,
+              available_sites: availableSites,
+              created_at: new Date().toISOString()
+            }, {
+              onConflict: 'branch_id'
+            });
+          
+          if (tokenError) {
+            console.error('Error storing token in database:', tokenError);
+          }
+        } catch (siteError) {
+          console.error('Error fetching sites:', siteError);
+        }
+      }
+      
+      // Add available sites to the response
+      const responseData = {
+        ...data,
+        availableSites
+      };
+      
       // Return the successful response
       return new Response(
-        JSON.stringify(data),
+        JSON.stringify(responseData),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -117,7 +202,7 @@ async function getToken(apiUrl: string, appKey: string, secretKey: string) {
 }
 
 // Function to test device connectivity
-async function testDevice(apiUrl: string, accessToken: string, deviceId: string, branchId: string) {
+async function testDevice(apiUrl: string, accessToken: string, deviceId: string, siteId: string) {
   try {
     if (!accessToken) {
       return new Response(
@@ -129,8 +214,8 @@ async function testDevice(apiUrl: string, accessToken: string, deviceId: string,
       );
     }
     
-    // Example: Get device status
-    const url = `${apiUrl}/api/hpcgw/v1/device/status`;
+    // Get device status using the Hikvision API
+    const url = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/device/status`;
     
     console.log(`Testing device with ID: ${deviceId}`);
     
@@ -141,7 +226,7 @@ async function testDevice(apiUrl: string, accessToken: string, deviceId: string,
         'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify({
-        deviceId: deviceId
+        deviceIds: [deviceId]
       })
     });
     
@@ -149,8 +234,29 @@ async function testDevice(apiUrl: string, accessToken: string, deviceId: string,
     
     console.log('Device test response:', data);
     
+    // Check if the device is online
+    if (data.code === '0' && data.data) {
+      const deviceStatus = data.data.find((d: any) => d.deviceId === deviceId);
+      
+      if (deviceStatus) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            status: deviceStatus.status, // 'online' or 'offline'
+            message: deviceStatus.status === 'online' ? 'Device is online' : 'Device is offline'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
+    // If we couldn't determine the status
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ 
+        success: false, 
+        message: data.msg || 'Could not determine device status',
+        rawResponse: data
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -158,6 +264,269 @@ async function testDevice(apiUrl: string, accessToken: string, deviceId: string,
     
     return new Response(
       JSON.stringify({ success: false, message: `Error testing device: ${error.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
+
+// Function to ensure a site exists for the branch
+async function ensureSiteExists(apiUrl: string, accessToken: string, branchId: string, siteName?: string) {
+  try {
+    if (!accessToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Access token not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // First check if we already have a site ID stored in the token table
+    const { data: tokenData, error: tokenError } = await supabaseClient
+      .from('hikvision_tokens')
+      .select('site_id')
+      .eq('branch_id', branchId)
+      .single();
+    
+    if (!tokenError && tokenData?.site_id) {
+      return new Response(
+        JSON.stringify({ success: true, siteId: tokenData.site_id }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Get branch name for site creation from branches table
+    const { data: branchData, error: branchError } = await supabaseClient
+      .from('branches')
+      .select('name')
+      .eq('id', branchId)
+      .single();
+    
+    let branchName = '';
+    if (branchError) {
+      console.error('Error fetching branch name:', branchError);
+      // Continue with default site name
+    } else {
+      branchName = branchData?.name || '';
+    }
+    
+    // Create a site with the branch name
+    const siteNameToUse = siteName || branchName || `Branch ${branchId}`;
+    console.log(`Creating site with name: ${siteNameToUse}`);
+    
+    // Create a site
+    const siteResponse = await createSite(apiUrl, accessToken, siteNameToUse);
+    const siteData = await siteResponse.json();
+    
+    if (!siteData.success || !siteData.siteId) {
+      return new Response(
+        JSON.stringify({ success: false, message: siteData.message || 'Failed to create site' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+    
+    // Save the site ID to the token table
+    const { error: updateError } = await supabaseClient
+      .from('hikvision_tokens')
+      .update({ site_id: siteData.siteId })
+      .eq('branch_id', branchId);
+    
+    if (updateError) {
+      console.error('Error saving site ID to token table:', updateError);
+      // We still return success since the site was created
+    }
+    
+    return new Response(
+      JSON.stringify({ success: true, siteId: siteData.siteId }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error in ensureSiteExists:', error);
+    return new Response(
+      JSON.stringify({ success: false, message: `Error ensuring site exists: ${error.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
+
+// Function to create a site
+async function createSite(apiUrl: string, accessToken: string, siteName: string) {
+  try {
+    if (!accessToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Access token not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    const url = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/site/add`;
+    
+    console.log(`Creating site with name: ${siteName}`);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        siteName: siteName
+      })
+    });
+    
+    const data = await response.json();
+    
+    console.log('Site creation response:', data);
+    
+    if (data.code === '0' && data.data?.siteId) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Site created successfully',
+          siteId: data.data.siteId
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        message: data.msg || 'Failed to create site',
+        rawResponse: data
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error creating site:', error);
+    return new Response(
+      JSON.stringify({ success: false, message: `Error creating site: ${error.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
+
+// Function to check if a device exists in a site
+async function checkDeviceExists(apiUrl: string, accessToken: string, siteId: string, deviceId: string) {
+  try {
+    if (!accessToken) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Access token not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    const url = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/device/list`;
+    
+    console.log(`Checking if device ${deviceId} exists in site ${siteId}`);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        siteId: siteId,
+        pageNo: 1,
+        pageSize: 100
+      })
+    });
+    
+    const data = await response.json();
+    
+    console.log('Device list response:', data);
+    
+    if (data.code === '0' && data.data?.list) {
+      // Check if the device exists in the list
+      const deviceExists = data.data.list.some((device: any) => device.deviceId === deviceId);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          exists: deviceExists,
+          message: deviceExists ? 'Device exists in site' : 'Device does not exist in site'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        message: data.msg || 'Failed to check if device exists',
+        rawResponse: data
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error checking if device exists:', error);
+    return new Response(
+      JSON.stringify({ success: false, message: `Error checking if device exists: ${error.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+}
+
+// Function to test ISUP device connectivity
+async function testIsupDevice(ipAddress: string, port: string, username: string, password: string) {
+  try {
+    if (!ipAddress || !username || !password) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Missing required parameters (IP address, username, password)' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    console.log(`Testing ISUP device at ${ipAddress}:${port}`);
+    
+    // In a real implementation, you would use the ISUP protocol to test the connection
+    // For now, we'll simulate a successful connection
+    
+    // Simulate a ping test to check if the device is reachable
+    try {
+      // Use a proxy service to avoid CORS issues
+      const pingUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://${ipAddress}:${port}`)}`;
+      
+      const pingResponse = await fetch(pingUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (pingResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'ISUP device is reachable'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'ISUP device is not reachable'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (pingError) {
+      console.error('Error pinging device:', pingError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `Error pinging device: ${pingError.message}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  } catch (error) {
+    console.error('Error testing ISUP device:', error);
+    return new Response(
+      JSON.stringify({ success: false, message: `Error testing ISUP device: ${error.message}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

@@ -84,8 +84,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:relative lg:z-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
+        onClick={(e) => {
+          // Prevent clicks on the sidebar from closing it
+          e.stopPropagation();
+        }}
       >
-        <SidebarComponent isSidebarOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
+        <SidebarComponent 
+          isSidebarOpen={sidebarOpen} 
+          closeSidebar={() => setSidebarOpen(false)} 
+        />
       </div>
       
       {/* Main content */}

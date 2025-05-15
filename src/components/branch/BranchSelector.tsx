@@ -29,17 +29,40 @@ export default function BranchSelector({ branches = [], onSelect, disabled = fal
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(currentBranch?.id || "");
 
+  // Sync local state with context
   useEffect(() => {
     if (currentBranch?.id) {
       setValue(currentBranch.id);
     }
   }, [currentBranch]);
 
+  // Auto-select first branch if none selected
+  useEffect(() => {
+    if (branches.length > 0 && !currentBranch && !value) {
+      const firstBranch = branches[0];
+      setValue(firstBranch.id);
+      setCurrentBranch(firstBranch);
+    }
+  }, [branches, currentBranch, value, setCurrentBranch]);
+
   const handleSelect = (branch: Branch) => {
-    setValue(branch.id);
-    setOpen(false);
-    onSelect(branch);
-    setCurrentBranch(branch);
+    if (!branch) return;
+    
+    try {
+      // Update local state
+      setValue(branch.id);
+      setOpen(false);
+      
+      // Update the branch context
+      setCurrentBranch(branch);
+      
+      // Notify parent component
+      if (onSelect) {
+        onSelect(branch);
+      }
+    } catch (error) {
+      console.error('Error selecting branch:', error);
+    }
   };
 
   return (
