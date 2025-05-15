@@ -16,7 +16,7 @@ export const useMembershipPlans = () => {
   const membershipPlans = memberships.map(membership => ({
     id: membership.id,
     name: membership.name,
-    description: membership.description,
+    description: membership.description || '',
     price: membership.price,
     duration_days: membership.duration_days,
     durationDays: membership.duration_days, // For backward compatibility
@@ -27,7 +27,10 @@ export const useMembershipPlans = () => {
     branch_id: membership.branch_id,
     created_at: membership.created_at,
     updated_at: membership.updated_at,
-    memberCount: 0 // Default value, would be populated from real data
+    benefits: membership.features?.features || [], // Add benefits for backward compatibility
+    memberCount: 0, // Default value, would be populated from real data
+    duration_label: getDurationLabel(membership.duration_days), // Add duration_label
+    allowed_classes: 'all' // Default value for allowed_classes
   }));
   
   const refetch = fetchMemberships;
@@ -39,5 +42,15 @@ export const useMembershipPlans = () => {
     refetch
   };
 };
+
+// Helper function to get duration label from days
+function getDurationLabel(days: number): string {
+  if (!days) return '1-month'; // Default
+  
+  if (days <= 31) return '1-month';
+  if (days <= 93) return '3-month';
+  if (days <= 186) return '6-month';
+  return '12-month';
+}
 
 // Additional membership operations can be added here

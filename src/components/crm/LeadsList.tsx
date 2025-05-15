@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
@@ -33,7 +34,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from '@/components/ui/skeleton';
-import LeadForm from './LeadForm';
 import BulkLeadActions from "./BulkLeadActions";
 import { useBranch } from '@/hooks/use-branch';
 import { leadService } from '@/services/leadService';
@@ -49,8 +49,8 @@ export const useLeads = () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await leadService.getLeads(currentBranch?.id);
-      setLeads(data as Lead[]);
+      const leadsData = await leadService.getLeads(currentBranch?.id);
+      setLeads(leadsData);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch leads');
       console.error('Error fetching leads:', err);

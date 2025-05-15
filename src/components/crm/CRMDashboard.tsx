@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
-import { followUpService } from '@/services/followUpService';
+import followUpService from '@/services/followUpService';
 import { useBranch } from '@/hooks/use-branch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -19,19 +20,20 @@ import {
   Legend
 } from 'recharts';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Lead, FollowUpHistory } from '@/types/crm';
 
 const CRMDashboard = () => {
   const { currentBranch } = useBranch();
 
   // Fetch leads data
-  const { data: leads, isLoading: isLoadingLeads } = useQuery({
+  const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
     queryKey: ['leads', currentBranch?.id],
     queryFn: () => leadService.getLeads(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
 
-  // Fetch follow-ups data - Fix the incorrect argument count
-  const { data: followUps, isLoading: isLoadingFollowUps } = useQuery({
+  // Fetch follow-ups data
+  const { data: followUps = [], isLoading: isLoadingFollowUps } = useQuery({
     queryKey: ['allFollowUps', currentBranch?.id],
     queryFn: () => followUpService.getFollowUpHistory(currentBranch?.id),
     enabled: !!currentBranch?.id,
@@ -39,7 +41,7 @@ const CRMDashboard = () => {
 
   // Calculate leads by stage
   const leadsByStage = React.useMemo(() => {
-    if (!leads) return [];
+    if (!leads.length) return [];
     
     const stages = ['cold', 'warm', 'hot', 'won', 'lost'];
     return stages.map(stage => ({
@@ -50,7 +52,7 @@ const CRMDashboard = () => {
 
   // Calculate follow-up completion rate
   const followUpCompletion = React.useMemo(() => {
-    if (!followUps) return [];
+    if (!followUps.length) return [];
     
     const total = followUps.length;
     const completed = followUps.filter(f => f.status !== 'scheduled' && f.status !== 'pending').length;
@@ -64,7 +66,7 @@ const CRMDashboard = () => {
 
   // Calculate monthly lead acquisition
   const monthlyLeads = React.useMemo(() => {
-    if (!leads) return [];
+    if (!leads.length) return [];
     
     const months = Array.from({ length: 6 }, (_, i) => {
       const date = subMonths(new Date(), i);
@@ -86,7 +88,7 @@ const CRMDashboard = () => {
 
   // Calculate conversion rate
   const conversionRate = React.useMemo(() => {
-    if (!leads) return 0;
+    if (!leads.length) return 0;
     
     const totalLeads = leads.length;
     const convertedLeads = leads.filter(lead => lead.status === 'won' || lead.status === 'converted').length;
@@ -109,7 +111,7 @@ const CRMDashboard = () => {
             {isLoadingLeads ? (
               <Skeleton className="h-10 w-20" />
             ) : (
-              <div className="text-2xl font-bold">{leads?.length || 0}</div>
+              <div className="text-2xl font-bold">{leads.length || 0}</div>
             )}
           </CardContent>
         </Card>
@@ -122,7 +124,7 @@ const CRMDashboard = () => {
             {isLoadingLeads ? (
               <Skeleton className="h-10 w-20" />
             ) : (
-              <div className="text-2xl font-bold">{leads?.filter(l => l.funnel_stage === 'hot').length || 0}</div>
+              <div className="text-2xl font-bold">{leads.filter(l => l.funnel_stage === 'hot').length || 0}</div>
             )}
           </CardContent>
         </Card>
@@ -148,7 +150,7 @@ const CRMDashboard = () => {
             {isLoadingFollowUps ? (
               <Skeleton className="h-10 w-20" />
             ) : (
-              <div className="text-2xl font-bold">{followUps?.length || 0}</div>
+              <div className="text-2xl font-bold">{followUps.length || 0}</div>
             )}
           </CardContent>
         </Card>
@@ -244,7 +246,7 @@ const CRMDashboard = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {leads?.filter(lead => lead.status === 'converted' || lead.status === 'won')
+                {leads.filter(lead => lead.status === 'converted' || lead.status === 'won')
                   .sort((a, b) => {
                     const dateA = a.conversion_date ? new Date(a.conversion_date).getTime() : 0;
                     const dateB = b.conversion_date ? new Date(b.conversion_date).getTime() : 0;
@@ -254,7 +256,7 @@ const CRMDashboard = () => {
                   .map(lead => (
                     <div key={lead.id} className="flex justify-between items-center p-2 border-b">
                       <div>
-                        <div className="font-medium">{lead.name || `${lead.first_name} ${lead.last_name}`}</div>
+                        <div className="font-medium">{lead.name || `${lead.first_name || ''} ${lead.last_name || ''}`.trim()}</div>
                         <div className="text-sm text-muted-foreground">{lead.email}</div>
                       </div>
                       <div className="text-sm">
@@ -262,7 +264,7 @@ const CRMDashboard = () => {
                       </div>
                     </div>
                   ))}
-                {(leads?.filter(lead => lead.status === 'converted' || lead.status === 'won').length || 0) === 0 && (
+                {(leads.filter(lead => lead.status === 'converted' || lead.status === 'won').length || 0) === 0 && (
                   <div className="text-center py-4 text-muted-foreground">No conversions yet</div>
                 )}
               </div>

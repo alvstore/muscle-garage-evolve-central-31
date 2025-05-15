@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import {
@@ -58,7 +57,7 @@ const FunnelBoard = () => {
   ]);
   
   // Fetch leads from Supabase
-  const { data: leads, isLoading, isError, refetch } = useQuery({
+  const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['leads', currentBranch?.id],
     queryFn: () => leadService.getLeads(currentBranch?.id),
     enabled: !!currentBranch?.id,
@@ -80,7 +79,7 @@ const FunnelBoard = () => {
   
   // Organize leads into columns when data changes
   useEffect(() => {
-    if (leads) {
+    if (leads && leads.length) {
       const organizedColumns = columns.map(column => {
         return {
           ...column,

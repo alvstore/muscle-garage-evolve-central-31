@@ -29,7 +29,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     handlePaymentMethodChange,
     handleSubmit,
   } = useInvoiceForm(invoice, () => {
-    // If onComplete is provided without an Invoice, call it without parameters
+    // If onComplete is provided, call it without parameters
     if (onComplete) onComplete();
   }, onSave);
 
@@ -67,8 +67,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={(e) => {
-                  e.preventDefault();
+                onClick={() => {
                   if (onCancel) {
                     onCancel();
                   } else if (onComplete) {
