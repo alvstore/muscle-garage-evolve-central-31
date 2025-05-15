@@ -120,12 +120,7 @@ const Navbar = () => {
 
         {/* Mobile Navigation Toggle */}
         <div className="md:hidden flex items-center gap-2">
-          <Button variant="outline" className="border-gym-yellow text-gym-yellow hover:bg-gym-yellow hover:text-gym-black relative" size="sm" onClick={() => window.location.href = "/cart"}>
-            <ShoppingCart className="h-4 w-4" />
-            {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {cartCount}
-              </span>}
-          </Button>
+          
           
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white focus:outline-none">
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
