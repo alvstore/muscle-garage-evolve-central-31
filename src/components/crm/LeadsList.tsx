@@ -283,7 +283,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onEdit, onView, onAddNew }) => {
 
       {isBulkActionsOpen && (
         <BulkLeadActions
-          selectedLeads={selectedLeads}
+          leadIds={selectedLeads}
           onSuccess={() => {
             refetch();
             setSelectedLeads([]);

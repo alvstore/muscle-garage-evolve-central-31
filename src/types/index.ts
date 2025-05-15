@@ -6,7 +6,7 @@ import { Member, Membership } from './member';
 import { DashboardSummary, ActivityItem, Payment, RenewalItem, Announcement as DashboardAnnouncement } from './dashboard';
 import { WorkoutPlan, WorkoutDay, Exercise } from './workout';
 import { DietPlan, MealPlan, ProgressMetrics } from './fitness';
-import { Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus } from './finance';
+import { Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus, TransactionType, RecurringPeriod } from './finance';
 import { 
   Notification, 
   Feedback, 
@@ -29,6 +29,7 @@ export type {
   WorkoutPlan, WorkoutDay, Exercise,
   DietPlan, MealPlan, ProgressMetrics,
   Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus,
+  TransactionType, RecurringPeriod,
   Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, ReminderRule, NotificationChannel,
   BackupLogEntry, Announcement
 };

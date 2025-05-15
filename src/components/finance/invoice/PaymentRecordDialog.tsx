@@ -63,12 +63,12 @@ const PaymentRecordDialog = ({
     try {
       // Calculate remaining amount
       const remainingAmount = invoice.amount - amount;
-      let newStatus: 'paid' | 'partial' | 'pending' = 'pending';
+      let newStatus: InvoiceStatus = 'pending';
       
       if (remainingAmount <= 0) {
         newStatus = 'paid';
       } else if (amount > 0) {
-        newStatus = 'partial';
+        newStatus = 'partially_paid';
       }
       
       // 1. Update invoice
@@ -89,8 +89,8 @@ const PaymentRecordDialog = ({
       const { error: paymentError } = await supabase
         .from('payments')
         .insert({
-          member_id: invoice.memberId,
-          membership_id: invoice.membershipPlanId,
+          member_id: invoice.member_id || invoice.memberId,
+          membership_id: invoice.membership_plan_id || invoice.membershipPlanId,
           amount: amount,
           payment_date: new Date().toISOString(),
           branch_id: currentBranch?.id,
@@ -113,7 +113,7 @@ const PaymentRecordDialog = ({
           type: 'income',
           amount: amount,
           transaction_date: new Date().toISOString(),
-          category_id: null, // Use appropriate category ID if available
+          category_id: null,
           description: `Payment received for invoice ${invoice.id}`,
           reference_id: invoice.id,
           branch_id: currentBranch?.id,
@@ -159,13 +159,13 @@ const PaymentRecordDialog = ({
                 <div>
                   <p className="text-sm font-medium">Invoice #{invoice.id?.substring(0, 8)}...</p>
                   <p className="text-sm text-muted-foreground">
-                    {invoice.memberName} - {format(new Date(invoice.issuedDate), "MMM d, yyyy")}
+                    {invoice.memberName} - {format(new Date(invoice.issuedDate || invoice.issued_date || new Date()), "MMM d, yyyy")}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">Total: {formatCurrency(invoice.amount)}</p>
                   <p className="text-sm text-muted-foreground">
-                    Due by: {format(new Date(invoice.dueDate), "MMM d, yyyy")}
+                    Due by: {format(new Date(invoice.dueDate || invoice.due_date || new Date()), "MMM d, yyyy")}
                   </p>
                 </div>
               </div>

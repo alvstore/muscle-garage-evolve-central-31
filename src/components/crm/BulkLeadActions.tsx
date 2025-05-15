@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -15,8 +16,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from 'sonner';
-import { useLeads } from '@/hooks/use-leads';
 import { User } from '@/types';
+import { supabase } from '@/services/supabaseClient';
 
 interface BulkLeadActionsProps {
   leadIds: string[];
@@ -28,7 +29,70 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leadIds, onSuccess, o
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const { deleteLeads, assignLeads, updateLeadStatus, users } = useLeads();
+  const [users, setUsers] = useState<User[]>([]);
+  
+  React.useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or('role.eq.admin,role.eq.staff');
+      
+      if (error) throw error;
+      setUsers(data as User[]);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const deleteLeads = async (leadIds: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', leadIds);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error deleting leads:", error);
+      throw error;
+    }
+  };
+
+  const assignLeads = async (leadIds: string[], userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ assigned_to: userId })
+        .in('id', leadIds);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error assigning leads:", error);
+      throw error;
+    }
+  };
+
+  const updateLeadStatus = async (leadIds: string[], status: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status })
+        .in('id', leadIds);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Error updating lead status:", error);
+      throw error;
+    }
+  };
 
   const handleDelete = async () => {
     setIsProcessing(true);
@@ -143,7 +207,7 @@ const BulkLeadActions: React.FC<BulkLeadActionsProps> = ({ leadIds, onSuccess, o
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={isProcessing}>
+          <AlertDialogAction onClick={handleDelete} disabled={isProcessing} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

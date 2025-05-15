@@ -1,45 +1,29 @@
 
-/**
- * Get initials from a name (e.g., "John Doe" => "JD")
- */
-export function getInitials(name: string): string {
-  if (!name) return 'NA';
-  
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-}
+export const formatCurrency = (amount: number, currencySymbol = '₹') => {
+  return `${currencySymbol}${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+};
 
-/**
- * Format a date string to a readable format
- */
-export function formatDate(dateString: string): string {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-}
+export const truncateText = (text: string, maxLength: number = 50) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
 
-/**
- * Format a time string to a readable format
- */
-export function formatTime(dateString: string): string {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+export const capitalizeFirstLetter = (text: string) => {
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
-/**
- * Format a number as currency (Indian Rupees ₹)
- */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
-}
+export const formatPhoneNumber = (phone: string) => {
+  if (!phone) return '';
+  
+  // Format Indian phone numbers
+  if (phone.length === 10) {
+    return `+91 ${phone.substring(0, 5)} ${phone.substring(5)}`;
+  }
+  
+  // Return original if not standard format
+  return phone;
+};

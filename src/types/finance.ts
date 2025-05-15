@@ -12,7 +12,7 @@ export interface Transaction {
   created_at?: string;
 }
 
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending' | 'partially_paid';
 
 export interface InvoiceItem {
   id: string;
@@ -27,14 +27,19 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   member_id: string;
+  memberId?: string; // For backward compatibility 
   memberName?: string;
   amount: number;
   status: InvoiceStatus;
   dueDate: string;
+  due_date?: string; // For backward compatibility
   issuedDate: string;
+  issued_date?: string; // For backward compatibility
   paidDate?: string;
+  paid_date?: string; // For backward compatibility
   items: InvoiceItem[];
   branchId?: string;
+  branch_id?: string; // For backward compatibility
   notes?: string;
   subtotal?: number;
   discount?: number;
@@ -42,13 +47,15 @@ export interface Invoice {
   total?: number;
   created_at?: string;
   updated_at?: string;
+  description?: string;
+  payment_method?: string;
+  membershipPlanId?: string;
+  membership_plan_id?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
 }
 
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
+export type PaymentMethod = 'cash' | 'card' | 'bank-transfer' | 'razorpay' | 'other';
 
 export type PaymentStatus = 'completed' | 'pending' | 'failed';
 
@@ -64,6 +71,7 @@ export interface Payment {
   notes?: string;
   transaction_id?: string;
   created_at?: string;
+  contactInfo?: string; // Adding this to fix StaffActivityData errors
 }
 
 export interface ExpenseCategory {
@@ -77,3 +85,11 @@ export interface IncomeCategory {
   name: string;
   description?: string;
 }
+
+export interface TransactionType {
+  id: string;
+  name: string;
+  isExpense: boolean;
+}
+
+export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
