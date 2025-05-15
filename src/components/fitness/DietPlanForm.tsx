@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,19 +51,19 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   const handleAddMeal = () => {
     setFormData({
       ...formData,
-      mealPlans: [...formData.mealPlans!, createEmptyMeal()]
+      mealPlans: [...(formData.mealPlans || []), createEmptyMeal()]
     });
   };
 
   const handleRemoveMeal = (index: number) => {
     setFormData({
       ...formData,
-      mealPlans: formData.mealPlans!.filter((_, i) => i !== index)
+      mealPlans: (formData.mealPlans || []).filter((_, i) => i !== index)
     });
   };
 
   const handleMealChange = (index: number, field: keyof MealPlan, value: any) => {
-    const updatedMeals = [...formData.mealPlans!];
+    const updatedMeals = [...(formData.mealPlans || [])];
     updatedMeals[index] = {
       ...updatedMeals[index],
       [field]: value
@@ -74,10 +75,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleAddMealItem = (mealIndex: number) => {
-    const updatedMeals = [...formData.mealPlans!];
+    const updatedMeals = [...(formData.mealPlans || [])];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
-      items: [...updatedMeals[mealIndex].items!, '']
+      items: [...(updatedMeals[mealIndex].items || []), '']
     };
     setFormData({
       ...formData,
@@ -86,10 +87,10 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleRemoveMealItem = (mealIndex: number, itemIndex: number) => {
-    const updatedMeals = [...formData.mealPlans!];
+    const updatedMeals = [...(formData.mealPlans || [])];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
-      items: updatedMeals[mealIndex].items!.filter((_, i) => i !== itemIndex)
+      items: (updatedMeals[mealIndex].items || []).filter((_, i) => i !== itemIndex)
     };
     setFormData({
       ...formData,
@@ -98,8 +99,8 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleMealItemChange = (mealIndex: number, itemIndex: number, value: string) => {
-    const updatedMeals = [...formData.mealPlans!];
-    const updatedItems = [...updatedMeals[mealIndex].items!];
+    const updatedMeals = [...(formData.mealPlans || [])];
+    const updatedItems = [...(updatedMeals[mealIndex].items || [])];
     updatedItems[itemIndex] = value;
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
@@ -111,12 +112,13 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
     });
   };
 
-  const handleMacrosChange = (mealIndex: number, macroField: keyof typeof formData.mealPlans![0]['macros'], value: number) => {
-    const updatedMeals = [...formData.mealPlans!];
+  // Fixed the syntax error in this function signature
+  const handleMacrosChange = (mealIndex: number, macroField: keyof MealPlan['macros'], value: number) => {
+    const updatedMeals = [...(formData.mealPlans || [])];
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
       macros: {
-        ...updatedMeals[mealIndex].macros!,
+        ...(updatedMeals[mealIndex].macros || {}),
         [macroField]: value
       }
     };
@@ -127,17 +129,17 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
   };
 
   const handleSubmit = () => {
-    const mealPlansWithCalories = formData.mealPlans!.map(meal => {
-      if (!meal.macros!.calories) {
+    const mealPlansWithCalories = (formData.mealPlans || []).map(meal => {
+      if (!meal.macros?.calories) {
         const calculatedCalories = 
-          meal.macros!.protein * 4 + 
-          meal.macros!.carbs * 4 + 
-          meal.macros!.fats * 9;
+          (meal.macros?.protein || 0) * 4 + 
+          (meal.macros?.carbs || 0) * 4 + 
+          (meal.macros?.fats || 0) * 9;
         
         return {
           ...meal,
           macros: {
-            ...meal.macros!,
+            ...(meal.macros || {}),
             calories: calculatedCalories
           }
         };
@@ -198,7 +200,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
             </Button>
           </div>
 
-          {formData.mealPlans.map((meal, mealIndex) => (
+          {(formData.mealPlans || []).map((meal, mealIndex) => (
             <Card key={meal.id} className="border border-gray-200">
               <CardHeader className="py-3 px-4 bg-gray-50">
                 <div className="flex justify-between items-center">
@@ -237,7 +239,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                   <div>
                     <Label>Food Items</Label>
                     <div className="space-y-2 mt-2">
-                      {meal.items.map((item, itemIndex) => (
+                      {(meal.items || []).map((item, itemIndex) => (
                         <div key={itemIndex} className="flex gap-2">
                           <Input
                             placeholder="Food item description"
@@ -249,7 +251,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveMealItem(mealIndex, itemIndex)}
-                            disabled={meal.items.length <= 1}
+                            disabled={(meal.items || []).length <= 1}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash className="h-4 w-4" />
@@ -276,7 +278,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                         <Input
                           id={`protein-${mealIndex}`}
                           type="number"
-                          value={meal.macros.protein}
+                          value={meal.macros?.protein || 0}
                           onChange={(e) => handleMacrosChange(mealIndex, 'protein', Number(e.target.value))}
                           min="0"
                         />
@@ -286,7 +288,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                         <Input
                           id={`carbs-${mealIndex}`}
                           type="number"
-                          value={meal.macros.carbs}
+                          value={meal.macros?.carbs || 0}
                           onChange={(e) => handleMacrosChange(mealIndex, 'carbs', Number(e.target.value))}
                           min="0"
                         />
@@ -296,7 +298,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                         <Input
                           id={`fats-${mealIndex}`}
                           type="number"
-                          value={meal.macros.fats}
+                          value={meal.macros?.fats || 0}
                           onChange={(e) => handleMacrosChange(mealIndex, 'fats', Number(e.target.value))}
                           min="0"
                         />
@@ -306,7 +308,7 @@ const DietPlanForm: React.FC<DietPlanFormProps> = ({
                         <Input
                           id={`calories-${mealIndex}`}
                           type="number"
-                          value={meal.macros.calories || meal.macros.protein * 4 + meal.macros.carbs * 4 + meal.macros.fats * 9}
+                          value={meal.macros?.calories || ((meal.macros?.protein || 0) * 4 + (meal.macros?.carbs || 0) * 4 + (meal.macros?.fats || 0) * 9)}
                           onChange={(e) => handleMacrosChange(mealIndex, 'calories', Number(e.target.value))}
                           min="0"
                           className="bg-gray-50"
