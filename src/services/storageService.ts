@@ -14,28 +14,45 @@ const requiredBuckets = [
 // Function to check if bucket exists
 const bucketExists = async (name: string): Promise<boolean> => {
   try {
+    // Instead of checking bucket metadata (which requires admin privileges),
+    // just try to list files in the bucket which only requires anon access
     const { data, error } = await supabase
       .storage
-      .getBucket(name);
+      .from(name)
+      .list();
     
-    return !error && !!data;
+    // If we can list files (even if empty), the bucket exists and is accessible
+    return !error;
   } catch (error) {
     console.error(`Error checking if bucket ${name} exists:`, error);
     return false;
   }
 };
 
-// Function to get bucket metadata without needing to create it
+// Function to check if a bucket is accessible and return basic info
 const getBucketMetadata = async (name: string) => {
   try {
-    const { data, error } = await supabase.storage.getBucket(name);
+    // Try to list files in the bucket (this only requires anon access)
+    const { data, error } = await supabase.storage.from(name).list('', {
+      limit: 1, // Just get one file to minimize data transfer
+      offset: 0,
+    });
+    
     if (error) {
-      console.error(`Error getting bucket metadata for ${name}:`, error);
+      console.error(`Error accessing bucket ${name}:`, error);
       return null;
     }
-    return data;
+    
+    // Return a simplified metadata object
+    return {
+      name,
+      id: name,
+      public: true, // Assuming public access since we can list files
+      createdAt: new Date().toISOString(),
+      // We don't have actual metadata, but this is enough for most use cases
+    };
   } catch (error) {
-    console.error(`Exception getting bucket metadata for ${name}:`, error);
+    console.error(`Exception accessing bucket ${name}:`, error);
     return null;
   }
 };

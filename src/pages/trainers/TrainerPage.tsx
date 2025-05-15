@@ -63,7 +63,11 @@ const TrainerPage = () => {
   const fetchTrainers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Get current branch ID from localStorage
+      const currentBranchId = localStorage.getItem('currentBranchId');
+      
+      // Build the query
+      let query = supabase
         .from('profiles')
         .select(`
           id,
@@ -77,6 +81,13 @@ const TrainerPage = () => {
           branches:branch_id (name)
         `)
         .eq('role', 'trainer');
+      
+      // Filter by branch if a branch is selected
+      if (currentBranchId) {
+        query = query.eq('branch_id', currentBranchId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       

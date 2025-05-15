@@ -5,7 +5,17 @@ import { membershipService } from '@/services/membershipService';
 export const useMembershipPlans = () => {
   return useQuery({
     queryKey: ['membership-plans'],
-    queryFn: membershipService.getMembershipPlans,
+    queryFn: async () => {
+      console.log('[useMembershipPlans] Fetching membership plans...');
+      try {
+        const plans = await membershipService.getMembershipPlans();
+        console.log('[useMembershipPlans] Fetched plans:', plans);
+        return plans;
+      } catch (error) {
+        console.error('[useMembershipPlans] Error fetching plans:', error);
+        throw error;
+      }
+    }
   });
 };
 

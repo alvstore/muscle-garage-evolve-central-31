@@ -39,12 +39,19 @@ export const MembershipPlanCard = ({
   const {
     name,
     description,
-    price,
-    durationDays,
+    price = 0,
+    duration_days,
+    durationDays = duration_days || 30,
     features = [],
-    isActive,
-    memberCount = 0
+    benefits = [],
+    is_active,
+    isActive = is_active !== false,
+    memberCount = 0,
+    status = 'active'
   } = plan;
+  
+  // Use benefits if available, otherwise use features
+  const planFeatures = benefits.length > 0 ? benefits : features;
 
   return (
     <Card className={cn(

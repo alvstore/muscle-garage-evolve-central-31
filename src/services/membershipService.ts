@@ -21,6 +21,195 @@ interface AssignMembershipParams {
 
 export const membershipService = {
   /**
+   * Gets all membership plans for the current branch
+   */
+  async getMembershipPlans() {
+    try {
+      console.log('[DEBUG] Fetching membership plans...');
+      // Get current branch from localStorage
+      const branchId = localStorage.getItem('currentBranchId');
+      console.log('[DEBUG] Current branch ID:', branchId);
+      
+      if (!branchId) {
+        console.error('[ERROR] No branch selected');
+        throw new Error('No branch selected');
+      }
+      
+      // First try to query from the memberships table directly
+      const { data: membershipsData, error: membershipsError } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('name', { ascending: true });
+        
+      // If that works, use it
+      if (!membershipsError && membershipsData && membershipsData.length > 0) {
+        return membershipsData.map(plan => ({
+          ...plan,
+          // Add default values for any fields that might be missing
+          price: plan.price || 0,
+          duration_days: plan.duration_days || 30,
+          durationDays: plan.duration_days || 30,
+          is_active: plan.is_active !== false,
+          isActive: plan.is_active !== false,
+          features: plan.features || [],
+          benefits: plan.benefits || [],
+          allowed_classes: plan.allowed_classes || 'all',
+          status: plan.status || 'active'
+        }));
+      }
+      
+      // Fallback to the membership_plans view
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('name', { ascending: true });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // If we have no data, create a default plan
+      if (!data || data.length === 0) {
+        return [{
+          id: 'default-plan',
+          name: 'Basic Membership',
+          description: 'Monthly membership with access to all facilities',
+          price: 1999,
+          duration_days: 30,
+          durationDays: 30,
+          duration_label: '1 Month',
+          features: ['Access to gym equipment', 'Locker access', '24/7 facility access'],
+          benefits: ['Fitness assessment', 'Personalized workout plan', 'Nutrition guidance'],
+          allowed_classes: 'all',
+          branch_id: branchId,
+          is_active: true,
+          isActive: true,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }];
+      }
+      
+      // Transform the data to match the expected format
+      return data.map(plan => ({
+        ...plan,
+        // Add default values for any fields that might be missing
+        price: plan.price || 0,
+        duration_days: plan.duration_days || 30,
+        durationDays: plan.duration_days || 30,
+        is_active: plan.is_active !== false,
+        isActive: plan.is_active !== false,
+        features: plan.features || [],
+        benefits: plan.benefits || [],
+        allowed_classes: plan.allowed_classes || 'all',
+        status: plan.status || 'active'
+      }));
+    } catch (error: any) {
+      console.error('Error fetching membership plans:', error);
+      throw new Error(error.message || 'Failed to fetch membership plans');
+    }
+  },
+  
+  /**
+   * Gets a specific membership plan by ID
+   */
+  async getMembershipPlanById(planId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+      
+      if (error) throw error;
+      
+      // Return with default values for any expected fields not in the view
+      return {
+        ...data,
+        price: data.price || 0,
+        duration_days: data.duration_days || 30,
+        is_active: data.is_active !== false // Default to true if not specified
+      };
+    } catch (error: any) {
+      console.error(`Error fetching membership plan ${planId}:`, error);
+      throw new Error(error.message || 'Failed to fetch membership plan');
+    }
+  },
+  
+  /**
+   * Gets a member's current subscription
+   */
+  async getMemberSubscription(memberId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('member_memberships')
+        .select(`
+          *,
+          membership:membership_id (
+            *,
+            membership_plan:membership_plan_id (*)
+          )
+        `)
+        .eq('member_id', memberId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned" error
+      
+      if (!data) return null;
+      
+      // Transform the data to ensure it has all expected fields
+      return {
+        ...data,
+        // Ensure membership has all required fields with defaults
+        membership: data.membership ? {
+          ...data.membership,
+          price: data.membership.price || 0,
+          duration_days: data.membership.duration_days || 30,
+          is_active: data.membership.is_active !== false
+        } : null
+      };
+    } catch (error: any) {
+      console.error(`Error fetching subscription for member ${memberId}:`, error);
+      throw new Error(error.message || 'Failed to fetch member subscription');
+    }
+  },
+  
+  /**
+   * Creates a new subscription for a member
+   */
+  async createSubscription(memberId: string, planId: string) {
+    // Implementation will depend on your business logic
+    throw new Error('Not implemented');
+  },
+  
+  /**
+   * Cancels a subscription
+   */
+  async cancelSubscription(subscriptionId: string, reason?: string) {
+    // Implementation will depend on your business logic
+    throw new Error('Not implemented');
+  },
+  
+  /**
+   * Gets a payment link for a subscription
+   */
+  async getPaymentLink(planId: string, memberId: string, promoCode?: string) {
+    // Implementation will depend on your payment gateway
+    throw new Error('Not implemented');
+  },
+  
+  /**
+   * Verifies a payment
+   */
+  async verifyPayment(paymentId: string, orderId: string, signature: string, subscriptionData: any) {
+    // Implementation will depend on your payment gateway
+    throw new Error('Not implemented');
+  },
+  /**
    * Assigns a membership to a member and handles all related operations:
    * - Creates membership assignment
    * - Updates member record
