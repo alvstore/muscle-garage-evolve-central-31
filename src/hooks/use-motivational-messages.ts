@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { MotivationalMessage, adaptMotivationalMessageFromDB } from '@/types/notification';
+import { MotivationalMessage, adaptMotivationalMessageFromDB } from '@/types';
 import { toast } from 'sonner';
 
 export const useMotivationalMessages = () => {

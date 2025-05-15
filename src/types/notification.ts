@@ -1,3 +1,4 @@
+
 export interface Notification {
   id: string;
   title: string;
@@ -58,7 +59,7 @@ export interface BackupLogEntry {
   updated_at: string;
 }
 
-export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'general';
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'general' | 'motivation' | 'recovery' | 'wellness';
 
 export interface MotivationalMessage {
   id: string;
@@ -175,5 +176,19 @@ export const adaptReminderRuleFromDB = (dbRule: any): ReminderRule => {
     targetType: dbRule.target_type || 'all',
     created_at: dbRule.created_at,
     updated_at: dbRule.updated_at
+  };
+};
+
+export const adaptMotivationalMessageFromDB = (dbMessage: any): MotivationalMessage => {
+  return {
+    id: dbMessage.id,
+    title: dbMessage.title,
+    content: dbMessage.content,
+    author: dbMessage.author,
+    category: dbMessage.category,
+    tags: dbMessage.tags || [],
+    active: dbMessage.active,
+    created_at: dbMessage.created_at,
+    updated_at: dbMessage.updated_at
   };
 };

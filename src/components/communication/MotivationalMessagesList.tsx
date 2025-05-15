@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { MotivationalMessage, MotivationalCategory } from '@/types/notification';
+import { MotivationalMessage, MotivationalCategory } from '@/types';
 import { PlusCircle, Loader2, Check, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import MotivationalMessageForm from './MotivationalMessageForm';
 import { motivationalMessageService } from '@/services/communicationService';
 import { toast } from 'sonner';
+
 interface MotivationalMessagesListProps {
   messagesList?: MotivationalMessage[];
   messages?: MotivationalMessage[];
@@ -17,6 +18,7 @@ interface MotivationalMessagesListProps {
   onDelete?: (id: string) => Promise<boolean>;
   onToggleActive?: (id: string, isActive: boolean) => Promise<boolean>;
 }
+
 const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
   messagesList,
   messages,

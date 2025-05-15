@@ -15,7 +15,10 @@ import {
   MotivationalCategory, 
   ReminderRule, 
   NotificationChannel,
-  Announcement
+  Announcement,
+  adaptAnnouncementFromDB,
+  adaptReminderRuleFromDB,
+  adaptMotivationalMessageFromDB
 } from './notification';
 import { BackupLogEntry } from './backup';
 
@@ -28,6 +31,13 @@ export type {
   Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus,
   Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, ReminderRule, NotificationChannel,
   BackupLogEntry, Announcement
+};
+
+// Re-export adapter functions
+export {
+  adaptAnnouncementFromDB,
+  adaptReminderRuleFromDB,
+  adaptMotivationalMessageFromDB
 };
 
 // Add any other types needed
