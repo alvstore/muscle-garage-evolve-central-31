@@ -1,9 +1,26 @@
-
 import { useState, useEffect } from 'react';
 import { financeService } from '@/services/financeService';
 import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
 import { FinancialTransaction, TransactionType } from '@/types/finance';
+
+// Update the Transaction interface to include the necessary properties
+interface Transaction {
+  id: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category_id?: string;
+  description?: string;
+  transaction_date: string;
+  recorded_by?: string;
+  branch_id?: string;
+  payment_method?: string;
+  reference_id?: string;
+  transaction_id?: string;
+  attachment?: File; // Add attachment property to match usage
+  created_at?: string;
+  updated_at?: string;
+}
 
 export const useIncomeRecords = () => {
   const [records, setRecords] = useState<FinancialTransaction[]>([]);

@@ -3,6 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ReminderRule } from '@/types/notification';
 
+// Update the ReminderRule interface to include the necessary properties
+interface ReminderRule {
+  id: string;
+  title: string;
+  description?: string;
+  trigger_type: string;
+  trigger_value?: number;
+  conditions: Record<string, any>;
+  target_roles: string[];
+  send_via: string[];
+  notification_channel?: string;
+  message?: string;
+  is_active: boolean;
+  name?: string; // Add name property to match usage
+}
+
 export const useReminderRules = () => {
   const [rules, setRules] = useState<ReminderRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);

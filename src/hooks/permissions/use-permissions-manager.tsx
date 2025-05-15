@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '../use-auth';
 import { Permission } from '../use-permissions';
@@ -55,3 +54,11 @@ export const usePermissionsManager = (): PermissionsContextType => {
   }
   return context;
 };
+
+export interface User {
+  id: string;
+  email?: string;
+  role?: string;
+  branch_id?: string;
+  isBranchManager?: boolean; // Add this property to match usage
+}

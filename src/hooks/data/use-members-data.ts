@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from '../use-branch';
@@ -47,19 +46,7 @@ export const useMembersData = () => {
       
       if (data) {
         // Map database fields to Member type
-        const mappedMembers: Member[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          email: item.email,
-          phone: item.phone,
-          status: item.status,
-          membershipStatus: item.membership_status,
-          membershipId: item.membership_id,
-          membershipStartDate: item.membership_start_date ? new Date(item.membership_start_date) : null,
-          membershipEndDate: item.membership_end_date ? new Date(item.membership_end_date) : null,
-          role: 'member' as const, // Use const assertion to ensure it's treated as a literal
-          branchId: item.branch_id
-        }));
+        const mappedMembers: Member[] = convertDbMembers(data);
         
         setMembers(mappedMembers);
       }
@@ -193,4 +180,22 @@ export const useMembersData = () => {
     updateMember,
     deleteMember
   };
+};
+
+// Fix issue with membershipStartDate and membershipEndDate
+const convertDbMembers = (data: any[]): Member[] => {
+  return data.map((item) => ({
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    phone: item.phone,
+    status: item.status,
+    membershipStatus: item.membership_status,
+    membershipId: item.membership_id,
+    membershipStartDate: item.membership_start_date ? item.membership_start_date.toString() : '', // Convert to string
+    membershipEndDate: item.membership_end_date ? item.membership_end_date.toString() : '', // Convert to string
+    role: "member",
+    branchId: item.branch_id
+    // Add any other fields needed
+  }));
 };

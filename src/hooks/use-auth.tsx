@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser, UserRole } from '@/types';
@@ -142,7 +141,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     email: user.email ?? profile.email ?? '',
     name: profile.full_name ?? '',
     role: profile.role || 'member',
-    branchId: profile.branch_id,
+    branch_id: profile.branch_id,
     avatar: profile.avatar_url,
     phone: profile.phone,
     isBranchManager: profile.is_branch_manager || false,

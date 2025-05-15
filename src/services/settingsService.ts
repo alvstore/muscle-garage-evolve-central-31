@@ -203,6 +203,34 @@ const settingsService = {
     }
   },
 
+  // SMS settings methods
+  getSmsSettings: async (branchId?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sms_settings')
+        .select('*')
+        .eq('branch_id', branchId || '')
+        .single();
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  
+  saveSmsSettings: async (settings: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('sms_settings')
+        .upsert(settings)
+        .select();
+      
+      return { success: !error, data };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+
   // Template management methods
   getTemplates: async (type: 'email' | 'sms' | 'whatsapp', branchId?: string) => {
     const tableMap: Record<string, string> = {

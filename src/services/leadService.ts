@@ -1,87 +1,114 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from '@/types/crm';
+import { Lead, FollowUpScheduled } from '@/types/crm';
 
+// Export as named export instead of default
 export const leadService = {
   getLeads: async (branchId?: string) => {
-    let query = supabase.from('leads').select('*');
-    
-    if (branchId) {
-      query = query.eq('branch_id', branchId);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('branch_id', branchId || '')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
       console.error('Error fetching leads:', error);
-      throw error;
+      return { data: null, error };
     }
-    
-    return data || [];
   },
   
-  getLeadById: async (id: string) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching lead:', error);
-      throw error;
-    }
-    
-    return data;
-  },
-  
-  createLead: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([lead])
-      .select()
-      .single();
-    
-    if (error) {
+  createLead: async (lead: Partial<Lead>) => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(lead)
+        .select();
+      
+      if (error) throw error;
+      
+      return { data: data[0], error: null };
+    } catch (error) {
       console.error('Error creating lead:', error);
-      throw error;
+      return { data: null, error };
     }
-    
-    return data;
   },
   
   updateLead: async (id: string, updates: Partial<Lead>) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .update(updates)
+        .eq('id', id)
+        .select();
+      
+      if (error) throw error;
+      
+      return { data: data[0], error: null };
+    } catch (error) {
       console.error('Error updating lead:', error);
-      throw error;
+      return { data: null, error };
     }
-    
-    return data;
   },
   
   deleteLead: async (id: string) => {
-    const { error } = await supabase
-      .from('leads')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      return { success: true, error: null };
+    } catch (error) {
       console.error('Error deleting lead:', error);
-      throw error;
+      return { success: false, error };
     }
-    
-    return true;
   },
   
-  // Add refetch method to fix error in LeadsList.tsx
-  refetch: async () => {
-    return await leadService.getLeads();
+  getFollowUpHistory: async (leadId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('follow_up_history')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('scheduled_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching follow-up history:', error);
+      return { data: null, error };
+    }
+  },
+  
+  scheduleFollowUp: async (followUp: FollowUpScheduled) => {
+    try {
+      const { data, error } = await supabase
+        .from('follow_up_history')
+        .insert({
+          lead_id: followUp.lead_id,
+          type: followUp.type,
+          content: followUp.content,
+          scheduled_date: followUp.scheduled_date,
+          status: 'pending',
+          sent_by: followUp.sent_by
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      return { data: data[0], error: null };
+    } catch (error) {
+      console.error('Error scheduling follow-up:', error);
+      return { data: null, error };
+    }
   }
 };
+
+export default leadService;

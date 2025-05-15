@@ -1,118 +1,115 @@
-
-import { useState } from 'react';
-import { Invoice, InvoiceStatus } from '@/types/finance';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { useToast } from '@/hooks/use-toast';
 import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/services/supabaseClient';
-import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { InvoiceItem } from '@/types/invoice';
 
-export interface InvoiceFormState {
-  member_id: string;
-  member_name: string;
-  description: string;
-  amount: number;
-  status: InvoiceStatus;
-  due_date: string;
-  payment_method: string;
-  notes: string;
-}
+const invoiceFormSchema = z.object({
+  member_id: z.string().min(1, {
+    message: "Please select a member.",
+  }),
+  issue_date: z.date(),
+  due_date: z.date(),
+  status: z.enum(['draft', 'pending', 'paid', 'overdue', 'void']),
+  notes: z.string().optional(),
+  items: z.array(
+    z.object({
+      description: z.string().min(1, {
+        message: "Description is required.",
+      }),
+      quantity: z.number().min(1, {
+        message: "Quantity must be at least 1.",
+      }),
+      unit_price: z.number().min(0, {
+        message: "Unit price must be at least 0.",
+      }),
+    })
+  ).optional(),
+  total_amount: z.number().optional(),
+  branch_id: z.string().optional(),
+  invoice_number: z.string().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+})
 
-export const useInvoiceForm = (
-  invoice: Invoice | null, 
-  onComplete?: () => void, 
-  onSave?: (invoice: Invoice) => void
-) => {
-  const { currentBranch } = useBranch();
+export const useInvoiceForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<InvoiceFormState>({
-    member_id: invoice?.member_id || '',
-    member_name: invoice?.memberName || '',
-    description: invoice?.description || '',
-    amount: invoice?.amount || 0,
-    status: invoice?.status || 'pending' as InvoiceStatus,
-    due_date: invoice?.due_date?.toString() || invoice?.dueDate?.toString() || new Date().toISOString().split('T')[0],
-    payment_method: invoice?.payment_method || '',
-    notes: invoice?.notes || '',
+  const { toast } = useToast();
+  const { currentBranch } = useBranch();
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+
+  type InvoiceFormType = z.infer<typeof invoiceFormSchema>
+
+  const form = useForm<InvoiceFormType>({
+    resolver: zodResolver(invoiceFormSchema),
+    defaultValues: {
+      member_id: '',
+      issue_date: new Date(),
+      due_date: new Date(),
+      status: 'draft',
+      notes: '',
+      items: [],
+      total_amount: 0,
+      branch_id: currentBranch?.id,
+      invoice_number: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleStatusChange = (value: string) => {
-    setFormData(prev => ({ ...prev, status: value as InvoiceStatus }));
-  };
-
-  const handlePaymentMethodChange = (value: string) => {
-    setFormData(prev => ({ ...prev, payment_method: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!currentBranch?.id) {
-      toast.error('Please select a branch first');
-      return;
-    }
-    
+  const onSubmit = async (values: InvoiceFormType) => {
     setIsSubmitting(true);
-    
     try {
-      // Prepare invoice data for saving
-      const submittedInvoice: Invoice = {
-        ...(invoice || {}),
-        ...formData,
-        id: invoice?.id || `temp-${Date.now()}`,
-        branch_id: currentBranch.id,
-        issued_date: invoice?.issued_date || invoice?.issuedDate || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        items: invoice?.items || [],
-        // Include all the required fields
-        updatedAt: new Date().toISOString(),
-        // Map to camelCase aliases
-        memberId: formData.member_id,
-        memberName: formData.member_name,
-        dueDate: formData.due_date,
-        paymentMethod: formData.payment_method,
-        branchId: currentBranch.id,
-      };
-      
-      if (invoice?.id) {
-        await supabase
-          .from('invoices')
-          .update(submittedInvoice)
-          .eq('id', invoice.id);
-          
-        toast.success('Invoice updated successfully');
+      const adaptedValues = adaptInvoiceToServerFormat(values);
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([adaptedValues])
+        .select();
+
+      if (error) {
+        console.error('Error creating invoice:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to create invoice',
+          variant: 'destructive',
+        });
       } else {
-        await supabase
-          .from('invoices')
-          .insert(submittedInvoice);
-          
-        toast.success('Invoice created successfully');
-      }
-      
-      if (onSave) {
-        onSave(submittedInvoice);
-      }
-      
-      if (onComplete) {
-        onComplete();
+        toast({
+          title: 'Success',
+          description: 'Invoice created successfully',
+        });
+        form.reset();
       }
     } catch (error) {
-      console.error('Error saving invoice:', error);
-      toast.error('Failed to save invoice');
+      console.error('Unexpected error creating invoice:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return {
-    formData,
-    isSubmitting,
-    handleChange,
-    handleStatusChange,
-    handlePaymentMethodChange,
-    handleSubmit,
+  const adaptInvoiceToServerFormat = (invoice: any) => {
+    return {
+      member_id: invoice.member_id,
+      issue_date: invoice.issue_date.toISOString(),
+      due_date: invoice.due_date.toISOString(),
+      status: invoice.status,
+      notes: invoice.notes,
+      items: invoice.items,
+      total_amount: invoice.total_amount,
+      branch_id: currentBranch?.id,
+      invoice_number: invoice.invoice_number,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
   };
+
+  return { form, onSubmit, isSubmitting, invoiceItems, setInvoiceItems };
 };

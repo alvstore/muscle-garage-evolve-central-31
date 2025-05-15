@@ -23,6 +23,8 @@ export interface TokenData {
   expiresAt: number;
   areaId?: string;
   siteId?: string;
+  availableSites?: Array<{siteId: string, siteName: string}>;
+  token?: string;
 }
 
 export function useHikvision({ branchId }: { branchId?: string }) {
@@ -136,7 +138,12 @@ export function useHikvision({ branchId }: { branchId?: string }) {
       const token: TokenData = {
         accessToken: "mock-token",
         expiresAt: Date.now() + 3600000, // 1 hour from now
-        siteId: "site-1"
+        siteId: "site-1",
+        token: "mock-token",
+        availableSites: [
+          { siteId: "site-1", siteName: "Main Site" },
+          { siteId: "site-2", siteName: "Secondary Site" }
+        ]
       };
       return { success: true, token };
     } catch (error) {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   } = useHikvision({ branchId });
 
   // Type assertion for getToken to ensure it returns TokenData
-  const getTokenData = getToken as unknown as (branchId: string) => Promise<TokenData | null>;
+  const getTokenData = getToken as unknown as () => Promise<{success: boolean, token: TokenData}>;
 
   const [newDevice, setNewDevice] = useState<any>({
     deviceName: '',
@@ -93,19 +92,16 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   const fetchAvailableSites = async () => {
     try {
       // Get token data directly from the hook which includes available sites
-      const tokenData = await getTokenData(branchId);
+      const tokenData = await getTokenData();
       
       if (!tokenData) {
         console.error('Error fetching token data');
         return;
       }
       
-      if (tokenData.availableSites && Array.isArray(tokenData.availableSites)) {
+      if (tokenData.token.availableSites && Array.isArray(tokenData.token.availableSites)) {
         // Convert to component format if needed
-        const sites = tokenData.availableSites.map((site: any) => ({
-          siteId: site.siteId || site.site_id,
-          siteName: site.siteName || site.site_name
-        }));
+        const sites = tokenData.token.availableSites;
         setAvailableSites(sites);
       } else {
         // Fallback to database query if not available in token data
@@ -148,9 +144,9 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
       
       // If cloud managed but no site ID is provided, get the default site ID
       if (newDevice.isCloudManaged && !newDevice.siteId) {
-        const tokenData = await getTokenData(branchId);
-        if (tokenData && tokenData.siteId) {
-          newDevice.siteId = tokenData.siteId;
+        const tokenData = await getTokenData();
+        if (tokenData && tokenData.token.siteId) {
+          newDevice.siteId = tokenData.token.siteId;
         }
       }
       
@@ -182,7 +178,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
         deviceData.password = newDevice.password;
       }
 
-      const success = await addDevice(deviceData, branchId);
+      const success = await addDevice(deviceData);
 
       if (success) {
         setDialogOpen(false);
@@ -206,7 +202,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
 
   const handleDelete = async (deviceId: string) => {
     if (confirm('Are you sure you want to delete this device?')) {
-      await removeDevice(deviceId, branchId);
+      await removeDevice(deviceId);
     }
   };
 
@@ -233,14 +229,14 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
       if (isCloudManaged) {
         try {
           // Get a token with site information
-          const tokenData = await getTokenData(branchId);
+          const tokenData = await getTokenData();
           if (!tokenData) {
             throw new Error("Failed to get access token");
           }
           
           // Now tokenData is properly typed as TokenData
-          const token = tokenData.token;
-          const siteId = tokenData.siteId;
+          const accessToken = tokenData.token.accessToken;
+          const siteId = tokenData.token.siteId;
           console.log('Testing cloud device connection for device:', deviceId);
           
           // Make sure we have a site ID
@@ -252,7 +248,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
           const { data: deviceData, error: deviceError } = await supabase.functions.invoke('hikvision-proxy', {
             body: {
               action: 'check-device-exists',
-              token,
+              token: accessToken,
               siteId,
               deviceId
             }
@@ -266,7 +262,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
           const { data: testData, error: testError } = await supabase.functions.invoke('hikvision-proxy', {
             body: {
               action: 'test-device',
-              token,
+              token: accessToken,
               deviceId,
               siteId
             }

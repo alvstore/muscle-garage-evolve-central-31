@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
@@ -7,20 +6,30 @@ import { AutomationRule } from '@/types/crm';
 
 export const useAutomationRules = () => {
   const [rules, setRules] = useState<AutomationRule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
 
-  const fetchRules = async () => {
-    setIsLoading(true);
+  // Fix the issue with setting automation rules
+  const fetchAutomationRules = async () => {
+    setLoading(true);
     try {
-      const data = await settingsService.getAutomationRules(currentBranch?.id);
-      setRules(data);
-    } catch (err: any) {
-      setError(err);
+      const result = await settingsService.getAutomationRules(currentBranch?.id);
+      
+      if (result.data) {
+        // Cast the data to AutomationRule[]
+        setRules(result.data as AutomationRule[]);
+      }
+      
+      if (result.error) {
+        console.error('Error fetching automation rules:', result.error);
+        throw result.error;
+      }
+    } catch (error) {
+      console.error('Error in fetchAutomationRules:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -35,7 +44,7 @@ export const useAutomationRules = () => {
       
       const result = await settingsService.saveAutomationRule(ruleToSave as AutomationRule);
       if (result) {
-        await fetchRules(); // Refresh the rules list
+        await fetchAutomationRules(); // Refresh the rules list
         return true;
       }
       return false;
@@ -88,7 +97,7 @@ export const useAutomationRules = () => {
 
   useEffect(() => {
     if (currentBranch?.id) {
-      fetchRules();
+      fetchAutomationRules();
     }
   }, [currentBranch?.id]);
 
@@ -97,7 +106,7 @@ export const useAutomationRules = () => {
     isLoading,
     error,
     isSaving,
-    fetchRules,
+    fetchAutomationRules,
     saveRule,
     deleteRule,
     toggleRuleStatus,

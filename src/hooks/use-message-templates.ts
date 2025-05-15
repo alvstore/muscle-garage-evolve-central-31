@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import settingsService from '@/services/settingsService';
 import { useBranch } from './use-branch';
@@ -24,20 +23,26 @@ export interface MessageTemplate {
 
 export const useMessageTemplates = (type: 'sms' | 'email' | 'whatsapp') => {
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
 
   const fetchTemplates = async () => {
-    setIsLoading(true);
     try {
-      const data = await settingsService.getTemplates(type, currentBranch?.id);
-      setTemplates(data);
-    } catch (err: any) {
-      setError(err);
+      setLoading(true);
+      const result = await settingsService.getTemplates(type, currentBranch?.id);
+      if (result.data) {
+        // Cast the data to MessageTemplate[]
+        setTemplates(result.data as MessageTemplate[]);
+      }
+      if (result.error) {
+        console.error(`Error fetching ${type} templates:`, result.error);
+      }
+    } catch (error) {
+      console.error(`Error in fetchTemplates (${type}):`, error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 

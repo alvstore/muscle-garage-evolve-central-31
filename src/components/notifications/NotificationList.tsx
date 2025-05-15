@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,11 @@ import NotificationItem from './NotificationItem';
 
 interface Notification {
   id: string;
-  type: string;
-  message: string;
   title: string;
-  data: any;
-  user_id: string;
-  is_read: boolean;
+  message?: string;
   created_at: string;
-  timestamp: string;
+  type?: string;
+  read: boolean; // Add this property to match the expected type
 }
 
 interface NotificationListProps {
