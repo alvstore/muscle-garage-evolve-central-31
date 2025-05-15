@@ -26,18 +26,36 @@ const CRMDashboard = () => {
   const { currentBranch } = useBranch();
 
   // Fetch leads data
-  const { data: leads = [], isLoading: isLoadingLeads } = useQuery({
+  const { data: leadsResponse = [], isLoading: isLoadingLeads } = useQuery({
     queryKey: ['leads', currentBranch?.id],
     queryFn: () => leadService.getLeads(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
 
   // Fetch follow-ups data
-  const { data: followUps = [], isLoading: isLoadingFollowUps } = useQuery({
+  const { data: followUpsResponse = [], isLoading: isLoadingFollowUps } = useQuery({
     queryKey: ['allFollowUps', currentBranch?.id],
     queryFn: () => followUpService.getFollowUpHistory(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
+
+  // Extract actual lead data from the response
+  const leads: Lead[] = React.useMemo(() => {
+    if (Array.isArray(leadsResponse)) {
+      return leadsResponse;
+    }
+    // Handle case where Supabase returns { data, error } format
+    return 'data' in leadsResponse && Array.isArray(leadsResponse.data) ? leadsResponse.data : [];
+  }, [leadsResponse]);
+
+  // Extract actual follow-ups data from the response
+  const followUps: FollowUpHistory[] = React.useMemo(() => {
+    if (Array.isArray(followUpsResponse)) {
+      return followUpsResponse;
+    }
+    // Handle case where Supabase returns { data, error } format
+    return 'data' in followUpsResponse && Array.isArray(followUpsResponse.data) ? followUpsResponse.data : [];
+  }, [followUpsResponse]);
 
   // Calculate leads by stage
   const leadsByStage = React.useMemo(() => {

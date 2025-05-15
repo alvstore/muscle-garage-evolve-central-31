@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Invoice } from '@/types/finance';
+import { Invoice } from '@/types/notification';
 import { InvoiceMemberFields } from './invoice/InvoiceMemberFields';
 import { InvoiceDetailsFields } from './invoice/InvoiceDetailsFields';
 import { InvoiceNotes } from './invoice/InvoiceNotes';
@@ -22,43 +22,41 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   onCancel,
 }) => {
   const {
-    formData,
+    form,
     isSubmitting,
+    onSubmit,
+    formValues,
     handleChange,
     handleStatusChange,
     handlePaymentMethodChange,
-    handleSubmit,
-  } = useInvoiceForm(invoice, () => {
-    // If onComplete is provided, call it without parameters
-    if (onComplete) onComplete();
-  }, onSave);
+  } = useInvoiceForm(invoice, onComplete, onSave);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={onSubmit}>
       <Card>
         <CardHeader>
           <CardTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <InvoiceMemberFields
-            memberId={formData.member_id}
-            memberName={formData.member_name}
+            memberId={formValues.member_id}
+            memberName={formValues.member_name}
             onChange={handleChange}
           />
           
           <InvoiceDetailsFields
-            description={formData.description || ''}
-            amount={formData.amount}
-            status={formData.status}
-            dueDate={formData.due_date}
-            paymentMethod={formData.payment_method || ''}
+            description={formValues.description || ''}
+            amount={formValues.amount}
+            status={formValues.status}
+            dueDate={formValues.due_date}
+            paymentMethod={formValues.payment_method || ''}
             onChange={handleChange}
             onStatusChange={handleStatusChange}
             onPaymentMethodChange={handlePaymentMethodChange}
           />
           
           <InvoiceNotes
-            notes={formData.notes}
+            notes={formValues.notes}
             onChange={handleChange}
           />
           

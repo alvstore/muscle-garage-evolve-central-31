@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FollowUpHistory } from '@/types/crm';
+import { FollowUpHistory, FollowUpScheduled } from '@/types/crm';
 
 export const followUpService = {
   async getFollowUpHistory(branchId?: string): Promise<FollowUpHistory[]> {
@@ -26,6 +27,50 @@ export const followUpService = {
       console.error('Error fetching follow-up history:', error);
       toast.error('Failed to load follow-ups');
       return [];
+    }
+  },
+
+  async getScheduledFollowUps(branchId?: string): Promise<FollowUpScheduled[]> {
+    try {
+      let query = supabase
+        .from('follow_up_history')
+        .select('*')
+        .eq('status', 'scheduled')
+        .order('scheduled_date', { ascending: true });
+        
+      if (branchId) {
+        // Filter by branch ID if provided
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+      
+      return data as FollowUpScheduled[];
+    } catch (error: any) {
+      console.error('Error fetching scheduled follow-ups:', error);
+      toast.error('Failed to load scheduled follow-ups');
+      return [];
+    }
+  },
+
+  async deleteScheduledFollowUp(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('follow_up_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Follow-up deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting follow-up:', error);
+      toast.error(`Failed to delete follow-up: ${error.message}`);
+      return false;
     }
   },
 

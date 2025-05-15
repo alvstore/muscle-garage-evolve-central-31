@@ -1,5 +1,6 @@
+
 import { supabase } from './supabaseClient';
-import { MotivationalMessage, ReminderRule, Announcement } from '@/types';
+import { MotivationalMessage, ReminderRule, Announcement, Feedback } from '@/types/notification';
 import { toast } from 'sonner';
 
 // Motivational Message Service
@@ -101,19 +102,21 @@ export const motivationalMessageService = {
   }
 };
 
-// Add more communication service methods as needed
-
+// Export required adapter functions that many components are importing
 export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
   return {
     id: dbAnnouncement.id,
     title: dbAnnouncement.title,
     content: dbAnnouncement.content,
     priority: dbAnnouncement.priority,
+    authorName: dbAnnouncement.author_name || dbAnnouncement.author,
+    authorId: dbAnnouncement.author_id,
     createdAt: dbAnnouncement.created_at,
     expiresAt: dbAnnouncement.expires_at,
-    author: dbAnnouncement.author_name || dbAnnouncement.author,
+    channel: dbAnnouncement.channel,
+    branchId: dbAnnouncement.branch_id,
+    targetRoles: dbAnnouncement.target_roles || [],
     channels: dbAnnouncement.channels || [dbAnnouncement.channel].filter(Boolean),
-    targetRoles: dbAnnouncement.target_roles || []
   };
 };
 
@@ -124,12 +127,12 @@ export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
     comments: dbFeedback.comments,
     rating: dbFeedback.rating,
     type: dbFeedback.type,
-    memberId: dbFeedback.member_id,
-    memberName: dbFeedback.member_name,
-    createdAt: dbFeedback.created_at,
-    branchId: dbFeedback.branch_id,
+    member_id: dbFeedback.member_id,
+    member_name: dbFeedback.member_name,
+    created_at: dbFeedback.created_at,
+    branch_id: dbFeedback.branch_id,
     anonymous: dbFeedback.anonymous || false,
-    relatedId: dbFeedback.related_id
+    related_id: dbFeedback.related_id
   };
 };
 
