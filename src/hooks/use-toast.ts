@@ -1,63 +1,262 @@
 
-import { toast as sonnerToast } from 'sonner';
+import * as React from "react";
+import { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
-type ToastProps = {
-  title: string;
-  description?: string;
-  variant?: 'default' | 'destructive';
-  [key: string]: any;
+const TOAST_LIMIT = 20;
+const TOAST_REMOVE_DELAY = 1000000;
+
+export type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
 };
 
-// Simplified toast interface for components that expect the shadcn/ui toast API
-export function useToast() {
-  return {
-    toast: (props: ToastProps) => {
-      const { title, description, variant, ...rest } = props;
-      
-      if (variant === 'destructive') {
-        return sonnerToast.error(title, {
-          description,
-          ...rest
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+let count = 0;
+
+function generateId() {
+  count = (count + 1) % Number.MAX_VALUE;
+  return count.toString();
+}
+
+type ActionType = typeof actionTypes;
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"];
+      toast: ToasterToast;
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"];
+      toast: Partial<ToasterToast>;
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"];
+      toastId?: ToasterToast["id"];
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"];
+      toastId?: ToasterToast["id"];
+    };
+
+interface State {
+  toasts: ToasterToast[];
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return;
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId);
+    dispatch({
+      type: actionTypes.REMOVE_TOAST,
+      toastId: toastId,
+    });
+  }, TOAST_REMOVE_DELAY);
+
+  toastTimeouts.set(toastId, timeout);
+};
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case actionTypes.ADD_TOAST:
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      };
+
+    case actionTypes.UPDATE_TOAST:
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      };
+
+    case actionTypes.DISMISS_TOAST: {
+      const { toastId } = action;
+
+      if (toastId) {
+        addToRemoveQueue(toastId);
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id);
         });
       }
-      
-      return sonnerToast(title, {
-        description,
-        ...rest
-      });
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      };
     }
+
+    case actionTypes.REMOVE_TOAST:
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        };
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      };
+    default:
+      return state;
+  }
+};
+
+const listeners: Array<(state: State) => void> = [];
+
+let memoryState: State = { toasts: [] };
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action);
+  listeners.forEach((listener) => {
+    listener(memoryState);
+  });
+}
+
+export function useToast() {
+  const [state, setState] = React.useState<State>(memoryState);
+
+  React.useEffect(() => {
+    listeners.push(setState);
+    return () => {
+      const index = listeners.indexOf(setState);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }, [state]);
+
+  return {
+    ...state,
+    toast: (props: Omit<ToasterToast, "id">) => {
+      const id = generateId();
+
+      const update = (props: Partial<ToasterToast>) =>
+        dispatch({
+          type: actionTypes.UPDATE_TOAST,
+          toast: { ...props, id },
+        });
+      const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+
+      dispatch({
+        type: actionTypes.ADD_TOAST,
+        toast: {
+          ...props,
+          id,
+          open: true,
+          onOpenChange: (open: boolean) => {
+            if (!open) dismiss();
+          },
+        },
+      });
+
+      return {
+        id: id,
+        dismiss,
+        update,
+      };
+    },
+    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
   };
 }
 
-// Export a compatible toast function 
-export const toast = {
-  // Standard toast method
-  default: (title: string, options?: any) => {
-    return sonnerToast(title, options);
-  },
+export const toast = (props: Omit<ToasterToast, "id">) => {
+  const id = generateId();
+
+  dispatch({
+    type: actionTypes.ADD_TOAST,
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open: boolean) => {
+        if (!open) {
+          dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+        }
+      },
+    },
+  });
+
+  return {
+    id: id,
+    dismiss: () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id }),
+    update: (props: Partial<ToasterToast>) =>
+      dispatch({
+        type: actionTypes.UPDATE_TOAST,
+        toast: { ...props, id },
+      }),
+  };
+};
+
+// Helper toast methods for different variants
+toast.success = (props: string | Omit<ToasterToast, "id">) => {
+  const toastProps = typeof props === "string" 
+    ? { description: props }
+    : props;
   
-  // Variants
-  success: (title: string, options?: any) => {
-    return sonnerToast.success(title, options);
-  },
+  return toast({
+    variant: "default",
+    ...toastProps
+  });
+};
+
+toast.error = (props: string | Omit<ToasterToast, "id">) => {
+  const toastProps = typeof props === "string" 
+    ? { description: props }
+    : props;
   
-  error: (title: string, options?: any) => {
-    return sonnerToast.error(title, options);
-  },
+  return toast({
+    variant: "destructive",
+    ...toastProps
+  });
+};
+
+toast.warning = (props: string | Omit<ToasterToast, "id">) => {
+  const toastProps = typeof props === "string" 
+    ? { description: props }
+    : props;
   
-  warning: (title: string, options?: any) => {
-    return sonnerToast(title, {
-      style: { backgroundColor: '#fff7ed', borderColor: '#fdba74' },
-      ...options
-    });
-  },
+  return toast({
+    variant: "default",
+    ...toastProps
+  });
+};
+
+toast.info = (props: string | Omit<ToasterToast, "id">) => {
+  const toastProps = typeof props === "string" 
+    ? { description: props }
+    : props;
   
-  info: (title: string, options?: any) => {
-    return sonnerToast.info(title, options);
-  },
-  
-  // For components expecting shadcn/ui toast API
-  destructive: (title: string, options?: any) => {
-    return sonnerToast.error(title, options);
-  }
+  return toast({
+    variant: "default",
+    ...toastProps
+  });
+};
+
+type ToastApiReturnType = {
+  id: string;
+  dismiss: () => void;
+  update: (props: Partial<ToasterToast>) => void;
 };

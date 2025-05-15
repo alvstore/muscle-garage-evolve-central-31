@@ -1,168 +1,64 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
-// Import Shadcn UI components
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Container } from '@/components/ui/container';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
-
-// Import access control components
-import ZoneManagement from '@/components/settings/access-control/ZoneManagement';
-import DoorManagement from '@/components/settings/access-control/DoorManagement';
-import MembershipAccessRules from '@/components/settings/access-control/MembershipAccessRules';
-import MemberAccessOverrides from '@/components/settings/access-control/MemberAccessOverrides';
+import React, { useState } from 'react';
+import { Container } from "@/components/ui/container";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import HikvisionSettings from '@/components/settings/access-control/HikvisionSettings';
-import ESSLSettings from '@/components/settings/access-control/ESSLSettings';
+import HikvisionDevices from '@/components/settings/access-control/HikvisionDevices';
+import { useBranch } from '@/hooks/use-branch';
 
 const AccessControlPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [branchId, setBranchId] = useState<string | null>(null);
-  const [branches, setBranches] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase.from('branches').select('id, name');
-        
-        if (error) {
-          throw error;
-        }
-        
-        setBranches(data || []);
-        
-        // Set default branch
-        if (data && data.length > 0) {
-          setBranchId(data[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching branches:', err);
-        setError('Failed to load branches. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchBranches();
-  }, []);
-
-  const handleBranchChange = (value: string) => {
-    setBranchId(value);
-  };
-
-  if (loading) {
+  const { currentBranch } = useBranch();
+  const [activeTab, setActiveTab] = useState('settings');
+  
+  if (!currentBranch?.id) {
     return (
       <Container>
-        <div className="flex justify-center items-center h-[80vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading access control settings...</span>
+        <div className="py-6">
+          <Card>
+            <CardContent className="py-10 text-center">
+              <p>Please select a branch to manage access control settings</p>
+            </CardContent>
+          </Card>
         </div>
       </Container>
     );
   }
-
-  if (error) {
-    return (
-      <Container className="py-6">
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </Container>
-    );
-  }
-
+  
   return (
     <Container>
       <div className="py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Access Control Management</h1>
-            <p className="text-muted-foreground">Configure and manage access control for your gym facilities</p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Access Control Settings</CardTitle>
-            <Select
-              value={branchId || ''}
-              onValueChange={handleBranchChange}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map(branch => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="zones" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="zones">Zones</TabsTrigger>
-                <TabsTrigger value="doors">Doors</TabsTrigger>
-                <TabsTrigger value="membership-rules">Membership Rules</TabsTrigger>
-                <TabsTrigger value="member-overrides">Member Overrides</TabsTrigger>
-                <TabsTrigger value="device-integrations">Device Integrations</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="zones" className="mt-6">
-                {branchId && <ZoneManagement branchId={branchId} />}
-              </TabsContent>
-              
-              <TabsContent value="doors" className="mt-6">
-                {branchId && <DoorManagement branchId={branchId} />}
-              </TabsContent>
-              
-              <TabsContent value="membership-rules" className="mt-6">
-                {branchId && <MembershipAccessRules branchId={branchId} />}
-              </TabsContent>
-              
-              <TabsContent value="member-overrides" className="mt-6">
-                {branchId && <MemberAccessOverrides branchId={branchId} />}
-              </TabsContent>
-              
-              <TabsContent value="device-integrations" className="mt-6">
-                {branchId && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Access Control Device Integrations</CardTitle>
-                      <CardDescription>
-                        Configure and manage access control device integrations
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Tabs defaultValue="hikvision" className="w-full">
-                        <TabsList className="mb-4">
-                          <TabsTrigger value="hikvision">Hikvision</TabsTrigger>
-                          <TabsTrigger value="essl">ESSL</TabsTrigger>
-                        </TabsList>
-                        
-                        <TabsContent value="hikvision">
-                          <HikvisionSettings branchId={branchId} />
-                        </TabsContent>
-                        
-                        <TabsContent value="essl">
-                          <ESSLSettings branchId={branchId} />
-                        </TabsContent>
-                      </Tabs>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+        <h1 className="text-2xl font-bold mb-6">Access Control Settings</h1>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="settings">API Settings</TabsTrigger>
+            <TabsTrigger value="devices">Devices</TabsTrigger>
+            <TabsTrigger value="zones">Access Zones</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="settings">
+            <HikvisionSettings branchId={currentBranch.id} />
+          </TabsContent>
+          
+          <TabsContent value="devices">
+            <HikvisionDevices branchId={currentBranch.id} />
+          </TabsContent>
+          
+          <TabsContent value="zones">
+            <Card>
+              <CardHeader>
+                <CardTitle>Access Zones</CardTitle>
+                <CardDescription>
+                  Configure access zones for different areas of your gym
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Zone management will be available in a future update.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Container>
   );

@@ -29,7 +29,11 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       const targetBranchId = branch || branchId;
       
       if (!targetBranchId) {
-        toast.error('No branch specified');
+        toast({
+          title: "Error",
+          description: 'No branch specified',
+          variant: "destructive",
+        });
         return null;
       }
       
@@ -42,7 +46,11 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       
       if (error) {
         console.error('Error fetching Hikvision settings:', error);
-        toast.error('Failed to load Hikvision settings');
+        toast({
+          title: "Error",
+          description: 'Failed to load Hikvision settings',
+          variant: "destructive",
+        });
         return null;
       }
       
@@ -75,52 +83,279 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       const targetBranchId = branch || branchId;
       
       if (!targetBranchId) {
-        toast.error('No branch specified');
+        toast({
+          title: "Error",
+          description: 'No branch specified',
+          variant: "destructive",
+        });
         return false;
       }
       
       const { apiUrl, appKey, secretKey } = credentials;
       
       if (!apiUrl || !appKey || !secretKey) {
-        toast.error('Missing required credential fields');
+        toast({
+          title: "Error",
+          description: 'Missing required credential fields',
+          variant: "destructive",
+        });
         return false;
+      }
+      
+      // First check if the settings already exist
+      const { data: existingSettings, error: checkError } = await supabase
+        .from('hikvision_api_settings')
+        .select('id, devices')
+        .eq('branch_id', targetBranchId)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking existing Hikvision settings:', checkError);
       }
       
       // First test the connection
       const testResult = await testConnection(credentials, targetBranchId);
       
       if (!testResult.success) {
-        toast.error(`Connection test failed: ${testResult.message}`);
-        return false;
-      }
-      
-      // Save to database
-      const { error } = await supabase
-        .from('hikvision_api_settings')
-        .upsert({
-          branch_id: targetBranchId,
-          api_url: apiUrl,
-          app_key: appKey,
-          app_secret: secretKey,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        }, {
-          onConflict: 'branch_id'
+        toast({
+          title: "Error",
+          description: `Connection test failed: ${testResult.message}`,
+          variant: "destructive",
         });
-      
-      if (error) {
-        console.error('Error saving Hikvision settings:', error);
-        toast.error('Failed to save settings');
         return false;
       }
       
-      toast.success('Hikvision settings saved successfully');
+      // Prepare the data with any existing devices
+      const devices = existingSettings?.devices || [];
+      
+      if (existingSettings) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('hikvision_api_settings')
+          .update({
+            api_url: apiUrl,
+            app_key: appKey,
+            app_secret: secretKey,
+            is_active: true,
+            devices: devices,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingSettings.id);
+          
+        if (updateError) {
+          console.error('Error updating Hikvision settings:', updateError);
+          toast({
+            title: "Error",
+            description: 'Failed to save settings',
+            variant: "destructive",
+          });
+          return false;
+        }
+      } else {
+        // Create new record
+        const { error: insertError } = await supabase
+          .from('hikvision_api_settings')
+          .insert({
+            branch_id: targetBranchId,
+            api_url: apiUrl,
+            app_key: appKey,
+            app_secret: secretKey,
+            is_active: true,
+            devices: devices,
+            updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          });
+          
+        if (insertError) {
+          console.error('Error saving Hikvision settings:', insertError);
+          toast({
+            title: "Error",
+            description: 'Failed to save settings',
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+      
+      toast({
+        title: "Success",
+        description: 'Hikvision settings saved successfully',
+      });
       await fetchSettings(targetBranchId);
       return true;
     } catch (error: any) {
       console.error('Error in saveSettings:', error);
-      toast.error('An unexpected error occurred');
+      toast({
+        title: "Error",
+        description: 'An unexpected error occurred',
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add or update a device
+  const addDevice = async (device: any, branch?: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const targetBranchId = branch || branchId;
+      
+      if (!targetBranchId) {
+        toast({
+          title: "Error",
+          description: 'No branch specified',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Get current settings
+      const { data, error } = await supabase
+        .from('hikvision_api_settings')
+        .select('id, devices')
+        .eq('branch_id', targetBranchId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching Hikvision settings:', error);
+        toast({
+          title: "Error",
+          description: 'Failed to load Hikvision settings',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Update devices array
+      const devices = data.devices || [];
+      
+      // Check if device already exists
+      const deviceIndex = devices.findIndex((d: any) => 
+        d.deviceId === device.deviceId || d.serialNumber === device.serialNumber
+      );
+      
+      if (deviceIndex >= 0) {
+        // Update existing device
+        devices[deviceIndex] = { ...devices[deviceIndex], ...device, updatedAt: new Date().toISOString() };
+      } else {
+        // Add new device
+        devices.push({
+          ...device,
+          id: crypto.randomUUID(),
+          addedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      // Save updated devices array
+      const { error: updateError } = await supabase
+        .from('hikvision_api_settings')
+        .update({
+          devices: devices,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', data.id);
+      
+      if (updateError) {
+        console.error('Error updating devices:', updateError);
+        toast({
+          title: "Error",
+          description: 'Failed to save device',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      await fetchSettings(targetBranchId);
+      toast({
+        title: "Success",
+        description: 'Device added successfully',
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error in addDevice:', error);
+      toast({
+        title: "Error",
+        description: `Error adding device: ${error.message}`,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Remove device
+  const removeDevice = async (deviceId: string, branch?: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const targetBranchId = branch || branchId;
+      
+      if (!targetBranchId) {
+        toast({
+          title: "Error",
+          description: 'No branch specified',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Get current settings
+      const { data, error } = await supabase
+        .from('hikvision_api_settings')
+        .select('id, devices')
+        .eq('branch_id', targetBranchId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching Hikvision settings:', error);
+        toast({
+          title: "Error",
+          description: 'Failed to load Hikvision settings',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Filter out the device to remove
+      const devices = (data.devices || []).filter((d: any) => 
+        d.id !== deviceId && d.deviceId !== deviceId && d.serialNumber !== deviceId
+      );
+      
+      // Save updated devices array
+      const { error: updateError } = await supabase
+        .from('hikvision_api_settings')
+        .update({
+          devices: devices,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', data.id);
+      
+      if (updateError) {
+        console.error('Error removing device:', updateError);
+        toast({
+          title: "Error",
+          description: 'Failed to remove device',
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      await fetchSettings(targetBranchId);
+      toast({
+        title: "Success",
+        description: 'Device removed successfully',
+      });
+      return true;
+    } catch (error: any) {
+      console.error('Error in removeDevice:', error);
+      toast({
+        title: "Error",
+        description: `Error removing device: ${error.message}`,
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);
@@ -168,6 +403,15 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       console.log('Hikvision test response:', data);
       
       // Check if we received HTML instead of JSON
+      if (data && typeof data === 'string' && data.includes('<!DOCTYPE html>')) {
+        setIsConnected(false);
+        return { 
+          success: false, 
+          message: 'Received HTML instead of JSON. Please check the API URL and credentials.' 
+        };
+      }
+      
+      // Check if the response data is HTML
       if (data && data.responseText && typeof data.responseText === 'string' && 
           data.responseText.includes('<!DOCTYPE html>')) {
         setIsConnected(false);
@@ -207,7 +451,11 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
   const getToken = async (branch?: string): Promise<string | null> => {
     const targetBranchId = branch || branchId;
     if (!targetBranchId) {
-      toast.error('No branch specified');
+      toast({
+        title: "Error",
+        description: 'No branch specified',
+        variant: "destructive",
+      });
       return null;
     }
     
@@ -226,6 +474,8 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
     fetchSettings,
     saveSettings,
     testConnection,
-    getToken
+    getToken,
+    addDevice,
+    removeDevice
   };
 }
