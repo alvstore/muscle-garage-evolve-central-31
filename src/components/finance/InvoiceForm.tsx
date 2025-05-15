@@ -31,8 +31,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     handlePaymentMethodChange,
   } = useInvoiceForm(invoice, onComplete, onSave);
 
+  // Form submit handler that adapts from React Hook Form to HTML form
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    form.handleSubmit(onSubmit)();
+  };
+
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={handleFormSubmit}>
       <Card>
         <CardHeader>
           <CardTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</CardTitle>

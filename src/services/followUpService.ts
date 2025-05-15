@@ -9,7 +9,7 @@ export const followUpService = {
       let query = supabase
         .from('follow_up_history')
         .select('*')
-        .order('scheduled_at', { ascending: false });
+        .order('scheduled_date', { ascending: false });
         
       if (branchId) {
         // If we have lead information with branch IDs, we would join or filter here

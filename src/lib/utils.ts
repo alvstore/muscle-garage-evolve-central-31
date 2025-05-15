@@ -39,3 +39,20 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
+/**
+ * Generate initials from a name
+ * @param name Full name
+ * @returns Initials (up to 2 characters)
+ */
+export function getInitials(name?: string): string {
+  if (!name) return '';
+  
+  const parts = name.split(' ').filter(Boolean);
+  
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  
+  // Get first letter of first and last name
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
