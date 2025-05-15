@@ -10,7 +10,19 @@ export const useToastManager = () => {
   useEffect(() => {
     const handleToastEvent = (event: Event) => {
       const options = (event as CustomEvent).detail;
-      shadowToast(options);
+      if (typeof options === 'object' && options.description) {
+        shadowToast({
+          title: options.title,
+          description: options.description,
+          variant: options.variant,
+          duration: options.duration
+        });
+      } else {
+        // Fallback for legacy calls
+        shadowToast({
+          description: String(options)
+        });
+      }
     };
     
     window.addEventListener('show-toast', handleToastEvent);
@@ -24,3 +36,4 @@ export const useToastManager = () => {
     toast
   };
 };
+

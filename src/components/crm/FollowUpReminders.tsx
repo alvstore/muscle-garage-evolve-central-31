@@ -1,31 +1,35 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { FollowUpType, FollowUpScheduled } from '@/types/crm';
+import { FollowUpType, FollowUpScheduled, Lead } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { followUpService } from '@/services/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBranch } from '@/hooks/use-branch';
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toast-manager';
 
 // Convert the database model to the component model
 const convertToFollowUpScheduled = (item: any): FollowUpScheduled => {
   return {
     id: item.id,
-    leadId: item.lead_id || "",
-    scheduledBy: item.sent_by || "",
-    scheduledDate: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
-    type: item.type,
+    lead_id: item.lead_id || "",
+    type: item.type as FollowUpType,
     subject: item.subject || "",
     content: item.content || "",
     status: item.status,
-    createdAt: new Date().toISOString(), // Add missing required field
+    scheduled_at: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
     lead: {
-      name: item.lead_name || "Unknown Lead"
-    }
+      id: item.lead_id || "",
+      name: item.lead_name || "Unknown Lead",
+      status: "new",
+      source: "website",
+      created_at: new Date().toISOString(),
+      funnel_stage: "cold"
+    } as Lead
   };
 };
 
@@ -201,7 +205,7 @@ const FollowUpReminders: React.FC<FollowUpRemindersProps> = ({ isLoading: propIs
                 <div className="mt-3 flex justify-between items-center">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatDate(followUp.scheduledDate)}</span>
+                    <span>{formatDate(followUp.scheduled_at)}</span>
                   </div>
                   <div className="flex space-x-2">
                     <Button 

@@ -2,7 +2,7 @@
 export interface User {
   id: string;
   email: string;
-  name: string; // Added this missing property
+  name: string;
   role?: string;
   avatar?: string;
   phone?: string;
@@ -11,4 +11,6 @@ export interface User {
   state?: string;
   zipCode?: string;
   country?: string;
+  full_name?: string;
+  avatar_url?: string;
 }

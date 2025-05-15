@@ -1,3 +1,4 @@
+
 // Simple toast management utility
 
 type ToastVariant = 'default' | 'success' | 'warning' | 'error' | 'destructive';
@@ -9,21 +10,43 @@ interface ToastOptions {
   duration?: number;
 }
 
+type ToastMessage = string | { title?: string; description: string };
+
 export const toast = {
-  default: (description: string, title?: string, duration?: number) => {
-    showToast({ title, description, variant: 'default', duration });
+  default: (message: ToastMessage, title?: string, duration?: number) => {
+    if (typeof message === 'string') {
+      showToast({ title, description: message, variant: 'default', duration });
+    } else {
+      showToast({ title: message.title || title, description: message.description, variant: 'default', duration });
+    }
   },
-  success: (description: string, title?: string, duration?: number) => {
-    showToast({ title, description, variant: 'success', duration });
+  success: (message: ToastMessage, title?: string, duration?: number) => {
+    if (typeof message === 'string') {
+      showToast({ title, description: message, variant: 'success', duration });
+    } else {
+      showToast({ title: message.title || title, description: message.description, variant: 'success', duration });
+    }
   },
-  warning: (description: string, title?: string, duration?: number) => {
-    showToast({ title, description, variant: 'warning', duration });
+  warning: (message: ToastMessage, title?: string, duration?: number) => {
+    if (typeof message === 'string') {
+      showToast({ title, description: message, variant: 'warning', duration });
+    } else {
+      showToast({ title: message.title || title, description: message.description, variant: 'warning', duration });
+    }
   },
-  error: (description: string, title?: string, duration?: number) => {
-    showToast({ title, description, variant: 'error', duration });
+  error: (message: ToastMessage, title?: string, duration?: number) => {
+    if (typeof message === 'string') {
+      showToast({ title, description: message, variant: 'error', duration });
+    } else {
+      showToast({ title: message.title || title, description: message.description, variant: 'error', duration });
+    }
   },
-  destructive: (description: string, title?: string, duration?: number) => {
-    showToast({ title, description, variant: 'destructive', duration });
+  destructive: (message: ToastMessage, title?: string, duration?: number) => {
+    if (typeof message === 'string') {
+      showToast({ title, description: message, variant: 'destructive', duration });
+    } else {
+      showToast({ title: message.title || title, description: message.description, variant: 'destructive', duration });
+    }
   }
 };
 

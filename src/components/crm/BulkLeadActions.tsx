@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -15,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TagsInput } from "@/components/ui/tags-input";
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast-manager';
 import { LeadStatus, FunnelStage } from '@/types/crm';
 import { leadService } from '@/services/leadService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,8 +62,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success({
-          title: "Success",
+        toast.success('Success', {
           description: `Status updated for ${selectedLeads.length} lead(s)`
         });
         onSuccess();
@@ -72,8 +70,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error updating lead status:', error);
-        toast.error({
-          title: "Error",
+        toast.error('Error', {
           description: 'Failed to update lead status'
         });
       })
@@ -91,8 +88,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success({
-          title: "Success",
+        toast.success('Success', {
           description: `Funnel stage updated for ${selectedLeads.length} lead(s)`
         });
         onSuccess();
@@ -100,8 +96,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error updating funnel stage:', error);
-        toast.error({
-          title: "Error",
+        toast.error('Error', {
           description: 'Failed to update funnel stage'
         });
       })
@@ -119,8 +114,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success({
-          title: "Success",
+        toast.success('Success', {
           description: `Assigned ${selectedLeads.length} lead(s) to user`
         });
         onSuccess();
@@ -128,8 +122,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error assigning leads:', error);
-        toast.error({
-          title: "Error",
+        toast.error('Error', {
           description: 'Failed to assign leads'
         });
       })
@@ -151,8 +144,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(updatePromises)
       .then(() => {
-        toast.success({
-          title: "Success",
+        toast.success('Success', {
           description: `Tags added to ${selectedLeads.length} lead(s)`
         });
         onSuccess();
@@ -160,8 +152,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error adding tags:', error);
-        toast.error({
-          title: "Error",
+        toast.error('Error', {
           description: 'Failed to add tags'
         });
       })
@@ -177,8 +168,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
     
     Promise.all(deletePromises)
       .then(() => {
-        toast.success({
-          title: "Success",
+        toast.success('Success', {
           description: `Deleted ${selectedLeads.length} lead(s)`
         });
         onSuccess();
@@ -186,8 +176,7 @@ export function BulkLeadActions({ selectedLeads, onSuccess, onClose }: BulkLeadA
       })
       .catch(error => {
         console.error('Error deleting leads:', error);
-        toast.error({
-          title: "Error",
+        toast.error('Error', {
           description: 'Failed to delete leads'
         });
       })

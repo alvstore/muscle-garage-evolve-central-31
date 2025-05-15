@@ -1,15 +1,14 @@
-
 export interface Lead {
   id: string;
   name: string;
   email?: string;
   phone?: string;
-  status: string;
-  source: string;
+  status: LeadStatus;
+  source: LeadSource;
   notes?: string;
   created_at: string;
   updated_at?: string;
-  funnel_stage: string;
+  funnel_stage: FunnelStage;
   assigned_to?: string;
   follow_up_date?: string;
   last_contact_date?: string;
@@ -18,7 +17,13 @@ export interface Lead {
   branch_id?: string;
   conversion_date?: string;
   conversion_value?: number;
+  first_name?: string;
+  last_name?: string;
 }
+
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost' | 'archived' | 'converted';
+export type LeadSource = 'website' | 'referral' | 'social' | 'email' | 'walk-in' | 'phone' | 'ad' | 'other';
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
 
 export type FollowUpType = 'email' | 'sms' | 'call' | 'whatsapp' | 'meeting';
 
