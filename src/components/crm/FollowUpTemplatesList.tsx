@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,114 +22,66 @@ import { FollowUpTemplate, FollowUpType } from '@/types/crm';
 import FollowUpTemplateForm from './FollowUpTemplateForm';
 
 // Dummy data for templates
-const dummyTemplates: FollowUpTemplate[] = [
+const templates: FollowUpTemplate[] = [
   {
-    id: '1',
-    title: 'Welcome Email',
-    name: 'Welcome Email', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, welcome to our service! We are excited to have you onboard.',
-    variables: ['name'],
-    created_at: '2023-01-15T10:30:00Z',
+    id: "1",
+    title: "Welcome Email",
+    name: "welcome-email",
+    type: "email",
+    content: "Hello {{name}},\n\nWelcome to our gym! We're excited to have you join our community. Your fitness journey starts now!\n\nBest regards,\nThe Gym Team",
+    variables: ["name"],
+    created_at: "2023-05-01T00:00:00Z",
+    updated_at: "2023-05-01T00:00:00Z", // Add the missing updated_at property
     isDefault: true
   },
   {
-    id: '2',
-    title: 'Follow-up Email',
-    name: 'Follow-up Email', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, we noticed you haven\'t responded to our previous message. Are you still interested?',
-    variables: ['name'],
-    created_at: '2023-01-20T14:20:00Z',
+    id: "2",
+    title: "Follow-up Email",
+    name: "follow-up-email",
+    type: "email",
+    content: "Dear {{name}}, we noticed you haven't responded to our previous message. Are you still interested?",
+    variables: ["name"],
+    created_at: "2023-05-02T00:00:00Z",
+    updated_at: "2023-05-02T00:00:00Z", // Add the missing updated_at property
     isDefault: false
   },
   {
-    id: '3',
-    title: 'Appointment Reminder',
-    name: 'Appointment Reminder', // Added name property
-    type: 'sms' as FollowUpType,
-    content: 'Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.',
-    variables: ['name', 'date', 'time'],
-    created_at: '2023-01-25T09:15:00Z',
+    id: "3",
+    title: "Appointment Reminder",
+    name: "appointment-reminder",
+    type: "sms",
+    content: "Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.",
+    variables: ["name", "date", "time"],
+    created_at: "2023-05-03T00:00:00Z",
+    updated_at: "2023-05-03T00:00:00Z", // Add the missing updated_at property
     isDefault: false
   },
   {
-    id: '4',
-    title: 'WhatsApp Welcome',
-    name: 'WhatsApp Welcome', // Added name property
-    type: 'whatsapp' as FollowUpType,
-    content: 'Hello {{name}}! Welcome to {{company}}. We\'re glad to have you with us.',
-    variables: ['name', 'company'],
-    created_at: '2023-02-01T11:00:00Z',
+    id: "4",
+    title: "WhatsApp Welcome",
+    name: "whatsapp-welcome",
+    type: "whatsapp",
+    content: "Hello {{name}}! Welcome to {{company}}. We're glad to have you with us.",
+    variables: ["name", "company"],
+    created_at: "2023-05-04T00:00:00Z",
+    updated_at: "2023-05-04T00:00:00Z", // Add the missing updated_at property
     isDefault: false
   },
   {
-    id: '5',
-    title: 'Feedback Request',
-    name: 'Feedback Request', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, we value your feedback. Please let us know how we\'re doing.',
-    variables: ['name'],
-    created_at: '2023-02-10T16:30:00Z',
+    id: "5",
+    title: "Feedback Request",
+    name: "feedback-request",
+    type: "email",
+    content: "Dear {{name}}, we value your feedback. Please let us know how we're doing.",
+    variables: ["name"],
+    created_at: "2023-05-05T00:00:00Z",
+    updated_at: "2023-05-05T00:00:00Z", // Add the missing updated_at property
     isDefault: false
-  }
-];
-
-const emailTemplates: FollowUpTemplate[] = [
-  {
-    id: '1',
-    title: 'Welcome Email',
-    name: 'Welcome Email', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, welcome to our service! We are excited to have you onboard.',
-    variables: ['name'],
-    isDefault: true,
-    created_at: '2023-01-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    title: 'Follow-up Email',
-    name: 'Follow-up Email', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, we noticed you haven\'t responded to our previous message. Are you still interested?',
-    variables: ['name'],
-    isDefault: false,
-    created_at: '2023-01-20T14:20:00Z'
-  },
-  {
-    id: '3',
-    title: 'Appointment Reminder',
-    name: 'Appointment Reminder', // Added name property
-    type: 'sms' as FollowUpType,
-    content: 'Hi {{name}}, this is a reminder about your appointment on {{date}} at {{time}}.',
-    variables: ['name', 'date', 'time'],
-    isDefault: false,
-    created_at: '2023-01-25T09:15:00Z'
-  },
-  {
-    id: '4',
-    title: 'WhatsApp Welcome',
-    name: 'WhatsApp Welcome', // Added name property
-    type: 'whatsapp' as FollowUpType,
-    content: 'Hello {{name}}! Welcome to {{company}}. We\'re glad to have you with us.',
-    variables: ['name', 'company'],
-    isDefault: false,
-    created_at: '2023-02-01T11:00:00Z'
-  },
-  {
-    id: '5',
-    title: 'Feedback Request',
-    name: 'Feedback Request', // Added name property
-    type: 'email' as FollowUpType,
-    content: 'Dear {{name}}, we value your feedback. Please let us know how we\'re doing.',
-    variables: ['name'],
-    isDefault: false,
-    created_at: '2023-02-10T16:30:00Z'
   }
 ];
 
 const FollowUpTemplatesList: React.FC = () => {
-  const [templates, setTemplates] = useState<FollowUpTemplate[]>(dummyTemplates);
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(templates);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<FollowUpTemplate | null>(null);

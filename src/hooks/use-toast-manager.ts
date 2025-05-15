@@ -3,7 +3,7 @@ import { toast } from '@/utils/toast-manager';
 import { useToast as useShadcnToast } from '@/components/ui/use-toast';
 import { useEffect } from 'react';
 
-export const useToastManager = () => {
+export const useToast = () => {
   const { toast: shadowToast } = useShadcnToast();
   
   // Set up the event listener for showing toasts
@@ -37,3 +37,5 @@ export const useToastManager = () => {
   };
 };
 
+// Re-export toast for direct import
+export { toast } from '@/utils/toast-manager';
