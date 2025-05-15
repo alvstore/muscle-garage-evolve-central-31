@@ -60,107 +60,26 @@ export interface HikvisionDeviceResponse {
   };
 }
 
-// Device Channels
-export interface HikvisionDeviceChannel {
-  channelId: string;
-  channelName?: string;
-  channelNo?: number;
-  channelType?: string;
-  deviceId: string;
-  status?: 'online' | 'offline' | 'unknown';
+// Site Management
+export interface HikvisionSite {
+  id: string;
+  name: string;
+  description?: string;
+  createdTime?: string;
+  updatedTime?: string;
 }
 
-export interface HikvisionChannelResponse {
+export interface HikvisionSiteResponse {
   code: string;
   msg: string;
   data?: {
-    channels: HikvisionDeviceChannel[];
-    total: number;
+    id?: string;
+    sites?: HikvisionSite[];
+    total?: number;
   };
 }
 
-// Transparent API Call
-export interface HikvisionTransparentRequest {
-  deviceId: string;
-  uri: string;
-  body?: string | object;
-  params?: Record<string, string>;
-  headers?: Record<string, string>;
-}
-
-export interface HikvisionTransparentResponse {
-  code: string;
-  msg: string;
-  data?: any;
-}
-
-// Batch Operations
-export interface HikvisionPropertyItem {
-  deviceId: string;
-  deviceType?: string;
-  uri: string;
-  xpath?: string;
-  value?: any;
-}
-
-export interface HikvisionBatchPropertyRequest {
-  properties: HikvisionPropertyItem[];
-}
-
-export interface HikvisionBatchPropertyResponse {
-  code: string;
-  msg: string;
-  data?: {
-    results: Array<{
-      deviceId: string;
-      uri: string;
-      code: string;
-      msg: string;
-      value?: any;
-    }>;
-  };
-}
-
-// Event Subscription
-export interface HikvisionSubscriptionRequest {
-  topics: string[];
-  subscriptionId?: string;
-  subscriptionDuration?: number;
-}
-
-export interface HikvisionSubscriptionResponse {
-  code: string;
-  msg: string;
-  data?: {
-    subscriptionId: string;
-    expiresAt: number;
-  };
-}
-
-// Events and Alarms
-export interface HikvisionEventMessage {
-  msgId: string;
-  topic: string;
-  data: any;
-  timestamp: number;
-}
-
-export interface HikvisionEventsResponse {
-  code: string;
-  msg: string;
-  data?: {
-    messages: HikvisionEventMessage[];
-    lastOffset?: string;
-  };
-}
-
-export interface HikvisionOffsetRequest {
-  subscriptionId: string;
-  topic: string;
-  offset: string;
-}
-
-// Person Management for Attendance
+// Person Management
 export interface HikvisionPerson {
   personId: string;
   personName?: string;
@@ -192,6 +111,7 @@ export interface HikvisionPersonResponse {
   };
 }
 
+// Access Privileges
 export interface HikvisionAccessPrivilege {
   personId: string;
   deviceIds: string[];
@@ -212,4 +132,38 @@ export interface HikvisionApiResponse<T = any> {
   code: string;
   msg: string;
   data?: T;
+}
+
+// Event Types
+export interface HikvisionEvent {
+  event_id: string;
+  event_type: 'entry' | 'exit' | 'denied';
+  event_time: string;
+  person_id?: string;
+  person_name?: string;
+  door_id?: string;
+  door_name?: string;
+  device_id?: string;
+  device_name?: string;
+  card_no?: string;
+  face_id?: string;
+}
+
+// Log Types
+export interface HikvisionSyncLog {
+  id: string;
+  branch_id: string;
+  event_type: 'sync' | 'error' | 'warning' | 'info' | 'process' | 'simulation';
+  status: 'success' | 'error' | 'warning' | 'pending';
+  message: string;
+  details?: string;
+  entity_type?: 'member' | 'device' | 'door' | 'attendance';
+  entity_id?: string;
+  entity_name?: string;
+  created_at: string;
+}
+
+export interface HikvisionSyncLogResponse {
+  logs: HikvisionSyncLog[];
+  total: number;
 }

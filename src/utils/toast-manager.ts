@@ -1,109 +1,38 @@
+// Simple toast management utility
 
-import { toast as sonnerToast } from 'sonner';
+type ToastVariant = 'default' | 'success' | 'warning' | 'error' | 'destructive';
 
-// Define our own ToastOptions type based on what sonner accepts
-type ToastOptions = {
-  id?: string;
+interface ToastOptions {
+  title?: string;
+  description: string;
+  variant?: ToastVariant;
   duration?: number;
-  icon?: React.ReactNode;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  description?: React.ReactNode;
-  promise?: Promise<any>;
-  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
-};
-
-// Simple message or object with title/description
-type ToastMessage = string | { title: string; description?: string };
-
-// Track shown toasts to prevent duplicates in rapid succession
-const recentToasts: Record<string, number> = {};
-const TOAST_DEBOUNCE_TIME = 3000; // 3 seconds
+}
 
 export const toast = {
-  success: (message: ToastMessage, options?: ToastOptions) => {
-    if (typeof message === 'string') {
-      if (shouldShowToast(message)) {
-        sonnerToast.success(message, options);
-      }
-    } else {
-      if (shouldShowToast(message.title)) {
-        sonnerToast.success(message.title, { 
-          ...options, 
-          description: message.description 
-        });
-      }
-    }
+  default: (description: string, title?: string, duration?: number) => {
+    showToast({ title, description, variant: 'default', duration });
   },
-  
-  error: (message: ToastMessage, options?: ToastOptions) => {
-    if (typeof message === 'string') {
-      if (shouldShowToast(message)) {
-        sonnerToast.error(message, options);
-      }
-    } else {
-      if (shouldShowToast(message.title)) {
-        sonnerToast.error(message.title, { 
-          ...options, 
-          description: message.description 
-        });
-      }
-    }
+  success: (description: string, title?: string, duration?: number) => {
+    showToast({ title, description, variant: 'success', duration });
   },
-  
-  warning: (message: ToastMessage, options?: ToastOptions) => {
-    if (typeof message === 'string') {
-      if (shouldShowToast(message)) {
-        sonnerToast.warning(message, options);
-      }
-    } else {
-      if (shouldShowToast(message.title)) {
-        sonnerToast.warning(message.title, { 
-          ...options, 
-          description: message.description 
-        });
-      }
-    }
+  warning: (description: string, title?: string, duration?: number) => {
+    showToast({ title, description, variant: 'warning', duration });
   },
-  
-  info: (message: ToastMessage, options?: ToastOptions) => {
-    if (typeof message === 'string') {
-      if (shouldShowToast(message)) {
-        sonnerToast.info(message, options);
-      }
-    } else {
-      if (shouldShowToast(message.title)) {
-        sonnerToast.info(message.title, { 
-          ...options, 
-          description: message.description 
-        });
-      }
-    }
+  error: (description: string, title?: string, duration?: number) => {
+    showToast({ title, description, variant: 'error', duration });
   },
-  
-  // For raw toast access when needed
-  raw: sonnerToast
+  destructive: (description: string, title?: string, duration?: number) => {
+    showToast({ title, description, variant: 'destructive', duration });
+  }
 };
 
-// Helper function to prevent duplicate toasts
-function shouldShowToast(message: string): boolean {
-  const now = Date.now();
-  const key = message.toLowerCase().trim();
-  
-  if (recentToasts[key] && now - recentToasts[key] < TOAST_DEBOUNCE_TIME) {
-    return false;
+// Internal function to show the toast
+function showToast(options: ToastOptions) {
+  // This is a placeholder that will be defined when the component is loaded
+  // The actual implementation comes from useToast from shadcn/ui
+  if (typeof window !== 'undefined') {
+    const event = new CustomEvent('show-toast', { detail: options });
+    window.dispatchEvent(event);
   }
-  
-  recentToasts[key] = now;
-  
-  // Clean up old entries
-  Object.keys(recentToasts).forEach(k => {
-    if (now - recentToasts[k] > TOAST_DEBOUNCE_TIME) {
-      delete recentToasts[k];
-    }
-  });
-  
-  return true;
 }
