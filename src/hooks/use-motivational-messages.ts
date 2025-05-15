@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { MotivationalMessage } from '@/types';
+import { MotivationalMessage, MotivationalCategory, adaptMotivationalMessageFromDB } from '@/types/notification';
 import { toast } from 'sonner';
 
 export const useMotivationalMessages = () => {
@@ -18,17 +18,7 @@ export const useMotivationalMessages = () => {
       
       if (error) throw error;
       
-      const adaptedMessages = data.map(msg => ({
-        id: msg.id,
-        title: msg.title,
-        content: msg.content,
-        author: msg.author,
-        category: msg.category,
-        tags: msg.tags || [],
-        active: msg.active,
-        created_at: msg.created_at,
-        updated_at: msg.updated_at
-      }));
+      const adaptedMessages = data.map(msg => adaptMotivationalMessageFromDB(msg));
       
       setMessages(adaptedMessages);
     } catch (error) {
@@ -39,7 +29,7 @@ export const useMotivationalMessages = () => {
     }
   }, []);
 
-  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
+  const addMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at' | 'is_active' | 'message'>) => {
     try {
       const { error } = await supabase
         .from('motivational_messages')
@@ -68,7 +58,14 @@ export const useMotivationalMessages = () => {
     try {
       const { error } = await supabase
         .from('motivational_messages')
-        .update(updates)
+        .update({
+          title: updates.title,
+          content: updates.content,
+          category: updates.category,
+          tags: updates.tags,
+          author: updates.author,
+          active: updates.active
+        })
         .eq('id', id);
       
       if (error) throw error;

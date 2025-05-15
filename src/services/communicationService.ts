@@ -1,6 +1,6 @@
 
 import { supabase } from './supabaseClient';
-import { MotivationalMessage, ReminderRule, Announcement, Feedback } from '@/types/notification';
+import { MotivationalMessage, MotivationalCategory, ReminderRule, Announcement, Feedback, adaptMotivationalMessageFromDB, adaptAnnouncementFromDB, adaptReminderRuleFromDB } from '@/types/notification';
 import { toast } from 'sonner';
 
 // Motivational Message Service
@@ -15,17 +15,7 @@ export const motivationalMessageService = {
       
       if (error) throw error;
       
-      return data.map(msg => ({
-        id: msg.id,
-        title: msg.title,
-        content: msg.content,
-        category: msg.category,
-        tags: msg.tags || [],
-        author: msg.author || 'Unknown',
-        active: msg.active,
-        created_at: msg.created_at,
-        updated_at: msg.updated_at
-      }));
+      return data.map(msg => adaptMotivationalMessageFromDB(msg));
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
       throw error;
@@ -33,7 +23,7 @@ export const motivationalMessageService = {
   },
 
   // Create a new motivational message
-  createMotivationalMessage: async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>): Promise<MotivationalMessage> => {
+  createMotivationalMessage: async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at' | 'is_active' | 'message'>): Promise<MotivationalMessage> => {
     try {
       const { data, error } = await supabase
         .from('motivational_messages')
@@ -50,17 +40,7 @@ export const motivationalMessageService = {
       
       if (error) throw error;
       
-      return {
-        id: data.id,
-        title: data.title,
-        content: data.content,
-        category: data.category,
-        tags: data.tags || [],
-        author: data.author || 'Unknown',
-        active: data.active,
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
+      return adaptMotivationalMessageFromDB(data);
     } catch (error) {
       console.error('Error creating motivational message:', error);
       throw error;
@@ -70,9 +50,18 @@ export const motivationalMessageService = {
   // Update a motivational message
   updateMotivationalMessage: async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>>): Promise<boolean> => {
     try {
+      const dbUpdates: any = {};
+      
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.content !== undefined) dbUpdates.content = updates.content;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+      if (updates.author !== undefined) dbUpdates.author = updates.author;
+      if (updates.active !== undefined) dbUpdates.active = updates.active;
+      
       const { error } = await supabase
         .from('motivational_messages')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
       
       if (error) throw error;
@@ -100,40 +89,6 @@ export const motivationalMessageService = {
       throw error;
     }
   }
-};
-
-// Export required adapter functions that many components are importing
-export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
-  return {
-    id: dbAnnouncement.id,
-    title: dbAnnouncement.title,
-    content: dbAnnouncement.content,
-    priority: dbAnnouncement.priority,
-    authorName: dbAnnouncement.author_name || dbAnnouncement.author,
-    authorId: dbAnnouncement.author_id,
-    createdAt: dbAnnouncement.created_at,
-    expiresAt: dbAnnouncement.expires_at,
-    channel: dbAnnouncement.channel,
-    branchId: dbAnnouncement.branch_id,
-    targetRoles: dbAnnouncement.target_roles || [],
-    channels: dbAnnouncement.channels || [dbAnnouncement.channel].filter(Boolean),
-  };
-};
-
-export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
-  return {
-    id: dbFeedback.id,
-    title: dbFeedback.title,
-    comments: dbFeedback.comments,
-    rating: dbFeedback.rating,
-    type: dbFeedback.type,
-    member_id: dbFeedback.member_id,
-    member_name: dbFeedback.member_name,
-    created_at: dbFeedback.created_at,
-    branch_id: dbFeedback.branch_id,
-    anonymous: dbFeedback.anonymous || false,
-    related_id: dbFeedback.related_id
-  };
 };
 
 // Re-export other communication services

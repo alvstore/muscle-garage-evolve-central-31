@@ -1,23 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ReminderRule } from '@/types/notification';
-
-// Update the ReminderRule interface to include the necessary properties
-interface ReminderRule {
-  id: string;
-  title: string;
-  description?: string;
-  trigger_type: string;
-  trigger_value?: number;
-  conditions: Record<string, any>;
-  target_roles: string[];
-  send_via: string[];
-  notification_channel?: string;
-  message?: string;
-  is_active: boolean;
-  name?: string; // Add name property to match usage
-}
+import { ReminderRule, adaptReminderRuleFromDB } from '@/types/notification';
 
 export const useReminderRules = () => {
   const [rules, setRules] = useState<ReminderRule[]>([]);
@@ -37,30 +22,7 @@ export const useReminderRules = () => {
       if (queryError) throw queryError;
 
       // Transform database fields to match our frontend type
-      const transformedRules: ReminderRule[] = (data || []).map(rule => ({
-        id: rule.id,
-        title: rule.title,
-        name: rule.title, // For backward compatibility
-        description: rule.description || '',
-        trigger_type: rule.trigger_type,
-        triggerType: rule.trigger_type, // For backward compatibility
-        trigger_value: rule.trigger_value,
-        triggerValue: rule.trigger_value, // For backward compatibility
-        conditions: rule.conditions || {},
-        message: rule.message || '',
-        notification_channel: rule.notification_channel,
-        notificationChannel: rule.notification_channel, // For backward compatibility
-        is_active: rule.is_active,
-        isActive: rule.is_active, // For backward compatibility
-        active: rule.is_active, // For backward compatibility
-        target_roles: rule.target_roles || [],
-        targetRoles: rule.target_roles || [], // For backward compatibility
-        send_via: rule.send_via || [],
-        sendVia: rule.send_via || [], // For backward compatibility
-        channels: rule.send_via || [], // For backward compatibility
-        created_at: rule.created_at,
-        updated_at: rule.updated_at
-      }));
+      const transformedRules: ReminderRule[] = (data || []).map(rule => adaptReminderRuleFromDB(rule));
 
       setRules(transformedRules);
       return transformedRules;
@@ -118,30 +80,7 @@ export const useReminderRules = () => {
 
       if (response) {
         // Transform the response back to our frontend type
-        const savedRule: ReminderRule = {
-          id: response.id,
-          title: response.title,
-          name: response.title, // For backward compatibility
-          description: response.description || '',
-          trigger_type: response.trigger_type,
-          triggerType: response.trigger_type, // For backward compatibility
-          trigger_value: response.trigger_value,
-          triggerValue: response.trigger_value, // For backward compatibility
-          conditions: response.conditions || {},
-          message: response.message || '',
-          notification_channel: response.notification_channel,
-          notificationChannel: response.notification_channel, // For backward compatibility
-          is_active: response.is_active,
-          isActive: response.is_active, // For backward compatibility
-          active: response.is_active, // For backward compatibility
-          target_roles: response.target_roles || [],
-          targetRoles: response.target_roles || [], // For backward compatibility
-          send_via: response.send_via || [],
-          sendVia: response.send_via || [], // For backward compatibility
-          channels: response.send_via || [], // For backward compatibility
-          created_at: response.created_at,
-          updated_at: response.updated_at
-        };
+        const savedRule = adaptReminderRuleFromDB(response);
 
         // Update rules array
         const updatedRules = [...rules];
@@ -213,12 +152,10 @@ export const useReminderRules = () => {
       if (data && data[0]) {
         // Update rules array
         const updatedRules = rules.map(rule => 
-          rule.id === id ? { 
-            ...rule, 
-            isActive: data[0].is_active,
-            is_active: data[0].is_active,
-            active: data[0].is_active 
-          } : rule
+          rule.id === id ? adaptReminderRuleFromDB({
+            ...rule,
+            is_active: data[0].is_active
+          }) : rule
         );
         
         setRules(updatedRules);

@@ -55,14 +55,14 @@ export function AnnouncementsList() {
           </div>
           <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <span>Posted by {announcement.authorName}</span>
+              <span>Posted by {announcement.author_name}</span>
               <span>•</span>
-              <span>{format(new Date(announcement.createdAt), 'MMM d, yyyy')}</span>
+              <span>{format(new Date(announcement.created_at), 'MMM d, yyyy')}</span>
             </div>
-            {(announcement.expires_at || announcement.expiresAt) && (
+            {announcement.expires_at && (
               <div className="flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                <span>Expires {format(new Date(announcement.expires_at || announcement.expiresAt || ''), 'MMM d, yyyy')}</span>
+                <span>Expires {format(new Date(announcement.expires_at), 'MMM d, yyyy')}</span>
               </div>
             )}
           </div>

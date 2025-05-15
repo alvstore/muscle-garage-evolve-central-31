@@ -1,110 +1,75 @@
 
 import React, { useState } from 'react';
-import { Container } from "@/components/ui/container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
-import ReminderRulesList from "@/components/communication/ReminderRulesList";
-import ReminderRuleForm from "@/components/communication/ReminderRuleForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ReminderRule } from '@/types/notification';
+import { Container } from '@/components/ui/container';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useReminderRules } from '@/hooks/use-reminder-rules';
+import ReminderRulesList from '@/components/communication/ReminderRulesList';
+import ReminderRuleForm from '@/components/communication/ReminderRuleForm';
+import { ReminderRule } from '@/types/notification';
+import { Plus } from 'lucide-react';
 
-const ReminderPage = () => {
-  const [activeTab, setActiveTab] = useState<string>('list');
-  const [openRuleDialog, setOpenRuleDialog] = useState(false);
+export default function ReminderPage() {
+  const { rules, isLoading, fetchRules, deleteRule, toggleRuleStatus } = useReminderRules();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editRule, setEditRule] = useState<ReminderRule | null>(null);
-  const { rules, isLoading, deleteRule, toggleRuleStatus } = useReminderRules();
-
-  const handleCreateNew = () => {
-    setEditRule(null);
-    setOpenRuleDialog(true);
-  };
 
   const handleEditRule = (rule: ReminderRule) => {
     setEditRule(rule);
-    setOpenRuleDialog(true);
+    setIsDialogOpen(true);
+  };
+
+  const handleFormComplete = () => {
+    setIsDialogOpen(false);
+    setEditRule(null);
+    fetchRules();
   };
 
   const handleDeleteRule = async (id: string) => {
-    await deleteRule(id);
+    const confirmed = window.confirm('Are you sure you want to delete this reminder rule?');
+    if (confirmed) {
+      await deleteRule(id);
+    }
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     await toggleRuleStatus(id, isActive);
   };
 
-  const handleRuleComplete = () => {
-    setOpenRuleDialog(false);
-  };
-
   return (
     <Container>
       <div className="py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Reminder Rules</h1>
+            <h1 className="text-2xl font-bold">Automated Reminders</h1>
             <p className="text-muted-foreground">
-              Configure automated reminders for members and staff
+              Set up rules for automatic reminders to members
             </p>
           </div>
-          <Button 
-            onClick={handleCreateNew}
-            className="ml-auto"
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            New Reminder Rule
-          </Button>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditRule(null)}>
+                <Plus className="mr-2 h-4 w-4" /> Create Rule
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <ReminderRuleForm 
+                editRule={editRule}
+                onComplete={handleFormComplete}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Tabs defaultValue="list" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="list">Rules List</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="logs">Activity Logs</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="list" className="space-y-4">
-            <ReminderRulesList 
-              rules={rules as ReminderRule[]} 
-              isLoading={isLoading}
-              onEdit={handleEditRule} 
-              onDelete={handleDeleteRule}
-              onToggleActive={handleToggleActive}
-            />
-          </TabsContent>
-          
-          <TabsContent value="analytics">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-center py-10 text-muted-foreground">
-                Reminders analytics will be available soon.
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="logs">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="text-center py-10 text-muted-foreground">
-                Reminder notification logs will be available soon.
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <ReminderRulesList
+          rules={rules}
+          isLoading={isLoading}
+          onEdit={handleEditRule}
+          onDelete={handleDeleteRule}
+          onToggleActive={handleToggleActive}
+        />
       </div>
-
-      <Dialog open={openRuleDialog} onOpenChange={setOpenRuleDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{editRule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</DialogTitle>
-          </DialogHeader>
-          <ReminderRuleForm 
-            editRule={editRule} 
-            onComplete={handleRuleComplete} 
-          />
-        </DialogContent>
-      </Dialog>
     </Container>
   );
-};
-
-export default ReminderPage;
+}

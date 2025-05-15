@@ -35,7 +35,7 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-sm text-muted-foreground">
-              Published by {announcement.authorName} on {format(parseISO(announcement.createdAt), "MMM dd, yyyy")}
+              Published by {announcement.author_name} on {format(parseISO(announcement.created_at), "MMM dd, yyyy")}
             </span>
             <Badge variant="outline" className="capitalize ml-auto">
               {announcement.priority} priority
@@ -61,7 +61,7 @@ const AnnouncementDetailDialog: React.FC<AnnouncementDetailDialogProps> = ({
             <div>
               <p className="font-medium">Target Audience</p>
               <div className="flex flex-wrap gap-1 mt-1">
-                {announcement.targetRoles && announcement.targetRoles.map((role) => (
+                {announcement.target_roles && announcement.target_roles.map((role) => (
                   <Badge key={role} variant="secondary" className="capitalize">
                     {role}
                   </Badge>

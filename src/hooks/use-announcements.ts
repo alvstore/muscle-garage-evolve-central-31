@@ -1,155 +1,135 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Announcement } from '@/types/notification';
+import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
 import { toast } from 'sonner';
-import { useBranch } from './use-branch';
-import { adaptAnnouncementFromDB } from '@/services/communicationService';
 
-interface UseAnnouncementsProps {
-  initialAnnouncements?: Announcement[];
-}
+export const useAnnouncements = () => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useAnnouncements = ({ initialAnnouncements }: UseAnnouncementsProps = {}) => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements || []);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const { currentBranch } = useBranch();
-
-  const fetchAnnouncements = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchAnnouncements = async () => {
     try {
-      if (!currentBranch?.id) {
-        setAnnouncements([]);
-        return;
-      }
-
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
-        .eq('branch_id', currentBranch.id)
         .order('created_at', { ascending: false });
-
-      if (error) {
-        setError(error);
-        toast.error(`Failed to fetch announcements: ${error.message}`);
-      } else {
-        const adaptedAnnouncements = data.map(adaptAnnouncementFromDB);
-        setAnnouncements(adaptedAnnouncements);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('An unexpected error occurred'));
-      toast.error(`An unexpected error occurred: ${err}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentBranch?.id]);
-
-  const createAnnouncement = async (newAnnouncement: Omit<Announcement, 'id' | 'createdAt'>) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      if (!currentBranch?.id) {
-        throw new Error("No branch selected");
-      }
-
-      const { data, error } = await supabase
-        .from('announcements')
-        .insert([
-          {
-            ...newAnnouncement,
-            branch_id: currentBranch.id,
-            author_name: 'Admin', // Replace with actual author name if available
-            author_id: 'admin-user-id', // Replace with actual author ID if available
-          },
-        ])
-        .select('*');
-
-      if (error) {
-        setError(error);
-        toast.error(`Failed to create announcement: ${error.message}`);
-      } else if (data && data.length > 0) {
-        const createdAnnouncement = adaptAnnouncementFromDB(data[0]);
-        setAnnouncements((prevAnnouncements) => [createdAnnouncement, ...prevAnnouncements]);
-        toast.success('Announcement created successfully!');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('An unexpected error occurred'));
-      toast.error(`An unexpected error occurred: ${err}`);
+      
+      if (error) throw error;
+      
+      const adaptedAnnouncements = data.map(announcement => adaptAnnouncementFromDB(announcement));
+      setAnnouncements(adaptedAnnouncements);
+      return adaptedAnnouncements;
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      toast.error('Failed to load announcements');
+      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateAnnouncement = async (announcementId: string, updatedAnnouncement: Partial<Announcement>) => {
-    setIsLoading(true);
-    setError(null);
+  const createAnnouncement = async (announcement: Partial<Announcement>) => {
     try {
+      // Format announcement to match database schema
+      const dbAnnouncement = {
+        title: announcement.title,
+        content: announcement.content,
+        author_name: announcement.author_name,
+        author_id: announcement.author_id,
+        priority: announcement.priority || 'medium',
+        target_roles: announcement.target_roles || [],
+        channels: announcement.channels || [],
+        expires_at: announcement.expires_at,
+        branch_id: announcement.branch_id
+      };
+
       const { data, error } = await supabase
         .from('announcements')
-        .update(updatedAnnouncement)
-        .eq('id', announcementId)
-        .select('*');
+        .insert(dbAnnouncement)
+        .select();
 
-      if (error) {
-        setError(error);
-        toast.error(`Failed to update announcement: ${error.message}`);
-      } else if (data && data.length > 0) {
-        const updated = adaptAnnouncementFromDB(data[0]);
-        setAnnouncements((prevAnnouncements) =>
-          prevAnnouncements.map((announcement) =>
-            announcement.id === announcementId ? updated : announcement
-          )
-        );
-        toast.success('Announcement updated successfully!');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('An unexpected error occurred'));
-      toast.error(`An unexpected error occurred: ${err}`);
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+
+      const newAnnouncement = adaptAnnouncementFromDB(data[0]);
+      setAnnouncements(prev => [newAnnouncement, ...prev]);
+      
+      return newAnnouncement;
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      toast.error('Failed to create announcement');
+      throw error;
     }
   };
 
-  const deleteAnnouncement = async (announcementId: string) => {
-    setIsLoading(true);
-    setError(null);
+  const updateAnnouncement = async (id: string, updates: Partial<Announcement>) => {
+    try {
+      // Format announcement to match database schema
+      const dbUpdates = {
+        title: updates.title,
+        content: updates.content,
+        author_name: updates.author_name,
+        author_id: updates.author_id,
+        priority: updates.priority,
+        target_roles: updates.target_roles,
+        channels: updates.channels,
+        expires_at: updates.expires_at,
+        branch_id: updates.branch_id
+      };
+
+      const { data, error } = await supabase
+        .from('announcements')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select();
+
+      if (error) throw error;
+
+      const updatedAnnouncement = adaptAnnouncementFromDB(data[0]);
+      setAnnouncements(prev => 
+        prev.map(announcement => 
+          announcement.id === id ? updatedAnnouncement : announcement
+        )
+      );
+      
+      return updatedAnnouncement;
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      toast.error('Failed to update announcement');
+      throw error;
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
     try {
       const { error } = await supabase
         .from('announcements')
         .delete()
-        .eq('id', announcementId);
+        .eq('id', id);
 
-      if (error) {
-        setError(error);
-        toast.error(`Failed to delete announcement: ${error.message}`);
-      } else {
-        setAnnouncements((prevAnnouncements) =>
-          prevAnnouncements.filter((announcement) => announcement.id !== announcementId)
-        );
-        toast.success('Announcement deleted successfully!');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('An unexpected error occurred'));
-      toast.error(`An unexpected error occurred: ${err}`);
-    } finally {
-      setIsLoading(false);
+      if (error) throw error;
+
+      setAnnouncements(prev => prev.filter(announcement => announcement.id !== id));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      toast.error('Failed to delete announcement');
+      throw error;
     }
   };
 
   useEffect(() => {
-    if (currentBranch?.id) {
-      fetchAnnouncements();
-    }
-  }, [currentBranch?.id, fetchAnnouncements]);
+    fetchAnnouncements();
+  }, []);
 
   return {
     announcements,
     isLoading,
-    error,
     fetchAnnouncements,
     createAnnouncement,
     updateAnnouncement,
-    deleteAnnouncement,
+    deleteAnnouncement
   };
 };

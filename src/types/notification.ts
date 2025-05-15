@@ -34,9 +34,12 @@ export interface Announcement {
   author_id: string;
   author_name?: string;
   is_active: boolean;
+  expires_at?: string;
   expiry_date?: string;
   channels: string[];
   branch_id?: string;
+  priority: string;
+  target_roles?: string[];
 }
 
 export interface FeedbackType {
@@ -61,31 +64,45 @@ export interface Feedback {
   branch_id?: string;
 }
 
-export interface MotivationalCategory {
-  id: string;
-  name: string;
-  description?: string;
-}
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 
 export interface MotivationalMessage {
   id: string;
-  category_id: string;
+  category: MotivationalCategory;
   message: string;
+  title: string;
+  content: string;
   author?: string;
   is_active: boolean;
+  active?: boolean;
   created_at: string;
   updated_at?: string;
+  tags?: string[];
 }
 
 export interface ReminderRule {
   id: string;
-  name: string;
-  event_type: string;
-  days_before: number;
-  message_template: string;
-  channels: string[];
+  name?: string; 
+  title: string;
+  description?: string;
+  trigger_type: string;
+  triggerType?: string;
+  trigger_value: number;
+  triggerValue?: number;
+  message?: string;
+  notification_channel?: string;
+  notificationChannel?: string;
+  conditions: Record<string, any>;
   is_active: boolean;
-  created_at: string;
+  isActive?: boolean;
+  active?: boolean;
+  target_roles: string[];
+  targetRoles?: string[];
+  send_via: string[];
+  sendVia?: string[];
+  channels?: string[];
+  targetType?: string;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -102,4 +119,67 @@ export interface Invoice {
   notes?: string;
   created_at: string;
   updated_at?: string;
+}
+
+// Add adapter functions to convert between frontend and backend models
+export function adaptAnnouncementFromDB(dbAnnouncement: any): Announcement {
+  return {
+    id: dbAnnouncement.id,
+    title: dbAnnouncement.title,
+    content: dbAnnouncement.content,
+    created_at: dbAnnouncement.created_at,
+    updated_at: dbAnnouncement.updated_at,
+    author_id: dbAnnouncement.author_id,
+    author_name: dbAnnouncement.author_name,
+    is_active: dbAnnouncement.is_active || true,
+    expires_at: dbAnnouncement.expires_at || dbAnnouncement.expiry_date,
+    expiry_date: dbAnnouncement.expiry_date || dbAnnouncement.expires_at,
+    channels: dbAnnouncement.channels || [],
+    branch_id: dbAnnouncement.branch_id,
+    priority: dbAnnouncement.priority || 'medium',
+    target_roles: dbAnnouncement.target_roles || []
+  };
+}
+
+export function adaptMotivationalMessageFromDB(dbMessage: any): MotivationalMessage {
+  return {
+    id: dbMessage.id,
+    title: dbMessage.title,
+    content: dbMessage.content,
+    message: dbMessage.message || dbMessage.content,
+    author: dbMessage.author,
+    category: dbMessage.category || 'general',
+    tags: dbMessage.tags || [],
+    is_active: dbMessage.is_active || dbMessage.active || true,
+    active: dbMessage.active || dbMessage.is_active || true,
+    created_at: dbMessage.created_at,
+    updated_at: dbMessage.updated_at
+  };
+}
+
+export function adaptReminderRuleFromDB(dbRule: any): ReminderRule {
+  return {
+    id: dbRule.id,
+    title: dbRule.title || dbRule.name,
+    name: dbRule.name || dbRule.title,
+    description: dbRule.description || '',
+    trigger_type: dbRule.trigger_type,
+    triggerType: dbRule.trigger_type,
+    trigger_value: dbRule.trigger_value || 0,
+    triggerValue: dbRule.trigger_value || 0,
+    message: dbRule.message || '',
+    notification_channel: dbRule.notification_channel,
+    notificationChannel: dbRule.notification_channel,
+    conditions: dbRule.conditions || {},
+    is_active: dbRule.is_active || dbRule.active || true,
+    isActive: dbRule.is_active || dbRule.active || true,
+    active: dbRule.is_active || dbRule.active || true,
+    target_roles: dbRule.target_roles || [],
+    targetRoles: dbRule.target_roles || [],
+    send_via: dbRule.send_via || dbRule.channels || [],
+    sendVia: dbRule.send_via || dbRule.channels || [],
+    channels: dbRule.channels || dbRule.send_via || [],
+    created_at: dbRule.created_at,
+    updated_at: dbRule.updated_at
+  };
 }
