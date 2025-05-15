@@ -123,7 +123,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
   }, [branchId]);
 
   // Save settings
-  const saveSettings = async (credentials: HikvisionCredentials, branch?: string) => {
+  const saveSettings = async (credentials: HikvisionCredentials, branch?: string, selectedSiteId?: string) => {
     try {
       setIsLoading(true);
       const targetBranchId = branch || branchId;
@@ -172,7 +172,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
       }
       
       // Get a token for the Hikvision API
-      const getToken = async (branchId: string): Promise<TokenData | null> => {
+      const getToken = async (branchId: string, forceRefresh: boolean = false): Promise<TokenData | null> => {
         try {
           // Check if we have a valid token in the database
           const { data: tokenData, error: tokenError } = await supabase
@@ -185,8 +185,8 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
             console.error('Error fetching token:', tokenError);
           }
           
-          // If we have a valid token that hasn't expired, return it
-          if (tokenData && tokenData.expire_time) {
+          // If we have a valid token that hasn't expired and we're not forcing a refresh, return it
+          if (!forceRefresh && tokenData && tokenData.expire_time) {
             const expireTime = new Date(tokenData.expire_time);
             const now = new Date();
             
@@ -199,7 +199,11 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
                 siteId: tokenData.site_id || '',
                 availableSites: tokenData.available_sites || []
               };
+            } else {
+              console.log('Token expired, getting new token');
             }
+          } else if (forceRefresh) {
+            console.log('Force refreshing token');
           }
           
           // If we don't have a valid token, get a new one
@@ -339,6 +343,105 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
           
           if (!siteResponse || !siteResponse.success) {
             console.error('Site creation failed:', siteResponse);
+            
+            // Check if it's a token expiration error
+            if (siteResponse?.errorCode === 'TOKEN_EXPIRED' || 
+                (siteResponse?.rawResponse?.errorCode === 'LAP500004')) {
+              console.log('Detected token expiration error:', siteResponse?.rawResponse);
+              console.log('Token expired, refreshing and retrying...');
+              
+              // Force a new token by invalidating the cache
+              console.log('Forcing token refresh for branch:', branchId);
+              
+              // First, clear the existing token from the database
+              try {
+                const { error: deleteError } = await supabase
+                  .from('hikvision_tokens')
+                  .delete()
+                  .eq('branch_id', branchId);
+                
+                if (deleteError) {
+                  console.error('Error deleting old token:', deleteError);
+                }
+              } catch (deleteError) {
+                console.error('Exception deleting old token:', deleteError);
+              }
+              
+              // Get the API settings directly
+              const { data: apiSettings, error: settingsError } = await supabase
+                .from('hikvision_api_settings')
+                .select('*')
+                .eq('branch_id', branchId)
+                .single();
+                
+              if (settingsError || !apiSettings) {
+                console.error('Error fetching API settings for token refresh:', settingsError);
+                throw new Error('Failed to get API settings for token refresh');
+              }
+              
+              // Get a new token directly from the API via Edge Function
+              console.log('Getting fresh token from API');
+              const { data: tokenResponse, error: tokenResponseError } = await supabase.functions.invoke('hikvision-proxy', {
+                body: {
+                  action: 'get-token',
+                  appKey: apiSettings.app_key,
+                  appSecret: apiSettings.app_secret,
+                  branchId: branchId,
+                  apiUrl: apiSettings.api_url
+                }
+              });
+              
+              if (tokenResponseError || !tokenResponse || !tokenResponse.data?.accessToken) {
+                console.error('Error getting fresh token:', tokenResponseError || 'No token returned');
+                throw new Error('Failed to get fresh token from API');
+              }
+              
+              // Get the token data
+              const accessToken = tokenResponse.data.accessToken;
+              
+              // Construct a TokenData object
+              const newToken = {
+                token: accessToken,
+                siteId: '',
+                availableSites: tokenResponse.availableSites || []
+              };
+              
+              if (!newToken.token) {
+                throw new Error('Failed to refresh token');
+              }
+              
+              console.log('Successfully refreshed token');
+              
+              // Retry site creation with new token
+              console.log('Retrying site creation with new token');
+              
+              // Make sure we're using the token string, not the TokenData object
+              const tokenString = newToken.token;
+              
+              // Log the token being used (first few characters only for security)
+              console.log('Using token for retry:', tokenString.substring(0, 10) + '...');
+              
+              const { data: retrySiteResponse, error: retrySiteError } = await supabase.functions.invoke('hikvision-proxy', {
+                body: {
+                  action: 'create-site',
+                  apiUrl: apiSettings.api_url || 'https://api.hik-partner.com',
+                  token: tokenString,
+                  siteName: siteNameToUse
+                }
+              });
+              
+              console.log('Retry response:', retrySiteResponse);
+              
+              if (retrySiteError || !retrySiteResponse?.success) {
+                console.error('Site creation retry failed:', retrySiteResponse || retrySiteError);
+                throw new Error(retrySiteResponse?.message || retrySiteError?.message || 'Failed to create site after token refresh');
+              }
+              
+              if (retrySiteResponse.success && retrySiteResponse.siteId) {
+                return retrySiteResponse.siteId;
+              }
+            }
+            
             throw new Error(siteResponse?.message || 'Failed to create site');
           }
           
@@ -408,12 +511,31 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
         return false;
       }
       
-      // Get the site ID
-      const siteId = await ensureSiteExists(targetBranchId);
+      // If a site ID was selected, use it directly
+      let siteId: string | null = null;
       
-      if (!siteId) {
-        console.error('Failed to get or create site');
-        return false;
+      if (selectedSiteId) {
+        console.log('Using selected site ID:', selectedSiteId);
+        siteId = selectedSiteId;
+        
+        // Save the selected site ID to the hikvision_tokens table
+        const { error: updateTokenError } = await supabase
+          .from('hikvision_tokens')
+          .update({ site_id: selectedSiteId })
+          .eq('branch_id', targetBranchId);
+        
+        if (updateTokenError) {
+          console.error('Error updating site ID in tokens table:', updateTokenError);
+          // Continue anyway since we have the site ID
+        }
+      } else {
+        // No site ID was selected, so ensure one exists or create a new one
+        siteId = await ensureSiteExists(targetBranchId);
+        
+        if (!siteId) {
+          console.error('Failed to get or create site');
+          return false;
+        }
       }
       
       // Prepare the data with any existing devices
@@ -725,13 +847,21 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
         return { success: false, message: 'Missing required credential fields' };
       }
       
+      console.log('Testing connection with credentials:', {
+        apiUrl,
+        appKeyLength: appKey?.length || 0,
+        secretKeyLength: secretKey?.length || 0
+      });
+      
       // Call the edge function to test
       const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
           action: 'token',
-          apiUrl,
+          apiUrl: apiUrl || 'https://api.hik-partner.com',
           appKey,
-          secretKey
+          secretKey,
+          branchId: targetBranchId,
+          isTestConnection: true // Flag to indicate this is a test connection
         }
       });
       
@@ -860,6 +990,44 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
     }
   };
 
+  // Fetch available sites from Hikvision API
+  const fetchAvailableSites = async (branchId: string): Promise<Array<{siteId: string, siteName: string}>> => {
+    try {
+      // Get the API settings
+      const { data: apiSettings, error: settingsError } = await supabase
+        .from('hikvision_api_settings')
+        .select('*')
+        .eq('branch_id', branchId)
+        .single();
+        
+      if (settingsError) {
+        console.error('Error fetching API settings:', settingsError);
+        return [];
+      }
+      
+      // Get a new token from the Hikvision API via Edge Function
+      const { data: tokenResponse, error: tokenResponseError } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          action: 'get-token',
+          appKey: apiSettings.app_key,
+          appSecret: apiSettings.app_secret,
+          branchId: branchId
+        }
+      });
+      
+      if (tokenResponseError || !tokenResponse) {
+        console.error('Error getting token for sites:', tokenResponseError || 'No token returned');
+        return [];
+      }
+      
+      // Return available sites from token response
+      return tokenResponse.availableSites || [];
+    } catch (error) {
+      console.error('Error fetching available sites:', error);
+      return [];
+    }
+  };
+
   return {
     settings,
     isLoading,
@@ -868,6 +1036,7 @@ export function useHikvision({ branchId }: UseHikvisionProps = {}) {
     testConnection,
     getToken,
     addDevice,
-    removeDevice
+    removeDevice,
+    fetchAvailableSites
   };
 }

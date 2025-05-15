@@ -9,6 +9,22 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
+// Helper function to add CORS headers to all responses
+const addCorsHeaders = (response: Response): Response => {
+  const newHeaders = new Headers(response.headers);
+  
+  // Add CORS headers
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    newHeaders.set(key, value);
+  });
+  
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
+};
+
 // Create a Supabase client
 const supabaseClient = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -20,9 +36,15 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
+  
+  // Log request details for debugging
+  console.log(`Processing ${req.method} request to ${req.url}`);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
   try {
-    const { action, apiUrl, appKey, secretKey, token, deviceId, personData, branchId, siteId, siteName, ipAddress, port, username, password } = await req.json();
+    const requestBody = await req.json();
+    console.log('Hikvision Edge Function received body:', requestBody);
+    const { action, apiUrl, appKey, secretKey, token, deviceId, personData, branchId, siteId, siteName, ipAddress, port, username, password, isTestConnection } = requestBody;
     
     // Route the request based on the action
     switch (action) {
@@ -58,39 +80,95 @@ serve(async (req) => {
         return await assignPrivileges(apiUrl, token, personData?.personId, deviceId);
       
       default:
-        return new Response(
+        return addCorsHeaders(new Response(
           JSON.stringify({ success: false, message: 'Invalid action' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-        );
+          { headers: { 'Content-Type': 'application/json' }, status: 400 }
+        ));
     }
   } catch (error) {
     console.error('Error processing request:', error);
-    return new Response(
+    return addCorsHeaders(new Response(
       JSON.stringify({ success: false, message: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
+    ));
   }
 });
 
 // Function to get a Hikvision token
 async function getToken(apiUrl: string, appKey: string, secretKey: string, request?: Request) {
   try {
+    // Validate input parameters
+    if (!appKey || !secretKey) {
+      console.error('Missing required parameters for token request:', { 
+        hasAppKey: !!appKey, 
+        hasSecretKey: !!secretKey,
+        appKeyType: typeof appKey,
+        secretKeyType: typeof secretKey
+      });
+      
+      // For testing purposes, if this is a test connection, return a more specific error
+      const requestData = request ? await request.clone().json() : null;
+      const isTestConnection = requestData?.isTestConnection === true;
+      
+      if (isTestConnection) {
+        return addCorsHeaders(new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Missing required parameters for test connection',
+            debug: { hasAppKey: !!appKey, hasSecretKey: !!secretKey }
+          }),
+          { headers: { 'Content-Type': 'application/json' }, status: 400 }
+        ));
+      }
+      
+      return addCorsHeaders(new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Missing required parameters: appKey and secretKey are required',
+          debug: { hasAppKey: !!appKey, hasSecretKey: !!secretKey }
+        }),
+        { headers: { 'Content-Type': 'application/json' }, status: 400 }
+      ));
+    }
+    
     // Form the token URL using the provided API URL
     const tokenUrl = `${apiUrl || 'https://api.hik-partner.com'}/api/hpcgw/v1/token/get`;
     
     console.log('Requesting token from:', tokenUrl);
+    console.log('Using appKey:', appKey.substring(0, 5) + '...');
+    
+    // Prepare request body
+    const requestBody = JSON.stringify({
+      appKey,
+      secretKey,
+    });
+    
+    console.log('Request body length:', requestBody.length);
     
     // Make the token request
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        appKey,
-        secretKey,
-      }),
-    });
+    let response;
+    try {
+      response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody,
+      });
+    } catch (fetchError) {
+      console.error('Fetch error during token request:', fetchError);
+      return addCorsHeaders(new Response(
+        JSON.stringify({
+          success: false,
+          message: `Error getting token: ${fetchError.message}`,
+          debug: { error: fetchError.toString() }
+        }),
+        { headers: { 'Content-Type': 'application/json' }, status: 500 }
+      ));
+    }
+    
+    // Log response status
+    console.log('Token response status:', response.status);
     
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
@@ -102,22 +180,52 @@ async function getToken(apiUrl: string, appKey: string, secretKey: string, reque
         JSON.stringify({ 
           success: false, 
           message: 'Invalid response format (not JSON)',
-          responseText: text.substring(0, 500) // Return part of the response for debugging
+          responseText: text.substring(0, 500), // Return part of the response for debugging
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries())
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
     
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error('Error parsing JSON response:', jsonError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `Error parsing JSON response: ${jsonError.message}`,
+          status: response.status
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
     
-    console.log('Token response:', data);
+    console.log('Token response:', JSON.stringify(data).substring(0, 200) + '...');
+    
+    // Check for error response
+    if (data.code !== '0' || !data.data?.accessToken) {
+      console.error('Error in token response:', data);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: data.msg || 'Failed to get token',
+          errorCode: data.code,
+          rawResponse: data
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
     
     // Store token in database if successful
-    if (data.code === '0' && data.data?.accessToken) {
-      let branchId;
-      let availableSites: Array<{siteId: string, siteName: string}> = [];
-      
-      try {
+    console.log('Successfully obtained token, expiry:', data.data.expireTime);
+    
+    let branchId;
+    let availableSites: Array<{siteId: string, siteName: string}> = [];
+    
+    try {
         // Try to get branchId from the request body
         if (request) {
           const requestData = await request.clone().json();
@@ -178,30 +286,28 @@ async function getToken(apiUrl: string, appKey: string, secretKey: string, reque
         }
       }
       
-      // Add available sites to the response
-      const responseData = {
-        ...data,
-        availableSites
-      };
-      
-      // Return the successful response
-      return new Response(
-        JSON.stringify(responseData),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Add available sites to the response
+    const responseData = {
+      ...data,
+      availableSites
+    };
     
-    return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    );
+    // Return the successful response
+    return addCorsHeaders(new Response(
+      JSON.stringify(responseData),
+      { headers: { 'Content-Type': 'application/json' } }
+    ));
   } catch (error) {
     console.error('Error getting token:', error);
     
-    return new Response(
-      JSON.stringify({ success: false, message: `Error getting token: ${error.message}` }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    return addCorsHeaders(new Response(
+      JSON.stringify({
+        success: false,
+        message: `Error getting token: ${error.message}`,
+        debug: { error: error.toString() }
+      }),
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
+    ));
   }
 }
 
@@ -408,10 +514,24 @@ async function createSite(apiUrl: string, accessToken: string, siteName: string)
         );
       }
       
+      // Check specifically for token expiration error
+      if (data.code === 'LAP500004') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Token expired or invalid',
+            errorCode: 'TOKEN_EXPIRED',
+            rawResponse: data
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
           message: data.msg || 'Failed to create site',
+          errorCode: data.code,
           rawResponse: data
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
