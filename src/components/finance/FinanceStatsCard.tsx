@@ -14,6 +14,7 @@ interface FinanceStatsCardProps {
   subtitle?: string;
   className?: string;
   iconColor?: string;
+  isLoading?: boolean;
 }
 
 const FinanceStatsCard: React.FC<FinanceStatsCardProps> = ({
@@ -23,7 +24,8 @@ const FinanceStatsCard: React.FC<FinanceStatsCardProps> = ({
   change,
   subtitle,
   className,
-  iconColor = 'text-primary'
+  iconColor = 'text-primary',
+  isLoading = false
 }) => {
   const getTrendColor = (trend: 'up' | 'down' | 'neutral') => {
     switch (trend) {
@@ -47,6 +49,27 @@ const FinanceStatsCard: React.FC<FinanceStatsCardProps> = ({
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card className={cn("overflow-hidden", className)}>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">{title}</p>
+              <div className="mt-2 h-7 w-24 animate-pulse rounded-md bg-muted"></div>
+              {subtitle && (
+                <div className="mt-1 h-4 w-32 animate-pulse rounded-md bg-muted"></div>
+              )}
+            </div>
+            <div className={cn("p-2 rounded-full bg-primary/10", iconColor)}>
+              <Icon className="h-5 w-5 opacity-50" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardContent className="p-6">

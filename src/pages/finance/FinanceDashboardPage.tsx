@@ -53,9 +53,10 @@ const FinanceDashboardPage = () => {
     fetchCategories();
     fetchTransactions();
     
-    // Set up real-time subscription
+    // Set up real-time subscriptions for all finance-related tables
     const channel = supabase
       .channel('finance_dashboard_changes')
+      // Listen for transactions table changes
       .on('postgres_changes', 
         { 
           event: '*', 
@@ -64,6 +65,46 @@ const FinanceDashboardPage = () => {
           ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
         }, 
         () => {
+          console.log('Transactions table updated');
+          fetchTransactions();
+        }
+      )
+      // Listen for income_records changes
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'income_records',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          console.log('Income records table updated');
+          fetchTransactions();
+        }
+      )
+      // Listen for expense_records changes
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'expense_records',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          console.log('Expense records table updated');
+          fetchTransactions();
+        }
+      )
+      // Listen for invoices table changes
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'invoices',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          console.log('Invoices table updated');
           fetchTransactions();
         }
       )
@@ -112,18 +153,112 @@ const FinanceDashboardPage = () => {
   const fetchTransactions = async () => {
     try {
       setIsLoading(true);
+      let combinedTransactions: any[] = [];
       
-      const { data, error } = await supabase
+      // Fetch from transactions table
+      const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
-        .eq('branch_id', currentBranch?.id || '');
-        
-      if (error) throw error;
+        .eq('branch_id', currentBranch?.id || '')
+        .order('transaction_date', { ascending: false });
       
-      setTransactions(data || []);
+      // Add transactions from the transactions table if available
+      if (!transactionsError && transactionsData && transactionsData.length > 0) {
+        const normalizedTransactions = transactionsData.map(transaction => ({
+          id: transaction.id,
+          type: transaction.type || 'unknown',
+          amount: transaction.amount || 0,
+          description: transaction.description || '',
+          transaction_date: transaction.transaction_date || transaction.created_at,
+          payment_method: transaction.payment_method || 'unknown',
+          category: transaction.category || 'Uncategorized',
+          branch_id: transaction.branch_id,
+          reference_id: transaction.reference_id || '',
+          status: transaction.status || 'completed',
+          created_at: transaction.created_at,
+          updated_at: transaction.updated_at
+        }));
+        
+        combinedTransactions = [...normalizedTransactions];
+      }
+      
+      // Fetch from income_records table
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('income_records')
+        .select('*')
+        .eq('branch_id', currentBranch?.id || '')
+        .order('date', { ascending: false });
+      
+      // Add income records if available
+      if (!incomeError && incomeData && incomeData.length > 0) {
+        const normalizedIncomeRecords = incomeData.map(record => ({
+          id: record.id,
+          type: 'income',
+          amount: record.amount || 0,
+          description: record.description || '',
+          transaction_date: record.date || record.created_at,
+          payment_method: record.payment_method || 'unknown',
+          category: record.category || 'Uncategorized',
+          branch_id: record.branch_id,
+          reference_id: record.reference || '',
+          status: 'completed',
+          created_at: record.created_at,
+          updated_at: record.updated_at,
+          source: record.source || 'Unknown'
+        }));
+        
+        combinedTransactions = [...combinedTransactions, ...normalizedIncomeRecords];
+      }
+      
+      // Fetch from expense_records table
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_records')
+        .select('*')
+        .eq('branch_id', currentBranch?.id || '')
+        .order('date', { ascending: false });
+      
+      // Add expense records if available
+      if (!expenseError && expenseData && expenseData.length > 0) {
+        const normalizedExpenseRecords = expenseData.map(record => ({
+          id: record.id,
+          type: 'expense',
+          amount: record.amount || 0,
+          description: record.description || '',
+          transaction_date: record.date || record.created_at,
+          payment_method: record.payment_method || 'unknown',
+          category: record.category || 'Uncategorized',
+          branch_id: record.branch_id,
+          reference_id: record.reference || '',
+          status: record.status || 'completed',
+          created_at: record.created_at,
+          updated_at: record.updated_at,
+          vendor: record.vendor || 'Unknown'
+        }));
+        
+        combinedTransactions = [...combinedTransactions, ...normalizedExpenseRecords];
+      }
+      
+      // If we have no data from any source, log an error
+      if (combinedTransactions.length === 0 && transactionsError && incomeError && expenseError) {
+        console.error('Failed to fetch from all financial data sources');
+        throw new Error('Failed to fetch financial data');
+      }
+      
+      // Sort all transactions by date, most recent first
+      const sortedTransactions = combinedTransactions.sort((a, b) => {
+        const dateA = new Date(a.transaction_date || a.created_at).getTime();
+        const dateB = new Date(b.transaction_date || b.created_at).getTime();
+        return dateB - dateA;
+      });
+      
+      setTransactions(sortedTransactions);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      toast.error('Failed to fetch transactions');
+      toast.error('Failed to load transactions');
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -156,7 +291,37 @@ const FinanceDashboardPage = () => {
   };
 
   const processTransactionData = () => {
-    if (!transactions || transactions.length === 0) return;
+    if (!transactions || transactions.length === 0) {
+      console.log('No transactions to process');
+      return;
+    }
+
+    console.log('Processing transactions:', transactions.length);
+
+    // Normalize transaction data to handle different table structures
+    const normalizedTransactions = transactions.map(t => {
+      // Determine the transaction date from various possible fields
+      const transactionDate = t.transaction_date || t.date || t.created_at || new Date().toISOString();
+      
+      // Determine transaction type
+      const type = t.type || 
+                  (t.transaction_type ? t.transaction_type.toLowerCase() : null) || 
+                  (t.amount > 0 ? 'income' : 'expense');
+      
+      // Ensure amount is a number and positive (we'll use type to determine if it's income or expense)
+      const amount = Math.abs(Number(t.amount || 0));
+      
+      // Determine category
+      const category = t.category || t.category_name || 'Uncategorized';
+      
+      return {
+        ...t,
+        transaction_date: transactionDate,
+        type,
+        amount,
+        category
+      };
+    });
 
     // Get today's date and calculate date ranges
     const today = new Date();
@@ -166,14 +331,14 @@ const FinanceDashboardPage = () => {
     const yearStart = startOfYear(new Date());
     
     // Filter transactions by date range
-    const todayTransactions = transactions.filter((t) => new Date(t.transaction_date) >= startOfToday);
-    const weekTransactions = transactions.filter((t) => new Date(t.transaction_date) >= weekStart);
-    const monthTransactions = transactions.filter((t) => new Date(t.transaction_date) >= monthStart);
-    const yearTransactions = transactions.filter((t) => new Date(t.transaction_date) >= yearStart);
+    const todayTransactions = normalizedTransactions.filter((t) => new Date(t.transaction_date) >= startOfToday);
+    const weekTransactions = normalizedTransactions.filter((t) => new Date(t.transaction_date) >= weekStart);
+    const monthTransactions = normalizedTransactions.filter((t) => new Date(t.transaction_date) >= monthStart);
+    const yearTransactions = normalizedTransactions.filter((t) => new Date(t.transaction_date) >= yearStart);
     
     // Filter by custom date range
     const customTransactions = startDate && endDate 
-      ? transactions.filter((t) => {
+      ? normalizedTransactions.filter((t) => {
           const date = new Date(t.transaction_date);
           return date >= startDate && date <= endDate;
         })
@@ -251,103 +416,93 @@ const FinanceDashboardPage = () => {
     setRevenueData(chartData);
 
     // Process income and expense breakdowns
-    if (incomeCategories.length > 0 && expenseCategories.length > 0) {
-      // Income breakdown
-      const incomeByCategoryMap = new Map();
-      const totalIncome = transactionsToProcess
-        .filter((t) => t.type === 'income')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+    // Define category item type
+    type CategoryItem = {
+      name: string;
+      value: number;
+      color: string;
+    };
+    
+    // Group transactions by category
+    const incomeByCategory: Record<string, CategoryItem> = {};
+    const expenseByCategory: Record<string, CategoryItem> = {};
+    
+    // Calculate total income and expense
+    const totalIncome = transactionsToProcess
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
       
-      // Initialize with categories
-      incomeCategories.forEach((cat) => {
-        incomeByCategoryMap.set(cat.id, { 
-          name: cat.name, 
-          value: 0, 
-          color: getRandomColor(cat.name)
-        });
+    const totalExpense = transactionsToProcess
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    // Process income transactions
+    transactionsToProcess
+      .filter((t) => t.type === 'income')
+      .forEach((transaction) => {
+        const categoryName = transaction.category || 'Other';
+        
+        if (!incomeByCategory[categoryName]) {
+          incomeByCategory[categoryName] = {
+            name: categoryName,
+            value: 0,
+            color: getRandomColor(categoryName)
+          };
+        }
+        
+        incomeByCategory[categoryName].value += Number(transaction.amount);
       });
-      
-      // Add "Other" category
-      incomeByCategoryMap.set('other', {
-        name: 'Other',
-        value: 0,
-        color: '#9c27b0'
+    
+    // Process expense transactions
+    transactionsToProcess
+      .filter((t) => t.type === 'expense')
+      .forEach((transaction) => {
+        const categoryName = transaction.category || 'Other';
+        
+        if (!expenseByCategory[categoryName]) {
+          expenseByCategory[categoryName] = {
+            name: categoryName,
+            value: 0,
+            color: getRandomColor(categoryName)
+          };
+        }
+        
+        expenseByCategory[categoryName].value += Number(transaction.amount);
       });
-      
-      // Aggregate income by category
-      transactionsToProcess
-        .filter((t) => t.type === 'income')
-        .forEach((transaction) => {
-          if (transaction.category_id && incomeByCategoryMap.has(transaction.category_id)) {
-            const category = incomeByCategoryMap.get(transaction.category_id);
-            category.value += Number(transaction.amount);
-          } else {
-            const other = incomeByCategoryMap.get('other');
-            other.value += Number(transaction.amount);
-          }
-        });
-      
-      // Calculate percentages
-      incomeByCategoryMap.forEach((category) => {
-        category.value = totalIncome > 0 
-          ? Math.round((category.value / totalIncome) * 100) 
-          : 0;
-      });
-      
-      // Convert to array and filter out zero values
-      const incomeData = Array.from(incomeByCategoryMap.values())
-        .filter(cat => cat.value > 0);
-      
-      setIncomeBreakdown(incomeData);
-      
-      // Expense breakdown
-      const expenseByCategoryMap = new Map();
-      const totalExpense = transactionsToProcess
-        .filter((t) => t.type === 'expense')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-      
-      // Initialize with categories
-      expenseCategories.forEach((cat) => {
-        expenseByCategoryMap.set(cat.id, { 
-          name: cat.name, 
-          value: 0, 
-          color: getRandomColor(cat.name) 
-        });
-      });
-      
-      // Add "Other" category
-      expenseByCategoryMap.set('other', {
-        name: 'Other',
-        value: 0,
-        color: '#9c27b0'
-      });
-      
-      // Aggregate expenses by category
-      transactionsToProcess
-        .filter((t) => t.type === 'expense')
-        .forEach((transaction) => {
-          if (transaction.category_id && expenseByCategoryMap.has(transaction.category_id)) {
-            const category = expenseByCategoryMap.get(transaction.category_id);
-            category.value += Number(transaction.amount);
-          } else {
-            const other = expenseByCategoryMap.get('other');
-            other.value += Number(transaction.amount);
-          }
-        });
-      
-      // Calculate percentages
-      expenseByCategoryMap.forEach((category) => {
-        category.value = totalExpense > 0 
-          ? Math.round((category.value / totalExpense) * 100) 
-          : 0;
-      });
-      
-      // Convert to array and filter out zero values
-      const expenseData = Array.from(expenseByCategoryMap.values())
-        .filter(cat => cat.value > 0);
-      
-      setExpenseBreakdown(expenseData);
-    }
+    
+    // Convert to percentage for income
+    const incomeBreakdownData = Object.values(incomeByCategory).map((category: CategoryItem) => {
+      return {
+        name: category.name,
+        color: category.color,
+        // Store original amount for tooltip
+        amount: category.value,
+        // Convert to percentage
+        value: totalIncome > 0 ? Math.round((category.value / totalIncome) * 100) : 0
+      };
+    }).filter((cat: any) => cat.value > 0);
+    
+    // Sort by value (highest first)
+    incomeBreakdownData.sort((a: any, b: any) => b.value - a.value);
+    
+    setIncomeBreakdown(incomeBreakdownData);
+    
+    // Convert to percentage for expenses
+    const expenseBreakdownData = Object.values(expenseByCategory).map((category: CategoryItem) => {
+      return {
+        name: category.name,
+        color: category.color,
+        // Store original amount for tooltip
+        amount: category.value,
+        // Convert to percentage
+        value: totalExpense > 0 ? Math.round((category.value / totalExpense) * 100) : 0
+      };
+    }).filter((cat: any) => cat.value > 0);
+    
+    // Sort by value (highest first)
+    expenseBreakdownData.sort((a: any, b: any) => b.value - a.value);
+    
+    setExpenseBreakdown(expenseBreakdownData);
   };
 
   // Helper function to generate consistent colors for categories

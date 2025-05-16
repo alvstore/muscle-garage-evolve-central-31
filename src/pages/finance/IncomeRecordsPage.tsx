@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Download, Filter, Search, RefreshCw } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -25,12 +25,20 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const IncomeRecordsPage = () => {
-  const { transactions, isLoading, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
+  const { transactions, isLoading, createTransaction, updateTransaction, deleteTransaction, fetchTransactions } = useTransactions();
   const { currentBranch } = useBranch();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<{startDate?: Date, endDate?: Date}>({});
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [sourceFilter, setSourceFilter] = useState<string>('');
 
   const [newTransaction, setNewTransaction] = useState<Partial<FinancialTransaction>>({
     type: 'income',
@@ -38,14 +46,55 @@ const IncomeRecordsPage = () => {
     description: '',
     transaction_date: new Date().toISOString(),
     payment_method: 'cash',
-    category: '', // Use category instead of category_id
+    category: '',
     branch_id: currentBranch?.id || '',
     reference_id: '',
-    status: 'completed'
+    status: 'completed',
+    source: 'Manual Entry'
   });
 
-  const paymentMethods = ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'];
-  const transactionCategories = ['sales', 'services', 'membership_fees', 'other'];
+  const paymentMethods = ['cash', 'card', 'upi', 'netbanking', 'cheque', 'online', 'wallet', 'razorpay'];
+  const transactionCategories = ['Membership Fees', 'Personal Training', 'Supplement Sales', 'Merchandise', 'Events', 'Sponsorships', 'Other'];
+  const incomeSources = ['Manual Entry', 'Razorpay', 'Online', 'Webhook', 'Member Payment'];
+
+  // Filter transactions
+  const filteredTransactions = transactions.filter(transaction => {
+    // Only show income transactions
+    if (transaction.type !== 'income') return false;
+    
+    // Apply tab filters
+    if (activeTab === 'membership' && transaction.category !== 'Membership Fees') return false;
+    if (activeTab === 'services' && !['Personal Training', 'Events'].includes(transaction.category || '')) return false;
+    if (activeTab === 'sales' && !['Supplement Sales', 'Merchandise'].includes(transaction.category || '')) return false;
+    if (activeTab === 'other' && !['Other', 'Sponsorships'].includes(transaction.category || '')) return false;
+    
+    // Apply search filter
+    if (searchTerm && !(
+      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    )) return false;
+    
+    // Apply date filter
+    if (dateFilter.startDate && new Date(transaction.transaction_date) < dateFilter.startDate) return false;
+    if (dateFilter.endDate) {
+      const endDate = new Date(dateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999); // Set to end of day
+      if (new Date(transaction.transaction_date) > endDate) return false;
+    }
+    
+    // Apply category filter
+    if (categoryFilter && transaction.category !== categoryFilter) return false;
+    
+    // Apply source filter
+    if (sourceFilter && transaction.source !== sourceFilter) return false;
+    
+    return true;
+  });
+
+  // Calculate total income
+  const totalIncome = filteredTransactions.reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
 
   // Handle input change for new transaction
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -69,8 +118,8 @@ const IncomeRecordsPage = () => {
   const handleEdit = (transaction: FinancialTransaction) => {
     setEditingTransaction({
       ...transaction,
-      category: transaction.category, // Keep category as is
-      reference_id: transaction.reference_id // Keep reference_id as is
+      category: transaction.category,
+      reference_id: transaction.reference_id
     });
     setIsDialogOpen(true);
   };
@@ -82,8 +131,8 @@ const IncomeRecordsPage = () => {
     try {
       await updateTransaction(editingTransaction.id, {
         ...editingTransaction,
-        category: editingTransaction.category, // Use category instead of category_id
-        reference_id: editingTransaction.reference_id, // Use reference_id instead of reference
+        category: editingTransaction.category,
+        reference_id: editingTransaction.reference_id,
         updated_at: new Date().toISOString()
       });
       setEditingTransaction(null);
@@ -109,8 +158,8 @@ const IncomeRecordsPage = () => {
     try {
       const result = await createTransaction({
         ...newTransaction as Omit<FinancialTransaction, 'id'>,
-        category: newTransaction.category, // Use category instead of category_id
-        reference_id: newTransaction.reference_id, // Use reference_id instead of reference
+        category: newTransaction.category,
+        reference_id: newTransaction.reference_id,
         transaction_date: newTransaction.transaction_date || new Date().toISOString(),
         status: 'completed',
         created_at: new Date().toISOString(),
@@ -124,10 +173,11 @@ const IncomeRecordsPage = () => {
         description: '',
         transaction_date: new Date().toISOString(),
         payment_method: 'cash',
-        category: '', // Use category instead of category_id
+        category: '',
         branch_id: currentBranch?.id || '',
         reference_id: '',
-        status: 'completed'
+        status: 'completed',
+        source: 'Manual Entry'
       });
       setIsDialogOpen(false);
       toast.success('Transaction created successfully');
@@ -139,50 +189,170 @@ const IncomeRecordsPage = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchTransactions();
+    toast.success('Refreshing income records...');
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setDateFilter({});
+    setCategoryFilter('all');
+    setSourceFilter('all');
+    setActiveTab('all');
+  };
+
   return (
     <Container>
       <div className="py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Income Records</h1>
-          <Button onClick={() => setIsDialogOpen(true)}>Add Income</Button>
+          <div>
+            <h1 className="text-2xl font-bold">Income Records</h1>
+            <p className="text-muted-foreground">Manage all your gym income sources</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh data">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)}>Add Income</Button>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-4 justify-between mb-6">
+                <div className="flex flex-1 gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search income records..."
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <Button variant="outline" onClick={resetFilters} className="shrink-0">
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={categoryFilter || "all"} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {transactionCategories.map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={sourceFilter || "all"} onValueChange={setSourceFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      {incomeSources.map(source => (
+                        <SelectItem key={source} value={source}>{source}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="w-full justify-start">
+                    <TabsTrigger value="all">All Income</TabsTrigger>
+                    <TabsTrigger value="membership">Membership</TabsTrigger>
+                    <TabsTrigger value="services">Services</TabsTrigger>
+                    <TabsTrigger value="sales">Sales</TabsTrigger>
+                    <TabsTrigger value="other">Other</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Total:</span>
+                  <span className="font-bold text-lg">₹{totalIncome.toFixed(2)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Income</CardTitle>
+            <CardTitle>Income Records</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{format(new Date(transaction.transaction_date), 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{transaction.category}</TableCell>
-                    <TableCell>${transaction.amount.toFixed(2)}</TableCell>
-                    <TableCell>{transaction.payment_method}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(transaction)}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(transaction.id)}>
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+            {isLoading ? (
+              // Loading skeleton
+              <div className="space-y-2">
+                {Array(5).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12" />
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[100px]" />
+                    <Skeleton className="h-4 w-[80px]" />
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            ) : filteredTransactions.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[120px]">Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">
+                        {format(new Date(transaction.transaction_date || transaction.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{transaction.category || 'Uncategorized'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{transaction.source || 'Manual'}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">₹{transaction.amount.toFixed(2)}</TableCell>
+                      <TableCell>{transaction.payment_method}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(transaction)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(transaction.id)}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={4}>Total</TableCell>
+                    <TableCell className="font-medium">₹{totalIncome.toFixed(2)}</TableCell>
+                    <TableCell colSpan={2}></TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No income records found</p>
+                <Button variant="outline" className="mt-4" onClick={() => setIsDialogOpen(true)}>
+                  Add your first income record
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

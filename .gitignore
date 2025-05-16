@@ -37,3 +37,4 @@ coverage/
 supabase/.temp/
 supabase/.env
 errorlist.md
+src/database/finance_schema.sql

@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 interface FinanceDataTableProps<T> {
-  data: T[];
-  columns: {
+  data?: T[];
+  columns?: {
     header: string;
     accessorKey: string;
     cell?: (row: T) => React.ReactNode;
@@ -21,14 +21,20 @@ interface FinanceDataTableProps<T> {
   title?: string;
   emptyMessage?: string;
   isLoading?: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  pageSize?: number;
 }
 
 function FinanceDataTable<T>({
-  data,
-  columns,
+  data = [],
+  columns = [],
   title = "Transactions",
   emptyMessage = "No data available",
-  isLoading = false
+  isLoading = false,
+  startDate,
+  endDate,
+  pageSize = 10
 }: FinanceDataTableProps<T>) {
   return (
     <Card className="w-full">

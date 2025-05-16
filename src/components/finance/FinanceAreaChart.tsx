@@ -5,29 +5,66 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface FinanceAreaChartProps {
-  data: {
+  data?: {
     name: string;
     revenue?: number;
     expenses?: number;
     profit?: number;
+    [key: string]: any;
   }[];
   title?: string;
   height?: number | string;
   showLegend?: boolean;
+  isLoading?: boolean;
+  emptyMessage?: string;
 }
 
 const FinanceAreaChart: React.FC<FinanceAreaChartProps> = ({ 
-  data, 
+  data = [], 
   title = "Revenue Overview",
   height = 350,
-  showLegend = true
+  showLegend = true,
+  isLoading = false,
+  emptyMessage = "No financial data available"
 }) => {
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style={{ width: '100%', height }} className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Handle empty data
+  if (!data || data.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style={{ width: '100%', height }} className="flex items-center justify-center">
+            <p className="text-muted-foreground">{emptyMessage}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   // Format the data for better display
   const formattedData = data.map(item => ({
     ...item,
-    name: item.name.includes('-') 
+    name: item.name && item.name.includes('-') 
       ? new Date(item.name).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-      : item.name
+      : (item.name || 'Unknown')
   }));
 
   return (

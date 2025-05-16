@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,142 +9,182 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash, Download, DollarSign, FileText } from "lucide-react";
+import { Plus, Edit, Trash, Download, DollarSign, FileText, RefreshCw, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { format } from 'date-fns';
-
-interface ExpenseRecord {
-  id: string;
-  date: string;
-  amount: number;
-  category: string;
-  description: string;
-  vendor: string;
-  paymentMethod: string;
-  reference: string;
-  attachment?: string;
-  branchId: string;
-  status: 'pending' | 'paid' | 'cancelled';
-}
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from '@/hooks/use-branch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ExpenseRecord } from '@/types/finance';
 
 const ExpenseRecordsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ExpenseRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expenseRecords, setExpenseRecords] = useState<ExpenseRecord[]>([]);
+  const { currentBranch } = useBranch();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('all');
   
   // Form state
   const [formData, setFormData] = useState<Omit<ExpenseRecord, 'id'>>({
     date: new Date().toISOString(),
     amount: 0,
-    category: '',
+    category: 'Uncategorized',
     description: '',
     vendor: '',
-    paymentMethod: 'cash',
+    payment_method: 'cash',
     reference: '',
-    branchId: 'branch1',
+    branch_id: currentBranch?.id || '',
     status: 'pending'
   });
 
-  // Mock data for expense records - will be replaced with Supabase data
-  const [expenseRecords, setExpenseRecords] = useState<ExpenseRecord[]>([
-    {
-      id: '1',
-      date: '2023-04-15T10:30:00.000Z',
-      amount: 5000000,
-      category: 'Rent',
-      description: 'Monthly rent payment',
-      vendor: 'ABC Properties',
-      paymentMethod: 'bank',
-      reference: 'RENT-APR-2023',
-      branchId: 'branch1',
-      status: 'paid'
-    },
-    {
-      id: '2',
-      date: '2023-04-15T14:45:00.000Z',
-      amount: 35000,
-      category: 'Utilities',
-      description: 'Electricity bill',
-      vendor: 'Power Supply Co.',
-      paymentMethod: 'bank',
-      reference: 'ELEC-042023',
-      branchId: 'branch1',
-      status: 'paid'
-    },
-    {
-      id: '3',
-      date: '2023-04-16T09:15:00.000Z',
-      amount: 25000,
-      category: 'Equipment Maintenance',
-      description: 'Treadmill repair',
-      vendor: 'Fitness Equipment Services',
-      paymentMethod: 'cash',
-      reference: 'SER-2023-042',
-      branchId: 'branch1',
-      status: 'pending'
-    },
-    {
-      id: '4',
-      date: '2023-04-17T11:00:00.000Z',
-      amount: 75000,
-      category: 'Inventory',
-      description: 'Protein powder stock',
-      vendor: 'Supplement Wholesale Ltd.',
-      paymentMethod: 'credit',
-      reference: 'INV-2023-156',
-      branchId: 'branch1',
-      status: 'paid'
-    },
-    {
-      id: '5',
-      date: '2023-04-18T15:30:00.000Z',
-      amount: 15000,
-      category: 'Cleaning Supplies',
-      description: 'Monthly cleaning supplies',
-      vendor: 'CleanCo',
-      paymentMethod: 'cash',
-      reference: 'PUR-2023-067',
-      branchId: 'branch1',
-      status: 'paid'
-    }
-  ]);
-
-  // Expense categories - will be replaced with data from Supabase
   const expenseCategories = [
-    'Rent',
-    'Utilities',
-    'Equipment Maintenance',
-    'Staff Salaries',
-    'Marketing',
-    'Insurance',
-    'Cleaning Supplies',
-    'Inventory',
-    'Software',
-    'Office Supplies',
-    'Other'
+    'Rent', 'Utilities', 'Equipment Maintenance', 'Inventory', 'Marketing',
+    'Salaries', 'Insurance', 'Taxes', 'Supplies', 'Cleaning', 'Repairs',
+    'Software', 'Subscriptions', 'Travel', 'Food', 'Other'
   ];
 
-  // Payment methods
-  const paymentMethods = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'credit', label: 'Credit Card' },
-    { value: 'debit', label: 'Debit Card' },
-    { value: 'upi', label: 'UPI' },
-    { value: 'bank', label: 'Bank Transfer' },
-    { value: 'cheque', label: 'Cheque' },
-    { value: 'other', label: 'Other' }
-  ];
+  const paymentMethods = ['cash', 'card', 'upi', 'netbanking', 'cheque', 'online', 'wallet'];
+  const statusOptions = ['pending', 'paid', 'cancelled'];
+  
+  // Fetch expense records from Supabase
+  const fetchExpenseRecords = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // First try to fetch from expense_records table
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_records')
+        .select('*')
+        .eq('branch_id', currentBranch?.id || '')
+        .order('date', { ascending: false });
+      
+      if (expenseError) {
+        // If expense_records fails, try transactions table with type=expense
+        const { data: transactionsData, error: transactionsError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('branch_id', currentBranch?.id || '')
+          .eq('type', 'expense')
+          .order('transaction_date', { ascending: false });
+        
+        if (transactionsError) {
+          console.error('Error fetching expense data:', transactionsError);
+          toast.error('Failed to load expense records');
+          return;
+        }
+        
+        // Normalize transaction data to match ExpenseRecord structure
+        const normalizedTransactions = transactionsData?.map(transaction => ({
+          id: transaction.id,
+          date: transaction.transaction_date,
+          amount: transaction.amount,
+          category: transaction.category || 'Uncategorized',
+          description: transaction.description || '',
+          vendor: transaction.vendor || 'Unknown',
+          payment_method: transaction.payment_method || 'cash',
+          reference: transaction.reference_id || '',
+          branch_id: transaction.branch_id,
+          status: transaction.status || 'completed',
+          created_at: transaction.created_at,
+          updated_at: transaction.updated_at
+        })) || [];
+        
+        setExpenseRecords(normalizedTransactions);
+      } else {
+        // Use data from expense_records table
+        setExpenseRecords(expenseData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching expense records:', error);
+      toast.error('Failed to load expense records');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentBranch?.id]);
+
+  // Set up real-time subscription for expense records
+  useEffect(() => {
+    fetchExpenseRecords();
+    
+    // Set up real-time subscriptions for expense-related tables
+    const channel = supabase
+      .channel('expense_records_changes')
+      // Listen for expense_records changes
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'expense_records',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          console.log('Expense records updated');
+          fetchExpenseRecords();
+        }
+      )
+      // Listen for transactions with type=expense changes
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'transactions',
+          ...(currentBranch?.id ? { filter: `branch_id=eq.${currentBranch.id}` } : {})
+        }, 
+        () => {
+          console.log('Transaction records updated');
+          fetchExpenseRecords();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentBranch?.id, fetchExpenseRecords]);
+  
+  // Filter expense records based on search term, category, and status
+  const filteredExpenseRecords = expenseRecords.filter(record => {
+    // Apply tab filters
+    if (activeTab === 'rent' && record.category !== 'Rent') return false;
+    if (activeTab === 'utilities' && record.category !== 'Utilities') return false;
+    if (activeTab === 'equipment' && record.category !== 'Equipment Maintenance') return false;
+    if (activeTab === 'other' && !['Other', 'Marketing', 'Supplies', 'Cleaning'].includes(record.category)) return false;
+    
+    // Apply search filter
+    if (searchTerm && !(
+      record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.vendor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+    )) return false;
+    
+    // Apply category filter
+    if (categoryFilter !== 'all' && record.category !== categoryFilter) return false;
+    
+    // Apply status filter
+    if (statusFilter !== 'all' && record.status !== statusFilter) return false;
+    
+    return true;
+  });
+  
+  // Calculate total expenses
+  const totalExpenses = filteredExpenseRecords.reduce((sum, record) => sum + (record.amount || 0), 0);
 
   const handleCreateRecord = () => {
     setFormData({
       date: new Date().toISOString(),
       amount: 0,
-      category: '',
+      category: 'Uncategorized',
       description: '',
       vendor: '',
-      paymentMethod: 'cash',
+      payment_method: 'cash',
       reference: '',
-      branchId: 'branch1',
+      branch_id: currentBranch?.id || '',
       status: 'pending'
     });
     setShowCreateDialog(true);
@@ -159,23 +198,48 @@ const ExpenseRecordsPage = () => {
       category: record.category,
       description: record.description,
       vendor: record.vendor,
-      paymentMethod: record.paymentMethod,
+      payment_method: record.payment_method,
       reference: record.reference,
-      attachment: record.attachment,
-      branchId: record.branchId,
+      branch_id: record.branch_id,
       status: record.status
     });
     setShowEditDialog(true);
   };
 
-  const handleDeleteRecord = (id: string) => {
+  const handleDeleteRecord = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this expense record?')) {
-      setExpenseRecords(expenseRecords.filter(record => record.id !== id));
-      toast.success('Expense record deleted successfully');
+      try {
+        // First try to delete from expense_records table
+        const { error: expenseError } = await supabase
+          .from('expense_records')
+          .delete()
+          .eq('id', id);
+        
+        if (expenseError) {
+          // If that fails, try deleting from transactions table
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', id);
+          
+          if (transactionError) {
+            console.error('Error deleting expense record:', transactionError);
+            toast.error('Failed to delete expense record');
+            return;
+          }
+        }
+        
+        // Update local state
+        setExpenseRecords(expenseRecords.filter(record => record.id !== id));
+        toast.success('Expense record deleted successfully');
+      } catch (error) {
+        console.error('Error deleting expense record:', error);
+        toast.error('Failed to delete expense record');
+      }
     }
   };
 
-  const handleSaveNewRecord = () => {
+  const handleSaveNewRecord = async () => {
     if (formData.amount <= 0) {
       toast.error('Amount must be greater than zero');
       return;
@@ -186,16 +250,84 @@ const ExpenseRecordsPage = () => {
       return;
     }
     
-    const newRecord = {
-      ...formData,
-      id: Date.now().toString()
-    };
-    setExpenseRecords([...expenseRecords, newRecord]);
-    setShowCreateDialog(false);
-    toast.success('Expense record created successfully');
+    try {
+      // Try to insert into expense_records table first
+      const { data, error } = await supabase
+        .from('expense_records')
+        .insert([{
+          date: formData.date,
+          amount: formData.amount,
+          category: formData.category,
+          description: formData.description,
+          vendor: formData.vendor,
+          payment_method: formData.payment_method,
+          reference: formData.reference,
+          branch_id: formData.branch_id || currentBranch?.id,
+          status: formData.status,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
+      
+      if (error) {
+        // If that fails, insert into transactions table
+        const { data: transactionData, error: transactionError } = await supabase
+          .from('transactions')
+          .insert([{
+            type: 'expense',
+            amount: formData.amount,
+            description: formData.description,
+            transaction_date: formData.date,
+            payment_method: formData.payment_method,
+            category: formData.category,
+            branch_id: formData.branch_id || currentBranch?.id,
+            reference_id: formData.reference,
+            status: formData.status,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select();
+        
+        if (transactionError) {
+          console.error('Error creating expense record:', transactionError);
+          toast.error('Failed to create expense record');
+          return;
+        }
+        
+        // Add the new record to local state
+        if (transactionData && transactionData[0]) {
+          const newRecord = {
+            id: transactionData[0].id,
+            date: transactionData[0].transaction_date,
+            amount: transactionData[0].amount,
+            category: transactionData[0].category,
+            description: transactionData[0].description,
+            vendor: formData.vendor,
+            payment_method: transactionData[0].payment_method,
+            reference: transactionData[0].reference_id,
+            branch_id: transactionData[0].branch_id,
+            status: transactionData[0].status,
+            created_at: transactionData[0].created_at,
+            updated_at: transactionData[0].updated_at
+          };
+          setExpenseRecords([newRecord, ...expenseRecords]);
+        }
+      } else {
+        // Add the new record to local state
+        if (data && data[0]) {
+          setExpenseRecords([data[0], ...expenseRecords]);
+        }
+      }
+      
+      setShowCreateDialog(false);
+      toast.success('Expense record created successfully');
+    } catch (error) {
+      console.error('Error creating expense record:', error);
+      toast.error('Failed to create expense record');
+    }
   };
 
-  const handleUpdateRecord = () => {
+  const handleUpdateRecord = async () => {
     if (!selectedRecord) return;
     
     if (formData.amount <= 0) {
@@ -208,11 +340,84 @@ const ExpenseRecordsPage = () => {
       return;
     }
     
-    setExpenseRecords(expenseRecords.map(record => 
-      record.id === selectedRecord.id ? { ...selectedRecord, ...formData } : record
-    ));
-    setShowEditDialog(false);
-    toast.success('Expense record updated successfully');
+    try {
+      // Check if the record is from expense_records or transactions table
+      const isExpenseRecord = await supabase
+        .from('expense_records')
+        .select('id')
+        .eq('id', selectedRecord.id)
+        .single();
+      
+      if (!isExpenseRecord.error) {
+        // Update expense_records table
+        const { error } = await supabase
+          .from('expense_records')
+          .update({
+            date: formData.date,
+            amount: formData.amount,
+            category: formData.category,
+            description: formData.description,
+            vendor: formData.vendor,
+            payment_method: formData.payment_method,
+            reference: formData.reference,
+            branch_id: formData.branch_id,
+            status: formData.status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedRecord.id);
+        
+        if (error) {
+          console.error('Error updating expense record:', error);
+          toast.error('Failed to update expense record');
+          return;
+        }
+      } else {
+        // Update transactions table
+        const { error } = await supabase
+          .from('transactions')
+          .update({
+            amount: formData.amount,
+            description: formData.description,
+            transaction_date: formData.date,
+            payment_method: formData.payment_method,
+            category: formData.category,
+            branch_id: formData.branch_id,
+            reference_id: formData.reference,
+            status: formData.status,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedRecord.id);
+        
+        if (error) {
+          console.error('Error updating expense record:', error);
+          toast.error('Failed to update expense record');
+          return;
+        }
+      }
+      
+      // Update local state
+      setExpenseRecords(expenseRecords.map(record => 
+        record.id === selectedRecord.id ? { 
+          ...record, 
+          date: formData.date,
+          amount: formData.amount,
+          category: formData.category,
+          description: formData.description,
+          vendor: formData.vendor,
+          payment_method: formData.payment_method,
+          reference: formData.reference,
+          branch_id: formData.branch_id,
+          status: formData.status,
+          updated_at: new Date().toISOString()
+        } : record
+      ));
+      
+      setShowEditDialog(false);
+      toast.success('Expense record updated successfully');
+    } catch (error) {
+      console.error('Error updating expense record:', error);
+      toast.error('Failed to update expense record');
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -224,22 +429,22 @@ const ExpenseRecordsPage = () => {
   };
 
   const getPaymentMethodLabel = (value: string) => {
-    const method = paymentMethods.find(method => method.value === value);
-    return method?.label || value;
+    return value.charAt(0).toUpperCase() + value.slice(1);
   };
 
-  const getStatusBadge = (status: 'pending' | 'paid' | 'cancelled') => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline">Pending</Badge>;
       case 'paid':
         return <Badge variant="default">Paid</Badge>;
       case 'cancelled':
+      case 'canceled':
         return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
-
-  const totalExpenses = expenseRecords.reduce((sum, record) => sum + record.amount, 0);
 
   return (
     <Container>
@@ -310,64 +515,68 @@ const ExpenseRecordsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="hidden md:table-cell">Vendor</TableHead>
-                  <TableHead className="hidden md:table-cell">Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Reference</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenseRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>
-                      {format(new Date(record.date), 'dd MMM yyyy')}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(record.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{record.category}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {record.vendor}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {getStatusBadge(record.status)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {record.reference}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEditRecord(record)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {record.attachment && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => toast.info("Downloading attachment...")}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteRecord(record.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="space-y-3">
+                  {Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="flex gap-4 items-center">
+                      <Skeleton className="h-12 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredExpenseRecords.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No expense records found</p>
+                  <Button onClick={handleCreateRecord} className="mt-4">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Expense Record
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Payment Method</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExpenseRecords.map(record => (
+                      <TableRow key={record.id}>
+                        <TableCell>{format(new Date(record.date), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell>{record.category}</TableCell>
+                        <TableCell>{record.description}</TableCell>
+                        <TableCell>{record.vendor}</TableCell>
+                        <TableCell>{formatCurrency(record.amount)}</TableCell>
+                        <TableCell>{getPaymentMethodLabel(record.payment_method)}</TableCell>
+                        <TableCell>{getStatusBadge(record.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditRecord(record)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {record.attachment && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => toast.info("Downloading attachment...")}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeleteRecord(record.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
                       </div>
                     </TableCell>
                   </TableRow>

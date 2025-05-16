@@ -3,39 +3,58 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface FinancePieChartProps {
-  data: {
+  data?: {
     name: string;
     value: number;
+    color?: string;
   }[];
   title?: string;
   height?: number | string;
   colors?: string[];
   showLegend?: boolean;
   showLabels?: boolean;
+  isLoading?: boolean;
+  emptyMessage?: string;
 }
 
 const COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#F44336', '#9C27B0', '#3F51B5', '#E91E63', '#009688'];
 
 const FinancePieChart: React.FC<FinancePieChartProps> = ({ 
-  data, 
+  data = [], 
   title = "Breakdown",
   height = 300,
   colors = COLORS,
   showLegend = true,
-  showLabels = false
+  showLabels = false,
+  isLoading = false,
+  emptyMessage = "No data available"
 }) => {
-  // Filter out any items with zero value
-  const filteredData = data.filter(item => item.value > 0);
-  
-  // If no data, show empty state
-  if (filteredData.length === 0) {
+  // Handle loading state
+  if (isLoading) {
     return (
       <Card className="w-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center" style={{ height }}>
-          <p className="text-muted-foreground">No data available</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Filter out any items with zero value
+  const filteredData = data.filter(item => item.value > 0);
+  
+  // If no data, show empty state
+  if (!filteredData || filteredData.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center" style={{ height }}>
+          <p className="text-muted-foreground">{emptyMessage}</p>
         </CardContent>
       </Card>
     );
@@ -62,7 +81,10 @@ const FinancePieChart: React.FC<FinancePieChartProps> = ({
                 label={showLabels ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : false}
               >
                 {filteredData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color || colors[index % colors.length]} 
+                  />
                 ))}
               </Pie>
               <Tooltip 

@@ -33,11 +33,23 @@ export default function TransactionList({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<FinancialTransaction | null>(null);
   
-  const filteredTransactions = transactions.filter(t => 
-    t.description?.toLowerCase().includes(search.toLowerCase()) ||
-    t.type?.toLowerCase().includes(search.toLowerCase()) ||
-    (t.reference_id && search !== '' && t.reference_id.includes(search))
-  );
+  // Ensure transactions is always an array and handle undefined data
+  const safeTransactions = transactions || [];
+  
+  const filteredTransactions = safeTransactions.filter(t => {
+    if (!t) return false;
+    
+    const description = t.description?.toLowerCase() || '';
+    const type = t.type?.toLowerCase() || '';
+    const referenceId = t.reference_id?.toLowerCase() || '';
+    const category = t.category?.toLowerCase() || '';
+    const searchLower = search.toLowerCase();
+    
+    return description.includes(searchLower) ||
+           type.includes(searchLower) ||
+           category.includes(searchLower) ||
+           (referenceId && searchLower !== '' && referenceId.includes(searchLower));
+  });
   
   const handleAddClick = () => {
     setIsAddDialogOpen(true);
@@ -129,25 +141,33 @@ export default function TransactionList({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        {transaction.transaction_date && format(new Date(transaction.transaction_date), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>{transaction.description}</TableCell>
-                      <TableCell>{transaction.id}</TableCell>
-                      <TableCell>{getTransactionBadge(transaction.type)}</TableCell>
-                      <TableCell className="text-right">
-                        <span className={transaction.type.toLowerCase() === 'expense' ? 'text-red-500' : 'text-green-500'}>
-                          {transaction.type.toLowerCase() === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
+                  {filteredTransactions.map((transaction) => {
+                    // Handle different date field names
+                    const transactionDate = transaction.transaction_date || transaction.date || transaction.created_at;
+                    // Handle different type field values
+                    const transactionType = transaction.type || 'unknown';
+                    // Determine if it's an expense based on type
+                    const isExpense = transactionType.toLowerCase() === 'expense';
+                    
+                    return (
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          {transactionDate && format(new Date(transactionDate), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>{transaction.description || 'No description'}</TableCell>
+                        <TableCell>{transaction.reference_id || transaction.id || '-'}</TableCell>
+                        <TableCell>{getTransactionBadge(transactionType)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={isExpense ? 'text-red-500' : 'text-green-500'}>
+                            {isExpense ? '-' : '+'}{formatCurrency(Math.abs(Number(transaction.amount || 0)))}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -163,7 +183,8 @@ export default function TransactionList({
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
             </div>

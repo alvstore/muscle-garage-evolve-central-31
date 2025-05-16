@@ -1,13 +1,16 @@
 // Basic finance types
+// Transaction types for the finance module
 export interface Transaction {
   id: string;
   amount: number;
-  type: TransactionType;
+  type: TransactionType | string;
   description?: string;
   category_id?: string;
+  category?: string; // For compatibility with different tables
   branch_id?: string;
   recorded_by?: string;
   reference_id?: string;
+  reference?: string; // For compatibility with income/expense records
   payment_method?: string;
   transaction_id?: string;
   transaction_date?: string;
@@ -15,6 +18,10 @@ export interface Transaction {
   created_at?: string;
   updated_at?: string;
   date?: string; // Alias for transaction_date
+  vendor?: string; // For expense records
+  source?: string; // For income records
+  status?: string;
+  webhook_processed?: boolean;
 }
 
 export enum InvoiceStatus {
@@ -83,6 +90,11 @@ export interface FinancialTransaction {
   updated_at: string;
   recurring?: boolean;
   recurring_period?: string | null;
+  webhook_processed?: boolean;
+  vendor?: string; // For expense records
+  source?: string; // For income records
+  reference?: string; // For compatibility with income/expense records
+  date?: string; // Alias for transaction_date
 }
 
 export interface ExpenseRecord {

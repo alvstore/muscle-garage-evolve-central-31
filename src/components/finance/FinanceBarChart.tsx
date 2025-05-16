@@ -4,12 +4,16 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+type ChartDataItem = {
+  name: string;
+  value: number;
+  color: string;
+  [key: string]: any;
+};
+
 interface FinanceBarChartProps {
-  data: {
-    name: string;
-    [key: string]: any;
-  }[];
-  keys: {
+  data?: ChartDataItem[];
+  keys?: {
     key: string;
     color: string;
     name: string;
@@ -18,23 +22,87 @@ interface FinanceBarChartProps {
   height?: number | string;
   showLegend?: boolean;
   stacked?: boolean;
+  isLoading?: boolean;
+  emptyMessage?: string;
 }
 
 const FinanceBarChart: React.FC<FinanceBarChartProps> = ({ 
-  data, 
+  data = [], 
   keys,
   title = "Financial Comparison",
   height = 350,
   showLegend = true,
-  stacked = false
+  stacked = false,
+  isLoading = false,
+  emptyMessage = "No data available"
 }) => {
-  // Format the data for better display
-  const formattedData = data.map(item => ({
-    ...item,
-    name: item.name.includes('-') 
-      ? new Date(item.name).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-      : item.name
-  }));
+  // Convert data format if needed
+  const prepareChartData = () => {
+    if (!data || data.length === 0) return [];
+    
+    // If keys are provided, use the standard format
+    if (keys && keys.length > 0) {
+      return data.map(item => ({
+        ...item,
+        name: item.name.includes('-') 
+          ? new Date(item.name).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : item.name
+      }));
+    }
+    
+    // If no keys are provided, transform the data for a single bar chart
+    // This handles the format used in the dashboard (name, value, color)
+    const transformedData = [{
+      name: 'Categories',
+      ...data.reduce((acc, item) => {
+        acc[item.name] = item.value;
+        return acc;
+      }, {})
+    }];
+    
+    // Create keys from the data
+    const derivedKeys = data.map(item => ({
+      key: item.name,
+      name: item.name,
+      color: item.color || `hsl(${Math.random() * 360}, 70%, 50%)`
+    }));
+    
+    return { chartData: transformedData, chartKeys: derivedKeys };
+  };
+  
+  const { chartData, chartKeys } = prepareChartData() as any;
+  const formattedData = chartData || [];
+  const formattedKeys = chartKeys || keys || [];
+  
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style={{ width: '100%', height }} className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!formattedData.length || !formattedKeys.length) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div style={{ width: '100%', height }} className="flex items-center justify-center">
+            <p className="text-muted-foreground">{emptyMessage}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
@@ -63,7 +131,7 @@ const FinanceBarChart: React.FC<FinanceBarChartProps> = ({
               />
               <Tooltip 
                 formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
-                labelFormatter={(label) => `Date: ${label}`}
+                labelFormatter={(label) => `${label}`}
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   borderRadius: '8px',
@@ -73,7 +141,7 @@ const FinanceBarChart: React.FC<FinanceBarChartProps> = ({
               />
               {showLegend && <Legend />}
               
-              {keys.map((item, index) => (
+              {formattedKeys.map((item, index) => (
                 <Bar 
                   key={item.key}
                   dataKey={item.key} 

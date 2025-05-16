@@ -125,49 +125,105 @@ export const financeService = {
     try {
       if (!branchId) return [];
       
-      // Try to get from transactions table first
-      const { data, error } = await supabase
+      // First try to fetch from transactions table
+      const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
         .eq('branch_id', branchId)
         .order('transaction_date', { ascending: false });
-
-      // If transactions table doesn't exist or is empty, try income_records
-      if (error || !data || data.length === 0) {
-        console.log('Falling back to income_records table for transactions');
+      
+      // Initialize arrays to hold data from different sources
+      let combinedTransactions: FinancialTransaction[] = [];
+      
+      // Add transactions from the transactions table if available
+      if (!transactionsError && transactionsData && transactionsData.length > 0) {
+        const normalizedTransactions = transactionsData.map((transaction: any) => ({
+          id: transaction.id,
+          type: transaction.type as 'income' | 'expense' | 'refund',
+          amount: transaction.amount,
+          description: transaction.description || '',
+          transaction_date: transaction.transaction_date,
+          payment_method: transaction.payment_method || 'unknown',
+          category: transaction.category || 'Uncategorized',
+          branch_id: transaction.branch_id,
+          reference_id: transaction.reference_id || '',
+          status: transaction.status || 'completed',
+          created_at: transaction.created_at,
+          updated_at: transaction.updated_at,
+          webhook_processed: transaction.webhook_processed
+        }));
         
-        // Get income records
-        const { data: incomeData, error: incomeError } = await supabase
-          .from('income_records')
-          .select('*')
-          .eq('branch_id', branchId)
-          .order('date', { ascending: false });
-          
-        if (incomeError) {
-          console.error('Error fetching from income_records:', incomeError);
-          return [];
-        }
-        
-        // Transform income_records to match FinancialTransaction interface
-        return (incomeData || []).map(record => ({
+        combinedTransactions = [...normalizedTransactions];
+      }
+      
+      // Fetch from income_records table
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('income_records')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('date', { ascending: false });
+      
+      // Add income records if available
+      if (!incomeError && incomeData && incomeData.length > 0) {
+        const normalizedIncomeRecords = incomeData.map((record: any) => ({
           id: record.id,
-          type: 'income',
+          type: 'income' as const,
           amount: record.amount,
           description: record.description || '',
           transaction_date: record.date,
           payment_method: record.payment_method || 'unknown',
-          category: record.category || 'Other',
+          category: record.category || 'Uncategorized',
+          branch_id: record.branch_id,
+          reference_id: record.reference || '',
+          status: 'completed',
+          created_at: record.created_at,
+          updated_at: record.updated_at,
+          source: record.source || 'Unknown'
+        }));
+        
+        combinedTransactions = [...combinedTransactions, ...normalizedIncomeRecords];
+      }
+      
+      // Fetch from expense_records table
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_records')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('date', { ascending: false });
+      
+      // Add expense records if available
+      if (!expenseError && expenseData && expenseData.length > 0) {
+        const normalizedExpenseRecords = expenseData.map((record: any) => ({
+          id: record.id,
+          type: 'expense' as const,
+          amount: record.amount,
+          description: record.description || '',
+          transaction_date: record.date,
+          payment_method: record.payment_method || 'unknown',
+          category: record.category || 'Uncategorized',
           branch_id: record.branch_id,
           reference_id: record.reference || '',
           status: record.status || 'completed',
           created_at: record.created_at,
           updated_at: record.updated_at,
-          recurring: false,
-          recurring_period: null
+          vendor: record.vendor || 'Unknown'
         }));
+        
+        combinedTransactions = [...combinedTransactions, ...normalizedExpenseRecords];
       }
       
-      return data as FinancialTransaction[];
+      // If we have no data from any source, log an error
+      if (combinedTransactions.length === 0 && transactionsError && incomeError && expenseError) {
+        console.error('Failed to fetch from all financial data sources');
+        throw new Error('Failed to fetch financial data');
+      }
+      
+      // Sort all transactions by date, most recent first
+      return combinedTransactions.sort((a, b) => {
+        const dateA = new Date(a.transaction_date || a.created_at).getTime();
+        const dateB = new Date(b.transaction_date || b.created_at).getTime();
+        return dateB - dateA;
+      });
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
       toast.error('Failed to load transactions');
@@ -177,16 +233,107 @@ export const financeService = {
 
   async createTransaction(transaction: Omit<FinancialTransaction, 'id'>): Promise<FinancialTransaction | null> {
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([transaction])
-        .select()
-        .single();
-
-      if (error) throw error;
+      const now = new Date().toISOString();
+      const transactionType = transaction.type?.toLowerCase() || 'income';
+      let result: any = null;
+      
+      // Determine which table to insert into based on transaction type
+      if (transactionType === 'expense') {
+        // Insert into expense_records table
+        const { data, error } = await supabase
+          .from('expense_records')
+          .insert([{
+            date: transaction.transaction_date || now,
+            amount: transaction.amount,
+            category: transaction.category || 'Uncategorized',
+            description: transaction.description || '',
+            vendor: transaction.vendor || 'Unknown',
+            payment_method: transaction.payment_method || 'cash',
+            reference: transaction.reference_id || '',
+            branch_id: transaction.branch_id,
+            status: transaction.status || 'completed',
+            created_at: now,
+            updated_at: now
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        // Convert to FinancialTransaction format
+        return {
+          id: result.id,
+          type: 'expense' as const,
+          amount: result.amount,
+          description: result.description || '',
+          transaction_date: result.date,
+          payment_method: result.payment_method || 'unknown',
+          category: result.category || 'Uncategorized',
+          branch_id: result.branch_id,
+          reference_id: result.reference || '',
+          status: result.status || 'completed',
+          created_at: result.created_at,
+          updated_at: result.updated_at,
+          vendor: result.vendor || 'Unknown'
+        };
+      } else if (transactionType === 'income') {
+        // Insert into income_records table
+        const { data, error } = await supabase
+          .from('income_records')
+          .insert([{
+            date: transaction.transaction_date || now,
+            amount: transaction.amount,
+            category: transaction.category || 'Uncategorized',
+            description: transaction.description || '',
+            source: transaction.source || 'Unknown',
+            payment_method: transaction.payment_method || 'cash',
+            reference: transaction.reference_id || '',
+            branch_id: transaction.branch_id,
+            created_at: now,
+            updated_at: now
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        // Convert to FinancialTransaction format
+        return {
+          id: result.id,
+          type: 'income' as const,
+          amount: result.amount,
+          description: result.description || '',
+          transaction_date: result.date,
+          payment_method: result.payment_method || 'unknown',
+          category: result.category || 'Uncategorized',
+          branch_id: result.branch_id,
+          reference_id: result.reference || '',
+          status: 'completed',
+          created_at: result.created_at,
+          updated_at: result.updated_at,
+          source: result.source || 'Unknown'
+        };
+      } else {
+        // Insert into transactions table as fallback
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert([{
+            ...transaction,
+            type: transactionType,
+            created_at: now,
+            updated_at: now
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
       
       toast.success('Transaction created successfully');
-      return data as FinancialTransaction;
+      return result as FinancialTransaction;
     } catch (error: any) {
       console.error('Error creating transaction:', error);
       toast.error(`Failed to create transaction: ${error.message}`);
@@ -196,15 +343,94 @@ export const financeService = {
 
   async updateTransaction(id: string, updates: Partial<FinancialTransaction>): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('transactions')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
+      const now = new Date().toISOString();
+      const transactionType = updates.type?.toLowerCase() || 'unknown';
+      let success = false;
       
-      toast.success('Transaction updated successfully');
-      return true;
+      // Determine which table to update based on transaction type
+      if (transactionType === 'expense') {
+        // Update in expense_records table
+        const { error } = await supabase
+          .from('expense_records')
+          .update({
+            date: updates.transaction_date || updates.date,
+            amount: updates.amount,
+            category: updates.category,
+            description: updates.description,
+            vendor: updates.vendor,
+            payment_method: updates.payment_method,
+            reference: updates.reference_id || updates.reference,
+            status: updates.status,
+            updated_at: now
+          })
+          .eq('id', id);
+        
+        if (error) {
+          // If failed, try updating in transactions table
+          const { error: fallbackError } = await supabase
+            .from('transactions')
+            .update({
+              ...updates,
+              updated_at: now
+            })
+            .eq('id', id);
+          
+          if (fallbackError) throw fallbackError;
+          success = true;
+        } else {
+          success = true;
+        }
+      } else if (transactionType === 'income') {
+        // Update in income_records table
+        const { error } = await supabase
+          .from('income_records')
+          .update({
+            date: updates.transaction_date || updates.date,
+            amount: updates.amount,
+            category: updates.category,
+            description: updates.description,
+            source: updates.source,
+            payment_method: updates.payment_method,
+            reference: updates.reference_id || updates.reference,
+            updated_at: now
+          })
+          .eq('id', id);
+        
+        if (error) {
+          // If failed, try updating in transactions table
+          const { error: fallbackError } = await supabase
+            .from('transactions')
+            .update({
+              ...updates,
+              updated_at: now
+            })
+            .eq('id', id);
+          
+          if (fallbackError) throw fallbackError;
+          success = true;
+        } else {
+          success = true;
+        }
+      } else {
+        // Update in transactions table as fallback
+        const { error } = await supabase
+          .from('transactions')
+          .update({
+            ...updates,
+            updated_at: now
+          })
+          .eq('id', id);
+        
+        if (error) throw error;
+        success = true;
+      }
+      
+      if (success) {
+        toast.success('Transaction updated successfully');
+        return true;
+      } else {
+        throw new Error('Failed to update transaction in any table');
+      }
     } catch (error: any) {
       console.error('Error updating transaction:', error);
       toast.error(`Failed to update transaction: ${error.message}`);
@@ -214,15 +440,47 @@ export const financeService = {
 
   async deleteTransaction(id: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('transactions')
+      let success = false;
+      
+      // Try to delete from all possible tables
+      // First try expense_records
+      const { error: expenseError } = await supabase
+        .from('expense_records')
         .delete()
         .eq('id', id);
-
-      if (error) throw error;
       
-      toast.success('Transaction deleted successfully');
-      return true;
+      if (!expenseError) {
+        success = true;
+      } else {
+        // Try income_records
+        const { error: incomeError } = await supabase
+          .from('income_records')
+          .delete()
+          .eq('id', id);
+        
+        if (!incomeError) {
+          success = true;
+        } else {
+          // Finally try transactions
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', id);
+          
+          if (!transactionError) {
+            success = true;
+          } else {
+            throw transactionError;
+          }
+        }
+      }
+      
+      if (success) {
+        toast.success('Transaction deleted successfully');
+        return true;
+      } else {
+        throw new Error('Failed to delete transaction from any table');
+      }
     } catch (error: any) {
       console.error('Error deleting transaction:', error);
       toast.error(`Failed to delete transaction: ${error.message}`);
