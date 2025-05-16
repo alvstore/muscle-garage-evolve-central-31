@@ -1,12 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { integrationsService } from '@/services';
 import { EmailSettings } from '@/types';
 
 export const useEmailSettings = (branchId?: string) => {
   const [settings, setSettings] = useState<EmailSettings>({
+    id: '',
     provider: '',
     from_email: '',
     is_active: false,
+    created_at: '',
+    updated_at: '',
     notifications: {
       sendOnInvoice: true,
       sendClassUpdates: true,
@@ -36,14 +40,14 @@ export const useEmailSettings = (branchId?: string) => {
     fetchSettings();
   }, [branchId]);
   
-  const updateSettings = async (newSettings: EmailSettings): Promise<boolean> => {
+  const updateSettings = async (newSettings: Partial<EmailSettings>): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     
     try {
       const result = await integrationsService.updateEmailSettings(newSettings, branchId);
       if (result) {
-        setSettings(newSettings);
+        setSettings(prev => ({ ...prev, ...newSettings }));
         return true;
       } else {
         setError('Failed to update email settings');
@@ -60,20 +64,12 @@ export const useEmailSettings = (branchId?: string) => {
   const updateIsActive = async (isActive: boolean): Promise<boolean> => {
     try {
       // Create a new settings object with updated is_active property
-      const updatedSettings: EmailSettings = {
-        ...settings,
+      const updatedSettings: Partial<EmailSettings> = {
         is_active: isActive
       };
       
-      // Update the state with the new settings object
-      setSettings(updatedSettings);
-      
-      // Call the API to update the settings
-      const result = await integrationsService.updateEmailSettings(
-        updatedSettings,
-        branchId
-      );
-      
+      // Call the updateSettings method to update the settings
+      const result = await updateSettings(updatedSettings);
       return result;
     } catch (error) {
       console.error('Failed to update email active status:', error);
@@ -86,14 +82,13 @@ export const useEmailSettings = (branchId?: string) => {
     setError(null);
     
     try {
-      const updatedSettings: EmailSettings = {
-        ...settings,
-        notifications: notifications
+      const updatedSettings: Partial<EmailSettings> = {
+        notifications
       };
       
       const result = await integrationsService.updateEmailSettings(updatedSettings, branchId);
       if (result) {
-        setSettings(updatedSettings);
+        setSettings(prev => ({ ...prev, notifications }));
         return true;
       } else {
         setError('Failed to update notification settings');

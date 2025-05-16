@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +8,25 @@ import { Invoice, InvoiceStatus, PaymentMethod } from '@/types/finance';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;
   isOpen?: boolean;
   onClose?: () => void;
   onComplete?: () => void;
-  onSaved?: () => void;
+  onSaved?: () => void; 
+  onCancel?: () => void;
 }
 
-const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ 
+  invoice, 
+  isOpen, 
+  onClose,
+  onComplete, 
+  onSaved,
+  onCancel 
+}) => {
   const { currentBranch } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,14 +90,32 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {
         toast.success('Invoice created successfully');
       }
       
+      if (onSaved) {
+        onSaved();
+      }
+      
       if (onComplete) {
         onComplete();
+      }
+      
+      if (onClose) {
+        onClose();
       }
     } catch (error) {
       console.error('Error saving invoice:', error);
       toast.error('Failed to save invoice');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else if (onClose) {
+      onClose();
+    } else if (onComplete) {
+      onComplete();
     }
   };
 

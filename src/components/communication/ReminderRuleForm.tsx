@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +27,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   const [message, setMessage] = useState('');
   const [targetType, setTargetType] = useState('all_members');
   const [active, setActive] = useState(true);
-  const [channels, setChannels] = useState<NotificationChannel[]>(['in-app' as NotificationChannel]);
+  const [channels, setChannels] = useState<NotificationChannel[]>(['in-app']);
   const [targetRoles, setTargetRoles] = useState<string[]>(['member']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -41,13 +40,13 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
       setMessage(editRule.message || '');
       setTargetType('all_members'); // Default value as it may not exist in DB
       setActive(editRule.is_active || false);
-      setChannels(editRule.send_via || ['app']);
+      setChannels(editRule.send_via ? (editRule.send_via as NotificationChannel[]) : ['in-app']);
       setTargetRoles(editRule.target_roles || ['member']);
     }
   }, [editRule]);
   
   const availableChannels = [
-    { id: 'app', label: 'In-App Notification' },
+    { id: 'in-app', label: 'In-App Notification' },
     { id: 'email', label: 'Email' },
     { id: 'sms', label: 'SMS' },
     { id: 'whatsapp', label: 'WhatsApp' }
@@ -142,10 +141,12 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   };
   
   const handleToggleChannel = (channelId: string) => {
-    if (channels.includes(channelId)) {
-      setChannels(channels.filter(id => id !== channelId));
+    const channelValue = channelId as NotificationChannel;
+    
+    if (channels.includes(channelValue)) {
+      setChannels(channels.filter(id => id !== channelValue));
     } else {
-      setChannels([...channels, channelId]);
+      setChannels([...channels, channelValue]);
     }
   };
 

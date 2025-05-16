@@ -1,33 +1,36 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AvatarUploadProps {
   initialImage?: string;
+  initialImageUrl?: string;
   onImageChange?: (file: File | null) => void;
-  onImageUrl?: (url: string | null) => void;
-  size?: 'sm' | 'md' | 'lg';
+  onImageUploaded?: (url: string) => void;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   disabled?: boolean;
   name?: string;
 }
 
 const AvatarUpload: React.FC<AvatarUploadProps> = ({
   initialImage,
+  initialImageUrl,
   onImageChange,
-  onImageUrl,
+  onImageUploaded,
   size = 'md',
   disabled = false,
   name = ''
 }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || initialImageUrl || null);
   const [isUploading, setIsUploading] = useState(false);
 
   const sizeClasses = {
     sm: 'h-16 w-16',
     md: 'h-24 w-24',
-    lg: 'h-32 w-32'
+    lg: 'h-32 w-32',
+    xl: 'h-40 w-40'
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +52,12 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     // Create preview
     const reader = new FileReader();
     reader.onload = () => {
-      setPreviewUrl(reader.result as string);
+      const result = reader.result as string;
+      setPreviewUrl(result);
+      
+      if (onImageUploaded) {
+        onImageUploaded(result);
+      }
     };
     reader.readAsDataURL(file);
 
@@ -64,8 +72,8 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     if (onImageChange) {
       onImageChange(null);
     }
-    if (onImageUrl) {
-      onImageUrl(null);
+    if (onImageUploaded) {
+      onImageUploaded('');
     }
   };
 

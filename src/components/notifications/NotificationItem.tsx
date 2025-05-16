@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Notification } from '@/types/notification';
 import { Bell, BadgeCheck, Flame, User, Calendar, MessageSquare, CreditCard, Check, AlertCircle, Bell as BellIcon } from 'lucide-react';
@@ -10,7 +9,8 @@ interface NotificationItemProps {
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkRead }) => {
-  const isRead = notification.is_read || notification.read;
+  // Support both read and is_read properties for backward compatibility
+  const isRead = notification.read || notification.is_read;
   
   const getIconByType = (type: string) => {
     switch (type) {

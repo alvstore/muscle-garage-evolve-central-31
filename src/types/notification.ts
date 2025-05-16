@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 
 export interface Notification {
@@ -6,7 +5,7 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
-  is_read?: boolean; // For backward compatibility
+  is_read: boolean; // Added for backward compatibility
   created_at: string;
   type?: string;
   user_id: string;

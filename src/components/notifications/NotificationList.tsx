@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCheck, Bell, Trash2 } from 'lucide-react';
@@ -11,8 +12,8 @@ export interface NotificationListProps {
   filterStatus?: 'all' | 'read' | 'unread';
   filterTypes?: string[];
   categoryTypes?: string[];
-  userId?: string; // Make this optional
-  onDelete?: (id: string) => void; // Add this prop
+  userId?: string;
+  onDelete?: (id: string) => void;
 }
 
 const NotificationList: React.FC<NotificationListProps> = ({
@@ -71,10 +72,13 @@ const NotificationList: React.FC<NotificationListProps> = ({
   };
 
   const filteredNotifications = notifications.filter((notification) => {
+    // Support both read and is_read properties for backward compatibility
+    const isRead = notification.read || notification.is_read;
+    
     const statusFilter =
       filterStatus === 'all' ||
-      (filterStatus === 'read' && (notification.read || notification.is_read)) ||
-      (filterStatus === 'unread' && !(notification.read || notification.is_read));
+      (filterStatus === 'read' && isRead) ||
+      (filterStatus === 'unread' && !isRead);
 
     return statusFilter;
   });
@@ -95,48 +99,49 @@ const NotificationList: React.FC<NotificationListProps> = ({
 
   return (
     <div className="space-y-4">
-      
-      {filteredNotifications.map((notification) => (
-        <div
-          key={notification.id}
-          className={`p-4 border rounded-lg transition-colors ${
-            notification.read || notification.is_read ? 'bg-background' : 'bg-accent/20'
-          }`}
-        >
-          
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-sm font-medium">{notification.title}</h3>
-              <p className="text-xs text-muted-foreground">{notification.message}</p>
+      {filteredNotifications.map((notification) => {
+        // Support both read and is_read properties for backward compatibility
+        const isRead = notification.read || notification.is_read;
+        
+        return (
+          <div
+            key={notification.id}
+            className={`p-4 border rounded-lg transition-colors ${
+              isRead ? 'bg-background' : 'bg-accent/20'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium">{notification.title}</h3>
+                <p className="text-xs text-muted-foreground">{notification.message}</p>
+              </div>
+              {!isRead && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 cursor-pointer"
+                  onClick={() => handleMarkRead(notification)}
+                >
+                  <CheckCheck className="h-3 w-3 mr-1" />
+                  Mark as Read
+                </Badge>
+              )}
             </div>
-            {!notification.read && !notification.is_read && (
-              <Badge
-                variant="secondary"
-                className="ml-2 cursor-pointer"
-                onClick={() => handleMarkRead(notification)}
-              >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Mark as Read
-              </Badge>
-            )}
-          </div>
-          
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>{formatDistanceToNow(new Date(notification.created_at || ''), { addSuffix: true })}</span>
             
-            <div className="flex items-center space-x-2">
-              <button
-                className="hover:text-red-500 transition-colors"
-                onClick={() => handleDelete(notification.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+            <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+              <span>{formatDistanceToNow(new Date(notification.created_at || ''), { addSuffix: true })}</span>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  className="hover:text-red-500 transition-colors"
+                  onClick={() => onDelete && onDelete(notification.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-      
-      
+        );
+      })}
     </div>
   );
 };

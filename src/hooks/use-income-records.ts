@@ -1,26 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { financeService } from '@/services/financeService';
 import { useBranch } from '@/hooks/use-branch';
 import { useAuth } from '@/hooks/use-auth';
 import { FinancialTransaction, TransactionType } from '@/types/finance';
-
-// Update the Transaction interface to include the necessary properties
-interface Transaction {
-  id: string;
-  amount: number;
-  type: 'income' | 'expense';
-  category_id?: string;
-  description?: string;
-  transaction_date: string;
-  recorded_by?: string;
-  branch_id?: string;
-  payment_method?: string;
-  reference_id?: string;
-  transaction_id?: string;
-  attachment?: File; // Add attachment property to match usage
-  created_at?: string;
-  updated_at?: string;
-}
 
 export const useIncomeRecords = () => {
   const [records, setRecords] = useState<FinancialTransaction[]>([]);
@@ -66,7 +49,10 @@ export const useIncomeRecords = () => {
   // Update an existing record
   const updateRecord = async (id: string, updates: Partial<FinancialTransaction>) => {
     try {
-      const updated = await financeService.updateTransaction(id, updates);
+      // Make sure we don't include attachment in the update
+      const { attachment, ...updateData } = updates;
+      
+      const updated = await financeService.updateTransaction(id, updateData);
       if (updated) {
         setRecords(prev => 
           prev.map(record => record.id === id ? { ...record, ...updates } : record)
@@ -99,7 +85,8 @@ export const useIncomeRecords = () => {
         }, 1000);
       });
       
-      await updateRecord(recordId, { attachment: url });
+      // Update the record with the attachment URL, not the File object
+      await updateRecord(recordId, { attachment: url as any });
       return url;
     } catch (error) {
       throw error;

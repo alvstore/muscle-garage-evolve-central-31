@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { EmailSettings, IntegrationStatus, AttendanceSettings } from '@/types/notification';
 import { AutomationRule } from '@/types/crm';
@@ -32,6 +31,50 @@ export const integrationsService = {
       console.error('Integrations service error:', err);
       toast.error('Failed to load email settings');
       return null;
+    }
+  },
+  
+  updateEmailSettings: async (settings: Partial<EmailSettings>, branchId?: string): Promise<boolean> => {
+    try {
+      // Ensure we have the id if we're updating existing settings
+      let settingsId = settings.id;
+      
+      if (!settingsId) {
+        // Try to get the existing settings first
+        const existingSettings = await integrationsService.getEmailSettings(branchId);
+        settingsId = existingSettings?.id;
+      }
+      
+      const updatePayload = {
+        ...settings,
+        branch_id: branchId || settings.branch_id,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (settingsId) {
+        // Update existing settings
+        const { error } = await supabase
+          .from('email_settings')
+          .update(updatePayload)
+          .eq('id', settingsId);
+          
+        if (error) throw error;
+      } else {
+        // Create new settings
+        const { error } = await supabase
+          .from('email_settings')
+          .insert({
+            ...updatePayload,
+            created_at: new Date().toISOString()
+          });
+          
+        if (error) throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating email settings:", error);
+      return false;
     }
   },
   
@@ -194,3 +237,5 @@ export const integrationsService = {
     }
   }
 };
+
+export default integrationsService;

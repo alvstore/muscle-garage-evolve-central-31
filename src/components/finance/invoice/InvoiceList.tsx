@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusIcon } from "lucide-react";
-import { InvoiceStatus } from "@/types/finance";
-import InvoiceForm from "../InvoiceForm";
+import { Invoice, InvoiceStatus } from "@/types/finance";
+import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
 import { useBranch } from "@/hooks/use-branch";
-import { InvoiceListTable } from "./InvoiceListTable";
+import { InvoiceListTable } from "./invoice/InvoiceListTable";
 import { supabase } from '@/services/supabaseClient';
 
 interface InvoiceListProps {
@@ -17,19 +16,19 @@ interface InvoiceListProps {
 }
 
 const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = true }: InvoiceListProps) => {
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const { currentBranch } = useBranch();
 
   const statusColors: Record<InvoiceStatus, string> = {
-    [InvoiceStatus.PAID]: "text-green-600 bg-green-100",
-    [InvoiceStatus.PENDING]: "text-yellow-600 bg-yellow-100",
-    [InvoiceStatus.OVERDUE]: "text-red-600 bg-red-100",
-    [InvoiceStatus.DRAFT]: "text-gray-600 bg-gray-100",
-    [InvoiceStatus.CANCELED]: "text-gray-600 bg-gray-100",
-    [InvoiceStatus.PARTIALLY_PAID]: "text-blue-600 bg-blue-100"
+    paid: "text-green-600 bg-green-100",
+    pending: "text-yellow-600 bg-yellow-100",
+    overdue: "text-red-600 bg-red-100",
+    draft: "text-gray-600 bg-gray-100",
+    canceled: "text-gray-600 bg-gray-100",
+    partially_paid: "text-blue-600 bg-blue-100"
   };
 
   // Fetch invoices from Supabase
@@ -76,7 +75,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
     setIsFormOpen(true);
   };
 
-  const handleEditInvoice = (invoice: any) => {
+  const handleEditInvoice = (invoice: Invoice) => {
     setEditingInvoice(invoice);
     setIsFormOpen(true);
   };
@@ -142,37 +141,35 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Invoices</CardTitle>
-          {!readonly && (
-            <Button onClick={handleAddInvoice}>
-              <PlusIcon className="h-4 w-4 mr-2" /> New Invoice
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          <InvoiceListTable
-            invoices={invoices} 
-            isLoading={isLoading}
-            onEdit={readonly ? undefined : handleEditInvoice}
-            onMarkAsPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
-            statusColors={statusColors}
-            allowDownload={allowDownload}
-          />
-        </CardContent>
-      </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Invoices</CardTitle>
+        {!readonly && (
+          <Button onClick={handleAddInvoice}>
+            <PlusIcon className="h-4 w-4 mr-2" /> New Invoice
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        <InvoiceListTable
+          invoices={invoices} 
+          isLoading={isLoading}
+          onEdit={readonly ? undefined : handleEditInvoice}
+          onMarkAsPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
+          statusColors={statusColors}
+          allowDownload={allowDownload}
+        />
+      </CardContent>
 
       {isFormOpen && (
         <InvoiceForm
           invoice={editingInvoice} 
-          isOpen={isFormOpen} 
-          onClose={handleInvoiceFormClose}
+          onComplete={handleInvoiceFormClose}
+          onCancel={handleInvoiceFormClose}
           onSaved={handleInvoiceSaved}
         />
       )}
-    </div>
+    </Card>
   );
 };
 
