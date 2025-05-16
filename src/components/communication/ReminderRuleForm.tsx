@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useReminderRules } from '@/hooks/use-reminder-rules';
 import { toast } from 'sonner';
-import { ReminderRule } from '@/types/notification';
+import { ReminderRule, NotificationChannel } from '@/types/notification';
 
 interface ReminderRuleFormProps {
   editRule?: ReminderRule | null;
@@ -28,7 +28,7 @@ const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
   const [message, setMessage] = useState('');
   const [targetType, setTargetType] = useState('all_members');
   const [active, setActive] = useState(true);
-  const [channels, setChannels] = useState<string[]>(['app']);
+  const [channels, setChannels] = useState<NotificationChannel[]>(['in-app' as NotificationChannel]);
   const [targetRoles, setTargetRoles] = useState<string[]>(['member']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
