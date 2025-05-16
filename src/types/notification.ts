@@ -219,3 +219,10 @@ export const adaptFeedbackFromDB = (data: any): Feedback => {
     anonymous: data.anonymous
   };
 };
+
+export interface NotificationPreferences {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+  whatsapp: boolean;
+}

@@ -1,4 +1,3 @@
-
 // Basic finance types
 export interface Transaction {
   id: string;
@@ -71,18 +70,17 @@ export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'ye
 
 export interface FinancialTransaction {
   id: string;
-  date?: string;
-  transaction_date?: string;
-  amount: number;
   type: TransactionType;
+  amount: number;
   description: string;
-  payment_method: PaymentMethod;
-  status: PaymentStatus;
-  reference_id?: string;
-  transaction_id?: string;
+  transaction_date: string;
+  payment_method: string;
+  category: string; // Changed from category_id to match database
+  branch_id: string;
+  reference_id: string;
+  status: string;
   created_at: string;
   updated_at: string;
-  branch_id?: string;
-  category?: string;
-  attachment?: string;
+  recurring?: boolean;
+  recurring_period?: string | null;
 }

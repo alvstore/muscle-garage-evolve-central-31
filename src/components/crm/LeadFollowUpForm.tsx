@@ -1,146 +1,172 @@
-
 import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from 'lucide-react';
-import { FollowUpType } from '@/types/crm';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Lead } from '@/types/crm';
+import { useMutation } from '@tanstack/react-query';
+import { leadConversionService } from '@/services/leadConversionService';
+import { toast } from 'sonner';
 
-interface LeadFollowUpFormProps {
-  lead: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
-  onSubmit: (data: {
-    type: FollowUpType;
-    subject?: string;
-    content: string;
-    scheduledDate: string;
-    leadId: string;
-  }) => void;
-  onCancel: () => void;
+export interface LeadFollowUpFormProps {
+  lead: Lead;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({ lead, onSubmit, onCancel }) => {
-  const [followUpType, setFollowUpType] = useState<FollowUpType>('email');
-  const [subject, setSubject] = useState('');
+const LeadFollowUpForm: React.FC<LeadFollowUpFormProps> = ({ lead, onSuccess, onCancel }) => {
+  const [followUpType, setFollowUpType] = useState<'email' | 'call' | 'meeting' | 'whatsapp'>('call');
+  const [subject, setSubject] = useState(`Follow-up with ${lead.name}`);
   const [content, setContent] = useState('');
-  const [scheduledDate, setScheduledDate] = useState(
-    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  );
-  
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [time, setTime] = useState('09:00');
+
+  const scheduleFollowUpMutation = useMutation({
+    mutationFn: (data: {
+      type: 'email' | 'call' | 'meeting' | 'whatsapp';
+      scheduledFor: string;
+      subject: string;
+      content: string;
+    }) => leadConversionService.scheduleFollowUp(lead.id, data),
+    onSuccess: () => {
+      toast.success('Follow-up scheduled successfully');
+      if (onSuccess) onSuccess();
+    },
+    onError: () => {
+      toast.error('Failed to schedule follow-up');
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
+    
+    if (!date) {
+      toast.error('Please select a date for the follow-up');
+      return;
+    }
+    
+    // Combine date and time
+    const scheduledDate = new Date(date);
+    const [hours, minutes] = time.split(':').map(Number);
+    scheduledDate.setHours(hours, minutes);
+    
+    scheduleFollowUpMutation.mutate({
       type: followUpType,
-      subject: followUpType === 'email' ? subject : undefined,
-      content,
-      scheduledDate,
-      leadId: lead.id
+      scheduledFor: scheduledDate.toISOString(),
+      subject,
+      content
     });
   };
-  
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Schedule Follow-Up</CardTitle>
-        <CardDescription>
-          Schedule a follow-up with {lead.name}
-        </CardDescription>
-      </CardHeader>
       <form onSubmit={handleSubmit}>
+        <CardHeader>
+          <CardTitle>Schedule Follow-up</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="follow-up-type">Follow-Up Type</Label>
+            <Label htmlFor="follow-up-type">Follow-up Type</Label>
             <Select 
               value={followUpType} 
-              onValueChange={(value: string) => setFollowUpType(value as FollowUpType)}
+              onValueChange={(value) => setFollowUpType(value as 'email' | 'call' | 'meeting' | 'whatsapp')}
             >
-              <SelectTrigger id="follow-up-type">
-                <SelectValue placeholder="Select type" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select follow-up type" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="call">Phone Call</SelectItem>
                 <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="sms">SMS</SelectItem>
-                <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                <SelectItem value="call">Call</SelectItem>
                 <SelectItem value="meeting">Meeting</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          {followUpType === 'email' && (
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Input 
-                id="subject" 
-                value={subject} 
-                onChange={(e) => setSubject(e.target.value)} 
-                placeholder="Follow up regarding your inquiry" 
-              />
-            </div>
-          )}
-          
           <div className="space-y-2">
-            <Label htmlFor="content">
-              {followUpType === 'email' ? 'Email Body' : 
-               followUpType === 'sms' || followUpType === 'whatsapp' ? 'Message' : 'Notes'}
-            </Label>
-            <Textarea 
-              id="content" 
-              value={content} 
-              onChange={(e) => setContent(e.target.value)} 
-              placeholder={followUpType === 'email' ? "Dear customer..." : "Hi there..."}
-              rows={followUpType === 'email' ? 5 : 3}
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Follow-up subject"
+              required
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="scheduled-date">Schedule For</Label>
-            <div className="flex gap-2">
-              <Input 
-                id="scheduled-date" 
-                type="date" 
-                value={scheduledDate} 
-                onChange={(e) => setScheduledDate(e.target.value)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="time">Time</Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                required
               />
             </div>
           </div>
           
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Contact Details</p>
-            <div className="text-sm text-muted-foreground">
-              <p>{lead.name}</p>
-              <p>{lead.email}</p>
-              <p>{lead.phone}</p>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="content">Notes</Label>
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Add notes about this follow-up"
+              rows={4}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">
-            <Calendar className="mr-2 h-4 w-4" />
-            Schedule Follow-Up
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={scheduleFollowUpMutation.isPending}>
+            {scheduleFollowUpMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Scheduling...
+              </>
+            ) : (
+              'Schedule Follow-up'
+            )}
           </Button>
         </CardFooter>
       </form>

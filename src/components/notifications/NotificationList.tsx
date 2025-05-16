@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCheck, Bell, Trash2 } from 'lucide-react';
@@ -32,7 +31,12 @@ const NotificationList: React.FC<NotificationListProps> = ({
       setIsLoading(true);
       try {
         const fetchedNotifications = await notificationService.getNotifications(userId);
-        setNotifications(fetchedNotifications);
+        // Ensure the notifications have the required is_read property
+        const formattedNotifications = fetchedNotifications.map(notification => ({
+          ...notification,
+          is_read: notification.read || notification.is_read || false
+        }));
+        setNotifications(formattedNotifications);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       } finally {

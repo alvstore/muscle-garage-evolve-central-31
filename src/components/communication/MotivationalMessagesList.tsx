@@ -52,7 +52,7 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
   const handleCreateMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
     setIsSubmitting(true);
     try {
-      const newMessage = await motivationalMessageService.createMotivationalMessage(message);
+      const newMessage = await communicationService.saveMotivationalMessage(message);
       if (newMessage) {
         setDisplayMessages(prev => [newMessage, ...prev]);
         setIsDialogOpen(false);
@@ -70,7 +70,7 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
       return await onDelete(id);
     } else {
       try {
-        const result = await motivationalMessageService.deleteMotivationalMessage(id);
+        const result = await communicationService.deleteMotivationalMessage(id);
         if (result) {
           setDisplayMessages(prev => prev.filter(msg => msg.id !== id));
           toast.success('Message deleted successfully');
@@ -88,7 +88,8 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
       return await onToggleActive(id, isActive);
     } else {
       try {
-        const result = await motivationalMessageService.updateMotivationalMessage(id, {
+        const result = await communicationService.saveMotivationalMessage({
+          id,
           active: isActive
         });
         if (result) {

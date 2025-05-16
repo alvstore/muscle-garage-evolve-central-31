@@ -1,176 +1,79 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusIcon } from "lucide-react";
-import { Invoice, InvoiceStatus } from "@/types/finance";
-import InvoiceForm from "./InvoiceForm";
-import { toast } from "sonner";
-import { useBranch } from "@/hooks/use-branch";
-import { InvoiceListTable } from "./invoice/InvoiceListTable";
-import { supabase } from '@/services/supabaseClient';
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Invoice } from "@/types/finance";
+import { InvoiceStatsOverview } from "./InvoiceStatsOverview";
+import { InvoiceFormDialog } from "./InvoiceFormDialog";
+import { InvoiceListHeader } from "./InvoiceListHeader";
+import { InvoiceListTable } from "./InvoiceListTable";
 
 interface InvoiceListProps {
-  readonly?: boolean;
+  invoices: Invoice[];
+  readOnly?: boolean;
   allowPayment?: boolean;
   allowDownload?: boolean;
+  onAdd: () => void;
+  onEdit: (invoice: Invoice) => void;
+  onMarkAsPaid: (id: string) => void;
+  onSendPaymentLink: (id: string) => void;
+  onDownload: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = true }: InvoiceListProps) => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const { currentBranch } = useBranch();
+export const InvoiceList = ({
+  invoices,
+  readOnly,
+  allowPayment,
+  allowDownload,
+  onAdd,
+  onEdit,
+  onMarkAsPaid,
+  onSendPaymentLink,
+  onDownload,
+  onDelete,
+}: InvoiceListProps) => {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
 
-  const statusColors: Record<InvoiceStatus, string> = {
-    paid: "text-green-600 bg-green-100",
-    pending: "text-yellow-600 bg-yellow-100",
-    overdue: "text-red-600 bg-red-100",
-    draft: "text-gray-600 bg-gray-100",
-    canceled: "text-gray-600 bg-gray-100",
-    partially_paid: "text-blue-600 bg-blue-100"
+  const handleAdd = () => {
+    setSelectedInvoice(null);
+    setIsDialogOpen(true);
+    onAdd();
   };
 
-  // Fetch invoices from Supabase
-  useEffect(() => {
-    fetchInvoices();
-  }, [currentBranch]);
-
-  const fetchInvoices = async () => {
-    try {
-      setIsLoading(true);
-      
-      let query = supabase
-        .from('invoices')
-        .select(`
-          *,
-          members(name)
-        `)
-        .order('issued_date', { ascending: false });
-        
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const formattedInvoices = data.map(invoice => ({
-        ...invoice,
-        memberName: invoice.members?.name || 'Unknown'
-      }));
-      
-      setInvoices(formattedInvoices);
-    } catch (error) {
-      console.error('Failed to fetch invoices:', error);
-      toast.error('Failed to fetch invoices');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleEdit = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsDialogOpen(true);
+    onEdit(invoice);
   };
 
-  const handleAddInvoice = () => {
-    setEditingInvoice(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEditInvoice = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    setIsFormOpen(true);
-  };
-
-  const handleMarkAsPaid = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('invoices')
-        .update({
-          status: 'paid',
-          paid_date: new Date().toISOString(),
-          payment_method: 'cash'
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setInvoices(invoices.map(invoice => 
-        invoice.id === id
-          ? { 
-              ...invoice, 
-              status: "paid" as InvoiceStatus, 
-              paid_date: new Date().toISOString(),
-              payment_method: "cash"
-            }
-          : invoice
-      ));
-      toast.success("Invoice marked as paid");
-      
-      // Create transaction record for this payment
-      const invoice = invoices.find(inv => inv.id === id);
-      if (invoice) {
-        const { error: transError } = await supabase
-          .from('transactions')
-          .insert([{
-            amount: invoice.amount,
-            type: 'income',
-            description: `Payment for invoice #${invoice.id.substring(0, 8)}`,
-            payment_method: 'cash',
-            reference_id: invoice.id,
-            transaction_date: new Date().toISOString()
-          }]);
-        
-        if (transError) {
-          console.error("Error creating transaction record:", transError);
-        }
-      }
-    } catch (error) {
-      console.error("Error marking invoice as paid:", error);
-      toast.error("Failed to update invoice status");
-    }
-  };
-
-  const handleInvoiceFormClose = () => {
-    setIsFormOpen(false);
-    setEditingInvoice(null);
-  };
-
-  const handleInvoiceSaved = () => {
-    setIsFormOpen(false);
-    setEditingInvoice(null);
-    fetchInvoices();
+  const handleComplete = (invoice?: Invoice) => {
+    setIsDialogOpen(false);
+    setSelectedInvoice(null);
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Invoices</CardTitle>
-        {!readonly && (
-          <Button onClick={handleAddInvoice}>
-            <PlusIcon className="h-4 w-4 mr-2" /> New Invoice
-          </Button>
-        )}
-      </CardHeader>
+      <InvoiceListHeader readOnly={readOnly} onAdd={handleAdd} />
       <CardContent>
+        <InvoiceStatsOverview invoices={invoices} />
         <InvoiceListTable
-          invoices={invoices} 
-          isLoading={isLoading}
-          onEdit={readonly ? undefined : handleEditInvoice}
-          onMarkAsPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
-          statusColors={statusColors}
+          invoices={invoices}
+          readonly={readOnly}
+          allowPayment={allowPayment}
           allowDownload={allowDownload}
+          onEdit={handleEdit}
+          onMarkAsPaid={onMarkAsPaid}
+          onSendPaymentLink={onSendPaymentLink}
+          onDownload={onDownload}
+          onDelete={onDelete}
         />
       </CardContent>
-
-      {isFormOpen && (
-        <InvoiceForm
-          invoice={editingInvoice} 
-          onComplete={handleInvoiceFormClose}
-          onCancel={handleInvoiceFormClose}
-          onSaved={handleInvoiceSaved}
-        />
-      )}
+      <InvoiceFormDialog
+        invoice={selectedInvoice}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onComplete={handleComplete}
+      />
     </Card>
   );
 };
-
-export default InvoiceList;

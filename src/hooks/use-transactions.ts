@@ -28,13 +28,14 @@ export const useTransactions = () => {
         description: transaction.description,
         transaction_date: transaction.transaction_date,
         payment_method: transaction.payment_method,
-        recorded_by: transaction.recorded_by,
+        category: transaction.category_id, // Map category_id to category
         branch_id: transaction.branch_id,
-        category_id: transaction.category_id,
         reference_id: transaction.reference_id,
+        status: transaction.status || 'completed', // Add status with default value
+        created_at: transaction.created_at || new Date().toISOString(), // Add created_at with default value
+        updated_at: transaction.updated_at || new Date().toISOString(), // Add updated_at with default value
         recurring: false, // Default value as it might not exist in DB
-        recurring_period: null, // Default value as it might not exist in DB
-        transaction_id: transaction.transaction_id
+        recurring_period: null // Default value as it might not exist in DB
       }));
 
       setTransactions(formattedTransactions);
@@ -58,11 +59,10 @@ export const useTransactions = () => {
             description: transaction.description,
             transaction_date: transaction.transaction_date,
             payment_method: transaction.payment_method,
-            recorded_by: transaction.recorded_by,
+            category_id: transaction.category, // Map category to category_id
             branch_id: transaction.branch_id || currentBranch?.id,
-            category_id: transaction.category_id,
             reference_id: transaction.reference_id,
-            transaction_id: transaction.transaction_id
+            status: transaction.status || 'completed', // Add status
           }
         ])
         .select();
@@ -85,9 +85,16 @@ export const useTransactions = () => {
   const updateTransaction = async (id: string, updates: Partial<FinancialTransaction>) => {
     setIsLoading(true);
     try {
+      // Map category to category_id if it exists in updates
+      const dbUpdates: any = { ...updates };
+      if (updates.category) {
+        dbUpdates.category_id = updates.category;
+        delete dbUpdates.category;
+      }
+
       const { error } = await supabase
         .from('transactions')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (error) throw error;

@@ -14,8 +14,8 @@ export const useToast = () => {
         shadowToast({
           title: options.title,
           description: options.description,
-          variant: options.variant,
-          duration: options.duration
+          variant: options.variant
+          // Remove duration as it's not supported in the type
         });
       } else {
         // Fallback for legacy calls

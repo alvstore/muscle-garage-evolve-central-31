@@ -1,259 +1,251 @@
-import { useState, useEffect, useContext, createContext, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
-import { toast } from 'sonner';
 
-export interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
+interface AuthContextType {
   user: User | null;
-  role: string | null;
-  userRole: string | null; // Added for component compatibility
-  login: (email: string, password: string) => Promise<{ data: any; error: any; success?: boolean }>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string, metadata: object) => Promise<{ data: any; error: any }>;
-  forgotPassword: (email: string) => Promise<{ data: any; error: any }>;
-  resetPassword: (accessToken: string, newPassword: string) => Promise<{ data: any; error: any }>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>; // Added method
+  userRole: UserRole | null;
+  isLoading: boolean;
+  isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  signUp: (email: string, password: string, userData: any) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  isLoading: true,
-  user: null,
-  role: null,
-  userRole: null,
-  login: async () => ({ data: null, error: null }),
-  logout: async () => {},
-  register: async () => ({ data: null, error: null }),
-  forgotPassword: async () => ({ data: null, error: null }),
-  resetPassword: async () => ({ data: null, error: null }),
-  changePassword: async () => false,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const getUserProfile = async () => {
+    const loadSession = async () => {
       setIsLoading(true);
-
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (!session) {
-          setIsAuthenticated(false);
+        if (session) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) {
+            console.error("Error fetching profile:", error);
+            setUser(null);
+            setUserRole(null);
+          } else {
+            const userProfile = {
+              ...session.user,
+              ...profile
+            } as User;
+            setUser(userProfile);
+            setUserRole(profile?.role || 'member');
+          }
+        } else {
           setUser(null);
-          setRole(null);
-          return;
+          setUserRole(null);
         }
-
-        const { user: authUser } = session;
-        
-        if (!authUser) {
-          setIsAuthenticated(false);
-          setUser(null);
-          setRole(null);
-          return;
-        }
-
-        // Get profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-        }
-
-        const userData: User = {
-          id: authUser.id,
-          email: authUser.email || undefined,
-          ...profileData
-        };
-
-        setUser(userData);
-        setRole(profileData?.role || null);
-        setIsAuthenticated(true);
       } catch (error) {
-        console.error('Auth error:', error);
-        setIsAuthenticated(false);
+        console.error("Unexpected error loading session:", error);
         setUser(null);
-        setRole(null);
+        setUserRole(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    getUserProfile();
+    loadSession();
 
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        getUserProfile();
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error fetching profile after sign-in:", error);
+              setUser(null);
+              setUserRole(null);
+            } else {
+              const userProfile = {
+                ...session.user,
+                ...data
+              } as User;
+              setUser(userProfile);
+              setUserRole(data?.role || 'member');
+            }
+          });
       } else if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
         setUser(null);
-        setRole(null);
+        setUserRole(null);
       }
     });
+  }, [navigate]);
 
-    return () => {
-      // Clean up the subscription
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
-  }, []);
-
-  const login = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        toast.error(error.message);
-        return { data, error: error.message };
+        throw error;
       }
 
-      return { data, error: null, success: true };
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile after sign-in:", profileError);
+        setUser(null);
+        setUserRole(null);
+      } else {
+        const userProfile = {
+          ...data.user,
+          ...profile
+        } as User;
+        setUser(userProfile);
+        setUserRole(profile?.role || 'member');
+      }
+      navigate('/dashboard');
     } catch (error: any) {
-      toast.error('Login failed');
-      return { data: null, error: error.message };
+      console.error("Sign-in error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = async () => {
+  const signOut = async () => {
+    setIsLoading(true);
     try {
       await supabase.auth.signOut();
-      setIsAuthenticated(false);
       setUser(null);
-      setRole(null);
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      toast.error('Logout failed');
+      setUserRole(null);
+      navigate('/login');
+    } catch (error) {
+      console.error("Sign-out error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, metadata: object) => {
+  const signUp = async (email: string, password: string, userData: any) => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: email,
+        password: password,
         options: {
-          data: metadata,
-        },
+          data: {
+            ...userData,
+          }
+        }
       });
-      
+
       if (error) {
-        toast.error(error.message);
-        return { data, error: error.message };
+        throw error;
       }
-      
-      return { data, error: null };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: data.user?.id,
+          email: email,
+          ...userData,
+          role: 'member'
+        }]);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      setUser({
+        ...data.user,
+        ...userData,
+        email: email,
+      } as User);
+      setUserRole('member');
+      navigate('/dashboard');
     } catch (error: any) {
-      toast.error('Registration failed');
-      return { data: null, error: error.message };
+      console.error("Signup error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const forgotPassword = async (email: string) => {
+  const resetPassword = async (email: string) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
       if (error) {
-        toast.error(error.message);
-        return { data, error: error.message };
+        throw error;
       }
-      
-      return { data, error: null };
-    } catch (error: any) {
-      toast.error('Password reset request failed');
-      return { data: null, error: error.message };
+    } catch (error) {
+      console.error("Reset password error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const resetPassword = async (accessToken: string, newPassword: string) => {
+  const updateUser = async (userData: Partial<User>) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      
+      const { error } = await supabase
+        .from('profiles')
+        .update(userData)
+        .eq('id', user?.id);
+
       if (error) {
-        toast.error(error.message);
-        return { data, error: error.message };
+        throw error;
       }
-      
-      return { data, error: null };
-    } catch (error: any) {
-      toast.error('Password reset failed');
-      return { data: null, error: error.message };
+
+      setUser({ ...user, ...userData } as User);
+    } catch (error) {
+      console.error("Update user error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Added changePassword method
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    try {
-      // First verify the current password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: currentPassword,
-      });
-      
-      if (signInError) {
-        toast.error('Current password is incorrect');
-        return false;
-      }
-      
-      // Then update to the new password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      
-      if (error) {
-        toast.error(error.message);
-        return false;
-      }
-      
-      toast.success('Password changed successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Password change error:', error);
-      toast.error('Failed to change password');
-      return false;
-    }
+  const value = {
+    user,
+    userRole,
+    isLoading,
+    isAdmin: userRole === 'admin',
+    signIn,
+    signOut,
+    signUp,
+    resetPassword,
+    updateUser
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        isLoading,
-        user,
-        role,
-        userRole: role, // Added for compatibility
-        login,
-        logout,
-        register,
-        forgotPassword,
-        resetPassword,
-        changePassword, // Added method
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

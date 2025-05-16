@@ -1,469 +1,310 @@
 import React, { useState, useEffect } from 'react';
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash, Download, DollarSign } from "lucide-react";
-import { toast } from "sonner";
+import { Container } from '@/components/ui/container';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { useIncomeRecords } from '@/hooks/use-income-records';
-import { FinancialTransaction, PaymentMethod } from '@/types/finance';
+import { cn } from '@/lib/utils';
+import { useTransactions } from '@/hooks/use-transactions';
+import { FinancialTransaction } from '@/types/finance';
+import { toast } from 'sonner';
 import { useBranch } from '@/hooks/use-branch';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const IncomeRecordsPage = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<FinancialTransaction | null>(null);
+  const { transactions, isLoading, createTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { currentBranch } = useBranch();
-  
-  // Form state with all properties needed
-  const [formData, setFormData] = useState<Partial<FinancialTransaction>>({
-    type: 'income' as const,
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
+
+  const [newTransaction, setNewTransaction] = useState<Partial<FinancialTransaction>>({
+    type: 'income',
     amount: 0,
     description: '',
-    payment_method: 'cash' as PaymentMethod,
+    transaction_date: new Date().toISOString(),
+    payment_method: 'cash',
+    category: '', // Use category instead of category_id
     branch_id: currentBranch?.id || '',
-    category_id: '',
-    reference_id: null,
-    transaction_id: null,
-    category: '', // Used by some components
-    reference: '', // Used by some components
+    reference_id: '',
+    status: 'completed'
   });
 
-  const {
-    records,
-    isLoading,
-    error,
-    createRecord,
-    updateRecord,
-    deleteRecord,
-    uploadAttachment,
-    deleteAttachment
-  } = useIncomeRecords();
+  const paymentMethods = ['cash', 'credit_card', 'bank_transfer', 'mobile_payment'];
+  const transactionCategories = ['sales', 'services', 'membership_fees', 'other'];
 
-  // Income categories - will be replaced with data from Supabase
-  const incomeCategories = [
-    'Membership',
-    'PT Session',
-    'Group Class',
-    'Store',
-    'Supplements',
-    'Merchandise',
-    'Events',
-    'Other'
-  ];
+  // Handle input change for new transaction
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewTransaction(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Payment methods
-  const paymentMethods = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'credit', label: 'Credit Card' },
-    { value: 'debit', label: 'Debit Card' },
-    { value: 'upi', label: 'UPI' },
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'cheque', label: 'Cheque' },
-    { value: 'other', label: 'Other' }
-  ];
+  // Handle select change for new transaction
+  const handleSelectChange = (name: string, value: string) => {
+    setNewTransaction(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Update form data when currentBranch changes
-  useEffect(() => {
-    if (currentBranch?.id) {
-      setFormData(prev => ({
-        ...prev,
-        branch_id: currentBranch.id
-      }));
+  // Handle date change for new transaction
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setNewTransaction(prev => ({ ...prev, transaction_date: date.toISOString() }));
     }
-  }, [currentBranch]);
-
-  const handleCreateRecord = () => {
-    setFormData({
-      type: 'income' as const,
-      amount: 0,
-      description: '',
-      payment_method: 'cash' as PaymentMethod,
-      branch_id: currentBranch?.id || '',
-      reference_id: null,
-      transaction_id: null,
-      category_id: null,
-      category: '', // Used by UI
-      reference: '', // Used by UI
-    });
-    setShowCreateDialog(true);
   };
 
-  const handleEditRecord = (record: FinancialTransaction) => {
-    setSelectedRecord(record);
-    setFormData({
-      type: record.type,
-      amount: record.amount,
-      description: record.description,
-      payment_method: record.payment_method as PaymentMethod,
-      branch_id: record.branch_id,
-      reference_id: record.reference_id,
-      transaction_id: record.transaction_id,
-      category_id: record.category_id,
-      category: record.category, // Used by UI
-      reference: record.reference || record.reference_id || '', // Used by UI
+  // Handle editing a transaction
+  const handleEdit = (transaction: FinancialTransaction) => {
+    setEditingTransaction({
+      ...transaction,
+      category: transaction.category, // Keep category as is
+      reference_id: transaction.reference_id // Keep reference_id as is
     });
-    setShowEditDialog(true);
+    setIsDialogOpen(true);
   };
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Handle saving the edited transaction
+  const handleSave = async () => {
+    if (!editingTransaction) return;
+
     try {
-      const newRecord: Partial<FinancialTransaction> = {
+      await updateTransaction(editingTransaction.id, {
+        ...editingTransaction,
+        category: editingTransaction.category, // Use category instead of category_id
+        reference_id: editingTransaction.reference_id, // Use reference_id instead of reference
+        updated_at: new Date().toISOString()
+      });
+      setEditingTransaction(null);
+      setIsDialogOpen(false);
+      toast.success('Transaction updated successfully');
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      toast.error('Failed to update transaction');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTransaction(id);
+      toast.success('Transaction deleted successfully');
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      toast.error('Failed to delete transaction');
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const result = await createTransaction({
+        ...newTransaction as Omit<FinancialTransaction, 'id'>,
+        category: newTransaction.category, // Use category instead of category_id
+        reference_id: newTransaction.reference_id, // Use reference_id instead of reference
+        transaction_date: newTransaction.transaction_date || new Date().toISOString(),
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      // Reset form and close dialog
+      setNewTransaction({
         type: 'income',
-        amount: formData.amount,
-        description: formData.description,
-        payment_method: formData.payment_method as PaymentMethod,
-        branch_id: formData.branch_id,
-        reference_id: formData.reference_id,
-        transaction_id: formData.transaction_id,
-        category_id: formData.category_id,
-        category: formData.category, // Keep for UI
-        reference: formData.reference, // Keep for UI
-        transaction_date: formData.transaction_date || new Date().toISOString(),
-      };
-
-      await createRecord(newRecord);
-      setShowCreateDialog(false);
-      toast.success('Income record created successfully');
+        amount: 0,
+        description: '',
+        transaction_date: new Date().toISOString(),
+        payment_method: 'cash',
+        category: '', // Use category instead of category_id
+        branch_id: currentBranch?.id || '',
+        reference_id: '',
+        status: 'completed'
+      });
+      setIsDialogOpen(false);
+      toast.success('Transaction created successfully');
+      return result;
     } catch (error) {
-      console.error('Error creating income record:', error);
-      toast.error('Failed to create income record');
-    }
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRecord) return;
-
-    try {
-      const updatedRecord: Partial<FinancialTransaction> = {
-        amount: formData.amount,
-        description: formData.description,
-        payment_method: formData.payment_method as PaymentMethod,
-        branch_id: formData.branch_id,
-        reference_id: formData.reference_id,
-        transaction_id: formData.transaction_id,
-        category_id: formData.category_id,
-        category: formData.category, // Keep for UI
-        reference: formData.reference, // Keep for UI
-      };
-
-      await updateRecord(selectedRecord.id, updatedRecord);
-      setShowEditDialog(false);
-      toast.success('Income record updated successfully');
-    } catch (error) {
-      console.error('Error updating income record:', error);
-      toast.error('Failed to update income record');
-    }
-  };
-
-  const handleDelete = async (recordId: string) => {
-    try {
-      await deleteRecord(recordId);
-      toast.success('Income record deleted successfully');
-    } catch (error) {
-      console.error('Error deleting income record:', error);
-      toast.error('Failed to delete income record');
+      console.error('Error creating transaction:', error);
+      toast.error('Failed to create transaction');
+      return null;
     }
   };
 
   return (
     <Container>
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Income Records
-              </div>
-            </CardTitle>
-            <Button 
-              onClick={handleCreateRecord}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Income
-            </Button>
-          </div>
-          <CardDescription>
-            Track all income sources and manage financial records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="text-destructive mb-4">
-              {error}
-            </div>
-          )}
-          {isLoading ? (
-            <div className="text-muted-foreground">Loading records...</div>
-          ) : (
+      <div className="py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Income Records</h1>
+          <Button onClick={() => setIsDialogOpen(true)}>Add Income</Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Income</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead className="w-[100px]">Date</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Source</TableHead>
+                  <TableHead>Amount</TableHead>
                   <TableHead>Payment Method</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>
-                      {record.transaction_date && format(new Date(record.transaction_date), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        {record.amount.toLocaleString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{record.category || 'N/A'}</Badge>
-                    </TableCell>
-                    <TableCell>N/A</TableCell>
-                    <TableCell>{record.payment_method}</TableCell>
-                    <TableCell>{record.reference || record.reference_id || 'N/A'}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditRecord(record)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(record.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
+                {transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">{format(new Date(transaction.transaction_date), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell>{transaction.category}</TableCell>
+                    <TableCell>${transaction.amount.toFixed(2)}</TableCell>
+                    <TableCell>{transaction.payment_method}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(transaction)}>
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(transaction.id)}>
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Create Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Income Record</DialogTitle>
-            <DialogDescription>
-              Enter details for the new income record
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreate}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingTransaction ? 'Edit Income' : 'Add Income'}</DialogTitle>
+              <DialogDescription>
+                {editingTransaction ? 'Edit the income details.' : 'Enter the income details.'}
+              </DialogDescription>
+            </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="transaction_date">Date</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
                 <Input
-                  id="transaction_date"
-                  type="datetime-local"
-                  value={formData.transaction_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, transaction_date: e.target.value }))}
+                  type="text"
+                  id="description"
+                  name="description"
+                  value={editingTransaction ? editingTransaction.description : newTransaction.description || ''}
+                  onChange={editingTransaction ? (e) => setEditingTransaction({ ...editingTransaction, description: e.target.value }) : handleInputChange}
+                  className="col-span-3"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="amount">Amount</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Amount
+                </Label>
                 <Input
-                  id="amount"
                   type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                  id="amount"
+                  name="amount"
+                  value={editingTransaction ? editingTransaction.amount : newTransaction.amount || 0}
+                  onChange={editingTransaction ? (e) => setEditingTransaction({ ...editingTransaction, amount: parseFloat(e.target.value) }) : handleInputChange}
+                  className="col-span-3"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="payment_method" className="text-right">
+                  Payment Method
+                </Label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    category: value,
-                    category_id: value // Also set category_id
-                  }))}
+                  value={editingTransaction ? editingTransaction.payment_method : newTransaction.payment_method || 'cash'}
+                  onValueChange={value => editingTransaction ? setEditingTransaction({ ...editingTransaction, payment_method: value }) : handleSelectChange('payment_method', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(method => (
+                      <SelectItem key={method} value={method}>{method}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <Select
+                  value={editingTransaction ? editingTransaction.category : newTransaction.category || ''}
+                  onValueChange={value => editingTransaction ? setEditingTransaction({ ...editingTransaction, category: value }) : handleSelectChange('category', value)}
+                >
+                  <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {incomeCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    {transactionCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="payment_method">Payment Method</Label>
-                <Select
-                  value={formData.payment_method as string}
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    payment_method: value as PaymentMethod 
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map(method => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="reference">Reference</Label>
-                <Input
-                  id="reference"
-                  value={formData.reference}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    reference: e.target.value,
-                    reference_id: e.target.value
-                  }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Income Record</DialogTitle>
-            <DialogDescription>
-              Update the income record details
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEdit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit_transaction_date">Date</Label>
-                <Input
-                  id="edit_transaction_date"
-                  type="datetime-local"
-                  value={formData.transaction_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, transaction_date: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit_amount">Amount</Label>
-                <Input
-                  id="edit_amount"
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="edit_payment_method">Payment Method</Label>
-                <Select 
-                  value={formData.payment_method as string} 
-                  onValueChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    payment_method: value as PaymentMethod 
-                  }))}
-                >
-                  <SelectTrigger id="edit_payment_method">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map(method => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="edit_description">Description</Label>
-                <Textarea 
-                  id="edit_description" 
-                  value={formData.description} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={2}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="edit_reference">Reference/Invoice Number</Label>
-                <Input 
-                  id="edit_reference" 
-                  value={formData.reference} 
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    reference: e.target.value,
-                    reference_id: e.target.value
-                  }))}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="edit_attachment">Attachment</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="edit_attachment" 
-                    type="file" 
-                    className="flex-1"
-                  />
-                  {formData.attachment && (
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => toast.info("Downloading attachment...")}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="transaction_date" className="text-right">
+                  Transaction Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "col-span-3 pl-3 text-left font-normal",
+                        !newTransaction.transaction_date && "text-muted-foreground"
+                      )}
                     >
-                      <Download className="h-4 w-4" />
+                      {newTransaction.transaction_date ? (
+                        format(new Date(newTransaction.transaction_date), "MMM dd, yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
-                  )}
-                </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      defaultMonth={new Date()}
+                      selected={newTransaction.transaction_date ? new Date(newTransaction.transaction_date) : undefined}
+                      onSelect={handleDateChange}
+                      disabled={false}
+                      className="rounded-md border"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-              <Button type="submit">Update Record</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="secondary" onClick={() => {
+                setIsDialogOpen(false);
+                setEditingTransaction(null);
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit" onClick={editingTransaction ? handleSave : handleCreate}>
+                {editingTransaction ? 'Update Income' : 'Add Income'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Container>
   );
 };

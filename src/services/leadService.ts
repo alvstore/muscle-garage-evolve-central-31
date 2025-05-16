@@ -1,43 +1,84 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { Lead } from '@/types/crm';
-import { supabase } from './supabaseClient';
 
-class LeadService {
-  async getLeads(branchId?: string) {
+export const leadService = {
+  getLeads: async (branchId?: string): Promise<Lead[]> => {
     try {
-      let query = supabase.from('leads').select('*');
+      let query = supabase
+        .from('leads')
+        .select('*');
       
       if (branchId) {
         query = query.eq('branch_id', branchId);
       }
       
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query;
       
       if (error) throw error;
-      return data as Lead[];
+      return data || [];
     } catch (error) {
       console.error('Error fetching leads:', error);
-      return [];
+      throw error;
     }
-  }
-
-  async updateLead(id: string, updates: Partial<Lead>) {
+  },
+  
+  getLeadById: async (id: string, branchId?: string): Promise<Lead | null> => {
+    try {
+      let query = supabase
+        .from('leads')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error(`Error fetching lead ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  createLead: async (lead: Partial<Lead>): Promise<Lead> => {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .update(updates)
-        .eq('id', id)
-        .select();
+        .insert([lead])
+        .select()
+        .single();
       
       if (error) throw error;
-      return data?.[0] as Lead;
+      return data;
     } catch (error) {
-      console.error('Error updating lead:', error);
-      return null;
+      console.error('Error creating lead:', error);
+      throw error;
     }
-  }
-
-  async deleteLead(id: string) {
+  },
+  
+  updateLead: async (id: string, lead: Partial<Lead>): Promise<Lead> => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .update(lead)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error(`Error updating lead ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  deleteLead: async (id: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from('leads')
@@ -45,12 +86,11 @@ class LeadService {
         .eq('id', id);
       
       if (error) throw error;
-      return true;
     } catch (error) {
-      console.error('Error deleting lead:', error);
-      return false;
+      console.error(`Error deleting lead ${id}:`, error);
+      throw error;
     }
   }
-}
+};
 
-export const leadService = new LeadService();
+export default leadService;

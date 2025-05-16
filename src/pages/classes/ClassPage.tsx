@@ -1,4 +1,3 @@
-
 import React, { Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -14,7 +13,7 @@ import ClassListPage from "./ClassListPage";
 import ClassBookingsPage from "./ClassBookingsPage";
 import PageHeader from "@/components/layout/PageHeader";
 
-interface ClassSchedulePageProps {
+interface ClassPageProps {
   hideHeader?: boolean;
 }
 
@@ -22,7 +21,7 @@ interface ClassTypesPageProps {
   hideHeader?: boolean;
 }
 
-const ClassPage: React.FC = () => {
+const ClassPage: React.FC<ClassPageProps> = ({ hideHeader = false }) => {
   const [activeTab, setActiveTab] = React.useState("schedule");
   const { can } = usePermissions();
   const navigate = useNavigate();
