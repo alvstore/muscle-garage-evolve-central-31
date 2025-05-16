@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../auth/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 
 interface PermissionsContextType {
   userRole: string | null;
