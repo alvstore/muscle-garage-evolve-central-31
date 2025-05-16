@@ -7,7 +7,7 @@ import { MotivationalMessage, MotivationalCategory } from '@/types';
 import { PlusCircle, Loader2, Check, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import MotivationalMessageForm from './MotivationalMessageForm';
-import { motivationalMessageService } from '@/services/communicationService';
+import communicationService from '@/services/communicationService';
 import { toast } from 'sonner';
 
 interface MotivationalMessagesListProps {
@@ -42,7 +42,7 @@ const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
   }, [messagesList, messages]);
   const fetchMessages = async () => {
     try {
-      const fetchedMessages = await motivationalMessageService.getMotivationalMessages();
+      const fetchedMessages = await communicationService.getMotivationalMessages();
       setDisplayMessages(fetchedMessages);
     } catch (error) {
       console.error('Error fetching motivational messages:', error);
