@@ -1,380 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-import { Check, X, ChevronRight, UserPlus, UserMinus, Key, KeyRound, Loader2 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHikvision } from '@/hooks/use-hikvision';
-import { toast } from 'sonner';
-import { addDays, format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { Checkbox } from "@/components/ui/checkbox";
 
-interface MemberAccessControlProps {
-  member: any;
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useHikvision } from '@/hooks/use-hikvision';
+import { useBranch } from '@/hooks/use-branch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Search, UserCheck, UserX } from 'lucide-react';
+import { memberService } from '@/services/memberService';
+import { Member } from '@/types/member';
+
+interface MemberAccessStatus {
+  id: string;
+  member_id: string;
+  hikvision_person_id: string;
+  device_serial: string;
+  face_registered: boolean;
+  card_registered: boolean;
+  fingerprint_registered: boolean;
 }
 
-export default function MemberAccessControl({ member }: MemberAccessControlProps) {
-  const { registerMember, unregisterMember, grantAccess, revokeAccess, memberAccess } = useHikvision();
+export default function MemberAccessControl() {
+  const { currentBranch } = useBranch();
+  const { memberAccess, settings } = useHikvision({ branchId: currentBranch?.id });
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [devices, setDevices] = useState<any[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('');
-  const [doorNumbers, setDoorNumbers] = useState<number[]>([1]);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 365)
-  });
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [accessCredentials, setAccessCredentials] = useState<any[]>([]);
+  const [accessDetails, setAccessDetails] = useState<MemberAccessStatus[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  // Fetch member access credentials on load
-  useEffect(() => {
-    const fetchAccessDetails = async () => {
-      if (member?.id) {
-        try {
-          const credentials = await memberAccess.getMemberAccess(member.id);
-          setAccessCredentials(credentials);
-          setIsRegistered(credentials.length > 0);
-        } catch (error) {
-          console.error("Failed to fetch access credentials:", error);
-        }
-      }
-    };
-    
-    // Mock devices for the demo
-    setDevices([
-      { id: 'device1', name: 'Main Entrance', doors: [1, 2] },
-      { id: 'device2', name: 'Gym Floor', doors: [1] },
-      { id: 'device3', name: 'Locker Rooms', doors: [1, 2] }
-    ]);
-    
-    fetchAccessDetails();
-  }, [member?.id]);
-  
-  const handleRegisterMember = async () => {
-    if (!member) return;
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !currentBranch?.id) return;
     
     setIsLoading(true);
     try {
-      const success = await registerMember(member);
-      if (success) {
-        setIsRegistered(true);
-        toast.success('Member registered successfully to access control system');
-      } else {
-        toast.error('Failed to register member');
-      }
-    } catch (error) {
-      console.error('Error registering member:', error);
-      toast.error('An error occurred while registering the member');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleUnregisterMember = async () => {
-    if (!member) return;
-    
-    if (!confirm('Are you sure you want to unregister this member from the access control system?')) {
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const success = await unregisterMember(member.id);
-      if (success) {
-        setIsRegistered(false);
-        setAccessCredentials([]);
-        toast.success('Member unregistered successfully from access control system');
-      } else {
-        toast.error('Failed to unregister member');
-      }
-    } catch (error) {
-      console.error('Error unregistering member:', error);
-      toast.error('An error occurred while unregistering the member');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleGrantAccess = async () => {
-    if (!member || !selectedDevice) {
-      toast.error('Please select a device first');
-      return;
-    }
-    
-    if (!dateRange?.from || !dateRange?.to) {
-      toast.error('Please select a valid date range');
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const startTime = format(dateRange.from, "yyyy-MM-dd'T'00:00:00'Z'");
-      const endTime = format(dateRange.to, "yyyy-MM-dd'T'23:59:59'Z'");
+      const members = await memberService.getMembersByBranch(currentBranch.id);
       
-      const success = await grantAccess(member.id, selectedDevice, doorNumbers, startTime, endTime);
-      if (success) {
-        // Refresh access credentials
-        const credentials = await memberAccess.getMemberAccess(member.id);
-        setAccessCredentials(credentials);
-        toast.success('Access granted successfully');
+      // Find member by name, email, or phone
+      const found = members.find(m => 
+        m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.phone?.includes(searchQuery)
+      );
+      
+      if (found) {
+        setSelectedMember(found);
+        // Load access details if found
+        if (found.id) {
+          const accessStatus = await memberAccess.getStatus(found.id);
+          setAccessDetails(accessStatus);
+        }
       } else {
-        toast.error('Failed to grant access');
+        setSelectedMember(null);
+        setAccessDetails([]);
       }
     } catch (error) {
-      console.error('Error granting access:', error);
-      toast.error('An error occurred while granting access');
+      console.error('Error searching for member:', error);
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleRevokeAccess = async () => {
-    if (!member || !selectedDevice) {
-      toast.error('Please select a device first');
-      return;
-    }
+  const handleSyncMember = async () => {
+    if (!selectedMember?.id || !currentBranch?.id) return;
     
-    if (!confirm('Are you sure you want to revoke access for this device?')) {
-      return;
-    }
-    
-    setIsLoading(true);
+    setIsProcessing(true);
     try {
-      const success = await revokeAccess(member.id, selectedDevice);
-      if (success) {
-        // Refresh access credentials
-        const credentials = await memberAccess.getMemberAccess(member.id);
-        setAccessCredentials(credentials);
-        toast.success('Access revoked successfully');
-      } else {
-        toast.error('Failed to revoke access');
+      // Get device serials from settings
+      const deviceSerials = settings?.devices?.map(d => d.serialNumber) || [];
+      
+      if (deviceSerials.length === 0) {
+        alert('No devices configured. Please add devices first.');
+        return;
       }
+      
+      // Sync member to all devices
+      await memberAccess.syncMember(selectedMember.id, deviceSerials);
+      
+      // Refresh access details
+      const accessStatus = await memberAccess.getStatus(selectedMember.id);
+      setAccessDetails(accessStatus);
     } catch (error) {
-      console.error('Error revoking access:', error);
-      toast.error('An error occurred while revoking access');
+      console.error('Error syncing member:', error);
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleRemoveMember = async () => {
+    if (!selectedMember?.id || !currentBranch?.id || !confirm('Are you sure you want to remove this member from access control?')) {
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      await memberAccess.removeMember(selectedMember.id);
+      
+      // Refresh access details (should be empty)
+      const accessStatus = await memberAccess.getStatus(selectedMember.id);
+      setAccessDetails(accessStatus);
+    } catch (error) {
+      console.error('Error removing member:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Access Control</CardTitle>
+        <CardTitle>Member Access Control</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="status">
-          <TabsList className="mb-4">
-            <TabsTrigger value="status">Status</TabsTrigger>
-            <TabsTrigger value="configure">Configure</TabsTrigger>
-            <TabsTrigger value="history">Access History</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Search Member */}
+          <div className="flex space-x-2">
+            <div className="flex-1">
+              <Input
+                placeholder="Search by name, email or phone"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <Button onClick={handleSearch} disabled={isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+              Search
+            </Button>
+          </div>
           
-          <TabsContent value="status">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+          {/* Selected Member */}
+          {selectedMember && (
+            <div className="border rounded-md p-4">
+              <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-semibold text-lg">Biometric Registration Status</h3>
-                  <p className="text-sm text-muted-foreground">Member registration in access control system</p>
+                  <h3 className="text-lg font-medium">{selectedMember.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
+                  <p className="text-sm text-muted-foreground">{selectedMember.phone}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isRegistered ? (
-                    <>
-                      <Check className="h-5 w-5 text-green-500" />
-                      <span className="font-medium text-green-500">Registered</span>
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-5 w-5 text-red-500" />
-                      <span className="font-medium text-red-500">Not Registered</span>
-                    </>
-                  )}
+                <div className="space-x-2">
+                  <Button
+                    onClick={handleSyncMember}
+                    disabled={isProcessing}
+                    className="flex items-center"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <UserCheck className="h-4 w-4 mr-2" />
+                    )}
+                    Grant Access
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleRemoveMember}
+                    disabled={isProcessing || accessDetails.length === 0}
+                    className="flex items-center"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <UserX className="h-4 w-4 mr-2" />
+                    )}
+                    Remove Access
+                  </Button>
                 </div>
               </div>
               
-              <Separator />
-              
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Access Credentials</h3>
-                
-                {memberAccess.isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : accessCredentials.length === 0 ? (
-                  <div className="text-center py-8">
-                    <KeyRound className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <h4 className="text-lg font-medium">No Access Credentials</h4>
-                    <p className="text-sm text-muted-foreground">This member doesn't have any access credentials yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {accessCredentials.map(credential => (
-                      <div key={credential.id} className="flex items-center justify-between border rounded-lg p-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Key className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{credential.credential_type}</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {credential.credential_value}
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          <div>Issued: {new Date(credential.issued_at).toLocaleDateString()}</div>
-                          {credential.expires_at && (
-                            <div>Expires: {new Date(credential.expires_at).toLocaleDateString()}</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="mt-6 flex justify-end">
-                  {isRegistered ? (
-                    <Button variant="destructive" onClick={handleUnregisterMember} disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <UserMinus className="mr-2 h-4 w-4" />
-                          Unregister Member
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button onClick={handleRegisterMember} disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Register Member
-                        </>
-                      )}
-                    </Button>
-                  )}
+              {/* Access Details Table */}
+              {accessDetails.length > 0 ? (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Access Details</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Device</TableHead>
+                        <TableHead>Person ID</TableHead>
+                        <TableHead>Face</TableHead>
+                        <TableHead>Card</TableHead>
+                        <TableHead>Fingerprint</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {accessDetails.map((detail) => {
+                        const device = settings?.devices?.find(d => d.serialNumber === detail.device_serial);
+                        
+                        return (
+                          <TableRow key={detail.id}>
+                            <TableCell>{device?.deviceName || detail.device_serial}</TableCell>
+                            <TableCell>{detail.hikvision_person_id}</TableCell>
+                            <TableCell>{detail.face_registered ? '✅' : '❌'}</TableCell>
+                            <TableCell>{detail.card_registered ? '✅' : '❌'}</TableCell>
+                            <TableCell>{detail.fingerprint_registered ? '✅' : '❌'}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
-              </div>
+              ) : (
+                <div className="mt-4 text-center p-4 bg-muted rounded-md">
+                  <p>No access control details found for this member.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click "Grant Access" to add this member to access control.
+                  </p>
+                </div>
+              )}
             </div>
-          </TabsContent>
+          )}
           
-          <TabsContent value="configure">
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold">Access Control Device</h3>
-                <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a device" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {devices.map(device => (
-                      <SelectItem key={device.id} value={device.id}>
-                        {device.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-semibold">Access Period</h3>
-                <DatePickerWithRange
-                  date={dateRange}
-                  setDate={(newRange) => setDateRange(newRange)}
-                  onDateChange={setDateRange}
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-semibold">Door Access</h3>
-                {devices.find(d => d.id === selectedDevice)?.doors.map((door: number) => (
-                  <div key={door} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`door-${door}`} 
-                      checked={doorNumbers.includes(door)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setDoorNumbers([...doorNumbers, door]);
-                        } else {
-                          setDoorNumbers(doorNumbers.filter(d => d !== door));
-                        }
-                      }}
-                    />
-                    <label
-                      htmlFor={`door-${door}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Door {door}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Switch id="elevator-access" />
-                  <Label htmlFor="elevator-access">Elevator Access</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="fingerprint-auth" />
-                  <Label htmlFor="fingerprint-auth">Require Fingerprint</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="face-auth" defaultChecked />
-                  <Label htmlFor="face-auth">Require Face Recognition</Label>
-                </div>
-              </div>
-              
-              <div className="flex justify-between">
-                <Button variant="destructive" onClick={handleRevokeAccess} disabled={!selectedDevice || isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <X className="mr-2 h-4 w-4" />
-                      Revoke Access
-                    </>
-                  )}
-                </Button>
-                <Button onClick={handleGrantAccess} disabled={!selectedDevice || isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <ChevronRight className="mr-2 h-4 w-4" />
-                      Grant Access
-                    </>
-                  )}
-                </Button>
-              </div>
+          {!selectedMember && searchQuery && !isLoading && (
+            <div className="text-center p-4 border rounded-md">
+              <p>No member found with those details.</p>
             </div>
-          </TabsContent>
+          )}
           
-          <TabsContent value="history">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Access history records will appear here</p>
+          {(!searchQuery || searchQuery.trim() === '') && !selectedMember && (
+            <div className="text-center p-4">
+              <p className="text-muted-foreground">
+                Search for a member to manage their access control privileges.
+              </p>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

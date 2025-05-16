@@ -1,136 +1,106 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useHikvision, HikvisionDevice, HikvisionSettings } from './use-hikvision';
 import { useBranch } from './use-branch';
-import { hikvisionService, HikvisionApiSettings, HikvisionDevice } from '@/services/hikvisionService';
 import { toast } from 'sonner';
 
-export const useHikvisionSettings = () => {
-  const [settings, setSettings] = useState<HikvisionApiSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
-  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+export interface HikvisionApiSettings {
+  app_key: string;
+  app_secret: string;
+  api_url: string;
+  branch_id: string;
+  is_active: boolean;
+  devices: HikvisionDevice[];
+}
+
+export function useHikvisionSettings() {
   const { currentBranch } = useBranch();
-
-  const fetchSettings = async () => {
-    if (!currentBranch?.id) return;
-    
-    setIsLoading(true);
+  const branchId = currentBranch?.id;
+  
+  const { 
+    settings,
+    isLoading,
+    isConnected,
+    fetchSettings,
+    saveSettings,
+    testConnection,
+    addDevice,
+    removeDevice,
+  } = useHikvision({ branchId });
+  
+  const [devices, setDevices] = useState<HikvisionDevice[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+  
+  // Save settings
+  const handleSaveSettings = useCallback(async (data: HikvisionApiSettings): Promise<boolean> => {
     try {
-      const data = await hikvisionService.getSettings(currentBranch.id);
-      setSettings(data);
-    } catch (err: any) {
-      setError(err);
-      toast.error('Failed to load Hikvision settings');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveSettings = async (updatedSettings: HikvisionApiSettings): Promise<boolean> => {
-    setIsSaving(true);
-    try {
-      // Make sure branch_id is set
-      const settingsToSave = {
-        ...updatedSettings,
-        branch_id: currentBranch?.id as string
-      };
+      setIsSaving(true);
+      const result = await saveSettings({
+        api_url: data.api_url,
+        app_key: data.app_key,
+        app_secret: data.app_secret,
+        is_active: data.is_active,
+        devices: data.devices || []
+      }, data.branch_id);
       
-      const result = await hikvisionService.saveSettings(settingsToSave);
-      if (result) {
-        setSettings(result);
-        toast.success('Hikvision settings saved successfully');
-        return true;
-      }
-      return false;
-    } catch (err: any) {
-      setError(err);
-      toast.error('Failed to save Hikvision settings');
+      return result;
+    } catch (error) {
+      console.error('Error saving settings:', error);
       return false;
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const testConnection = async (settingsToTest?: HikvisionApiSettings): Promise<boolean> => {
+  }, [saveSettings]);
+  
+  // Test connection
+  const handleTestConnection = useCallback(async (credentials: HikvisionApiSettings) => {
+    return testConnection({
+      api_url: credentials.api_url,
+      app_key: credentials.app_key,
+      app_secret: credentials.app_secret
+    });
+  }, [testConnection]);
+  
+  // Fetch devices
+  const fetchDevices = useCallback(async () => {
     try {
-      const settingsData = settingsToTest || settings;
-      if (!settingsData) return false;
+      setIsLoadingDevices(true);
       
-      const success = await hikvisionService.testConnection(settingsData);
-      if (success) {
-        toast.success('Successfully connected to Hikvision API');
-      } else {
-        toast.error('Failed to connect to Hikvision API');
+      if (!settings) {
+        await fetchSettings();
       }
-      return success;
+      
+      // For now, just use the devices from settings
+      if (settings?.devices) {
+        setDevices(settings.devices);
+      }
+      
+      return settings?.devices || [];
     } catch (error) {
-      toast.error('Connection test failed');
-      return false;
-    }
-  };
-
-  const fetchDevices = async () => {
-    if (!settings || !settings.is_active) return;
-    
-    setIsLoadingDevices(true);
-    try {
-      const devicesList = await hikvisionService.getDevices(settings);
-      setDevices(devicesList);
-    } catch (err) {
-      console.error('Error fetching devices:', err);
+      console.error('Error fetching devices:', error);
       toast.error('Failed to load devices');
+      return [];
     } finally {
       setIsLoadingDevices(false);
     }
-  };
-
-  // Add a device to the Hikvision system
-  const addDevice = async (deviceName: string, deviceSerial: string, siteId: string): Promise<boolean> => {
-    if (!settings) return false;
-    
-    try {
-      await hikvisionService.addDevice(settings, {
-        deviceName,
-        deviceSerial,
-        siteId
-      });
-      
-      // Refresh devices list after adding
-      await fetchDevices();
-      toast.success('Device added successfully');
-      return true;
-    } catch (error) {
-      console.error('Error adding device:', error);
-      toast.error('Failed to add device');
-      return false;
-    }
-  };
-
+  }, [settings, fetchSettings]);
+  
+  // Initial load
   useEffect(() => {
-    if (currentBranch?.id) {
-      fetchSettings();
+    if (settings?.devices) {
+      setDevices(settings.devices);
     }
-  }, [currentBranch?.id]);
-
-  useEffect(() => {
-    if (settings?.is_active) {
-      fetchDevices();
-    }
-  }, [settings?.is_active]);
-
+  }, [settings]);
+  
   return {
     settings,
     isLoading,
-    error,
     isSaving,
-    devices,
-    isLoadingDevices,
-    fetchSettings,
-    saveSettings,
-    testConnection,
+    saveSettings: handleSaveSettings,
+    testConnection: handleTestConnection,
     fetchDevices,
-    addDevice
+    isLoadingDevices,
+    devices
   };
-};
+}

@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useHikvision } from '@/hooks/use-hikvision';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface HikvisionSettingsProps {
@@ -16,10 +16,10 @@ interface HikvisionSettingsProps {
 }
 
 export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) {
-  const [apiUrl, setApiUrl] = useState('');
-  const [appKey, setAppKey] = useState('');
-  const [secretKey, setSecretKey] = useState('');
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [api_url, setApiUrl] = useState('');
+  const [app_key, setAppKey] = useState('');
+  const [app_secret, setAppSecret] = useState('');
+  const [is_active, setIsEnabled] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const { 
@@ -33,12 +33,12 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
 
   useEffect(() => {
     if (branchId) {
-      fetchSettings().then(settings => {
+      fetchSettings(branchId).then(settings => {
         if (settings) {
-          setApiUrl(settings.apiUrl || '');
-          setAppKey(settings.appKey || '');
-          setSecretKey(settings.appSecret || '');
-          setIsEnabled(settings.isActive);
+          setApiUrl(settings.api_url || '');
+          setAppKey(settings.app_key || '');
+          setAppSecret(settings.app_secret || '');
+          setIsEnabled(settings.is_active);
         }
       });
     }
@@ -47,16 +47,17 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
   const handleSave = async () => {
     setErrorMessage(null);
     
-    if (!apiUrl || !appKey || !secretKey) {
+    if (!api_url || !app_key || !app_secret) {
       toast.error('Please fill in all required fields');
       return;
     }
     
     try {
       const success = await saveSettings({
-        apiUrl,
-        appKey,
-        secretKey
+        api_url,
+        app_key,
+        app_secret,
+        is_active
       }, branchId);
       
       if (success) {
@@ -71,16 +72,16 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
   const handleTestConnection = async () => {
     setErrorMessage(null);
     
-    if (!apiUrl || !appKey || !secretKey) {
+    if (!api_url || !app_key || !app_secret) {
       toast.error('Please fill in all required fields');
       return;
     }
     
     try {
       const result = await testConnection({
-        apiUrl,
-        appKey,
-        secretKey
+        api_url,
+        app_key,
+        app_secret
       });
       
       if (result.success) {
@@ -116,7 +117,7 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
             <p className="text-sm text-muted-foreground">Activate the Hikvision access control integration</p>
           </div>
           <Switch 
-            checked={isEnabled} 
+            checked={is_active} 
             onCheckedChange={setIsEnabled}
             disabled={isLoading}
           />
@@ -141,13 +142,13 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="api-url">API URL</Label>
+            <Label htmlFor="api_url">API URL</Label>
             <Input 
-              id="api-url" 
-              value={apiUrl} 
+              id="api_url" 
+              value={api_url} 
               onChange={(e) => setApiUrl(e.target.value)}
               placeholder="https://example.hikvision.com"
-              disabled={isLoading || !isEnabled}
+              disabled={isLoading || !is_active}
             />
             <p className="text-xs text-muted-foreground">
               The base URL of your Hikvision Partner Pro API
@@ -155,25 +156,25 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="app-key">App Key</Label>
+            <Label htmlFor="app_key">App Key</Label>
             <Input 
-              id="app-key" 
-              value={appKey} 
+              id="app_key" 
+              value={app_key} 
               onChange={(e) => setAppKey(e.target.value)}
               placeholder="Enter App Key"
-              disabled={isLoading || !isEnabled}
+              disabled={isLoading || !is_active}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="secret-key">Secret Key</Label>
+            <Label htmlFor="app_secret">Secret Key</Label>
             <Input 
-              id="secret-key" 
+              id="app_secret" 
               type="password" 
-              value={secretKey} 
-              onChange={(e) => setSecretKey(e.target.value)}
+              value={app_secret} 
+              onChange={(e) => setAppSecret(e.target.value)}
               placeholder="••••••••••••••"
-              disabled={isLoading || !isEnabled}
+              disabled={isLoading || !is_active}
             />
           </div>
         </div>
@@ -182,7 +183,7 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
         <Button 
           variant="outline" 
           onClick={handleTestConnection} 
-          disabled={isLoading || !isEnabled || !apiUrl || !appKey || !secretKey}
+          disabled={isLoading || !is_active || !api_url || !app_key || !app_secret}
         >
           {isLoading ? (
             <>
@@ -196,7 +197,7 @@ export default function HikvisionSettings({ branchId }: HikvisionSettingsProps) 
         
         <Button 
           onClick={handleSave} 
-          disabled={isLoading || !isEnabled || !apiUrl || !appKey || !secretKey}
+          disabled={isLoading || !is_active || !api_url || !app_key || !app_secret}
         >
           {isLoading ? (
             <>
