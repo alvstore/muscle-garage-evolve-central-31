@@ -194,7 +194,7 @@ const FinanceDashboardPage = () => {
         const normalizedIncomeRecords = incomeData.map(record => ({
           id: record.id,
           type: 'income',
-          amount: record.amount || 0,
+          amount: parseFloat(record.amount) || 0, // Ensure amount is parsed as a float
           description: record.description || '',
           transaction_date: record.date || record.created_at,
           payment_method: record.payment_method || 'unknown',
@@ -222,7 +222,7 @@ const FinanceDashboardPage = () => {
         const normalizedExpenseRecords = expenseData.map(record => ({
           id: record.id,
           type: 'expense',
-          amount: record.amount || 0,
+          amount: parseFloat(record.amount) || 0, // Ensure amount is parsed as a float
           description: record.description || '',
           transaction_date: record.date || record.created_at,
           payment_method: record.payment_method || 'unknown',
@@ -348,16 +348,17 @@ const FinanceDashboardPage = () => {
     const calculateSummary = (transactionList: any[]) => {
       const income = transactionList
         .filter((t) => t.type === 'income')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
       
       const expense = transactionList
         .filter((t) => t.type === 'expense')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
       
+      // Ensure we're working with precise numbers by using toFixed and parsing back to number
       return {
-        income,
-        expense,
-        profit: income - expense
+        income: parseFloat(income.toFixed(2)),
+        expense: parseFloat(expense.toFixed(2)),
+        profit: parseFloat((income - expense).toFixed(2))
       };
     };
 
@@ -390,21 +391,23 @@ const FinanceDashboardPage = () => {
                                  dateRange === 'week' ? weekTransactions :
                                  dateRange === 'year' ? yearTransactions : monthTransactions;
     
-    // Group transactions by month
+    // Process transactions by month
     transactionsToProcess.forEach((transaction) => {
       const transactionDate = new Date(transaction.transaction_date);
       const monthName = monthNames[transactionDate.getMonth()];
       
       if (transaction.type === 'income') {
-        revenueByMonth[monthName].revenue += Number(transaction.amount);
+        revenueByMonth[monthName].revenue += parseFloat(transaction.amount || 0);
       } else if (transaction.type === 'expense') {
-        revenueByMonth[monthName].expenses += Number(transaction.amount);
+        revenueByMonth[monthName].expenses += parseFloat(transaction.amount || 0);
       }
     });
     
-    // Calculate profit for each month
+    // Calculate profit for each month and ensure precision
     Object.keys(revenueByMonth).forEach(month => {
-      revenueByMonth[month].profit = revenueByMonth[month].revenue - revenueByMonth[month].expenses;
+      revenueByMonth[month].revenue = parseFloat(revenueByMonth[month].revenue.toFixed(2));
+      revenueByMonth[month].expenses = parseFloat(revenueByMonth[month].expenses.toFixed(2));
+      revenueByMonth[month].profit = parseFloat((revenueByMonth[month].revenue - revenueByMonth[month].expenses).toFixed(2));
     });
     
     // Convert to array and filter for current and past months
@@ -427,14 +430,18 @@ const FinanceDashboardPage = () => {
     const incomeByCategory: Record<string, CategoryItem> = {};
     const expenseByCategory: Record<string, CategoryItem> = {};
     
-    // Calculate total income and expense
+    // Calculate total income and expense with proper numeric handling
     const totalIncome = transactionsToProcess
       .filter((t) => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
       
     const totalExpense = transactionsToProcess
       .filter((t) => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      
+    // Ensure we have precise values
+    const formattedTotalIncome = parseFloat(totalIncome.toFixed(2));
+    const formattedTotalExpense = parseFloat(totalExpense.toFixed(2));
     
     // Process income transactions
     transactionsToProcess
@@ -450,9 +457,9 @@ const FinanceDashboardPage = () => {
           };
         }
         
-        incomeByCategory[categoryName].value += Number(transaction.amount);
+        incomeByCategory[categoryName].value += parseFloat(transaction.amount || 0);
       });
-    
+      
     // Process expense transactions
     transactionsToProcess
       .filter((t) => t.type === 'expense')
@@ -467,18 +474,26 @@ const FinanceDashboardPage = () => {
           };
         }
         
-        expenseByCategory[categoryName].value += Number(transaction.amount);
+        expenseByCategory[categoryName].value += parseFloat(transaction.amount || 0);
       });
+      
+    // Ensure all category values have consistent precision
+    Object.values(incomeByCategory).forEach(category => {
+      category.value = parseFloat(category.value.toFixed(2));
+    });
     
-    // Convert to percentage for income
+    Object.values(expenseByCategory).forEach(category => {
+      category.value = parseFloat(category.value.toFixed(2));
+    });
+    
+    // Convert to percentage for income with proper formatting
     const incomeBreakdownData = Object.values(incomeByCategory).map((category: CategoryItem) => {
       return {
         name: category.name,
         color: category.color,
-        // Store original amount for tooltip
-        amount: category.value,
-        // Convert to percentage
-        value: totalIncome > 0 ? Math.round((category.value / totalIncome) * 100) : 0
+        value: category.value,
+        // Calculate percentage using formatted total for accuracy
+        percentage: formattedTotalIncome > 0 ? Math.round((category.value / formattedTotalIncome) * 100) : 0
       };
     }).filter((cat: any) => cat.value > 0);
     
@@ -487,15 +502,14 @@ const FinanceDashboardPage = () => {
     
     setIncomeBreakdown(incomeBreakdownData);
     
-    // Convert to percentage for expenses
+    // Convert to percentage for expenses with proper formatting
     const expenseBreakdownData = Object.values(expenseByCategory).map((category: CategoryItem) => {
       return {
         name: category.name,
         color: category.color,
-        // Store original amount for tooltip
-        amount: category.value,
-        // Convert to percentage
-        value: totalExpense > 0 ? Math.round((category.value / totalExpense) * 100) : 0
+        value: category.value,
+        // Calculate percentage using formatted total for accuracy
+        percentage: formattedTotalExpense > 0 ? Math.round((category.value / formattedTotalExpense) * 100) : 0
       };
     }).filter((cat: any) => cat.value > 0);
     
