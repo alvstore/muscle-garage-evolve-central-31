@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +16,8 @@ import { useBranch } from '@/hooks/use-branch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExpenseRecord } from '@/types/finance';
+// Using direct styling instead of Container component
+// import { Container } from "@/components/ui/container";
 
 const ExpenseRecordsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -447,7 +448,7 @@ const ExpenseRecordsPage = () => {
   };
 
   return (
-    <Container>
+    <div className="container mx-auto p-4">
       <div className="py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -577,12 +578,14 @@ const ExpenseRecordsPage = () => {
                             >
                               <Trash className="h-4 w-4" />
                             </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -912,7 +915,7 @@ const ExpenseRecordsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Container>
+    </div>
   );
 };
 
