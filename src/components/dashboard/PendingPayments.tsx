@@ -65,7 +65,7 @@ const PendingPayments = ({ payments }: PendingPaymentsProps) => {
                     <div className="flex items-center pt-1">
                       <span className="text-xs text-muted-foreground">{payment.membership_plan}</span>
                       <span className="mx-1 text-xs text-muted-foreground">・</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(payment.status)}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(payment.status || '')}`}>
                         {payment.status === "overdue" ? "Overdue" : (payment.due_date ? `Due ${format(parseISO(payment.due_date), "MMM dd")}` : "Pending")}
                       </span>
                     </div>

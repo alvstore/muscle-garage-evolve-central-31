@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -39,16 +40,36 @@ import { Member } from '@/types';
 // We'll mock these imports until they're resolved or created
 // import { countries } from 'countries-list';
 // import { Country, State } from 'country-state-city';
-// import { membersService } from '@/services/membersService';
-// import { TrainerSelect } from './TrainerSelect';
+import { membersService } from '@/services/membersService';
+import { TrainerSelect } from './TrainerSelect';
 
 // Mocked data for countries until the module is available
-const countries = {
-  US: { name: 'United States' },
-  CA: { name: 'Canada' },
-  UK: { name: 'United Kingdom' },
-  IN: { name: 'India' },
-  // Add more countries as needed
+const countriesData = {
+  "IN": { name: "India", native: "भारत", phone: "91", currency: "INR" },
+  "US": { name: "United States", native: "United States", phone: "1", currency: "USD" },
+  // Add more as needed
+};
+
+const countries = { countries: countriesData };
+const { Country, State, City } = {
+  Country: {
+    getAllCountries: () => [
+      { isoCode: "IN", name: "India" },
+      { isoCode: "US", name: "United States" },
+    ]
+  },
+  State: {
+    getStatesOfCountry: (countryCode: string) => [
+      { isoCode: "MH", name: "Maharashtra" },
+      { isoCode: "DL", name: "Delhi" },
+    ]
+  },
+  City: {
+    getCitiesOfState: (countryCode: string, stateCode: string) => [
+      { name: "Mumbai" },
+      { name: "Delhi" },
+    ]
+  }
 };
 
 // Basic TrainerSelect component as a placeholder
@@ -169,27 +190,52 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({
     }));
   };
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+  const handleSubmit = async (data: any) => {
+    // This function now handles both camelCase and snake_case properties
+    const convertedData = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      zip_code: data.zip_code || data.zipCode,
+      gender: data.gender,
+      date_of_birth: data.date_of_birth || data.dateOfBirth,
+      membership_id: data.membership_id || data.membershipId,
+      membership_status: data.membership_status || data.membershipStatus,
+      membership_start_date: data.membership_start_date || data.membershipStartDate,
+      membership_end_date: data.membership_end_date || data.membershipEndDate,
+      trainer_id: data.trainer_id || data.trainerId,
+      goal: data.goal,
+      occupation: data.occupation,
+      blood_group: data.blood_group,
+      id_type: data.id_type,
+      id_number: data.id_number,
+      // Add any other fields that need conversion
+    };
+
     onSubmit({
-      ...values,
-      id: formData.id,
-      address: values.address || '',
-      city: values.city || '',
-      state: values.state || '',
-      zip_code: values.zip_code || '',
-      country: values.country || '',
-      gender: values.gender || '',
-      date_of_birth: values.date_of_birth || '',
-      id_type: values.id_type || '',
-      id_number: values.id_number || '',
-      membership_id: values.membership_id || '',
-      membership_status: values.membership_status || '',
-      membership_start_date: values.membership_start_date || '',
-      membership_end_date: values.membership_end_date || '',
-      trainer_id: values.trainer_id || '',
-      goal: values.goal || '',
-      occupation: values.occupation || '',
-      blood_group: values.blood_group || '',
+      ...convertedData,
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip_code: data.zip_code || '',
+      country: data.country || '',
+      gender: data.gender || '',
+      date_of_birth: data.date_of_birth || '',
+      id_type: data.id_type || '',
+      id_number: data.id_number || '',
+      membership_id: data.membership_id || '',
+      membership_status: data.membership_status || '',
+      membership_start_date: data.membership_start_date || '',
+      membership_end_date: data.membership_end_date || '',
+      trainer_id: data.trainer_id || '',
+      goal: data.goal || '',
+      occupation: data.occupation || '',
+      blood_group: data.blood_group || '',
     });
   };
   

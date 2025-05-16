@@ -51,11 +51,11 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
             {activities.map((activity) => (
               <div key={activity.id} className="flex items-start gap-4">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-                  {activity.member ? (
-                    <span className="font-medium text-xs">{activity.member.name?.substring(0, 2).toUpperCase() || "ME"}</span>
+                  {activity.member?.name ? (
+                    <span className="font-medium text-xs">{activity.member.name.substring(0, 2).toUpperCase()}</span>
                   ) : (
                     <span className="font-medium text-xs">
-                      {(activity.user?.name || "").substring(0, 2).toUpperCase() || "AC"}
+                      {activity.user?.name ? activity.user.name.substring(0, 2).toUpperCase() : "AC"}
                     </span>
                   )}
                 </div>

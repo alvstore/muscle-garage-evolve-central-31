@@ -1,60 +1,57 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Invoice } from '@/types/finance';
-import InvoiceForm from '../InvoiceForm';
-import { notificationToFinanceInvoice, financeToNotificationInvoice } from '@/utils/invoiceTypeConverters';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import InvoiceForm from "../InvoiceForm";
+import { Invoice } from "@/types/finance";
 
-export interface InvoiceFormDialogProps {
+interface InvoiceFormDialogProps {
+  invoice: Invoice | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoice?: Invoice | null;
-  onComplete?: () => void;
-  onSuccess?: () => void;
+  onComplete: (invoice?: Invoice) => void;
 }
 
 const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
+  invoice,
   open,
   onOpenChange,
-  invoice = null,
   onComplete,
-  onSuccess,
 }) => {
-  const isEditing = Boolean(invoice);
-
-  // Convert to notification invoice format for the form
-  const notificationInvoice = invoice ? 
-    (('items' in invoice) ? financeToNotificationInvoice(invoice) : invoice) : 
-    null;
-
-  const handleComplete = () => {
-    if (onComplete) {
-      onComplete();
-    }
-    if (onSuccess) {
-      onSuccess();
-    }
+  // Function to handle form completion
+  const handleComplete = (updatedInvoice?: Invoice) => {
+    onComplete(updatedInvoice);
     onOpenChange(false);
+  };
+
+  // Function to handle form cancellation
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
+  // Convert notification invoice to finance invoice if needed
+  const prepareInvoice = (invoice: Invoice | null): Invoice | null => {
+    if (!invoice) return null;
+
+    // If the invoice doesn't have items, add an empty items array
+    const updatedInvoice: Invoice = {
+      ...invoice,
+      items: invoice.items || [],
+    };
+
+    return updatedInvoice;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? 'Update invoice details below' : 'Enter invoice details below to create a new invoice.'}
-          </DialogDescription>
+          <DialogTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
         </DialogHeader>
-        <InvoiceForm 
-          invoice={notificationInvoice}
+        <InvoiceForm
+          invoice={prepareInvoice(invoice)}
           onComplete={handleComplete}
+          onCancel={handleCancel}
         />
       </DialogContent>
     </Dialog>

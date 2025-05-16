@@ -25,8 +25,8 @@ const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
     if (a.status !== 'overdue' && b.status === 'overdue') return 1;
     
     // Same status, sort by expiry date
-    const dateA = new Date(a.expiry_date || a.expiryDate || '');
-    const dateB = new Date(b.expiry_date || b.expiryDate || '');
+    const dateA = new Date(a.expiryDate || a.expiry_date || '');
+    const dateB = new Date(b.expiryDate || b.expiry_date || '');
     return dateA.getTime() - dateB.getTime();
   });
 
@@ -53,11 +53,11 @@ const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
                     <img 
                       src={renewal.member_avatar || renewal.memberAvatar} 
                       className="w-full h-full rounded-full object-cover" 
-                      alt={renewal.member_name || renewal.memberName || "Member"} 
+                      alt={renewal.memberName || renewal.member_name || "Member"} 
                     />
                   ) : (
                     <span className="font-medium text-xs">
-                      {(renewal.member_name || renewal.memberName || "").substring(0, 2).toUpperCase()}
+                      {(renewal.memberName || renewal.member_name || "").substring(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -65,7 +65,7 @@ const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium truncate">
-                      {renewal.member_name || renewal.memberName}
+                      {renewal.memberName || renewal.member_name}
                     </p>
                     <Badge 
                       variant={renewal.status === 'overdue' ? 'destructive' : 
@@ -76,10 +76,10 @@ const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
                   </div>
                   
                   <div className="text-xs text-muted-foreground flex justify-between mt-1">
-                    <span>{renewal.membership_plan || renewal.membershipPlan || renewal.plan_name}</span>
+                    <span>{renewal.membershipName || renewal.membership_plan || renewal.membershipPlan || renewal.plan_name}</span>
                     <span>
                       {renewal.status === 'overdue' ? 'Expired ' : 'Expires '}
-                      {formatDistance(new Date(renewal.expiry_date || renewal.expiryDate || ''), new Date(), { 
+                      {formatDistance(new Date(renewal.expiryDate || renewal.expiry_date || ''), new Date(), { 
                         addSuffix: true 
                       })}
                     </span>
@@ -92,7 +92,7 @@ const UpcomingRenewals: React.FC<UpcomingRenewalsProps> = ({
                   </p>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Actions for {renewal.member_name || renewal.memberName}</span>
+                    <span className="sr-only">Actions for {renewal.memberName || renewal.member_name}</span>
                   </Button>
                 </div>
               </div>

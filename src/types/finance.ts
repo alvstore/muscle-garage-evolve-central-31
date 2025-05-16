@@ -19,7 +19,8 @@ export interface Invoice {
   id: string;
   member_id?: string;
   memberId?: string; // For backward compatibility
-  memberName?: string;
+  member_name?: string;
+  memberName?: string; // For backward compatibility
   amount: number;
   description: string;
   status: InvoiceStatus;

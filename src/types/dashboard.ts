@@ -11,9 +11,15 @@ export interface ActivityItem {
   type: string;
   description: string;
   timestamp: string;
-  user?: string;
+  user?: {
+    name?: string;
+  };
   userId?: string;
   icon?: string;
+  time?: string;
+  member?: {
+    name?: string;
+  };
 }
 
 export interface Payment {
@@ -25,6 +31,8 @@ export interface Payment {
   payment_method: string;
   contactInfo?: string;
   status?: string;
+  due_date?: string;
+  member_avatar?: string;
 }
 
 export interface RenewalItem {
@@ -33,12 +41,14 @@ export interface RenewalItem {
   membershipName: string;
   expiryDate: string;
   status: string;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  author: string;
+  membership_plan?: string;
+  membershipPlan?: string;
+  plan_name?: string;
+  renewal_amount?: number;
+  renewalAmount?: number;
+  amount?: number;
+  member_name?: string;
+  member_avatar?: string;
+  memberAvatar?: string;
+  expiry_date?: string;
 }
