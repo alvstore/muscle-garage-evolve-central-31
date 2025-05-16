@@ -6,7 +6,7 @@ import { leadService } from '@/services/leadService';
 import { followUpService } from '@/services/followUpService';
 import { useBranch } from '@/hooks/use-branch';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { LeadsList } from '@/components/crm/LeadsList';
+import LeadsList from '@/components/crm/LeadsList';
 import { Lead, FollowUpHistory } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 
