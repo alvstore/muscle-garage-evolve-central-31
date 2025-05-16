@@ -6,6 +6,7 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
+  is_read?: boolean; // For backward compatibility
   created_at: string;
   type?: string;
   user_id: string;

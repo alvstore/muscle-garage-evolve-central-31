@@ -157,7 +157,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
             invoices={invoices} 
             isLoading={isLoading}
             onEdit={readonly ? undefined : handleEditInvoice}
-            onMarkPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
+            onMarkAsPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
             statusColors={statusColors}
             allowDownload={allowDownload}
           />

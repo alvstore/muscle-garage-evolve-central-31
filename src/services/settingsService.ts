@@ -466,12 +466,16 @@ export const getHikvisionSites = async (branchId: string) => {
   }
 };
 
+// Alias for saveEmailSettings for backward compatibility
+export const updateEmailSettings = saveEmailSettings;
+
 export default {
   getAutomationRules,
   saveAutomationRule,
   deleteAutomationRule,
   getEmailSettings,
   saveEmailSettings,
+  updateEmailSettings,
   getCompanySettings,
   saveCompanySettings,
   getAttendanceSettings,

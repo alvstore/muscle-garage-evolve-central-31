@@ -13,7 +13,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;
+  isOpen?: boolean;
+  onClose?: () => void;
   onComplete?: () => void;
+  onSaved?: () => void;
 }
 
 const InvoiceForm: React.FC<InvoiceFormProps> = ({ invoice, onComplete }) => {

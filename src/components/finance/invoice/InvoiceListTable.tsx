@@ -24,6 +24,7 @@ export interface InvoiceListTableProps {
   onSendPaymentLink?: (id: string) => void;
   onDownload?: (id: string) => void;
   onDelete?: (id: string) => void;
+  statusColors?: Record<string, string>;
 }
 
 export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({

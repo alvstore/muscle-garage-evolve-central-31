@@ -62,7 +62,7 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks: propFeedbacks, i
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">{feedback.comment || feedback.comments}</p>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">{feedback.comments}</p>
           <div className="flex justify-between text-sm text-gray-500">
             <span>
               {feedback.anonymous ? 'Anonymous' : feedback.member_name}
