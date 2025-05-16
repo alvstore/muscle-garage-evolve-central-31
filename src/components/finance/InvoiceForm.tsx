@@ -2,11 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Invoice } from '@/types/notification';
+import { Invoice } from '@/types/finance';
 import { InvoiceMemberFields } from './invoice/InvoiceMemberFields';
 import { InvoiceDetailsFields } from './invoice/InvoiceDetailsFields';
 import { InvoiceNotes } from './invoice/InvoiceNotes';
 import { useInvoiceForm } from '@/hooks/use-invoice-form';
+import { ChangeEvent } from 'react';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -39,6 +40,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     form.handleSubmit(onSubmit)();
   };
 
+  // Create wrapper handlers that transform the event before calling the original handlers
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    handleChange(name, value);
+  };
+
+  const onTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    handleChange(name, value);
+  };
+
+  const onStatusChange = (status: string) => {
+    handleStatusChange(status as any);
+  };
+
   return (
     <form onSubmit={handleFormSubmit}>
       <Card>
@@ -47,8 +63,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <InvoiceMemberFields
-            memberId={formValues.member_id}
-            memberName={formValues.member_name}
+            memberId={formValues.member_id || ''}
+            memberName={formValues.memberName || ''}
             onChange={handleChange}
           />
           
@@ -58,14 +74,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             status={formValues.status}
             dueDate={formValues.due_date}
             paymentMethod={formValues.payment_method || ''}
-            onChange={handleInputChange}
-            onStatusChange={handleStatusChange}
+            onChange={onInputChange}
+            onStatusChange={onStatusChange}
             onPaymentMethodChange={handlePaymentMethodChange}
           />
           
           <InvoiceNotes
-            notes={formValues.notes}
-            onChange={handleTextAreaChange}
+            notes={formValues.notes || ''}
+            onChange={onTextAreaChange}
           />
           
           <div className="flex justify-end space-x-2 pt-4">

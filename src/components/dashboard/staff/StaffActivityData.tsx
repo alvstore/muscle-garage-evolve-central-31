@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,8 +10,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Payment } from '@/types/finance';
+} from "@/components/ui/table";
+import { Payment } from '@/types/dashboard';
 
 interface StaffActivityDataProps {
   payments: Payment[];

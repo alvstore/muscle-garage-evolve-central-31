@@ -1,4 +1,3 @@
-
 export interface MembershipPlan {
   id: string;
   name: string;
@@ -6,16 +5,20 @@ export interface MembershipPlan {
   price: number;
   duration_days: number;
   durationDays?: number; // For backward compatibility
-  features?: string[];
-  benefits?: string[]; // For backward compatibility
+  features?: string[] | any[];
+  benefits?: string[] | any[]; // For backward compatibility
   is_active?: boolean;
   isActive?: boolean; // For backward compatibility
   status?: string;
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+  createdAt?: string; // For backward compatibility
+  updatedAt?: string; // For backward compatibility
   duration_label?: string; // Added for MembershipPlanForm
   allowed_classes?: ClassType; // Added for MembershipPlanForm
+  memberCount?: number; // For MembershipPlanCard
+  durationLabel?: string; // For backward compatibility
 }
 
 // Add these missing types
@@ -43,7 +46,9 @@ export interface Member {
   membership_status?: string;
   membershipStatus?: string; // For backward compatibility
   membership_start_date?: string;
+  membershipStartDate?: string; // For backward compatibility
   membership_end_date?: string;
+  membershipEndDate?: string; // For backward compatibility
   status?: string;
   date_of_birth?: string;
   dateOfBirth?: string; // For backward compatibility
@@ -51,6 +56,10 @@ export interface Member {
   profile_picture?: string;
   goal?: string;
   branch_id?: string;
+  occupation?: string;
+  blood_group?: string;
+  id_type?: string;
+  id_number?: string;
 }
 
 export interface Trainer {

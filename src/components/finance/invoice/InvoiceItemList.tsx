@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { InvoiceItemListProps, InvoiceItemProps } from "@/types/invoice";
+import { InvoiceItem } from "@/types/finance";
 
 const InvoiceItemRow = ({ item, onUpdate, onRemove, canDelete }: InvoiceItemProps) => (
   <div className="grid grid-cols-12 gap-2 mb-2">
@@ -28,8 +29,8 @@ const InvoiceItemRow = ({ item, onUpdate, onRemove, canDelete }: InvoiceItemProp
       <Input
         type="number"
         placeholder="Unit Price"
-        value={item.unitPrice}
-        onChange={(e) => onUpdate(item.id, "unitPrice", Number(e.target.value))}
+        value={item.price} // Using price instead of unitPrice
+        onChange={(e) => onUpdate(item.id, "price", Number(e.target.value))}
         min="0"
         required
       />
@@ -73,4 +74,3 @@ export const InvoiceItemList = ({ items, onAddItem, onUpdateItem, onRemoveItem }
     ))}
   </div>
 );
-

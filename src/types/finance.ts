@@ -1,6 +1,6 @@
 
 // Defining necessary types for finance-related components
-export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void';
+export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void' | 'sent';
 
 export interface InvoiceItem {
   id: string;
@@ -12,17 +12,21 @@ export interface InvoiceItem {
   tax_amount?: number;
   discount?: number;
   total: number;
+  unitPrice?: number; // Added for backward compatibility
 }
 
 export interface Invoice {
   id: string;
   member_id?: string;
+  memberId?: string; // For backward compatibility
   memberName?: string;
   amount: number;
   description: string;
   status: InvoiceStatus;
   due_date: string;
+  dueDate?: string; // For backward compatibility
   issued_date?: string;
+  issuedDate?: string; // For backward compatibility
   paid_date?: string;
   payment_method?: PaymentMethod;
   notes?: string;
@@ -30,9 +34,11 @@ export interface Invoice {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+  membership_plan_id?: string;
+  membershipPlanId?: string; // For backward compatibility
 }
 
-export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'check' | 'other';
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'check' | 'other' | 'razorpay';
 
 export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 
@@ -66,4 +72,9 @@ export interface FinancialTransaction {
   reference_id?: string;
   created_by?: string;
   notes?: string;
+  transaction_id?: string;
+  transaction_date?: string; // Added for backward compatibility
 }
+
+// Re-export Payment from dashboard for backward compatibility
+export { Payment } from './dashboard';

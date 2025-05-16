@@ -1,9 +1,11 @@
+
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  timestamp?: string; // Add timestamp for backward compatibility
+  timestamp?: string; // For backward compatibility
   read: boolean;
+  is_read?: boolean; // Added for backward compatibility
   type?: string;
   created_at: string;
   user_id: string;
@@ -201,30 +203,31 @@ export interface BackupLogEntry {
   updated_at: string;
 }
 
-// Add missing types for Invoice
+// Updated Invoice interface to match finance.ts
 export interface Invoice {
   id: string;
   member_id?: string;
   amount: number;
   status: InvoiceStatus;
   due_date: string;
-  issued_date: string;
+  issued_date?: string;
   paid_date?: string;
   payment_method?: string;
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
   branch_id?: string;
-  items: any[];
+  items?: any[];
   description?: string;
   notes?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
   membership_plan_id?: string;
+  member_name?: string;
 }
 
 // Add missing types for enums
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft';
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void' | 'sent';
 export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment';
 export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';

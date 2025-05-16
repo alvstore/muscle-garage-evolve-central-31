@@ -33,3 +33,10 @@ export interface InvoiceDateSelectorProps {
 export interface InvoiceTotalProps {
   amount: number;
 }
+
+export interface MembershipPlanFormProps {
+  plan: any;
+  onSave: (plan: any) => Promise<void>;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}

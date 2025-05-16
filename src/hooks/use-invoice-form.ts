@@ -1,8 +1,7 @@
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import { Invoice } from '@/types/notification';
-import { ChangeEvent } from 'react';
+import { Invoice, InvoiceStatus } from '@/types/finance';
 
 export const useInvoiceForm = (
   initialInvoice: Invoice | null, 
@@ -17,11 +16,12 @@ export const useInvoiceForm = (
     member_name: '',
     amount: 0,
     description: '',
-    status: 'pending' as const,
+    status: 'pending' as InvoiceStatus,
     due_date: new Date().toISOString(),
     payment_method: '',
     notes: '',
     created_at: new Date().toISOString(),
+    items: [],
   };
   
   const form = useForm({
@@ -39,7 +39,7 @@ export const useInvoiceForm = (
     }));
   };
 
-  // Create wrapper functions that accept events
+  // Create wrapper functions that handle events
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     handleChange(e.target.name, e.target.value);
   };
@@ -48,10 +48,10 @@ export const useInvoiceForm = (
     handleChange(e.target.name, e.target.value);
   };
   
-  const handleStatusChange = (status: string) => {
+  const handleStatusChange = (status: InvoiceStatus) => {
     setFormValues(prev => ({
       ...prev,
-      status: status as any
+      status: status
     }));
   };
   

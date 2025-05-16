@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,7 +123,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
     toast.success("Payment link sent successfully");
   };
 
-  // Fix this function to receive an id parameter instead of taking no parameters
+  // Update the handleSaveInvoice function to be compatible with both notification and finance Invoice types
   const handleSaveInvoice = async (invoice: Invoice) => {
     try {
       setIsLoading(true);
@@ -134,11 +133,11 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         const { error } = await supabase
           .from('invoices')
           .update({
-            member_id: invoice.member_id,
+            member_id: invoice.member_id || invoice.memberId,
             amount: invoice.amount,
             description: invoice.description,
             status: invoice.status,
-            due_date: invoice.due_date,
+            due_date: invoice.due_date || invoice.dueDate,
             items: invoice.items,
             notes: invoice.notes,
             updated_at: new Date().toISOString()
@@ -150,14 +149,14 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         setInvoices(invoices.map(inv => inv.id === invoice.id ? invoice : inv));
         toast.success("Invoice updated successfully");
       } else {
-        // Create new invoice
+        // Create new invoice with consistent field names
         const newInvoice = {
           ...invoice,
           branch_id: currentBranch?.id || 'branch-1',
-          branchId: currentBranch?.id || 'branch-1',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+          items: invoice.items || [],
         };
         
         const { data, error } = await supabase
