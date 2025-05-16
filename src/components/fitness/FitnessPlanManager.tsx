@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { List, ListIcon, ListItem } from "@/components/ui/list";
 import { CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { WorkoutPlan, DietPlan, Member } from '@/types';
-import { workoutPlansService } from '@/services/workoutPlansService';
-import { dietPlansService } from '@/services/dietPlansService';
-import { membersService } from '@/services/membersService';
+import workoutPlansService from '@/services/workoutPlansService';
+import dietPlansService from '@/services/dietPlansService';
+import membersService from '@/services/membersService';
 
 interface FitnessPlanManagerProps {
   memberId: string;

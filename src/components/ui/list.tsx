@@ -21,3 +21,7 @@ export const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(({ classN
 });
 
 ListItem.displayName = "ListItem";
+
+export const ListIcon = ({ className, ...props }: React.HTMLAttributes<SVGElement>) => {
+  return <span className={`mr-2 inline-block ${className || ''}`} {...props} />;
+};

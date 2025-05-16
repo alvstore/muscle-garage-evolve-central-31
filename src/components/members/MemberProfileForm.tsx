@@ -40,39 +40,9 @@ import { Member } from '@/types';
 // We'll mock these imports until they're resolved or created
 // import { countries } from 'countries-list';
 // import { Country, State } from 'country-state-city';
-import { membersService } from '@/services/membersService';
-import { TrainerSelect } from './TrainerSelect';
+import membersService from '@/services/membersService';
 
-// Mocked data for countries until the module is available
-const countriesData = {
-  "IN": { name: "India", native: "भारत", phone: "91", currency: "INR" },
-  "US": { name: "United States", native: "United States", phone: "1", currency: "USD" },
-  // Add more as needed
-};
-
-const countries = { countries: countriesData };
-const { Country, State, City } = {
-  Country: {
-    getAllCountries: () => [
-      { isoCode: "IN", name: "India" },
-      { isoCode: "US", name: "United States" },
-    ]
-  },
-  State: {
-    getStatesOfCountry: (countryCode: string) => [
-      { isoCode: "MH", name: "Maharashtra" },
-      { isoCode: "DL", name: "Delhi" },
-    ]
-  },
-  City: {
-    getCitiesOfState: (countryCode: string, stateCode: string) => [
-      { name: "Mumbai" },
-      { name: "Delhi" },
-    ]
-  }
-};
-
-// Basic TrainerSelect component as a placeholder
+// Create a mock TrainerSelect component
 const TrainerSelect = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => (
   <Select value={value} onValueChange={onChange}>
     <SelectTrigger>
@@ -144,14 +114,14 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({
     zip_code: member?.zip_code || member?.zipCode || '',
     country: member?.country || '',
     gender: member?.gender || '',
-    date_of_birth: member?.date_of_birth || member?.dateOfBirth || '',
+    date_of_birth: member?.date_of_birth || '',
     id_type: member?.id_type || '',
     id_number: member?.id_number || '',
-    membership_id: member?.membership_id || member?.membershipId || '',
-    membership_status: member?.membership_status || member?.membershipStatus || '',
-    membership_start_date: member?.membership_start_date || member?.membershipStartDate || '',
-    membership_end_date: member?.membership_end_date || member?.membershipEndDate || '',
-    trainer_id: member?.trainer_id || member?.trainerId || '',
+    membership_id: member?.membership_id || '',
+    membership_status: member?.membership_status || '',
+    membership_start_date: member?.membership_start_date || '',
+    membership_end_date: member?.membership_end_date || '',
+    trainer_id: member?.trainer_id || '',
     goal: member?.goal || '',
     occupation: member?.occupation || '',
     blood_group: member?.blood_group || '',
