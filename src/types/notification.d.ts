@@ -126,7 +126,7 @@ export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
   };
 };
 
-// Adapter functions that are being imported
+// Adapter functions
 export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
   return {
     id: dbFeedback.id,
@@ -139,7 +139,9 @@ export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
     type: dbFeedback.type,
     anonymous: dbFeedback.anonymous || false,
     created_at: dbFeedback.created_at,
-    related_id: dbFeedback.related_id
+    related_id: dbFeedback.related_id,
+    // Added for backward compatibility
+    comment: dbFeedback.comments
   };
 };
 
@@ -189,6 +191,7 @@ export interface Feedback {
   title: string;
   rating: number;
   comments?: string;
+  comment?: string; // Added for backward compatibility
   member_id?: string;
   member_name?: string;
   branch_id?: string;
@@ -227,7 +230,7 @@ export interface BackupLogEntry {
 }
 
 // Enums
-export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment' | 'fitness-plan';
+export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment' | 'fitness-plan' | 'service';
 export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
 

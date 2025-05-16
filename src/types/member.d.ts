@@ -1,3 +1,4 @@
+
 export interface Member {
   id: string;
   name: string;
@@ -13,9 +14,13 @@ export interface Member {
   membership?: Membership;
   membershipStatus?: 'active' | 'expired' | 'pending' | 'cancelled';
   joinDate?: string;
-  avatar?: string; // Added this missing property
+  avatar?: string;
   trainer?: string;
   goal?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relation?: string;
+  membership_id?: string;
 }
 
 export interface Membership {
@@ -36,11 +41,11 @@ export interface MembershipPlan {
   description?: string;
   price: number;
   duration_days: number;
-  features?: any[];
-  benefits?: any[];
+  features?: string[];
+  benefits?: string[];
   is_active?: boolean;
   status?: MembershipPlanStatus;
-  memberCount?: number; // Add this property
+  memberCount?: number;
   // For backward compatibility
   durationDays?: number;
   isActive?: boolean;

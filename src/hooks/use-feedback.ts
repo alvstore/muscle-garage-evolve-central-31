@@ -10,7 +10,7 @@ export const useFeedback = (type?: FeedbackType) => {
   const { currentBranch } = useBranch();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = async (specificType?: FeedbackType) => {
     try {
       if (!currentBranch?.id) return [];
       
@@ -22,9 +22,9 @@ export const useFeedback = (type?: FeedbackType) => {
     }
   };
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['feedback', currentBranch?.id, type],
-    queryFn: fetchFeedback,
+    queryFn: () => fetchFeedback(type),
     enabled: !!currentBranch?.id,
   });
 
@@ -63,6 +63,8 @@ export const useFeedback = (type?: FeedbackType) => {
     feedbacks,
     isLoading,
     submitFeedback,
-    refreshFeedback: refetch
+    refreshFeedback: refetch,
+    fetchFeedback,
+    error
   };
 };

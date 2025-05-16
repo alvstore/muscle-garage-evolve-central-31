@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -16,6 +15,7 @@ export interface UseAuthActionsReturn {
   register: (email: string, password: string, name: string) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<string>;
   isLoading: boolean;
 }
 
@@ -165,12 +165,30 @@ export const useAuthActions = (): UseAuthActionsReturn => {
     }
   };
 
+  const resetPassword = async (email: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+      
+      if (error) {
+        toast.error(error.message);
+        throw error;
+      }
+      
+      toast.success('Password reset link sent to your email');
+      return 'Reset link sent successfully';  // Return a string directly instead of a Promise<string>
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send reset link');
+      throw error;
+    }
+  };
+
   return {
     login,
     logout,
     register,
     changePassword,
     forgotPassword,
+    resetPassword,
     isLoading
   };
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCheck, Bell, Trash2 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { notificationService } from '@/services';
 import { Notification } from '@/types';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -48,9 +48,9 @@ const NotificationList: React.FC<NotificationListProps> = ({
     }
   }, [onDelete]);
 
-  const markAsRead = useCallback(async (notification: Notification) => {
+  const handleMarkRead = async (notification: Notification) => {
     try {
-      await notificationService.markNotificationAsRead(notification.id);
+      await notificationService.markAsRead(notification.id);
       setNotifications((prevNotifications) =>
         prevNotifications.map((n) =>
           n.id === notification.id ? { ...n, is_read: true, read: true } : n
@@ -59,7 +59,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
-  }, []);
+  };
 
   const formatDate = (dateString: string): string => {
     try {
@@ -113,7 +113,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
               <Badge
                 variant="secondary"
                 className="ml-2 cursor-pointer"
-                onClick={() => markAsRead(notification)}
+                onClick={() => handleMarkRead(notification)}
               >
                 <CheckCheck className="h-3 w-3 mr-1" />
                 Mark as Read
@@ -122,7 +122,7 @@ const NotificationList: React.FC<NotificationListProps> = ({
           </div>
           
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>{formatDate(notification.created_at || '')}</span>
+            <span>{formatDistanceToNow(new Date(notification.created_at || ''), { addSuffix: true })}</span>
             
             <div className="flex items-center space-x-2">
               <button

@@ -72,8 +72,8 @@ const EditStaffForm: React.FC<EditStaffFormProps> = ({
   };
 
   return (
-    <Form>
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid gap-4">
         <div>
           <Label htmlFor="name">Full Name</Label>
           <Input
@@ -215,17 +215,16 @@ const EditStaffForm: React.FC<EditStaffFormProps> = ({
             onCheckedChange={handleSwitchChange}
           />
         </div>
-
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      </div>
+      <div className="flex justify-end">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

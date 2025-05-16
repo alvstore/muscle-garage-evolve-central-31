@@ -8,6 +8,7 @@ import { AutomationRule } from '@/types/crm';
 export const useAutomationRules = () => {
   const { currentBranch } = useBranch();
   const [rules, setRules] = useState<AutomationRule[]>([]);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchRules = useCallback(async () => {
     try {
@@ -19,8 +20,9 @@ export const useAutomationRules = () => {
         return fetchedRules;
       }
       return [];
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching automation rules:', error);
+      setError(error);
       return [];
     }
   }, [currentBranch?.id]);
@@ -69,6 +71,7 @@ export const useAutomationRules = () => {
   return {
     rules,
     isLoading,
+    error,
     saveRule,
     deleteRule,
     refreshRules: refetch,

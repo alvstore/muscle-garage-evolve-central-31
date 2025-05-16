@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useFeedback } from '@/hooks/use-feedback';
 import { FeedbackType, Feedback } from '@/types/notification';
@@ -24,11 +23,8 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks: propFeedbacks, i
   
   React.useEffect(() => {
     if (!propFeedbacks) {
-      if (activeTab === 'all') {
-        hookResult.fetchFeedback();
-      } else {
-        hookResult.fetchFeedback(activeTab as FeedbackType);
-      }
+      // Instead of calling fetchFeedback, call refreshFeedback
+      hookResult.refreshFeedback();
     }
   }, [activeTab, propFeedbacks]);
   
@@ -40,10 +36,10 @@ const FeedbackList: React.FC<FeedbackListProps> = ({ feedbacks: propFeedbacks, i
     );
   }
   
-  if (hookResult.error && !propFeedbacks) {
+  if (!propFeedbacks && hookResult.error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading feedback: {hookResult.error.message}
+        Error loading feedback: {hookResult.error.message || 'Unknown error'}
       </div>
     );
   }

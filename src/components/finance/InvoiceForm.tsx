@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { InvoiceMemberFields } from "@/components/finance/invoice/InvoiceMemberF
 import { InvoiceDetailsFields } from "@/components/finance/invoice/InvoiceDetailsFields";
 import { InvoiceItemList } from "@/components/finance/invoice/InvoiceItemList";
 import { v4 as uuidv4 } from 'uuid';
-import { Invoice, InvoiceItem } from "@/types/finance";
+import { Invoice, InvoiceItem, InvoiceStatus } from "@/types/finance";
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -30,7 +31,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     status: invoice?.status || 'pending',
     due_date: invoice?.due_date || new Date().toISOString().split('T')[0],
     payment_method: invoice?.payment_method || 'cash',
-    items: invoice?.items || [{ id: uuidv4(), name: 'Service', quantity: 1, price: 100 }],
+    items: invoice?.items || [{
+      id: uuidv4(),
+      name: 'Service',
+      quantity: 1,
+      price: 100,
+      total: 100 // Add the total property
+    }],
+    created_at: invoice?.created_at || new Date().toISOString()
   });
 
   useEffect(() => {
@@ -45,26 +53,34 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       name: 'New Item',
       quantity: 1,
       price: 0,
+      total: 0 // Add the total property
     };
     setInvoiceData(prev => ({
       ...prev,
-      items: [...prev.items, newItem],
+      items: [...(prev.items || []), newItem],
     }));
   };
 
   const handleUpdateItem = (id: string, field: string, value: any) => {
     setInvoiceData(prev => ({
       ...prev,
-      items: prev.items.map(item =>
-        item.id === id ? { ...item, [field]: value } : item
-      ),
+      items: prev.items?.map(item =>
+        item.id === id ? { 
+          ...item, 
+          [field]: value,
+          // Update total when price or quantity changes
+          ...(field === 'price' || field === 'quantity' ? {
+            total: field === 'price' ? value * item.quantity : item.quantity * value
+          } : {})
+        } : item
+      ) || [],
     }));
   };
 
   const handleRemoveItem = (id: string) => {
     setInvoiceData(prev => ({
       ...prev,
-      items: prev.items.filter(item => item.id !== id),
+      items: prev.items?.filter(item => item.id !== id) || [],
     }));
   };
 
@@ -87,6 +103,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     updateField(name, value);
   };
 
+  const onSelectMember = (id: string, name: string) => {
+    updateField('member_id', id);
+    updateField('member_name', name);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <InvoiceFormHeader isEditing={!!invoice} />
@@ -96,13 +117,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           <InvoiceMemberFields
             memberId={invoiceData.member_id}
             memberName={invoiceData.member_name}
-            onMemberChange={updateField}
+            onSelectMember={onSelectMember}
           />
           
           <InvoiceDetailsFields
             description={invoiceData.description}
             amount={invoiceData.amount}
-            status={invoiceData.status}
+            status={invoiceData.status as InvoiceStatus}
             dueDate={invoiceData.due_date}
             paymentMethod={invoiceData.payment_method}
             onChange={handleInputChange}
@@ -111,7 +132,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           />
           
           <InvoiceItemList
-            items={invoiceData.items}
+            items={invoiceData.items || []}
             onAddItem={handleAddItem}
             onUpdateItem={handleUpdateItem}
             onRemoveItem={handleRemoveItem}
