@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
 import { communicationService } from '@/services';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export const useAnnouncements = () => {
   const { currentBranch } = useBranch();
