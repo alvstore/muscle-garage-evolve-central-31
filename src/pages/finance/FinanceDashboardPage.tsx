@@ -577,93 +577,143 @@ const FinanceDashboardPage = () => {
           </TabsContent>
           
           <TabsContent value="income" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Income Sources</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-                ) : incomeBreakdown.length > 0 ? (
-                  <div className="space-y-8">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {incomeBreakdown.map((item, index) => (
-                        <Card key={index}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold" style={{ color: item.color }}>{item.value}%</div>
-                            <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <FinanceBarChart 
+                  data={incomeBreakdown} 
+                  title="Income Sources"
+                  height={400}
+                  showLegend={true}
+                  isLoading={isLoading}
+                  emptyMessage="No income data available for this period"
+                />
+              </div>
+              
+              <div className="md:col-span-1">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Income Summary</CardTitle>
+                    <p className="text-sm text-muted-foreground">Breakdown by source</p>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="h-[350px] flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : incomeBreakdown.length > 0 ? (
+                      <div className="space-y-4">
+                        {incomeBreakdown.map((item, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center">
                               <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-sm font-medium">{item.name}</span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    
-                    <Button variant="outline" onClick={() => toast.info('Detailed income report will be available soon')}>
-                      View Detailed Report
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-60">
-                    <p className="text-muted-foreground">No income data available for this period</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                            <Badge variant="outline" className="font-mono">
+                              {item.value}%
+                            </Badge>
+                          </div>
+                        ))}
+                        
+                        <div className="pt-4 mt-4 border-t">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Total Income</span>
+                            <span className="font-bold text-green-600">
+                              ₹{currentPeriodData.income.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          className="w-full mt-4" 
+                          onClick={() => toast.info('Detailed income report will be available soon')}
+                        >
+                          <Activity className="mr-2 h-4 w-4" />
+                          Generate Income Report
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-60">
+                        <p className="text-muted-foreground">No income data available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
           
           <TabsContent value="expenses" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Categories</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
-                ) : expenseBreakdown.length > 0 ? (
-                  <div className="space-y-8">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {expenseBreakdown.map((item, index) => (
-                        <Card key={index}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-2xl font-bold" style={{ color: item.color }}>{item.value}%</div>
-                            <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <FinanceBarChart 
+                  data={expenseBreakdown} 
+                  title="Expense Categories"
+                  height={400}
+                  showLegend={true}
+                  isLoading={isLoading}
+                  emptyMessage="No expense data available for this period"
+                />
+              </div>
+              
+              <div className="md:col-span-1">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Expense Summary</CardTitle>
+                    <p className="text-sm text-muted-foreground">Breakdown by category</p>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="h-[350px] flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : expenseBreakdown.length > 0 ? (
+                      <div className="space-y-4">
+                        {expenseBreakdown.map((item, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center">
                               <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-sm font-medium">{item.name}</span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                    
-                    <Button variant="outline" onClick={() => toast.info('Detailed expense report will be available soon')}>
-                      View Detailed Report
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-60">
-                    <p className="text-muted-foreground">No expense data available for this period</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                            <Badge variant="outline" className="font-mono">
+                              {item.value}%
+                            </Badge>
+                          </div>
+                        ))}
+                        
+                        <div className="pt-4 mt-4 border-t">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Total Expenses</span>
+                            <span className="font-bold text-red-600">
+                              ₹{currentPeriodData.expense.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          className="w-full mt-4" 
+                          onClick={() => toast.info('Detailed expense report will be available soon')}
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Generate Expense Report
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-60">
+                        <p className="text-muted-foreground">No expense data available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
           
           <TabsContent value="transactions" className="space-y-4">
