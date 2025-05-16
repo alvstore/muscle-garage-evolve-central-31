@@ -153,6 +153,74 @@ export const useHikvision = ({ branchId }: { branchId?: string }) => {
     }
   }, [settings]);
 
+  // Member access control functions
+  const memberAccess = {
+    getStatus: async (memberId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('member_access')
+          .select('*')
+          .eq('member_id', memberId);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error getting member access status:', error);
+        return [];
+      }
+    },
+    
+    syncMember: async (memberId: string, deviceSerials: string[]) => {
+      try {
+        console.log(`Syncing member ${memberId} to devices:`, deviceSerials);
+        // This would typically make API calls to sync the member
+        // For now we'll just insert mock data
+        
+        // First delete any existing entries
+        await supabase
+          .from('member_access')
+          .delete()
+          .eq('member_id', memberId);
+          
+        // Then insert new ones
+        const entries = deviceSerials.map(serial => ({
+          member_id: memberId,
+          device_serial: serial,
+          hikvision_person_id: `person-${memberId.slice(0, 8)}`,
+          face_registered: true,
+          card_registered: false,
+          fingerprint_registered: false,
+          created_at: new Date().toISOString()
+        }));
+        
+        const { error } = await supabase
+          .from('member_access')
+          .insert(entries);
+          
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error('Error syncing member:', error);
+        return false;
+      }
+    },
+    
+    removeMember: async (memberId: string) => {
+      try {
+        const { error } = await supabase
+          .from('member_access')
+          .delete()
+          .eq('member_id', memberId);
+          
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error('Error removing member:', error);
+        return false;
+      }
+    }
+  };
+
   return {
     isLoading,
     isConnected,
@@ -162,7 +230,8 @@ export const useHikvision = ({ branchId }: { branchId?: string }) => {
     fetchSettings,
     saveSettings,
     testConnection,
-    fetchDevices
+    fetchDevices,
+    memberAccess
   };
 };
 

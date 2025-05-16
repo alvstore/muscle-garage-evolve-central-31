@@ -27,7 +27,7 @@ export interface Announcement {
   updated_at?: string;
 }
 
-export type MotivationalCategory = 'fitness' | 'health' | 'nutrition' | 'mindfulness' | 'general';
+export type MotivationalCategory = 'fitness' | 'health' | 'nutrition' | 'mindfulness' | 'general' | string;
 
 export interface MotivationalMessage {
   id: string;

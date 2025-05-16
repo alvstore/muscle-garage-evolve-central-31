@@ -72,8 +72,9 @@ const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
     setIsConnectionValid(null);
     
     try {
-      const success = await testConnection(formData);
-      setIsConnectionValid(success);
+      const result = await testConnection(formData);
+      // Set connection validity based on success property, not the whole result object
+      setIsConnectionValid(result.success);
     } finally {
       setIsTesting(false);
     }

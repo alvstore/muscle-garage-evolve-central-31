@@ -79,7 +79,7 @@ export interface FollowUpHistory {
   updated_at?: string;
 }
 
-export type FollowUpType = 'call' | 'email' | 'message' | 'meeting' | 'other';
+export type FollowUpType = 'call' | 'email' | 'message' | 'meeting' | 'sms' | 'whatsapp' | 'other';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'unqualified' | 'converted' | 'lost';
 export type FunnelStage = 'cold' | 'warm' | 'hot' | 'won' | 'lost';
 export type DealStage = 'prospecting' | 'qualification' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
