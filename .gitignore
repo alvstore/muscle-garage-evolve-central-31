@@ -36,3 +36,4 @@ coverage/
 # Optional: Ignore local Supabase config
 supabase/.temp/
 supabase/.env
+errorlist.md

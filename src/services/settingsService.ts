@@ -316,6 +316,156 @@ export const updateIntegrationStatus = async (integrationKey: string, status: st
   }
 };
 
+// Hikvision integration methods
+export const saveHikvisionSettings = async (settings: { apiUrl: string; appKey: string; secretKey: string; siteId?: string; branchId: string }) => {
+  try {
+    const { branchId, ...settingsData } = settings;
+    
+    // First, check if settings already exist for this branch
+    const { data: existingSettings, error: fetchError } = await supabase
+      .from('integration_settings')
+      .select('*')
+      .eq('integration_key', 'hikvision')
+      .eq('branch_id', branchId)
+      .single();
+    
+    let response;
+    
+    if (existingSettings) {
+      // Update existing settings
+      response = await supabase
+        .from('integration_settings')
+        .update({
+          config: settingsData,
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('integration_key', 'hikvision')
+        .eq('branch_id', branchId);
+    } else {
+      // Create new settings
+      response = await supabase
+        .from('integration_settings')
+        .insert({
+          integration_key: 'hikvision',
+          branch_id: branchId,
+          config: settingsData,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+    }
+    
+    if (response.error) {
+      throw response.error;
+    }
+    
+    toast.success('Hikvision settings saved successfully');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error saving Hikvision settings:', error);
+    toast.error(`Failed to save Hikvision settings: ${error.message}`);
+    return { success: false, message: error.message };
+  }
+};
+
+export const testHikvisionConnection = async (credentials: { apiUrl: string; appKey: string; secretKey: string }) => {
+  try {
+    // Call the Edge Function to test the connection
+    const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+      body: {
+        action: 'token',
+        apiUrl: credentials.apiUrl || 'https://api.hik-partner.com',
+        appKey: credentials.appKey,
+        secretKey: credentials.secretKey,
+        isTestConnection: true
+      }
+    });
+    
+    if (error) {
+      console.error('Error testing Hikvision connection:', error);
+      return { 
+        success: false, 
+        message: `Edge function error: ${error.message}` 
+      };
+    }
+    
+    if (!data || (data.code !== '0' && data.errorCode !== '0')) {
+      const errorMsg = data?.msg || data?.message || 'Unknown error';
+      return { 
+        success: false, 
+        message: errorMsg 
+      };
+    }
+    
+    return { 
+      success: true, 
+      message: 'Connection successful',
+      data
+    };
+  } catch (error: any) {
+    console.error('Error testing Hikvision connection:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Connection test failed' 
+    };
+  }
+};
+
+export const getHikvisionSites = async (branchId: string) => {
+  try {
+    // First get the credentials from the settings
+    const { data: settings, error: settingsError } = await supabase
+      .from('integration_settings')
+      .select('config')
+      .eq('integration_key', 'hikvision')
+      .eq('branch_id', branchId)
+      .single();
+    
+    if (settingsError) {
+      throw settingsError;
+    }
+    
+    if (!settings || !settings.config) {
+      return { data: [], error: 'No Hikvision settings found' };
+    }
+    
+    const credentials = settings.config;
+    
+    // Call the Edge Function to get the token and available sites
+    const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+      body: {
+        action: 'token',
+        apiUrl: credentials.apiUrl || 'https://api.hik-partner.com',
+        appKey: credentials.appKey,
+        secretKey: credentials.secretKey,
+        branchId
+      }
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (!data || (data.code !== '0' && data.errorCode !== '0')) {
+      const errorMsg = data?.msg || data?.message || 'Unknown error';
+      throw new Error(errorMsg);
+    }
+    
+    // Return the available sites from the response
+    return { 
+      data: data.availableSites || [], 
+      error: null 
+    };
+  } catch (error: any) {
+    console.error('Error fetching Hikvision sites:', error);
+    return { 
+      data: [], 
+      error: error.message || 'Failed to fetch sites' 
+    };
+  }
+};
+
 export default {
   getAutomationRules,
   saveAutomationRule,
@@ -327,5 +477,8 @@ export default {
   getAttendanceSettings,
   saveAttendanceSettings,
   getIntegrationStatus,
-  updateIntegrationStatus
+  updateIntegrationStatus,
+  saveHikvisionSettings,
+  testHikvisionConnection,
+  getHikvisionSites
 };

@@ -84,4 +84,5 @@ export interface FinancialTransaction {
   updated_at: string;
   branch_id?: string;
   category?: string;
+  attachment?: string;
 }
