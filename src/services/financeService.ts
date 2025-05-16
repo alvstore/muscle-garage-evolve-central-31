@@ -1,20 +1,172 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FinancialTransaction } from '@/types/finance';
+import { FinancialTransaction, ExpenseRecord, Invoice, InvoiceStatus } from '@/types/finance';
 
 export const financeService = {
+  // Invoice methods
+  async getInvoices(branchId: string | undefined): Promise<Invoice[]> {
+    try {
+      if (!branchId) return [];
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*, members(name)')
+        .eq('branch_id', branchId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform the data to match the Invoice interface
+      return data.map((invoice: any) => ({
+        ...invoice,
+        member_name: invoice.members?.name || 'Unknown',
+        // For backward compatibility
+        memberName: invoice.members?.name || 'Unknown',
+        memberId: invoice.member_id,
+        dueDate: invoice.due_date,
+        issuedDate: invoice.created_at,
+        membershipPlanId: invoice.membership_plan_id
+      }));
+    } catch (error: any) {
+      console.error('Error fetching invoices:', error);
+      toast.error('Failed to load invoices');
+      return [];
+    }
+  },
+
+  async getInvoiceById(id: string): Promise<Invoice | null> {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*, members(name)')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          toast.error('Invoice not found');
+          return null;
+        }
+        throw error;
+      }
+
+      // Transform the data to match the Invoice interface
+      return {
+        ...data,
+        member_name: data.members?.name || 'Unknown',
+        // For backward compatibility
+        memberName: data.members?.name || 'Unknown',
+        memberId: data.member_id,
+        dueDate: data.due_date,
+        issuedDate: data.created_at,
+        membershipPlanId: data.membership_plan_id
+      };
+    } catch (error: any) {
+      console.error('Error fetching invoice:', error);
+      toast.error('Failed to load invoice details');
+      return null;
+    }
+  },
+
+  async createInvoice(invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>): Promise<Invoice | null> {
+    try {
+      // Prepare the invoice data for insertion
+      const invoiceData = {
+        member_id: invoice.member_id || invoice.memberId,
+        amount: invoice.amount,
+        description: invoice.description,
+        status: invoice.status,
+        due_date: invoice.due_date || invoice.dueDate,
+        payment_method: invoice.payment_method,
+        notes: invoice.notes,
+        branch_id: invoice.branch_id,
+        membership_plan_id: invoice.membership_plan_id || invoice.membershipPlanId,
+        items: invoice.items || []
+      };
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([invoiceData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success('Invoice created successfully');
+      return data as Invoice;
+    } catch (error: any) {
+      console.error('Error creating invoice:', error);
+      toast.error(`Failed to create invoice: ${error.message}`);
+      return null;
+    }
+  },
+
+  async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success(`Invoice marked as ${status}`);
+      return true;
+    } catch (error: any) {
+      console.error('Error updating invoice status:', error);
+      toast.error(`Failed to update invoice: ${error.message}`);
+      return false;
+    }
+  },
+
+  // Transaction methods
   async getTransactions(branchId: string | undefined): Promise<FinancialTransaction[]> {
     try {
       if (!branchId) return [];
       
+      // Try to get from transactions table first
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('branch_id', branchId)
         .order('transaction_date', { ascending: false });
 
-      if (error) throw error;
+      // If transactions table doesn't exist or is empty, try income_records
+      if (error || !data || data.length === 0) {
+        console.log('Falling back to income_records table for transactions');
+        
+        // Get income records
+        const { data: incomeData, error: incomeError } = await supabase
+          .from('income_records')
+          .select('*')
+          .eq('branch_id', branchId)
+          .order('date', { ascending: false });
+          
+        if (incomeError) {
+          console.error('Error fetching from income_records:', incomeError);
+          return [];
+        }
+        
+        // Transform income_records to match FinancialTransaction interface
+        return (incomeData || []).map(record => ({
+          id: record.id,
+          type: 'income',
+          amount: record.amount,
+          description: record.description || '',
+          transaction_date: record.date,
+          payment_method: record.payment_method || 'unknown',
+          category: record.category || 'Other',
+          branch_id: record.branch_id,
+          reference_id: record.reference || '',
+          status: record.status || 'completed',
+          created_at: record.created_at,
+          updated_at: record.updated_at,
+          recurring: false,
+          recurring_period: null
+        }));
+      }
+      
       return data as FinancialTransaction[];
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
@@ -75,6 +227,199 @@ export const financeService = {
       console.error('Error deleting transaction:', error);
       toast.error(`Failed to delete transaction: ${error.message}`);
       return false;
+    }
+  },
+  // Expense record methods
+  async getExpenseRecords(branchId: string | undefined): Promise<ExpenseRecord[]> {
+    try {
+      if (!branchId) return [];
+      
+      // Try to get from expense_records table first
+      const { data, error } = await supabase
+        .from('expense_records')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('date', { ascending: false });
+
+      // If expense_records table doesn't exist or is empty, try transactions with type=expense
+      if (error || !data || data.length === 0) {
+        console.log('Falling back to transactions table for expense records');
+        
+        // Get expense transactions
+        const { data: expenseData, error: expenseError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('branch_id', branchId)
+          .eq('type', 'expense')
+          .order('transaction_date', { ascending: false });
+          
+        if (expenseError) {
+          console.error('Error fetching expenses from transactions:', expenseError);
+          return [];
+        }
+        
+        // Transform transactions to match ExpenseRecord interface
+        return (expenseData || []).map(transaction => ({
+          id: transaction.id,
+          date: transaction.transaction_date,
+          amount: transaction.amount,
+          category: transaction.category || 'Other',
+          description: transaction.description || '',
+          vendor: transaction.vendor || 'Unknown',
+          payment_method: transaction.payment_method || 'unknown',
+          reference: transaction.reference_id || '',
+          branch_id: transaction.branch_id,
+          status: transaction.status || 'completed',
+          created_at: transaction.created_at,
+          updated_at: transaction.updated_at
+        }));
+      }
+      
+      return data as ExpenseRecord[];
+    } catch (error: any) {
+      console.error('Error fetching expense records:', error);
+      toast.error('Failed to load expense records');
+      return [];
+    }
+  },
+
+  async getExpenseRecordById(id: string): Promise<ExpenseRecord | null> {
+    try {
+      const { data, error } = await supabase
+        .from('expense_records')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          toast.error('Expense record not found');
+          return null;
+        }
+        throw error;
+      }
+
+      return data as ExpenseRecord;
+    } catch (error: any) {
+      console.error('Error fetching expense record:', error);
+      toast.error('Failed to load expense record details');
+      return null;
+    }
+  },
+
+  async createExpenseRecord(expenseRecord: Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>): Promise<ExpenseRecord | null> {
+    try {
+      const { data, error } = await supabase
+        .from('expense_records')
+        .insert([expenseRecord])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success('Expense record created successfully');
+      return data as ExpenseRecord;
+    } catch (error: any) {
+      console.error('Error creating expense record:', error);
+      toast.error(`Failed to create expense record: ${error.message}`);
+      return null;
+    }
+  },
+
+  async updateExpenseRecord(id: string, updates: Partial<ExpenseRecord>): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('expense_records')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Expense record updated successfully');
+      return true;
+    } catch (error: any) {
+      console.error('Error updating expense record:', error);
+      toast.error(`Failed to update expense record: ${error.message}`);
+      return false;
+    }
+  },
+
+  async deleteExpenseRecord(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('expense_records')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Expense record deleted successfully');
+      return true;
+    } catch (error: any) {
+      console.error('Error deleting expense record:', error);
+      toast.error(`Failed to delete expense record: ${error.message}`);
+      return false;
+    }
+  },
+
+  // Finance dashboard methods
+  async getFinanceSummary(branchId: string | undefined) {
+    try {
+      if (!branchId) return { income: 0, expenses: 0, balance: 0 };
+      
+      // Try to get income from transactions table first
+      const { data: incomeData, error: incomeError } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('branch_id', branchId)
+        .eq('type', 'income');
+
+      // If no transactions table or error, try income_records table
+      let totalIncome = 0;
+      if (incomeError || !incomeData || incomeData.length === 0) {
+        console.log('Falling back to income_records table');
+        const { data: altIncomeData, error: altIncomeError } = await supabase
+          .from('income_records')
+          .select('amount')
+          .eq('branch_id', branchId);
+          
+        if (!altIncomeError && altIncomeData) {
+          totalIncome = altIncomeData.reduce((sum, item) => sum + Number(item.amount), 0);
+        }
+      } else {
+        totalIncome = incomeData.reduce((sum, item) => sum + Number(item.amount), 0);
+      }
+
+      // Try to get expenses from expense_records table
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expense_records')
+        .select('amount')
+        .eq('branch_id', branchId);
+
+      // If no expense_records table or error, try transactions table with type='expense'
+      let totalExpenses = 0;
+      if (expenseError || !expenseData || expenseData.length === 0) {
+        console.log('Falling back to transactions table for expenses');
+        const { data: altExpenseData, error: altExpenseError } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('branch_id', branchId)
+          .eq('type', 'expense');
+          
+        if (!altExpenseError && altExpenseData) {
+          totalExpenses = altExpenseData.reduce((sum, item) => sum + Number(item.amount), 0);
+        }
+      } else {
+        totalExpenses = expenseData.reduce((sum, item) => sum + Number(item.amount), 0);
+      }
+
+      const balance = totalIncome - totalExpenses;
+
+      return { income: totalIncome, expenses: totalExpenses, balance };
+    } catch (error: any) {
+      console.error('Error fetching finance summary:', error);
+      toast.error('Failed to load finance summary');
+      return { income: 0, expenses: 0, balance: 0 };
     }
   }
 };

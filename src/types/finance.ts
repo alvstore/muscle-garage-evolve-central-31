@@ -84,3 +84,18 @@ export interface FinancialTransaction {
   recurring?: boolean;
   recurring_period?: string | null;
 }
+
+export interface ExpenseRecord {
+  id: string;
+  date: string;
+  amount: number;
+  category: string;
+  description: string;
+  vendor: string;
+  payment_method: string;
+  reference: string;
+  branch_id: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}

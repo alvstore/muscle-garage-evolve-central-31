@@ -3,9 +3,11 @@ import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   Calendar, DollarSign, TrendingUp, TrendingDown, 
-  PieChart, BarChart, ArrowUpRight, ArrowDownRight 
+  PieChart, BarChart, ArrowUpRight, ArrowDownRight,
+  Wallet, CreditCard, LineChart, Activity 
 } from "lucide-react";
 import TransactionList from "@/components/finance/TransactionList";
 import RevenueChart from "@/components/dashboard/RevenueChart";
@@ -17,7 +19,14 @@ import { Label } from "@/components/ui/label";
 import { supabase } from '@/services/supabaseClient';
 import { useBranch } from '@/hooks/use-branch';
 import { toast } from 'sonner';
-import { format, subDays, startOfWeek, startOfMonth, startOfYear } from "date-fns";
+import { format, subDays, startOfWeek, startOfMonth, startOfYear, subMonths } from "date-fns";
+
+// Import modern finance components
+import FinanceAreaChart from "@/components/finance/FinanceAreaChart";
+import FinancePieChart from "@/components/finance/FinancePieChart";
+import FinanceBarChart from "@/components/finance/FinanceBarChart";
+import FinanceStatsCard from "@/components/finance/FinanceStatsCard";
+import FinanceDataTable from "@/components/finance/FinanceDataTable";
 
 const FinanceDashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -411,54 +420,58 @@ const FinanceDashboardPage = () => {
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {isLoading ? "Loading..." : `₹${currentPeriodData.income.toLocaleString()}`}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>Updated in real-time</span>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <FinanceStatsCard
+            title="Total Income"
+            value={isLoading ? 0 : currentPeriodData.income}
+            icon={DollarSign}
+            iconColor="text-green-600"
+            change={{
+              value: 0,
+              trend: 'up'
+            }}
+            subtitle="Updated in real-time"
+            isLoading={isLoading}
+          />
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
-              <TrendingDown className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {isLoading ? "Loading..." : `₹${currentPeriodData.expense.toLocaleString()}`}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowDownRight className="mr-1 h-3 w-3 text-red-500" />
-                <span>Updated in real-time</span>
-              </div>
-            </CardContent>
-          </Card>
+          <FinanceStatsCard
+            title="Total Expenses"
+            value={isLoading ? 0 : currentPeriodData.expense}
+            icon={TrendingDown}
+            iconColor="text-red-600"
+            change={{
+              value: 0,
+              trend: 'down'
+            }}
+            subtitle="Updated in real-time"
+            isLoading={isLoading}
+          />
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {isLoading ? "Loading..." : `₹${currentPeriodData.profit.toLocaleString()}`}
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <ArrowUpRight className="mr-1 h-3 w-3 text-green-500" />
-                <span>Updated in real-time</span>
-              </div>
-            </CardContent>
-          </Card>
+          <FinanceStatsCard
+            title="Net Profit"
+            value={isLoading ? 0 : currentPeriodData.profit}
+            icon={Wallet}
+            iconColor={currentPeriodData.profit >= 0 ? "text-green-600" : "text-red-600"}
+            change={{
+              value: 0,
+              trend: currentPeriodData.profit >= 0 ? 'up' : 'down'
+            }}
+            subtitle="Updated in real-time"
+            isLoading={isLoading}
+          />
+          
+          <FinanceStatsCard
+            title="Profit Margin"
+            value={`${currentPeriodData.income > 0 
+              ? Math.round((currentPeriodData.profit / currentPeriodData.income) * 100)
+              : 0}%`}
+            icon={LineChart}
+            iconColor="text-blue-600"
+            subtitle={currentPeriodData.income > 0 
+              ? `Based on ₹${currentPeriodData.income.toLocaleString()} income` 
+              : 'No income recorded'}
+            isLoading={isLoading}
+          />
         </div>
         
         <Tabs defaultValue="overview" className="space-y-4">
@@ -471,131 +484,95 @@ const FinanceDashboardPage = () => {
           
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="lg:col-span-5">
-                <CardHeader>
-                  <CardTitle>Revenue vs Expenses</CardTitle>
+              <div className="lg:col-span-5">
+                <FinanceAreaChart 
+                  data={revenueData} 
+                  title="Revenue vs Expenses"
+                  height={350}
+                  showLegend={true}
+                />
+              </div>
+              
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">Cash Flow Forecast</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
-                    <div className="h-80 animate-pulse rounded-lg bg-muted"></div>
+                    <div className="h-[350px] flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
                   ) : (
-                    <RevenueChart data={revenueData} />
+                    <div className="space-y-6">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Projected Monthly Balance</p>
+                        <h3 className={`text-2xl font-bold ${financialSummary.month.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ₹{financialSummary.month.profit.toLocaleString()}
+                        </h3>
+                        <Badge variant={financialSummary.month.profit >= 0 ? "outline" : "destructive"} className="mt-2">
+                          {financialSummary.month.profit >= 0 ? "Positive" : "Negative"} Cash Flow
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Current Month</span>
+                            <span className={financialSummary.month.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              ₹{Math.round(financialSummary.month.profit).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${financialSummary.month.profit >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                              style={{ width: `${Math.min(Math.abs(financialSummary.month.profit) / 10000 * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Year to Date</span>
+                            <span className={financialSummary.year.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              ₹{Math.round(financialSummary.year.profit).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${financialSummary.year.profit >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                              style={{ width: `${Math.min(Math.abs(financialSummary.year.profit) / 100000 * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </CardContent>
-              </Card>
-              
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Quick Stats</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-8">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Current Cash Flow</h4>
-                      <div className="text-2xl font-bold">
-                        ₹{financialSummary.month.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">Monthly</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">YTD Profit</h4>
-                      <div className="text-2xl font-bold">
-                        ₹{financialSummary.year.profit.toLocaleString()}
-                        <span className="ml-2 text-xs font-normal text-green-600">Year to date</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Profit Margin</h4>
-                      <div className="text-2xl font-bold">
-                        {financialSummary.month.income > 0 
-                          ? Math.round((financialSummary.month.profit / financialSummary.month.income) * 100)
-                          : 0}%
-                        <span className="ml-2 text-xs font-normal text-green-600">This month</span>
-                      </div>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
             
             <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Income Breakdown</CardTitle>
-                  <PieChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : incomeBreakdown.length > 0 ? (
-                    <div className="flex justify-center">
-                      <div className="w-full max-w-md">
-                        {incomeBreakdown.map((item, index) => (
-                          <div key={index} className="mb-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm">{item.name}</span>
-                              <span className="text-sm font-medium">{item.value}%</span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-60">
-                      <p className="text-muted-foreground">No income data available for this period</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div>
+                <FinancePieChart 
+                  data={incomeBreakdown} 
+                  title="Income Breakdown"
+                  height={300}
+                  showLegend={true}
+                  emptyMessage="No income data available for this period"
+                  isLoading={isLoading}
+                />
+              </div>
               
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Expense Breakdown</CardTitle>
-                  <BarChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="h-60 animate-pulse rounded-lg bg-muted"></div>
-                  ) : expenseBreakdown.length > 0 ? (
-                    <div className="flex justify-center">
-                      <div className="w-full max-w-md">
-                        {expenseBreakdown.map((item, index) => (
-                          <div key={index} className="mb-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm">{item.name}</span>
-                              <span className="text-sm font-medium">{item.value}%</span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full" 
-                                style={{ 
-                                  width: `${item.value}%`,
-                                  backgroundColor: item.color
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-60">
-                      <p className="text-muted-foreground">No expense data available for this period</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div>
+                <FinancePieChart 
+                  data={expenseBreakdown} 
+                  title="Expense Breakdown"
+                  height={300}
+                  showLegend={true}
+                  emptyMessage="No expense data available for this period"
+                  isLoading={isLoading}
+                />
+              </div>
             </div>
           </TabsContent>
           
@@ -690,7 +667,27 @@ const FinanceDashboardPage = () => {
           </TabsContent>
           
           <TabsContent value="transactions" className="space-y-4">
-            <TransactionList filterStartDate={startDate} filterEndDate={endDate} />
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium">Recent Transactions</CardTitle>
+                <p className="text-sm text-muted-foreground">All financial transactions in the selected period</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="h-[400px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <FinanceDataTable 
+                    data={transactions} 
+                    startDate={startDate}
+                    endDate={endDate}
+                    pageSize={10}
+                    emptyMessage="No transactions found for the selected period"
+                  />
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
