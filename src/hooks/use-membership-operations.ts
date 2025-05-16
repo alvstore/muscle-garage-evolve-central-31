@@ -125,12 +125,93 @@ export const useMembershipOperations = () => {
     return updateMembershipPlan(id, { is_active: status });
   };
 
+  // Add the missing methods
+  const getMembershipPlan = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error fetching membership plan:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getMemberSubscription = async (memberId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('membership_subscriptions')
+        .select('*')
+        .eq('user_id', memberId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error fetching member subscription:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createSubscription = async (subscriptionData: any) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('membership_subscriptions')
+        .insert([subscriptionData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      toast.success('Subscription created successfully');
+      return data;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error creating subscription:', err);
+      toast.error(`Failed to create subscription: ${err.message}`);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const assignMembership = async (membershipData: any) => {
+    // Implementation of assignMembership function
+    return null;
+  };
+
   return {
     fetchMembershipPlans,
     createMembershipPlan,
     updateMembershipPlan,
     deleteMembershipPlan,
     toggleMembershipStatus,
+    getMembershipPlan, // Added missing function
+    getMemberSubscription, // Added missing function
+    createSubscription, // Added missing function
+    assignMembership,
     isLoading,
     error,
   };

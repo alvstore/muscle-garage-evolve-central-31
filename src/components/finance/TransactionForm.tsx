@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TransactionType, PaymentMethod, RecurringPeriod } from '@/types/finance';
+import { FinancialTransaction } from '@/types';
 
 const formSchema = z.object({
   type: z.enum(['income', 'expense']),
@@ -43,11 +44,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
-  onSubmit: (values: FormValues) => void;
+  transaction?: FinancialTransaction;
+  onSave: (data: any) => Promise<void>;
   onCancel: () => void;
 }
 
-const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel }) => {
+const TransactionForm: React.FC<TransactionFormProps> = ({ transaction, onSave, onCancel }) => {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurring_period, setRecurring_period] = useState<RecurringPeriod>(null);
 
@@ -63,7 +65,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
   });
 
   const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
+    onSave(values);
   };
 
   return (

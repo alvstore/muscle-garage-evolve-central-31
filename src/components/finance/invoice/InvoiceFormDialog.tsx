@@ -1,60 +1,126 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogClose,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import InvoiceForm from "../InvoiceForm";
-import { Invoice } from "@/types/finance";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Invoice } from '@/types';
+import React from 'react';
 
-interface InvoiceFormDialogProps {
-  invoice: Invoice | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onComplete: (invoice?: Invoice) => void;
+export interface InvoiceFormDialogProps {
+  invoice?: Invoice | null;
+  onSave: (invoice: Partial<Invoice>) => Promise<void>;
+  onCancel: () => void;
 }
 
-const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({
-  invoice,
-  open,
-  onOpenChange,
-  onComplete,
-}) => {
-  // Function to handle form completion
-  const handleComplete = (updatedInvoice?: Invoice) => {
-    onComplete(updatedInvoice);
-    onOpenChange(false);
-  };
+const formSchema = z.object({
+  invoiceNumber: z.string().min(3, {
+    message: "Invoice number must be at least 3 characters.",
+  }),
+  amount: z.number().min(0, {
+    message: "Amount must be a positive number.",
+  }),
+  dueDate: z.date(),
+  status: z.enum(["pending", "paid", "overdue"]),
+});
 
-  // Function to handle form cancellation
-  const handleCancel = () => {
-    onOpenChange(false);
-  };
+const InvoiceFormDialog: React.FC<InvoiceFormDialogProps> = ({ invoice, onSave, onCancel }) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      invoiceNumber: invoice?.invoiceNumber || "",
+      amount: invoice?.amount || 0,
+      dueDate: invoice?.dueDate ? new Date(invoice.dueDate) : new Date(),
+      status: invoice?.status || "pending",
+    },
+  });
 
-  // Convert notification invoice to finance invoice if needed
-  const prepareInvoice = (invoice: Invoice | null): Invoice | null => {
-    if (!invoice) return null;
-
-    // If the invoice doesn't have items, add an empty items array
-    const updatedInvoice: Invoice = {
-      ...invoice,
-      items: invoice.items || [],
-    };
-
-    return updatedInvoice;
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Here, you would typically call your API to save the invoice data.
+    // For this example, we'll just log the values to the console.
+    console.log(values);
+    await onSave(values);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <DialogHeader>
-          <DialogTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
+          <DialogTitle>
+            {invoice ? "Edit Invoice" : "Create New Invoice"}
+          </DialogTitle>
+          <DialogDescription>
+            {invoice
+              ? "Make changes to your invoice here. Click save when you're done."
+              : "Create a new invoice here. Click save when you're done."}
+          </DialogDescription>
         </DialogHeader>
-        <InvoiceForm
-          invoice={prepareInvoice(invoice)}
-          onComplete={handleComplete}
-          onCancel={handleCancel}
+        <FormField
+          control={form.control}
+          name="invoiceNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Invoice Number</FormLabel>
+              <FormControl>
+                <Input placeholder="INV-0001" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </DialogContent>
-    </Dialog>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="100.00" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="dueDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Due Date</FormLabel>
+              <FormControl>
+                <Input
+                  type="date"
+                  {...field}
+                  value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">Save</Button>
+        </DialogFooter>
+      </form>
+    </Form>
   );
 };
 

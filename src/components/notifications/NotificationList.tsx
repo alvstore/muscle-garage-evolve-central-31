@@ -12,13 +12,22 @@ interface NotificationListProps {
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   isLoading?: boolean;
+  userId?: string;
+  filterStatus?: 'all' | 'read' | 'unread';
+  filterTypes?: string[];
+  categoryTypes?: string[];
+  refreshTrigger?: number;
 }
 
 export default function NotificationList({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
-  isLoading = false
+  isLoading = false,
+  userId,
+  filterStatus = 'all',
+  filterTypes = [],
+  categoryTypes = []
 }: NotificationListProps) {
   // Helper function to get icon based on notification type
   const getNotificationIcon = (type: string) => {

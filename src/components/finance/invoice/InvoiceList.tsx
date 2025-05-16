@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Invoice } from '@/types';
 import { toast } from 'sonner';
 import InvoiceFormDialog from './InvoiceFormDialog';
-import InvoiceListTable from './InvoiceListTable';
+import { InvoiceListTable } from './InvoiceListTable';
 
 interface InvoiceListProps {
   invoices: Invoice[];

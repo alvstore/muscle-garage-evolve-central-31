@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { Check, X, ChevronRight, UserPlus, UserMinus, Key, KeyRound, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +12,7 @@ import { useHikvision } from '@/hooks/use-hikvision';
 import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface MemberAccessControlProps {
   member: any;
@@ -293,6 +293,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
                 <h3 className="font-semibold">Access Period</h3>
                 <DatePickerWithRange
                   date={dateRange}
+                  setDate={(newRange) => setDateRange(newRange)}
                   onDateChange={setDateRange}
                 />
               </div>

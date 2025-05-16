@@ -3,13 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
 import { AlertCircle, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 import { toast } from 'sonner';
 import { motion } from "framer-motion";
 import GymEquipment3D from "@/components/website/GymEquipment3D";
+import { useAuthActions } from "@/hooks/auth/use-auth-actions";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -18,7 +18,7 @@ const loginSchema = z.object({
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading } = useAuthActions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -218,19 +218,19 @@ const LoginForm = () => {
                     <Input 
                       id="password" 
                       name="password" 
-                      type="password" 
-                      autoComplete="current-password" 
-                      required 
-                      value={password} 
-                      onChange={e => setPassword(e.target.value)} 
-                      className={`pl-10 bg-white/10 border-gray-700 text-white placeholder:text-gray-500 ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500'}`} 
-                      placeholder="••••••••" 
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={`pl-10 bg-white/10 border-gray-700 text-white placeholder:text-gray-500 ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500'}`}
+                      placeholder="••••••••"
                     />
                   </div>
                   {validationErrors.password && (
-                    <motion.p 
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: 1 }} 
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       className="mt-1 text-sm text-red-400"
                     >
                       {validationErrors.password}
@@ -239,33 +239,36 @@ const LoginForm = () => {
                 </div>
               </div>
 
-              <div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white transition-all duration-200 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                  disabled={isLoading}
+              <Button
+                type="submit"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></div>
+                    Signing in...
+                  </>
+                ) : "Sign in"}
+              </Button>
+
+              <p className="text-center text-sm text-gray-400 mt-6">
+                Don't have an account?{' '}
+                <Link
+                  to="/register"
+                  className="text-yellow-400 hover:text-yellow-300 dark:text-yellow-400 font-medium"
                 >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign in"
-                  )}
-                </Button>
-              </div>
+                  Create one now
+                </Link>
+              </p>
             </form>
 
-            <div className="mt-6 text-center">
-              <Link 
-                to="/" 
-                className="inline-flex items-center text-sm font-medium text-gray-300 hover:text-white dark:text-gray-400 dark:hover:text-white transition-colors"
+            <div className="mt-8 pt-6 border-t border-gray-700/30 text-center">
+              <Link
+                to="/"
+                className="inline-flex items-center text-sm text-gray-400 hover:text-yellow-400 transition-colors"
               >
-                <ArrowLeft className="h-4 w-4 mr-1" />
+                <ArrowLeft className="mr-1 h-4 w-4" />
                 Back to home
               </Link>
             </div>
