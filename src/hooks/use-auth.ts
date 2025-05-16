@@ -1,8 +1,8 @@
-
-import { useState, useCallback, createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { useState, useCallback, createContext, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { User, UserRole } from '@/types';
 
+// Define the auth context interface
 interface AuthContextProps {
   user: User | null;
   isLoading: boolean;
@@ -16,9 +16,16 @@ interface AuthContextProps {
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error: any }>;
 }
 
+// Create the auth context with a default undefined value
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Define the auth provider props interface
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+// Create the auth provider component
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,7 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []);
-  
+
+  // Create login function
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -108,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create logout function
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -121,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create register function
   const register = useCallback(async (email: string, password: string, userData: any) => {
     setIsLoading(true);
     try {
@@ -143,6 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create forgot password function
   const forgotPassword = useCallback(async (email: string) => {
     setIsLoading(true);
     try {
@@ -159,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create reset password function
   const resetPassword = useCallback(async (newPassword: string) => {
     setIsLoading(true);
     try {
@@ -177,6 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Create change password function
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     setIsLoading(true);
     try {
@@ -204,7 +217,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const value = {
+  // Create the context value
+  const contextValue: AuthContextProps = {
     user,
     isLoading,
     isAuthenticated: !!user,
@@ -217,19 +231,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     changePassword
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  return React.createElement(
+    AuthContext.Provider,
+    { value: contextValue },
+    children
   );
+
 };
 
+// Custom hook to use the auth context
 export const useAuth = (): AuthContextProps => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
-
-export default useAuth;
