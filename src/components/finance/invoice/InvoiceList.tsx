@@ -1,151 +1,178 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Download, Eye, Pencil, MoreHorizontal, Trash2, CreditCard } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useInvoices } from '@/hooks/use-invoices';
-import { useToast } from '@/components/ui/use-toast';
-import { Invoice, InvoiceStatus } from '@/types/finance';
 
-const STATUS_COLORS: Record<InvoiceStatus, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  pending: 'bg-yellow-100 text-yellow-800',
-  paid: 'bg-green-100 text-green-800',
-  overdue: 'bg-red-100 text-red-800', 
-  cancelled: 'bg-gray-100 text-gray-800',
-  partially_paid: 'bg-cyan-100 text-cyan-800',
-  void: 'bg-gray-100 text-gray-800',
-  sent: 'bg-blue-100 text-blue-800'
-};
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusIcon } from "lucide-react";
+import { InvoiceStatus } from "@/types/finance";
+import InvoiceForm from "../InvoiceForm";
+import { toast } from "sonner";
+import { useBranch } from "@/hooks/use-branch";
+import { InvoiceListTable } from "./InvoiceListTable";
+import { supabase } from '@/services/supabaseClient';
 
 interface InvoiceListProps {
-  onView?: (invoice: Invoice) => void;
-  onEdit?: (invoice: Invoice) => void;
-  onDelete?: (invoiceId: string) => void;
-  onPayment?: (invoice: Invoice) => void;
+  readonly?: boolean;
+  allowPayment?: boolean;
+  allowDownload?: boolean;
 }
 
-const InvoiceList = ({ onView, onEdit, onDelete, onPayment }: InvoiceListProps) => {
-  const { toast } = useToast();
-  const { invoices, isLoading, deleteInvoice } = useInvoices();
-  
-  const handleDelete = async (invoiceId: string) => {
+const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = true }: InvoiceListProps) => {
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
+  const { currentBranch } = useBranch();
+
+  const statusColors: Record<InvoiceStatus, string> = {
+    [InvoiceStatus.PAID]: "text-green-600 bg-green-100",
+    [InvoiceStatus.PENDING]: "text-yellow-600 bg-yellow-100",
+    [InvoiceStatus.OVERDUE]: "text-red-600 bg-red-100",
+    [InvoiceStatus.DRAFT]: "text-gray-600 bg-gray-100",
+    [InvoiceStatus.CANCELED]: "text-gray-600 bg-gray-100",
+    [InvoiceStatus.PARTIALLY_PAID]: "text-blue-600 bg-blue-100"
+  };
+
+  // Fetch invoices from Supabase
+  useEffect(() => {
+    fetchInvoices();
+  }, [currentBranch]);
+
+  const fetchInvoices = async () => {
     try {
-      await deleteInvoice(invoiceId);
-      if (onDelete) onDelete(invoiceId);
+      setIsLoading(true);
+      
+      let query = supabase
+        .from('invoices')
+        .select(`
+          *,
+          members(name)
+        `)
+        .order('issued_date', { ascending: false });
+        
+      if (currentBranch?.id) {
+        query = query.eq('branch_id', currentBranch.id);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      const formattedInvoices = data.map(invoice => ({
+        ...invoice,
+        memberName: invoice.members?.name || 'Unknown'
+      }));
+      
+      setInvoices(formattedInvoices);
     } catch (error) {
-      console.error('Error deleting invoice:', error);
+      console.error('Failed to fetch invoices:', error);
+      toast.error('Failed to fetch invoices');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDownload = (invoice: Invoice) => {
-    toast({
-      title: "Download started",
-      description: `Invoice #${invoice.id.substring(0, 8)} is being prepared for download`
-    });
-    // Implement PDF generation and download functionality
+  const handleAddInvoice = () => {
+    setEditingInvoice(null);
+    setIsFormOpen(true);
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    return format(new Date(dateStr), 'PPP');
+  const handleEditInvoice = (invoice: any) => {
+    setEditingInvoice(invoice);
+    setIsFormOpen(true);
+  };
+
+  const handleMarkAsPaid = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          status: 'paid',
+          paid_date: new Date().toISOString(),
+          payment_method: 'cash'
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setInvoices(invoices.map(invoice => 
+        invoice.id === id
+          ? { 
+              ...invoice, 
+              status: "paid" as InvoiceStatus, 
+              paid_date: new Date().toISOString(),
+              payment_method: "cash"
+            }
+          : invoice
+      ));
+      toast.success("Invoice marked as paid");
+      
+      // Create transaction record for this payment
+      const invoice = invoices.find(inv => inv.id === id);
+      if (invoice) {
+        const { error: transError } = await supabase
+          .from('transactions')
+          .insert([{
+            amount: invoice.amount,
+            type: 'income',
+            description: `Payment for invoice #${invoice.id.substring(0, 8)}`,
+            payment_method: 'cash',
+            reference_id: invoice.id,
+            transaction_date: new Date().toISOString()
+          }]);
+        
+        if (transError) {
+          console.error("Error creating transaction record:", transError);
+        }
+      }
+    } catch (error) {
+      console.error("Error marking invoice as paid:", error);
+      toast.error("Failed to update invoice status");
+    }
+  };
+
+  const handleInvoiceFormClose = () => {
+    setIsFormOpen(false);
+    setEditingInvoice(null);
+  };
+
+  const handleInvoiceSaved = () => {
+    setIsFormOpen(false);
+    setEditingInvoice(null);
+    fetchInvoices();
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invoices</CardTitle>
-        <CardDescription>Manage your client invoices</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice ID</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">Loading invoices...</TableCell>
-                </TableRow>
-              ) : invoices.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">No invoices found.</TableCell>
-                </TableRow>
-              ) : (
-                invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      {invoice.id.substring(0, 8)}...
-                    </TableCell>
-                    <TableCell>{invoice.memberName}</TableCell>
-                    <TableCell>₹{invoice.amount.toLocaleString()}</TableCell>
-                    <TableCell>{formatDate(invoice.issued_date || invoice.issuedDate)}</TableCell>
-                    <TableCell>
-                      <Badge className={`${STATUS_COLORS[invoice.status]} border-none`}>
-                        {invoice.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => onView && onView(invoice)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownload(invoice)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </DropdownMenuItem>
-                          {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                            <DropdownMenuItem onClick={() => onEdit && onEdit(invoice)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          {(invoice.status === 'pending' || invoice.status === 'overdue' || invoice.status === 'partially_paid') && (
-                            <DropdownMenuItem onClick={() => onPayment && onPayment(invoice)}>
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Record Payment
-                            </DropdownMenuItem>
-                          )}
-                          {invoice.status !== 'paid' && (
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(invoice.id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Invoices</CardTitle>
+          {!readonly && (
+            <Button onClick={handleAddInvoice}>
+              <PlusIcon className="h-4 w-4 mr-2" /> New Invoice
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <InvoiceListTable
+            invoices={invoices} 
+            isLoading={isLoading}
+            onEdit={readonly ? undefined : handleEditInvoice}
+            onMarkPaid={readonly || !allowPayment ? undefined : handleMarkAsPaid}
+            statusColors={statusColors}
+            allowDownload={allowDownload}
+          />
+        </CardContent>
+      </Card>
+
+      {isFormOpen && (
+        <InvoiceForm
+          invoice={editingInvoice} 
+          isOpen={isFormOpen} 
+          onClose={handleInvoiceFormClose}
+          onSaved={handleInvoiceSaved}
+        />
+      )}
+    </div>
   );
 };
 

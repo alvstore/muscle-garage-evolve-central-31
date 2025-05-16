@@ -32,6 +32,7 @@ export interface FollowUpTemplate {
   type?: FollowUpType; // Added for backward compatibility
   variables?: string[]; // Added for backward compatibility
   isDefault?: boolean; // Added for backward compatibility
+  updated_at?: string; // Added for component compatibility
 }
 
 export interface FollowUp {
@@ -59,6 +60,7 @@ export interface FollowUpHistory {
   status: string;
   sent_by?: string;
   sent_at?: string;
+  scheduled_at?: string; // Added to fix error
   response?: string;
   response_at?: string;
   template_id?: string;
@@ -74,6 +76,9 @@ export interface FollowUpScheduled {
   status: string;
   scheduled_at: string;
   leads?: Lead;
+  created_by?: string;
+  created_at?: string;
+  template_id?: string;
 }
 
 export interface AutomationRule {
@@ -94,4 +99,4 @@ export interface AutomationRule {
 export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 export type LeadSource = 'website' | 'referral' | 'social' | 'walk-in' | 'call' | 'other';
-export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'customer' | 'lost';
+export type FunnelStage = 'cold' | 'warm' | 'hot' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost' | 'lead' | 'prospect' | 'opportunity' | 'customer' | 'lost';

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -83,7 +84,7 @@ const LeadTimeline: React.FC<LeadTimelineProps> = ({ leadId }) => {
           activities.push({
             id: followUp.id,
             type: 'followUp',
-            date: followUp.sent_at,
+            date: followUp.sent_at || new Date().toISOString(), // Use fallback if sent_at is null
             title: `${followUp.type.charAt(0).toUpperCase() + followUp.type.slice(1)} follow-up`,
             description: followUp.content,
             icon,
@@ -95,7 +96,7 @@ const LeadTimeline: React.FC<LeadTimelineProps> = ({ leadId }) => {
             activities.push({
               id: `response-${followUp.id}`,
               type: 'followUp',
-              date: followUp.response_at || followUp.sent_at,
+              date: followUp.response_at || followUp.sent_at || new Date().toISOString(),
               title: 'Lead response',
               description: followUp.response,
               icon: <ArrowRight className="h-4 w-4" />,

@@ -190,5 +190,32 @@ export const membershipService = {
       toast.error('Failed to delete membership plan');
       return false;
     }
+  },
+
+  // Add missing methods needed by components
+  calculateEndDate: (startDate: Date, durationDays: number): Date => {
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + durationDays);
+    return endDate;
+  },
+
+  assignMembership: async (membershipData: any): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('member_memberships')
+        .insert([membershipData]);
+      
+      if (error) {
+        console.error('Error assigning membership:', error);
+        throw error;
+      }
+      
+      toast.success('Membership assigned successfully');
+      return true;
+    } catch (err) {
+      console.error('Error assigning membership:', err);
+      toast.error('Failed to assign membership');
+      return false;
+    }
   }
 };

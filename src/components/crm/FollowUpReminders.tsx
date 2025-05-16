@@ -165,7 +165,7 @@ const FollowUpReminders = ({ isLoading: propIsLoading = false }) => {
                   <div>
                     <div className="font-semibold">{followUp.subject || 'Follow-up'}</div>
                     <div className="text-xs text-muted-foreground">
-                      For: {followUp.lead?.name || "Unknown lead"}
+                      For: {followUp.leads?.name || "Unknown lead"}
                     </div>
                   </div>
                   <div>{getTypeBadge(followUp.type)}</div>
@@ -176,7 +176,7 @@ const FollowUpReminders = ({ isLoading: propIsLoading = false }) => {
                 <div className="mt-3 flex justify-between items-center">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatDate(followUp.scheduled_date)}</span>
+                    <span>{formatDate(followUp.scheduled_at)}</span>
                   </div>
                   <div className="flex space-x-2">
                     <Button 

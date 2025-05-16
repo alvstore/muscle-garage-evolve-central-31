@@ -1,79 +1,78 @@
 
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { integrationsService } from '@/services';
-import { useBranch } from './use-branch';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { integrationsService } from '@/services/integrationsService';
 import { AutomationRule } from '@/types/crm';
+import { useBranch } from '@/hooks/use-branch';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export const useAutomationRules = () => {
   const { currentBranch } = useBranch();
-  const [rules, setRules] = useState<AutomationRule[]>([]);
-  const [error, setError] = useState<Error | null>(null);
+  const [selectedRule, setSelectedRule] = useState<AutomationRule | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchRules = useCallback(async () => {
-    try {
-      if (!currentBranch?.id) return [];
-      
-      const fetchedRules = await integrationsService.getAutomationRules(currentBranch.id);
-      if (fetchedRules) {
-        setRules(fetchedRules);
-        return fetchedRules;
-      }
-      return [];
-    } catch (error: any) {
-      console.error('Error fetching automation rules:', error);
-      setError(error);
-      return [];
-    }
-  }, [currentBranch?.id]);
-
-  const { isLoading, refetch } = useQuery({
+  // Fetch automation rules
+  const {
+    data: automationRules,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['automationRules', currentBranch?.id],
-    queryFn: fetchRules,
+    queryFn: () => integrationsService.getAutomationRules(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
 
-  const saveRule = async (rule: AutomationRule): Promise<boolean> => {
-    try {
-      if (!currentBranch?.id) return false;
-      
-      const result = await integrationsService.saveAutomationRule({
-        ...rule,
-        branch_id: currentBranch.id
-      });
-      
-      if (result) {
-        refetch();
-      }
-      
-      return !!result;
-    } catch (error) {
-      console.error('Error saving automation rule:', error);
-      return false;
-    }
+  // Create/Update automation rule mutation
+  const saveRuleMutation = useMutation({
+    mutationFn: (rule: Partial<AutomationRule>) => integrationsService.saveAutomationRule(rule),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['automationRules'] });
+      toast.success('Automation rule saved successfully');
+      setSelectedRule(null);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to save rule: ${error.message}`);
+    },
+  });
+
+  // Delete automation rule mutation
+  const deleteRuleMutation = useMutation({
+    mutationFn: (id: string) => integrationsService.deleteAutomationRule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['automationRules'] });
+      toast.success('Automation rule deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete rule: ${error.message}`);
+    },
+  });
+
+  const selectRule = (rule: AutomationRule | null) => {
+    setSelectedRule(rule);
   };
 
-  const deleteRule = async (id: string): Promise<boolean> => {
-    try {
-      const result = await integrationsService.deleteAutomationRule(id);
-      
-      if (result) {
-        refetch();
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('Error deleting automation rule:', error);
-      return false;
+  const saveRule = (rule: Partial<AutomationRule>) => {
+    saveRuleMutation.mutate({
+      ...rule,
+      branch_id: currentBranch?.id,
+    });
+  };
+
+  const deleteRule = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this automation rule?')) {
+      deleteRuleMutation.mutate(id);
     }
   };
 
   return {
-    rules,
+    automationRules,
     isLoading,
     error,
+    selectedRule,
+    selectRule,
     saveRule,
     deleteRule,
-    refreshRules: refetch,
+    isSaving: saveRuleMutation.isPending,
+    isDeleting: deleteRuleMutation.isPending,
   };
 };

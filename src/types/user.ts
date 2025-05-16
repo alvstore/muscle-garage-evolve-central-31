@@ -17,6 +17,8 @@ export interface User {
   city?: string;
   state?: string;
   country?: string;
+  zip_code?: string; // Added to fix zipCode reference
+  zipCode?: string; // For backward compatibility
   gender?: string;
   department?: string;
   is_trainer?: boolean;

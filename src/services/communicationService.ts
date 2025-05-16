@@ -140,6 +140,28 @@ export const communicationService = {
       return null;
     }
   },
+
+  // Add missing method for deleteAnnouncement
+  deleteAnnouncement: async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting announcement:', error);
+        throw error;
+      }
+      
+      toast.success('Announcement deleted successfully');
+      return true;
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to delete announcement');
+      return false;
+    }
+  },
   
   // Feedback
   getFeedback: async (branchId?: string): Promise<Feedback[]> => {

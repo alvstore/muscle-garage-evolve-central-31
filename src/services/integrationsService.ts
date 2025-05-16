@@ -92,6 +92,77 @@ export const integrationsService = {
       return [];
     }
   },
+
+  // Add missing methods for automation rules
+  saveAutomationRule: async (rule: Partial<AutomationRule>): Promise<AutomationRule | null> => {
+    try {
+      let data;
+      let error;
+
+      if (rule.id) {
+        // Update existing rule
+        const response = await supabase
+          .from('automation_rules')
+          .update(rule)
+          .eq('id', rule.id)
+          .select()
+          .single();
+          
+        data = response.data;
+        error = response.error;
+        
+        if (!error) {
+          toast.success('Automation rule updated successfully');
+        }
+      } else {
+        // Create new rule
+        const response = await supabase
+          .from('automation_rules')
+          .insert([rule])
+          .select()
+          .single();
+          
+        data = response.data;
+        error = response.error;
+        
+        if (!error) {
+          toast.success('Automation rule created successfully');
+        }
+      }
+      
+      if (error) {
+        console.error('Error saving automation rule:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Integrations service error:', err);
+      toast.error('Failed to save automation rule');
+      return null;
+    }
+  },
+
+  deleteAutomationRule: async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('automation_rules')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting automation rule:', error);
+        throw error;
+      }
+      
+      toast.success('Automation rule deleted successfully');
+      return true;
+    } catch (err) {
+      console.error('Integrations service error:', err);
+      toast.error('Failed to delete automation rule');
+      return false;
+    }
+  },
   
   // Attendance Settings
   getAttendanceSettings: async (branchId?: string): Promise<AttendanceSettings | null> => {

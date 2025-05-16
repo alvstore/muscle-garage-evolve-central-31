@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AlertCircle, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from 'sonner';
 import { motion } from "framer-motion";
 import GymEquipment3D from "@/components/website/GymEquipment3D";
 
@@ -80,7 +79,7 @@ const LoginForm = () => {
   
     try {
       const result = await login(email, password);
-      if (result.success) {
+      if (!result.error) {
         toast.success("Login successful");
         // Login is successful - navigation will be handled by the Login page component
       } else {

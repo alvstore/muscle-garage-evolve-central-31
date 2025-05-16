@@ -1,235 +1,251 @@
 
-import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Invoice, PaymentMethod, InvoiceStatus } from "@/types/finance"; 
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input"; 
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useAuth } from '@/hooks/use-auth';
-import { useBranch } from '@/hooks/use-branch';
-import { supabase } from '@/services/supabaseClient';
-import { formatCurrency } from '@/utils/stringUtils';
+import { supabase } from "@/services/supabaseClient";
+import { Invoice, InvoiceStatus, PaymentMethod } from '@/types/finance';
 
 interface PaymentRecordDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  invoice: Invoice;
+  invoice: Invoice | null;
   onPaymentRecorded: () => void;
 }
 
-const PaymentRecordDialog = ({
-  isOpen,
-  onClose,
-  invoice,
-  onPaymentRecorded
-}: PaymentRecordDialogProps) => {
-  const [amount, setAmount] = useState<number>(invoice.amount);
+const PaymentRecordDialog: React.FC<PaymentRecordDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  invoice, 
+  onPaymentRecorded 
+}) => {
+  const [amount, setAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isPartial, setIsPartial] = useState<boolean>(false);
-  const { user } = useAuth();
-  const { currentBranch } = useBranch();
+  const [transactionId, setTransactionId] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [partialPayment, setPartialPayment] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (invoice) {
+      setAmount(invoice.amount);
+    }
+  }, [invoice]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newAmount = parseFloat(e.target.value);
+    setAmount(newAmount);
+    
+    // Determine if this is a partial payment
+    if (invoice) {
+      setPartialPayment(newAmount < invoice.amount);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || amount <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    if (!invoice) return;
     
-    if (amount > invoice.amount) {
-      toast.error("Payment amount cannot exceed invoice amount");
-      return;
-    }
-    
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
-      // Calculate remaining amount
-      const remainingAmount = invoice.amount - amount;
-      let newStatus: InvoiceStatus = 'pending';
+      // Determine new invoice status based on payment amount
+      let newStatus: InvoiceStatus;
       
-      if (remainingAmount <= 0) {
-        newStatus = 'paid';
+      if (amount >= invoice.amount) {
+        newStatus = InvoiceStatus.PAID;
       } else if (amount > 0) {
-        newStatus = 'partially_paid';
+        newStatus = InvoiceStatus.PARTIALLY_PAID as InvoiceStatus;
+      } else {
+        newStatus = InvoiceStatus.PENDING;
       }
       
-      // 1. Update invoice
-      const { error: updateError } = await supabase
+      // Update invoice in database
+      const { error: invoiceError } = await supabase
         .from('invoices')
         .update({
           status: newStatus,
-          paid_date: newStatus === 'paid' ? new Date().toISOString() : null,
+          paid_date: paymentDate.toISOString(),
           payment_method: paymentMethod,
+          notes: notes || invoice.notes,
+          updated_at: new Date().toISOString()
         })
         .eq('id', invoice.id);
-
-      if (updateError) {
-        throw updateError;
+      
+      if (invoiceError) {
+        throw invoiceError;
       }
       
-      // 2. Record payment
+      // Create payment record
       const { error: paymentError } = await supabase
         .from('payments')
-        .insert({
-          member_id: invoice.member_id || invoice.memberId,
-          membership_id: invoice.membership_plan_id || invoice.membershipPlanId,
+        .insert([{
           amount: amount,
-          payment_date: new Date().toISOString(),
-          branch_id: currentBranch?.id,
-          staff_id: user?.id,
-          status: 'completed',
+          member_id: invoice.member_id,
+          payment_date: paymentDate.toISOString(),
           payment_method: paymentMethod,
-          notes: `Payment for invoice ${invoice.id}`,
-          transaction_id: `pay-${Date.now()}`,
-          invoice_id: invoice.id
-        });
-
+          transaction_id: transactionId || null,
+          notes: notes || null,
+          membership_id: invoice.membership_plan_id || null,
+          status: 'completed'
+        }]);
+      
       if (paymentError) {
         throw paymentError;
       }
-
-      // 3. Record transaction for finance tracking
+      
+      // Create transaction record
       const { error: transactionError } = await supabase
         .from('transactions')
-        .insert({
-          type: 'income',
+        .insert([{
           amount: amount,
-          transaction_date: new Date().toISOString(),
-          category_id: null,
-          description: `Payment received for invoice ${invoice.id}`,
-          reference_id: invoice.id,
-          branch_id: currentBranch?.id,
-          recorded_by: user?.id,
+          type: 'income',
+          description: `Payment for invoice #${invoice.id.substring(0, 8)}`,
+          transaction_date: paymentDate.toISOString(),
           payment_method: paymentMethod,
-        });
-
+          reference_id: invoice.id,
+          transaction_id: transactionId || null
+        }]);
+      
       if (transactionError) {
         throw transactionError;
       }
-
-      toast.success(`Payment of ${formatCurrency(amount)} recorded successfully`);
+      
+      toast.success('Payment recorded successfully');
       onPaymentRecorded();
       onClose();
     } catch (error) {
-      console.error("Error recording payment:", error);
-      toast.error("Failed to record payment");
+      console.error('Error recording payment:', error);
+      toast.error('Failed to record payment');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePartialPaymentToggle = (value: boolean) => {
-    setIsPartial(value);
-    if (!value) {
-      setAmount(invoice.amount);
-    } else {
-      setAmount(0);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Record Payment</DialogTitle>
+        </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Record Payment</DialogTitle>
-          </DialogHeader>
-          
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <div className="flex justify-between mb-4">
-                <div>
-                  <p className="text-sm font-medium">Invoice #{invoice.id?.substring(0, 8)}...</p>
-                  <p className="text-sm text-muted-foreground">
-                    {invoice.memberName} - {format(new Date(invoice.issued_date || invoice.issuedDate || new Date()), "MMM d, yyyy")}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">Total: {formatCurrency(invoice.amount)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Due by: {format(new Date(invoice.due_date || invoice.dueDate || new Date()), "MMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
-                  id="partialPayment"
-                  checked={isPartial}
-                  onChange={(e) => handlePartialPaymentToggle(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="partialPayment">Partial payment</Label>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="amount">Payment Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                  disabled={!isPartial || isLoading}
-                  min={0}
-                  max={invoice.amount}
-                  step={0.01}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select
-                  value={paymentMethod}
-                  onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="razorpay">Razorpay</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {paymentMethod === 'razorpay' && (
-                <div className="p-3 bg-blue-50 rounded-md text-sm">
-                  <p>This will generate a payment link that can be sent to the customer.</p>
-                </div>
+            <div className="grid gap-2">
+              <Label htmlFor="amount">Payment Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={handleAmountChange}
+                className="col-span-3"
+              />
+              {partialPayment && (
+                <p className="text-xs text-amber-500">
+                  This is a partial payment. The invoice will be marked as partially paid.
+                </p>
               )}
             </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="payment-date">Payment Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="payment-date"
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !paymentDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={paymentDate}
+                    onSelect={(date) => date && setPaymentDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Payment Methods</SelectLabel>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="netbanking">Net Banking</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="razorpay">Razorpay</SelectItem>
+                    <SelectItem value="wallet">Wallet</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="transaction-id">Transaction ID (Optional)</Label>
+              <Input
+                id="transaction-id"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
           </div>
-          
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Processing..." : "Record Payment"}
+            <Button type="submit" disabled={isSubmitting || amount <= 0}>
+              {isSubmitting ? "Processing..." : "Record Payment"}
             </Button>
           </DialogFooter>
         </form>

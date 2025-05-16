@@ -1,80 +1,81 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Announcement, adaptAnnouncementFromDB } from '@/types/notification';
-import { communicationService } from '@/services';
-import { useBranch } from './use-branches';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { communicationService } from '@/services/communicationService';
+import { Announcement } from '@/types/notification';
+import { useBranch } from '@/hooks/use-branch';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export const useAnnouncements = () => {
   const { currentBranch } = useBranch();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchAnnouncements = async () => {
-    try {
-      if (!currentBranch?.id) return [];
-      
-      const response = await communicationService.getAnnouncements(currentBranch.id);
-      return response.map((item: any) => adaptAnnouncementFromDB(item));
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-      return [];
-    }
-  };
-
-  const { data, isLoading, refetch } = useQuery({
+  // Fetch announcements
+  const {
+    data: announcements,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['announcements', currentBranch?.id],
-    queryFn: fetchAnnouncements,
+    queryFn: () => communicationService.getAnnouncements(currentBranch?.id),
     enabled: !!currentBranch?.id,
   });
 
-  useEffect(() => {
-    if (data) {
-      setAnnouncements(data);
-    }
-  }, [data]);
+  // Create announcement mutation
+  const createAnnouncementMutation = useMutation({
+    mutationFn: (announcement: Partial<Announcement>) =>
+      communicationService.createAnnouncement(announcement),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      toast.success('Announcement created successfully');
+      setSelectedAnnouncement(null);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to create announcement: ${error.message}`);
+    },
+  });
 
-  const createAnnouncement = async (announcement: Partial<Announcement>): Promise<boolean> => {
-    try {
-      if (!currentBranch?.id) return false;
-      
-      const result = await communicationService.createAnnouncement({
-        ...announcement,
-        branch_id: currentBranch.id
-      } as Announcement);
-      
-      if (result) {
-        refetch();
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error creating announcement:', error);
-      return false;
-    }
+  // Delete announcement mutation
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: (id: string) => communicationService.deleteAnnouncement(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      toast.success('Announcement deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to delete announcement: ${error.message}`);
+    },
+  });
+
+  const selectAnnouncement = (announcement: Announcement | null) => {
+    setSelectedAnnouncement(announcement);
   };
 
-  const deleteAnnouncement = async (id: string): Promise<boolean> => {
-    try {
-      const result = await communicationService.deleteAnnouncement(id);
-      
-      if (result) {
-        refetch();
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error deleting announcement:', error);
-      return false;
+  const createAnnouncement = (announcement: Partial<Announcement>) => {
+    createAnnouncementMutation.mutate({
+      ...announcement,
+      branch_id: currentBranch?.id,
+    });
+  };
+
+  const deleteAnnouncement = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this announcement?')) {
+      deleteAnnouncementMutation.mutate(id);
     }
   };
 
   return {
     announcements,
     isLoading,
+    error,
+    refetch,
+    selectedAnnouncement,
+    selectAnnouncement,
     createAnnouncement,
     deleteAnnouncement,
-    refreshAnnouncements: refetch
+    isCreating: createAnnouncementMutation.isPending,
+    isDeleting: deleteAnnouncementMutation.isPending,
   };
 };

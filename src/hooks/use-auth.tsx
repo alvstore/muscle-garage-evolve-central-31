@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useContext, createContext, ReactNode } from "react";
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import { toast } from 'sonner';
 
 export interface AuthContextType {
@@ -9,8 +8,8 @@ export interface AuthContextType {
   isLoading: boolean;
   user: User | null;
   role: string | null;
-  userRole: string | null; // Added for compatibility
-  login: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  userRole: string | null; // Added for component compatibility
+  login: (email: string, password: string) => Promise<{ data: any; error: any; success?: boolean }>;
   logout: () => Promise<void>;
   register: (email: string, password: string, metadata: object) => Promise<{ data: any; error: any }>;
   forgotPassword: (email: string) => Promise<{ data: any; error: any }>;

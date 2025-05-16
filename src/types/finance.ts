@@ -23,7 +23,8 @@ export enum InvoiceStatus {
   PENDING = 'pending',
   OVERDUE = 'overdue',
   DRAFT = 'draft',
-  CANCELED = 'canceled'
+  CANCELED = 'canceled',
+  PARTIALLY_PAID = 'partially_paid'
 }
 
 export interface Invoice {
@@ -48,6 +49,7 @@ export interface Invoice {
   branch_id?: string;
   items?: any[];
   membership_plan_id?: string;
+  membershipPlanId?: string; // For backward compatibility
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
 }
@@ -62,7 +64,7 @@ export interface InvoiceItem {
   total?: number;
 }
 
-export type PaymentMethod = 'cash' | 'card' | 'upi' | 'netbanking' | 'cheque' | 'online' | 'wallet' | 'other';
+export type PaymentMethod = 'cash' | 'card' | 'upi' | 'netbanking' | 'cheque' | 'online' | 'wallet' | 'other' | 'razorpay';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type TransactionType = 'income' | 'expense' | 'refund';
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
