@@ -32,8 +32,8 @@ const BranchesPage = () => {
     setIsEditModalOpen(false);
   };
   
-  const activeBranches = branches.filter(branch => branch.isActive);
-  const inactiveBranches = branches.filter(branch => !branch.isActive);
+  const activeBranches = branches.filter(branch => branch.is_active);
+  const inactiveBranches = branches.filter(branch => !branch.is_active);
   
   return (
     <Container>
@@ -124,11 +124,11 @@ const BranchList = ({ branches, isLoading, onEdit, showEditOptions }: BranchList
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {branches.map((branch) => (
-        <Card key={branch.id} className={`overflow-hidden ${!branch.isActive ? 'border-dashed border-gray-300' : ''}`}>
+        <Card key={branch.id} className={`overflow-hidden ${!branch.is_active ? 'border-dashed border-gray-300' : ''}`}>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
               <CardTitle className="truncate">{branch.name}</CardTitle>
-              {branch.isActive ? (
+              {branch.is_active ? (
                 <span className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Active
@@ -145,8 +145,8 @@ const BranchList = ({ branches, isLoading, onEdit, showEditOptions }: BranchList
             <div className="text-sm text-gray-600 mb-4">
               <p>{branch.address}</p>
               <p className="mt-1">
-                {branch.openingHours && branch.closingHours && (
-                  <span>Hours: {branch.openingHours} - {branch.closingHours}</span>
+                {branch.opening_hours && branch.closing_hours && (
+                  <span>Hours: {branch.opening_hours} - {branch.closing_hours}</span>
                 )}
               </p>
               <p className="mt-1">{branch.phone}</p>
@@ -155,10 +155,10 @@ const BranchList = ({ branches, isLoading, onEdit, showEditOptions }: BranchList
             
             <div className="text-sm text-gray-600 mb-4">
               <p>
-                <span className="font-medium">Manager:</span> {branch.manager || 'Not assigned'}
+                <span className="font-medium">Manager:</span> {branch.manager_id ? `ID: ${branch.manager_id}` : 'Not assigned'}
               </p>
               <p>
-                <span className="font-medium">Capacity:</span> {branch.maxCapacity || 'N/A'}
+                <span className="font-medium">Capacity:</span> {branch.max_capacity || 'N/A'}
               </p>
             </div>
             
