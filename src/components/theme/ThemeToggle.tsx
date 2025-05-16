@@ -2,18 +2,15 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/providers/ThemeProvider';
 
 interface ThemeToggleProps {
   className?: string;
 }
 
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ className }) => {
-  const { theme, setTheme } = useTheme();
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <Button 
@@ -22,8 +19,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className }) => {
       onClick={toggleTheme}
       className={className}
     >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun className={`h-[1.2rem] w-[1.2rem] transition-all ${isDark ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+      <Moon className={`absolute h-[1.2rem] w-[1.2rem] transition-all ${isDark ? 'rotate-0 scale-100' : 'rotate-90 scale-0'}`} />
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

@@ -12,7 +12,11 @@ const router = createBrowserRouter(appRoutes);
 export default function AppRouter() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <BranchProvider>
+        <PermissionsProvider>
+          <RouterProvider router={router} />
+        </PermissionsProvider>
+      </BranchProvider>
     </AuthProvider>
   );
 }
