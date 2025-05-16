@@ -64,21 +64,15 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BranchProvider>
-          <PermissionsProvider>
-            <ThemeProvider>
-              <AppRouter />
-              <Toaster />
-            </ThemeProvider>
-          </PermissionsProvider>
-        </BranchProvider>
-      </AuthProvider>
-      {showDevtools && (
-        <Suspense fallback={null}>
-          <ReactQueryDevtoolsProduction initialIsOpen={false} />
-        </Suspense>
-      )}
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <AppRouter />
+        <Toaster position="top-right" richColors />
+        {showDevtools && (
+          <Suspense fallback={null}>
+            <ReactQueryDevtoolsProduction initialIsOpen={false} />
+          </Suspense>
+        )}
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

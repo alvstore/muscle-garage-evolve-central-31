@@ -25,7 +25,6 @@ const bucketExists = async (name: string): Promise<boolean> => {
     // If we can list files (even if empty), the bucket exists and is accessible
     return !error;
   } catch (error) {
-    console.error(`Error checking if bucket ${name} exists:`, error);
     return false;
   }
 };
@@ -40,7 +39,6 @@ const getBucketMetadata = async (name: string) => {
     });
     
     if (error) {
-      console.error(`Error accessing bucket ${name}:`, error);
       return null;
     }
     
@@ -53,7 +51,6 @@ const getBucketMetadata = async (name: string) => {
       // We don't have actual metadata, but this is enough for most use cases
     };
   } catch (error) {
-    console.error(`Exception accessing bucket ${name}:`, error);
     return null;
   }
 };
@@ -65,7 +62,6 @@ export const ensureStorageBucketsExist = async (): Promise<void> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.warn('User not authenticated, skipping bucket verification');
       return;
     }
     
@@ -73,18 +69,14 @@ export const ensureStorageBucketsExist = async (): Promise<void> => {
     for (const bucket of requiredBuckets) {
       const exists = await bucketExists(bucket);
       if (!exists) {
-        console.warn(`Storage bucket ${bucket} does not exist or is not accessible.`);
         toast(`Storage bucket ${bucket} not accessible. Contact administrator.`, {
           description: "Some file upload features may not work correctly.",
           duration: 5000,
         });
-      } else {
-        console.info(`Storage bucket ${bucket} exists and is accessible.`);
       }
     }
-    console.info('Storage bucket verification complete');
   } catch (error) {
-    console.error('Error ensuring storage buckets exist:', error);
+    // Error handled by toast notifications
   }
 };
 
@@ -124,7 +116,6 @@ export const uploadFile = async (
     
     return urlData.publicUrl;
   } catch (error: any) {
-    console.error(`Error uploading file to ${bucketName}/${filePath}:`, error);
     toast.error(`Error uploading file: ${error.message || 'Unknown error'}`);
     return null;
   }
@@ -147,7 +138,6 @@ export const deleteFile = async (
     
     return true;
   } catch (error: any) {
-    console.error(`Error deleting file ${bucketName}/${filePath}:`, error);
     toast.error(`Error deleting file: ${error.message || 'Unknown error'}`);
     return false;
   }

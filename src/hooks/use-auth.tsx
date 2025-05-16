@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// No longer using useNavigate to avoid router context dependency
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
 
@@ -8,20 +8,31 @@ interface AuthContextType {
   userRole: UserRole | null;
   isLoading: boolean;
   isAdmin: boolean;
+  // Authentication methods
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, userData: any) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  // Alias methods for backward compatibility
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// A helper function to handle navigation safely without relying on useNavigate
+const navigateToPath = (path: string) => {
+  window.location.href = path;
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const loadSession = async () => {
@@ -89,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserRole(null);
       }
     });
-  }, [navigate]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -117,7 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(userProfile);
         setUserRole(profile?.role || 'member');
       }
-      navigate('/dashboard');
+      navigateToPath('/dashboard');
     } catch (error: any) {
       console.error("Sign-in error:", error);
       throw error;
@@ -132,7 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await supabase.auth.signOut();
       setUser(null);
       setUserRole(null);
-      navigate('/login');
+      navigateToPath('/login');
     } catch (error) {
       console.error("Sign-out error:", error);
     } finally {
@@ -176,7 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: email,
       } as User);
       setUserRole('member');
-      navigate('/dashboard');
+      navigateToPath('/dashboard');
     } catch (error: any) {
       console.error("Signup error:", error);
       throw error;
@@ -203,23 +214,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateUser = async (userData: Partial<User>) => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update(userData)
-        .eq('id', user?.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setUser({ ...user, ...userData } as User);
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      return Promise.resolve();
     } catch (error) {
-      console.error("Update user error:", error);
-      throw error;
+      console.error('Error updating user:', error);
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Alias methods for backward compatibility
+  const login = signIn;
+  const logout = signOut;
+  const register = signUp;
+  const forgotPassword = resetPassword;
+  
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+      setIsLoading(false);
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setIsLoading(false);
+      return Promise.reject(error);
     }
   };
 
@@ -228,12 +262,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userRole,
     isLoading,
     isAdmin: userRole === 'admin',
-    signIn,
-    signOut,
-    signUp,
+    // New methods
+    login,
+    logout,
+    register,
+    forgotPassword,
     resetPassword,
-    updateUser
-  };
+    changePassword,
+    // Alias methods for backward compatibility
+    signIn: signIn,
+    signOut: signOut,
+    signUp: signUp,
+    updateUser: updateUser,
+  } as const;
 
   return (
     <AuthContext.Provider value={value}>
