@@ -1,92 +1,78 @@
 
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { branchService } from '@/services';
-
-export interface Branch {
-  id: string;
-  name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  logo?: string;
-  timezone?: string;
-  currency?: string;
-  language?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  is_active?: boolean;
-  is_default?: boolean;
-}
+import { Branch } from '@/types/branch';
+import { useAuth } from './use-auth';
 
 interface BranchContextType {
   branches: Branch[];
+  currentBranch: Branch | null;
+  setCurrentBranch: (branch: Branch | null) => void;
   isLoading: boolean;
   error: Error | null;
-  currentBranch: Branch | null;
-  setCurrentBranchId: (branchId: string) => void;
-  refreshBranches: () => Promise<void>;
-  createBranch: (branch: Omit<Branch, 'id'>) => Promise<Branch | null>;
+  refetch: () => Promise<void>;
+  createBranch: (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => Promise<Branch | null>;
   updateBranch: (branchId: string, updates: Partial<Branch>) => Promise<Branch | null>;
   deleteBranch: (branchId: string) => Promise<boolean>;
 }
 
 const BranchContext = createContext<BranchContextType | undefined>(undefined);
 
-export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
-  const [currentBranchId, setCurrentBranchId] = useState<string | null>(null);
+export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
 
   const fetchBranches = useCallback(async () => {
+    if (!user) {
+      setBranches([]);
+      setCurrentBranch(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const fetchedBranches = await branchService.getBranches();
-      setBranches(fetchedBranches);
+      setIsLoading(true);
       setError(null);
-      return fetchedBranches;
+      const branchesData = await branchService.getBranches();
+      setBranches(branchesData);
+      
+      // If no current branch is selected, select first active branch
+      if (!currentBranch && branchesData.length > 0) {
+        const defaultBranch = branchesData.find(b => b.is_active) || branchesData[0];
+        setCurrentBranch(defaultBranch);
+      }
+      
+      setIsLoading(false);
     } catch (err: any) {
-      setError(err);
-      return [];
+      console.error('Error fetching branches:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch branches'));
+      setIsLoading(false);
     }
-  }, []);
+  }, [user, currentBranch]);
 
-  const { isLoading, refetch } = useQuery({
-    queryKey: ['branches'],
-    queryFn: fetchBranches,
-  });
-
+  // Effect to fetch branches on mount and auth changes
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    fetchBranches();
+  }, [fetchBranches]);
 
-  const currentBranch = branches.find(branch => branch.id === currentBranchId) || null;
-
-  const setCurrentBranchIdHandler = (branchId: string) => {
-    setCurrentBranchId(branchId);
-    // Store in localStorage for persistence
-    localStorage.setItem('currentBranchId', branchId);
-  };
-
-  // Load branch from localStorage on initial load
-  useEffect(() => {
-    const savedBranchId = localStorage.getItem('currentBranchId');
-    if (savedBranchId) {
-      setCurrentBranchId(savedBranchId);
-    }
-  }, []);
-
-  const createBranch = async (branch: Omit<Branch, 'id'>): Promise<Branch | null> => {
+  const createBranch = async (branch: Omit<Branch, 'id' | 'created_at' | 'updated_at'>): Promise<Branch | null> => {
     try {
       const newBranch = await branchService.createBranch(branch);
-      setBranches(prevBranches => [...prevBranches, newBranch]);
+      if (newBranch) {
+        setBranches(prev => [...prev, newBranch]);
+        
+        // If this is the first branch, set it as current
+        if (branches.length === 0) {
+          setCurrentBranch(newBranch);
+        }
+      }
       return newBranch;
-    } catch (error) {
-      console.error("Error creating branch:", error);
+    } catch (err) {
+      console.error('Error creating branch:', err);
       return null;
     }
   };
@@ -94,59 +80,63 @@ export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
   const updateBranch = async (branchId: string, updates: Partial<Branch>): Promise<Branch | null> => {
     try {
       const updatedBranch = await branchService.updateBranch(branchId, updates);
-      setBranches(prevBranches =>
-        prevBranches.map(branch => (branch.id === branchId ? { ...branch, ...updatedBranch } : branch))
-      );
+      if (updatedBranch) {
+        setBranches(prev => prev.map(b => b.id === branchId ? updatedBranch : b));
+        
+        // If current branch was updated, update it here too
+        if (currentBranch?.id === branchId) {
+          setCurrentBranch(updatedBranch);
+        }
+      }
       return updatedBranch;
-    } catch (error) {
-      console.error("Error updating branch:", error);
+    } catch (err) {
+      console.error('Error updating branch:', err);
       return null;
     }
   };
 
   const deleteBranch = async (branchId: string): Promise<boolean> => {
     try {
-      await branchService.deleteBranch(branchId);
-      setBranches(prevBranches => prevBranches.filter(branch => branch.id !== branchId));
-      return true;
-    } catch (error) {
-      console.error("Error deleting branch:", error);
+      const success = await branchService.deleteBranch(branchId);
+      if (success) {
+        setBranches(prev => prev.filter(b => b.id !== branchId));
+        
+        // If current branch was deleted, select another
+        if (currentBranch?.id === branchId) {
+          const nextBranch = branches.find(b => b.id !== branchId);
+          setCurrentBranch(nextBranch || null);
+        }
+      }
+      return success;
+    } catch (err) {
+      console.error('Error deleting branch:', err);
       return false;
     }
   };
 
-  // Fix the refreshBranches function to properly handle the Promise
-  const refreshBranches = async (): Promise<void> => {
-    try {
-      await refetch();
-    } catch (error) {
-      console.error("Error refreshing branches:", error);
-    }
-  };
-
-  const value = {
-    branches,
-    isLoading,
-    error,
-    currentBranch,
-    setCurrentBranchId: setCurrentBranchIdHandler,
-    refreshBranches,
-    createBranch,
-    updateBranch,
-    deleteBranch,
-  };
-
   return (
-    <BranchContext.Provider value={value}>
+    <BranchContext.Provider
+      value={{
+        branches,
+        currentBranch,
+        setCurrentBranch,
+        isLoading,
+        error,
+        refetch: fetchBranches,
+        createBranch,
+        updateBranch,
+        deleteBranch
+      }}
+    >
       {children}
     </BranchContext.Provider>
   );
 };
 
-export const useBranch = () => {
+export const useBranches = () => {
   const context = useContext(BranchContext);
   if (!context) {
-    throw new Error("useBranch must be used within a BranchProvider");
+    throw new Error('useBranches must be used within a BranchProvider');
   }
   return context;
 };

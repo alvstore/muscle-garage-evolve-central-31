@@ -6,12 +6,14 @@ interface InvoiceMemberFieldsProps {
   memberId: string;
   memberName: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectMember?: (id: string, name: string) => void; // Added this prop
 }
 
 export const InvoiceMemberFields: React.FC<InvoiceMemberFieldsProps> = ({
   memberId,
   memberName,
   onChange,
+  onSelectMember,
 }) => {
   return (
     <div className="grid grid-cols-2 gap-4">

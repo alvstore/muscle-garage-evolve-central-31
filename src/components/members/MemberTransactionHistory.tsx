@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,7 +13,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import { Transaction } from '@/types/finance';
 
 interface MemberTransactionHistoryProps {
@@ -22,10 +23,15 @@ interface MemberTransactionHistoryProps {
 const MemberTransactionHistory: React.FC<MemberTransactionHistoryProps> = ({ transactions }) => {
 
 const formatDate = (transaction: Transaction) => {
-  const dateString = transaction.date || transaction.transaction_date || transaction.created_at;
+  const dateString = transaction.transaction_date || transaction.date || transaction.created_at;
   if (!dateString) return 'N/A';
   
-  return format(new Date(dateString), 'PP');
+  try {
+    return format(new Date(dateString), 'PP');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
 };
 
 // Update the badge function to accept the extended TransactionType

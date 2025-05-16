@@ -1,6 +1,55 @@
 
-// Defining necessary types for finance-related components
-export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void' | 'sent';
+// Basic finance types
+export interface Transaction {
+  id: string;
+  amount: number;
+  type: string;
+  description?: string;
+  category_id?: string;
+  branch_id?: string;
+  recorded_by?: string;
+  reference_id?: string;
+  payment_method?: string;
+  transaction_id?: string;
+  
+  // DB field
+  transaction_date?: string;
+  
+  // For backward compatibility
+  created_at?: string;
+  updated_at?: string;
+  date?: string; // Alias for transaction_date
+}
+
+export enum InvoiceStatus {
+  PAID = 'paid',
+  PENDING = 'pending',
+  OVERDUE = 'overdue',
+  DRAFT = 'draft',
+  CANCELED = 'canceled'
+}
+
+export interface Invoice {
+  id: string;
+  member_id?: string;
+  member_name?: string;
+  amount: number;
+  description?: string;
+  status: string;
+  due_date: string;
+  payment_date?: string;
+  paid_date?: string;
+  payment_method?: string;
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+  issued_date?: string;
+  branch_id?: string;
+  items?: any[];
+  membership_plan_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
+}
 
 export interface InvoiceItem {
   id: string;
@@ -8,74 +57,26 @@ export interface InvoiceItem {
   description?: string;
   quantity: number;
   price: number;
-  tax_rate?: number;
-  tax_amount?: number;
-  discount?: number;
-  total: number;
-  unitPrice?: number; // Added for backward compatibility
+  tax?: number;
+  total?: number;
 }
 
-export interface Invoice {
-  id: string;
-  member_id?: string;
-  memberId?: string; // For backward compatibility
-  member_name?: string;
-  memberName?: string; // For backward compatibility
-  amount: number;
-  description: string;
-  status: InvoiceStatus;
-  due_date: string;
-  dueDate?: string; // For backward compatibility
-  issued_date?: string;
-  issuedDate?: string; // For backward compatibility
-  paid_date?: string;
-  payment_method?: PaymentMethod;
-  notes?: string;
-  items: InvoiceItem[];
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  membership_plan_id?: string;
-  membershipPlanId?: string; // For backward compatibility
-}
-
-export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'check' | 'other' | 'razorpay';
-
-export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
-
-export interface Transaction {
-  id: string;
-  type: TransactionType;
-  amount: number;
-  description?: string;
-  payment_method?: PaymentMethod;
-  transaction_date: string;
-  category_id?: string;
-  branch_id?: string;
-  recorded_by?: string;
-  reference_id?: string;
-  transaction_id?: string;
-}
-
+export type PaymentMethod = 'cash' | 'card' | 'upi' | 'netbanking' | 'cheque' | 'online' | 'wallet' | 'other';
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type TransactionType = 'income' | 'expense' | 'refund';
-
 export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface FinancialTransaction {
   id: string;
-  amount: number;
-  type: string;
-  category: string;
   date: string;
+  amount: number;
+  type: TransactionType;
   description: string;
-  payment_method: string;
-  status: string;
+  payment_method: PaymentMethod;
+  status: PaymentStatus;
   reference_id?: string;
-  created_by?: string;
-  notes?: string;
-  transaction_id?: string;
-  transaction_date?: string; // Added for backward compatibility
+  created_at: string;
+  updated_at: string;
+  branch_id?: string;
+  category?: string;
 }
-
-// Re-export Payment from dashboard for backward compatibility
-export { Payment } from './dashboard';

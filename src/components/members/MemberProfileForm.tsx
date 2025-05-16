@@ -24,7 +24,9 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
 
   useEffect(() => {
     if (member) {
-      setDate(member.dateOfBirth ? new Date(member.dateOfBirth) : undefined);
+      // Use date_of_birth from member, fallback to dateOfBirth for compatibility
+      setDate(member.date_of_birth ? new Date(member.date_of_birth) : 
+             (member.dateOfBirth ? new Date(member.dateOfBirth) : undefined));
     }
   }, [member]);
 
@@ -35,10 +37,10 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
     address: member?.address || '',
     city: member?.city || '',
     state: member?.state || '',
-    zipCode: member?.zipCode || '',
+    zipCode: member?.zipCode || member?.zip_code || '',
     country: member?.country || 'India',
     gender: member?.gender || 'male',
-    dateOfBirth: member?.dateOfBirth || '',
+    date_of_birth: member?.date_of_birth || member?.dateOfBirth || '',
     goal: member?.goal || '',
     avatar: member?.avatar || '',
     emergency_contact_name: member?.emergency_contact_name || '',
@@ -59,7 +61,11 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
     setDate(date);
     if (date) {
       const formattedDate = format(date, 'yyyy-MM-dd');
-      setFormData(prev => ({ ...prev, dateOfBirth: formattedDate }));
+      setFormData(prev => ({ 
+        ...prev, 
+        date_of_birth: formattedDate,
+        dateOfBirth: formattedDate // For backward compatibility
+      }));
     }
   }, [setFormData]);
 
@@ -198,7 +204,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
       </div>
 
       <div>
-        <Label htmlFor="dateOfBirth">Date of Birth</Label>
+        <Label htmlFor="date_of_birth">Date of Birth</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -241,6 +247,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
           <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
           <Input
             id="emergency_contact_name"
+            name="emergency_contact_name"
             value={formData.emergency_contact_name}
             onChange={handleInputChange}
             disabled={disabled}
@@ -250,6 +257,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
           <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
           <Input
             id="emergency_contact_phone"
+            name="emergency_contact_phone"
             value={formData.emergency_contact_phone}
             onChange={handleInputChange}
             disabled={disabled}
@@ -260,6 +268,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
         <Label htmlFor="emergency_contact_relation">Relationship</Label>
         <Input
           id="emergency_contact_relation"
+          name="emergency_contact_relation"
           value={formData.emergency_contact_relation}
           onChange={handleInputChange}
           disabled={disabled}

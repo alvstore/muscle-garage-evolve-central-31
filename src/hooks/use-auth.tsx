@@ -1,179 +1,262 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { User as AppUser, UserRole } from '@/types';
-import { AuthStateProvider, useAuthState } from './auth/use-auth-state';
-import { useAuthActions, LoginResult } from './auth/use-auth-actions';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface Profile {
-  id: string;
-  full_name?: string;
-  role: UserRole;
-  branch_id?: string;
-  accessible_branch_ids?: string[];
-  is_branch_manager?: boolean;
-  email?: string;
-  avatar_url?: string;
-  phone?: string;
-}
-
 interface AuthContextType {
-  user: AppUser | null;
-  userRole: UserRole | null;
-  isAuthenticated: boolean;
+  user: User | null;
+  session: Session | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<LoginResult>;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ error: any; data: any }>;
+  signup: (email: string, password: string, metadata?: any) => Promise<{ error: any; data: any }>;
   logout: () => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<boolean>;
-  profile: Profile | null;
-  updateUserBranch: (branchId: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<{ error: any; data: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any; data: any }>;
+  refreshSession: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  userRole: null,
-  isAuthenticated: false,
-  isLoading: true,
-  login: async () => ({ success: false }),
-  logout: async () => {},
-  register: async () => {},
-  changePassword: async () => false,
-  forgotPassword: async () => false,
-  profile: null,
-  updateUserBranch: async () => false,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  return (
-    <AuthStateProvider>
-      <AuthProviderInner>{children}</AuthProviderInner>
-    </AuthStateProvider>
-  );
-};
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-const AuthProviderInner = ({ children }: { children: ReactNode }) => {
-  const { user, isAuthenticated, isLoading: authStateLoading } = useAuthState();
-  const { login, logout, register, changePassword, forgotPassword, isLoading: authActionsLoading } = useAuthActions();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [profileError, setProfileError] = useState<Error | null>(null);
-  
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('Auth state changed:', event);
+        
+        setSession(newSession);
+        
+        // If we have a user from the session, fetch their profile data
+        if (newSession?.user) {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', newSession.user.id)
+              .single();
+              
+            // Enhance user object with profile data
+            if (profileData) {
+              setUser({
+                ...newSession.user,
+                // Add any fields you need in the UI
+                is_branch_manager: profileData.is_branch_manager,
+                is_staff: profileData.is_staff,
+                is_trainer: profileData.is_trainer,
+                branch_id: profileData.branch_id,
+                full_name: profileData.full_name,
+                role: profileData.role
+              });
+            } else {
+              setUser(newSession.user);
+            }
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
+            setUser(newSession.user);
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setIsAuthenticated(!!newSession?.user);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+            
+          // Enhance user object with profile data
+          if (profileData) {
+            setUser({
+              ...currentSession.user,
+              // Add any fields you need in the UI
+              is_branch_manager: profileData.is_branch_manager,
+              is_staff: profileData.is_staff, 
+              is_trainer: profileData.is_trainer,
+              branch_id: profileData.branch_id,
+              full_name: profileData.full_name,
+              role: profileData.role
+            });
+          } else {
+            setUser(currentSession.user);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUser(currentSession.user);
+        }
+      } else {
+        setUser(null);
       }
       
-      try {
-        setIsLoadingProfile(true);
-        setProfileError(null);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching profile:', error);
-          setProfileError(new Error(error.message));
-          toast.error('Failed to load user profile data');
-        } else if (data) {
-          setProfile(data);
-        }
-      } catch (err: any) {
-        console.error('Profile fetch error:', err);
-        setProfileError(err);
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-    
-    fetchUserProfile();
-    
-    // Set up real-time subscription for profile changes
-    const profileSubscription = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles',
-        filter: user ? `id=eq.${user.id}` : undefined
-      }, (payload) => {
-        if (payload.new && user && payload.new.id === user.id) {
-          setProfile(payload.new as Profile);
-        }
-      })
-      .subscribe();
-    
-    return () => {
-      profileSubscription.unsubscribe();
-    };
-  }, [user]);
+      setIsAuthenticated(!!currentSession?.user);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error('Error getting session:', error);
+      setIsLoading(false);
+    });
 
-  const updateUserBranch = async (branchId: string): Promise<boolean> => {
-    if (!user) return false;
-    
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ branch_id: branchId })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-
-      // Update will happen automatically through subscription
-      return true;
-    } catch (err) {
-      console.error('Error updating user branch:', err);
-      return false;
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        toast.error(error.message);
+        return { error, data: null };
+      }
+      toast.success('Logged in successfully!');
+      await refreshSession();
+      return { error: null, data };
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred during login');
+      return { error, data: null };
     }
   };
-  
-  // Map Supabase user to our User type
-  const mappedUser: AppUser | null = user && profile ? {
-    id: user.id,
-    email: user.email ?? profile.email ?? '',
-    name: profile.full_name ?? '',
-    role: profile.role || 'member',
-    branch_id: profile.branch_id,
-    avatar: profile.avatar_url,
-    phone: profile.phone,
-    isBranchManager: profile.is_branch_manager || false,
-    branchIds: profile.accessible_branch_ids || []
-  } : null;
-  
-  const isLoading = authStateLoading || authActionsLoading || isLoadingProfile;
-  
-  // Create custom logout function that returns void instead of boolean
-  const customLogout = async (): Promise<void> => {
-    await logout();
+
+  const signup = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+      if (error) {
+        toast.error(error.message);
+        return { error, data: null };
+      }
+      toast.success('Account created successfully! Please check your email for verification.');
+      return { error: null, data };
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred during signup');
+      return { error, data: null };
+    }
   };
 
-  // Create custom register function that accepts userData object
-  const customRegister = async (userData: any): Promise<void> => {
-    await register(userData.email, userData.password, userData.name);
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success('Logged out successfully!');
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred during logout');
+    }
   };
-  
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+        return { error, data: null };
+      }
+      toast.success('Password reset instructions sent to your email');
+      return { error: null, data };
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred');
+      return { error, data: null };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) {
+        toast.error(error.message);
+        return { error, data: null };
+      }
+      toast.success('Password updated successfully!');
+      return { error: null, data };
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred');
+      return { error, data: null };
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+            
+          // Enhance user object with profile data
+          if (profileData) {
+            setUser({
+              ...currentSession.user,
+              // Add any fields you need in the UI
+              is_branch_manager: profileData.is_branch_manager,
+              is_staff: profileData.is_staff,
+              is_trainer: profileData.is_trainer,
+              branch_id: profileData.branch_id,
+              full_name: profileData.full_name,
+              role: profileData.role
+            });
+          } else {
+            setUser(currentSession.user);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUser(currentSession.user);
+        }
+      } else {
+        setUser(null);
+      }
+      
+      setIsAuthenticated(!!currentSession?.user);
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
-        user: mappedUser,
-        userRole: profile?.role || null,
-        isAuthenticated,
+        user,
+        session,
         isLoading,
+        isAuthenticated,
         login,
-        logout: customLogout,
-        register: customRegister,
-        changePassword,
-        forgotPassword,
-        profile,
-        updateUserBranch
+        signup,
+        logout,
+        resetPassword,
+        updatePassword,
+        refreshSession
       }}
     >
       {children}
@@ -181,4 +264,10 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

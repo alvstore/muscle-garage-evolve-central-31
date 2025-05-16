@@ -1,24 +1,25 @@
 
-export type UserRole = 'admin' | 'manager' | 'trainer' | 'staff' | 'member';
+export type UserRole = 'admin' | 'member' | 'trainer' | 'staff' | 'manager';
 
 export interface User {
   id: string;
-  email: string;
-  phone?: string;
-  role: UserRole;
+  email?: string;
   full_name?: string;
   avatar_url?: string;
+  role: UserRole;
+  branch_id?: string;
   is_active?: boolean;
   created_at?: string;
-  updated_at?: string;
-  branch_id?: string;
-  accessible_branch_ids?: string[];
+  phone?: string;
   address?: string;
   city?: string;
   state?: string;
-  zipCode?: string;
   country?: string;
-  // Add these properties for backward compatibility
-  name?: string;
-  avatar?: string;
+  gender?: string;
+  department?: string;
+  is_trainer?: boolean;
+  is_staff?: boolean;
+  is_branch_manager?: boolean; // Added this field
+  isBranchManager?: boolean; // For backward compatibility
+  accessible_branch_ids?: string[];
 }

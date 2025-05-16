@@ -1,6 +1,6 @@
 
-import { supabase } from './supabaseClient';
-import { MotivationalMessage, MotivationalCategory, ReminderRule, Announcement, Feedback, adaptMotivationalMessageFromDB, adaptAnnouncementFromDB, adaptReminderRuleFromDB } from '@/types/notification';
+import { supabase } from '@/integrations/supabase/client';
+import { Announcement, Feedback, MotivationalMessage, ReminderRule, adaptAnnouncementFromDB, adaptFeedbackFromDB, adaptMotivationalMessageFromDB, adaptReminderRuleFromDB } from '@/types/notification';
 import { toast } from 'sonner';
 
 // Motivational Message Service
@@ -23,7 +23,7 @@ export const motivationalMessageService = {
   },
 
   // Create a new motivational message
-  createMotivationalMessage: async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at' | 'is_active' | 'message'>): Promise<MotivationalMessage> => {
+  createMotivationalMessage: async (message: Partial<MotivationalMessage>): Promise<MotivationalMessage> => {
     try {
       const { data, error } = await supabase
         .from('motivational_messages')
@@ -48,7 +48,7 @@ export const motivationalMessageService = {
   },
 
   // Update a motivational message
-  updateMotivationalMessage: async (id: string, updates: Partial<Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>>): Promise<boolean> => {
+  updateMotivationalMessage: async (id: string, updates: Partial<MotivationalMessage>): Promise<boolean> => {
     try {
       const dbUpdates: any = {};
       
@@ -91,10 +91,123 @@ export const motivationalMessageService = {
   }
 };
 
-// Re-export other communication services
-export * from './notificationService';
-
-// Default export for backwards compatibility
-export default {
-  motivationalMessageService
+export const communicationService = {
+  // Announcements
+  getAnnouncements: async (branchId?: string): Promise<Announcement[]> => {
+    try {
+      let query = supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching announcements:', error);
+        throw error;
+      }
+      
+      return (data || []).map(adaptAnnouncementFromDB);
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to load announcements');
+      return [];
+    }
+  },
+  
+  createAnnouncement: async (announcement: Partial<Announcement>): Promise<Announcement | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert([announcement])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating announcement:', error);
+        throw error;
+      }
+      
+      toast.success('Announcement created successfully');
+      return adaptAnnouncementFromDB(data);
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to create announcement');
+      return null;
+    }
+  },
+  
+  // Feedback
+  getFeedback: async (branchId?: string): Promise<Feedback[]> => {
+    try {
+      let query = supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (branchId) {
+        query = query.eq('branch_id', branchId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching feedback:', error);
+        throw error;
+      }
+      
+      return (data || []).map(adaptFeedbackFromDB);
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to load feedback');
+      return [];
+    }
+  },
+  
+  // Reminder Rules
+  getReminderRules: async (): Promise<ReminderRule[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('reminder_rules')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching reminder rules:', error);
+        throw error;
+      }
+      
+      return (data || []).map(adaptReminderRuleFromDB);
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to load reminder rules');
+      return [];
+    }
+  },
+  
+  createReminderRule: async (rule: Partial<ReminderRule>): Promise<ReminderRule | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('reminder_rules')
+        .insert([rule])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating reminder rule:', error);
+        throw error;
+      }
+      
+      toast.success('Reminder rule created successfully');
+      return adaptReminderRuleFromDB(data);
+    } catch (err) {
+      console.error('Communication service error:', err);
+      toast.error('Failed to create reminder rule');
+      return null;
+    }
+  }
 };
