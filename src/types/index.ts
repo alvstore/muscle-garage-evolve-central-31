@@ -26,6 +26,40 @@ import {
   adaptMotivationalMessageFromDB,
   adaptFeedbackFromDB
 } from './notification';
+import { Lead, Deal, Contact, FollowUpTemplate, FollowUpHistory, FollowUpType, LeadStatus, FunnelStage } from './crm';
+import {
+  CommunicationTask,
+  Announcement as CommAnnouncement,
+  MotivationalMessage as CommMotivationalMessage,
+  ReminderRule as CommReminderRule,
+  Feedback as CommFeedback
+} from './communication';
+import {
+  SmsSettings,
+  EmailSettings as SettingsEmailSettings,
+  WhatsAppSettings,
+  InvoiceSettings,
+  TaxProfile,
+  NotificationTemplate,
+  AutomationRule,
+  ReferralProgram,
+  PromoCode
+} from './settings';
+import {
+  AccessZone,
+  AccessDoor,
+  MemberAccess,
+  HikvisionSettings,
+  HikvisionDevice,
+  HikvisionDoor,
+  TokenData
+} from './access-control';
+import {
+  StoreProduct,
+  Order,
+  OrderItem,
+  OrderStatus
+} from './store';
 
 // Re-export types
 export type { 
@@ -37,7 +71,13 @@ export type {
   TransactionType, RecurringPeriod, FinancialTransaction, ExpenseRecord,
   Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, 
   ReminderRule, NotificationChannel, BackupLogEntry, Announcement, EmailSettings,
-  IntegrationStatus, AttendanceSettings, CompanySettings
+  IntegrationStatus, AttendanceSettings, CompanySettings,
+  Lead, Deal, Contact, FollowUpTemplate, FollowUpHistory, FollowUpType, LeadStatus, FunnelStage,
+  CommunicationTask, CommAnnouncement, CommMotivationalMessage, CommReminderRule, CommFeedback,
+  SmsSettings, SettingsEmailSettings, WhatsAppSettings, InvoiceSettings, TaxProfile,
+  NotificationTemplate, AutomationRule, ReferralProgram, PromoCode,
+  AccessZone, AccessDoor, MemberAccess, HikvisionSettings, HikvisionDevice, HikvisionDoor, TokenData,
+  StoreProduct, Order, OrderItem, OrderStatus
 };
 
 // Re-export adapter functions
