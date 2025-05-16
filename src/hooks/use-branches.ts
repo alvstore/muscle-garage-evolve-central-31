@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { branchService } from '@/services';
@@ -26,7 +27,7 @@ export interface Branch {
 interface BranchContextType {
   branches: Branch[];
   isLoading: boolean;
-  error: Error | null; // Add this line
+  error: Error | null;
   currentBranch: Branch | null;
   setCurrentBranchId: (branchId: string) => void;
   refreshBranches: () => Promise<void>;
