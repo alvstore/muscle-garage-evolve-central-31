@@ -65,4 +65,6 @@ export interface AutomationRule {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  data?: any;
+  error?: any;
 }

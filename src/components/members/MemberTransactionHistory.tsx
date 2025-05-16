@@ -1,103 +1,107 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Transaction, FinancialTransaction } from '@/types/finance';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Transaction } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { TransactionType } from '@/types';
 
-interface TransactionHistoryProps {
+interface MemberTransactionHistoryProps {
   transactions: Transaction[];
-  isLoading?: boolean;
 }
 
-// Sample transactions if none provided
-const sampleTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'income',
-    amount: 5000,
-    description: 'Membership Payment',
-    transaction_date: new Date().toISOString(),
-    payment_method: 'card',
-  },
-  {
-    id: '2',
-    type: 'income',
-    amount: 1200,
-    description: 'Personal Training Session',
-    transaction_date: new Date(Date.now() - 86400000 * 7).toISOString(),
-    payment_method: 'cash',
-  },
-  {
-    id: '3',
-    type: 'income',
-    amount: 800,
-    description: 'Supplement Purchase',
-    transaction_date: new Date(Date.now() - 86400000 * 14).toISOString(),
-    payment_method: 'online',
+const MemberTransactionHistory: React.FC<MemberTransactionHistoryProps> = ({ transactions }) => {
+  if (!transactions || transactions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+          <CardDescription>Recent transactions for this member</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No transactions found for this member.</p>
+        </CardContent>
+      </Card>
+    );
   }
-];
 
-const MemberTransactionHistory: React.FC<TransactionHistoryProps> = ({ 
-  transactions = [], 
-  isLoading = false 
-}) => {
-  
-  // Use sample data if no transactions are provided (for demo purposes only)
-  const displayTransactions = transactions.length > 0 ? transactions : sampleTransactions;
-  
-  // Format date
-  const formatDate = (date: string) => {
-    return format(new Date(date), 'PP');
-  };
-  
-  // Format transaction type
-  const getTypeColor = (type: 'income' | 'expense') => {
-    return type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-  
-  // Format amount with currency symbol
-  const formatAmount = (amount: number, type: 'income' | 'expense') => {
-    return `${type === 'income' ? '+' : '-'} ₹${amount.toLocaleString()}`;
-  };
-  
+// Define a function to get the appropriate color class based on transaction type
+const getTypeColorClass = (type: TransactionType): string => {
+  switch (type) {
+    case 'income':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    case 'expense':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    case 'refund':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  }
+};
+
+// Define a function to get the appropriate text color based on transaction type
+const getTextColorClass = (type: TransactionType): string => {
+  switch (type) {
+    case 'income':
+      return 'text-green-600 dark:text-green-400';
+    case 'expense':
+      return 'text-red-600 dark:text-red-400';
+    case 'refund':
+      return 'text-blue-600 dark:text-blue-400';
+    default:
+      return 'text-gray-600 dark:text-gray-400';
+  }
+};
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Transaction History</CardTitle>
+        <CardTitle>Transaction History</CardTitle>
+        <CardDescription>Recent transactions for this member</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-6">Loading transactions...</div>
-          ) : displayTransactions.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              No transactions found for this member.
-            </div>
-          ) : (
-            displayTransactions.map((transaction) => (
-              <div 
-                key={transaction.id || transaction.transaction_id} 
-                className="p-3 border rounded-lg hover:bg-accent/5 transition-colors"
-              >
-                <div className="flex justify-between">
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(transaction.transaction_date)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{formatAmount(transaction.amount, transaction.type)}</p>
-                    <Badge variant="outline" className={`text-xs ${getTypeColor(transaction.type)}`}>
-                      {transaction.payment_method || 'Unknown'}
+      <CardContent className="overflow-auto">
+        <ScrollArea>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">{format(new Date(transaction.date), 'MMM d, yyyy')}</TableCell>
+                  <TableCell>{transaction.description}</TableCell>
+                  <TableCell>
+                    <Badge className={getTypeColorClass(transaction.type)}>
+                      {transaction.type === 'income' ? <ArrowUp className="mr-2 h-4 w-4" /> : transaction.type === 'expense' ? <ArrowDown className="mr-2 h-4 w-4" /> : null}
+                      {transaction.type}
                     </Badge>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    <span className={getTextColorClass(transaction.type)}>
+                      {transaction.type === 'expense' ? '-' : '+'}
+                      {transaction.amount}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

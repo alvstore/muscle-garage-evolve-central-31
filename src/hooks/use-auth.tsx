@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { User as AppUser, UserRole } from '@/types';
@@ -151,6 +150,16 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   
   const isLoading = authStateLoading || authActionsLoading || isLoadingProfile;
   
+  // Create custom logout function that returns void instead of boolean
+  const customLogout = async (): Promise<void> => {
+    await logout();
+  };
+
+  // Create custom register function that accepts userData object
+  const customRegister = async (userData: any): Promise<void> => {
+    await register(userData.email, userData.password, userData.name);
+  };
+  
   return (
     <AuthContext.Provider
       value={{
@@ -159,8 +168,8 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
         isAuthenticated,
         isLoading,
         login,
-        logout,
-        register,
+        logout: customLogout,
+        register: customRegister,
         changePassword,
         forgotPassword,
         profile,

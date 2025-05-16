@@ -88,12 +88,17 @@ export interface Announcement {
   priority: 'low' | 'medium' | 'high';
   authorName: string;
   authorId?: string;
+  author_id?: string;
+  author_name?: string;
   createdAt: string;
+  created_at?: string;
   expiresAt?: string; // For backward compatibility
   expires_at?: string;
   channel?: string;
   branchId?: string;
+  branch_id?: string;
   targetRoles?: string[];
+  target_roles?: string[];
   channels?: string[];
 }
 
@@ -104,13 +109,19 @@ export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
     title: dbAnnouncement.title,
     content: dbAnnouncement.content,
     priority: dbAnnouncement.priority || 'medium',
-    authorName: dbAnnouncement.author_name,
+    authorName: dbAnnouncement.author_name || dbAnnouncement.authorName,
     authorId: dbAnnouncement.author_id,
+    author_id: dbAnnouncement.author_id,
+    author_name: dbAnnouncement.author_name,
     createdAt: dbAnnouncement.created_at,
+    created_at: dbAnnouncement.created_at,
     expiresAt: dbAnnouncement.expires_at,
+    expires_at: dbAnnouncement.expires_at,
     channel: dbAnnouncement.channel,
     branchId: dbAnnouncement.branch_id,
+    branch_id: dbAnnouncement.branch_id,
     targetRoles: dbAnnouncement.target_roles,
+    target_roles: dbAnnouncement.target_roles,
     channels: dbAnnouncement.channels
   };
 };
@@ -216,7 +227,7 @@ export interface BackupLogEntry {
 }
 
 // Enums
-export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment';
+export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment' | 'fitness-plan';
 export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
 

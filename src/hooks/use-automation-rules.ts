@@ -1,114 +1,76 @@
-import { useState, useEffect } from 'react';
-import settingsService from '@/services/settingsService';
+
+import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { integrationsService } from '@/services';
 import { useBranch } from './use-branch';
-import { toast } from 'sonner';
 import { AutomationRule } from '@/types/crm';
 
 export const useAutomationRules = () => {
-  const [rules, setRules] = useState<AutomationRule[]>([]);
-  const [isLoading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
+  const [rules, setRules] = useState<AutomationRule[]>([]);
 
-  // Fix the issue with setting automation rules
-  const fetchAutomationRules = async () => {
-    setLoading(true);
+  const fetchRules = useCallback(async () => {
     try {
-      const result = await settingsService.getAutomationRules(currentBranch?.id);
+      if (!currentBranch?.id) return [];
       
-      if (result.data) {
-        // Cast the data to AutomationRule[]
-        setRules(result.data as AutomationRule[]);
+      const fetchedRules = await integrationsService.getAutomationRules(currentBranch.id);
+      if (fetchedRules) {
+        setRules(fetchedRules);
+        return fetchedRules;
       }
-      
-      if (result.error) {
-        console.error('Error fetching automation rules:', result.error);
-        throw result.error;
-      }
+      return [];
     } catch (error) {
-      console.error('Error in fetchAutomationRules:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching automation rules:', error);
+      return [];
     }
-  };
+  }, [currentBranch?.id]);
 
-  const saveRule = async (rule: Omit<AutomationRule, 'id'> & { id?: string }) => {
-    setIsSaving(true);
+  const { isLoading, refetch } = useQuery({
+    queryKey: ['automationRules', currentBranch?.id],
+    queryFn: fetchRules,
+    enabled: !!currentBranch?.id,
+  });
+
+  const saveRule = async (rule: AutomationRule): Promise<boolean> => {
     try {
-      // Ensure the branch_id is set
-      const ruleToSave = {
-        ...rule,
-        branch_id: currentBranch?.id,
-      };
+      if (!currentBranch?.id) return false;
       
-      const result = await settingsService.saveAutomationRule(ruleToSave as AutomationRule);
-      if (result) {
-        await fetchAutomationRules(); // Refresh the rules list
-        return true;
-      }
-      return false;
-    } catch (err: any) {
-      setError(err);
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const deleteRule = async (ruleId: string) => {
-    try {
-      const success = await settingsService.deleteAutomationRule(ruleId);
-      if (success) {
-        setRules(rules.filter(rule => rule.id !== ruleId));
-      }
-      return success;
-    } catch (err: any) {
-      setError(err);
-      return false;
-    }
-  };
-
-  const toggleRuleStatus = async (ruleId: string, isActive: boolean) => {
-    const ruleToUpdate = rules.find(rule => rule.id === ruleId);
-    if (!ruleToUpdate) {
-      toast.error("Rule not found");
-      return false;
-    }
-
-    try {
-      const result = await saveRule({
-        ...ruleToUpdate,
-        is_active: isActive
+      const result = await integrationsService.saveAutomationRule({
+        ...rule,
+        branch_id: currentBranch.id
       });
       
       if (result) {
-        setRules(rules.map(rule => 
-          rule.id === ruleId ? { ...rule, is_active: isActive } : rule
-        ));
+        refetch();
       }
       
-      return result;
-    } catch (err) {
-      console.error("Error toggling rule status:", err);
+      return !!result;
+    } catch (error) {
+      console.error('Error saving automation rule:', error);
       return false;
     }
   };
 
-  useEffect(() => {
-    if (currentBranch?.id) {
-      fetchAutomationRules();
+  const deleteRule = async (id: string): Promise<boolean> => {
+    try {
+      const result = await integrationsService.deleteAutomationRule(id);
+      
+      if (result) {
+        refetch();
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error deleting automation rule:', error);
+      return false;
     }
-  }, [currentBranch?.id]);
+  };
 
   return {
     rules,
     isLoading,
-    error,
-    isSaving,
-    fetchAutomationRules,
     saveRule,
     deleteRule,
-    toggleRuleStatus,
+    refreshRules: refetch,
   };
 };

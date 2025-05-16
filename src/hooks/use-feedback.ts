@@ -1,99 +1,68 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Feedback, FeedbackType } from '@/types/notification';
-import { toast } from 'sonner';
-import { adaptFeedbackFromDB } from '@/services/communicationService';
+import { adaptFeedbackFromDB } from '@/types/notification';
+import { communicationService } from '@/services';
 import { useBranch } from './use-branch';
 
-export const useFeedback = () => {
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const useFeedback = (type?: FeedbackType) => {
   const { currentBranch } = useBranch();
-  
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+
+  const fetchFeedback = async () => {
+    try {
+      if (!currentBranch?.id) return [];
+      
+      const response = await communicationService.getFeedback(currentBranch.id);
+      return response.map((item: any) => adaptFeedbackFromDB(item));
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      return [];
+    }
+  };
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['feedback', currentBranch?.id, type],
+    queryFn: fetchFeedback,
+    enabled: !!currentBranch?.id,
+  });
+
   useEffect(() => {
-    fetchFeedback();
-  }, [currentBranch?.id]);
-  
-  const fetchFeedback = async (type?: FeedbackType) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      let query = supabase
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (currentBranch?.id) {
-        query = query.eq('branch_id', currentBranch.id);
-      }
-      
+    if (data) {
       if (type) {
-        query = query.eq('type', type);
+        setFeedbacks(data.filter(item => item.type === type));
+      } else {
+        setFeedbacks(data);
       }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setFeedbacks(data.map(adaptFeedbackFromDB));
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      setError(error);
-      toast.error(`Failed to fetch feedback: ${error.message}`);
-    } finally {
-      setIsLoading(false);
     }
-  };
-  
-  // Add this as an alias for fetchFeedback to match the usage in FeedbackPage
-  const fetchFeedbacks = fetchFeedback;
-  
-  const submitFeedback = async (feedback: Partial<Feedback>) => {
-    setIsLoading(true);
-    setError(null);
+  }, [data, type]);
+
+  const submitFeedback = async (feedback: Partial<Feedback>): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
-        .from('feedback')
-        .insert({
-          title: feedback.title,
-          comments: feedback.comments,
-          rating: feedback.rating,
-          member_id: feedback.member_id,
-          member_name: feedback.member_name,
-          type: feedback.type,
-          branch_id: feedback.branch_id || currentBranch?.id,
-          related_id: feedback.related_id,
-          anonymous: feedback.anonymous
-        })
-        .select();
+      if (!currentBranch?.id) return false;
       
-      if (error) throw error;
+      const result = await communicationService.submitFeedback({
+        ...feedback,
+        branch_id: currentBranch.id
+      } as Feedback);
       
-      if (data && data.length > 0) {
-        const newFeedback = adaptFeedbackFromDB(data[0]);
-        setFeedbacks(prev => [newFeedback, ...prev]);
-        toast.success('Feedback submitted successfully!');
-        return newFeedback;
+      if (result) {
+        refetch();
+        return true;
       }
-      return null;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      setError(error);
-      toast.error(`Failed to submit feedback: ${error.message}`);
-      return null;
-    } finally {
-      setIsLoading(false);
+      
+      return false;
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      return false;
     }
   };
-  
+
   return {
     feedbacks,
     isLoading,
-    error,
-    fetchFeedback,
-    fetchFeedbacks,
-    submitFeedback
+    submitFeedback,
+    refreshFeedback: refetch
   };
 };

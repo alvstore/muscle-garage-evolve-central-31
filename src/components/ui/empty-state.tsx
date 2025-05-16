@@ -9,7 +9,7 @@ export interface EmptyStateProps {
   onAction?: () => void;
   actionLabel?: string;
   actionElement?: React.ReactNode;
-  action?: React.ReactNode; // Add this prop
+  action?: React.ReactNode; // Support directly passing an action element
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({

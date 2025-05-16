@@ -1,136 +1,118 @@
-
 import { useState, useEffect } from 'react';
-import settingsService from '@/services/settingsService';
-import { useBranch } from './use-branch';
-import { toast } from 'sonner';
+import { integrationsService } from '@/services';
+import { EmailSettings } from '@/types';
 
-export interface EmailSettings {
-  id?: string;
-  provider: string;
-  from_email: string;
-  sendgrid_api_key?: string;
-  mailgun_api_key?: string;
-  mailgun_domain?: string;
-  smtp_host?: string;
-  smtp_port?: number;
-  smtp_username?: string;
-  smtp_password?: string;
-  smtp_secure?: boolean;
-  is_active: boolean;
-  branch_id?: string;
-  notifications?: {
-    sendOnRegistration: boolean;
-    sendOnInvoice: boolean;
-    sendClassUpdates: boolean;
-  };
-  // For backward compatibility
-  fromEmail?: string;
-  apiKey?: string;
-  smtpHost?: string;
-  smtpPort?: number;
-  smtpUsername?: string;
-  smtpPassword?: string;
-  smtpSecure?: boolean;
-}
-
-export const useEmailSettings = () => {
-  const [settings, setSettings] = useState<EmailSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const { currentBranch } = useBranch();
-
-  const fetchSettings = async () => {
-    setIsLoading(true);
-    try {
-      const data = await settingsService.getEmailSettings(currentBranch?.id);
-      setSettings(data || {
-        provider: 'sendgrid',
-        from_email: '',
-        is_active: false,
-        notifications: {
-          sendOnRegistration: true,
-          sendOnInvoice: true,
-          sendClassUpdates: false
+export const useEmailSettings = (branchId?: string) => {
+  const [settings, setSettings] = useState<EmailSettings>({
+    provider: '',
+    from_email: '',
+    is_active: false,
+    notifications: {
+      sendOnInvoice: true,
+      sendClassUpdates: true,
+      sendOnRegistration: true
+    }
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const fetchedSettings = await integrationsService.getEmailSettings(branchId);
+        if (fetchedSettings) {
+          setSettings(fetchedSettings);
         }
-      });
+      } catch (err: any) {
+        setError(err.message || 'Failed to load email settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [branchId]);
+  
+  const updateSettings = async (newSettings: EmailSettings): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await integrationsService.updateEmailSettings(newSettings, branchId);
+      if (result) {
+        setSettings(newSettings);
+        return true;
+      } else {
+        setError('Failed to update email settings');
+        return false;
+      }
     } catch (err: any) {
-      setError(err);
+      setError(err.message || 'Failed to update email settings');
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveSettings = async (updatedSettings: EmailSettings) => {
-    setIsSaving(true);
+  const updateIsActive = async (isActive: boolean): Promise<boolean> => {
     try {
-      // Ensure the branch_id is set
-      const settingsToSave = {
-        ...updatedSettings,
-        branch_id: currentBranch?.id
+      // Create a new settings object with updated is_active property
+      const updatedSettings: EmailSettings = {
+        ...settings,
+        is_active: isActive
       };
       
-      const result = await settingsService.saveEmailSettings(settingsToSave);
-      if (result) {
-        setSettings(result);
-      }
-      return !!result;
-    } catch (err: any) {
-      setError(err);
+      // Update the state with the new settings object
+      setSettings(updatedSettings);
+      
+      // Call the API to update the settings
+      const result = await integrationsService.updateEmailSettings(
+        updatedSettings,
+        branchId
+      );
+      
+      return result;
+    } catch (error) {
+      console.error('Failed to update email active status:', error);
       return false;
-    } finally {
-      setIsSaving(false);
     }
-  };
-
-  const updateSettings = async (updatedSettings: Partial<EmailSettings>) => {
-    if (!settings) return false;
-    return saveSettings({ ...settings, ...updatedSettings });
-  };
-
-  const updateField = (field: string, value: any) => {
-    if (!settings) return;
-    setSettings({ ...settings, [field]: value });
-  };
-
-  const testConnection = async (email: string) => {
-    // In a real implementation, this would call an API endpoint
-    // For now, just simulate a successful test
-    return new Promise<boolean>(resolve => {
-      setTimeout(() => {
-        resolve(true);
-      }, 1000);
-    });
   };
   
-  const sendTestEmail = async (email: string) => {
+  const updateNotifications = async (notifications: EmailSettings['notifications']): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // In a real implementation, this would call the API to send a test email
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(`Test email sent to ${email}`);
-      return true;
-    } catch (error) {
-      toast.error("Failed to send test email");
+      const updatedSettings: EmailSettings = {
+        ...settings,
+        notifications: notifications
+      };
+      
+      const result = await integrationsService.updateEmailSettings(updatedSettings, branchId);
+      if (result) {
+        setSettings(updatedSettings);
+        return true;
+      } else {
+        setError('Failed to update notification settings');
+        return false;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update notification settings');
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (currentBranch?.id) {
-      fetchSettings();
-    }
-  }, [currentBranch?.id]);
-
+  
   return {
     settings,
     isLoading,
     error,
-    isSaving,
-    fetchSettings,
-    saveSettings,
     updateSettings,
-    updateField,
-    testConnection,
-    sendTestEmail
+    updateIsActive,
+    updateNotifications
   };
 };

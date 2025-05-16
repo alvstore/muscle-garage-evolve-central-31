@@ -1,4 +1,3 @@
-
 export interface Member {
   id: string;
   name: string;
@@ -27,4 +26,22 @@ export interface Membership {
   status: 'active' | 'expired' | 'pending' | 'cancelled';
   price?: number;
   features?: string[];
+}
+
+export type MembershipPlanStatus = 'active' | 'inactive' | 'archived';
+
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration_days: number;
+  features?: any[];
+  benefits?: any[];
+  is_active?: boolean;
+  status?: MembershipPlanStatus;
+  memberCount?: number; // Add this property
+  // For backward compatibility
+  durationDays?: number;
+  isActive?: boolean;
 }

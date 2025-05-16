@@ -1,16 +1,15 @@
 
+export type UserRole = 'admin' | 'staff' | 'trainer' | 'member' | 'guest';
+
 export interface User {
   id: string;
-  email: string;
-  name: string;
-  role?: string;
+  name?: string;
+  email?: string;
+  role?: UserRole;
   avatar?: string;
   phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-  full_name?: string;
-  avatar_url?: string;
+  branch_id?: string;
+  branchIds?: string[];
+  isBranchManager?: boolean;
+  accessible_branch_ids?: string[];
 }

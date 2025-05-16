@@ -1,112 +1,132 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { InvoiceFormHeader } from "@/components/finance/invoice/InvoiceFormHeader";
+import { InvoiceMemberFields } from "@/components/finance/invoice/InvoiceMemberFields";
+import { InvoiceDetailsFields } from "@/components/finance/invoice/InvoiceDetailsFields";
+import { InvoiceItemList } from "@/components/finance/invoice/InvoiceItemList";
+import { v4 as uuidv4 } from 'uuid';
+import { Invoice, InvoiceItem } from "@/types/finance";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Invoice } from '@/types/finance';
-import { InvoiceMemberFields } from './invoice/InvoiceMemberFields';
-import { InvoiceDetailsFields } from './invoice/InvoiceDetailsFields';
-import { InvoiceNotes } from './invoice/InvoiceNotes';
-import { useInvoiceForm } from '@/hooks/use-invoice-form';
-import { ChangeEvent } from 'react';
-
-export interface InvoiceFormProps {
+interface InvoiceFormProps {
   invoice: Invoice | null;
-  onComplete?: (invoice?: Invoice) => void;
-  onSave?: (invoice: Invoice) => void;
-  onCancel?: () => void;
+  onComplete: (invoice?: Invoice) => void;
+  onCancel: () => void;
 }
 
 const InvoiceForm: React.FC<InvoiceFormProps> = ({
-  invoice,
+  invoice = null,
   onComplete,
-  onSave,
-  onCancel,
+  onCancel
 }) => {
-  const {
-    form,
-    isSubmitting,
-    onSubmit,
-    formValues,
-    handleChange,
-    handleInputChange,
-    handleTextAreaChange,
-    handleStatusChange,
-    handlePaymentMethodChange,
-  } = useInvoiceForm(invoice, onComplete, onSave);
+  const [invoiceData, setInvoiceData] = useState<Invoice>({
+    id: invoice?.id || uuidv4(),
+    member_id: invoice?.member_id || '',
+    member_name: invoice?.member_name || '',
+    description: invoice?.description || '',
+    amount: invoice?.amount || 0,
+    status: invoice?.status || 'pending',
+    due_date: invoice?.due_date || new Date().toISOString().split('T')[0],
+    payment_method: invoice?.payment_method || 'cash',
+    items: invoice?.items || [{ id: uuidv4(), name: 'Service', quantity: 1, price: 100 }],
+  });
 
-  // Form submit handler that adapts from React Hook Form to HTML form
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (invoice) {
+      setInvoiceData(invoice);
+    }
+  }, [invoice]);
+
+  const handleAddItem = () => {
+    const newItem: InvoiceItem = {
+      id: uuidv4(),
+      name: 'New Item',
+      quantity: 1,
+      price: 0,
+    };
+    setInvoiceData(prev => ({
+      ...prev,
+      items: [...prev.items, newItem],
+    }));
+  };
+
+  const handleUpdateItem = (id: string, field: string, value: any) => {
+    setInvoiceData(prev => ({
+      ...prev,
+      items: prev.items.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setInvoiceData(prev => ({
+      ...prev,
+      items: prev.items.filter(item => item.id !== id),
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    form.handleSubmit(onSubmit)();
+    onComplete(invoiceData);
   };
 
-  // Create a wrapper for the onChange handler that extracts values from input events
-  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  // Modified updateField to accept either event or direct value
+  const updateField = (field: string, value: any) => {
+    setInvoiceData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Create a handler for input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    handleInputChange(name, value);
-  };
-
-  const onTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    handleTextAreaChange(name, value);
-  };
-
-  const onStatusChange = (status: string) => {
-    handleStatusChange(status as any);
+    updateField(name, value);
   };
 
   return (
-    <form onSubmit={handleFormSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <InvoiceFormHeader isEditing={!!invoice} />
+      
       <Card>
-        <CardHeader>
-          <CardTitle>{invoice ? 'Edit Invoice' : 'Create New Invoice'}</CardTitle>
-        </CardHeader>
         <CardContent className="space-y-4">
           <InvoiceMemberFields
-            memberId={formValues.member_id || ''}
-            memberName={formValues.member_name || ''}
-            onChange={handleChange}
+            memberId={invoiceData.member_id}
+            memberName={invoiceData.member_name}
+            onMemberChange={updateField}
           />
           
           <InvoiceDetailsFields
-            description={formValues.description || ''}
-            amount={formValues.amount}
-            status={formValues.status}
-            dueDate={formValues.due_date}
-            paymentMethod={formValues.payment_method || ''}
-            onChange={onInputChange}
-            onStatusChange={onStatusChange}
-            onPaymentMethodChange={handlePaymentMethodChange}
+            description={invoiceData.description}
+            amount={invoiceData.amount}
+            status={invoiceData.status}
+            dueDate={invoiceData.due_date}
+            paymentMethod={invoiceData.payment_method}
+            onChange={handleInputChange}
+            onStatusChange={(value) => updateField("status", value)}
+            onPaymentMethodChange={(value) => updateField("payment_method", value)}
           />
           
-          <InvoiceNotes
-            notes={formValues.notes || ''}
-            onChange={onTextAreaChange}
+          <InvoiceItemList
+            items={invoiceData.items}
+            onAddItem={handleAddItem}
+            onUpdateItem={handleUpdateItem}
+            onRemoveItem={handleRemoveItem}
           />
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            {(onCancel || onComplete) && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  if (onCancel) {
-                    onCancel();
-                  } else if (onComplete) {
-                    onComplete();
-                  }
-                }}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            )}
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : invoice ? 'Update Invoice' : 'Create Invoice'}
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          {invoice ? 'Update Invoice' : 'Create Invoice'}
+        </Button>
+      </div>
     </form>
   );
 };
