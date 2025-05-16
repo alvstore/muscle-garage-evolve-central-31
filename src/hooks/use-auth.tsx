@@ -8,6 +8,7 @@ interface AuthContextType {
   userRole: UserRole | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isAuthenticated: boolean;
   // Authentication methods
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -262,6 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userRole,
     isLoading,
     isAdmin: userRole === 'admin',
+    isAuthenticated: !!user,
     // New methods
     login,
     logout,
