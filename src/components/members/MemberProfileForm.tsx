@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import *muiPhoneNumber from 'material-ui-phone-number';
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -402,7 +401,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({
             <Input
               id="membershipStartDate"
               type="date"
-              value={formData.membership_start_date || formData.membershipStartDate || ''}
+              value={formData.membership_start_date || ''}
               onChange={(e) => updateFormData('membership_start_date', e.target.value)}
             />
           </div>
@@ -412,7 +411,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({
             <Input
               id="membershipEndDate"
               type="date"
-              value={formData.membership_end_date || formData.membershipEndDate || ''}
+              value={formData.membership_end_date || ''}
               onChange={(e) => updateFormData('membership_end_date', e.target.value)}
             />
           </div>
@@ -420,7 +419,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({
           <div>
             <Label htmlFor="trainer">Assigned Trainer</Label>
             <TrainerSelect 
-              value={formData.trainer_id || formData.trainerId || ''}
+              value={formData.trainer_id || ''}
               onChange={(value) => updateFormData('trainer_id', value)}
             />
           </div>
