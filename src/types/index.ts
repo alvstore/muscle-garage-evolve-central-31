@@ -1,3 +1,4 @@
+
 // Re-export all types for easy importing
 import { Branch } from './branch';
 import { User, UserRole } from './user';
@@ -15,11 +16,16 @@ import {
   ReminderRule, 
   NotificationChannel,
   Announcement,
+  EmailSettings,
+  BackupLogEntry,
+  IntegrationStatus,
+  AttendanceSettings,
+  CompanySettings,
   adaptAnnouncementFromDB,
   adaptReminderRuleFromDB,
-  adaptMotivationalMessageFromDB
+  adaptMotivationalMessageFromDB,
+  adaptFeedbackFromDB
 } from './notification';
-import { BackupLogEntry } from './backup';
 
 // Re-export types
 export type { 
@@ -29,15 +35,17 @@ export type {
   DietPlan, MealPlan, ProgressMetrics,
   Invoice, InvoiceItem, InvoiceStatus, Transaction, PaymentMethod, PaymentStatus,
   TransactionType, RecurringPeriod, FinancialTransaction,
-  Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, ReminderRule, NotificationChannel,
-  BackupLogEntry, Announcement
+  Notification, Feedback, FeedbackType, MotivationalMessage, MotivationalCategory, 
+  ReminderRule, NotificationChannel, BackupLogEntry, Announcement, EmailSettings,
+  IntegrationStatus, AttendanceSettings, CompanySettings
 };
 
 // Re-export adapter functions
 export {
   adaptAnnouncementFromDB,
   adaptReminderRuleFromDB,
-  adaptMotivationalMessageFromDB
+  adaptMotivationalMessageFromDB,
+  adaptFeedbackFromDB
 };
 
 // Define additional types needed

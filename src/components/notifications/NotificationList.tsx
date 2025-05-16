@@ -1,6 +1,6 @@
 // Update NotificationList to handle compatibility between notification types
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { BellOff, Check, Trash2 } from 'lucide-react';
 
@@ -25,11 +25,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Notification } from '@/types';
 
-interface NotificationListProps {
-  notifications: Notification[];
-  onMarkAsRead: (notification: Notification) => void;
-  onMarkAllAsRead: () => void;
-  onDelete: (id: string) => void;
+export interface NotificationListProps {
+  notifications?: Notification[];
+  isLoading?: boolean;
+  onMarkAsRead?: (id: string) => Promise<void>;
+  onMarkAllAsRead?: () => Promise<void>;
+  refreshTrigger?: number; // Add this prop to match the usage
+  filterStatus?: 'all' | 'read' | 'unread'; // Add this prop to match the usage
+  filterTypes?: string[]; // Add this prop to match the usage
+  categoryTypes?: string[]; // Add this prop to match the usage
+  userId?: string; // Add this prop to match the usage in NotificationsPanel
 }
 
 const NotificationList: React.FC<NotificationListProps> = ({ 

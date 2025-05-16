@@ -11,6 +11,5 @@ export * from './use-toast';
 export * from './use-company';
 export * from './use-leads';
 
-// Fix for default exports - if any hooks are exported as default, export them explicitly here
-export { default as leadService } from '@/services/leadService';
-export { default as followUpService } from '@/services/followUpService';
+// Note: Since these modules don't have default exports, we'll use their named exports
+// instead of trying to re-export non-existent default exports

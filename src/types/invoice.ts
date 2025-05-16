@@ -1,5 +1,6 @@
 
 import { Invoice, InvoiceItem, InvoiceStatus } from './finance';
+import { MembershipPlan } from './index';
 
 export interface InvoiceItemProps {
   item: InvoiceItem;
@@ -35,8 +36,8 @@ export interface InvoiceTotalProps {
 }
 
 export interface MembershipPlanFormProps {
-  plan: any;
-  onSave: (plan: any) => Promise<void>;
+  plan?: MembershipPlan;
+  onSave: (plan: MembershipPlan) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
 }

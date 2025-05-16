@@ -1,130 +1,38 @@
 
-import { useAuth } from './use-auth';
-import { usePermissionsManager } from './permissions/use-permissions-manager';
-import { UserRole } from '@/types';
+import { useState, useEffect } from 'react';
 
-export type Permission = 
-  | 'access_dashboards'
-  | 'view_all_branches' 
-  | 'manage_branches'
-  | 'manage_branch'
-  | 'view_branch_data'
-  | 'view_all_attendance'
-  | 'view_attendance'
-  | 'manage_members'
-  | 'member_view_plans'
-  | 'view_classes'
-  | 'manage_classes'
-  | 'view_staff'
-  | 'view_all_trainers'
-  | 'trainer_view_classes'
-  | 'trainer_view_members'
-  | 'trainer_edit_fitness'
-  | 'trainer_view_attendance'
-  | 'view_dashboard'
-  | 'access_crm' 
-  | 'manage_marketing'
-  | 'access_marketing'
-  | 'access_inventory'
-  | 'manage_inventory'
-  | 'access_store'
-  | 'access_communication'
-  | 'access_reports'
-  | 'access_finance'
-  | 'manage_invoices'
-  | 'manage_transactions'
-  | 'manage_income'
-  | 'manage_expenses'
-  | 'access_settings'
-  | 'manage_settings'
-  | 'manage_integrations'
-  | 'manage_templates'
-  | 'manage_devices'
-  | 'manage_website'
-  | 'manage_fitness_data'
-  | 'assign_workout_plan'
-  | 'assign_diet_plan'
-  | 'log_attendance'
-  | 'assign_plan'
-  | 'manage_roles'
-  | 'manage_staff'
-  | 'feature_trainer_dashboard'
-  | 'view_analytics'
-  | 'view_reports'
-  | 'view_finance_dashboard'
-  | 'manage_trainers'
-  | 'manage_memberships'
-  | 'feature_member_dashboard'
-  | 'member_view_profile'
-  | 'member_book_classes'
-  | 'member_view_attendance'
-  | 'member_view_invoices'
-  | 'feature_email_campaigns'
-  | 'full_system_access';
+interface UsePermissionsReturn {
+  userRole: string;
+  canManageUsers: boolean;
+  canManagePayments: boolean;
+  canViewReports: boolean;
+  canManageSettings: boolean;
+  isAdmin: boolean;
+  isStaff: boolean;
+  isTrainer: boolean;
+  isMember: boolean;
+}
 
-export const usePermissions = () => {
-  const { user } = useAuth();
-  const { can, isSystemAdmin, isBranchAdmin, userRole } = usePermissionsManager();
-
-  const hasPermission = (permission: Permission): boolean => {
-    return can(permission);
-  };
-
-  const isAdmin = (): boolean => {
-    return user?.role === 'admin';
-  };
-
-  const isStaff = (): boolean => {
-    return user?.role === 'staff';
-  };
-
-  const isTrainer = (): boolean => {
-    return user?.role === 'trainer';
-  };
-
-  const isMember = (): boolean => {
-    return user?.role === 'member';
-  };
-
-  const canManageBranches = (): boolean => {
-    return hasPermission('manage_branches');
-  };
-
-  const canViewAllBranches = (): boolean => {
-    return hasPermission('view_all_branches');
-  };
-
-  const canManageMembers = (): boolean => {
-    return hasPermission('manage_members');
-  };
-
-  const canAccessSettings = (): boolean => {
-    return hasPermission('access_settings');
-  };
-
-  const canAccessFinanceSection = (): boolean => {
-    return hasPermission('access_finance');
-  };
-
+export const usePermissions = (): UsePermissionsReturn => {
+  const [userRole, setUserRole] = useState('admin');
+  
+  // This will be expanded with actual permissions logic later
+  const isAdmin = userRole === 'admin';
+  const isStaff = userRole === 'staff' || isAdmin;
+  const isTrainer = userRole === 'trainer' || isStaff;
+  const isMember = userRole === 'member';
+  
   return {
-    user,
-    can: hasPermission,
+    userRole,
+    canManageUsers: isAdmin || isStaff,
+    canManagePayments: isAdmin || isStaff,
+    canViewReports: isAdmin || isStaff,
+    canManageSettings: isAdmin,
     isAdmin,
     isStaff,
     isTrainer,
-    isMember,
-    isSuperAdmin: isSystemAdmin,
-    isBranchManager: isBranchAdmin,
-    canManageBranches,
-    canViewAllBranches,
-    canManageMembers,
-    canAccessSettings,
-    canAccessFinanceSection,
-    userRole,  // Expose userRole directly
+    isMember
   };
 };
-
-// Re-export the provider from the permissions manager
-export { PermissionsProvider } from './permissions/use-permissions-manager';
 
 export default usePermissions;

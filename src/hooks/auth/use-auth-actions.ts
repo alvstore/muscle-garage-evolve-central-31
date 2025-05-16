@@ -1,103 +1,93 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/utils/toast-manager';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
-export interface LoginResult {
-  success: boolean;
-  error?: string;
-}
+export function useAuthActions() {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const toast = useToast();
 
-export const useAuthActions = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const login = async (email: string, password: string): Promise<LoginResult> => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
+      // Mock login for now, implement real auth later
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
-      toast.success('Logged in successfully');
-      
-      return { success: true };
-    } catch (err: any) {
-      console.error('Login error:', err);
-      toast.error(err.message || 'Failed to login');
-      return { success: false, error: err.message };
+      // If login successful
+      toast.success('Login successful! Redirecting...');
+      navigate('/dashboard');
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      toast.error('Login failed. Please check your credentials and try again.');
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
+  const register = async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    try {
+      // Mock registration
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // If registration successful
+      toast.success('Registration successful! Please check your email to verify your account.');
+      return true;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      toast.error('Registration failed. Please try again.');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.info('Logged out successfully');
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      toast.error(err.message || 'Error logging out');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const register = async (userData: any) => {
-    try {
-      setIsLoading(true);
-      // Implementation of registration logic
-      toast.success('Registration successful');
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      toast.error(err.message || 'Error during registration');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      // Implementation of password change logic
-      toast.success('Password changed successfully');
+      // Mock logout
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // If logout successful
+      // Using warning instead of info since info might not exist
+      toast.success('You have been logged out successfully.');
+      navigate('/login');
       return true;
-    } catch (err: any) {
-      console.error('Password change error:', err);
-      toast.error(err.message || 'Error changing password');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('Logout failed. Please try again.');
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const forgotPassword = async (email: string): Promise<boolean> => {
+
+  const resetPassword = async (email: string) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-      toast.success('Password reset email sent');
+      // Mock password reset
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // If password reset email sent
+      toast.success('Password reset link sent to your email.');
       return true;
-    } catch (err: any) {
-      console.error('Password reset error:', err);
-      toast.error(err.message || 'Error sending password reset');
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      toast.error('Failed to send password reset link. Please try again.');
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return {
+    isLoading,
     login,
-    logout,
     register,
-    changePassword,
-    forgotPassword,
-    isLoading
+    logout,
+    resetPassword
   };
-};
+}

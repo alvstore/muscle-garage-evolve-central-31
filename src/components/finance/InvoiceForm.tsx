@@ -64,7 +64,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <CardContent className="space-y-4">
           <InvoiceMemberFields
             memberId={formValues.member_id || ''}
-            memberName={formValues.member_name || formValues.memberName || ''}
+            memberName={formValues.member_name || ''}
             onChange={handleChange}
           />
           
