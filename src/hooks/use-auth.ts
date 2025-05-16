@@ -1,19 +1,24 @@
 import React, { useState, useCallback, createContext, useContext, useEffect, ReactNode } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { User, UserRole } from '@/types';
+import { UserRoleRecord } from '@/types/user';
 
 // Define the auth context interface
+// UserRoleRecord is now imported from user types
+
 interface AuthContextProps {
-  user: User | null;
+  user: (User & { roles?: UserRoleRecord[] }) | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   role: UserRole | null;
+  roles: UserRoleRecord[];
   login: (email: string, password: string) => Promise<{ success: boolean; error: any }>;
   logout: () => Promise<void>;
   register: (email: string, password: string, userData: any) => Promise<{ success: boolean; data: any; error: any }>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error: any }>;
   resetPassword: (newPassword: string) => Promise<{ success: boolean; error: any }>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error: any }>;
+  hasRole: (role: UserRole, branchId?: string) => boolean;
 }
 
 // Create the auth context with a default undefined value
@@ -28,6 +33,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [roles, setRoles] = useState<UserRoleRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize auth state
@@ -39,22 +45,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Get user profile data
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Get user roles from user_roles table
+          const { data: userRoles, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('role, branch_id, created_at, updated_at')
+            .eq('user_id', session.user.id);
             
+          if (rolesError) throw rolesError;
+          
+          // Set the primary role (you might want to implement your own logic here)
+          const primaryRole = userRoles?.[0]?.role as UserRole || null;
+          
+          // Set user with roles
           setUser({
             ...session.user,
-            ...profile
+            role: primaryRole,
+            roles: userRoles || []
           } as User);
           
-          setRole((profile?.role as UserRole) || null);
+          setRole(primaryRole);
+          setRoles(userRoles || []);
         } else {
           setUser(null);
           setRole(null);
+          setRoles([]);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -71,22 +85,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          // Get user profile data
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Get user roles from user_roles table
+          const { data: userRoles, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('role, branch_id, created_at, updated_at')
+            .eq('user_id', session.user.id);
             
+          if (rolesError) {
+            console.error('Error fetching user roles:', rolesError);
+            return;
+          }
+          
+          // Set the primary role (you might want to implement your own logic here)
+          const primaryRole = userRoles?.[0]?.role as UserRole || null;
+          
+          // Set user with roles
           setUser({
             ...session.user,
-            ...profile
+            role: primaryRole,
+            roles: userRoles || []
           } as User);
           
-          setRole((profile?.role as UserRole) || null);
+          setRole(primaryRole);
+          setRoles(userRoles || []);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setRole(null);
+          setRoles([]);
         }
       }
     );
@@ -217,18 +242,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Check if user has a specific role
+  const hasRole = useCallback((checkRole: UserRole, branchId?: string): boolean => {
+    if (!user?.roles) return false;
+    
+    return user.roles.some(r => {
+      const roleMatches = r.role === checkRole;
+      if (branchId) {
+        return roleMatches && r.branch_id === branchId;
+      }
+      return roleMatches;
+    });
+  }, [user]);
+
   // Create the context value
   const contextValue: AuthContextProps = {
     user,
     isLoading,
     isAuthenticated: !!user,
     role,
+    roles,
     login,
     logout,
     register,
     forgotPassword,
     resetPassword,
-    changePassword
+    changePassword,
+    hasRole: (checkRole: UserRole, branchId?: string): boolean => {
+      if (!user?.roles) return false;
+      return user.roles.some(r => {
+        const roleMatches = r.role === checkRole;
+        if (branchId) {
+          return roleMatches && r.branch_id === branchId;
+        }
+        return roleMatches;
+      });
+    }
   };
 
   return React.createElement(
