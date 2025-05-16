@@ -63,8 +63,8 @@ const TrainerPage = () => {
   const fetchTrainers = async () => {
     setLoading(true);
     try {
-      // Get current branch ID from localStorage
-      const currentBranchId = localStorage.getItem('currentBranchId');
+      // Get current branch ID from localStorage - using the correct key
+      const currentBranchId = localStorage.getItem('selectedBranchId');
       
       // Build the query
       let query = supabase

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { MembershipPlan } from '@/types';
 import { useDisclosure } from '@/hooks/use-disclosure';
 import EmptyState from '@/components/ui/empty-state';
+import { useBranch } from '@/hooks/use-branch';
 
 const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
@@ -20,15 +21,20 @@ const MembershipPlans = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+  const { currentBranch } = useBranch();
 
+  // Fetch plans when component mounts or when branch changes
   useEffect(() => {
-    fetchMembershipPlans();
-  }, []);
+    if (currentBranch?.id) {
+      fetchMembershipPlans();
+    }
+  }, [currentBranch?.id]);
 
   const fetchMembershipPlans = async () => {
     setIsLoading(true);
     try {
-      const data = await membershipService.getMembershipPlans();
+      // Pass the current branch ID to filter plans by branch
+      const data = await membershipService.getMembershipPlans(currentBranch?.id);
       setPlans(data || []);
     } catch (error) {
       console.error('Failed to fetch membership plans:', error);

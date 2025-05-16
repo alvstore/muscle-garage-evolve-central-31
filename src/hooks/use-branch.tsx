@@ -238,10 +238,26 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchBranches();
   }, [fetchBranches]);
 
+  // Load the selected branch from localStorage when the app starts
   useEffect(() => {
-    // Set the first branch as current if available and none is selected
-    if (branches.length > 0 && !currentBranch) {
+    const savedBranchId = localStorage.getItem('selectedBranchId');
+    
+    if (savedBranchId && branches.length > 0) {
+      // Find the saved branch in the branches list
+      const savedBranch = branches.find(branch => branch.id === savedBranchId);
+      
+      if (savedBranch) {
+        // If the saved branch exists, set it as the current branch
+        setCurrentBranch(savedBranch);
+      } else {
+        // If the saved branch doesn't exist (maybe it was deleted), set the first branch as current
+        setCurrentBranch(branches[0]);
+        localStorage.setItem('selectedBranchId', branches[0].id);
+      }
+    } else if (branches.length > 0 && !currentBranch) {
+      // If no saved branch ID or no current branch is set, set the first branch as current
       setCurrentBranch(branches[0]);
+      localStorage.setItem('selectedBranchId', branches[0].id);
     }
   }, [branches, currentBranch]);
 
@@ -251,13 +267,31 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     const branch = branches.find(b => b.id === branchId);
     if (branch) {
+      // Check if we're actually changing branches
+      const isChangingBranch = currentBranch?.id !== branchId;
+      
+      // Set the new branch as current
       setCurrentBranch(branch);
+      
       // Save the selected branch ID to localStorage for persistence
       localStorage.setItem('selectedBranchId', branchId);
+      
+      // If we're changing branches, trigger a page refresh to reload all data
+      if (isChangingBranch) {
+        // Use a custom event to notify components that branch has changed
+        const branchChangeEvent = new CustomEvent('branchChanged', { detail: { branchId } });
+        window.dispatchEvent(branchChangeEvent);
+        
+        // Optionally, you can force a full page refresh if needed
+        // window.location.reload();
+        
+        // Show a success message
+        toast.success(`Switched to ${branch.name} branch`);
+      }
     } else {
       console.error(`Branch with ID ${branchId} not found`);
     }
-  }, [branches, setCurrentBranch]);
+  }, [branches, currentBranch, setCurrentBranch]);
 
   return (
     <BranchContext.Provider 
