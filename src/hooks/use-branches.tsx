@@ -68,7 +68,17 @@ export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setCurrentBranchIdHandler = (branchId: string) => {
     setCurrentBranchId(branchId);
+    // Store in localStorage for persistence
+    localStorage.setItem('currentBranchId', branchId);
   };
+
+  // Load branch from localStorage on initial load
+  useEffect(() => {
+    const savedBranchId = localStorage.getItem('currentBranchId');
+    if (savedBranchId) {
+      setCurrentBranchId(savedBranchId);
+    }
+  }, []);
 
   const createBranch = async (branch: Omit<Branch, 'id'>): Promise<Branch | null> => {
     try {
@@ -105,13 +115,22 @@ export const BranchProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const value: BranchContextType = {
+  // Fix the refreshBranches function to properly handle the Promise
+  const refreshBranches = async (): Promise<void> => {
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("Error refreshing branches:", error);
+    }
+  };
+
+  const value = {
     branches,
     isLoading,
     error,
     currentBranch,
     setCurrentBranchId: setCurrentBranchIdHandler,
-    refreshBranches: refetch,
+    refreshBranches,
     createBranch,
     updateBranch,
     deleteBranch,

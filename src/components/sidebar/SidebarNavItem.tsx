@@ -12,9 +12,14 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ item, onLinkClick }) =>
   const location = useLocation();
   const isActive = location.pathname === item.href;
   
-  const handleClick = (e: React.MouseEvent) => {
-    // Don't prevent default - let the normal link behavior work
-    // Just handle the sidebar closing
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Prevent default behavior for links to the current page
+    if (isActive) {
+      e.preventDefault();
+      return;
+    }
+    
+    // For mobile: close sidebar
     if (onLinkClick) {
       onLinkClick();
     }

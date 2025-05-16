@@ -1,15 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useBranch } from '@/hooks/use-branches';
 import BranchDeviceManager from '@/components/integrations/BranchDeviceManager';
 import BranchSpecificSettings from '@/components/settings/BranchSpecificSettings';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Server, Settings2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { LocalTabs, LocalTabsList, LocalTabsTrigger, LocalTabsContent } from '@/components/ui/local-tabs';
 
 const BranchIntegrationSettings = () => {
   const { currentBranch } = useBranch();
+  const [activeTab, setActiveTab] = useState('settings');
   
   if (!currentBranch) {
     return (
@@ -41,24 +42,24 @@ const BranchIntegrationSettings = () => {
         </p>
       </div>
       
-      <Tabs defaultValue="settings" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+      <LocalTabs defaultValue="settings" onValueChange={setActiveTab}>
+        <LocalTabsList className="grid w-full grid-cols-2 mb-8">
+          <LocalTabsTrigger value="settings" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
             Branch Settings
-          </TabsTrigger>
-          <TabsTrigger value="devices" className="flex items-center gap-2">
+          </LocalTabsTrigger>
+          <LocalTabsTrigger value="devices" className="flex items-center gap-2">
             <Server className="h-4 w-4" />
             Access Control Devices
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="settings">
+          </LocalTabsTrigger>
+        </LocalTabsList>
+        <LocalTabsContent value="settings">
           <BranchSpecificSettings />
-        </TabsContent>
-        <TabsContent value="devices">
+        </LocalTabsContent>
+        <LocalTabsContent value="devices">
           <BranchDeviceManager />
-        </TabsContent>
-      </Tabs>
+        </LocalTabsContent>
+      </LocalTabs>
     </div>
   );
 };

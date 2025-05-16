@@ -26,8 +26,13 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
     // First set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       console.log('Auth state changed:', event);
-      setSession(newSession);
-      setUser(newSession?.user || null);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setSession(newSession);
+        setUser(newSession?.user || null);
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+      }
     });
 
     // Then check for existing session
@@ -43,6 +48,9 @@ export const AuthStateProvider = ({ children }: { children: ReactNode }) => {
         setUser(data.session?.user || null);
       } catch (error) {
         console.error('Failed to get auth session:', error);
+        // Clear any potential stale state
+        setSession(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }

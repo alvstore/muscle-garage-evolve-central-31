@@ -1,19 +1,20 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import WebsiteContentManager from './WebsiteContentManager';
 import SEOManager from './SEOManager';
 import WebsiteAnalytics from './WebsiteAnalytics';
-// Using updated WebsiteContentManager with real Supabase data integration
 
 const WebsiteManagementPage: React.FC = () => {
-  const { section = 'pages' } = useParams<{ section?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const section = searchParams.get('section') || 'pages';
 
   const handleTabChange = (value: string) => {
-    navigate(`/website/${value}`);
+    // Use search params instead of navigation to avoid full page reloads
+    setSearchParams({ section: value });
   };
 
   const renderContent = () => {
@@ -21,7 +22,6 @@ const WebsiteManagementPage: React.FC = () => {
       case 'pages':
         return (
           <div className="p-0">
-            {/* Integrate the WebsiteContentManager component */}
             <React.Suspense fallback={<div className="p-4">Loading website content manager...</div>}>
               <WebsiteContentManager />
             </React.Suspense>
@@ -30,7 +30,6 @@ const WebsiteManagementPage: React.FC = () => {
       case 'seo':
         return (
           <div className="p-0">
-            {/* Integrate the SEOManager component */}
             <React.Suspense fallback={<div className="p-4">Loading SEO manager...</div>}>
               <SEOManager />
             </React.Suspense>
@@ -39,7 +38,6 @@ const WebsiteManagementPage: React.FC = () => {
       case 'analytics':
         return (
           <div className="p-0">
-            {/* Integrate the WebsiteAnalytics component */}
             <React.Suspense fallback={<div className="p-4">Loading analytics...</div>}>
               <WebsiteAnalytics />
             </React.Suspense>
