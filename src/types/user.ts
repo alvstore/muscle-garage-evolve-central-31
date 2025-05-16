@@ -5,7 +5,9 @@ export interface User {
   id: string;
   email?: string;
   full_name?: string;
+  name?: string; // For backward compatibility
   avatar_url?: string;
+  avatar?: string; // For backward compatibility
   role: UserRole;
   branch_id?: string;
   is_active?: boolean;
@@ -19,7 +21,8 @@ export interface User {
   department?: string;
   is_trainer?: boolean;
   is_staff?: boolean;
-  is_branch_manager?: boolean; // Added this field
+  is_branch_manager?: boolean;
   isBranchManager?: boolean; // For backward compatibility
   accessible_branch_ids?: string[];
+  branchIds?: string[]; // For backward compatibility
 }

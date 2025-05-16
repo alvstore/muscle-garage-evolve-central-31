@@ -28,12 +28,16 @@ export interface FollowUpTemplate {
   content: string;
   created_at?: string;
   created_by?: string;
+  title?: string; // Added for backward compatibility
+  type?: FollowUpType; // Added for backward compatibility
+  variables?: string[]; // Added for backward compatibility
+  isDefault?: boolean; // Added for backward compatibility
 }
 
 export interface FollowUp {
   id: string;
   lead_id: string;
-  type: string;
+  type: FollowUpType;
   content: string;
   subject?: string;
   status: string;
@@ -44,6 +48,32 @@ export interface FollowUp {
   template_id?: string;
   response?: string;
   response_at?: string;
+}
+
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  type: FollowUpType;
+  content: string;
+  subject?: string;
+  status: string;
+  sent_by?: string;
+  sent_at?: string;
+  response?: string;
+  response_at?: string;
+  template_id?: string;
+  leads?: Lead;
+}
+
+export interface FollowUpScheduled {
+  id: string;
+  lead_id: string;
+  type: FollowUpType;
+  content: string;
+  subject?: string;
+  status: string;
+  scheduled_at: string;
+  leads?: Lead;
 }
 
 export interface AutomationRule {
@@ -59,3 +89,9 @@ export interface AutomationRule {
   created_at: string;
   updated_at: string;
 }
+
+// Enum types for CRM
+export type FollowUpType = 'email' | 'sms' | 'whatsapp' | 'call' | 'meeting';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+export type LeadSource = 'website' | 'referral' | 'social' | 'walk-in' | 'call' | 'other';
+export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'customer' | 'lost';

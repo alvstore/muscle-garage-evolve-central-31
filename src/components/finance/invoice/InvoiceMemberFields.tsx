@@ -6,7 +6,7 @@ interface InvoiceMemberFieldsProps {
   memberId: string;
   memberName: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSelectMember?: (id: string, name: string) => void; // Added this prop
+  onSelectMember?: (id: string, name: string) => void;
 }
 
 export const InvoiceMemberFields: React.FC<InvoiceMemberFieldsProps> = ({

@@ -3,7 +3,7 @@
 export interface Transaction {
   id: string;
   amount: number;
-  type: string;
+  type: TransactionType;
   description?: string;
   category_id?: string;
   branch_id?: string;
@@ -11,10 +11,7 @@ export interface Transaction {
   reference_id?: string;
   payment_method?: string;
   transaction_id?: string;
-  
-  // DB field
   transaction_date?: string;
-  
   // For backward compatibility
   created_at?: string;
   updated_at?: string;
@@ -33,10 +30,13 @@ export interface Invoice {
   id: string;
   member_id?: string;
   member_name?: string;
+  memberName?: string; // For backward compatibility
+  memberId?: string; // For backward compatibility
   amount: number;
   description?: string;
-  status: string;
+  status: InvoiceStatus | string;
   due_date: string;
+  dueDate?: string; // For backward compatibility
   payment_date?: string;
   paid_date?: string;
   payment_method?: string;
@@ -44,6 +44,7 @@ export interface Invoice {
   created_at: string;
   updated_at?: string;
   issued_date?: string;
+  issuedDate?: string; // For backward compatibility
   branch_id?: string;
   items?: any[];
   membership_plan_id?: string;
@@ -68,13 +69,15 @@ export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'ye
 
 export interface FinancialTransaction {
   id: string;
-  date: string;
+  date?: string;
+  transaction_date?: string;
   amount: number;
   type: TransactionType;
   description: string;
   payment_method: PaymentMethod;
   status: PaymentStatus;
   reference_id?: string;
+  transaction_id?: string;
   created_at: string;
   updated_at: string;
   branch_id?: string;

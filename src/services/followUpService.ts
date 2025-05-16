@@ -1,6 +1,6 @@
 
 import { FollowUpHistory, FollowUpScheduled } from '@/types/crm';
-import { supabase } from './supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 class FollowUpService {
   async getFollowUpHistory(leadId?: string) {
@@ -43,7 +43,7 @@ class FollowUpService {
       const { data, error } = await query.order('scheduled_at', { ascending: true });
       
       if (error) throw error;
-      return data;
+      return data as FollowUpScheduled[];
     } catch (error) {
       console.error('Error fetching scheduled follow-ups:', error);
       return [];
