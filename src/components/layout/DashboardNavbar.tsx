@@ -157,7 +157,8 @@ const DashboardNavbar = ({
       toast.error("Failed to mark notifications as read");
     }
   };
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return "U"; // Default to 'U' for unknown/undefined
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
   const handleLogout = async () => {
