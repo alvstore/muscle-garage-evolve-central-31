@@ -109,7 +109,7 @@ export const useIncomeRecords = () => {
   // Delete attachment
   const deleteAttachment = async (recordId: string) => {
     try {
-      await updateRecord(recordId, { attachment: undefined });
+      await updateRecord(recordId, { attachment: null as unknown as undefined });
       return true;
     } catch (error) {
       throw error;
