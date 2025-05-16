@@ -53,14 +53,22 @@ export const useDashboard = () => {
   const { currentBranch } = useBranch();
 
   const refreshData = useCallback(async () => {
-    if (!currentBranch) return;
+    if (!currentBranch?.id) return;
+
+    // Prevent multiple simultaneous refreshes
+    if (isLoading) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      // Fetch dashboard summary data
-      const summary = await fetchDashboardSummary(currentBranch.id);
+      // Use Promise.all to fetch data in parallel
+      const [summary, payments, renewals, classes] = await Promise.all([
+        fetchDashboardSummary(currentBranch.id),
+        fetchPendingPayments(currentBranch.id),
+        fetchMembershipRenewals(currentBranch.id),
+        fetchUpcomingClasses(currentBranch.id)
+      ]);
       
       // Ensure totalIncome is always set even if the API doesn't return it
       const updatedSummary = {
@@ -68,18 +76,10 @@ export const useDashboard = () => {
         totalIncome: summary.totalIncome || summary.revenue?.monthly || 0
       };
       
+      // Batch state updates to reduce renders
       setDashboardData(updatedSummary);
-
-      // Fetch pending payments
-      const payments = await fetchPendingPayments(currentBranch.id);
       setPendingPayments(payments);
-
-      // Fetch upcoming membership renewals
-      const renewals = await fetchMembershipRenewals(currentBranch.id);
       setUpcomingRenewals(renewals);
-
-      // Fetch upcoming classes
-      const classes = await fetchUpcomingClasses(currentBranch.id);
       setUpcomingClasses(classes);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading dashboard data');
@@ -87,12 +87,14 @@ export const useDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch]);
+  }, [currentBranch?.id, isLoading]);
 
-  // Initial data fetching
+  // Initial data fetching - only run when branch changes, not on every refreshData change
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (currentBranch?.id) {
+      refreshData();
+    }
+  }, [currentBranch?.id]); // Only depend on branch ID, not the refreshData function
 
   return {
     dashboardData,

@@ -3,28 +3,56 @@ import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { getCurrentUserBranch } from '@/services/supabaseClient';
+import { branchService } from '@/services';
+import type { Branch } from '@/types/branch';
 
 const ContactSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [branchId, setBranchId] = useState<string | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     inquiryType: "membership",
-    message: ""
+    message: "",
+    branchId: ""
   });
 
   useEffect(() => {
-    const fetchBranchId = async () => {
-      // Try to get branch ID, fallback to a default branch ID
-      const userBranchId = await getCurrentUserBranch();
-      setBranchId(userBranchId || "default-branch-id");
+    const fetchBranchData = async () => {
+      setIsLoadingBranches(true);
+      try {
+        // Fetch all active branches
+        const branchesData = await branchService.getBranches();
+        const activeBranches = branchesData.filter(branch => branch.is_active);
+        setBranches(activeBranches);
+        
+        // Try to get user's branch ID if logged in
+        const userBranchId = await getCurrentUserBranch();
+        
+        // Set default branch ID (either user's branch or first active branch)
+        const defaultBranchId = userBranchId || (activeBranches.length > 0 ? activeBranches[0].id : null);
+        setBranchId(defaultBranchId);
+        
+        // Set the default branch in the form
+        if (defaultBranchId) {
+          setFormData(prev => ({
+            ...prev,
+            branchId: defaultBranchId
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+      } finally {
+        setIsLoadingBranches(false);
+      }
     };
 
-    fetchBranchId();
+    fetchBranchData();
   }, []);
 
   useEffect(() => {
@@ -60,8 +88,20 @@ const ContactSection = () => {
   const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate branch selection
+    if (!formData.branchId) {
+      toast({
+        title: "Branch selection required",
+        description: "Please select a branch to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setSubmitting(true);
     try {
+      // Create lead input object with only the fields that exist in the leads table
       const leadInput = {
         name: formData.name,
         email: formData.email,
@@ -70,10 +110,9 @@ const ContactSection = () => {
         status: 'new' as LeadStatus,
         funnel_stage: 'cold' as FunnelStage,
         notes: `${formData.inquiryType}: ${formData.message}`,
-        branch_id: branchId || "default-branch-id",
-        note: `${formData.inquiryType}: ${formData.message}`,
-        first_name: formData.name.split(' ')[0],
-        last_name: formData.name.includes(' ') ? formData.name.split(' ').slice(1).join(' ') : '',
+        branch_id: formData.branchId, // Use the selected branch ID from the form
+        // Remove fields that don't exist in the leads table
+        // first_name and last_name are not in the schema
       };
       
       const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));
@@ -87,7 +126,8 @@ const ContactSection = () => {
           email: "",
           phone: "",
           inquiryType: "membership",
-          message: ""
+          message: "",
+          branchId: formData.branchId // Keep the selected branch for convenience
         });
       } else {
         toast({
@@ -158,6 +198,28 @@ const ContactSection = () => {
                   <option value="classes">Group Classes</option>
                   <option value="facilities">Facility Information</option>
                   <option value="other">Other</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="branchId" className="block text-sm font-medium text-gray-300 mb-1">
+                  Select Branch
+                </label>
+                <select 
+                  id="branchId" 
+                  name="branchId" 
+                  value={formData.branchId} 
+                  onChange={handleChange} 
+                  className="w-full p-3 rounded-md bg-gym-gray-700 border border-gym-gray-600 text-black" 
+                  required
+                  disabled={isLoadingBranches}
+                >
+                  <option value="">Select a branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

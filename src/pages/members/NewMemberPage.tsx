@@ -488,10 +488,20 @@ const NewMemberPage = () => {
                     <Button variant="outline" onClick={() => navigate("/members")}>
                       Cancel
                     </Button>
-                    <Button type="button" onClick={() => {
-                      if (form.getValues("name")) {
+                    <Button type="button" onClick={async () => {
+                      // Validate the required fields in the personal tab
+                      const result = await form.trigger(['name', 'gender', 'dateOfBirth']);
+                      if (result) {
+                        // If validation passes, navigate to the next tab
                         const tabButton = document.querySelector('[data-value="address"]');
                         if (tabButton instanceof HTMLElement) tabButton.click();
+                      } else {
+                        // Show toast for validation errors
+                        toast({
+                          title: "Please check the form",
+                          description: "Please fill in all required fields before proceeding.",
+                          variant: "destructive",
+                        });
                       }
                     }}>
                       Next
@@ -630,11 +640,12 @@ const NewMemberPage = () => {
                     }}>
                       Previous
                     </Button>
-                    <Button type="button" onClick={(e) => {
+                    <Button type="button" onClick={async (e) => {
                       e.preventDefault();
                       // Force form validation before proceeding
-                      form.trigger(['phone', 'email', 'address', 'city', 'state', 'zipCode', 'country']);
-                      // Proceed to next tab even if there are validation errors
+                      const result = await form.trigger(['phone', 'email', 'address', 'city', 'state', 'zipCode', 'country']);
+                      
+                      // Proceed to next tab - these fields are optional, so we don't need to check the result
                       const tabButton = document.querySelector('[data-value="membership"]');
                       if (tabButton instanceof HTMLElement) tabButton.click();
                     }}>

@@ -37,6 +37,9 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Fetch branches from Supabase
   const fetchBranches = useCallback(async (): Promise<Branch[]> => {
+    // Prevent multiple simultaneous fetches
+    if (isLoading) return branches;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -78,11 +81,11 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (error) {
       console.error('Error fetching branches:', error);
       toast.error('Failed to fetch branches');
-      return [];
+      return branches; // Return current branches on error to prevent state churn
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch]);
+  }, [isLoading, branches, currentBranch]); // Add proper dependencies
 
   // Create a branch
   const createBranch = async (branchData: Partial<Branch>): Promise<Branch | null> => {
@@ -234,15 +237,23 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Only fetch branches on initial mount, not on every fetchBranches change
   useEffect(() => {
     fetchBranches();
-  }, [fetchBranches]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only once on mount
 
-  // Load the selected branch from localStorage when the app starts
+  // Load the selected branch from localStorage when branches are loaded
   useEffect(() => {
+    // Only run this effect when branches change and we have branches available
+    if (branches.length === 0) return;
+    
     const savedBranchId = localStorage.getItem('selectedBranchId');
     
-    if (savedBranchId && branches.length > 0) {
+    // Avoid unnecessary state updates if we already have a current branch
+    if (currentBranch) return;
+    
+    if (savedBranchId) {
       // Find the saved branch in the branches list
       const savedBranch = branches.find(branch => branch.id === savedBranchId);
       
@@ -254,44 +265,47 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCurrentBranch(branches[0]);
         localStorage.setItem('selectedBranchId', branches[0].id);
       }
-    } else if (branches.length > 0 && !currentBranch) {
-      // If no saved branch ID or no current branch is set, set the first branch as current
+    } else {
+      // If no saved branch ID is set, set the first branch as current
       setCurrentBranch(branches[0]);
       localStorage.setItem('selectedBranchId', branches[0].id);
     }
-  }, [branches, currentBranch]);
+  }, [branches, currentBranch]); // Keep both dependencies, but add early returns to prevent unnecessary work
 
   // Function to switch to a different branch by ID
   const switchBranch = useCallback((branchId: string) => {
     if (!branchId) return;
     
+    // Don't do anything if we're already on this branch
+    if (currentBranch?.id === branchId) return;
+    
     const branch = branches.find(b => b.id === branchId);
     if (branch) {
-      // Check if we're actually changing branches
-      const isChangingBranch = currentBranch?.id !== branchId;
-      
-      // Set the new branch as current
-      setCurrentBranch(branch);
-      
       // Save the selected branch ID to localStorage for persistence
       localStorage.setItem('selectedBranchId', branchId);
       
-      // If we're changing branches, trigger a page refresh to reload all data
-      if (isChangingBranch) {
-        // Use a custom event to notify components that branch has changed
-        const branchChangeEvent = new CustomEvent('branchChanged', { detail: { branchId } });
+      // Set the new branch as current - do this only once
+      setCurrentBranch(branch);
+      
+      // Use a debounced event to prevent multiple rapid events
+      // This helps prevent cascading re-renders across the application
+      const notifyBranchChange = () => {
+        const branchChangeEvent = new CustomEvent('branchChanged', { 
+          detail: { branchId, timestamp: Date.now() } 
+        });
         window.dispatchEvent(branchChangeEvent);
-        
-        // Optionally, you can force a full page refresh if needed
-        // window.location.reload();
         
         // Show a success message
         toast.success(`Switched to ${branch.name} branch`);
-      }
+      };
+      
+      // Use setTimeout to debounce the event
+      setTimeout(notifyBranchChange, 50);
     } else {
       console.error(`Branch with ID ${branchId} not found`);
+      toast.error(`Branch not found`);
     }
-  }, [branches, currentBranch, setCurrentBranch]);
+  }, [branches, currentBranch]);
 
   return (
     <BranchContext.Provider 

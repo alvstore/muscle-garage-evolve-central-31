@@ -37,60 +37,102 @@ const DashboardNavbar = ({
 
   // Fetch notifications when the component mounts
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchNotifications = async () => {
-      if (!user?.id) return;
+      if (!user?.id || !isMounted) return;
+      
       setIsLoadingNotifications(true);
       try {
         const notificationService = (await import('@/services/notificationService')).default;
         const data = await notificationService.getNotifications(user.id);
-        setNotifications(data);
-        setUnreadCount(data.filter((n: any) => !n.read).length);
+        
+        if (isMounted) {
+          setNotifications(data || []);
+          setUnreadCount(data ? data.filter((n: any) => !n.read).length : 0);
+        }
       } catch (error) {
         console.error('Error fetching notifications:', error);
+        if (isMounted) {
+          // Set empty array to prevent UI issues
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       } finally {
-        setIsLoadingNotifications(false);
+        if (isMounted) {
+          setIsLoadingNotifications(false);
+        }
       }
     };
+    
+    // Initial fetch
     fetchNotifications();
 
     // Set up real-time subscription for notifications using Supabase
     const setupRealtimeSubscriptions = async () => {
-      if (!user?.id) return;
-      const {
-        supabase
-      } = await import('@/integrations/supabase/client');
+      if (!user?.id) return null;
+      
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
 
-      // Subscribe to changes in the notifications table
-      const notificationsSubscription = supabase.channel('navbar-notifications').on('postgres_changes', {
-        event: '*',
-        // Listen for inserts, updates, and deletes
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // Refresh notifications when changes occur
-        fetchNotifications();
-      }).subscribe();
+        // Subscribe to changes in the notifications table
+        const notificationsSubscription = supabase
+          .channel('navbar-notifications')
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          }, (payload) => {
+            // Only refresh if component is still mounted
+            if (isMounted) {
+              fetchNotifications();
+            }
+          })
+          .subscribe((status) => {
+            if (status !== 'SUBSCRIBED' && isMounted) {
+              console.warn('Notification subscription status:', status);
+            }
+          });
 
-      // Subscribe to changes in follow-up history for real-time follow-up notifications
-      const followUpSubscription = supabase.channel('navbar-follow-ups').on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'follow_up_history'
-      }, () => {
-        // Refresh notifications when follow-ups change
-        fetchNotifications();
-      }).subscribe();
-      return () => {
-        // Clean up subscriptions
-        notificationsSubscription.unsubscribe();
-        followUpSubscription.unsubscribe();
-      };
+        // Subscribe to changes in follow-up history
+        const followUpSubscription = supabase
+          .channel('navbar-follow-ups')
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'follow_up_history',
+            filter: `assigned_to=eq.${user.id}`
+          }, () => {
+            if (isMounted) {
+              fetchNotifications();
+            }
+          })
+          .subscribe();
+          
+        return () => {
+          notificationsSubscription.unsubscribe();
+          followUpSubscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Error setting up notification subscriptions:', error);
+        return null;
+      }
     };
-    const cleanup = setupRealtimeSubscriptions();
+    
+    const cleanupSubscriptions = setupRealtimeSubscriptions();
+    
+    // Cleanup function
     return () => {
+      isMounted = false;
       // Clean up subscriptions when component unmounts
-      if (cleanup) cleanup.then(fn => fn && fn());
+      if (cleanupSubscriptions) {
+        if (typeof cleanupSubscriptions === 'function') {
+          cleanupSubscriptions();
+        } else if (cleanupSubscriptions instanceof Promise) {
+          cleanupSubscriptions.then(fn => fn && fn());
+        }
+      }
     };
   }, [user?.id]);
 

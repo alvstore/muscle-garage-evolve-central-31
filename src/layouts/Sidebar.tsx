@@ -127,7 +127,7 @@ const Sidebar = (): JSX.Element => {
   : isDark ? 'text-foreground' // Dark mode with semi-dark disabled
   : 'text-gray-700'; // Light mode with semi-dark disabled (dark text on white sidebar)
 
-  return <aside className={cn("fixed left-0 top-0 z-20 h-full flex flex-col transition-all duration-300", collapsed ? 'w-20' : 'w-64', sidebarBgColor, textColor)}>
+  return <aside className={cn("fixed left-0 top-0 z-20 h-full flex flex-col transition-all duration-300", collapsed ? 'w-20' : 'w-64', sidebarBgColor, textColor)} data-sidebar="root">
       {/* Sidebar header */}
       <div className={cn("flex items-center justify-between h-16 px-4 border-b", settings.semiDark ? isDark ? "border-border" : "border-[#3a4a76]" : "border-border")}>
         <Link to="/" className="flex items-center">

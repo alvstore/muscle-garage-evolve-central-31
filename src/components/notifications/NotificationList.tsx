@@ -9,7 +9,7 @@ import { Notification } from '@/types';
 
 interface NotificationListProps {
   notifications: Notification[];
-  onMarkAsRead: (id: string) => void;
+  onMarkAsRead: (id: string, userId?: string) => void;
   onMarkAllAsRead: () => void;
   isLoading?: boolean;
   userId?: string;
@@ -103,7 +103,7 @@ export default function NotificationList({
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8 rounded-full"
-                      onClick={() => onMarkAsRead(notification.id)}
+                      onClick={() => onMarkAsRead(notification.id, userId)}
                     >
                       <Check className="h-4 w-4" />
                       <span className="sr-only">Mark as read</span>

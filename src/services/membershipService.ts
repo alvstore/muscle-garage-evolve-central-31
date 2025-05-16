@@ -201,21 +201,142 @@ export const membershipService = {
 
   assignMembership: async (membershipData: any): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      // First check if member already has an active membership
+      const { data: existingMemberships, error: fetchError } = await supabase
         .from('member_memberships')
-        .insert([membershipData]);
+        .select('*')
+        .eq('member_id', membershipData.member_id)
+        .eq('status', 'active');
+      
+      if (fetchError) {
+        console.error('Error checking existing memberships:', fetchError);
+        throw fetchError;
+      }
+      
+      // If member has active memberships, update them to inactive
+      if (existingMemberships && existingMemberships.length > 0) {
+        const { error: updateError } = await supabase
+          .from('member_memberships')
+          .update({ status: 'inactive', end_date: new Date().toISOString() })
+          .eq('member_id', membershipData.member_id)
+          .eq('status', 'active');
+        
+        if (updateError) {
+          console.error('Error updating existing memberships:', updateError);
+          throw updateError;
+        }
+      }
+      
+      // Now insert the new membership
+      const { data, error } = await supabase
+        .from('member_memberships')
+        .insert([{
+          ...membershipData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
       
       if (error) {
         console.error('Error assigning membership:', error);
         throw error;
       }
       
-      toast.success('Membership assigned successfully');
+      // Update member status to active
+      const { error: memberUpdateError } = await supabase
+        .from('members')
+        .update({ status: 'active', membership_status: 'active' })
+        .eq('id', membershipData.member_id);
+      
+      if (memberUpdateError) {
+        console.error('Error updating member status:', memberUpdateError);
+        // Continue despite error - membership was assigned
+      }
+      
       return true;
     } catch (err) {
-      console.error('Error assigning membership:', err);
-      toast.error('Failed to assign membership');
+      console.error('Error in membership assignment process:', err);
       return false;
+    }
+  },
+
+  /**
+   * Get active memberships for a member
+   * @param memberId - The member ID to fetch memberships for
+   * @returns Promise with array of membership data
+   */
+  getMemberActiveMemberships: async (memberId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('member_memberships')
+        .select(`
+          id,
+          membership_id,
+          start_date,
+          end_date,
+          total_amount,
+          amount_paid,
+          payment_status,
+          memberships:membership_id(name, price, duration_days)
+        `)
+        .eq('member_id', memberId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching member memberships:', error);
+        throw error;
+      }
+
+      // Update the member's profile with the membership information
+      if (data && data.length > 0) {
+        const latestMembership = data[0];
+        const { error: updateError } = await supabase
+          .from('members')
+          .update({
+            membership_id: latestMembership.membership_id,
+            membership_status: 'active',
+            membership_start_date: latestMembership.start_date,
+            membership_end_date: latestMembership.end_date,
+            membership_name: latestMembership.memberships?.name
+          })
+          .eq('id', memberId);
+
+        if (updateError) {
+          console.error('Error updating member profile with membership info:', updateError);
+          // Continue despite error
+        }
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Error in getMemberActiveMemberships:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Get invoice history for a member
+   * @param memberId - The member ID to fetch invoices for
+   * @returns Promise with array of invoice data
+   */
+  getMemberInvoiceHistory: async (memberId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('member_id', memberId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching member invoices:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (err) {
+      console.error('Error in getMemberInvoiceHistory:', err);
+      return [];
     }
   }
 };

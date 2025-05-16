@@ -209,7 +209,10 @@ const ThemeCustomizer = () => {
   }, [])
 
   return (
-    <div className={`fixed right-0 top-1/4 z-50 transition-all duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%-3rem)]'}`}>
+    <div 
+      className={`fixed right-0 top-1/4 z-50 transition-all duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%-3rem)]'}`}
+      data-theme-customizer="root"
+    >
       {/* Customizer toggle button */}
       <div 
         className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-l-md bg-primary text-white shadow-md"

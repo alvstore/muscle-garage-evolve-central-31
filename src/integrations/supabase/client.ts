@@ -49,20 +49,40 @@ const createCustomFetch = (baseUrl: string) => {
 // Create custom fetch instance for Supabase
 const customFetch = createCustomFetch(supabaseUrl);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: {
-    fetch: customFetch,
-    headers: {
-      'apikey': supabaseAnonKey
+// Create a singleton instance to avoid multiple client instances
+let supabaseInstance: any = null;
+
+// Function to get the Supabase client instance
+export const getSupabaseClient = () => {
+  if (supabaseInstance) return supabaseInstance;
+  
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      fetch: customFetch,
+      headers: {
+        'apikey': supabaseAnonKey
+      }
+    },
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false // Prevent URL detection causing refreshes
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 1 // Further limit events rate to prevent connection issues
+      },
+      timeout: 60000, // Increase timeout to 60 seconds
+      heartbeatIntervalMs: 30000 // Send heartbeat every 30 seconds
     }
-  },
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false // Prevent URL detection causing refreshes
-  }
-});
+  });
+  
+  return supabaseInstance;
+};
+
+// Export the singleton instance for backward compatibility
+export const supabase = getSupabaseClient();
 
 // Function to get the current user's branch
 export const getCurrentUserBranch = async () => {

@@ -49,6 +49,7 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Calculate BMI when height or weight changes
   useEffect(() => {
@@ -99,17 +100,20 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
         const fileName = `${memberId || formData.memberId}/measurements/${Date.now()}-${photo.name}`;
         
         const { data, error } = await supabase.storage
-          .from('member-photos')
-          .upload(fileName, photo);
-          
+          .from('fitness-photos')
+          .upload(fileName, photo, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
         if (error) throw error;
         
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('member-photos')
-          .getPublicUrl(fileName);
-          
-        uploadedUrls.push(publicUrlData.publicUrl);
+        // Get the public URL for the uploaded file
+        const { data: urlData } = supabase.storage
+          .from('fitness-photos')
+          .getPublicUrl(data.path);
+        
+        uploadedUrls.push(urlData.publicUrl);
       }
       
       return uploadedUrls;
@@ -122,64 +126,74 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!formData.memberId && !memberId) {
-      toast.error("Member ID is required");
+    // Validate required fields
+    if (!formData.weight || !formData.height) {
+      toast.error('Weight and height are required');
       return;
     }
     
-    let uploadedPhotoUrls: string[] = [];
-    
-    if (includePhotos && photos.length > 0) {
-      uploadedPhotoUrls = await uploadPhotos();
+    setIsSubmitting(true);
+    try {
+      // Upload photos if included
+      let photoUrlsToSave: string[] = [];
+      if (includePhotos && photos.length > 0) {
+        photoUrlsToSave = await uploadPhotos();
+      }
+      
+      // Add calculated BMI to the form data
+      const finalData = {
+        ...formData,
+        bmi: calculatedBMI,
+        photos: photoUrlsToSave.length > 0 ? photoUrlsToSave : undefined
+      };
+      
+      onSave(finalData);
+    } catch (error) {
+      console.error('Error saving measurements:', error);
+      toast.error('Failed to save measurements');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    const dataToSave: Partial<BodyMeasurement> & { photos?: string[] } = {
-      ...formData,
-      memberId: formData.memberId || memberId,
-      bmi: calculatedBMI,
-    };
-    
-    if (uploadedPhotoUrls.length > 0) {
-      dataToSave.photos = uploadedPhotoUrls;
-    }
-    
-    onSave(dataToSave);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditMode ? "Edit Body Measurements" : "Record Body Measurements"}</CardTitle>
+    <Card className="w-full max-w-4xl mx-auto overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="text-xl">{isEditMode ? "Edit Body Measurements" : "Record Body Measurements"}</CardTitle>
         <CardDescription>
           Enter the member's current body measurements to track their progress
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 overflow-y-auto max-h-[80vh]">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <Label htmlFor="weight">Weight (kg)</Label>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="weight" className="text-sm">Weight (kg)</Label>
               <Input
                 id="weight"
+                name="weight"
                 type="number"
                 step="0.1"
                 min="0"
                 value={formData.weight || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
-            <div>
-              <Label htmlFor="height">Height (cm)</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="height" className="text-sm">Height (cm)</Label>
               <Input
                 id="height"
+                name="height"
                 type="number"
                 step="0.1"
                 min="0"
                 value={formData.height || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
           </div>
@@ -191,9 +205,9 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="chest">Chest (cm)</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="chest" className="text-sm">Chest (cm)</Label>
               <Input
                 id="chest"
                 name="chest"
@@ -202,11 +216,12 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Chest in cm"
                 value={formData.chest || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="waist">Waist (cm)</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="waist" className="text-sm">Waist (cm)</Label>
               <Input
                 id="waist"
                 name="waist"
@@ -215,11 +230,12 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Waist in cm"
                 value={formData.waist || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="hips">Hips (cm)</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="hips" className="text-sm">Hips (cm)</Label>
               <Input
                 id="hips"
                 name="hips"
@@ -228,13 +244,14 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Hips in cm"
                 value={formData.hips || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="biceps">Biceps (cm)</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="biceps" className="text-sm">Biceps (cm)</Label>
               <Input
                 id="biceps"
                 name="biceps"
@@ -243,11 +260,12 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Biceps in cm"
                 value={formData.biceps || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="thighs">Thighs (cm)</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="thighs" className="text-sm">Thighs (cm)</Label>
               <Input
                 id="thighs"
                 name="thighs"
@@ -256,11 +274,12 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Thighs in cm"
                 value={formData.thighs || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="bodyFat">Body Fat %</Label>
+            <div className="space-y-1 sm:space-y-2">
+              <Label htmlFor="bodyFat" className="text-sm">Body Fat %</Label>
               <Input
                 id="bodyFat"
                 name="bodyFat"
@@ -269,15 +288,17 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                 placeholder="Body fat percentage"
                 value={formData.bodyFat || ""}
                 onChange={handleChange}
+                className="h-9"
               />
             </div>
           </div>
           
           <div className="mb-4">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes" className="text-sm">Notes</Label>
             <textarea
               id="notes"
-              className="w-full p-2 border rounded-md mt-1"
+              name="notes"
+              className="w-full p-2 border rounded-md mt-1 text-sm sm:text-base"
               rows={3}
               value={formData.notes || ""}
               onChange={(e) => handleChange({
@@ -286,6 +307,7 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
                   value: e.target.value
                 }
               } as React.ChangeEvent<HTMLInputElement>)}
+              placeholder="Any additional notes about the measurement"
             />
           </div>
           
@@ -347,17 +369,26 @@ const BodyMeasurementForm: React.FC<BodyMeasurementFormProps> = ({
             )}
           </div>
           
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-6">
             {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel} 
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
             )}
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? (
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || isUploading}
+              className="w-full sm:w-auto"
+            >
+              {isSubmitting || isUploading ? (
                 <>
-                  <Upload className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
+                  <span className="animate-spin mr-2">⏳</span>
+                  {isUploading ? 'Uploading...' : 'Saving...'}
                 </>
               ) : (
                 <>{isEditMode ? "Update" : "Save"} Measurements</>

@@ -41,7 +41,22 @@ interface FunnelBoardProps {
   isLoading?: boolean;
 }
 
-export default function FunnelBoard({ leads, stages, onUpdateLead, onAddLead, isLoading = false }: FunnelBoardProps) {
+// Default stages to use if none are provided
+const DEFAULT_STAGES: FunnelStage[] = [
+  { id: 'cold', name: 'Cold', order: 1, color: '#3b82f6' },
+  { id: 'warm', name: 'Warm', order: 2, color: '#f59e0b' },
+  { id: 'hot', name: 'Hot', order: 3, color: '#ef4444' },
+  { id: 'won', name: 'Won', order: 4, color: '#10b981' },
+  { id: 'lost', name: 'Lost', order: 5, color: '#6b7280' },
+];
+
+export default function FunnelBoard({ 
+  leads = [], 
+  stages = DEFAULT_STAGES, 
+  onUpdateLead = async () => {}, 
+  onAddLead = async () => {}, 
+  isLoading = false 
+}: Partial<FunnelBoardProps>) {
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState<boolean>(false);
@@ -51,8 +66,11 @@ export default function FunnelBoard({ leads, stages, onUpdateLead, onAddLead, is
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   
+  // Ensure stages is always an array
+  const safeStages = Array.isArray(stages) ? stages : DEFAULT_STAGES;
+  
   // Sort stages by order
-  const sortedStages = [...stages].sort((a, b) => a.order - b.order);
+  const sortedStages = [...safeStages].sort((a, b) => a.order - b.order);
   
   // Group leads by funnel stage
   const leadsByStage: Record<string, Lead[]> = {};

@@ -35,8 +35,8 @@ export const memberService = {
         query = query.eq('branch_id', branchId);
       }
       
-      // Only get active members
-      query = query.eq('status', 'active');
+      // Get members with active status OR active membership status
+      query = query.or('status.eq.active,membership_status.eq.active');
       
       const { data, error } = await query;
       
@@ -105,12 +105,12 @@ export const memberService = {
         email: data.email,
         phone: data.phone,
         status: data.status as 'active' | 'inactive' | 'pending',
-        membershipStatus: (data.membership_status || 'none') as 'active' | 'expired' | 'none',
-        membershipId: data.membership_id,
-        membershipStartDate: data.membership_start_date ? new Date(data.membership_start_date) : null,
-        membershipEndDate: data.membership_end_date ? new Date(data.membership_end_date) : null,
-        role: data.role as 'member' | 'trainer' | 'staff' | 'admin',
-        branchId: data.branch_id
+        membership_status: (data.membership_status || 'none') as 'active' | 'expired' | 'none',
+        membership_id: data.membership_id,
+        membership_start_date: data.membership_start_date || null,
+        membership_end_date: data.membership_end_date || null,
+        // role is used internally but not part of the Member interface
+        branch_id: data.branch_id
       };
     } catch (error: any) {
       console.error('Error in getMemberById:', error);

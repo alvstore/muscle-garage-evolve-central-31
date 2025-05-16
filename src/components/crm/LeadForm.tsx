@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from '@/hooks/use-branch';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -62,11 +64,9 @@ interface LeadFormProps {
 
 const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [staffMembers, setStaffMembers] = useState([
-    { id: "1", name: "Staff 1" },
-    { id: "2", name: "Staff 2" },
-    { id: "3", name: "Staff 3" },
-  ]);
+  const [staffMembers, setStaffMembers] = useState<Array<{ id: string, name: string }>>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  const { currentBranch } = useBranch();
   
   const [interests, setInterests] = useState([
     "weight loss",
@@ -97,6 +97,41 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
     },
   });
 
+  // Fetch staff members when component mounts or branch changes
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      if (!currentBranch?.id) return;
+      
+      setIsLoadingStaff(true);
+      try {
+        // Fetch staff members (trainers, admins, managers) from the selected branch
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('role', ['admin', 'manager', 'trainer', 'staff'])
+          .eq('branch_id', currentBranch.id)
+          .eq('is_active', true)
+          .order('full_name');
+        
+        if (error) throw error;
+        
+        // Format the data for the dropdown
+        const formattedStaff = data.map(staff => ({
+          id: staff.id,
+          name: staff.full_name
+        }));
+        
+        setStaffMembers(formattedStaff);
+      } catch (error) {
+        console.error('Error fetching staff members:', error);
+      } finally {
+        setIsLoadingStaff(false);
+      }
+    };
+    
+    fetchStaffMembers();
+  }, [currentBranch?.id]);
+  
   // Update selected interests when form values change
   useEffect(() => {
     if (lead?.interests) {
@@ -296,17 +331,23 @@ const LeadForm = ({ lead, onComplete }: LeadFormProps) => {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Assign to staff member" />
+                        <SelectTrigger disabled={isLoadingStaff}>
+                          <SelectValue placeholder={isLoadingStaff ? "Loading staff..." : "Assign to staff member"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {staffMembers.map(staff => (
-                          <SelectItem key={staff.id} value={staff.name}>
-                            {staff.name}
+                        {staffMembers.length > 0 ? (
+                          staffMembers.map(staff => (
+                            <SelectItem key={staff.id} value={staff.id}>
+                              {staff.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-staff" disabled>
+                            {isLoadingStaff ? "Loading..." : "No staff members available"}
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

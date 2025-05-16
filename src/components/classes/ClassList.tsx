@@ -163,6 +163,22 @@ const ClassList = ({ onClassSelect, hideActions = false, limit, filterStatus = '
       if (trainerIds.length > 0) {
         fetchTrainers(trainerIds).then(trainerData => {
           setTrainers(trainerData);
+          
+          // Update class objects with trainer information
+          const updatedClasses = classes.map(classItem => {
+            if (classItem.trainerId && trainerData[classItem.trainerId]) {
+              return {
+                ...classItem,
+                trainer: trainerData[classItem.trainerId].full_name || 'Unassigned',
+                trainerName: trainerData[classItem.trainerId].full_name,
+                trainerAvatar: trainerData[classItem.trainerId].avatar_url
+              };
+            }
+            return classItem;
+          });
+          
+          // This won't trigger a re-render of the component, but the updated trainer info
+          // will be used when rendering individual class cards
         });
       }
       

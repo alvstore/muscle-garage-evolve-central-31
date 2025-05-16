@@ -8,8 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface NotificationsPanelProps {
   onClose?: () => void; // Making this prop optional with "?"
@@ -29,79 +28,68 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onClose, catego
     task: true,
     membership: true
   });
-  const queryClient = useQueryClient();
+  
+  // Use our custom hook for notifications
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll, 
+    refresh 
+  } = useNotifications(categoryFilter, refreshTrigger);
 
-  // Mark all notifications as read
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error("User not authenticated");
-      
-      const { data, error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
-      
-      if (error) throw error;
-      return data;
-    },
-    onMutate: () => {
-      setIsProcessing(true);
-    },
-    onSuccess: () => {
-      toast.success("All notifications marked as read");
-      setRefreshTrigger(prev => prev + 1); // Trigger refresh
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-    onError: (error: any) => {
-      console.error("Error marking all notifications as read:", error);
-      toast.error("Failed to mark notifications as read");
-    },
-    onSettled: () => {
-      setIsProcessing(false);
-    }
-  });
-
-  // Clear all notifications
-  const clearAllMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error("User not authenticated");
-      
-      const { data, error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      return data;
-    },
-    onMutate: () => {
-      setIsProcessing(true);
-    },
-    onSuccess: () => {
-      toast.success("All notifications cleared");
-      setRefreshTrigger(prev => prev + 1); // Trigger refresh
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-    onError: (error: any) => {
-      console.error("Error clearing notifications:", error);
-      toast.error("Failed to clear notifications");
-    },
-    onSettled: () => {
-      setIsProcessing(false);
-    }
-  });
-
+  // Handle mark as read for individual notification
+  const handleMarkAsRead = (id: string, userId?: string) => {
+    if (!userId || isProcessing) return;
+    setIsProcessing(true);
+    markAsRead(id, userId)
+      .then(() => {
+        toast.success("Notification marked as read");
+      })
+      .catch((error) => {
+        console.error("Error marking notification as read:", error);
+        toast.error("Failed to mark notification as read");
+      })
+      .finally(() => {
+        setIsProcessing(false);
+      });
+  };
+  
   // Handle mark all as read
   const handleMarkAllAsRead = () => {
     if (!user?.id || isProcessing) return;
-    markAllAsReadMutation.mutate();
+    setIsProcessing(true);
+    markAllAsRead()
+      .then(() => {
+        toast.success("All notifications marked as read");
+      })
+      .catch((error) => {
+        console.error("Error marking all notifications as read:", error);
+        toast.error("Failed to mark notifications as read");
+      })
+      .finally(() => {
+        setIsProcessing(false);
+      });
   };
 
   // Handle clear all
   const handleClearAll = () => {
     if (!user?.id || isProcessing) return;
-    clearAllMutation.mutate();
+    setIsProcessing(true);
+    clearAll()
+      .then(() => {
+        toast.success("All notifications cleared");
+      })
+      .catch((error) => {
+        console.error("Error clearing notifications:", error);
+        toast.error("Failed to clear notifications");
+      })
+      .finally(() => {
+        setIsProcessing(false);
+        setRefreshTrigger(prev => prev + 1);
+      });
   };
 
   // Filter notifications based on active tab, filters, and category
@@ -227,11 +215,25 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onClose, catego
 
       <div className="flex-1 overflow-auto">
         <NotificationList 
+          notifications={notifications.filter(notification => {
+            // Filter by read status
+            if (activeTab === 'read' && !notification.read) return false;
+            if (activeTab === 'unread' && notification.read) return false;
+            
+            // Filter by type
+            const types = getFilteredNotifications();
+            if (types.length > 0 && !types.includes(notification.type || 'system')) return false;
+            
+            // Filter by category
+            const categories = getCategoryFilterTypes();
+            if (categories.length > 0 && categories[0] !== 'all' && notification.category !== categories[0]) return false;
+            
+            return true;
+          })}
           userId={user?.id} 
-          refreshTrigger={refreshTrigger} 
-          filterStatus={activeTab} 
-          filterTypes={getFilteredNotifications()} 
-          categoryTypes={getCategoryFilterTypes()}
+          onMarkAsRead={handleMarkAsRead}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          isLoading={isLoading}
         />
       </div>
 

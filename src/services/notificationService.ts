@@ -17,37 +17,78 @@ export interface Notification {
   category?: 'announcement' | 'feedback' | 'system' | 'gym' | 'member' | 'staff' | 'trainer' | 'motivation' | 'fitness' | 'nutrition' | 'wellness' | string;
   author?: string;
   tags?: string[];
+  branch_id?: string; // Add branch_id to make notifications branch-specific
 }
 
 export const notificationService = {
   async getNotifications(userId: string, includeFallowUps: boolean = true): Promise<Notification[]> {
-    // Get user role first
+    // Get user profile to get role and branch_id
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, branch_id')
       .eq('id', userId)
       .single();
 
     if (profileError) throw profileError;
     const userRole = userProfile?.role || 'member';
+    const userBranchId = userProfile?.branch_id;
     try {
       // Get system notifications
-      const { data: systemData, error: systemError } = await supabase
+      let notificationsQuery = supabase
         .from('notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
+        
+      // Filter by branch_id if available
+      if (userBranchId) {
+        notificationsQuery = notificationsQuery.or(`branch_id.eq.${userBranchId},branch_id.is.null`);
+      }
+      
+      const { data: systemData, error: systemError } = await notificationsQuery;
 
       if (systemError) throw systemError;
 
-      // Get announcements
-      const { data: announcements, error: announcementError } = await supabase
+      // Get announcements - fetch all that match either the user's role or branch
+      // Using separate queries and combining results to avoid complex filter issues
+      
+      // Get the current time to filter out expired announcements
+      const now = new Date().toISOString();
+      
+      // First query: Get announcements for this user's branch
+      let branchQuery = supabase
         .from('announcements')
-        .select('*')
-        .contains('target_roles', [userId])
-        .order('created_at', { ascending: false });
-
-      if (announcementError) throw announcementError;
+        .select('*, announcement_reads(user_id, read_at)')
+        .order('created_at', { ascending: false })
+        .limit(10); // Limit to 10 most recent messages
+      
+      if (userBranchId) {
+        branchQuery = branchQuery.eq('branch_id', userBranchId);
+      }
+      
+      // Add expiration filter
+      branchQuery = branchQuery.or('expires_at.gt.' + now + ',expires_at.is.null');
+      
+      const { data: branchAnnouncements, error: branchError } = await branchQuery;
+      
+      if (branchError) throw branchError;
+      
+      // Second query: Get global announcements (branch_id is null)
+      const { data: globalAnnouncements, error: globalError } = await supabase
+        .from('announcements')
+        .select('*, announcement_reads(user_id, read_at)')
+        .is('branch_id', null)
+        .order('created_at', { ascending: false })
+        .limit(10)
+        .or('expires_at.gt.' + now + ',expires_at.is.null');
+      
+      if (globalError) throw globalError;
+      
+      // Combine results and remove duplicates
+      const announcements = [...(branchAnnouncements || []), ...(globalAnnouncements || [])];
+      const uniqueAnnouncements = announcements.filter((announcement, index, self) =>
+        index === self.findIndex((a) => a.id === announcement.id)
+      );
 
       // Get feedback
       const { data: feedback, error: feedbackError } = await supabase
@@ -61,17 +102,26 @@ export const notificationService = {
 
 
       // Convert announcements to notifications format
-      const announcementNotifications = (announcements || []).map(announcement => ({
-        id: `announcement-${announcement.id}`,
-        user_id: userId,
-        title: announcement.title,
-        message: announcement.content,
-        type: 'announcement',
-        read: false,
-        created_at: announcement.created_at,
-        category: 'announcement',
-        priority: announcement.priority
-      }));
+      const announcementNotifications = (uniqueAnnouncements || []).map(announcement => {
+        // Check if this announcement has been read by the user
+        const readRecord = announcement.announcement_reads?.find(
+          (record: any) => record.user_id === userId && record.read_at
+        );
+        
+        return {
+          id: `announcement-${announcement.id}`,
+          user_id: userId,
+          title: announcement.title,
+          message: announcement.content,
+          type: 'announcement',
+          read: !!readRecord, // Mark as read if there's a read record
+          created_at: announcement.created_at,
+          category: 'announcement',
+          priority: announcement.priority,
+          branch_id: announcement.branch_id,
+          link: '/announcements'
+        };
+      });
 
       // Convert feedback to notifications format
       const feedbackNotifications = (feedback || []).map(item => ({
@@ -87,12 +137,13 @@ export const notificationService = {
         source: 'feedback'
       }));
 
-      // Get motivational messages
+      // Get motivational messages - limit to recent ones to improve performance
       const { data: motivationalMessages, error: motivationalError } = await supabase
         .from('motivational_messages')
         .select('id, title, content, author, category, tags, created_at')
         .eq('active', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(5); // Limit to 5 most recent messages to reduce payload size
 
       if (motivationalError) throw motivationalError;
 
@@ -273,14 +324,32 @@ export const notificationService = {
     }
   },
   
-  async markAsRead(id: string): Promise<boolean> {
+  async markAsRead(id: string, userId?: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id);
+      // Check if this is an announcement notification (they have a special format: announcement-{id})
+      if (id.startsWith('announcement-') && userId) {
+        const announcementId = id.replace('announcement-', '');
+        
+        // Create or update an announcement read record
+        const { error: announcementError } = await supabase
+          .from('announcement_reads')
+          .upsert({
+            announcement_id: announcementId,
+            user_id: userId,
+            read_at: new Date().toISOString()
+          }, { onConflict: 'announcement_id,user_id' });
+          
+        if (announcementError) throw announcementError;
+      } else {
+        // Regular notification
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      
       return true;
     } catch (error: any) {
       console.error('Error marking notification as read:', error);
@@ -288,15 +357,58 @@ export const notificationService = {
     }
   },
   
+  async clearAll(userId: string): Promise<boolean> {
+    try {
+      // Delete all notifications for this user
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      toast.success('All notifications cleared');
+      return true;
+    } catch (error: any) {
+      console.error('Error clearing notifications:', error);
+      toast.error('Failed to clear notifications');
+      return false;
+    }
+  },
+
   async markAllAsRead(userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      // First, mark system notifications as read
+      const { error: systemError } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('user_id', userId)
         .eq('read', false);
 
-      if (error) throw error;
+      if (systemError) throw systemError;
+      
+      // Then, get all unread announcements
+      const { data: unreadAnnouncements, error: fetchError } = await supabase
+        .from('announcements')
+        .select('id');
+        
+      if (fetchError) throw fetchError;
+      
+      if (unreadAnnouncements && unreadAnnouncements.length > 0) {
+        // Create read records for all announcements
+        const readRecords = unreadAnnouncements.map(announcement => ({
+          announcement_id: announcement.id,
+          user_id: userId,
+          read_at: new Date().toISOString()
+        }));
+        
+        // Insert or update announcement read records
+        const { error: announcementError } = await supabase
+          .from('announcement_reads')
+          .upsert(readRecords, { onConflict: 'announcement_id,user_id' });
+          
+        if (announcementError) throw announcementError;
+      }
+      
       toast.success('All notifications marked as read');
       return true;
     } catch (error: any) {
@@ -324,22 +436,10 @@ export const notificationService = {
           type === 'member' || 
           title.includes('member') || 
           message.includes('member') ||
-          title.includes('payment') ||
-          message.includes('payment') ||
-          title.includes('check-in') ||
-          message.includes('check-in')
+          title.includes('membership') || 
+          message.includes('membership')
         ) {
           category = 'member';
-        }
-        // Check for staff-related content
-        else if (
-          type === 'staff' || 
-          title.includes('staff') || 
-          message.includes('staff') ||
-          title.includes('task') ||
-          message.includes('task')
-        ) {
-          category = 'staff';
         }
         // Check for trainer-related content
         else if (
@@ -350,6 +450,27 @@ export const notificationService = {
           message.includes('session')
         ) {
           category = 'trainer';
+        }
+        // Check for staff-related content
+        else if (
+          type === 'staff' || 
+          title.includes('staff') || 
+          message.includes('staff')
+        ) {
+          category = 'staff';
+        }
+      }
+      
+      // If branch_id is not provided but user_id is, get the user's branch_id
+      if (!notification.branch_id && notification.user_id) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('branch_id')
+          .eq('id', notification.user_id)
+          .single();
+          
+        if (userProfile?.branch_id) {
+          notification.branch_id = userProfile.branch_id;
         }
       }
       
@@ -365,6 +486,7 @@ export const notificationService = {
           link: notification.link,
           source: notification.source || 'system',
           related_id: notification.related_id,
+          branch_id: notification.branch_id,
           category: category
         })
         .select()

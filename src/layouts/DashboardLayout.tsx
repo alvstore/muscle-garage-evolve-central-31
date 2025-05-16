@@ -16,9 +16,11 @@ const DashboardLayout = () => {
   }
   
   return (
-    <div className="flex h-screen bg-[hsl(var(--body-bg))]">
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="flex h-screen bg-[hsl(var(--body-bg))]" data-dashboard-layout="root">
+      {/* Sidebar - Wrap in a div without aria-hidden */}
+      <div className="sidebar-container">
+        <Sidebar />
+      </div>
       
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden transition-all duration-300 ml-0 md:ml-64">

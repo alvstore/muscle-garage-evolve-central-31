@@ -138,7 +138,7 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
                 <strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled
                 {gymClass.enrolled >= gymClass.capacity && " (Class Full)"}
               </p>
-              <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer}</p>
+              <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer || 'Unassigned'}</p>
             </div>
           </div>
           

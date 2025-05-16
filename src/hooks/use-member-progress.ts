@@ -72,28 +72,48 @@ export const useMemberProgress = (memberId: string) => {
 
     fetchMemberProgress();
 
-    // Real-time subscription with proper channel name
-    const channel = supabase
-      .channel(`member_progress_changes_${memberId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'member_progress',
-          filter: `member_id=eq.${memberId}`
-        },
-        (payload) => {
-          console.log('Real-time update:', payload);
-          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-            setProgress(payload.new as MemberProgress);
-          }
-        }
-      )
-      .subscribe();
+    // Real-time subscription with proper channel name and cleanup
+    let channel: any = null;
+    
+    // Only create a channel if we have a valid memberId and user
+    if (memberId && user?.id) {
+      try {
+        channel = supabase
+          .channel(`member_progress_changes_${memberId}_${Date.now()}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'member_progress',
+              filter: `member_id=eq.${memberId}`
+            },
+            (payload) => {
+              console.log('Real-time update:', payload);
+              if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                setProgress(payload.new as MemberProgress);
+              }
+            }
+          )
+          .subscribe((status: any) => {
+            if (status === 'SUBSCRIBED') {
+              console.log(`Subscribed to member_progress changes for ${memberId}`);
+            }
+          });
+      } catch (err) {
+        console.error('Error setting up realtime subscription:', err);
+      }
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      // Properly clean up the channel if it exists
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (err) {
+          console.error('Error removing channel:', err);
+        }
+      }
     };
   }, [memberId, user, currentBranch]);
 
