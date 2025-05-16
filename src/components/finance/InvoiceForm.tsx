@@ -40,15 +40,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     form.handleSubmit(onSubmit)();
   };
 
-  // Create wrapper handlers that transform the event before calling the original handlers
+  // Create a wrapper for the onChange handler that extracts values from input events
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    handleChange(name, value);
+    handleInputChange(name, value);
   };
 
   const onTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    handleChange(name, value);
+    handleTextAreaChange(name, value);
   };
 
   const onStatusChange = (status: string) => {

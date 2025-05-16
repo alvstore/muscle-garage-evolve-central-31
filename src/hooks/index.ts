@@ -10,6 +10,7 @@ export * from './use-motivational-messages';
 export * from './use-toast';
 export * from './use-company';
 export * from './use-leads';
+export * from './use-permissions';
 
 // Note: Since these modules don't have default exports, we'll use their named exports
 // instead of trying to re-export non-existent default exports

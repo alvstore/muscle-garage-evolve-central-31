@@ -1,6 +1,6 @@
 
 import { UserRole } from '@/types';
-import { Permission } from '../use-permissions';
+import { Permission } from '@/hooks/use-permissions';
 
 // Define permissions for each role
 export const rolePermissions: Record<string, Permission[]> = {
@@ -11,9 +11,9 @@ export const rolePermissions: Record<string, Permission[]> = {
     'view_all_attendance',
     'manage_members',
     'member_view_plans',
-    'view_classes',
+    'view:classes',
     'trainer_view_classes',
-    'view_staff',
+    'view:staff',
     'view_all_trainers',
     'access_crm', 
     'access_marketing',
@@ -51,8 +51,8 @@ export const rolePermissions: Record<string, Permission[]> = {
     'access_dashboards',
     'manage_members',
     'member_view_plans',
-    'view_classes',
-    'view_staff',
+    'view:classes',
+    'view:staff',
     'access_crm',
     'access_marketing',
     'access_inventory',
@@ -71,7 +71,7 @@ export const rolePermissions: Record<string, Permission[]> = {
   ],
   trainer: [
     'access_dashboards',
-    'view_classes',
+    'view:classes',
     'trainer_view_classes',
     'manage_fitness_data',
     'access_communication',

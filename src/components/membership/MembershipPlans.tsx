@@ -1,24 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { PlusCircle, Trash, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { membershipService } from '@/services/membershipService';
-import { MembershipPlan } from '@/types';
-import { MembershipPlanCard } from './MembershipPlanCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import MembershipPlanCard from './MembershipPlanCard';
 import MembershipPlanForm from './MembershipPlanForm';
-import { PlusCircle, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { EmptyState } from '@/components/ui/empty-state';
+import { membershipService } from '@/services';
 import { toast } from 'sonner';
+import { MembershipPlan } from '@/types';
+import { useDisclosure } from '@/hooks/use-disclosure';
+import EmptyState from '@/components/ui/empty-state';
 
-const MembershipPlans: React.FC = () => {
+const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
 
   useEffect(() => {
     fetchMembershipPlans();
@@ -27,80 +28,68 @@ const MembershipPlans: React.FC = () => {
   const fetchMembershipPlans = async () => {
     setIsLoading(true);
     try {
-      const fetchedPlans = await membershipService.getMembershipPlans();
-      setPlans(fetchedPlans);
+      const data = await membershipService.getMembershipPlans();
+      setPlans(data || []);
     } catch (error) {
       console.error('Failed to fetch membership plans:', error);
-      toast.error('Failed to load membership plans');
+      toast.error('Failed to fetch membership plans');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredPlans = plans.filter(plan => 
-    plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleCreateClick = () => {
-    setEditingPlan(null);
-    setIsDialogOpen(true);
+  const handleCreatePlan = () => {
+    setSelectedPlan(null);
+    setDialogMode('create');
+    onOpen();
   };
 
-  const handleEditClick = (plan: MembershipPlan) => {
-    setEditingPlan(plan);
-    setIsDialogOpen(true);
+  const handleEditPlan = (plan: MembershipPlan) => {
+    setSelectedPlan(plan);
+    setDialogMode('edit');
+    onOpen();
   };
 
-  const handleDeleteClick = async (planId: string) => {
-    if (window.confirm('Are you sure you want to delete this membership plan?')) {
-      try {
-        // For now, let's assume the method exists
-        await membershipService.deleteMembershipPlan(planId);
-        toast.success('Membership plan deleted successfully');
-        
-        // Update the local state to reflect the deletion
-        setPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId));
-      } catch (error) {
-        console.error('Error deleting membership plan:', error);
-        toast.error('Failed to delete membership plan');
-      }
+  const handleDeletePlan = (plan: MembershipPlan) => {
+    setSelectedPlan(plan);
+    onDeleteOpen();
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedPlan) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Use the correct method signature that matches the service
+      await membershipService.deleteMembershipPlan(selectedPlan.id);
+      toast.success('Membership plan deleted successfully');
+      fetchMembershipPlans();
+      onDeleteClose();
+    } catch (error) {
+      console.error('Failed to delete membership plan:', error);
+      toast.error('Failed to delete membership plan');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingPlan(null);
-  };
-
-  const handleSavePlan = async (plan: MembershipPlan) => {
+  const handleSavePlan = async (planData: MembershipPlan) => {
     setIsSubmitting(true);
     try {
-      let savedPlan;
-      
-      if (editingPlan) {
-        // For now, let's assume the method exists
-        savedPlan = await membershipService.updateMembershipPlan(editingPlan.id as string, plan);
-        
-        // Update the plan in the local state
-        setPlans(prevPlans => 
-          prevPlans.map(p => p.id === editingPlan.id ? savedPlan : p)
-        );
-        
+      if (dialogMode === 'edit' && selectedPlan) {
+        // Use the correct method signature that matches the service
+        await membershipService.updateMembershipPlan(selectedPlan.id, planData);
         toast.success('Membership plan updated successfully');
       } else {
-        // For now, let's assume the method exists
-        savedPlan = await membershipService.createMembershipPlan(plan);
-        
-        // Add the new plan to the local state
-        setPlans(prevPlans => [...prevPlans, savedPlan]);
-        
+        // Use the correct method signature that matches the service
+        await membershipService.createMembershipPlan(planData);
         toast.success('Membership plan created successfully');
       }
       
-      handleCloseDialog();
+      fetchMembershipPlans();
+      onClose();
     } catch (error) {
-      console.error('Error saving membership plan:', error);
+      console.error('Failed to save membership plan:', error);
       toast.error('Failed to save membership plan');
     } finally {
       setIsSubmitting(false);
@@ -109,66 +98,85 @@ const MembershipPlans: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <EmptyState
+        title="No Membership Plans"
+        description="You haven't created any membership plans yet. Create your first plan to start enrolling members."
+        icon={<PlusCircle className="w-10 h-10" />}
+        actionLabel="Create Membership Plan"
+        onAction={handleCreatePlan}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Membership Plans</h1>
-        <Button onClick={handleCreateClick}>
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <div>
+          <h2 className="text-2xl font-bold">Membership Plans</h2>
+          <p className="text-muted-foreground">Manage your gym's membership plans</p>
+        </div>
+        <Button onClick={handleCreatePlan}>
+          <PlusCircle className="h-4 w-4 mr-2" />
           Create Plan
         </Button>
       </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Search membership plans..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {plans.map((plan) => (
+          <MembershipPlanCard
+            key={plan.id}
+            plan={plan}
+            onEdit={() => handleEditPlan(plan)}
+            onDelete={() => handleDeletePlan(plan)}
+          />
+        ))}
       </div>
 
-      {filteredPlans.length === 0 ? (
-        <EmptyState
-          title="No membership plans found"
-          description="Create your first membership plan to get started"
-          icon={<PlusCircle className="h-12 w-12" />}
-          onAction={handleCreateClick}
-          actionLabel="Create Plan"
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlans.map((plan) => (
-            <MembershipPlanCard
-              key={plan.id}
-              plan={plan}
-              onEdit={() => handleEditClick(plan)}
-              onDelete={() => handleDeleteClick(plan.id as string)}
-            />
-          ))}
-        </div>
-      )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? 'Edit Membership Plan' : 'Create Membership Plan'}
-            </DialogTitle>
+            <DialogTitle>{dialogMode === 'create' ? 'Create Membership Plan' : 'Edit Membership Plan'}</DialogTitle>
+            <DialogDescription>
+              {dialogMode === 'create' 
+                ? 'Create a new membership plan for your gym' 
+                : 'Update the details of your membership plan'}
+            </DialogDescription>
           </DialogHeader>
           <MembershipPlanForm
-            plan={editingPlan || undefined}
+            plan={selectedPlan}
             onSave={handleSavePlan}
-            onCancel={handleCloseDialog}
+            onCancel={onClose}
             isSubmitting={isSubmitting}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteOpen} onOpenChange={(open) => !open && onDeleteClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Membership Plan</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the "{selectedPlan?.name}" membership plan? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="outline" onClick={onDeleteClose} disabled={isSubmitting}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete} 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Deleting...' : 'Delete Plan'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

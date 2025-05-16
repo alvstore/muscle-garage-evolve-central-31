@@ -1,6 +1,7 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '../use-auth';
-import { Permission } from '../use-permissions';
+import { Permission } from '@/hooks/use-permissions';
 import { hasPermission, isUserSystemAdmin, isUserBranchAdmin } from './use-permission-utils';
 import { UserRole } from '@/types';
 
@@ -60,5 +61,5 @@ export interface User {
   email?: string;
   role?: string;
   branch_id?: string;
-  isBranchManager?: boolean; // Add this property to match usage
+  isBranchManager?: boolean;
 }

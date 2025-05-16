@@ -123,6 +123,8 @@ export interface Class {
   updated_at?: string;
 }
 
+export type MembershipPlanStatus = 'active' | 'inactive' | 'archived';
+
 export interface MembershipPlan {
   id: string;
   name: string;
@@ -133,6 +135,7 @@ export interface MembershipPlan {
   benefits?: any[];
   is_active?: boolean;
   status?: string;
+  memberCount?: number;
   // For backward compatibility
   durationDays?: number;
   isActive?: boolean;

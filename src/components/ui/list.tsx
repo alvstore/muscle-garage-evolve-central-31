@@ -22,6 +22,7 @@ export const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(({ classN
 
 ListItem.displayName = "ListItem";
 
+// Fix the ListIcon type to be specifically for HTML span elements
 export const ListIcon: React.FC<React.HTMLAttributes<HTMLSpanElement>> = ({ className, ...props }) => {
   return <span className={`mr-2 inline-block ${className || ''}`} {...props} />;
 };

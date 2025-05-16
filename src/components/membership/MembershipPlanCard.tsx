@@ -1,137 +1,94 @@
+
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, Edit, Trash, Users, Calendar, DollarSign } from 'lucide-react';
+import { Edit, Trash, Users, Calendar, Check } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/utils/stringUtils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MembershipPlan } from '@/types/member';
+import { Button } from '@/components/ui/button';
+import { MembershipPlan } from '@/types';
 
 interface MembershipPlanCardProps {
   plan: MembershipPlan;
-  onEdit?: (plan: MembershipPlan) => void;
-  onDelete?: (plan: MembershipPlan) => void;
-  showActions?: boolean;
-  isPopular?: boolean;
+  onEdit: (plan: MembershipPlan) => void;
+  onDelete: (plan: MembershipPlan) => void;
 }
 
-export const MembershipPlanCard = ({
-  plan,
-  onEdit,
-  onDelete,
-  showActions = true,
-  isPopular = false,
-}: MembershipPlanCardProps) => {
-  const {
-    name,
-    description,
-    price = 0,
-    duration_days,
-    durationDays = duration_days || 30,
-    features = [],
-    benefits = [],
-    is_active,
-    isActive = is_active !== false,
-    memberCount = 0,
-    status = 'active'
-  } = plan;
+const MembershipPlanCard: React.FC<MembershipPlanCardProps> = ({ plan, onEdit, onDelete }) => {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', { 
+      style: 'currency', 
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
+  };
   
-  // Use benefits if available, otherwise use features
-  const planFeatures = benefits.length > 0 ? benefits : features;
+  const formatDuration = (days: number) => {
+    if (days % 30 === 0) {
+      const months = days / 30;
+      return `${months} ${months === 1 ? 'month' : 'months'}`;
+    }
+    if (days % 7 === 0) {
+      const weeks = days / 7;
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
+    }
+    return `${days} days`;
+  };
 
   return (
-    <Card className={cn(
-      "flex flex-col h-full transition-all duration-200 hover:shadow-lg",
-      isPopular && "border-primary shadow-md scale-105"
-    )}>
-      <CardHeader className="space-y-1">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold">{name}</CardTitle>
-          {isPopular && (
-            <Badge variant="default" className="bg-primary">
-              Popular
-            </Badge>
-          )}
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl">{plan.name}</CardTitle>
+            <div className="mt-1 text-2xl font-bold">{formatPrice(plan.price)}</div>
+          </div>
+          <Badge variant={plan.is_active ? 'default' : 'outline'}>
+            {plan.is_active ? 'Active' : 'Inactive'}
+          </Badge>
         </div>
-        {description && (
-          <CardDescription className="text-sm text-muted-foreground">
-            {description}
-          </CardDescription>
-        )}
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="mb-6">
-          <div className="flex items-baseline gap-x-2">
-            <span className="text-3xl font-bold">{formatCurrency(price)}</span>
-            <span className="text-muted-foreground">
-              / {durationDays} days
-            </span>
-          </div>
+      <CardContent className="flex-grow py-2">
+        {plan.description && (
+          <p className="text-muted-foreground mb-4">{plan.description}</p>
+        )}
+        
+        <div className="flex items-center text-sm text-muted-foreground mb-3">
+          <Calendar className="h-4 w-4 mr-2" />
+          <span>Duration: {formatDuration(plan.duration_days)}</span>
         </div>
-
-        <div className="space-y-4">
-          {/* Key Statistics */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{durationDays} days</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{memberCount} members</span>
-            </div>
+        
+        {/* Only show member count if it's available */}
+        {typeof plan.memberCount !== 'undefined' && (
+          <div className="flex items-center text-sm text-muted-foreground mb-4">
+            <Users className="h-4 w-4 mr-2" />
+            <span>{plan.memberCount} active members</span>
           </div>
-
-          {/* Features List */}
-          <div className="space-y-2">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <Check className="h-4 w-4 text-primary mt-1" />
-                <span className="text-sm">{feature}</span>
-              </div>
-            ))}
+        )}
+        
+        {plan.features && plan.features.length > 0 && (
+          <div className="space-y-1 mt-4">
+            <p className="text-sm font-medium">Features:</p>
+            <ul className="space-y-1">
+              {plan.features.map((feature, index) => (
+                <li key={index} className="flex items-center text-sm">
+                  <Check className="h-4 w-4 mr-2 text-green-500" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        )}
       </CardContent>
-      
-      {showActions && (
-        <CardFooter className="flex justify-between pt-6">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant={isActive ? "success" : "secondary"}>
-                  {isActive ? "Active" : "Inactive"}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isActive ? "Plan is currently active" : "Plan is not active"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <div className="flex gap-2">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => onEdit(plan)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => onDelete(plan)}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </CardFooter>
-      )}
+      <CardFooter className="pt-2 border-t flex justify-between">
+        <Button variant="outline" size="sm" onClick={() => onEdit(plan)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => onDelete(plan)}>
+          <Trash className="h-4 w-4 mr-2" />
+          Delete
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

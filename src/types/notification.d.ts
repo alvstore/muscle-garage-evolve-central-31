@@ -1,4 +1,10 @@
 
+// This file defines the types used for notifications
+
+// Re-export types from other files for compatibility
+import { Invoice, InvoiceStatus } from './finance';
+export { Invoice, InvoiceStatus };
+
 export interface Notification {
   id: string;
   title: string;
@@ -109,7 +115,7 @@ export const adaptAnnouncementFromDB = (dbAnnouncement: any): Announcement => {
   };
 };
 
-// You should also add the other adapter functions that are being imported
+// Adapter functions that are being imported
 export const adaptFeedbackFromDB = (dbFeedback: any): Feedback => {
   return {
     id: dbFeedback.id,
@@ -133,16 +139,23 @@ export const adaptReminderRuleFromDB = (dbRule: any): ReminderRule => {
     name: dbRule.name || dbRule.title,
     description: dbRule.description,
     triggerType: dbRule.trigger_type,
+    trigger_type: dbRule.trigger_type,
     triggerValue: dbRule.trigger_value,
+    trigger_value: dbRule.trigger_value,
     message: dbRule.message,
     notificationChannel: dbRule.notification_channel,
+    notification_channel: dbRule.notification_channel,
     conditions: dbRule.conditions || {},
     isActive: dbRule.is_active,
-    active: dbRule.is_active, // For backward compatibility
+    active: dbRule.is_active,
+    is_active: dbRule.is_active, 
     targetRoles: dbRule.target_roles || [],
+    target_roles: dbRule.target_roles || [],
     sendVia: dbRule.send_via || [],
+    send_via: dbRule.send_via || [],
     channels: dbRule.channels || [],
-    targetType: dbRule.target_type || 'all'
+    targetType: dbRule.target_type || 'all',
+    target_type: dbRule.target_type || 'all'
   };
 };
 
@@ -160,7 +173,6 @@ export const adaptMotivationalMessageFromDB = (dbMessage: any): MotivationalMess
   };
 };
 
-// You'll also need to define the Feedback and MotivationalMessage interfaces
 export interface Feedback {
   id: string;
   title: string;
@@ -169,7 +181,7 @@ export interface Feedback {
   member_id?: string;
   member_name?: string;
   branch_id?: string;
-  type: string;
+  type: FeedbackType;
   anonymous: boolean;
   created_at?: string;
   related_id?: string;
@@ -203,31 +215,7 @@ export interface BackupLogEntry {
   updated_at: string;
 }
 
-// Updated Invoice interface to match finance.ts
-export interface Invoice {
-  id: string;
-  member_id?: string;
-  amount: number;
-  status: InvoiceStatus;
-  due_date: string;
-  issued_date?: string;
-  paid_date?: string;
-  payment_method?: string;
-  razorpay_payment_id?: string;
-  razorpay_order_id?: string;
-  branch_id?: string;
-  items?: any[];
-  description?: string;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  membership_plan_id?: string;
-  member_name?: string;
-}
-
-// Add missing types for enums
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void' | 'sent';
+// Enums
 export type FeedbackType = 'general' | 'trainer' | 'facility' | 'class' | 'equipment';
 export type MotivationalCategory = 'fitness' | 'nutrition' | 'mindfulness' | 'recovery' | 'general' | 'motivation' | 'wellness';
 export type NotificationChannel = 'email' | 'sms' | 'whatsapp' | 'app' | 'push';
