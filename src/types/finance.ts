@@ -1,86 +1,69 @@
 
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'sent' | 'void';
-export type PaymentMethod = 'cash' | 'card' | 'online' | 'bank_transfer' | 'wallet' | 'other' | 'razorpay' | 'credit_card';
-export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
-export type TransactionType = 'income' | 'expense';
-export type RecurringPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-
-export interface Invoice {
-  id: string;
-  member_id: string;
-  memberName?: string; // Derived field for UI
-  amount: number;
-  description?: string;
-  status: InvoiceStatus;
-  due_date: string;
-  dueDate?: string; // For backward compatibility
-  issued_date?: string;
-  issuedDate?: string; // For backward compatibility
-  paid_date?: string;
-  payment_method?: PaymentMethod;
-  items: InvoiceItem[];
-  razorpay_order_id?: string;
-  razorpay_payment_id?: string;
-  branch_id?: string;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  // Add for backward compatibility
-  memberId?: string;
-  membership_plan_id?: string;
-  membershipPlanId?: string;
-}
+// Defining necessary types for finance-related components
+export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'partially_paid' | 'void';
 
 export interface InvoiceItem {
-  id?: string;
+  id: string;
   name: string;
   description?: string;
   quantity: number;
-  unitPrice: number;
+  price: number;
+  tax_rate?: number;
+  tax_amount?: number;
   discount?: number;
+  total: number;
 }
+
+export interface Invoice {
+  id: string;
+  member_id?: string;
+  memberName?: string;
+  amount: number;
+  description: string;
+  status: InvoiceStatus;
+  due_date: string;
+  issued_date?: string;
+  paid_date?: string;
+  payment_method?: PaymentMethod;
+  notes?: string;
+  items: InvoiceItem[];
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'check' | 'other';
+
+export type PaymentStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 
 export interface Transaction {
   id: string;
   type: TransactionType;
   amount: number;
   description?: string;
-  category_id?: string;
-  transaction_date: string;
   payment_method?: PaymentMethod;
-  reference_id?: string;
+  transaction_date: string;
+  category_id?: string;
   branch_id?: string;
   recorded_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  // Adding for backward compatibility
+  reference_id?: string;
   transaction_id?: string;
-  recurring?: boolean; // Added for compatibility
 }
 
-export interface Payment {
+export type TransactionType = 'income' | 'expense' | 'refund';
+
+export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface FinancialTransaction {
   id: string;
   amount: number;
-  payment_date: string;
-  date?: string; // For backward compatibility
-  payment_method: PaymentMethod;
-  status: PaymentStatus;
-  member_id?: string;
-  membership_id?: string;
-  staff_id?: string;
-  transaction_id?: string;
-  razorpay_order_id?: string;
-  razorpay_payment_id?: string;
+  type: string;
+  category: string;
+  date: string;
+  description: string;
+  payment_method: string;
+  status: string;
+  reference_id?: string;
+  created_by?: string;
   notes?: string;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  contactInfo?: string; // Adding this to fix the errors
-  // Adding for backward compatibility
-  member_name?: string;
-  membership_plan?: string;
 }
-
-// Alias for Transaction to fix MemberTransactionHistory import issue
-export type FinancialTransaction = Transaction;

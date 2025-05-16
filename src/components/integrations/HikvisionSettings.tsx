@@ -1,135 +1,155 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useBranch } from '@/hooks/use-branch';
+import { integrationsService } from '@/services/integrationsService';
+import { HikvisionSettings as HikvisionSettingsType } from '@/types';
 import { toast } from 'sonner';
-import { useAutomations } from '@/hooks/use-automations';
 
-interface HikvisionSettingsForm {
-  api_url: string;
-  app_key: string;
-  app_secret: string;
-  is_active: boolean;
-}
-
-const HikvisionSettings = () => {
-  const [formData, setFormData] = useState<HikvisionSettingsForm>({
-    api_url: 'https://open.hikvision.com',
+const HikvisionSettings: React.FC = () => {
+  const { currentBranch } = useBranch();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [settings, setSettings] = useState<HikvisionSettingsType>({
+    id: '',
     app_key: '',
     app_secret: '',
-    is_active: false
+    api_url: '',
+    branch_id: currentBranch?.id || '',
+    is_active: false,
+    devices: [],
+    created_at: '',
+    updated_at: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const { getIntegrationStatus } = useAutomations();
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setIsLoading(true);
-        const status = await getIntegrationStatus('hikvision');
-        const settings = status?.config || {};
-        if (settings) {
-          setFormData({
-            api_url: settings.api_url || 'https://open.hikvision.com',
-            app_key: settings.app_key || '',
-            app_secret: settings.app_secret || '',
-            is_active: settings.is_active || false
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching Hikvision settings:', error);
-        toast.error('Failed to load Hikvision settings');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (currentBranch?.id) {
+      loadSettings();
+    }
+  }, [currentBranch?.id]);
 
-    fetchSettings();
-  }, [getIntegrationStatus]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, is_active: checked }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const loadSettings = async () => {
     try {
-      const { updateIntegrationStatus } = useAutomations();
-      await updateIntegrationStatus('hikvision', formData.is_active ? 'configured' : 'not-configured', formData);
-      toast.success('Hikvision settings saved successfully!');
+      setIsLoading(true);
+      const status = await integrationsService.getIntegrationStatus('hikvision');
+      if (status && status.config) {
+        setSettings({
+          ...settings,
+          api_url: status.config.api_url || '',
+          app_key: status.config.app_key || '',
+          app_secret: status.config.app_secret || '',
+          is_active: status.config.is_active || false,
+        });
+      }
     } catch (error) {
-      console.error('Error saving Hikvision settings:', error);
-      toast.error('Failed to save Hikvision settings');
+      console.error('Error loading Hikvision settings:', error);
+      toast.error('Failed to load Hikvision settings');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSaveSettings = async () => {
+    try {
+      setIsSaving(true);
+      await integrationsService.updateIntegrationStatus('hikvision', settings.is_active ? 'active' : 'inactive', {
+        api_url: settings.api_url,
+        app_key: settings.app_key,
+        app_secret: settings.app_secret,
+        is_active: settings.is_active
+      });
+      
+      toast.success('Hikvision settings updated successfully');
+    } catch (error) {
+      console.error('Error saving Hikvision settings:', error);
+      toast.error('Failed to save Hikvision settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChange = (field: keyof HikvisionSettingsType, value: any) => {
+    setSettings({
+      ...settings,
+      [field]: value
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Hikvision Integration</CardTitle>
-        <CardDescription>Configure your Hikvision device settings here.</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Hikvision Integration</CardTitle>
+            <CardDescription>Connect to Hikvision devices for access control</CardDescription>
+          </div>
+          <Badge variant={settings.is_active ? "outline" : "secondary"}>
+            {settings.is_active ? 'Active' : 'Inactive'}
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="api_url">API URL</Label>
-            <Input
-              type="text"
-              id="api_url"
-              name="api_url"
-              value={formData.api_url}
-              onChange={handleChange}
-              placeholder="https://open.hikvision.com"
-              disabled={isLoading}
+      <CardContent>
+        <div className="space-y-6">
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="hikvision-active" 
+              checked={settings.is_active}
+              onCheckedChange={(checked) => handleChange('is_active', checked)}
+              disabled={isLoading || isSaving}
             />
+            <Label htmlFor="hikvision-active">Enable Hikvision Integration</Label>
           </div>
-          <div>
-            <Label htmlFor="app_key">App Key</Label>
-            <Input
-              type="text"
-              id="app_key"
-              name="app_key"
-              value={formData.app_key}
-              onChange={handleChange}
-              placeholder="Your Hikvision App Key"
-              disabled={isLoading}
-            />
+
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="api-url">API URL</Label>
+              <Input 
+                id="api-url" 
+                value={settings.api_url || ''}
+                onChange={(e) => handleChange('api_url', e.target.value)}
+                placeholder="https://api.hikvisionpartner.com/api" 
+                disabled={isLoading || isSaving}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="app-key">App Key</Label>
+              <Input 
+                id="app-key" 
+                value={settings.app_key || ''}
+                onChange={(e) => handleChange('app_key', e.target.value)}
+                placeholder="Enter your App Key"
+                disabled={isLoading || isSaving}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="app-secret">App Secret</Label>
+              <Input 
+                id="app-secret" 
+                type="password"
+                value={settings.app_secret || ''}
+                onChange={(e) => handleChange('app_secret', e.target.value)}
+                placeholder="Enter your App Secret"
+                disabled={isLoading || isSaving}
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="app_secret">App Secret</Label>
-            <Input
-              type="text"
-              id="app_secret"
-              name="app_secret"
-              value={formData.app_secret}
-              onChange={handleChange}
-              placeholder="Your Hikvision App Secret"
-              disabled={isLoading}
-            />
+
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSaveSettings} 
+              disabled={isLoading || isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save Settings'}
+            </Button>
           </div>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="is_active">Enable Integration</Label>
-            <Switch
-              id="is_active"
-              checked={formData.is_active}
-              onCheckedChange={handleSwitchChange}
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

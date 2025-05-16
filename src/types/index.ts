@@ -1,4 +1,3 @@
-
 // Re-export all types for easy importing
 import { Branch } from './branch';
 import { User, UserRole } from './user';
@@ -136,15 +135,15 @@ export interface FileOptions {
 }
 
 export interface HikvisionSettings {
-  id?: string;
+  id: string;
   app_key: string;
   app_secret: string;
   api_url: string;
   branch_id: string;
   is_active: boolean;
   devices: any[];
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface HikvisionCredentials {

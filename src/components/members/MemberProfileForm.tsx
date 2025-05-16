@@ -1,313 +1,521 @@
-import { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import *muiPhoneNumber from 'material-ui-phone-number';
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Member } from "@/types";
-import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from 'date-fns';
+import { DatePicker } from "@/components/ui/date-picker";
+import { countries } from 'countries-list';
+import { Country, State } from 'country-state-city';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+import { PopoverClose } from "@radix-ui/react-popover";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/components/ui/use-toast";
+import { Member } from '@/types';
+import { membersService } from '@/services/membersService';
+import { TrainerSelect } from './TrainerSelect';
+
+const phoneRegExp = new RegExp(
+  /^\s*(?:\+?(\d+))[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/
+);
+
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Invalid email address.",
+  }),
+  phone: z.string().regex(phoneRegExp, {
+    message: "Invalid phone number.",
+  }),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip_code: z.string().optional(),
+  country: z.string().optional(),
+  gender: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  id_type: z.string().optional(),
+  id_number: z.string().optional(),
+  membership_id: z.string().optional(),
+  membership_status: z.string().optional(),
+  membership_start_date: z.string().optional(),
+  membership_end_date: z.string().optional(),
+  trainer_id: z.string().optional(),
+  goal: z.string().optional(),
+  occupation: z.string().optional(),
+  blood_group: z.string().optional(),
+});
 
 interface MemberProfileFormProps {
-  member: Member;
-  onSave: (updatedMember: Member) => void;
+  member: Member | null;
+  onSubmit: (values: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-const MemberProfileForm = ({ member, onSave, onCancel }: MemberProfileFormProps) => {
-  const { user } = useAuth();
-  const isMember = user?.role === 'member';
-  
-  const [formData, setFormData] = useState<Member & {
-    address?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    country?: string;
-  }>({
-    ...member,
-    address: member.address || '',
-    city: member.city || '',
-    state: member.state || '',
-    zipCode: member.zipCode || '',
-    country: member.country || 'India',
+const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ 
+  member, 
+  onSubmit, 
+  onCancel, 
+  isSubmitting = false 
+}) => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState<Member>({
+    id: member?.id || '',
+    name: member?.name || '',
+    email: member?.email || '',
+    phone: member?.phone || '',
+    address: member?.address || '',
+    city: member?.city || '',
+    state: member?.state || '',
+    zip_code: member?.zip_code || '',
+    country: member?.country || '',
+    gender: member?.gender || '',
+    date_of_birth: member?.date_of_birth || '',
+    id_type: member?.id_type || '',
+    id_number: member?.id_number || '',
+    membership_id: member?.membership_id || '',
+    membership_status: member?.membership_status || '',
+    membership_start_date: member?.membership_start_date || '',
+    membership_end_date: member?.membership_end_date || '',
+    trainer_id: member?.trainer_id || '',
+    goal: member?.goal || '',
+    occupation: member?.occupation || '',
+    blood_group: member?.blood_group || '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(member.avatar);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: member?.name || "",
+      email: member?.email || "",
+      phone: member?.phone || "",
+      address: member?.address || "",
+      city: member?.city || "",
+      state: member?.state || "",
+      zip_code: member?.zip_code || "",
+      country: member?.country || "",
+      gender: member?.gender || "",
+      date_of_birth: member?.date_of_birth || "",
+      id_type: member?.id_type || "",
+      id_number: member?.id_number || "",
+      membership_id: member?.membership_id || "",
+      membership_status: member?.membership_status || "",
+      membership_start_date: member?.membership_start_date || "",
+      membership_end_date: member?.membership_end_date || "",
+      trainer_id: member?.trainer_id || "",
+      goal: member?.goal || "",
+      occupation: member?.occupation || "",
+      blood_group: member?.blood_group || "",
+    },
+  });
+
+  const updateFormData = (key: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSubmit({
+      ...values,
+      id: formData.id,
+      address: values.address || '',
+      city: values.city || '',
+      state: values.state || '',
+      zip_code: values.zip_code || '',
+      country: values.country || '',
+      gender: values.gender || '',
+      date_of_birth: values.date_of_birth || '',
+      id_type: values.id_type || '',
+      id_number: values.id_number || '',
+      membership_id: values.membership_id || '',
+      membership_status: values.membership_status || '',
+      membership_start_date: values.membership_start_date || '',
+      membership_end_date: values.membership_end_date || '',
+      trainer_id: values.trainer_id || '',
+      goal: values.goal || '',
+      occupation: values.occupation || '',
+      blood_group: values.blood_group || '',
+    });
   };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedMember = {
-        ...member, // Keep original properties
-        // Only update editable fields
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        country: formData.country,
-        avatar: avatarPreview
-      };
-      onSave(updatedMember as Member);
-      toast.success("Member profile updated successfully");
-      setIsSubmitting(false);
-    }, 1000);
-  };
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Edit Member Profile</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
-          {/* Profile Photo */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarPreview} alt={member.name} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {getInitials(member.name)}
-                </AvatarFallback>
-              </Avatar>
-              <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-1 bg-primary text-white rounded-full cursor-pointer">
-                <Camera className="h-4 w-4" />
-                <input 
-                  id="avatar-upload" 
-                  type="file" 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </label>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Click the camera icon to change profile photo
-            </div>
+    <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <div className="grid gap-4">
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">Personal Information</h3>
+          <p className="text-sm text-muted-foreground">Update your personal details</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="johndoe@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="+16479304837" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Gender</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a gender" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="date_of_birth"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Date of birth</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[240px] pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date?.toISOString())}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+
+      {/* Address Section */}
+      <div className="grid gap-4 mt-8">
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">Address</h3>
+          <p className="text-sm text-muted-foreground">Update your address details</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="123 Main St" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>City</FormLabel>
+                <FormControl>
+                  <Input placeholder="New York" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="state"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>State</FormLabel>
+                <FormControl>
+                  <Input placeholder="NY" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="zip_code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Zip Code</FormLabel>
+                <FormControl>
+                  <Input placeholder="10001" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="country"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Country</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="max-h-96 overflow-y-auto">
+                    {Object.keys(countries).map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {countries[key].name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+      
+      {/* Membership Section */}
+      <div className="grid gap-4 mt-8">
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">Membership Details</h3>
+          <p className="text-sm text-muted-foreground">Update membership information for this member</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="membershipStartDate">Start Date</Label>
+            <Input
+              id="membershipStartDate"
+              type="date"
+              value={formData.membership_start_date || formData.membershipStartDate || ''}
+              onChange={(e) => updateFormData('membership_start_date', e.target.value)}
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Read-only fields */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                readOnly={isMember}
-                disabled={isMember}
-                className={isMember ? "bg-muted" : ""}
-              />
-            </div>
-            
-            {/* Editable fields */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone || ""}
-                onChange={handleChange}
-              />
-            </div>
-            
-            {/* Read-only fields */}
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                name="date_of_birth"
-                value={formData.date_of_birth ? new Date(formData.date_of_birth).toLocaleDateString() : ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            {/* Editable address fields */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="min-h-[80px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="zipCode">Postal Code</Label>
-              <Input
-                id="zipCode"
-                name="zipCode"
-                value={formData.zipCode}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                placeholder="India"
-              />
-            </div>
-            
-            {/* Read-only membership fields */}
-            <div className="space-y-2">
-              <Label htmlFor="membershipStatus">Membership Status</Label>
-              <Input
-                id="membershipStatus"
-                name="membership_status"
-                value={formData.membership_status}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipId">Membership ID</Label>
-              <Input
-                id="membershipId"
-                name="membership_id"
-                value={formData.membership_id || ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipStartDate">Start Date</Label>
-              <Input
-                id="membershipStartDate"
-                name="membershipStartDate"
-                value={formData.membershipStartDate ? new Date(formData.membershipStartDate).toLocaleDateString() : ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="membershipEndDate">End Date</Label>
-              <Input
-                id="membershipEndDate"
-                name="membershipEndDate"
-                value={formData.membershipEndDate ? new Date(formData.membershipEndDate).toLocaleDateString() : ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="trainerId">Assigned Trainer</Label>
-              <Input
-                id="trainerId"
-                name="trainerId"
-                value={formData.trainerId || ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="goal">Fitness Goal</Label>
-              <Input
-                id="goal"
-                name="goal"
-                value={formData.goal || ""}
-                readOnly
-                disabled
-                className="bg-muted"
-              />
-            </div>
+          
+          <div>
+            <Label htmlFor="membershipEndDate">End Date</Label>
+            <Input
+              id="membershipEndDate"
+              type="date"
+              value={formData.membership_end_date || formData.membershipEndDate || ''}
+              onChange={(e) => updateFormData('membership_end_date', e.target.value)}
+            />
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+          
+          <div>
+            <Label htmlFor="trainer">Assigned Trainer</Label>
+            <TrainerSelect 
+              value={formData.trainer_id || formData.trainerId || ''}
+              onChange={(value) => updateFormData('trainer_id', value)}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="goal"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Goal</FormLabel>
+                <FormControl>
+                  <Input placeholder="Weight Loss" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="occupation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Occupation</FormLabel>
+                <FormControl>
+                  <Input placeholder="Engineer" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="blood_group"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Blood Group</FormLabel>
+                <FormControl>
+                  <Input placeholder="O+" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+      
+      {/* ID Information Section */}
+      <div className="grid gap-4 mt-8">
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">ID Information</h3>
+          <p className="text-sm text-muted-foreground">Provide government-issued ID details</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="id_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID Type</FormLabel>
+                <FormControl>
+                  <Input placeholder="Passport" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="id_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ID Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="AB1234567" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+      
+      <div className="flex justify-end mt-6 space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

@@ -29,6 +29,10 @@ export interface Member {
   blood_group?: string;
   id_type?: string;
   id_number?: string;
+  // For backward compatibility
+  trainerId?: string;
+  membershipStartDate?: string;
+  membershipEndDate?: string;
 }
 
 export interface Membership {
@@ -70,4 +74,8 @@ export interface MembershipPlan {
   branch_id?: string;
   created_at?: string;
   updated_at?: string;
+  // Additional fields for backward compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  durationLabel?: string;
 }

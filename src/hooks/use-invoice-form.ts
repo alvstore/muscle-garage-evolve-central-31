@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Invoice } from '@/types/notification';
+import { ChangeEvent } from 'react';
 
 export const useInvoiceForm = (
   initialInvoice: Invoice | null, 
@@ -36,6 +37,15 @@ export const useInvoiceForm = (
       ...prev,
       [field]: value
     }));
+  };
+
+  // Create wrapper functions that accept events
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    handleChange(e.target.name, e.target.value);
+  };
+
+  const handleTextAreaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    handleChange(e.target.name, e.target.value);
   };
   
   const handleStatusChange = (status: string) => {
@@ -80,6 +90,8 @@ export const useInvoiceForm = (
     isSubmitting,
     formValues,
     handleChange,
+    handleInputChange,
+    handleTextAreaChange,
     handleStatusChange,
     handlePaymentMethodChange,
     onSubmit

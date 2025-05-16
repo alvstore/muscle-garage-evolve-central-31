@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,20 +6,7 @@ import { Check, Edit, Trash, Users, Calendar, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/stringUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-interface MembershipPlan {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  durationDays: number;
-  features?: string[];
-  isActive?: boolean;
-  branchId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  memberCount?: number;
-}
+import { MembershipPlan } from '@/types/member';
 
 interface MembershipPlanCardProps {
   plan: MembershipPlan;

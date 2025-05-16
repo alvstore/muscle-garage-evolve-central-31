@@ -1,191 +1,175 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Member } from "@/types";
-import { CalendarIcon, Edit2Icon, MapPinIcon, UserIcon } from "lucide-react";
-import { format } from "date-fns";
-import MemberProfileForm from "./MemberProfileForm";
+import { Edit, User, Mail, Phone, Calendar, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { Member } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { trainersService } from '@/services/trainersService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MemberProfileProps {
-  member: Member;
-  onUpdate: (updatedMember: Member) => void;
+  member: Member | null;
+  onEdit: () => void;
+  isLoading?: boolean;
 }
 
-const MemberProfile = ({ member, onUpdate }: MemberProfileProps) => {
-  const [editing, setEditing] = useState(false);
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "inactive":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "expired":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+const MemberProfile: React.FC<MemberProfileProps> = ({ 
+  member, 
+  onEdit, 
+  isLoading = false 
+}) => {
+  const { data: trainer, isLoading: isLoadingTrainer } = useQuery(
+    ['trainer', member?.trainer_id],
+    () => trainersService.getTrainer(member?.trainer_id || ''),
+    {
+      enabled: !!member?.trainer_id,
     }
-  };
-
-  const handleUpdate = (updatedMember: Member) => {
-    onUpdate(updatedMember);
-    setEditing(false);
+  );
+  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Member Profile</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[200px]" />
+            <Skeleton className="h-4 w-[300px]" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[200px]" />
+            <Skeleton className="h-4 w-[300px]" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!member) {
+    return (
+      <Card>
+        <CardContent className="text-center p-6">
+          No member selected.
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  const displayTrainer = () => {
+    // Use trainer_id or trainerId (backward compatibility)
+    const hasTrainer = member?.trainer_id || member?.trainerId;
+    
+    if (hasTrainer) {
+      return (
+        <div className="flex items-center">
+          <Avatar className="h-8 w-8 mr-2">
+            <AvatarImage src={trainer?.avatar_url} />
+            <AvatarFallback>{trainer?.name?.charAt(0) || 'T'}</AvatarFallback>
+          </Avatar>
+          <span>{trainer?.name || 'Assigned Trainer'}</span>
+        </div>
+      );
+    }
+    
+    return <span className="text-muted-foreground">No trainer assigned</span>;
   };
   
-  if (editing) {
-    return <MemberProfileForm member={member} onSave={handleUpdate} onCancel={() => setEditing(false)} />;
-  }
+  const getMembershipStatusBadge = () => {
+    const isActive = member.membership_status === 'active';
+    
+    return (
+      <Badge variant={isActive ? 'outline' : 'secondary'}>
+        {isActive ? 'Active Member' : 'Inactive'}
+      </Badge>
+    );
+  };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle>Member Profile</CardTitle>
-          <CardDescription>View and manage member details</CardDescription>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-1"
-          onClick={() => setEditing(true)}
-        >
-          <Edit2Icon className="h-4 w-4" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-2xl font-bold">Member Profile</CardTitle>
+        <Button variant="ghost" onClick={onEdit}>
+          <Edit className="mr-2 h-4 w-4" />
           Edit Profile
         </Button>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="personal" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="personal">Personal Info</TabsTrigger>
-            <TabsTrigger value="address">Address</TabsTrigger>
-            <TabsTrigger value="membership">Membership</TabsTrigger>
-            <TabsTrigger value="fitness">Fitness Details</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="personal" className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={member.avatar} alt={member.name} />
-                <AvatarFallback className="text-2xl">{getInitials(member.name)}</AvatarFallback>
-              </Avatar>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                  <p className="font-medium">{member.name}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p className="font-medium">{member.email}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                  <p className="font-medium">{member.phone || "Not provided"}</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    {member.date_of_birth ? format(new Date(member.date_of_birth), "MMMM d, yyyy") : "Not provided"}
-                  </p>
-                </div>
-              </div>
+      <CardContent className="grid gap-6">
+        <div className="flex gap-4">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={member.avatar} />
+            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <h4 className="text-3xl font-semibold">{member.name}</h4>
+            <p className="text-muted-foreground">
+              {member.email}
+            </p>
+            {getMembershipStatusBadge()}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-lg font-medium">Personal Information</h4>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span>{member.gender}, {member.date_of_birth}</span>
             </div>
-          </TabsContent>
-          
-          {/* New Address Tab */}
-          <TabsContent value="address" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Address</p>
-                <p className="font-medium flex items-start gap-1">
-                  <MapPinIcon className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <span>{member.address || "No address provided"}</span>
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">City</p>
-                <p className="font-medium">{member.city || "Not provided"}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">State</p>
-                <p className="font-medium">{member.state || "Not provided"}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Postal Code</p>
-                <p className="font-medium">{member.zipCode || "Not provided"}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Country</p>
-                <p className="font-medium">{member.country || "India"}</p>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>{member.email || 'N/A'}</span>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="membership" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Membership Status</p>
-                <p className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(member.membership_status)}`}>
-                  {member.membership_status.charAt(0).toUpperCase() + member.membership_status.slice(1)}
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Membership ID</p>
-                <p className="font-medium">{member.membership_id || "Not assigned"}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-                <p className="font-medium">
-                  {member.membership_start_date ? format(new Date(member.membership_start_date), "MMMM d, yyyy") : "Not set"}
-                </p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">End Date</p>
-                <p className="font-medium">
-                  {member.membership_end_date ? format(new Date(member.membership_end_date), "MMMM d, yyyy") : "Not set"}
-                </p>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span>{member.phone || 'N/A'}</span>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="fitness" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Fitness Goal</p>
-                <p className="font-medium">{member.goal || "Not set"}</p>
-              </div>
-              
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Assigned Trainer</p>
-                <p className="font-medium flex items-center gap-1">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" />
-                  {member.trainerId ? "Trainer ID: " + member.trainerId : "None assigned"}
-                </p>
-              </div>
+            <div className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span>{member.address || 'N/A'}</span>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-lg font-medium">Membership Details</h4>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>
+                Start Date: {member.membership_start_date || 'N/A'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>
+                End Date: {member.membership_end_date || 'N/A'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <span>Status: {member.membership_status || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="text-lg font-medium">Assigned Trainer</h4>
+          {isLoadingTrainer ? (
+            <Skeleton className="h-8 w-32" />
+          ) : (
+            displayTrainer()
+          )}
+        </div>
       </CardContent>
     </Card>
   );

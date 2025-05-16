@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { FollowUpType } from '@/types/crm';
 
 interface LeadTimelineProps {
   leadId: string;
@@ -71,7 +71,7 @@ const LeadTimeline: React.FC<LeadTimelineProps> = ({ leadId }) => {
           activities.push({
             id: `scheduled-${followUp.id}`,
             type: 'followUp',
-            date: followUp.scheduled_date || new Date().toISOString(),
+            date: followUp.scheduled_at || new Date().toISOString(),
             title: `Scheduled ${followUp.type} follow-up`,
             description: followUp.content,
             icon: <Clock className="h-4 w-4" />,

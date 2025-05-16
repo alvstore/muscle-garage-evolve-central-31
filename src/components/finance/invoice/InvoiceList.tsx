@@ -10,14 +10,15 @@ import { useInvoices } from '@/hooks/use-invoices';
 import { useToast } from '@/components/ui/use-toast';
 import { Invoice, InvoiceStatus } from '@/types/finance';
 
-const statusColors: Record<InvoiceStatus, string> = {
-  'draft': 'bg-gray-100 text-gray-800',
-  'sent': 'bg-blue-100 text-blue-800',
-  'paid': 'bg-green-100 text-green-800',
-  'overdue': 'bg-red-100 text-red-800',
-  'cancelled': 'bg-gray-100 text-gray-800',
-  'pending': 'bg-yellow-100 text-yellow-800',
-  'partially_paid': 'bg-emerald-100 text-emerald-800'
+const STATUS_COLORS: Record<InvoiceStatus, string> = {
+  draft: 'bg-gray-100 text-gray-800',
+  sent: 'bg-blue-100 text-blue-800',
+  paid: 'bg-green-100 text-green-800',
+  overdue: 'bg-red-100 text-red-800', 
+  cancelled: 'bg-gray-100 text-gray-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+  partially_paid: 'bg-cyan-100 text-cyan-800',
+  void: 'bg-gray-100 text-gray-800'
 };
 
 interface InvoiceListProps {
@@ -91,7 +92,7 @@ const InvoiceList = ({ onView, onEdit, onDelete, onPayment }: InvoiceListProps) 
                     <TableCell>₹{invoice.amount.toLocaleString()}</TableCell>
                     <TableCell>{formatDate(invoice.issued_date || invoice.issuedDate)}</TableCell>
                     <TableCell>
-                      <Badge className={`${statusColors[invoice.status]} border-none`}>
+                      <Badge className={`${STATUS_COLORS[invoice.status]} border-none`}>
                         {invoice.status}
                       </Badge>
                     </TableCell>

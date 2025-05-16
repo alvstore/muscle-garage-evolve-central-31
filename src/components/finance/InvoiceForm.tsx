@@ -10,7 +10,7 @@ import { useInvoiceForm } from '@/hooks/use-invoice-form';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;
-  onComplete?: (invoice?: Invoice) => void;  // Modified to accept optional Invoice
+  onComplete?: (invoice?: Invoice) => void;
   onSave?: (invoice: Invoice) => void;
   onCancel?: () => void;
 }
@@ -27,6 +27,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     onSubmit,
     formValues,
     handleChange,
+    handleInputChange,
+    handleTextAreaChange,
     handleStatusChange,
     handlePaymentMethodChange,
   } = useInvoiceForm(invoice, onComplete, onSave);
@@ -56,14 +58,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             status={formValues.status}
             dueDate={formValues.due_date}
             paymentMethod={formValues.payment_method || ''}
-            onChange={handleChange}
+            onChange={handleInputChange}
             onStatusChange={handleStatusChange}
             onPaymentMethodChange={handlePaymentMethodChange}
           />
           
           <InvoiceNotes
             notes={formValues.notes}
-            onChange={handleChange}
+            onChange={handleTextAreaChange}
           />
           
           <div className="flex justify-end space-x-2 pt-4">
