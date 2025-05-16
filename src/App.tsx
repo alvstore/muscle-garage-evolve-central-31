@@ -65,14 +65,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <AuthProvider>
-          <BranchProvider>
-            <PermissionsProvider>
-              <AppRouter />
-              <Toaster position="top-right" richColors />
-            </PermissionsProvider>
-          </BranchProvider>
-        </AuthProvider>
+        <AppRouter />
+        <Toaster position="top-right" richColors />
         {showDevtools && (
           <Suspense fallback={null}>
             <ReactQueryDevtoolsProduction initialIsOpen={false} />

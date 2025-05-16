@@ -38,4 +38,3 @@ supabase/.temp/
 supabase/.env
 errorlist.md
 src/database/finance_schema.sql
-.DS_Store

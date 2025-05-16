@@ -1,46 +1,81 @@
-
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { useHikvision, HikvisionDevice } from '@/hooks/use-hikvision';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
+import { useHikvision, TokenData } from '@/hooks/use-hikvision';
 import { Loader2, Plus, Trash2, RefreshCw, Cloud, Wifi, Server, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HikvisionDevicesProps {
   branchId: string;
 }
 
+interface HikvisionDevice {
+  id: string;
+  name?: string;
+  device_name?: string;
+  deviceName?: string;
+  device_id?: string;
+  deviceId?: string;
+  device_type?: string;
+  deviceType?: string;
+  location?: string;
+  ip_address?: string;
+  ipAddress?: string;
+  port?: string;
+  username?: string;
+  password?: string;
+  is_active?: boolean;
+  isActive?: boolean;
+  is_cloud_managed?: boolean;
+  isCloudManaged?: boolean;
+  use_isup_fallback?: boolean;
+  useIsupFallback?: boolean;
+  sync_status?: 'success' | 'failed' | 'pending';
+  syncStatus?: 'success' | 'failed' | 'pending';
+  last_sync?: string;
+  lastSync?: string;
+  status?: 'online' | 'offline' | 'unknown';
+}
+
 export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   const { 
-    settings, 
     isLoading, 
+    settings, 
     fetchSettings, 
     addDevice,
     removeDevice,
     getToken
   } = useHikvision({ branchId });
 
-  const [newDevice, setNewDevice] = useState<Partial<HikvisionDevice>>({
+  // Type assertion for getToken to ensure it returns TokenData
+  const getTokenData = getToken as unknown as () => Promise<{success: boolean, token: TokenData}>;
+
+  const [newDevice, setNewDevice] = useState<any>({
     deviceName: '',
-    deviceType: 'door_controller',
-    serialNumber: '',
+    deviceType: '',
+    deviceId: '',
     isCloudManaged: true,
     useIsupFallback: false,
     ipAddress: '',
     port: '80',
     username: '',
     password: '',
-    location: '',
     siteId: ''
   });
   
+  // Using TokenData interface imported from use-hikvision.ts
+  
   const [availableSites, setAvailableSites] = useState<{siteId: string, siteName: string}[]>([]);
+  
   const [isAddingDevice, setIsAddingDevice] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
@@ -52,20 +87,42 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
       fetchSettings(branchId);
       fetchAvailableSites();
     }
-  }, [branchId, fetchSettings]);
+  }, [branchId]);
 
   const fetchAvailableSites = async () => {
     try {
-      // Get token data which includes available sites
-      const tokenResult = await getToken();
+      // Get token data directly from the hook which includes available sites
+      const tokenData = await getTokenData();
       
-      if (!tokenResult.success || !tokenResult.token) {
+      if (!tokenData) {
         console.error('Error fetching token data');
         return;
       }
       
-      if (tokenResult.token.availableSites && Array.isArray(tokenResult.token.availableSites)) {
-        setAvailableSites(tokenResult.token.availableSites);
+      if (tokenData.token.availableSites && Array.isArray(tokenData.token.availableSites)) {
+        // Convert to component format if needed
+        const sites = tokenData.token.availableSites;
+        setAvailableSites(sites);
+      } else {
+        // Fallback to database query if not available in token data
+        const { data: dbTokenData, error } = await supabase
+          .from('hikvision_tokens')
+          .select('available_sites')
+          .eq('branch_id', branchId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching available sites:', error);
+          return;
+        }
+        
+        if (dbTokenData?.available_sites && Array.isArray(dbTokenData.available_sites)) {
+          const sites = dbTokenData.available_sites.map((site: any) => ({
+            siteId: site.siteId || site.site_id,
+            siteName: site.siteName || site.site_name
+          }));
+          setAvailableSites(sites);
+        }
       }
     } catch (error) {
       console.error('Error in fetchAvailableSites:', error);
@@ -77,30 +134,49 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
     try {
       // Validate inputs
       if (!newDevice.deviceName || !newDevice.serialNumber) {
-        toast.error('Device name and serial number are required');
+        toast({
+          title: "Error",
+          description: 'Device name and serial number are required',
+          variant: "destructive",
+        });
         return;
+      }
+      
+      // If cloud managed but no site ID is provided, get the default site ID
+      if (newDevice.isCloudManaged && !newDevice.siteId) {
+        const tokenData = await getTokenData();
+        if (tokenData && tokenData.token.siteId) {
+          newDevice.siteId = tokenData.token.siteId;
+        }
       }
       
       // Validate ISUP fallback requirements
       if (newDevice.useIsupFallback && (!newDevice.ipAddress || !newDevice.username || !newDevice.password)) {
-        toast.error('IP address, username, and password are required for ISUP fallback');
+        toast({
+          title: "Error",
+          description: 'IP address, username, and password are required for ISUP fallback',
+          variant: "destructive",
+        });
         return;
       }
 
-      // Create a complete device object
-      const deviceData: HikvisionDevice = {
-        deviceName: newDevice.deviceName || '',
-        deviceType: newDevice.deviceType || 'door_controller',
-        serialNumber: newDevice.serialNumber || '',
-        location: newDevice.location,
-        isCloudManaged: Boolean(newDevice.isCloudManaged),
-        useIsupFallback: Boolean(newDevice.useIsupFallback),
-        ipAddress: newDevice.ipAddress,
-        port: newDevice.port,
-        username: newDevice.username,
-        password: newDevice.password,
-        siteId: newDevice.siteId
+      const deviceData: any = {
+        deviceName: newDevice.deviceName,
+        deviceType: newDevice.deviceType,
+        serialNumber: newDevice.serialNumber,
+        location: newDevice.location || undefined,
+        isCloudManaged: newDevice.isCloudManaged,
+        useIsupFallback: newDevice.useIsupFallback,
+        siteId: newDevice.siteId || ''
       };
+      
+      // Add ISUP connection details if needed
+      if (newDevice.useIsupFallback || !newDevice.isCloudManaged) {
+        deviceData.ipAddress = newDevice.ipAddress;
+        deviceData.port = newDevice.port;
+        deviceData.username = newDevice.username;
+        deviceData.password = newDevice.password;
+      }
 
       const success = await addDevice(deviceData);
 
@@ -133,66 +209,158 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   const testDevice = async (device: HikvisionDevice) => {
     try {
       setIsTestingDevice(true);
-      setSelectedDevice(device.id || device.serialNumber);
+      setSelectedDevice(device.id);
       setDeviceTestStatus(prev => {
-        const filtered = prev.filter(item => (device.id && item.id !== device.id) || 
-                                             (device.serialNumber && item.id !== device.serialNumber));
+        const filtered = prev.filter(item => item.id !== device.id);
         // Add new pending status
-        return [...filtered, { id: device.id || device.serialNumber || '', status: 'pending' }];
+        return [...filtered, { id: device.id, status: 'pending' }];
       });
       
-      // Get a token
-      const tokenResult = await getToken();
+      // Extract device properties with fallbacks
+      const deviceId = device.device_id || device.deviceId || '';
+      const isCloudManaged = device.is_cloud_managed || device.isCloudManaged || false;
+      const useIsupFallback = device.use_isup_fallback || device.useIsupFallback || false;
+      const ipAddress = device.ip_address || device.ipAddress || '';
+      const port = device.port || '80';
+      const username = device.username || '';
+      const password = device.password || '';
       
-      if (!tokenResult.success || !tokenResult.token) {
-        throw new Error("Failed to get access token");
+      // First try cloud API if device is cloud-managed
+      if (isCloudManaged) {
+        try {
+          // Get a token with site information
+          const tokenData = await getTokenData();
+          if (!tokenData) {
+            throw new Error("Failed to get access token");
+          }
+          
+          // Now tokenData is properly typed as TokenData
+          const accessToken = tokenData.token.accessToken;
+          const siteId = tokenData.token.siteId;
+          console.log('Testing cloud device connection for device:', deviceId);
+          
+          // Make sure we have a site ID
+          if (!siteId) {
+            throw new Error("No site ID available. Please configure a site first.");
+          }
+          
+          // Step 1: Check if device is already added to the site
+          const { data: deviceData, error: deviceError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'check-device-exists',
+              token: accessToken,
+              siteId,
+              deviceId
+            }
+          });
+          
+          if (deviceError) {
+            throw new Error(deviceError.message || "Failed to check device");
+          }
+          
+          // Step 2: Test device connection
+          const { data: testData, error: testError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'test-device',
+              token: accessToken,
+              deviceId,
+              siteId
+            }
+          });
+          
+          if (testError) {
+            throw new Error(testError.message || "Failed to test device connection");
+          }
+          
+          if (testData?.status === 'online') {
+            setDeviceTestStatus(prev => {
+              const filtered = prev.filter(item => item.id !== device.id);
+              return [...filtered, { id: device.id, status: 'success' }];
+            });
+            
+            toast({
+              title: "Success",
+              description: deviceData?.exists 
+                ? "Device is online and connected" 
+                : "Device is online but not yet added to site",
+            });
+            return;
+          } else {
+            // Device exists but is offline
+            if (useIsupFallback && ipAddress) {
+              console.log('Device is offline, trying ISUP fallback');
+              // Continue to ISUP testing below
+            } else {
+              throw new Error("Device exists but is offline. Check device power and network connection.");
+            }
+          }
+        } catch (cloudError: any) {
+          console.log('Cloud connection failed:', cloudError);
+          
+          // Only proceed with ISUP fallback if enabled and IP address is available
+          if (!useIsupFallback || !ipAddress) {
+            throw cloudError;
+          }
+          // Otherwise continue to ISUP testing below
+        }
       }
       
-      const accessToken = tokenResult.token.accessToken;
-      const siteId = device.siteId || tokenResult.token.siteId;
-      console.log('Testing device connection for device:', device.serialNumber);
-      
-      // Make sure we have a site ID for cloud-managed devices
-      if (device.isCloudManaged && !siteId) {
-        throw new Error("No site ID available. Please configure a site first.");
-      }
-      
-      // Call our edge function to test the device
-      const { data, error } = await fetch('/api/hikvision-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'test-device',
-          token: accessToken,
-          deviceId: device.serialNumber,
-          siteId: siteId,
-          branchId: branchId
-        })
-      }).then(res => res.json());
-      
-      if (error || !data || !data.success) {
-        throw new Error(error?.message || data?.message || "Failed to test device");
-      }
-      
-      if (data.status === 'online') {
-        setDeviceTestStatus(prev => {
-          const filtered = prev.filter(item => (device.id && item.id !== device.id) || 
-                                               (device.serialNumber && item.id !== device.serialNumber));
-          return [...filtered, { id: device.id || device.serialNumber || '', status: 'success' }];
-        });
-        
-        toast.success("Device is online and connected");
-      } else {
-        throw new Error("Device exists but is offline. Check device power and network connection.");
+      // Try ISUP protocol for direct device connection
+      if (ipAddress && username && password) {
+        try {
+          console.log('Testing ISUP direct connection for device:', deviceId);
+          
+          // Test ISUP connection via Edge Function
+          const { data: isupData, error: isupError } = await supabase.functions.invoke('hikvision-proxy', {
+            body: {
+              action: 'test-isup-device',
+              ipAddress,
+              port,
+              username,
+              password
+            }
+          });
+          
+          if (isupError) {
+            throw new Error(isupError.message || "ISUP connection failed");
+          }
+          
+          if (isupData?.success) {
+            setDeviceTestStatus(prev => {
+              const filtered = prev.filter(item => item.id !== device.id);
+              return [...filtered, { id: device.id, status: 'success' }];
+            });
+            
+            toast({
+              title: "Success",
+              description: "ISUP connection successful",
+            });
+            return;
+          } else {
+            throw new Error(isupData?.message || "ISUP connection failed");
+          }
+        } catch (isupError: any) {
+          console.error('ISUP connection failed:', isupError);
+          setDeviceTestStatus(prev => {
+            const filtered = prev.filter(item => item.id !== device.id);
+            return [...filtered, { id: device.id, status: 'error' }];
+          });
+          throw isupError;
+        }
+      } else if (!isCloudManaged) {
+        throw new Error("Missing required ISUP connection details (IP address, username, password)");
       }
     } catch (error: any) {
       console.error('Error testing device:', error);
       setDeviceTestStatus(prev => {
-        const filtered = prev.filter(item => (device.id && item.id !== device.id) || 
-                                             (device.serialNumber && item.id !== device.serialNumber));
-        return [...filtered, { id: device.id || device.serialNumber || '', status: 'error' }];
+        const filtered = prev.filter(item => item.id !== device.id);
+        return [...filtered, { id: device.id, status: 'error' }];
       });
-      toast.error(error.message || "Failed to test device connection");
+      toast({
+        title: "Error",
+        description: error.message || "Failed to test device connection",
+        variant: "destructive",
+      });
     } finally {
       setIsTestingDevice(false);
       setTimeout(() => setSelectedDevice(null), 3000);
@@ -410,18 +578,22 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                 <div className="text-right">Actions</div>
               </div>
               <div className="divide-y">
-                {settings.devices.map((device) => {
+                {settings.devices.map((device: any) => {
                   // Get device test status if available
-                  const testStatus = deviceTestStatus.find(status => 
-                    status.id === device.id || status.id === device.serialNumber
-                  );
+                  const testStatus = deviceTestStatus.find(status => status.id === device.id);
+                  const deviceName = device.deviceName || device.device_name || device.name || 'Unnamed Device';
+                  const deviceId = device.device_id || device.deviceId || device.serialNumber || 'Unknown ID';
+                  const deviceType = device.deviceType || device.device_type || 'Unknown Type';
+                  const isCloudManaged = device.isCloudManaged || device.is_cloud_managed || false;
+                  const useIsupFallback = device.useIsupFallback || device.use_isup_fallback || false;
+                  const location = device.location || 'Not specified';
                   
                   return (
-                    <div key={device.id || device.serialNumber} className="grid grid-cols-7 gap-4 p-3">
+                    <div key={device.id || deviceId} className="grid grid-cols-7 gap-4 p-3">
                       <div className="col-span-2 flex items-center">
                         <div>
-                          <div className="font-medium">{device.deviceName}</div>
-                          {device.useIsupFallback && (
+                          <div className="font-medium">{deviceName}</div>
+                          {useIsupFallback && (
                             <div className="text-xs text-muted-foreground mt-1">
                               ISUP Fallback Enabled
                             </div>
@@ -429,22 +601,22 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 truncate font-medium">{device.deviceType}</div>
+                        <div className="flex-1 truncate font-medium">{deviceType}</div>
                         <Badge 
-                          variant={device.isCloudManaged ? "default" : "outline"} 
+                          variant={isCloudManaged ? "default" : "outline"} 
                           className="ml-2 flex items-center gap-1"
                         >
-                          {device.isCloudManaged ? 
+                          {isCloudManaged ? 
                             <Cloud className="h-3 w-3" /> : 
                             <Wifi className="h-3 w-3" />}
-                          {device.isCloudManaged ? 'Cloud' : 'ISUP'}
+                          {isCloudManaged ? 'Cloud' : 'ISUP'}
                         </Badge>
                       </div>
                       <div className="text-sm flex items-center">
-                        <span className="truncate">{device.serialNumber}</span>
+                        <span className="truncate">{deviceId}</span>
                       </div>
                       <div className="text-sm flex items-center">
-                        <span className="truncate">{device.location || '-'}</span>
+                        <span className="truncate">{location}</span>
                       </div>
                       <div className="flex items-center">
                         {testStatus?.status === 'pending' ? (
@@ -470,11 +642,11 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                           variant="outline" 
                           size="icon"
                           onClick={() => testDevice(device)}
-                          disabled={isTestingDevice && selectedDevice === (device.id || device.serialNumber)}
+                          disabled={isTestingDevice && selectedDevice === device.id}
                           className="h-8 w-8"
                           title="Test Connection"
                         >
-                          {isTestingDevice && selectedDevice === (device.id || device.serialNumber) ? (
+                          {isTestingDevice && selectedDevice === device.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <RefreshCw className="h-4 w-4" />
@@ -483,7 +655,7 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
                         <Button 
                           variant="destructive" 
                           size="icon"
-                          onClick={() => handleDelete(device.id || device.serialNumber)}
+                          onClick={() => handleDelete(device.id || deviceId)}
                           className="h-8 w-8"
                           title="Delete Device"
                         >

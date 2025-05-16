@@ -7,7 +7,6 @@ import IntegrationSettingsPage from '@/pages/settings/IntegrationSettingsPage';
 import PaymentSettingsPage from '@/pages/settings/PaymentSettingsPage';
 import AIServicesPage from '@/pages/settings/ai-services';
 import AccessControlPage from '@/pages/settings/access-control';
-import HikvisionIntegrationPage from '@/pages/settings/HikvisionIntegrationPage';
 
 export const settingsRoutes: RouteObject[] = [
   {
@@ -55,14 +54,6 @@ export const settingsRoutes: RouteObject[] = [
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <AccessControlPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/settings/access-control/hikvision',
-    element: (
-      <PrivateRoute allowedRoles={['admin']}>
-        <HikvisionIntegrationPage />
       </PrivateRoute>
     )
   }

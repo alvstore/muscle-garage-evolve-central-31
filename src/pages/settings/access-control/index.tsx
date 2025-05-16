@@ -5,15 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 // Import Shadcn UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Container } from '@/components/ui/container';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 
 // Import access control components
+import ZoneManagement from '@/components/settings/access-control/ZoneManagement';
+import DoorManagement from '@/components/settings/access-control/DoorManagement';
+import MembershipAccessRules from '@/components/settings/access-control/MembershipAccessRules';
+import MemberAccessOverrides from '@/components/settings/access-control/MemberAccessOverrides';
 import HikvisionSettings from '@/components/settings/access-control/HikvisionSettings';
 import HikvisionDevices from '@/components/settings/access-control/HikvisionDevices';
-import MemberAccessControl from '@/components/access-control/MemberAccessControl';
+import ESSLSettings from '@/components/settings/access-control/ESSLSettings';
 
 const AccessControlPage = () => {
   const [loading, setLoading] = useState(true);
@@ -81,23 +87,6 @@ const AccessControlPage = () => {
             <h1 className="text-2xl font-bold">Access Control Management</h1>
             <p className="text-muted-foreground">Configure and manage access control for your gym facilities</p>
           </div>
-          
-          {branches.length > 0 && (
-            <div className="w-64">
-              <Select value={branchId || undefined} onValueChange={handleBranchChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
 
         <Card>
@@ -105,23 +94,83 @@ const AccessControlPage = () => {
             <CardTitle>Access Control Settings</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="settings" className="w-full">
+            <Tabs defaultValue="access-rules" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="access-rules">Access Rules</TabsTrigger>
                 <TabsTrigger value="devices">Devices</TabsTrigger>
-                <TabsTrigger value="members">Member Access</TabsTrigger>
+                <TabsTrigger value="integrations">API Integrations</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="settings" className="mt-6">
-                {branchId && <HikvisionSettings branchId={branchId} />}
+              {/* Access Rules Tab - Contains Zones, Doors, Membership Rules, Member Overrides */}
+              <TabsContent value="access-rules" className="mt-6">
+                <Tabs defaultValue="zones" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="zones">Zones</TabsTrigger>
+                    <TabsTrigger value="doors">Doors</TabsTrigger>
+                    <TabsTrigger value="membership-rules">Membership Rules</TabsTrigger>
+                    <TabsTrigger value="member-overrides">Member Overrides</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="zones">
+                    {branchId && <ZoneManagement branchId={branchId} />}
+                  </TabsContent>
+                  
+                  <TabsContent value="doors">
+                    {branchId && <DoorManagement branchId={branchId} />}
+                  </TabsContent>
+                  
+                  <TabsContent value="membership-rules">
+                    {branchId && <MembershipAccessRules branchId={branchId} />}
+                  </TabsContent>
+                  
+                  <TabsContent value="member-overrides">
+                    {branchId && <MemberAccessOverrides branchId={branchId} />}
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
               
+              {/* Devices Tab - Contains Hikvision Devices and ESSL Devices */}
               <TabsContent value="devices" className="mt-6">
-                {branchId && <HikvisionDevices branchId={branchId} />}
+                <Tabs defaultValue="hikvision-devices" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="hikvision-devices">Hikvision Devices</TabsTrigger>
+                    <TabsTrigger value="essl-devices">ESSL Devices</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="hikvision-devices">
+                    {branchId && <HikvisionDevices branchId={branchId} />}
+                  </TabsContent>
+                  
+                  <TabsContent value="essl-devices">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>ESSL Devices</CardTitle>
+                        <CardDescription>Manage your ESSL access control devices</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p>ESSL device management coming soon...</p>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
               
-              <TabsContent value="members" className="mt-6">
-                {branchId && <MemberAccessControl />}
+              {/* API Integrations Tab - Contains Hikvision API and ESSL API settings */}
+              <TabsContent value="integrations" className="mt-6">
+                <Tabs defaultValue="hikvision-api" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="hikvision-api">Hikvision API</TabsTrigger>
+                    <TabsTrigger value="essl-api">ESSL API</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="hikvision-api">
+                    {branchId && <HikvisionSettings branchId={branchId} />}
+                  </TabsContent>
+                  
+                  <TabsContent value="essl-api">
+                    {branchId && <ESSLSettings branchId={branchId} />}
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
             </Tabs>
           </CardContent>

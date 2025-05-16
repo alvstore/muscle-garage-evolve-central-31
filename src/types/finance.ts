@@ -1,72 +1,113 @@
-
-export interface IncomeCategory {
+// Basic finance types
+// Transaction types for the finance module
+export interface Transaction {
   id: string;
-  name: string;
+  amount: number;
+  type: TransactionType | string;
   description?: string;
+  category_id?: string;
+  category?: string; // For compatibility with different tables
   branch_id?: string;
-  is_active?: boolean;
+  recorded_by?: string;
+  reference_id?: string;
+  reference?: string; // For compatibility with income/expense records
+  payment_method?: string;
+  transaction_id?: string;
+  transaction_date?: string;
+  // For backward compatibility
   created_at?: string;
   updated_at?: string;
+  date?: string; // Alias for transaction_date
+  vendor?: string; // For expense records
+  source?: string; // For income records
+  status?: string;
+  webhook_processed?: boolean;
 }
 
-export interface IncomeRecord {
+export enum InvoiceStatus {
+  PAID = 'paid',
+  PENDING = 'pending',
+  OVERDUE = 'overdue',
+  DRAFT = 'draft',
+  CANCELED = 'canceled',
+  PARTIALLY_PAID = 'partially_paid'
+}
+
+export interface Invoice {
   id: string;
-  date: string;
+  member_id?: string;
+  member_name?: string;
+  memberName?: string; // For backward compatibility
+  memberId?: string; // For backward compatibility
   amount: number;
   description?: string;
-  source?: string;
-  category?: string;
-  reference?: string;
+  status: InvoiceStatus | string;
+  due_date: string;
+  dueDate?: string; // For backward compatibility
+  payment_date?: string;
+  paid_date?: string;
   payment_method?: string;
-  branch_id: string;
-  recorded_by?: string;
-  status?: string;
-  created_at?: string;
+  notes?: string;
+  created_at: string;
   updated_at?: string;
+  issued_date?: string;
+  issuedDate?: string; // For backward compatibility
+  branch_id?: string;
+  items?: any[];
+  membership_plan_id?: string;
+  membershipPlanId?: string; // For backward compatibility
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
 }
 
-export interface ExpenseCategory {
+export interface InvoiceItem {
   id: string;
   name: string;
   description?: string;
-  branch_id?: string;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  quantity: number;
+  price: number;
+  tax?: number;
+  total?: number;
+}
+
+export type PaymentMethod = 'cash' | 'card' | 'upi' | 'netbanking' | 'cheque' | 'online' | 'wallet' | 'other' | 'razorpay';
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type TransactionType = 'income' | 'expense' | 'refund';
+export type RecurringPeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface FinancialTransaction {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  description: string;
+  transaction_date: string;
+  payment_method: string;
+  category: string; // Changed from category_id to match database
+  branch_id: string;
+  reference_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  recurring?: boolean;
+  recurring_period?: string | null;
+  webhook_processed?: boolean;
+  vendor?: string; // For expense records
+  source?: string; // For income records
+  reference?: string; // For compatibility with income/expense records
+  date?: string; // Alias for transaction_date
 }
 
 export interface ExpenseRecord {
   id: string;
   date: string;
   amount: number;
-  description?: string;
-  vendor?: string;
-  category?: string;
-  reference?: string;
-  payment_method?: string;
+  category: string;
+  description: string;
+  vendor: string;
+  payment_method: string;
+  reference: string;
   branch_id: string;
-  recorded_by?: string;
-  status?: string;
+  status: string;
   created_at?: string;
   updated_at?: string;
 }
-
-export interface Transaction {
-  id: string;
-  transaction_date: string;
-  amount: number;
-  type: TransactionType;
-  status: TransactionStatus;
-  reference?: string;
-  notes?: string;
-  payment_method?: PaymentMethod;
-  branch_id: string;
-  member_id?: string;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export type TransactionType = 'income' | 'expense' | 'refund' | 'adjustment';
-export type TransactionStatus = 'pending' | 'completed' | 'cancelled' | 'failed';
-export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'check' | 'other';

@@ -1,161 +1,136 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { HikvisionApiSettings, hikvisionService, TokenResponse } from '@/services/hikvisionService';
+import { useState, useEffect } from 'react';
 import { useBranch } from './use-branch';
-import { HikvisionDevice } from '@/types/access-control';
+import { hikvisionService, HikvisionApiSettings, HikvisionDevice } from '@/services/hikvisionService';
 import { toast } from 'sonner';
-import { supabase } from '@/services/supabaseClient';
 
 export const useHikvisionSettings = () => {
-  const { currentBranch } = useBranch();
   const [settings, setSettings] = useState<HikvisionApiSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [devices, setDevices] = useState<HikvisionDevice[]>([]);
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+  const { currentBranch } = useBranch();
 
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = async () => {
     if (!currentBranch?.id) return;
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('hikvision_api_settings')
-        .select('*')
-        .eq('branch_id', currentBranch.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found"
-        console.error('Error fetching Hikvision settings:', error);
-        toast.error('Failed to load Hikvision settings');
-        return;
-      }
-      
-      setSettings(data || {
-        app_key: '',
-        app_secret: '',
-        api_url: 'https://api.hikvision.com',
-        is_active: false,
-        branch_id: currentBranch.id,
-        devices: []
-      });
-    } catch (error) {
-      console.error('Error in fetchSettings:', error);
+      const data = await hikvisionService.getSettings(currentBranch.id);
+      setSettings(data);
+    } catch (err: any) {
+      setError(err);
       toast.error('Failed to load Hikvision settings');
     } finally {
       setIsLoading(false);
     }
-  }, [currentBranch?.id]);
+  };
 
-  // Load settings when branch changes
-  useEffect(() => {
-    if (currentBranch?.id) {
-      fetchSettings();
-    }
-  }, [currentBranch?.id, fetchSettings]);
-
-  const saveSettings = async (settingsData: HikvisionApiSettings): Promise<boolean> => {
-    if (!currentBranch?.id) return false;
-    
+  const saveSettings = async (updatedSettings: HikvisionApiSettings): Promise<boolean> => {
     setIsSaving(true);
     try {
+      // Make sure branch_id is set
       const settingsToSave = {
-        ...settingsData,
-        branch_id: currentBranch.id,
-        updated_at: new Date().toISOString()
+        ...updatedSettings,
+        branch_id: currentBranch?.id as string
       };
       
-      // Check if settings already exist
-      const { data: existingSettings } = await supabase
-        .from('hikvision_api_settings')
-        .select('id')
-        .eq('branch_id', currentBranch.id)
-        .maybeSingle();
-      
-      if (existingSettings?.id) {
-        // Update existing settings
-        const { error } = await supabase
-          .from('hikvision_api_settings')
-          .update(settingsToSave)
-          .eq('id', existingSettings.id);
-          
-        if (error) throw error;
-      } else {
-        // Insert new settings
-        const { error } = await supabase
-          .from('hikvision_api_settings')
-          .insert([{
-            ...settingsToSave,
-            created_at: new Date().toISOString()
-          }]);
-          
-        if (error) throw error;
+      const result = await hikvisionService.saveSettings(settingsToSave);
+      if (result) {
+        setSettings(result);
+        toast.success('Hikvision settings saved successfully');
+        return true;
       }
-      
-      // Update local state
-      setSettings(settingsToSave);
-      toast.success('Settings saved successfully');
-      return true;
-    } catch (error) {
-      console.error('Error saving Hikvision settings:', error);
-      toast.error('Failed to save settings');
+      return false;
+    } catch (err: any) {
+      setError(err);
+      toast.error('Failed to save Hikvision settings');
       return false;
     } finally {
       setIsSaving(false);
     }
   };
 
-  const testConnection = async (credentials: HikvisionApiSettings): Promise<TokenResponse> => {
+  const testConnection = async (settingsToTest?: HikvisionApiSettings): Promise<boolean> => {
     try {
-      const result = await hikvisionService.getToken({
-        api_url: credentials.api_url,
-        app_key: credentials.app_key,
-        app_secret: credentials.app_secret
-      });
+      const settingsData = settingsToTest || settings;
+      if (!settingsData) return false;
       
-      if (result.success) {
-        toast.success('Connection successful');
+      const success = await hikvisionService.testConnection(settingsData);
+      if (success) {
+        toast.success('Successfully connected to Hikvision API');
       } else {
-        toast.error('Connection failed: ' + (result.message || 'Unknown error'));
+        toast.error('Failed to connect to Hikvision API');
       }
-      
-      return result;
+      return success;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error testing connection:', error);
-      toast.error('Connection test error: ' + errorMessage);
-      return { success: false, message: errorMessage };
+      toast.error('Connection test failed');
+      return false;
     }
   };
 
   const fetchDevices = async () => {
-    if (!settings || !settings.is_active) {
-      setDevices([]);
-      return [];
-    }
+    if (!settings || !settings.is_active) return;
     
     setIsLoadingDevices(true);
     try {
-      const devicesList = await hikvisionService.fetchDevices(settings);
+      const devicesList = await hikvisionService.getDevices(settings);
       setDevices(devicesList);
-      return devicesList;
-    } catch (error) {
-      console.error('Error fetching devices:', error);
+    } catch (err) {
+      console.error('Error fetching devices:', err);
       toast.error('Failed to load devices');
-      return [];
     } finally {
       setIsLoadingDevices(false);
     }
   };
 
+  // Add a device to the Hikvision system
+  const addDevice = async (deviceName: string, deviceSerial: string, siteId: string): Promise<boolean> => {
+    if (!settings) return false;
+    
+    try {
+      await hikvisionService.addDevice(settings, {
+        deviceName,
+        deviceSerial,
+        siteId
+      });
+      
+      // Refresh devices list after adding
+      await fetchDevices();
+      toast.success('Device added successfully');
+      return true;
+    } catch (error) {
+      console.error('Error adding device:', error);
+      toast.error('Failed to add device');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchSettings();
+    }
+  }, [currentBranch?.id]);
+
+  useEffect(() => {
+    if (settings?.is_active) {
+      fetchDevices();
+    }
+  }, [settings?.is_active]);
+
   return {
     settings,
     isLoading,
+    error,
     isSaving,
+    devices,
+    isLoadingDevices,
+    fetchSettings,
     saveSettings,
     testConnection,
     fetchDevices,
-    devices,
-    isLoadingDevices
+    addDevice
   };
 };

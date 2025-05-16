@@ -1,47 +1,67 @@
 
-export interface StoreProduct {
+export type ProductCategory = "supplement" | "equipment" | "apparel" | "accessory" | "membership" | "other";
+export type ProductStatus = "in-stock" | "low-stock" | "out-of-stock" | "discontinued";
+export type OrderStatus = "pending" | "processing" | "completed" | "cancelled" | "refunded";
+export type PaymentMethod = "cash" | "card" | "bank-transfer" | "wallet" | "other";
+
+export interface Product {
   id: string;
   name: string;
-  description?: string;
-  sku?: string;
+  description: string;
   price: number;
-  cost_price?: number;
-  inventory_count?: number;
-  category?: string;
-  image_url?: string;
-  is_active?: boolean;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  salePrice?: number;
+  category: ProductCategory;
+  status: ProductStatus;
+  stock: number;
+  inventoryId?: string; // reference to inventory item
+  sku: string;
+  barcode?: string;
+  images: string[];
+  features?: string[];
+  brand?: string;
+  featured: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CartItem {
+  productId: string;
+  product: Product;
+  quantity: number;
+  price: number;
+  discount?: number;
 }
 
 export interface Order {
   id: string;
-  order_number?: string;
-  member_id?: string;
-  total_amount: number;
-  status?: OrderStatus;
-  payment_method?: string;
-  order_date?: string;
-  completed_date?: string;
+  memberId?: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  items: CartItem[];
+  subtotal: number;
+  discount?: number;
+  promoCodeId?: string;
+  promoCode?: string;
+  tax: number;
+  total: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  createdAt: string;
+  updatedAt?: string;
+  completedAt?: string;
   notes?: string;
-  branch_id: string;
-  created_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  items?: OrderItem[];
+  staffId?: string;
 }
 
-export interface OrderItem {
+export interface Review {
   id: string;
-  order_id: string;
-  product_id: string;
-  quantity: number;
-  price_per_unit: number;
-  total_price: number;
-  created_at?: string;
-  updated_at?: string;
-  product?: StoreProduct;
+  productId: string;
+  memberId: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  helpful: number;
+  reported: boolean;
 }
-
-export type OrderStatus = 'pending' | 'paid' | 'completed' | 'cancelled' | 'refunded';
