@@ -1,16 +1,15 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Use environment variables for Supabase URL and anon key
 const supabaseUrl = 'https://rnqgpucxlvubwqpkgstc.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWdwdWN4bHZ1YndxcGtnc3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDgwNjQsImV4cCI6MjA2MDgyNDA2NH0.V5nFuGrJnTdFx60uI8hv46VKUmWoA2aAOx_jJjJFcUA';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: localStorage, // Use local storage for auth state
-    persistSession: true,  // Persist the session
-    autoRefreshToken: true, // Automatically refresh token
-    detectSessionInUrl: true // Detect session in URL (for OAuth and password reset)
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false, // Prevent URL detection causing refreshes
   },
   // Add global headers to ensure API key is sent with every request
   global: {
@@ -38,7 +37,7 @@ export const getCurrentUserBranch = async () => {
       return null;
     }
 
-    return profile.branch_id;
+    return profile?.branch_id;
   } catch (error) {
     console.error('Error in getCurrentUserBranch:', error);
     return null;
@@ -54,7 +53,7 @@ export const userHasBranchAccess = async (branchId: string) => {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('role, branch_id, accessible_branch_ids')
+      .select('branch_id, accessible_branch_ids, role')
       .eq('id', user.id)
       .single();
 
@@ -64,20 +63,44 @@ export const userHasBranchAccess = async (branchId: string) => {
     }
 
     // Admin has access to all branches
-    if (profile.role === 'admin') return true;
+    if (profile?.role === 'admin') return true;
     
     // User has access to their own branch
-    if (profile.branch_id === branchId) return true;
+    if (profile?.branch_id === branchId) return true;
 
-    // User has access to branches in their accessible_branch_ids array
-    if (profile.accessible_branch_ids && Array.isArray(profile.accessible_branch_ids)) {
-      return profile.accessible_branch_ids.includes(branchId);
-    }
+    // Branch manager or staff with multiple branch access
+    if (profile?.accessible_branch_ids?.includes(branchId)) return true;
 
+    // Default: no access
     return false;
   } catch (error) {
     console.error('Error in userHasBranchAccess:', error);
     return false;
+  }
+};
+
+// Function to get user role
+export const getUserRole = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return null;
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+
+    return profile?.role;
+  } catch (error) {
+    console.error('Error in getUserRole:', error);
+    return null;
   }
 };
 
