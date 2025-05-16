@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
 import { followUpService } from '@/services/followUpService';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import LeadsList from '@/components/crm/LeadsList';
 import { Lead, FollowUpHistory } from '@/types/crm';

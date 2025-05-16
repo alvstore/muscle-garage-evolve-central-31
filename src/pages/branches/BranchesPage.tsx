@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Building2, CheckCircle, XCircle } from 'lucide-react';
 import { Branch } from '@/types/branch';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { usePermissions } from '@/hooks/use-permissions';
 import BranchForm from '@/components/branch/BranchForm';
 import { PermissionGuard } from '@/components/auth/PermissionGuard';

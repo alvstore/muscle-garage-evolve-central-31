@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, Edit, Trash2, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { Branch } from "@/types/branch";
 import { toast } from "sonner";
 import CreateBranchDialog from "@/components/branch/CreateBranchDialog";

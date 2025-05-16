@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import BranchDeviceManager from '@/components/integrations/BranchDeviceManager';
 import BranchSpecificSettings from '@/components/settings/BranchSpecificSettings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
