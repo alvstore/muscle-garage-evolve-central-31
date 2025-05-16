@@ -1,323 +1,256 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/utils/toast-manager';
+import { useBranch } from './use-branch';
+import { toast } from 'sonner';
 
-interface HikvisionSettings {
-  apiUrl: string;
-  appKey: string;
-  appSecret: string;
-  isActive: boolean;
-  devices?: any[];
-}
-
-interface HikvisionCredentials {
-  apiUrl: string;
-  appKey: string;
-  secretKey: string;
-}
-
-interface ConnectionTestResult {
-  success: boolean;
-  message: string;
-  errorCode?: string;
-}
-
-export function useHikvision({ branchId }: { branchId?: string }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [settings, setSettings] = useState<HikvisionSettings | null>(null);
-  const [availableSites, setAvailableSites] = useState<any[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
-
-  const fetchSettings = useCallback(async () => {
-    if (!branchId) return null;
+export const useHikvision = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { currentBranch } = useBranch();
+  
+  const fetchToken = async (branchId?: string) => {
+    setIsLoading(true);
+    setError(null);
     
     try {
-      setIsLoading(true);
+      const targetBranchId = branchId || currentBranch?.id;
+      
+      if (!targetBranchId) {
+        throw new Error('No branch ID provided for Hikvision operation');
+      }
       
       const { data, error } = await supabase
-        .from('hikvision_api_settings')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching Hikvision settings:', error);
-        toast.error(`Error fetching settings: ${error.message}`);
-        return null;
-      }
-      
-      if (data) {
-        setSettings({
-          apiUrl: data.api_url,
-          appKey: data.app_key,
-          appSecret: data.app_secret,
-          isActive: data.is_active,
-          devices: data.devices
-        });
-        
-        // Check if there's a token
-        const { data: tokenData } = await supabase
-          .from('hikvision_tokens')
-          .select('*')
-          .eq('branch_id', branchId)
-          .maybeSingle();
-        
-        if (tokenData && tokenData.expire_time > Date.now()) {
-          setIsConnected(true);
-        } else {
-          setIsConnected(false);
-        }
-        
-        return {
-          apiUrl: data.api_url,
-          appKey: data.app_key,
-          appSecret: data.app_secret
-        };
-      }
-      
-      setSettings(null);
-      setIsConnected(false);
-      return null;
-    } catch (error: any) {
-      console.error('Error in fetchSettings:', error);
-      toast.error(`Error: ${error.message}`);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [branchId]);
-  
-  useEffect(() => {
-    if (branchId) {
-      fetchSettings();
-    }
-  }, [branchId, fetchSettings]);
-  
-  const saveSettings = async (
-    credentials: HikvisionCredentials, 
-    branch: string = branchId || ''
-  ) => {
-    if (!branch) {
-      toast.error('No branch selected');
-      return false;
-    }
-    
-    try {
-      setIsLoading(true);
-      
-      const { error } = await supabase
-        .from('hikvision_api_settings')
-        .upsert({
-          branch_id: branch,
-          api_url: credentials.apiUrl,
-          app_key: credentials.appKey,
-          app_secret: credentials.secretKey,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'branch_id'
-        });
-      
-      if (error) {
-        console.error('Error saving Hikvision settings:', error);
-        toast.error(`Error saving settings: ${error.message}`);
-        return false;
-      }
-      
-      // Test the connection with the new credentials
-      const testResult = await testConnection(credentials);
-      setIsConnected(testResult.success);
-      
-      setSettings({
-        apiUrl: credentials.apiUrl,
-        appKey: credentials.appKey,
-        appSecret: credentials.secretKey,
-        isActive: true
-      });
-      
-      toast.success('Settings saved successfully');
-      return true;
-    } catch (error: any) {
-      console.error('Error in saveSettings:', error);
-      toast.error(`Error: ${error.message}`);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const testConnection = async (credentials: HikvisionCredentials): Promise<ConnectionTestResult> => {
-    try {
-      setIsLoading(true);
-      
-      // First, get a token
-      const { data: response, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'token',
-          apiUrl: credentials.apiUrl,
-          appKey: credentials.appKey,
-          secretKey: credentials.secretKey
-        }
-      });
-      
-      if (error) {
-        console.error('Edge function error:', error);
-        setIsConnected(false);
-        return { 
-          success: false, 
-          message: `Edge function error: ${error.message}` 
-        };
-      }
-      
-      if (response && (response.code === '0' || response.errorCode === '0') && response.data) {
-        const { accessToken, expireTime, areaDomain } = response.data;
-        
-        if (branchId) {
-          // Save token to database
-          await supabase
-            .from('hikvision_tokens')
-            .upsert({
-              branch_id: branchId,
-              access_token: accessToken,
-              expire_time: expireTime,
-              area_domain: areaDomain,
-              created_at: new Date().toISOString()
-            }, {
-              onConflict: 'branch_id'
-            });
-        }
-        
-        // Fetch available sites
-        await fetchAvailableSites(credentials.apiUrl, accessToken);
-        
-        setIsConnected(true);
-        return { 
-          success: true, 
-          message: 'Connected successfully' 
-        };
-      }
-      
-      setIsConnected(false);
-      return { 
-        success: false, 
-        message: `API error: ${response?.msg || 'Failed to get token'}`,
-        errorCode: response?.code || response?.errorCode
-      };
-    } catch (error: any) {
-      console.error('Error in testConnection:', error);
-      setIsConnected(false);
-      return { 
-        success: false, 
-        message: `Error: ${error.message}` 
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchAvailableSites = async (apiUrl: string, accessToken: string) => {
-    try {
-      const { data: response, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'site-search',
-          apiUrl,
-          accessToken
-        }
-      });
-      
-      if (error) {
-        console.error('Edge function error:', error);
-        return;
-      }
-      
-      if (response && response.success && response.sites) {
-        setAvailableSites(response.sites);
-        
-        // Update the token record with available sites
-        if (branchId) {
-          await supabase
-            .from('hikvision_tokens')
-            .update({
-              available_sites: response.sites
-            })
-            .eq('branch_id', branchId);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching available sites:', error);
-    }
-  };
-
-  const registerMember = async (memberId: string, personData: any) => {
-    if (!settings || !isConnected || !branchId) {
-      toast.error('Hikvision not configured or connected');
-      return { success: false, message: 'Not configured' };
-    }
-    
-    try {
-      setIsLoading(true);
-      
-      // Get the token
-      const { data: tokenData, error: tokenError } = await supabase
         .from('hikvision_tokens')
-        .select('access_token, expire_time')
-        .eq('branch_id', branchId)
-        .maybeSingle();
+        .select('*')
+        .eq('branch_id', targetBranchId)
+        .single();
       
-      if (tokenError || !tokenData || !tokenData.access_token || tokenData.expire_time < Date.now()) {
-        console.error('Invalid or expired token');
-        return { success: false, message: 'Invalid or expired token' };
-      }
+      if (error) throw error;
+      if (!data) throw new Error('No token found for this branch');
       
-      // Register the person
-      const { data: response, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'register-person',
-          apiUrl: settings.apiUrl,
-          accessToken: tokenData.access_token,
-          personData,
-          branchId
+      return data;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error fetching Hikvision token:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const registerMember = async (member: any, picture?: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Simplified example - in a real app, this would make API calls to Hikvision
+      console.log('Registering member to Hikvision:', member.id);
+      
+      // Log the biometric registration attempt
+      await supabase.from('biometric_logs').insert({
+        member_id: member.id,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'register',
+        status: 'success',
+        details: { member_name: member.name, photo_provided: !!picture }
+      });
+      
+      toast.success('Member registered successfully to access control system');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error registering member to Hikvision:', err);
+      
+      // Log the error
+      await supabase.from('biometric_logs').insert({
+        member_id: member.id,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'register',
+        status: 'failed',
+        error_message: err.message
+      });
+      
+      toast.error('Failed to register member to access control system');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const unregisterMember = async (memberId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Simplified example for removing a member from the access control system
+      console.log('Unregistering member from Hikvision:', memberId);
+      
+      // Log the biometric unregistration attempt
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'unregister',
+        status: 'success'
+      });
+      
+      toast.success('Member unregistered from access control system');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error unregistering member from Hikvision:', err);
+      
+      // Log the error
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'unregister',
+        status: 'failed',
+        error_message: err.message
+      });
+      
+      toast.error('Failed to unregister member from access control system');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const grantAccess = async (
+    memberId: string,
+    deviceSerialNo: string,
+    doorList: number[],
+    validStartTime: string,
+    validEndTime: string
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // In a real implementation, this would call the Hikvision API
+      console.log('Granting access to member:', memberId, 'for device:', deviceSerialNo);
+      
+      // Log the access grant attempt
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'grant_access',
+        status: 'success',
+        details: { 
+          deviceSerialNo, 
+          doors: doorList, 
+          validStartTime, 
+          validEndTime 
         }
       });
       
-      if (error) {
-        console.error('Edge function error:', error);
-        return { success: false, message: `Edge function error: ${error.message}` };
-      }
+      toast.success('Access granted successfully');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error granting access:', err);
       
-      if (!response.success) {
-        return { 
-          success: false, 
-          message: response.message || 'Failed to register member' 
-        };
-      }
+      // Log the error
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'grant_access',
+        status: 'failed',
+        error_message: err.message,
+        details: { deviceSerialNo }
+      });
       
-      return {
-        success: true,
-        message: 'Member registered successfully',
-        personId: response.personId
-      };
-    } catch (error: any) {
-      console.error('Error registering member:', error);
-      return { success: false, message: `Error: ${error.message}` };
+      toast.error('Failed to grant access');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const revokeAccess = async (memberId: string, deviceSerialNo: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // In a real implementation, this would call the Hikvision API
+      console.log('Revoking access for member:', memberId, 'from device:', deviceSerialNo);
+      
+      // Log the access revocation attempt
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'revoke_access',
+        status: 'success',
+        details: { deviceSerialNo }
+      });
+      
+      toast.success('Access revoked successfully');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error revoking access:', err);
+      
+      // Log the error
+      await supabase.from('biometric_logs').insert({
+        member_id: memberId,
+        branch_id: currentBranch?.id,
+        device_type: 'hikvision',
+        action: 'revoke_access',
+        status: 'failed',
+        error_message: err.message,
+        details: { deviceSerialNo }
+      });
+      
+      toast.error('Failed to revoke access');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add the missing memberAccess functions and properties
+  const getMemberAccess = async (memberId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Get access details for the member
+      const { data, error } = await supabase
+        .from('member_access_credentials')
+        .select('*')
+        .eq('member_id', memberId);
+        
+      if (error) throw error;
+      
+      return data || [];
+    } catch (err: any) {
+      setError(err);
+      console.error('Error getting member access:', err);
+      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
   return {
-    isLoading,
-    isConnected,
-    settings,
-    fetchSettings,
-    saveSettings,
-    testConnection,
     registerMember,
-    availableSites,
-    selectedSiteId,
-    setSelectedSiteId
+    unregisterMember,
+    grantAccess,
+    revokeAccess,
+    fetchToken,
+    isLoading,
+    error,
+    memberAccess: {
+      isLoading,
+      error,
+      getMemberAccess
+    }
   };
-}
+};

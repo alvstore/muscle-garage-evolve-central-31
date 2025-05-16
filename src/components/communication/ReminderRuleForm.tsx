@@ -1,275 +1,293 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useReminderRules } from '@/hooks/use-reminder-rules';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { ReminderRule, NotificationChannel } from '@/types/notification';
+import { ReminderRule, NotificationChannel } from '@/types';
 
 interface ReminderRuleFormProps {
-  editRule?: ReminderRule | null;
-  onComplete?: () => void;
+  rule?: ReminderRule;
+  onSave: (rule: Partial<ReminderRule>) => Promise<void>;
+  onCancel: () => void;
 }
 
-const ReminderRuleForm: React.FC<ReminderRuleFormProps> = ({
-  editRule = null,
-  onComplete
-}) => {
-  const { saveRule } = useReminderRules();
-  
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [triggerType, setTriggerType] = useState('days_before_expiry');
-  const [triggerValue, setTriggerValue] = useState<number>(7);
-  const [message, setMessage] = useState('');
-  const [targetType, setTargetType] = useState('all_members');
-  const [active, setActive] = useState(true);
-  const [channels, setChannels] = useState<NotificationChannel[]>(['in-app']);
-  const [targetRoles, setTargetRoles] = useState<string[]>(['member']);
+const triggerTypes = [
+  { label: 'Membership Expiry', value: 'membership_expiry' },
+  { label: 'Birthday', value: 'birthday' },
+  { label: 'Missed Classes', value: 'missed_classes' },
+  { label: 'Low Attendance', value: 'low_attendance' },
+  { label: 'Payment Due', value: 'payment_due' },
+  { label: 'Payment Overdue', value: 'payment_overdue' },
+  { label: 'New Member Welcome', value: 'new_member' },
+];
+
+const targetRoles = [
+  { label: 'Members', value: 'member' },
+  { label: 'Staff', value: 'staff' },
+  { label: 'Trainers', value: 'trainer' },
+  { label: 'Admins', value: 'admin' },
+];
+
+const notificationChannels = [
+  { label: 'Email', value: 'email' },
+  { label: 'SMS', value: 'sms' },
+  { label: 'App', value: 'app' },
+  { label: 'WhatsApp', value: 'whatsapp' },
+];
+
+export default function ReminderRuleForm({ rule, onSave, onCancel }: ReminderRuleFormProps) {
+  const [formData, setFormData] = useState<Partial<ReminderRule>>({
+    title: '',
+    description: '',
+    trigger_type: 'membership_expiry',
+    trigger_value: 7, // Default days before
+    is_active: true,
+    message: '',
+    target_roles: ['member'],
+    send_via: ['email'],
+    conditions: {},
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   useEffect(() => {
-    if (editRule) {
-      setName(editRule.title || '');
-      setDescription(editRule.description || '');
-      setTriggerType(editRule.trigger_type || '');
-      setTriggerValue(editRule.trigger_value || 7);
-      setMessage(editRule.message || '');
-      setTargetType('all_members'); // Default value as it may not exist in DB
-      setActive(editRule.is_active || false);
-      setChannels(editRule.send_via ? (editRule.send_via as NotificationChannel[]) : ['in-app']);
-      setTargetRoles(editRule.target_roles || ['member']);
+    if (rule) {
+      setFormData(rule);
     }
-  }, [editRule]);
-  
-  const availableChannels = [
-    { id: 'in-app', label: 'In-App Notification' },
-    { id: 'email', label: 'Email' },
-    { id: 'sms', label: 'SMS' },
-    { id: 'whatsapp', label: 'WhatsApp' }
-  ];
-  
+  }, [rule]);
+
+  const handleInputChange = (field: keyof ReminderRule, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleTargetRole = (role: string) => {
+    const currentRoles = [...(formData.target_roles || [])];
+    const roleIndex = currentRoles.indexOf(role);
+    
+    if (roleIndex === -1) {
+      currentRoles.push(role);
+    } else {
+      currentRoles.splice(roleIndex, 1);
+    }
+    
+    handleInputChange('target_roles', currentRoles);
+  };
+
+  const handleToggleChannel = (channel: string) => {
+    const currentChannels = [...(formData.send_via || [])];
+    const channelIndex = currentChannels.indexOf(channel);
+    
+    if (channelIndex === -1) {
+      currentChannels.push(channel);
+    } else {
+      currentChannels.splice(channelIndex, 1);
+    }
+    
+    handleInputChange('send_via', currentChannels);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim()) {
-      toast.error('Please provide a name for the reminder rule');
-      return;
-    }
-    
-    if (!message.trim()) {
-      toast.error('Please provide a message template');
-      return;
-    }
-    
-    if (channels.length === 0) {
-      toast.error('Please select at least one communication channel');
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
-      const ruleData: Partial<ReminderRule> = {
-        id: editRule?.id, // Include id if editing
-        title: name,
-        description,
-        trigger_type: triggerType,
-        trigger_value: triggerValue,
-        message,
-        conditions: {},
-        is_active: active,
-        target_roles: targetRoles,
-        send_via: channels,
-      };
-      
-      let success;
-      
-      if (editRule?.id) {
-        // Make sure we have a complete ReminderRule
-        const completeRule: ReminderRule = {
-          ...ruleData,
-          id: editRule.id,
-          notification_channel: '',
-          created_at: editRule.created_at,
-          updated_at: new Date().toISOString(),
-          triggerType: triggerType, // For backward compatibility
-          triggerValue: triggerValue, // For backward compatibility
-          isActive: active, // For backward compatibility
-          active: active, // For backward compatibility
-          targetRoles: targetRoles, // For backward compatibility
-          sendVia: channels, // For backward compatibility
-          channels: channels // For backward compatibility
-        } as ReminderRule;
-        success = await saveRule(completeRule);
-      } else {
-        // For new rules, create a complete object with all required fields
-        const newRule: ReminderRule = {
-          ...ruleData,
-          id: '', // This will be generated by the backend
-          notification_channel: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          triggerType: triggerType, // For backward compatibility
-          triggerValue: triggerValue, // For backward compatibility
-          isActive: active, // For backward compatibility
-          active: active, // For backward compatibility
-          targetRoles: targetRoles, // For backward compatibility
-          sendVia: channels, // For backward compatibility
-          channels: channels // For backward compatibility
-        } as ReminderRule;
-        success = await saveRule(newRule);
-      }
-      
-      if (success) {
-        toast.success(editRule ? 'Reminder rule updated successfully' : 'Reminder rule created successfully');
-        if (onComplete) {
-          onComplete();
-        }
-      } else {
-        toast.error('Failed to save reminder rule');
-      }
+      await onSave(formData);
+      toast.success(`Reminder rule ${rule ? 'updated' : 'created'} successfully!`);
     } catch (error) {
       console.error('Error saving reminder rule:', error);
-      toast.error('An error occurred while saving the reminder rule');
+      toast.error(`Failed to ${rule ? 'update' : 'create'} reminder rule`);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  const handleToggleChannel = (channelId: string) => {
-    const channelValue = channelId as NotificationChannel;
-    
-    if (channels.includes(channelValue)) {
-      setChannels(channels.filter(id => id !== channelValue));
-    } else {
-      setChannels([...channels, channelValue]);
-    }
-  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="rule-name">Rule Name</Label>
-          <Input
-            id="rule-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name for this reminder rule"
-            required
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="rule-description">Description (Optional)</Label>
-          <Textarea
-            id="rule-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short description of what this rule does"
-            rows={2}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="trigger-type">Trigger Type</Label>
-            <Select value={triggerType} onValueChange={setTriggerType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select trigger" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                <SelectItem value="days_before_expiry">Days Before Membership Expiry</SelectItem>
-                <SelectItem value="days_after_joining">Days After Joining</SelectItem>
-                <SelectItem value="days_of_absence">Days of Absence</SelectItem>
-                <SelectItem value="birthday">Birthday</SelectItem>
-                <SelectItem value="class_reminder">Class Reminder</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label htmlFor="trigger-value">Trigger Value</Label>
-            <Input
-              id="trigger-value"
-              type="number"
-              value={triggerValue}
-              onChange={(e) => setTriggerValue(Number(e.target.value))}
-              min={0}
-              max={365}
-              required
-            />
-          </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="target-type">Target Recipients</Label>
-          <Select value={targetType} onValueChange={setTargetType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select recipients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all_members">All Members</SelectItem>
-              <SelectItem value="active_members">Active Members Only</SelectItem>
-              <SelectItem value="inactive_members">Inactive Members</SelectItem>
-              <SelectItem value="expiring_members">Expiring Members</SelectItem>
-              <SelectItem value="new_members">New Members</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <Label htmlFor="message-template">Message Template</Label>
-          <Textarea
-            id="message-template"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Template for the reminder message"
-            rows={4}
-            required
-          />
-          <p className="text-sm text-muted-foreground mt-2">
-            Use {'{name}'} for member name, {'{days}'} for days value, {'{date}'} for formatted date
-          </p>
-        </div>
-        
-        <div>
-          <Label className="mb-2 block">Communication Channels</Label>
-          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
-            {availableChannels.map((channel) => (
-              <div key={channel.id} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`channel-${channel.id}`} 
-                  checked={channels.includes(channel.id)}
-                  onCheckedChange={() => handleToggleChannel(channel.id)}
-                />
-                <Label htmlFor={`channel-${channel.id}`} className="text-sm">{channel.label}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="active" 
-            checked={active} 
-            onCheckedChange={(checked) => setActive(checked === true)}
-          />
-          <Label htmlFor="active">Rule is active</Label>
-        </div>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-2">
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-          {isSubmitting ? 'Saving...' : editRule ? 'Update Rule' : 'Create Rule'}
-        </Button>
-      </div>
-    </form>
-  );
-};
+    <Card>
+      <CardHeader>
+        <CardTitle>{rule ? 'Edit Reminder Rule' : 'Create New Reminder Rule'}</CardTitle>
+        <CardDescription>
+          Configure notification rules to automatically remind users about important events
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Rule Name</Label>
+              <Input
+                id="title"
+                placeholder="Enter a descriptive name for this rule"
+                value={formData.title || ''}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                required
+              />
+            </div>
 
-export default ReminderRuleForm;
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Add more details about this rule's purpose"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="trigger_type">Trigger Event</Label>
+              <Select
+                value={formData.trigger_type}
+                onValueChange={(value) => handleInputChange('trigger_type', value)}
+              >
+                <SelectTrigger id="trigger_type">
+                  <SelectValue placeholder="Select trigger event" />
+                </SelectTrigger>
+                <SelectContent>
+                  {triggerTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="trigger_value">
+                {formData.trigger_type === 'membership_expiry' || 
+                 formData.trigger_type === 'birthday' || 
+                 formData.trigger_type === 'payment_due'
+                  ? 'Days Before' 
+                  : formData.trigger_type === 'missed_classes' || formData.trigger_type === 'low_attendance'
+                    ? 'Threshold Count'
+                    : 'Value'}
+              </Label>
+              <Input
+                id="trigger_value"
+                type="number"
+                min={1}
+                value={formData.trigger_value || ''}
+                onChange={(e) => handleInputChange('trigger_value', parseInt(e.target.value, 10) || 0)}
+                required
+              />
+              <p className="text-sm text-gray-500">
+                {formData.trigger_type === 'membership_expiry' 
+                  ? 'Number of days before membership expiry to send the reminder'
+                  : formData.trigger_type === 'birthday'
+                    ? 'Number of days before birthday to send the reminder'
+                    : formData.trigger_type === 'missed_classes'
+                      ? 'Number of consecutive classes missed to trigger the notification'
+                      : formData.trigger_type === 'low_attendance'
+                        ? 'Minimum attendance percentage threshold to trigger the notification'
+                        : formData.trigger_type === 'payment_due'
+                          ? 'Days before payment is due to send the reminder'
+                          : formData.trigger_type === 'payment_overdue'
+                            ? 'Days after payment is due to send the reminder'
+                            : 'Configuration value for this trigger'}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Target Roles</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {targetRoles.map((role) => (
+                  <div key={role.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`role-${role.value}`}
+                      checked={(formData.target_roles || []).includes(role.value)}
+                      onCheckedChange={() => handleToggleTargetRole(role.value)}
+                    />
+                    <Label htmlFor={`role-${role.value}`} className="cursor-pointer">
+                      {role.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Send Via</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {notificationChannels.map((channel) => (
+                  <div key={channel.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`channel-${channel.value}`}
+                      checked={(formData.send_via || []).includes(channel.value)}
+                      onCheckedChange={() => handleToggleChannel(channel.value)}
+                    />
+                    <Label htmlFor={`channel-${channel.value}`} className="cursor-pointer">
+                      {channel.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {formData.send_via && formData.send_via.length > 0 && (
+              <div className="grid gap-2">
+                <Label htmlFor="notification_channel">Primary Notification Channel</Label>
+                <Select
+                  value={formData.notification_channel || (formData.send_via.length > 0 ? formData.send_via[0] : '')}
+                  onValueChange={(value) => handleInputChange('notification_channel', value as NotificationChannel)}
+                >
+                  <SelectTrigger id="notification_channel">
+                    <SelectValue placeholder="Select primary channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.send_via.map((channel) => (
+                      <SelectItem key={channel} value={channel}>
+                        {notificationChannels.find(c => c.value === channel)?.label || channel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message Template</Label>
+              <Textarea
+                id="message"
+                placeholder="Enter the message content with optional variables like {{name}} or {{date}}"
+                value={formData.message || ''}
+                onChange={(e) => handleInputChange('message', e.target.value)}
+                rows={5}
+                required
+              />
+              <p className="text-sm text-gray-500">
+                Available variables: {{name}}, {{date}}, {{membership_end}}, {{class_date}}, {{amount_due}}, {{due_date}}
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+              />
+              <Label htmlFor="is_active">Active</Label>
+              <p className="text-sm text-gray-500 ml-2">
+                Toggle on to enable this reminder rule
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : rule ? 'Update Rule' : 'Create Rule'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}

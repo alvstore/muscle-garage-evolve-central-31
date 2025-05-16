@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 // No longer using useNavigate to avoid router context dependency
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isAuthenticated: boolean;
+  role?: UserRole | null;
   // Authentication methods
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -264,6 +266,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading,
     isAdmin: userRole === 'admin',
     isAuthenticated: !!user,
+    role: userRole,
     // New methods
     login,
     logout,

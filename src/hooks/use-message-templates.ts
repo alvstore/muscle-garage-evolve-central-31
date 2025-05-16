@@ -1,100 +1,246 @@
-import { useState, useEffect } from 'react';
-import settingsService from '@/services/settingsService';
-import { useBranch } from './use-branch';
 
-export interface MessageTemplate {
-  id?: string;
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useBranch } from './use-branch';
+import { toast } from 'sonner';
+
+export interface EmailTemplate {
+  id: string;
   name: string;
+  subject: string;
   content: string;
-  variables?: string[] | any;
   category: string;
+  variables?: Record<string, string>;
   branch_id?: string;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
-  
-  // Type-specific fields
-  subject?: string; // Email-specific
-  dlt_template_id?: string; // SMS-specific
-  header_text?: string; // WhatsApp-specific
-  footer_text?: string; // WhatsApp-specific
-  whatsapp_template_name?: string; // WhatsApp-specific
 }
 
-export const useMessageTemplates = (type: 'sms' | 'email' | 'whatsapp') => {
-  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-  const [isLoading, setLoading] = useState(true);
+export interface SmsTemplate {
+  id: string;
+  name: string;
+  content: string;
+  category: string;
+  dlt_template_id?: string;
+  variables?: Record<string, string>;
+  branch_id?: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const useMessageTemplates = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const { currentBranch } = useBranch();
 
-  const fetchTemplates = async () => {
-    try {
-      setLoading(true);
-      const result = await settingsService.getTemplates(type, currentBranch?.id);
-      if (result.data) {
-        // Cast the data to MessageTemplate[]
-        setTemplates(result.data as MessageTemplate[]);
-      }
-      if (result.error) {
-        console.error(`Error fetching ${type} templates:`, result.error);
-      }
-    } catch (error) {
-      console.error(`Error in fetchTemplates (${type}):`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchEmailTemplates = async () => {
+    setIsLoading(true);
+    setError(null);
 
-  const saveTemplate = async (template: MessageTemplate) => {
-    setIsSaving(true);
     try {
-      // Ensure the branch_id is set
-      const templateToSave = {
-        ...template,
-        branch_id: currentBranch?.id
-      };
-      
-      const result = await settingsService.saveTemplate(type, templateToSave);
-      if (result) {
-        await fetchTemplates(); // Refresh the templates list
-        return true;
+      let query = supabase.from('email_templates').select('*');
+
+      if (currentBranch?.id) {
+        query = query.or(`branch_id.is.null,branch_id.eq.${currentBranch.id}`);
       }
-      return false;
+
+      const { data: templates, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      return templates || [];
     } catch (err: any) {
       setError(err);
-      return false;
+      console.error('Error fetching email templates:', err);
+      return [];
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const deleteTemplate = async (templateId: string) => {
+  const fetchSmsTemplates = async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const success = await settingsService.deleteTemplate(type, templateId);
-      if (success) {
-        setTemplates(templates.filter(template => template.id !== templateId));
+      let query = supabase.from('sms_templates').select('*');
+
+      if (currentBranch?.id) {
+        query = query.or(`branch_id.is.null,branch_id.eq.${currentBranch.id}`);
       }
-      return success;
+
+      const { data: templates, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      return templates || [];
     } catch (err: any) {
       setError(err);
-      return false;
+      console.error('Error fetching SMS templates:', err);
+      return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (currentBranch?.id) {
-      fetchTemplates();
+  const saveEmailTemplate = async (template: Partial<EmailTemplate>) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { id, ...templateData } = template;
+      let result;
+
+      if (id) {
+        // Update
+        const { data, error: updateError } = await supabase
+          .from('email_templates')
+          .update({ 
+            ...templateData, 
+            branch_id: templateData.branch_id || currentBranch?.id || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        result = data;
+        toast.success('Email template updated successfully');
+      } else {
+        // Insert
+        const { data, error: insertError } = await supabase
+          .from('email_templates')
+          .insert([{ 
+            ...templateData, 
+            branch_id: templateData.branch_id || currentBranch?.id || null 
+          }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        result = data;
+        toast.success('Email template created successfully');
+      }
+
+      return result;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error saving email template:', err);
+      toast.error(`Failed to save email template: ${err.message}`);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
-  }, [currentBranch?.id, type]);
+  };
+
+  const saveSmsTemplate = async (template: Partial<SmsTemplate>) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { id, ...templateData } = template;
+      let result;
+
+      if (id) {
+        // Update
+        const { data, error: updateError } = await supabase
+          .from('sms_templates')
+          .update({ 
+            ...templateData, 
+            branch_id: templateData.branch_id || currentBranch?.id || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        result = data;
+        toast.success('SMS template updated successfully');
+      } else {
+        // Insert
+        const { data, error: insertError } = await supabase
+          .from('sms_templates')
+          .insert([{ 
+            ...templateData, 
+            branch_id: templateData.branch_id || currentBranch?.id || null 
+          }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        result = data;
+        toast.success('SMS template created successfully');
+      }
+
+      return result;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error saving SMS template:', err);
+      toast.error(`Failed to save SMS template: ${err.message}`);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteEmailTemplate = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      toast.success('Email template deleted successfully');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error deleting email template:', err);
+      toast.error(`Failed to delete email template: ${err.message}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteSmsTemplate = async (id: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('sms_templates')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      toast.success('SMS template deleted successfully');
+      return true;
+    } catch (err: any) {
+      setError(err);
+      console.error('Error deleting SMS template:', err);
+      toast.error(`Failed to delete SMS template: ${err.message}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
-    templates,
+    fetchEmailTemplates,
+    fetchSmsTemplates,
+    saveEmailTemplate,
+    saveSmsTemplate,
+    deleteEmailTemplate,
+    deleteSmsTemplate,
     isLoading,
-    error,
-    isSaving,
-    fetchTemplates,
-    saveTemplate,
-    deleteTemplate,
+    error
   };
 };

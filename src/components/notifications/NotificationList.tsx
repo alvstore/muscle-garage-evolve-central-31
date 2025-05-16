@@ -1,153 +1,111 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { CheckCheck, Bell, Trash2 } from 'lucide-react';
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
-import { notificationService } from '@/services';
-import { Notification } from '@/types';
-import { EmptyState } from '@/components/ui/empty-state';
 
-export interface NotificationListProps {
-  refreshTrigger?: number;
-  filterStatus?: 'all' | 'read' | 'unread';
-  filterTypes?: string[];
-  categoryTypes?: string[];
-  userId?: string;
-  onDelete?: (id: string) => void;
+import React from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { Bell, Check, Calendar, User, FileText, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Notification } from '@/types';
+
+interface NotificationListProps {
+  notifications: Notification[];
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  isLoading?: boolean;
 }
 
-const NotificationList: React.FC<NotificationListProps> = ({
-  refreshTrigger = 0,
-  filterStatus = 'all',
-  filterTypes = [],
-  categoryTypes = [],
-  userId,
-  onDelete
-}) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setIsLoading(true);
-      try {
-        const fetchedNotifications = await notificationService.getNotifications(userId);
-        // Ensure the notifications have the required is_read property
-        const formattedNotifications = fetchedNotifications.map(notification => ({
-          ...notification,
-          is_read: notification.read || notification.is_read || false
-        }));
-        setNotifications(formattedNotifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNotifications();
-  }, [refreshTrigger, userId]);
-
-  const handleDelete = useCallback((id: string) => {
-    if (onDelete) {
-      onDelete(id);
-    }
-  }, [onDelete]);
-
-  const handleMarkRead = async (notification: Notification) => {
-    try {
-      await notificationService.markAsRead(notification.id);
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((n) =>
-          n.id === notification.id ? { ...n, is_read: true, read: true } : n
-        )
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+export default function NotificationList({
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  isLoading = false
+}: NotificationListProps) {
+  // Helper function to get icon based on notification type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'appointment':
+      case 'class':
+        return <Calendar className="h-5 w-5 text-blue-500" />;
+      case 'membership':
+        return <CreditCard className="h-5 w-5 text-indigo-500" />;
+      case 'user':
+      case 'member':
+      case 'trainer':
+        return <User className="h-5 w-5 text-green-500" />;
+      case 'document':
+      case 'invoice':
+        return <FileText className="h-5 w-5 text-amber-500" />;
+      default:
+        return <Bell className="h-5 w-5 text-gray-500" />;
     }
   };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      return format(parseISO(dateString), 'MMM dd, yyyy hh:mm a');
-    } catch (error) {
-      console.error('Error parsing date:', error);
-      return 'Invalid Date';
-    }
-  };
-
-  const filteredNotifications = notifications.filter((notification) => {
-    // Support both read and is_read properties for backward compatibility
-    const isRead = notification.read || notification.is_read;
-    
-    const statusFilter =
-      filterStatus === 'all' ||
-      (filterStatus === 'read' && isRead) ||
-      (filterStatus === 'unread' && !isRead);
-
-    return statusFilter;
-  });
-
-  if (isLoading) {
-    return <div className="flex justify-center py-10">Loading notifications...</div>;
-  }
-
-  if (notifications.length === 0) {
-    return (
-      <EmptyState
-        title="No notifications"
-        description="You're all caught up! Check back later for updates."
-        icon={<Bell className="h-6 w-6" />}
-      />
-    );
-  }
+  
+  const unreadCount = notifications.filter(notification => !notification.read).length;
 
   return (
-    <div className="space-y-4">
-      {filteredNotifications.map((notification) => {
-        // Support both read and is_read properties for backward compatibility
-        const isRead = notification.read || notification.is_read;
-        
-        return (
-          <div
-            key={notification.id}
-            className={`p-4 border rounded-lg transition-colors ${
-              isRead ? 'bg-background' : 'bg-accent/20'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium">{notification.title}</h3>
-                <p className="text-xs text-muted-foreground">{notification.message}</p>
-              </div>
-              {!isRead && (
-                <Badge
-                  variant="secondary"
-                  className="ml-2 cursor-pointer"
-                  onClick={() => handleMarkRead(notification)}
-                >
-                  <CheckCheck className="h-3 w-3 mr-1" />
-                  Mark as Read
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-              <span>{formatDistanceToNow(new Date(notification.created_at || ''), { addSuffix: true })}</span>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  className="hover:text-red-500 transition-colors"
-                  onClick={() => onDelete && onDelete(notification.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+    <Card className="w-full max-w-md border shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Notifications</CardTitle>
+            <CardDescription>{unreadCount} unread</CardDescription>
           </div>
-        );
-      })}
-    </div>
+          {unreadCount > 0 && (
+            <Button size="sm" variant="ghost" onClick={onMarkAllAsRead}>
+              Mark all as read
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <Bell className="h-10 w-10 text-muted-foreground opacity-50" />
+            <p className="mt-2 text-sm text-muted-foreground">No notifications yet</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[300px] p-0">
+            <div className="divide-y">
+              {notifications.map((notification) => (
+                <div 
+                  key={notification.id} 
+                  className={`flex items-start p-4 gap-4 ${!notification.read ? 'bg-muted/50' : 'hover:bg-muted/30'} transition-colors`}
+                >
+                  <div className="mt-1">
+                    {getNotificationIcon(notification.type || 'default')}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{notification.title}</p>
+                    {notification.message && (
+                      <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                    )}
+                    {notification.created_at && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </p>
+                    )}
+                  </div>
+                  {!notification.read && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => onMarkAsRead(notification.id)}
+                    >
+                      <Check className="h-4 w-4" />
+                      <span className="sr-only">Mark as read</span>
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
   );
-};
-
-export default NotificationList;
+}

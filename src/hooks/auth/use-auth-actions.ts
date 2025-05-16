@@ -1,7 +1,9 @@
 
 import { useAuth } from '@/hooks/use-auth';
-import { toast } from 'sonner';
 
+/**
+ * Extracts auth actions from the auth context for easier access
+ */
 export const useAuthActions = () => {
   const { login, logout, register, forgotPassword, resetPassword, changePassword } = useAuth();
   

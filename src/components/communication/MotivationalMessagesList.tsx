@@ -1,194 +1,311 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { MotivationalMessage, MotivationalCategory } from '@/types';
-import { PlusCircle, Loader2, Check, X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import MotivationalMessageForm from './MotivationalMessageForm';
-import communicationService from '@/services/communicationService';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { MotivationalMessage } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trash, Edit, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 interface MotivationalMessagesListProps {
-  messagesList?: MotivationalMessage[];
-  messages?: MotivationalMessage[];
-  isLoading?: boolean;
-  onEdit?: (message: MotivationalMessage) => void;
-  onDelete?: (id: string) => Promise<boolean>;
-  onToggleActive?: (id: string, isActive: boolean) => Promise<boolean>;
+  messages: MotivationalMessage[];
+  onAddMessage: (message: Partial<MotivationalMessage>) => Promise<void>;
+  onUpdateMessage: (id: string, message: Partial<MotivationalMessage>) => Promise<void>;
+  onDeleteMessage: (id: string) => Promise<void>;
 }
 
-const MotivationalMessagesList: React.FC<MotivationalMessagesListProps> = ({
-  messagesList,
+export default function MotivationalMessagesList({
   messages,
-  isLoading = true,
-  onEdit,
-  onDelete,
-  onToggleActive
-}) => {
-  const [displayMessages, setDisplayMessages] = useState<MotivationalMessage[]>([]);
-  const [activeCategory, setActiveCategory] = useState<MotivationalCategory | 'all'>('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  useEffect(() => {
-    if (messagesList) {
-      setDisplayMessages(messagesList);
-    } else if (messages) {
-      setDisplayMessages(messages);
-    } else {
-      fetchMessages();
+  onAddMessage,
+  onUpdateMessage,
+  onDeleteMessage
+}: MotivationalMessagesListProps) {
+  const [newMessage, setNewMessage] = useState<Partial<MotivationalMessage>>({
+    title: '',
+    content: '',
+    category: 'fitness',
+    tags: []
+  });
+  const [editingMessage, setEditingMessage] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<MotivationalMessage>>({});
+  const [tagInput, setTagInput] = useState('');
+
+  const handleAddTag = () => {
+    if (tagInput.trim()) {
+      const currentTags = newMessage.tags || [];
+      setNewMessage({
+        ...newMessage,
+        tags: [...currentTags, tagInput.trim()]
+      });
+      setTagInput('');
     }
-  }, [messagesList, messages]);
-  const fetchMessages = async () => {
+  };
+
+  const handleEditTag = (tag: string) => {
+    if (tagInput.trim() && editFormData.tags) {
+      setEditFormData({
+        ...editFormData,
+        tags: [...editFormData.tags, tagInput.trim()]
+      });
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    if (newMessage.tags) {
+      setNewMessage({
+        ...newMessage,
+        tags: newMessage.tags.filter(tag => tag !== tagToRemove)
+      });
+    }
+  };
+
+  const handleRemoveEditTag = (tagToRemove: string) => {
+    if (editFormData.tags) {
+      setEditFormData({
+        ...editFormData,
+        tags: editFormData.tags.filter(tag => tag !== tagToRemove)
+      });
+    }
+  };
+
+  const handleSaveMessage = async () => {
     try {
-      const fetchedMessages = await communicationService.getMotivationalMessages();
-      setDisplayMessages(fetchedMessages);
+      await onAddMessage(newMessage);
+      setNewMessage({ title: '', content: '', category: 'fitness', tags: [] });
+      toast.success('Message added successfully!');
     } catch (error) {
-      console.error('Error fetching motivational messages:', error);
-      toast.error('Failed to load motivational messages');
+      toast.error('Failed to add message');
     }
   };
-  const handleCreateMessage = async (message: Omit<MotivationalMessage, 'id' | 'created_at' | 'updated_at'>) => {
-    setIsSubmitting(true);
+
+  const handleStartEdit = (message: MotivationalMessage) => {
+    setEditingMessage(message.id);
+    setEditFormData({ ...message });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingMessage && editFormData) {
+      try {
+        await onUpdateMessage(editingMessage, editFormData);
+        setEditingMessage(null);
+        setEditFormData({});
+        toast.success('Message updated successfully!');
+      } catch (error) {
+        toast.error('Failed to update message');
+      }
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     try {
-      const newMessage = await communicationService.saveMotivationalMessage(message);
-      if (newMessage) {
-        setDisplayMessages(prev => [newMessage, ...prev]);
-        setIsDialogOpen(false);
-        toast.success('Motivational message created successfully!');
-      }
+      await onDeleteMessage(id);
+      toast.success('Message deleted successfully!');
     } catch (error) {
-      console.error('Error creating motivational message:', error);
-      toast.error('Failed to create motivational message');
-    } finally {
-      setIsSubmitting(false);
+      toast.error('Failed to delete message');
     }
   };
-  const handleDeleteMessage = async (id: string) => {
-    if (onDelete) {
-      return await onDelete(id);
-    } else {
-      try {
-        const result = await communicationService.deleteMotivationalMessage(id);
-        if (result) {
-          setDisplayMessages(prev => prev.filter(msg => msg.id !== id));
-          toast.success('Message deleted successfully');
-        }
-        return result;
-      } catch (error) {
-        console.error('Error deleting message:', error);
-        toast.error('Failed to delete message');
-        return false;
-      }
-    }
-  };
-  const handleToggleActive = async (id: string, isActive: boolean) => {
-    if (onToggleActive) {
-      return await onToggleActive(id, isActive);
-    } else {
-      try {
-        const result = await communicationService.saveMotivationalMessage({
-          id,
-          active: isActive
-        });
-        if (result) {
-          setDisplayMessages(prev => prev.map(msg => msg.id === id ? {
-            ...msg,
-            active: isActive
-          } : msg));
-          toast.success(`Message ${isActive ? 'activated' : 'deactivated'} successfully`);
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error('Error updating message:', error);
-        toast.error('Failed to update message status');
-        return false;
-      }
-    }
-  };
-  const filteredMessages = activeCategory === 'all' ? displayMessages : displayMessages.filter(msg => msg.category === activeCategory);
-  if (isLoading) {
-    return <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>;
-  }
-  return <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold">Motivational Messages</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Message
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-[95%] max-w-[600px] p-4 sm:p-6">
-            <MotivationalMessageForm onSubmit={handleCreateMessage} isSubmitting={isSubmitting} />
-          </DialogContent>
-        </Dialog>
-      </div>
+
+  return (
+    <div className="space-y-6">
+      {/* Add new message form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Add New Motivational Message</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <label htmlFor="title">Title</label>
+              <Input
+                id="title"
+                value={newMessage.title}
+                onChange={(e) => setNewMessage({ ...newMessage, title: e.target.value })}
+                placeholder="Message title"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label htmlFor="category">Category</label>
+              <Select
+                value={newMessage.category}
+                onValueChange={(value) => setNewMessage({ ...newMessage, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fitness">Fitness</SelectItem>
+                  <SelectItem value="nutrition">Nutrition</SelectItem>
+                  <SelectItem value="mindfulness">Mindfulness</SelectItem>
+                  <SelectItem value="motivation">Motivation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <label htmlFor="content">Content</label>
+              <Textarea
+                id="content"
+                value={newMessage.content}
+                onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
+                placeholder="Message content"
+                rows={5}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label htmlFor="tags">Tags</label>
+              <div className="flex gap-2">
+                <Input
+                  id="tags"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add tag"
+                  className="flex-1"
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                />
+                <Button type="button" onClick={handleAddTag}>Add</Button>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {newMessage.tags?.map((tag) => (
+                  <Badge key={tag} className="px-2 py-1 cursor-pointer hover:bg-destructive" onClick={() => handleRemoveTag(tag)}>
+                    {tag} <X className="ml-1 h-3 w-3" />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <Button onClick={handleSaveMessage}>Save Message</Button>
+          </div>
+        </CardContent>
+      </Card>
       
-      <div className="overflow-x-auto">
-        <Tabs defaultValue={activeCategory} onValueChange={value => setActiveCategory(value as MotivationalCategory | 'all')}>
-          <TabsList className="w-full flex flex-wrap h-auto py-1">
-            <TabsTrigger value="all" className="flex-grow">All</TabsTrigger>
-            <TabsTrigger value="fitness" className="flex-grow">Fitness</TabsTrigger>
-            <TabsTrigger value="nutrition" className="flex-grow">Nutrition</TabsTrigger>
-            <TabsTrigger value="mindfulness" className="flex-grow">Mindful</TabsTrigger>
-            <TabsTrigger value="recovery" className="flex-grow">Recovery</TabsTrigger>
-            <TabsTrigger value="general" className="flex-grow">General</TabsTrigger>
-            <TabsTrigger value="motivation" className="flex-grow">Motivation</TabsTrigger>
-            <TabsTrigger value="wellness" className="flex-grow">Wellness</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value={activeCategory} className="mt-6">
-            {filteredMessages.length === 0 ? <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <p className="text-gray-500 mb-4">No messages found in this category.</p>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
-                    Create New Message
-                  </Button>
+      {/* Messages list */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {messages.map((message) => (
+          <Card key={message.id} className="transition-all hover:shadow-md">
+            {editingMessage === message.id ? (
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <label htmlFor={`edit-title-${message.id}`}>Title</label>
+                    <Input
+                      id={`edit-title-${message.id}`}
+                      value={editFormData.title}
+                      onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <label htmlFor={`edit-category-${message.id}`}>Category</label>
+                    <Select
+                      value={editFormData.category}
+                      onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fitness">Fitness</SelectItem>
+                        <SelectItem value="nutrition">Nutrition</SelectItem>
+                        <SelectItem value="mindfulness">Mindfulness</SelectItem>
+                        <SelectItem value="motivation">Motivation</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <label htmlFor={`edit-content-${message.id}`}>Content</label>
+                    <Textarea
+                      id={`edit-content-${message.id}`}
+                      value={editFormData.content}
+                      onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
+                      rows={5}
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <label htmlFor={`edit-tags-${message.id}`}>Tags</label>
+                    <div className="flex gap-2">
+                      <Input
+                        id={`edit-tags-${message.id}`}
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        placeholder="Add tag"
+                        className="flex-1"
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleEditTag(e.currentTarget.value))}
+                      />
+                      <Button type="button" onClick={() => handleEditTag(tagInput)}>Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {editFormData.tags?.map((tag) => (
+                        <Badge key={tag} className="px-2 py-1 cursor-pointer hover:bg-destructive" onClick={() => handleRemoveEditTag(tag)}>
+                          {tag} <X className="ml-1 h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={handleCancelEdit}>
+                      <X className="mr-1 h-4 w-4" /> Cancel
+                    </Button>
+                    <Button onClick={handleSaveEdit}>
+                      <Check className="mr-1 h-4 w-4" /> Save
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            ) : (
+              <>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{message.title}</CardTitle>
+                      <Badge className="mt-1">{message.category}</Badge>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleStartEdit(message)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(message.id)}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500 mb-3">{message.content}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {message.tags?.map((tag) => (
+                      <Badge key={tag} variant="outline" className="px-2 py-1">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
-              </Card> : <div className="space-y-4">
-                {filteredMessages.map(message => <Card key={message.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <CardTitle className="text-base sm:text-lg">{message.title}</CardTitle>
-                        <div className="flex items-center space-x-2">
-                          <span className={`text-sm ${message.active ? 'text-green-600' : 'text-red-600'}`}>
-                            {message.active ? <Check className="h-4 w-4 inline-block mr-1" /> : <X className="h-4 w-4 inline-block mr-1" />}
-                            {message.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-700 dark:text-gray-300 mb-4">{message.content}</p>
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center text-sm text-gray-500 gap-2">
-                        <span>By {message.author || 'Unknown'} • <span className="capitalize">{message.category}</span></span>
-                        <span>{message.created_at && formatDistanceToNow(new Date(message.created_at), {
-                      addSuffix: true
-                    })}</span>
-                      </div>
-                      {(onEdit || onDelete || onToggleActive) && <div className="flex flex-wrap justify-end gap-2 mt-4">
-                          {onToggleActive && <Button variant="outline" size="sm" onClick={() => handleToggleActive(message.id, !message.active)}>
-                              {message.active ? 'Deactivate' : 'Activate'}
-                            </Button>}
-                          {onEdit && <Button variant="outline" size="sm" onClick={() => onEdit(message)}>
-                              Edit
-                            </Button>}
-                          {onDelete && <Button variant="destructive" size="sm" onClick={() => handleDeleteMessage(message.id)}>
-                              Delete
-                            </Button>}
-                        </div>}
-                    </CardContent>
-                  </Card>)}
-              </div>}
-          </TabsContent>
-        </Tabs>
+              </>
+            )}
+          </Card>
+        ))}
+        
+        {messages.length === 0 && (
+          <Card className="col-span-2">
+            <CardContent className="py-6 text-center text-gray-500">
+              No motivational messages found. Add your first message above!
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </div>;
-};
-export default MotivationalMessagesList;
+    </div>
+  );
+}
