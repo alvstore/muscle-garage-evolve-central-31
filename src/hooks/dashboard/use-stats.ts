@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from './use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { subDays } from 'date-fns';
 
 export interface DateRange {

@@ -44,7 +44,7 @@ const DashboardNavbar = ({
       
       setIsLoadingNotifications(true);
       try {
-        const notificationService = (await import('@/services/notificationService')).default;
+        const notificationService = (await import('@/services/communication/notificationService')).default;
         const data = await notificationService.getNotifications(user.id);
         
         if (isMounted) {
@@ -140,7 +140,7 @@ const DashboardNavbar = ({
   const handleClearAll = async () => {
     if (!user?.id) return;
     try {
-      const notificationService = (await import('@/services/notificationService')).default;
+      const notificationService = (await import('@/services/communication/notificationService')).default;
       await notificationService.clearAllNotifications(user.id);
 
       // Remove only system notifications, keep follow-up notifications
@@ -163,7 +163,7 @@ const DashboardNavbar = ({
       return;
     }
     try {
-      const notificationService = (await import('@/services/notificationService')).default;
+      const notificationService = (await import('@/services/communication/notificationService')).default;
       await notificationService.markAsRead(id);
       setNotifications(notifications.map(n => n.id === id ? {
         ...n,
@@ -176,7 +176,7 @@ const DashboardNavbar = ({
   };
   const markAllAsRead = async () => {
     try {
-      const notificationService = (await import('@/services/notificationService')).default;
+      const notificationService = (await import('@/services/communication/notificationService')).default;
       const systemNotifications = notifications.filter(n => !n.id.startsWith('follow-up-') && n.source !== 'follow-up');
       if (systemNotifications.length > 0) {
         await notificationService.markAllAsRead(user?.id || '');

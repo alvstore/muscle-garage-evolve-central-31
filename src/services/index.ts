@@ -10,6 +10,7 @@ export * from './communication/notificationService';
 export * from './members/classService';
 export * from './members/class-types-service';
 export * from './members/memberService';
+export * from './members/membershipService';
 
 // Finance
 export * from './finance/financeService';

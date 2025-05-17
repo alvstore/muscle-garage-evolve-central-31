@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { hikvisionService, HikvisionEvent } from '@/services/integrations/hikvisionService';
+import { hikvisionService, HikvisionEvent } from '@/integrations/hikvision/hikvisionService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { usePermissions } from '@/hooks/auth/use-permissions';

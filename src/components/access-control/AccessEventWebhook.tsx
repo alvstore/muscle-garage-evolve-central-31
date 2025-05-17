@@ -13,16 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/services/api/supabaseClient';
-import { hikvisionService } from '@/services/hikvisionService';
-import { useHikvisionSettings } from '@/hooks/integrations/use-hikvision-settings';
+import { supabase } from '@/integrations/supabase/client';
+import { hikvisionService } from '@/services/integrations/hikvisionService';
+import useHikvision, { HikvisionDevice } from '@/hooks/access/use-hikvision-consolidated';
 
 interface AccessEventWebhookProps {
   branchId?: string;
 }
 
 const AccessEventWebhook = ({ branchId }: AccessEventWebhookProps) => {
-  const { settings } = useHikvisionSettings();
+  const { settings } = useHikvision();
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookSecret, setWebhookSecret] = useState('');
   const [logOutput, setLogOutput] = useState('');
