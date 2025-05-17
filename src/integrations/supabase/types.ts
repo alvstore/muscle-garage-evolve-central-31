@@ -11,10 +11,9 @@ export type Database = {
     Tables: {
       access_doors: {
         Row: {
-          branch_id: string | null
+          branch_id: string
           created_at: string | null
-          description: string | null
-          device_id: string | null
+          device_id: string
           door_name: string
           door_number: string | null
           hikvision_door_id: string
@@ -24,10 +23,9 @@ export type Database = {
           zone_id: string | null
         }
         Insert: {
-          branch_id?: string | null
+          branch_id: string
           created_at?: string | null
-          description?: string | null
-          device_id?: string | null
+          device_id: string
           door_name: string
           door_number?: string | null
           hikvision_door_id: string
@@ -37,10 +35,9 @@ export type Database = {
           zone_id?: string | null
         }
         Update: {
-          branch_id?: string | null
+          branch_id?: string
           created_at?: string | null
-          description?: string | null
-          device_id?: string | null
+          device_id?: string
           door_name?: string
           door_number?: string | null
           hikvision_door_id?: string
@@ -65,13 +62,6 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
           {
-            foreignKeyName: "access_doors_device_id_fkey"
-            columns: ["device_id"]
-            isOneToOne: false
-            referencedRelation: "hikvision_api_settings"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "access_doors_zone_id_fkey"
             columns: ["zone_id"]
             isOneToOne: false
@@ -80,70 +70,9 @@ export type Database = {
           },
         ]
       }
-      access_logs: {
-        Row: {
-          created_at: string | null
-          credential_type: string | null
-          credential_value: string | null
-          door_id: string | null
-          event_id: string
-          event_time: string
-          event_type: string
-          hikvision_event_id: string | null
-          id: string
-          member_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          credential_type?: string | null
-          credential_value?: string | null
-          door_id?: string | null
-          event_id: string
-          event_time: string
-          event_type: string
-          hikvision_event_id?: string | null
-          id?: string
-          member_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          credential_type?: string | null
-          credential_value?: string | null
-          door_id?: string | null
-          event_id?: string
-          event_time?: string
-          event_type?: string
-          hikvision_event_id?: string | null
-          id?: string
-          member_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "access_logs_door_id_fkey"
-            columns: ["door_id"]
-            isOneToOne: false
-            referencedRelation: "access_doors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "access_logs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "access_logs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
       access_zones: {
         Row: {
-          branch_id: string | null
+          branch_id: string
           created_at: string | null
           description: string | null
           id: string
@@ -151,7 +80,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          branch_id?: string | null
+          branch_id: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -159,7 +88,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          branch_id?: string | null
+          branch_id?: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -180,177 +109,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
-          },
-        ]
-      }
-      ai_diet_plans: {
-        Row: {
-          calories_per_day: number | null
-          created_at: string | null
-          created_by: string | null
-          cuisine_type: string | null
-          description: string | null
-          diet_type: string | null
-          goals: string[] | null
-          id: string
-          is_public: boolean | null
-          plan_content: string
-          restrictions: string[] | null
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          calories_per_day?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          cuisine_type?: string | null
-          description?: string | null
-          diet_type?: string | null
-          goals?: string[] | null
-          id?: string
-          is_public?: boolean | null
-          plan_content: string
-          restrictions?: string[] | null
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          calories_per_day?: number | null
-          created_at?: string | null
-          created_by?: string | null
-          cuisine_type?: string | null
-          description?: string | null
-          diet_type?: string | null
-          goals?: string[] | null
-          id?: string
-          is_public?: boolean | null
-          plan_content?: string
-          restrictions?: string[] | null
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_diet_plans_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_diet_plans_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
-      ai_services: {
-        Row: {
-          api_key: string
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_active: boolean | null
-          service_name: string
-          updated_at: string | null
-        }
-        Insert: {
-          api_key: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          service_name: string
-          updated_at?: string | null
-        }
-        Update: {
-          api_key?: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          service_name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_services_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_services_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
-      ai_workout_plans: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          days_per_week: number | null
-          description: string | null
-          fitness_level: string | null
-          goals: string[] | null
-          id: string
-          is_public: boolean | null
-          plan_content: string
-          restrictions: string[] | null
-          session_duration: number | null
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          days_per_week?: number | null
-          description?: string | null
-          fitness_level?: string | null
-          goals?: string[] | null
-          id?: string
-          is_public?: boolean | null
-          plan_content: string
-          restrictions?: string[] | null
-          session_duration?: number | null
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          days_per_week?: number | null
-          description?: string | null
-          fitness_level?: string | null
-          goals?: string[] | null
-          id?: string
-          is_public?: boolean | null
-          plan_content?: string
-          restrictions?: string[] | null
-          session_duration?: number | null
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_workout_plans_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_workout_plans_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -419,42 +177,6 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
-      }
-      attendance: {
-        Row: {
-          check_in_time: string | null
-          check_out_time: string | null
-          created_at: string | null
-          device_id: string | null
-          event_id: string | null
-          id: string
-          member_id: string | null
-          source: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          check_in_time?: string | null
-          check_out_time?: string | null
-          created_at?: string | null
-          device_id?: string | null
-          event_id?: string | null
-          id?: string
-          member_id?: string | null
-          source?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          check_in_time?: string | null
-          check_out_time?: string | null
-          created_at?: string | null
-          device_id?: string | null
-          event_id?: string | null
-          id?: string
-          member_id?: string | null
-          source?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       attendance_settings: {
         Row: {
@@ -603,77 +325,6 @@ export type Database = {
         }
         Relationships: []
       }
-      biometric_logs: {
-        Row: {
-          action: string
-          branch_id: string | null
-          completed_at: string | null
-          created_at: string
-          details: Json | null
-          device_type: string
-          error_message: string | null
-          id: string
-          member_id: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          action: string
-          branch_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          details?: Json | null
-          device_type: string
-          error_message?: string | null
-          id?: string
-          member_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          action?: string
-          branch_id?: string | null
-          completed_at?: string | null
-          created_at?: string
-          details?: Json | null
-          device_type?: string
-          error_message?: string | null
-          id?: string
-          member_id?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "biometric_logs_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "biometric_logs_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-          {
-            foreignKeyName: "biometric_logs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "member_churn_risk"
-            referencedColumns: ["member_id"]
-          },
-          {
-            foreignKeyName: "biometric_logs_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       body_measurements: {
         Row: {
           arms: number | null
@@ -765,8 +416,10 @@ export type Database = {
           name: string
           opening_hours: string | null
           phone: string | null
+          region: string | null
           state: string | null
           tax_rate: number | null
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
@@ -784,8 +437,10 @@ export type Database = {
           name: string
           opening_hours?: string | null
           phone?: string | null
+          region?: string | null
           state?: string | null
           tax_rate?: number | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -803,8 +458,10 @@ export type Database = {
           name?: string
           opening_hours?: string | null
           phone?: string | null
+          region?: string | null
           state?: string | null
           tax_rate?: number | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -844,20 +501,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_bookings_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_bookings_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
           },
         ]
       }
@@ -941,10 +584,8 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           description: string | null
-          difficulty: string | null
           id: string
           is_active: boolean | null
-          level: string | null
           name: string
           updated_at: string | null
         }
@@ -952,10 +593,8 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
-          difficulty?: string | null
           id?: string
           is_active?: boolean | null
-          level?: string | null
           name: string
           updated_at?: string | null
         }
@@ -963,10 +602,8 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
-          difficulty?: string | null
           id?: string
           is_active?: boolean | null
-          level?: string | null
           name?: string
           updated_at?: string | null
         }
@@ -993,17 +630,13 @@ export type Database = {
           capacity: number
           created_at: string | null
           description: string | null
-          difficulty: string | null
           end_time: string
           enrolled: number | null
           id: string
           is_active: boolean | null
-          level: string | null
           location: string | null
           name: string
           recurrence: string | null
-          recurring: boolean | null
-          recurring_pattern: string | null
           start_time: string
           status: Database["public"]["Enums"]["class_status"] | null
           trainer: string | null
@@ -1016,17 +649,13 @@ export type Database = {
           capacity: number
           created_at?: string | null
           description?: string | null
-          difficulty?: string | null
           end_time: string
           enrolled?: number | null
           id?: string
           is_active?: boolean | null
-          level?: string | null
           location?: string | null
           name: string
           recurrence?: string | null
-          recurring?: boolean | null
-          recurring_pattern?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["class_status"] | null
           trainer?: string | null
@@ -1039,17 +668,13 @@ export type Database = {
           capacity?: number
           created_at?: string | null
           description?: string | null
-          difficulty?: string | null
           end_time?: string
           enrolled?: number | null
           id?: string
           is_active?: boolean | null
-          level?: string | null
           location?: string | null
           name?: string
           recurrence?: string | null
-          recurring?: boolean | null
-          recurring_pattern?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["class_status"] | null
           trainer?: string | null
@@ -1708,11 +1333,9 @@ export type Database = {
           lead_id: string | null
           response: string | null
           response_at: string | null
-          scheduled_at: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
-          subject: string | null
           template_id: string | null
           type: string
         }
@@ -1722,11 +1345,9 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
-          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status: string
-          subject?: string | null
           template_id?: string | null
           type: string
         }
@@ -1736,11 +1357,9 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
-          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
-          subject?: string | null
           template_id?: string | null
           type?: string
         }
@@ -1912,140 +1531,47 @@ export type Database = {
           },
         ]
       }
-      hikvision_event: {
-        Row: {
-          card_no: string | null
-          created_at: string | null
-          device_id: string | null
-          device_name: string | null
-          door_id: string | null
-          door_name: string | null
-          event_id: string
-          event_time: string
-          event_type: string
-          face_id: string | null
-          id: string
-          person_id: string | null
-          person_name: string | null
-          processed: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          card_no?: string | null
-          created_at?: string | null
-          device_id?: string | null
-          device_name?: string | null
-          door_id?: string | null
-          door_name?: string | null
-          event_id: string
-          event_time: string
-          event_type: string
-          face_id?: string | null
-          id?: string
-          person_id?: string | null
-          person_name?: string | null
-          processed?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          card_no?: string | null
-          created_at?: string | null
-          device_id?: string | null
-          device_name?: string | null
-          door_id?: string | null
-          door_name?: string | null
-          event_id?: string
-          event_time?: string
-          event_type?: string
-          face_id?: string | null
-          id?: string
-          person_id?: string | null
-          person_name?: string | null
-          processed?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       hikvision_tokens: {
         Row: {
           access_token: string
           area_domain: string | null
-          available_sites: Json | null
           branch_id: string
-          created_at: string
+          created_at: string | null
           expire_time: number
           id: string
-          site_id: string
         }
         Insert: {
           access_token: string
           area_domain?: string | null
-          available_sites?: Json | null
           branch_id: string
-          created_at?: string
+          created_at?: string | null
           expire_time: number
           id?: string
-          site_id?: string
         }
         Update: {
           access_token?: string
           area_domain?: string | null
-          available_sites?: Json | null
           branch_id?: string
-          created_at?: string
+          created_at?: string | null
           expire_time?: number
           id?: string
-          site_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "hikvision_tokens_branch_id_fkey"
             columns: ["branch_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "hikvision_tokens_branch_id_fkey"
             columns: ["branch_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
           },
         ]
-      }
-      hsn_codes: {
-        Row: {
-          code: string
-          created_at: string | null
-          description: string
-          gst_rate: number
-          id: string
-          is_active: boolean
-          is_service: boolean
-          updated_at: string | null
-        }
-        Insert: {
-          code: string
-          created_at?: string | null
-          description: string
-          gst_rate?: number
-          id?: string
-          is_active?: boolean
-          is_service?: boolean
-          updated_at?: string | null
-        }
-        Update: {
-          code?: string
-          created_at?: string | null
-          description?: string
-          gst_rate?: number
-          id?: string
-          is_active?: boolean
-          is_service?: boolean
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       income_categories: {
         Row: {
@@ -2275,144 +1801,6 @@ export type Database = {
           },
         ]
       }
-      invoice_settings: {
-        Row: {
-          branch_id: string | null
-          company_address: string | null
-          company_email: string | null
-          company_gst_number: string | null
-          company_name: string
-          company_phone: string | null
-          company_website: string | null
-          created_at: string | null
-          default_gst_treatment: string
-          default_notes: string | null
-          default_place_of_supply: string | null
-          default_tax_enabled: boolean
-          default_tax_rate: number
-          default_tax_type: string
-          default_terms: string | null
-          id: string
-          last_reset_date: string | null
-          next_number: number
-          number_digits: number
-          number_prefix: string
-          number_suffix: string | null
-          reset_frequency: string
-          show_logo: boolean
-          show_signature: boolean
-          signature_image_url: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          branch_id?: string | null
-          company_address?: string | null
-          company_email?: string | null
-          company_gst_number?: string | null
-          company_name?: string
-          company_phone?: string | null
-          company_website?: string | null
-          created_at?: string | null
-          default_gst_treatment?: string
-          default_notes?: string | null
-          default_place_of_supply?: string | null
-          default_tax_enabled?: boolean
-          default_tax_rate?: number
-          default_tax_type?: string
-          default_terms?: string | null
-          id?: string
-          last_reset_date?: string | null
-          next_number?: number
-          number_digits?: number
-          number_prefix?: string
-          number_suffix?: string | null
-          reset_frequency?: string
-          show_logo?: boolean
-          show_signature?: boolean
-          signature_image_url?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          branch_id?: string | null
-          company_address?: string | null
-          company_email?: string | null
-          company_gst_number?: string | null
-          company_name?: string
-          company_phone?: string | null
-          company_website?: string | null
-          created_at?: string | null
-          default_gst_treatment?: string
-          default_notes?: string | null
-          default_place_of_supply?: string | null
-          default_tax_enabled?: boolean
-          default_tax_rate?: number
-          default_tax_type?: string
-          default_terms?: string | null
-          id?: string
-          last_reset_date?: string | null
-          next_number?: number
-          number_digits?: number
-          number_prefix?: string
-          number_suffix?: string | null
-          reset_frequency?: string
-          show_logo?: boolean
-          show_signature?: boolean
-          signature_image_url?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoice_settings_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoice_settings_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-        ]
-      }
-      invoice_templates: {
-        Row: {
-          created_at: string | null
-          css_content: string | null
-          description: string | null
-          html_content: string
-          id: string
-          is_active: boolean
-          is_default: boolean
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          css_content?: string | null
-          description?: string | null
-          html_content: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          css_content?: string | null
-          description?: string | null
-          html_content?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       invoices: {
         Row: {
           amount: number
@@ -2507,13 +1895,6 @@ export type Database = {
             foreignKeyName: "invoices_membership_plan_id_fkey"
             columns: ["membership_plan_id"]
             isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_membership_plan_id_fkey"
-            columns: ["membership_plan_id"]
-            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -2522,7 +1903,6 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
-          branch_id: string | null
           conversion_date: string | null
           conversion_value: number | null
           created_at: string | null
@@ -2542,7 +1922,6 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -2562,7 +1941,6 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
-          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -2751,141 +2129,6 @@ export type Database = {
           },
         ]
       }
-      member_access_credentials: {
-        Row: {
-          created_at: string | null
-          credential_type: string | null
-          credential_value: string
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          issued_at: string | null
-          member_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          credential_type?: string | null
-          credential_value: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          issued_at?: string | null
-          member_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          credential_type?: string | null
-          credential_value?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          issued_at?: string | null
-          member_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "member_access_credentials_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_access_credentials_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
-      member_access_overrides: {
-        Row: {
-          access_type: string | null
-          created_at: string | null
-          created_by: string | null
-          id: string
-          member_id: string | null
-          reason: string | null
-          schedule_days: string[] | null
-          schedule_end_time: string | null
-          schedule_start_time: string | null
-          updated_at: string | null
-          valid_from: string | null
-          valid_until: string | null
-          zone_id: string | null
-        }
-        Insert: {
-          access_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          member_id?: string | null
-          reason?: string | null
-          schedule_days?: string[] | null
-          schedule_end_time?: string | null
-          schedule_start_time?: string | null
-          updated_at?: string | null
-          valid_from?: string | null
-          valid_until?: string | null
-          zone_id?: string | null
-        }
-        Update: {
-          access_type?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          member_id?: string | null
-          reason?: string | null
-          schedule_days?: string[] | null
-          schedule_end_time?: string | null
-          schedule_start_time?: string | null
-          updated_at?: string | null
-          valid_from?: string | null
-          valid_until?: string | null
-          zone_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "member_access_overrides_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "access_zones"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       member_attendance: {
         Row: {
           access_method: string | null
@@ -2937,20 +2180,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
-          },
-          {
-            foreignKeyName: "member_attendance_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "member_churn_risk"
-            referencedColumns: ["member_id"]
-          },
-          {
-            foreignKeyName: "member_attendance_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -3016,27 +2245,6 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
           {
-            foreignKeyName: "member_memberships_member_fk"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "member_churn_risk"
-            referencedColumns: ["member_id"]
-          },
-          {
-            foreignKeyName: "member_memberships_member_fk"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_memberships_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "member_memberships_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
@@ -3092,20 +2300,14 @@ export type Database = {
       }
       members: {
         Row: {
-          address: string | null
-          avatar: string | null
           blood_group: string | null
           branch_id: string | null
-          city: string | null
-          country: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           gender: string | null
           goal: string | null
           id: string
-          id_number: string | null
-          id_type: string | null
           membership_end_date: string | null
           membership_id: string | null
           membership_start_date: string | null
@@ -3113,30 +2315,20 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
-          profile_picture: string | null
-          state: string | null
           status: string | null
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
-          zip_code: string | null
-          zipCode: string | null
         }
         Insert: {
-          address?: string | null
-          avatar?: string | null
           blood_group?: string | null
           branch_id?: string | null
-          city?: string | null
-          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
-          id_number?: string | null
-          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -3144,30 +2336,20 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
-          profile_picture?: string | null
-          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zip_code?: string | null
-          zipCode?: string | null
         }
         Update: {
-          address?: string | null
-          avatar?: string | null
           blood_group?: string | null
           branch_id?: string | null
-          city?: string | null
-          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
-          id_number?: string | null
-          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -3175,14 +2357,10 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
-          profile_picture?: string | null
-          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zip_code?: string | null
-          zipCode?: string | null
         }
         Relationships: [
           {
@@ -3198,95 +2376,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
-          },
-          {
-            foreignKeyName: "members_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "members_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "memberships"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      membership_access_permissions: {
-        Row: {
-          access_type: string | null
-          branch_id: string | null
-          created_at: string | null
-          id: string
-          membership_id: string | null
-          schedule_days: string[] | null
-          schedule_end_time: string | null
-          schedule_start_time: string | null
-          updated_at: string | null
-          zone_id: string | null
-        }
-        Insert: {
-          access_type?: string | null
-          branch_id?: string | null
-          created_at?: string | null
-          id?: string
-          membership_id?: string | null
-          schedule_days?: string[] | null
-          schedule_end_time?: string | null
-          schedule_start_time?: string | null
-          updated_at?: string | null
-          zone_id?: string | null
-        }
-        Update: {
-          access_type?: string | null
-          branch_id?: string | null
-          created_at?: string | null
-          id?: string
-          membership_id?: string | null
-          schedule_days?: string[] | null
-          schedule_end_time?: string | null
-          schedule_start_time?: string | null
-          updated_at?: string | null
-          zone_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "membership_access_permissions_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "membership_access_permissions_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-          {
-            foreignKeyName: "membership_access_permissions_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "membership_access_permissions_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "memberships"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "membership_access_permissions_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "access_zones"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -3352,13 +2441,6 @@ export type Database = {
             foreignKeyName: "membership_subscriptions_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "membership_subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -3376,7 +2458,6 @@ export type Database = {
           name: string
           plan_name: string | null
           price: number
-          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3390,7 +2471,6 @@ export type Database = {
           name: string
           plan_name?: string | null
           price: number
-          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3404,7 +2484,6 @@ export type Database = {
           name?: string
           plan_name?: string | null
           price?: number
-          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -3746,13 +2825,6 @@ export type Database = {
             foreignKeyName: "payments_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
-            referencedRelation: "membership_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
@@ -3775,8 +2847,6 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_branch_manager: boolean | null
-          is_staff: boolean | null
-          is_trainer: boolean | null
           phone: string | null
           rating: number | null
           role: string
@@ -3799,8 +2869,6 @@ export type Database = {
           id: string
           is_active?: boolean | null
           is_branch_manager?: boolean | null
-          is_staff?: boolean | null
-          is_trainer?: boolean | null
           phone?: string | null
           rating?: number | null
           role?: string
@@ -3823,8 +2891,6 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_branch_manager?: boolean | null
-          is_staff?: boolean | null
-          is_trainer?: boolean | null
           phone?: string | null
           rating?: number | null
           role?: string
@@ -3856,15 +2922,12 @@ export type Database = {
           code: string
           created_at: string | null
           created_by: string | null
-          createdBy: string | null
           current_usage: number | null
           description: string | null
           end_date: string
           id: string
           max_discount_amount: number | null
-          maxDiscountAmount: number | null
           min_purchase_amount: number | null
-          minPurchaseAmount: number | null
           start_date: string
           status: string
           type: string
@@ -3879,15 +2942,12 @@ export type Database = {
           code: string
           created_at?: string | null
           created_by?: string | null
-          createdBy?: string | null
           current_usage?: number | null
           description?: string | null
           end_date: string
           id?: string
           max_discount_amount?: number | null
-          maxDiscountAmount?: number | null
           min_purchase_amount?: number | null
-          minPurchaseAmount?: number | null
           start_date: string
           status: string
           type: string
@@ -3902,15 +2962,12 @@ export type Database = {
           code?: string
           created_at?: string | null
           created_by?: string | null
-          createdBy?: string | null
           current_usage?: number | null
           description?: string | null
           end_date?: string
           id?: string
           max_discount_amount?: number | null
-          maxDiscountAmount?: number | null
           min_purchase_amount?: number | null
-          minPurchaseAmount?: number | null
           start_date?: string
           status?: string
           type?: string
@@ -3951,7 +3008,6 @@ export type Database = {
       }
       referrals: {
         Row: {
-          branch_id: string | null
           converted_at: string | null
           created_at: string | null
           id: string
@@ -3968,7 +3024,6 @@ export type Database = {
           status: string
         }
         Insert: {
-          branch_id?: string | null
           converted_at?: string | null
           created_at?: string | null
           id?: string
@@ -3985,7 +3040,6 @@ export type Database = {
           status: string
         }
         Update: {
-          branch_id?: string | null
           converted_at?: string | null
           created_at?: string | null
           id?: string
@@ -4398,56 +3452,6 @@ export type Database = {
           },
         ]
       }
-      tax_profiles: {
-        Row: {
-          applies_to: string
-          created_at: string | null
-          description: string | null
-          hsn_code: string | null
-          id: string
-          is_active: boolean
-          is_default: boolean
-          name: string
-          tax_rate: number
-          tax_type: string
-          updated_at: string | null
-        }
-        Insert: {
-          applies_to?: string
-          created_at?: string | null
-          description?: string | null
-          hsn_code?: string | null
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name: string
-          tax_rate?: number
-          tax_type?: string
-          updated_at?: string | null
-        }
-        Update: {
-          applies_to?: string
-          created_at?: string | null
-          description?: string | null
-          hsn_code?: string | null
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          name?: string
-          tax_rate?: number
-          tax_type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tax_profiles_hsn_code_fkey"
-            columns: ["hsn_code"]
-            isOneToOne: false
-            referencedRelation: "hsn_codes"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
       trainer_assignments: {
         Row: {
           branch_id: string | null
@@ -4553,116 +3557,6 @@ export type Database = {
           },
         ]
       }
-      trainer_schedules: {
-        Row: {
-          created_at: string | null
-          date: string
-          id: string
-          is_available: boolean | null
-          time_slot: string
-          trainer_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          date: string
-          id?: string
-          is_available?: boolean | null
-          time_slot: string
-          trainer_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          date?: string
-          id?: string
-          is_available?: boolean | null
-          time_slot?: string
-          trainer_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trainer_schedules_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trainer_schedules_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
-      trainer_sessions: {
-        Row: {
-          created_at: string | null
-          date: string
-          id: string
-          member_id: string | null
-          notes: string | null
-          status: string | null
-          time_slot: string
-          trainer_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          date: string
-          id?: string
-          member_id?: string | null
-          notes?: string | null
-          status?: string | null
-          time_slot: string
-          trainer_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          date?: string
-          id?: string
-          member_id?: string | null
-          notes?: string | null
-          status?: string | null
-          time_slot?: string
-          trainer_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trainer_sessions_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trainer_sessions_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-          {
-            foreignKeyName: "trainer_sessions_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trainer_sessions_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
-      }
       trainers: {
         Row: {
           avatar: string | null
@@ -4700,22 +3594,7 @@ export type Database = {
           specialty?: string | null
           status?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "trainers_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trainers_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-        ]
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -5123,45 +4002,6 @@ export type Database = {
           },
         ]
       }
-      class_schedules_with_trainers: {
-        Row: {
-          branch_id: string | null
-          capacity: number | null
-          created_at: string | null
-          description: string | null
-          difficulty: string | null
-          end_time: string | null
-          enrolled: number | null
-          id: string | null
-          location: string | null
-          name: string | null
-          recurring: boolean | null
-          recurring_pattern: string | null
-          start_time: string | null
-          status: string | null
-          trainer_avatar_url: string | null
-          trainer_id: string | null
-          trainer_name: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "class_schedules_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_schedules_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-        ]
-      }
       inventory_alerts: {
         Row: {
           branch_id: string | null
@@ -5245,63 +4085,6 @@ export type Database = {
           },
         ]
       }
-      membership_plans: {
-        Row: {
-          branch_id: string | null
-          created_at: string | null
-          description: string | null
-          duration_days: number | null
-          features: Json | null
-          id: string | null
-          is_active: boolean | null
-          name: string | null
-          price: number | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          branch_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          duration_days?: number | null
-          features?: Json | null
-          id?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          price?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          branch_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          duration_days?: number | null
-          features?: Json | null
-          id?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          price?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "memberships_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "memberships_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-        ]
-      }
       trainer_utilization: {
         Row: {
           branch_id: string | null
@@ -5333,10 +4116,6 @@ export type Database = {
     Functions: {
       can_book_class: {
         Args: { user_uuid: string }
-        Returns: boolean
-      }
-      check_user_branch_access: {
-        Args: { check_branch_id: string }
         Returns: boolean
       }
       get_all_website_content: {
@@ -5414,7 +4193,7 @@ export type Database = {
       }
     }
     Enums: {
-      class_status: "active" | "cancelled" | "completed" | "scheduled"
+      class_status: "active" | "cancelled" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5530,7 +4309,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      class_status: ["active", "cancelled", "completed", "scheduled"],
+      class_status: ["active", "cancelled", "completed"],
     },
   },
 } as const
