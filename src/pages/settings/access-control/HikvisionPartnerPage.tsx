@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, Plus, RefreshCw, Trash, Settings2, User, Clock, Link, CameraOff, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { hikvisionPartnerService, HikvisionDeviceWithStatus } from '@/services/integrations/hikvision/hikvisionPartnerService';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const HikvisionPartnerPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');

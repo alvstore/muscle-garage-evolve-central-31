@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/integrations/supabase/client';
-import { AIGenerationRequest } from '@/services/aiService';
+import { AIGenerationRequest } from '@/services/ai/aiService';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 

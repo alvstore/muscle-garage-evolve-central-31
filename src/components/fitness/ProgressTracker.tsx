@@ -11,7 +11,7 @@ import { ProgressMetrics } from "@/types/class";
 import { Member } from '@/types'; 
 import { toast } from "sonner";
 import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberMeasurements } from '@/hooks/use-member-measurements';
 import { useMemberProgress } from '@/hooks/use-member-progress';

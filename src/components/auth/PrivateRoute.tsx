@@ -1,10 +1,9 @@
-
 import React, { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Loader2 } from 'lucide-react';
-import { UserRole } from '@/types';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/permissions/use-permissions-manager';
+import { UserRole } from '@/types/auth/user';
 
 interface PrivateRouteProps {
   allowedRoles?: UserRole[];
@@ -19,9 +18,11 @@ const PrivateRoute = ({
   requiredPermission,
   children
 }: PrivateRouteProps) => {
-  const { isAuthenticated, user, role, isLoading } = useAuth();
-  const { can } = usePermissions();
+  const { isAuthenticated, user, role, isLoading: isAuthLoading } = useAuth();
+  const { hasPermission, isLoading: isPermissionsLoading } = usePermissions();
   const location = useLocation();
+  
+  const isLoading = isAuthLoading || isPermissionsLoading;
 
   // Show a loading indicator while checking authentication status
   if (isLoading) {
@@ -49,9 +50,9 @@ const PrivateRoute = ({
     }
   }
 
-  // Check for specific permission if required
-  if (requiredPermission && !can(requiredPermission as any)) {
-    return <Navigate to="/unauthorized" replace />;
+  // Check if user has required permission if specified
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
   // If children are provided, render them, otherwise use Outlet

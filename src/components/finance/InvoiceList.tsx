@@ -7,7 +7,7 @@ import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
 import { useBranch } from "@/hooks/use-branches";
 import { InvoiceListTable } from "./invoice/InvoiceListTable";
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 
 interface InvoiceListProps {
   readonly?: boolean;

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useMembershipPlans } from '@/hooks';
-import type { Member } from '@/hooks';
+import { useMemberships } from '@/hooks/members/use-memberships';
+import type { Member } from '@/types/members/member';
 import { Users, UserCheck, UserSearch, Crown, Monitor, PieChart, Edit, UserPlus as UserPlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -45,8 +45,8 @@ import {
 } from 'lucide-react';
 
 // Services
-import { useBranch } from '@/hooks/use-branches';
-import { useMembers } from '@/hooks/use-members';
+import { useBranch } from '@/hooks/settings/use-branches';
+import { useMembers } from '@/hooks/members/use-members';
 
 type ViewMode = 'list' | 'grid';
 
@@ -163,12 +163,12 @@ const MembersListPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { currentBranch } = useBranch();
   const { members, isLoading, fetchMembers, deleteMember } = useMembers();
-  const { membershipPlans } = useMembershipPlans();
+  const { memberships } = useMemberships(currentBranch?.id);
 
   // Get membership plan name
   const getMembershipPlanName = (planId: string | null) => {
     if (!planId) return 'No Plan';
-    const plan = membershipPlans?.find(p => p.id === planId);
+    const plan = memberships?.find(p => p.id === planId);
     return plan?.name || 'Unknown Plan';
   };
 

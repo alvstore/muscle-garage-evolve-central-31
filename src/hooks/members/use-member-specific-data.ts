@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from './use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 
 // This is a custom hook to fetch data that is specific to a member
 // It helps prevent the infinite update depth exceeded error by properly managing dependencies

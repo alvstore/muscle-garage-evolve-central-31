@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '../use-branches';
-import { Member } from '@/types/member';
+import { Member } from '@/types/members/member';
 import { toast } from '@/utils/toast-manager';
 
 export const useMembersData = () => {

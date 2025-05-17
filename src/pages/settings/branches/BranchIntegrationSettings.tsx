@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/auth/use-branches';
 import BranchDeviceManager from '@/components/integrations/BranchDeviceManager';
-import BranchSpecificSettings from '@/components/settings/BranchSpecificSettings';
+import BranchSpecificSettings from '@/components/settings/branches/BranchSpecificSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Server, Settings2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";

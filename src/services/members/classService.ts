@@ -1,5 +1,5 @@
 
-import api from './api';
+import api from '../api/api';
 import { GymClass, ClassBooking } from '@/types/class';
 import { toast } from 'sonner';
 

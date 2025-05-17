@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branches";
-import { MembershipAssignment } from "@/types/membership-assignment";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { useBranch } from "@/hooks/settings/use-branches";
+import { MembershipAssignment } from "@/types/members/membership-assignment";
 
 export const useMembershipAssignment = () => {
   const [loading, setLoading] = useState(false);

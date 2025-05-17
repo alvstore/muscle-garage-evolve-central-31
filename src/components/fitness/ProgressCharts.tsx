@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { BodyMeasurement, PROGRESS_TIMEFRAMES, ProgressTimeframe } from '@/types/measurements';
+import { BodyMeasurement, PROGRESS_TIMEFRAMES, ProgressTimeframe } from '@/types/members/measurements';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 

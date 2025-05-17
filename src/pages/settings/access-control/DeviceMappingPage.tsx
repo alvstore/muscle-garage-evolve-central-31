@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BranchDeviceManager from '@/components/integrations/BranchDeviceManager';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const DeviceMappingPage = () => {
   const { can } = usePermissions();

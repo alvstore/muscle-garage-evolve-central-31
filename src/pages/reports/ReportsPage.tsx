@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarChart, Calendar, Users, FileText, Activity, Dumbbell, TrendingUp } from "lucide-react";
 import { mockMembers, mockClasses } from "@/data/mockData";

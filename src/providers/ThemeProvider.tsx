@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useLocalStorage } from "@/hooks/utils/use-local-storage";
 
 type Theme = "light" | "dark" | "system";
 type ColorScheme = "slate" | "blue" | "green" | "orange" | "red" | "violet" | "zinc" | "yellow" | "gray" | "primary";

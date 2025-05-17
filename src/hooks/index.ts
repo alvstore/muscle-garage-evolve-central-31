@@ -38,7 +38,7 @@ export { useDisclosure } from './utils/use-disclosure';
 export { useLocalStorage } from './utils/use-local-storage';
 
 // Hikvision
-export { useHikvision } from './use-hikvision-consolidated';
+export { useHikvision } from './access/use-hikvision-consolidated';
 
 // Export from subdirectories
 export * from "./auth";

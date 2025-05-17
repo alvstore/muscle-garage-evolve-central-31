@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 
 export type Permission = 
   | 'view:members' 

@@ -1,6 +1,6 @@
 
 import { UserRole } from '@/types';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/types/permissions';
 
 // Define role hierarchy for permission inheritance
 const roleHierarchy: Record<UserRole, UserRole[]> = {

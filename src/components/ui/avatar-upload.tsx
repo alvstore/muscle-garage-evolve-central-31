@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { Button } from './button';
 import { Input } from './input';
 import { Upload } from 'lucide-react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 
 interface AvatarUploadProps {

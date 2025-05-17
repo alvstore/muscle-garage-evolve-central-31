@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { useCallback } from 'react';
 
 export type Permission = 

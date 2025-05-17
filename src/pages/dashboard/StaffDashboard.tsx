@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Edit, Trash2, PlusCircle } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 
 interface Trainer {
   id: string;

@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, RefreshCw, Clock, UserCheck, Lock, Download, UploadCloud, Server, Shield } from 'lucide-react';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import HikvisionDeviceManager from '@/components/access-control/HikvisionDeviceManager';
 import HikvisionWebhookHandler from '@/components/access-control/HikvisionWebhookHandler';

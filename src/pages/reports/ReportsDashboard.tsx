@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DateRange } from '@/hooks/use-stats';
+import { DateRange } from '@/hooks/stats/use-stats';
 import { format, subDays } from 'date-fns';
 
 const ReportsDashboard = () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useUserBranch = () => {
   const [branchId, setBranchId] = useState<string | null>(null);

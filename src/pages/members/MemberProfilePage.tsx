@@ -10,20 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CalendarDays, Mail, Phone, Loader2, Plus, CreditCard, ReceiptText, User, Edit, Dumbbell, ClipboardList, Activity, Clock, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import MembershipAssignmentForm from '@/components/membership/MembershipAssignmentForm';
-import { useBranch } from '@/hooks/use-branches';
-import { membershipService } from '@/services/membershipService';
+import { useBranch } from '@/hooks/settings/use-branches';
+import { membershipService } from '@/services/members/membershipService';
 import { toast } from '@/components/ui/sonner';
 import { formatCurrency } from '@/utils/stringUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AttendanceHistory from "@/components/attendance/AttendanceHistory";
 import BodyMeasurementForm from '@/components/fitness/BodyMeasurementForm';
 import ProfileImageUpload from '@/components/members/ProfileImageUpload';
-import { registerMemberInBiometricDevice, checkBiometricDeviceStatus } from '@/services/biometricService';
+import * as biometricService from '@/services/settings/biometricService';
+import { Member } from '@/types/members/member';
 
-interface MemberData {
+interface MemberData extends Member {
   id: string;
   name: string;
   email?: string;
@@ -81,9 +82,17 @@ interface MembershipData {
   };
 }
 
+interface BiometricDeviceStatus {
+  configured: boolean;
+  online: boolean;
+  lastCheck: string;
+  deviceCount: number;
+}
+
 interface BiometricStatus {
-  hikvision: boolean;
-  essl: boolean;
+  hasDevices: boolean;
+  hikvision?: BiometricDeviceStatus;
+  essl?: BiometricDeviceStatus;
 }
 
 const MemberProfilePage = () => {
@@ -221,7 +230,7 @@ const MemberProfilePage = () => {
 
         // Check biometric registration status
         if (currentBranch?.id) {
-          const status = await checkBiometricDeviceStatus(currentBranch.id);
+          const status = await biometricService.checkBiometricDeviceStatus(currentBranch.id);
           setBiometricStatus(status);
         }
       } catch (err) {
@@ -234,29 +243,40 @@ const MemberProfilePage = () => {
 
   const handleAddMembershipSuccess = async () => {
     if (member?.id) {
-      setIsAddMembershipOpen(false);
-      toast({
-        title: "Membership assigned",
-        description: "Membership has been successfully assigned to this member",
-      });
-      
-      // Refresh memberships
-      const memberships = await membershipService.getMemberActiveMemberships(member.id);
-      setActiveMemberships(memberships);
-      
-      // Refresh invoices
-      const invoiceHistory = await membershipService.getMemberInvoiceHistory(member.id);
-      setInvoices(invoiceHistory);
+      try {
+        setIsAddMembershipOpen(false);
+        toast.success("Membership has been successfully assigned to this member");
+        
+        // Refresh memberships
+        const memberships = await membershipService.getMemberActiveMemberships(member.id);
+        setActiveMemberships(memberships);
+        
+        // Refresh invoices
+        const invoiceHistory = await membershipService.getMemberInvoiceHistory(member.id);
+        setInvoices(invoiceHistory);
+        
+        // Refresh member data to get updated membership info
+        const { data: updatedMember, error: memberError } = await supabase
+          .from('members')
+          .select('*')
+          .eq('id', member.id)
+          .single();
+          
+        if (memberError) {
+          console.error('Error refreshing member data:', memberError);
+        } else if (updatedMember) {
+          setMember(updatedMember);
+        }
+      } catch (error) {
+        console.error('Error in handleAddMembershipSuccess:', error);
+        toast.error("Failed to refresh membership information");
+      }
     }
   };
 
   const handleBiometricRegistration = async (deviceType: 'hikvision' | 'essl') => {
     if (!member || !member.id || !currentBranch?.id) {
-      toast({
-        title: "Error",
-        description: "Missing member or branch information",
-        variant: "destructive",
-      });
+      toast.error("Missing member or branch information");
       return;
     }
 
@@ -264,7 +284,7 @@ const MemberProfilePage = () => {
     setBiometricRegistrationStatus("Registering...");
     
     try {
-      const result = await registerMemberInBiometricDevice({
+      const result = await biometricService.registerMemberInBiometricDevice({
         memberId: member.id,
         name: member.name,
         phone: member.phone || '',
@@ -995,8 +1015,11 @@ const MemberProfilePage = () => {
             </DialogDescription>
           </DialogHeader>
           <MembershipAssignmentForm
+            isOpen={isAddMembershipOpen}
+            onClose={() => setIsAddMembershipOpen(false)}
             memberId={member.id}
-            onSuccess={handleAddMembershipSuccess} />
+            memberName={member.name}
+            onAssigned={handleAddMembershipSuccess} />
         </DialogContent>
       </Dialog>
 

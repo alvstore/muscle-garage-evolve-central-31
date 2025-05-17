@@ -20,7 +20,7 @@ import { useDashboard } from '@/hooks/use-dashboard';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 
 // No trainer interface needed anymore
 

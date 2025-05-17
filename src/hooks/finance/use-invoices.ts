@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Invoice } from '@/types/finance';
 import { toast } from 'sonner';
 import { useBranch } from './use-branches';

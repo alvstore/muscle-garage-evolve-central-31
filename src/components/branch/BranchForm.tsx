@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Branch } from "@/types/branch";
-import { useBranch } from "@/hooks/use-branches";
+import { Branch } from "@/types";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({

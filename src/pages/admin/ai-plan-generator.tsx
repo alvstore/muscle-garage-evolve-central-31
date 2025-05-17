@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { aiService, WorkoutPlanParams, DietPlanParams } from '@/services/aiService';
+import { aiService, WorkoutPlanParams, DietPlanParams } from '@/services/ai/aiService';
 import AdminLayout from '@/layouts/AdminLayout';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';

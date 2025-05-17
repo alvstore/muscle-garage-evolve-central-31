@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Member } from '@/types/member';
+import { Member } from '@/types/members/member';
 
 /**
  * Service for member-related operations

@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from '../use-branches';
-import { useSupabaseQuery } from '../use-supabase-query';
+import { useBranch } from '../settings/use-branches';
+import { useSupabaseQuery } from './use-supabase-query';
 import { toast } from 'sonner';
 
 export interface Member {

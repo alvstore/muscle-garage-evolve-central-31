@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Container } from '@/components/ui/container';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
 import { ChevronRight, Layers, Settings } from 'lucide-react';
-import { aiService, AIServiceConfig } from '@/services/aiService';
+import { aiService, AIServiceConfig } from '@/services/ai/aiService';
 
 export default function AIServicesPage() {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { BodyMeasurement, PTPlan } from "@/types/measurements";
-import { measurementService } from "@/services/measurementService";
+import { BodyMeasurement, PTPlan } from "@/types/members/measurements";
+import { measurementService } from "@/services/members/measurementService";
 import { toast } from "sonner";
-import { useAuth } from "./use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 
 export const useBodyMeasurements = (memberId?: string) => {
   const { user } = useAuth();

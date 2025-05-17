@@ -1,12 +1,12 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 import { useForm, FormProvider } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ interface GlobalSetting {
 const GlobalSettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState("general");
   const { isSuperAdmin } = usePermissions();
+  const isSuperAdminUser = isSuperAdmin();
   const globalForm = useForm({
     defaultValues: {
       companyName: "",
@@ -159,7 +160,7 @@ const GlobalSettingsPage: React.FC = () => {
     }
   };
 
-  if (!isSuperAdmin()) {
+  if (!isSuperAdminUser) {
     return (
       <Alert variant="destructive" className="mb-4">
         <AlertTriangle className="h-4 w-4" />

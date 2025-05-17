@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useBranch } from "@/hooks/use-branches";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 import { PlusIcon } from "lucide-react";
 
 // Mock announcements that would be used for trainers

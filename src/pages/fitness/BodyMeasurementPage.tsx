@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { usePermissions } from "@/hooks/use-permissions";
-import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/components/ui/use-toast";
+import { usePermissions } from "@/hooks/auth/use-permissions";
+import { useAuth } from "@/hooks/auth/use-auth";
 import MeasurementHistory from "@/components/fitness/MeasurementHistory";
 import ProgressCharts from "@/components/fitness/ProgressCharts";
 import BodyMeasurementForm from "@/components/fitness/BodyMeasurementForm";
-import { BodyMeasurement, PROGRESS_TIMEFRAMES } from "@/types/measurements";
-import { measurementService } from "@/services/measurementService";
+import { BodyMeasurement, PROGRESS_TIMEFRAMES } from "@/types/members/measurements";
+import { measurementService } from "@/services/members/measurementService";
+// No need for PERMISSIONS import, using direct string literal
 
 const BodyMeasurementPage = () => {
   const { memberId } = useParams<{ memberId: string }>();
@@ -48,7 +49,8 @@ const BodyMeasurementPage = () => {
     if (!user || !memberId) return false;
     
     // Admin and staff can always edit
-    if (can("manage_members")) return true;
+    const canEdit = can('edit:members');
+    if (canEdit) return true;
     
     // Trainers can edit if they're assigned to this member
     if (user.role === "trainer" && memberAssignedToTrainer()) return true;

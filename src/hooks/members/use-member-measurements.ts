@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { BodyMeasurement } from '@/types/measurements';
+import { BodyMeasurement } from '@/types/members/measurements';
 
 interface UseMemberMeasurementsResult {
   measurements: BodyMeasurement[];

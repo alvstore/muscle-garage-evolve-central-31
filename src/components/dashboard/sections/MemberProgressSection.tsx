@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileBarChart, Users, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { useBranch } from '@/hooks/use-branches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Member } from '@/types';

@@ -8,7 +8,7 @@ import { Invoice, InvoiceStatus, PaymentMethod } from '@/types/finance';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useBranch } from '@/hooks/use-branches';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 
 export interface InvoiceFormProps {
   invoice: Invoice | null;

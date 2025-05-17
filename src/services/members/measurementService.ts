@@ -1,6 +1,6 @@
 
-import { BodyMeasurement, PTPlan } from '@/types/measurements';
-import api from './api';
+import { BodyMeasurement, PTPlan } from '@/types/members/measurements';
+import api from '../api/api';
 import { toast } from 'sonner';
 
 export const measurementService = {

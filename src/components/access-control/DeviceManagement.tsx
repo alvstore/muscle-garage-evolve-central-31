@@ -24,7 +24,7 @@ import { Loader2, Plus, DoorOpen, Check, X, HardDrive } from "lucide-react";
 import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
 import { hikvisionService, HikvisionDevice, HikvisionDoor } from '@/services/hikvisionService';
 import { toast } from 'sonner';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 
 interface DeviceManagementProps {
   branchId?: string;

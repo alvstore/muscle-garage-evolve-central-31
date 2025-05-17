@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 import {
   Table,
   TableBody,

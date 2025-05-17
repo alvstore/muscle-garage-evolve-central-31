@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { usePermissions, Permission } from '@/hooks/use-permissions';
+import { usePermissions, Permission } from '@/hooks/auth/use-permissions';
 
 interface PermissionGuardProps {
   permission: Permission;

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ProgressChart } from "@/components/fitness/ProgressChart";
 import { MemberProgressTable } from "@/components/fitness/MemberProgressTable";
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 
 // Define a more compatible Member type for the page

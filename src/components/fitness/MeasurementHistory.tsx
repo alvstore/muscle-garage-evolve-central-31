@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BodyMeasurement } from '@/types/measurements';
+import { BodyMeasurement } from '@/types/members/measurements';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface MeasurementHistoryProps {

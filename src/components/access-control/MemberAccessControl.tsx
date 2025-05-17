@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHikvision } from '@/hooks/use-hikvision-consolidated';
+import { useHikvision } from '@/hooks/access/use-hikvision-consolidated';
 import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';

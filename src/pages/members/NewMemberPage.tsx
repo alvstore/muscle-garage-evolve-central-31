@@ -36,11 +36,12 @@ import { format, isValid } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { useMemberships } from "@/hooks";
-import { membershipService } from "@/services/membershipService";
+import { membershipService } from "@/services/members/membershipService";
 import { CalendarIcon, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MembershipPlan } from "@/types/members/membership";
 
 // Form schema for member creation
 const memberFormSchema = z.object({
@@ -77,9 +78,9 @@ const NewMemberPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentBranch } = useBranch();
-  const { memberships, isLoading: isLoadingMemberships } = useMemberships();
+  const { memberships = [], isLoading: isLoadingMemberships } = useMemberships();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedMembership, setSelectedMembership] = useState<any>(null);
+  const [selectedMembership, setSelectedMembership] = useState<MembershipPlan | null>(null);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [biometricStatus, setBiometricStatus] = useState<{ success: boolean; message: string } | null>(null);
@@ -173,42 +174,52 @@ const NewMemberPage = () => {
       }
 
       // Member successfully created
-      let invoiceId = null;
-
-      // 2. If membership is selected, create membership assignment
-      if (values.createWithMembership && values.membershipId && values.startDate && selectedMembership) {
-        const endDate = membershipService.calculateEndDate(
-          values.startDate,
-          selectedMembership.duration_days
-        );
-        
-        const assignResult = await membershipService.assignMembership({
-          memberId: newMember.id,
-          membershipId: values.membershipId,
-          startDate: values.startDate,
-          endDate: endDate,
-          amount: totalAmount,
-          amountPaid: values.amountPaid || 0,
-          paymentStatus: values.paymentStatus as 'paid' | 'partial' | 'pending',
-          paymentMethod: values.paymentMethod,
-          branchId: currentBranch.id,
-          notes: values.membershipNotes
-        });
-        
-        if (!assignResult.success) {
-          // Don't throw error here, just log it and continue
-          console.error("Error assigning membership:", assignResult.error);
-          setRegistrationError(assignResult.error || "Failed to assign membership");
-        } else {
-          invoiceId = assignResult.invoiceId;
+      let invoiceId: string | null = null;
+      
+      // Handle membership assignment if selected
+      if (values.createWithMembership && values.membershipId && values.startDate && currentBranch?.id) {
+        try {
+          // Calculate end date based on membership duration
+          const selectedMembership = memberships?.find(m => m.id === values.membershipId);
+          if (selectedMembership) {
+            const endDate = new Date(values.startDate);
+            endDate.setDate(endDate.getDate() + (selectedMembership.duration_days || 30));
+            
+            const success = await membershipService.assignMembership({
+              memberId: newMember.id,
+              membershipId: values.membershipId,
+              startDate: values.startDate,
+              endDate: endDate,
+              amount: selectedMembership.price || 0,
+              amountPaid: values.amountPaid || 0,
+              paymentStatus: (values.paymentStatus as 'paid' | 'partial' | 'pending') || 'pending',
+              paymentMethod: values.paymentMethod || 'cash',
+              branchId: currentBranch.id,
+              notes: values.membershipNotes
+            });
+            
+            if (success) {
+              // Get the latest invoice for this member
+              const invoices = await membershipService.getMemberInvoiceHistory(newMember.id);
+              if (invoices && invoices.length > 0) {
+                invoiceId = invoices[0].id;
+              }
+            } else {
+              console.error("Error assigning membership");
+              setRegistrationError("Failed to assign membership");
+            }
+          }
+        } catch (error) {
+          console.error("Error assigning membership:", error);
+          setRegistrationError(error instanceof Error ? error.message : "Failed to assign membership");
         }
       }
       
-      // 3. If biometric integration is enabled, register member in biometric devices
-      if (newMember) {
-        const biometricResult = await membershipService.registerInBiometricDevices(newMember, currentBranch.id);
-        setBiometricStatus(biometricResult);
-      }
+      // Set default biometric status (handled in MemberProfile)
+      setBiometricStatus({
+        success: true,
+        message: "Member created successfully"
+      });
 
       // Show success message
       toast({

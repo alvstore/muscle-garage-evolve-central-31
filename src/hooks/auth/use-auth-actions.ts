@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 
 /**
  * Extracts auth actions from the auth context for easier access

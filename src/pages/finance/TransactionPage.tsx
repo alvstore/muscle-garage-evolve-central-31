@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TransactionList from "@/components/finance/TransactionList";
 import WebhookLogs from "@/components/finance/WebhookLogs";
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { useBranch } from '@/hooks/use-branches';
 import { toast } from 'sonner';
 import { FinancialTransaction } from "@/types/finance";

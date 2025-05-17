@@ -23,7 +23,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/services/api/supabaseClient";
 import { Invoice, InvoiceStatus, PaymentMethod } from '@/types/finance';
 
 interface PaymentRecordDialogProps {

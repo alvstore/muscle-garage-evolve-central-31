@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { membershipService } from '@/services/membershipService';
+import { membershipService } from '@/services/members/membershipService';
 
 export const useMembershipPlans = () => {
   return useQuery({

@@ -6,7 +6,7 @@ import PromoCodeList from '@/components/marketing/PromoCodeList';
 import PromoCodeForm from '@/components/marketing/PromoCodeForm';
 import PromoCodeStats from '@/components/marketing/PromoCodeStats';
 import { PromoCode } from '@/types/marketing';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const PromoPage = () => {

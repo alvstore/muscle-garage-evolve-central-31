@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { Member } from '@/types/member';
+import { Member } from '@/types/members/member';
 import { useToast } from "@/components/ui/use-toast"
 
 interface MemberProfileFormProps {

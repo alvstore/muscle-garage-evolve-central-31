@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { uploadFile } from '@/services/storageService';
+import { uploadFile } from '@/services/utils/storageService';
 import { User } from '@supabase/supabase-js';
 import { Loader2, Camera, Key, UserIcon } from 'lucide-react';
 import { format } from 'date-fns';

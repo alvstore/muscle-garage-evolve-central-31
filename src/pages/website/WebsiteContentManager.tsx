@@ -6,7 +6,7 @@ import { Globe, ExternalLink, Eye } from 'lucide-react';
 import WebsitePreview from '@/components/frontpages/WebsitePreview';
 import { useToast } from '@/components/ui/use-toast';
 import FrontPagesManager from '@/pages/frontpages/FrontPagesManager';
-import { websiteContentService, WebsiteContent } from '@/services/websiteContentService';
+import { websiteContentService, WebsiteContent } from '@/services/communication/websiteContentService';
 
 // Using WebsiteContent interface from websiteContentService
 

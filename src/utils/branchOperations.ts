@@ -1,5 +1,5 @@
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Branch, normalizeBranch } from '@/types/branch';
 
 export const fetchUserBranches = async (userId: string): Promise<{ branchesData: any[], primaryBranchId: string | null }> => {

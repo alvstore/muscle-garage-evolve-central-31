@@ -9,7 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { useCompanySettings } from "@/hooks/use-realtime-settings";
+import { useCompanySettings } from "@/hooks/core/use-company-settings";
 
 // Define the form schema with Zod
 const companySettingsSchema = z.object({

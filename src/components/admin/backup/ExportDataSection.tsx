@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { toast } from 'sonner';
 import { Loader2, Download, FileText } from 'lucide-react';
-import backupService from '@/services/backupService';
+import backupService from '@/services/settings/backupService';
 
 interface ExportDataSectionProps {
   onExportComplete: () => void;

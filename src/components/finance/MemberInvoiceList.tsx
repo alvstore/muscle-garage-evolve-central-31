@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { formatCurrency } from "@/utils/stringUtils";
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 

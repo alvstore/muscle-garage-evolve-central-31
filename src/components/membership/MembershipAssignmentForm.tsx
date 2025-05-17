@@ -24,9 +24,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-import { membershipService } from '@/services/membershipService';
-import { MembershipPlan } from '@/types';
-import { useBranch } from '@/hooks/use-branches';
+import { membershipService } from '@/services/members/membershipService';
+import { MembershipPlan } from '@/types/members/member';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
 
 interface MembershipAssignmentFormProps {
@@ -62,7 +62,17 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
     const fetchMembershipPlans = async () => {
       try {
         setIsLoading(true);
-        const plans = await membershipService.getMembershipPlans(currentBranch?.id);
+        if (!currentBranch?.id) {
+          console.error('No branch selected');
+          toast.error('Please select a branch first');
+          onClose();
+          return;
+        }
+        const plans = await membershipService.getMembershipPlans(currentBranch.id);
+        if (!plans || plans.length === 0) {
+          toast.error('No membership plans found for the selected branch');
+          return;
+        }
         setMembershipPlans(plans);
       } catch (error) {
         console.error('Error fetching membership plans:', error);

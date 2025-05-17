@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { HikvisionEvent } from '@/services/integrations/hikvisionService';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+// Re-export HikvisionEvent from the service
+export type { HikvisionEvent } from '@/services/integrations/hikvisionService';
 
 // Define types that match the hikvisionService
 export interface HikvisionDevice {
@@ -56,8 +60,6 @@ export interface HikvisionApiSettings {
   lastSync?: string;
   branchId?: string;
 }
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface HikvisionState {
   devices: HikvisionDevice[];
@@ -67,6 +69,7 @@ interface HikvisionState {
   isInitialized: boolean;
 }
 
+// Main hook for Hikvision integration
 export const useHikvision = () => {
   const [state, setState] = useState<HikvisionState>({
     devices: [],

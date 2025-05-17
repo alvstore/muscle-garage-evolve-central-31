@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getHikvisionToken } from './hikvisionTokenService';
-import { Member } from '@/types/member';
+import { Member } from '@/types/members/member';
 
 interface RegisterMemberParams {
   memberId: string;

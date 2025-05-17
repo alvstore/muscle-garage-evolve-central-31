@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
-import { useReferrals } from '@/hooks/use-referrals';
-import { useAuth } from '@/hooks/use-auth';
+import { useReferrals } from '@/hooks/members/use-referrals';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { toast } from "@/utils/toast-manager";
 
 const CreateReferralDialog = () => {

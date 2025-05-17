@@ -15,7 +15,7 @@ import { MoreHorizontal, Edit, Trash2, UserCog, UserCheck, UserX } from 'lucide-
 import { StaffMember } from '@/hooks/use-staff';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useStaff } from '@/hooks/use-staff';
 
 // Helper function to get initials from a name

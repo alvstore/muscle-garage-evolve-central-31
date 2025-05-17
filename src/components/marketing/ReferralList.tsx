@@ -28,7 +28,7 @@ import {
   Search
 } from "lucide-react";
 import { Referral, ReferralStatus } from "@/types/marketing";
-import { useReferrals } from '@/hooks/use-referrals';
+import { useReferrals } from '@/hooks/members/use-referrals';
 import CreateReferralDialog from './CreateReferralDialog';
 
 const ReferralList = () => {

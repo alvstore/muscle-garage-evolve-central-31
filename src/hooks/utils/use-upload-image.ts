@@ -1,5 +1,5 @@
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 
 interface UploadImageProps {

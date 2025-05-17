@@ -3,7 +3,7 @@ import React from 'react';
 import { Container } from '@/components/ui/container';
 import MembershipPlans from '@/components/membership/MembershipPlans';
 import MembershipPlansDisplay from '@/components/membership/MembershipPlansDisplay';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const MembershipPage = () => {
   const { userRole } = usePermissions();
