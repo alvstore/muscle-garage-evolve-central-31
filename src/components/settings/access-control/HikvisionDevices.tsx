@@ -7,9 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import { useHikvision } from '@/hooks/use-hikvision-consolidated';
-import type { HikvisionDevice } from '@/services/hikvisionService';
+import { toast } from '@/hooks/ui/use-toast';
+import { useHikvision, type HikvisionDevice } from '@/hooks/use-hikvision-consolidated';
 import { Loader2, Plus, Trash2, RefreshCw, Cloud, Wifi, Server, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';

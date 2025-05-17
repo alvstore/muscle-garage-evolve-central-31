@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { toast } from 'sonner';
 import { Loader2, Upload, FileText } from 'lucide-react';
-import backupService from '@/services/backupService';
+import backupService from '@/services/settings/backupService';
 
 const ImportDataSection = ({ onImportComplete }: { onImportComplete: () => void }) => {
   const [importing, setImporting] = useState(false);

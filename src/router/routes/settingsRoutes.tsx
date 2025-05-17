@@ -2,22 +2,22 @@
 import React from 'react';
 import { AppRoute } from '@/types/route';
 import UnifiedSettingsPage from '@/pages/settings/core/UnifiedSettingsPage';
-import InvoiceSettingsPage from '@/pages/settings/InvoiceSettingsPage';
-import IntegrationsPage from '@/pages/settings/IntegrationsPage';
+import InvoiceSettingsPage from '@/pages/settings/payments/InvoiceSettingsPage';
+import IntegrationsPage from '@/pages/settings/integrations/IntegrationsPage';
 import AccessControlPage from '@/pages/settings/access-control';
-import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
+import PaymentGatewaySettingsPage from '@/pages/settings/payments/PaymentGatewaySettingsPage';
 import PushNotificationSettingsPage from '@/pages/settings/core/PushNotificationSettingsPage';
-import EmailSettingsPage from '@/pages/settings/EmailSettingsPage';
-import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
-import MessagingSettingsPage from '@/pages/settings/MessagingSettingsPage';
-import TemplatesPage from '@/pages/settings/TemplatesPage';
-import EmailTemplatesPage from '@/pages/settings/EmailTemplatesPage';
-import SmsTemplatesPage from '@/pages/settings/SmsTemplatesPage';
-import WhatsAppTemplatesPage from '@/pages/settings/WhatsAppTemplatesPage';
+import EmailSettingsPage from '@/pages/settings/communication/email/EmailSettingsPage';
+import SmsIntegrationPage from '@/pages/settings/communication/sms/SmsIntegrationPage';
+import MessagingSettingsPage from '@/pages/settings/communication/MessagingSettingsPage';
+import MessageTemplatesPage from '@/pages/settings/communication/MessageTemplatesPage';
+import EmailTemplatesPage from '@/pages/settings/communication/email/EmailTemplatesPage';
+import SmsTemplatesPage from '@/pages/settings/communication/sms/SmsTemplatesPage';
+import WhatsAppTemplatesPage from '@/pages/settings/communication/whatsapp/WhatsAppTemplatesPage';
 import RolePermissionsPage from '@/components/settings/permissions/pages/RolePermissionsPage';
-import GlobalSettingsPage from '@/pages/settings/GlobalSettingsPage';
-import BranchManagementPage from '@/pages/settings/BranchManagementPage';
-import AIServicesPage from '@/pages/settings/ai-services';
+import GlobalSettingsPage from '@/pages/settings/core/GlobalSettingsPage';
+import BranchManagementPage from '@/pages/settings/branches/BranchManagementPage';
+import AIServicesPage from '@/pages/settings/integrations/ai-services';
 import { 
   Settings, 
   Webhook, 
@@ -156,7 +156,7 @@ export const settingsRoutes: AppRoute[] = [
   },
   {
     path: '/settings/templates',
-    element: <TemplatesPage />,
+    element: <MessageTemplatesPage />,
     meta: {
       title: 'Templates',
       breadcrumb: 'Templates',

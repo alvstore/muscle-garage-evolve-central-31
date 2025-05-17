@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { hikvisionService, HikvisionApiSettings, HikvisionPerson, HikvisionAccessPrivilege } from '@/services/hikvisionService';
-import { useHikvision } from './use-hikvision-consolidated';
+import { useHikvision } from '../use-hikvision-consolidated';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
@@ -47,7 +47,7 @@ export const useMemberAccess = () => {
   };
 
   const registerMember = async (member: any, picture?: string): Promise<boolean> => {
-    if (!settings || !settings.is_active) {
+    if (!settings || !settings.isActive) {
       toast.error('Hikvision integration is not configured');
       return false;
     }
@@ -113,7 +113,7 @@ export const useMemberAccess = () => {
   };
 
   const unregisterMember = async (memberId: string): Promise<boolean> => {
-    if (!settings || !settings.is_active) return false;
+    if (!settings || !settings.isActive) return false;
 
     setIsProcessing(true);
     try {
@@ -149,7 +149,7 @@ export const useMemberAccess = () => {
     validStartTime: string,
     validEndTime: string
   ): Promise<boolean> => {
-    if (!settings || !settings.is_active) return false;
+    if (!settings || !settings.isActive) return false;
     
     setIsProcessing(true);
     try {
@@ -182,7 +182,7 @@ export const useMemberAccess = () => {
   };
 
   const revokeAccess = async (memberId: string, deviceSerialNo: string): Promise<boolean> => {
-    if (!settings || !settings.is_active) return false;
+    if (!settings || !settings.isActive) return false;
     
     setIsProcessing(true);
     try {

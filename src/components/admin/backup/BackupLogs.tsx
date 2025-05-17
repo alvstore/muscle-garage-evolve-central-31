@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { BackupLogEntry } from '@/types/backup';
-import backupService from '@/services/backupService';
+import backupService from '@/services/settings/backupService';
 import BackupLogsHeader from './BackupLogsHeader';
 import BackupLogsFilters from './BackupLogsFilters';
 import BackupLogsTable from './BackupLogsTable';
