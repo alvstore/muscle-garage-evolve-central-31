@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { ChevronRight, MessageCircle, MessageSquare, Settings } from "lucide-react";
-import SmsSettings from '@/components/settings/SmsSettings';
-import WhatsAppSettings from '@/components/settings/WhatsAppSettings';
+import SmsSettings from '@/components/settings/communication/sms/SmsSettings';
+import WhatsAppSettings from '@/components/settings/communication/whatsapp/WhatsAppSettings';
 import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const MessagingSettingsPage = () => {

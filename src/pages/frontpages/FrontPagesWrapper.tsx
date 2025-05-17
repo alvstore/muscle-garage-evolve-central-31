@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import FrontPagesManager from './FrontPagesManager';
-import { websiteContentService } from '@/services/websiteContentService';
+import { websiteContentService } from '@/services/communication/websiteContentService';
 import { WebsiteContent } from '@/types/website';
 
 const FrontPagesWrapper = () => {

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BranchSchema, BranchFormValues } from '@/types/branch';
+import { BranchSchema, BranchFormValues } from '@/types/settings/branch';
 import { toast } from 'sonner';
 
 interface CreateBranchDialogProps {

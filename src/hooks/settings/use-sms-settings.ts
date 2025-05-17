@@ -1,50 +1,41 @@
-
 import { useState, useEffect } from 'react';
-import settingsService from '@/services/settingsService';
-import { useBranch } from './use-branches';
-
-export interface SmsSettings {
-  id?: string;
-  provider: string;
-  sender_id: string;
-  msg91_auth_key?: string;
-  twilio_account_sid?: string;
-  twilio_auth_token?: string;
-  custom_api_url?: string;
-  custom_api_headers?: string;
-  custom_api_params?: string;
-  is_active: boolean;
-  branch_id?: string;
-  templates?: {
-    membershipAlert: boolean;
-    renewalReminder: boolean;
-    otpVerification: boolean;
-    attendanceConfirmation: boolean;
-  };
-}
+import settingsService from '@/services/settings/settingsService';
+import { useBranches } from '@/hooks/use-branches';
+import { SmsSettings, SmsProvider, SmsTemplates } from '@/types/communication/sms';
 
 export const useSmsSettings = () => {
   const [settings, setSettings] = useState<SmsSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const { currentBranch } = useBranch();
+  const { currentBranch } = useBranches();
 
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
       const data = await settingsService.getSmsSettings(currentBranch?.id);
-      setSettings(data || {
-        provider: 'msg91',
-        sender_id: 'GYMAPP',
-        is_active: false,
-        templates: {
-          membershipAlert: false,
-          renewalReminder: false,
-          otpVerification: false,
-          attendanceConfirmation: false
-        }
-      });
+      
+      // Default settings
+      const defaultProvider: SmsProvider = {
+        id: '',
+        name: '',
+        apiKey: '',
+        senderId: '',
+        isActive: false
+      };
+
+      const defaultTemplates: SmsTemplates = {
+        membershipAlert: false,
+        renewalReminder: false,
+        otpVerification: false,
+        attendanceConfirmation: false,
+      };
+
+      setSettings({
+        ...(data || {}),
+        provider: data?.provider || defaultProvider,
+        templates: data?.templates || defaultTemplates,
+      } as SmsSettings);
     } catch (err: any) {
       setError(err);
     } finally {

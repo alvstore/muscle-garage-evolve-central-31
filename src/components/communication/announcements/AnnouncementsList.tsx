@@ -3,8 +3,8 @@ import { format } from 'date-fns';
 import { MessageSquare, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Announcement } from '@/types/notification';
-import { useAnnouncements } from '@/hooks/communication/use-announcements';
+import { Announcement } from '@/types/communication/notification';
+import { useAnnouncements } from '@/hooks/notifications/use-announcements';
 
 export function AnnouncementsList() {
   const { announcements, isLoading } = useAnnouncements();

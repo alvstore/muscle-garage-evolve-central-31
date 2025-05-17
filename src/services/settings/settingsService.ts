@@ -298,4 +298,5 @@ const settingsService = {
   }
 };
 
+// Export the settings service
 export default settingsService;

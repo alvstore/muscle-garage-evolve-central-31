@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import communicationService from '@/services/communicationService';
+import communicationService from '@/services/communication/communicationService';
 import { useBranch } from '@/hooks/settings/use-branches';
 
 export const useAnnouncements = () => {
