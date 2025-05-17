@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/auth/use-auth';
-import { notificationService } from '@/services/notificationService';
-import type { Notification } from '@/services/notificationService';
+import { notificationService } from '@/services/communication/communicationService';
+import type { Notification } from '@/services/communication/communicationService';
 
 export function useNotifications(categoryFilter = 'all', refreshTrigger = 0) {
   const { user } = useAuth();

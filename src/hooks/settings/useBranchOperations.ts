@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Branch } from '@/types/branch';
+import { Branch } from '@/types/settings/branch';
 import { toast } from '@/utils/toast-manager';
 import { createBranchInDb, updateBranchInDb } from '@/utils/branchOperations';
 
