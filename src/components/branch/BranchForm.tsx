@@ -88,49 +88,111 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log('Form submitted with values:', values);
     setIsSubmitting(true);
+    
     try {
+      // Validate required fields first
+      if (!values.name?.trim()) {
+        const errorMsg = 'Branch name is required';
+        console.error(errorMsg);
+        toast.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!values.address?.trim()) {
+        const errorMsg = 'Branch address is required';
+        console.error(errorMsg);
+        toast.error(errorMsg);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Prepare branch data with all required fields
-      const branchData: Omit<Branch, 'id'> = {
-        name: values.name,
-        address: values.address,
-        phone: values.phone || null,
-        email: values.email || null,
-        manager_id: values.manager_id || null,
+      const branchData: Partial<Branch> = {
+        name: values.name.trim(),
+        address: values.address.trim(),
+        phone: values.phone?.trim() || null,
+        email: values.email?.trim() || null,
+        manager_id: values.manager_id?.trim() || null,
         is_active: values.is_active,
-        branch_code: values.branch_code || null,
-        city: values.city || null,
-        state: values.state || null,
-        country: values.country || 'India',
+        branch_code: values.branch_code?.trim() || null,
+        city: values.city?.trim() || null,
+        state: values.state?.trim() || null,
+        country: values.country?.trim() || 'India',
         created_at: branch?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         // Extended fields
-        ...(values.max_capacity && { max_capacity: parseInt(values.max_capacity) }),
-        ...(values.opening_hours && { opening_hours: values.opening_hours }),
-        ...(values.closing_hours && { closing_hours: values.closing_hours }),
-        ...(values.region && { region: values.region }),
-        ...(values.tax_rate && { tax_rate: parseFloat(values.tax_rate) }),
-        ...(values.timezone && { timezone: values.timezone })
+        ...(values.max_capacity && { max_capacity: parseInt(values.max_capacity) || 0 }),
+        ...(values.opening_hours && { opening_hours: values.opening_hours.trim() }),
+        ...(values.closing_hours && { closing_hours: values.closing_hours.trim() }),
+        ...(values.region && { region: values.region.trim() }),
+        ...(values.tax_rate && { tax_rate: parseFloat(values.tax_rate) || 0 }),
+        ...(values.timezone && { timezone: values.timezone.trim() })
       };
       
-      let success = false;
+      console.log('Prepared branch data for submission:', branchData);
       
-      if (isEditMode && branch) {
-        const result = await updateBranch(branch.id, branchData);
-        success = !!result;
-      } else {
-        const result = await createBranch(branchData);
-        success = !!result;
-      }
+      let result;
       
-      if (success) {
-        form.reset();
+      try {
+        if (isEditMode && branch) {
+          console.log('Updating branch with ID:', branch.id);
+          result = await updateBranch(branch.id, branchData);
+        } else {
+          console.log('Creating new branch');
+          result = await createBranch(branchData);
+        }
+        
+        if (!result) {
+          throw new Error('No result returned from the branch operation');
+        }
+        
+        console.log('Branch operation successful, result:', result);
+        
+        // Reset form on success
+        form.reset({
+          name: '',
+          address: '',
+          city: '',
+          state: '',
+          country: 'India',
+          email: '',
+          phone: '',
+          is_active: true,
+          branch_code: '',
+          max_capacity: '',
+          opening_hours: '',
+          closing_hours: '',
+          region: '',
+          tax_rate: '',
+          timezone: ''
+        });
+        
         onComplete();
         toast.success(`Branch ${isEditMode ? 'updated' : 'created'} successfully`);
+        
+      } catch (error: any) {
+        console.error('Error in branch operation:', {
+          error,
+          message: error.message,
+          stack: error.stack,
+          ...(error.response && { response: error.response.data })
+        });
+        
+        const errorMessage = error.message || `Failed to ${isEditMode ? 'update' : 'create'} branch`;
+        console.error(errorMessage);
+        toast.error(errorMessage);
       }
-    } catch (error) {
-      console.error("Error submitting branch form:", error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} branch`);
+      
+    } catch (error: any) {
+      console.error('Unexpected error in form submission:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
+      toast.error('An unexpected error occurred. Please check the console for more details.');
     } finally {
       setIsSubmitting(false);
     }

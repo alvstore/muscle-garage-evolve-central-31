@@ -90,28 +90,82 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Create a branch
   const createBranch = async (branchData: Partial<Branch>): Promise<Branch | null> => {
     try {
+      console.log('Creating branch with data:', branchData);
+      
+      // Validate required fields with specific error messages
+      if (!branchData.name?.trim()) {
+        const errorMsg = 'Branch name is required';
+        console.error(errorMsg);
+        toast.error(errorMsg);
+        return null;
+      }
+
+      if (!branchData.address?.trim()) {
+        const errorMsg = 'Branch address is required';
+        console.error(errorMsg);
+        toast.error(errorMsg);
+        return null;
+      }
+
+      // Prepare the data to be inserted
+      const insertData: any = {
+        name: branchData.name.trim(),
+        address: branchData.address.trim(),
+        city: branchData.city?.trim() || null,
+        state: branchData.state?.trim() || null,
+        country: branchData.country?.trim() || 'India',
+        email: branchData.email?.trim() || null,
+        phone: branchData.phone?.trim() || null,
+        is_active: branchData.is_active !== undefined ? branchData.is_active : true,
+        manager_id: branchData.manager_id?.trim() || null,
+        branch_code: branchData.branch_code?.trim() || null,
+        opening_hours: branchData.opening_hours?.trim() || null,
+        closing_hours: branchData.closing_hours?.trim() || null,
+        tax_rate: branchData.tax_rate || null,
+        max_capacity: branchData.max_capacity || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Prepared insert data:', insertData);
+
+      // Remove undefined values
+      Object.keys(insertData).forEach(key => {
+        if (insertData[key] === undefined) {
+          delete insertData[key];
+        }
+      });
+
+      console.log('Final insert data after cleanup:', insertData);
+
       const { data, error } = await supabase
         .from('branches')
-        .insert([{
-          name: branchData.name,
-          address: branchData.address,
-          city: branchData.city,
-          state: branchData.state,
-          country: branchData.country || 'India',
-          email: branchData.email,
-          phone: branchData.phone,
-          is_active: branchData.is_active !== undefined ? branchData.is_active : true,
-          manager_id: branchData.manager_id,
-          branch_code: branchData.branch_code,
-          opening_hours: branchData.opening_hours,
-          closing_hours: branchData.closing_hours,
-          tax_rate: branchData.tax_rate,
-          max_capacity: branchData.max_capacity
-        }])
-        .select()
+        .insert([insertData])
+        .select('*')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        let errorMessage = 'Failed to create branch';
+        
+        // Handle specific error codes
+        if (error.code === '23505') { // Unique violation
+          errorMessage = 'A branch with this name or code already exists';
+        } else if (error.message.includes('violates not-null constraint')) {
+          errorMessage = 'Required field is missing';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
 
       const newBranch: Branch = {
         id: data.id,
