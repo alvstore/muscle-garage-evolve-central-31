@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Feedback, FeedbackType } from '@/types/notification';
 import { adaptFeedbackFromDB } from '@/types/notification';
 import communicationService from '@/services/communicationService';
-import { useBranch } from './use-branches';
+import { useBranch } from './use-branch';
 
 export const useFeedback = (type?: FeedbackType) => {
   const { currentBranch } = useBranch();
