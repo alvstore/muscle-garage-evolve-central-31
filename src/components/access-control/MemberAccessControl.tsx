@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMemberAccess } from '@/hooks/use-member-access';
 
 interface MemberAccessControlProps {
   member: any;
@@ -24,9 +26,14 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
     unregisterMember, 
     grantAccess, 
     revokeAccess, 
-    getMemberAccess,
-    devices: hikvisionDevices
+    isProcessing
+  } = useMemberAccess();
+  
+  const { 
+    devices: hikvisionDevices,
+    getMemberAccess
   } = useHikvision();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('');
@@ -52,7 +59,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
       }
     };
     
-      // Use actual devices from the hook
+    // Use actual devices from the hook
     if (hikvisionDevices && hikvisionDevices.length > 0) {
       setDevices(hikvisionDevices.map(device => ({
         id: device.deviceId,
@@ -60,11 +67,9 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
         doors: device.doors || [1] // Default to door 1 if no doors specified
       })));
     }
-      { id: 'device3', name: 'Locker Rooms', doors: [1, 2] }
-    ]);
     
     fetchAccessDetails();
-  }, [member?.id]);
+  }, [member?.id, getMemberAccess, hikvisionDevices]);
   
   const handleRegisterMember = async () => {
     if (!member) return;
@@ -130,7 +135,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
       const success = await grantAccess(member.id, selectedDevice, doorNumbers, startTime, endTime);
       if (success) {
         // Refresh access credentials
-        const credentials = await memberAccess.getMemberAccess(member.id);
+        const credentials = await getMemberAccess(member.id);
         setAccessCredentials(credentials);
         toast.success('Access granted successfully');
       } else {
@@ -159,7 +164,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
       const success = await revokeAccess(member.id, selectedDevice);
       if (success) {
         // Refresh access credentials
-        const credentials = await memberAccess.getMemberAccess(member.id);
+        const credentials = await getMemberAccess(member.id);
         setAccessCredentials(credentials);
         toast.success('Access revoked successfully');
       } else {
@@ -213,7 +218,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
               <div>
                 <h3 className="font-semibold text-lg mb-4">Access Credentials</h3>
                 
-                {memberAccess.isLoading ? (
+                {isProcessing ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
