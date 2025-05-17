@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { useHikvision, TokenData } from '@/hooks/use-hikvision';
+import { useHikvision } from '@/hooks/use-hikvision-consolidated';
+import type { HikvisionDevice } from '@/services/hikvisionService';
 import { Loader2, Plus, Trash2, RefreshCw, Cloud, Wifi, Server, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -18,48 +19,33 @@ interface HikvisionDevicesProps {
   branchId: string;
 }
 
-interface HikvisionDevice {
-  id: string;
-  name?: string;
-  device_name?: string;
-  deviceName?: string;
-  device_id?: string;
-  deviceId?: string;
-  device_type?: string;
-  deviceType?: string;
-  location?: string;
-  ip_address?: string;
-  ipAddress?: string;
-  port?: string;
-  username?: string;
-  password?: string;
-  is_active?: boolean;
-  isActive?: boolean;
-  is_cloud_managed?: boolean;
-  isCloudManaged?: boolean;
-  use_isup_fallback?: boolean;
-  useIsupFallback?: boolean;
-  sync_status?: 'success' | 'failed' | 'pending';
-  syncStatus?: 'success' | 'failed' | 'pending';
-  last_sync?: string;
-  lastSync?: string;
-  status?: 'online' | 'offline' | 'unknown';
-}
+// Using HikvisionDevice from use-hikvision-consolidated
 
 export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   const { 
     isLoading, 
-    settings, 
-    fetchSettings, 
-    addDevice,
-    removeDevice,
-    getToken
-  } = useHikvision({ branchId });
+    isSaving, 
+    error, 
+    devices, 
+    getDevices,
+    saveSettings,
+    testConnection
+  } = useHikvision();
 
-  // Type assertion for getToken to ensure it returns TokenData
-  const getTokenData = getToken as unknown as () => Promise<{success: boolean, token: TokenData}>;
+  // Get token data from the service
+  const getTokenData = async () => {
+    try {
+      const response = await testConnection();
+      return { success: true, token: response };
+    } catch (error) {
+      console.error('Error getting token:', error);
+      return { success: false, token: null };
+    }
+  };
 
-  const [newDevice, setNewDevice] = useState<any>({
+  const [localDevices, setLocalDevices] = useState<HikvisionDevice[]>([]);
+  
+  const [newDevice, setNewDevice] = useState<HikvisionDevice>({
     deviceName: '',
     deviceType: '',
     deviceId: '',
@@ -81,6 +67,18 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [isTestingDevice, setIsTestingDevice] = useState(false);
   const [deviceTestStatus, setDeviceTestStatus] = useState<{ id: string, status: 'success' | 'error' | 'pending' }[]>([]);
+
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        await getDevices();
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+      }
+    };
+    
+    fetchDevices();
+  }, [getDevices]);
 
   useEffect(() => {
     if (branchId) {
@@ -129,22 +127,20 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
     }
   };
 
-  const handleAddDevice = async () => {
-    setIsAddingDevice(true);
+  const handleAddDevice = async (device: HikvisionDevice) => {
     try {
-      // Validate inputs
-      if (!newDevice.deviceName || !newDevice.serialNumber) {
-        toast({
-          title: "Error",
-          description: 'Device name and serial number are required',
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // If cloud managed but no site ID is provided, get the default site ID
-      if (newDevice.isCloudManaged && !newDevice.siteId) {
-        const tokenData = await getTokenData();
+      // Add device to local state
+      setLocalDevices(prev => [...prev, device]);
+      toast({
+        title: 'Device added',
+        description: 'The device has been added successfully.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add device. Please try again.',
+        variant: 'destructive',
+      });
         if (tokenData && tokenData.token.siteId) {
           newDevice.siteId = tokenData.token.siteId;
         }

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Check, X, RefreshCw } from "lucide-react";
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvision } from '@/hooks/use-hikvision-consolidated';
 import { HikvisionApiSettings } from '@/services/hikvisionService';
 
 interface HikvisionSettingsProps {
@@ -20,36 +20,41 @@ interface HikvisionSettingsProps {
 }
 
 const HikvisionSettings = ({ branchId }: HikvisionSettingsProps) => {
-  const { 
-    settings, 
-    isLoading, 
-    isSaving, 
-    saveSettings, 
-    testConnection,
-    fetchDevices,
-    isLoadingDevices,
-    devices 
-  } = useHikvisionSettings();
+  const hikvision = useHikvision();
   
-  const [formData, setFormData] = useState<HikvisionApiSettings>({
-    app_key: '',
-    app_secret: '',
-    api_url: 'https://api.hikvision.com',
-    branch_id: branchId || '',
-    is_active: false,
-    devices: []
-  });
+  // Extract values from the hook
+  const settings = hikvision.settings as HikvisionApiSettings | null;
+  const isLoading = hikvision.isLoading || false;
+  const isSaving = hikvision.isSaving || false;
+  const saveSettings = hikvision.saveSettings;
+  const testConnection = hikvision.testConnection;
+  const fetchDevices = hikvision.fetchDevices;
+  const isLoadingDevices = hikvision.isLoadingDevices || false;
+  const devices = hikvision.devices || [];
+  
+  type FormData = Omit<HikvisionApiSettings, 'id' | 'created_at' | 'updated_at'> & { branch_id: string };
+  
+  const [formData, setFormData] = useState<FormData>(() => ({
+    app_key: settings?.app_key || '',
+    app_secret: settings?.app_secret || '',
+    api_url: settings?.api_url || 'https://api.hikvision.com',
+    branch_id: settings?.branch_id || branchId || '',
+    is_active: settings?.is_active || false,
+    devices: settings?.devices || []
+  }));
   const [isTesting, setIsTesting] = useState(false);
   const [isConnectionValid, setIsConnectionValid] = useState<boolean | null>(null);
 
   // Initialize form data once settings are loaded
   React.useEffect(() => {
     if (settings) {
-      setFormData({
-        ...settings
-      });
+      setFormData(prev => ({
+        ...prev,
+        ...settings,
+        branch_id: settings.branch_id || branchId || ''
+      }));
     }
-  }, [settings]);
+  }, [settings, branchId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

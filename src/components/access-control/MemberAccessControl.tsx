@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHikvision } from '@/hooks/use-hikvision';
+import { useHikvision } from '@/hooks/use-hikvision-consolidated';
 import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -19,7 +19,14 @@ interface MemberAccessControlProps {
 }
 
 export default function MemberAccessControl({ member }: MemberAccessControlProps) {
-  const { registerMember, unregisterMember, grantAccess, revokeAccess, memberAccess } = useHikvision();
+  const { 
+    registerMember, 
+    unregisterMember, 
+    grantAccess, 
+    revokeAccess, 
+    getMemberAccess,
+    devices: hikvisionDevices
+  } = useHikvision();
   const [isLoading, setIsLoading] = useState(false);
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('');
@@ -36,7 +43,7 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
     const fetchAccessDetails = async () => {
       if (member?.id) {
         try {
-          const credentials = await memberAccess.getMemberAccess(member.id);
+          const credentials = await getMemberAccess(member.id);
           setAccessCredentials(credentials);
           setIsRegistered(credentials.length > 0);
         } catch (error) {
@@ -45,10 +52,14 @@ export default function MemberAccessControl({ member }: MemberAccessControlProps
       }
     };
     
-    // Mock devices for the demo
-    setDevices([
-      { id: 'device1', name: 'Main Entrance', doors: [1, 2] },
-      { id: 'device2', name: 'Gym Floor', doors: [1] },
+      // Use actual devices from the hook
+    if (hikvisionDevices && hikvisionDevices.length > 0) {
+      setDevices(hikvisionDevices.map(device => ({
+        id: device.deviceId,
+        name: device.name,
+        doors: device.doors || [1] // Default to door 1 if no doors specified
+      })));
+    }
       { id: 'device3', name: 'Locker Rooms', doors: [1, 2] }
     ]);
     

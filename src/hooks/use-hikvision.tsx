@@ -215,7 +215,6 @@ export const useHikvision = () => {
     }
   };
 
-  // Add the missing memberAccess functions and properties
   const getMemberAccess = async (memberId: string) => {
     setIsLoading(true);
     setError(null);

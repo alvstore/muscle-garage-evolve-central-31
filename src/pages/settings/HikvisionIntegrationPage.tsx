@@ -18,12 +18,13 @@ import PermissionGuard from '@/components/auth/PermissionGuard';
 import HikvisionDeviceManager from '@/components/integrations/HikvisionDeviceManager';
 import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
 import { useBranch } from '@/hooks/use-branch';
-import { useHikvision } from '@/hooks/use-hikvision';
+import { useHikvision } from '@/hooks/use-hikvision-consolidated';
 
 const hikvisionCredentialsSchema = z.object({
-  apiUrl: z.string().url({ message: "Please enter a valid API URL" }),
-  appKey: z.string().min(1, { message: "App Key is required" }),
-  secretKey: z.string().min(1, { message: "Secret Key is required" }),
+  api_url: z.string().url({ message: "Please enter a valid API URL" }),
+  app_key: z.string().min(1, { message: "App Key is required" }),
+  app_secret: z.string().min(1, { message: "Secret Key is required" }),
+  is_active: z.boolean().default(false),
 });
 
 const HikvisionIntegrationPage = () => {
@@ -39,17 +40,17 @@ const HikvisionIntegrationPage = () => {
     settings, 
     fetchSettings, 
     saveSettings, 
-    testConnection 
-  } = useHikvision({ 
-    branchId: currentBranch?.id 
-  });
+    testConnection,
+    isSaving
+  } = useHikvision();
 
   const form = useForm<z.infer<typeof hikvisionCredentialsSchema>>({
     resolver: zodResolver(hikvisionCredentialsSchema),
     defaultValues: {
-      apiUrl: '',
-      appKey: '',
-      secretKey: '',
+      api_url: settings?.api_url || 'https://api.hikvision.com',
+      app_key: settings?.app_key || '',
+      app_secret: settings?.app_secret || '',
+      is_active: settings?.is_active || false,
     },
   });
 
@@ -93,20 +94,19 @@ const HikvisionIntegrationPage = () => {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof hikvisionCredentialsSchema>) => {
-    if (!currentBranch?.id) {
-      toast.error('Please select a branch');
-      return;
-    }
-    
-    const success = await saveSettings(data);
-    
-    if (!success) {
-      setErrorLogs(prev => [...prev, {
-        time: new Date().toISOString(),
-        message: 'Failed to save Hikvision settings',
-        code: 'SAVE_FAILED'
-      }]);
+  const handleSave = async (values: z.infer<typeof hikvisionCredentialsSchema>) => {
+    try {
+      const result = await saveSettings({
+        ...values,
+        branch_id: currentBranch?.id || '',
+      });
+      if (result) {
+        toast.success('Settings saved successfully');
+      } else {
+        toast.error('Failed to save settings');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'An error occurred while saving settings');
     }
   };
 

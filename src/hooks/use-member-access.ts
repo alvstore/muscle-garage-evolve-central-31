@@ -1,13 +1,13 @@
 
 import { useState } from 'react';
 import { hikvisionService, HikvisionApiSettings, HikvisionPerson, HikvisionAccessPrivilege } from '@/services/hikvisionService';
-import { useHikvisionSettings } from './use-hikvision-settings';
+import { useHikvision } from './use-hikvision-consolidated';
 import { supabase } from '@/services/supabaseClient';
 import { toast } from 'sonner';
 
 export const useMemberAccess = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { settings } = useHikvisionSettings();
+  const { settings } = useHikvision();
 
   const getMemberCredential = async (memberId: string) => {
     try {
