@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Edit, Trash2, UserCog, UserCheck, UserX } from 'lucide-react';
-import { StaffMember } from '@/hooks/use-staff';
+import { StaffMember } from '@/hooks/staff/use-staff';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useToast } from '@/hooks/ui/use-toast';
-import { useStaff } from '@/hooks/use-staff';
+import { useStaff } from '@/hooks/staff/use-staff';
 
 // Helper function to get initials from a name
 const getInitials = (name: string) => {

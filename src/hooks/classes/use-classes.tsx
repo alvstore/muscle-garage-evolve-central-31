@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { classService } from '@/services/classService';
+import { classService } from '@/services/members/classService';
 import { GymClass, ClassBooking } from '@/types/class';
 import { toast } from 'sonner';
 
@@ -35,12 +35,16 @@ export const useMemberBookings = (memberId: string) => {
   });
 };
 
+interface BookClassVariables {
+  classId: string;
+  memberId: string;
+}
+
 export const useBookClass = () => {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: ({ classId, memberId }: { classId: string; memberId: string }) => 
-      classService.bookClass(classId, memberId),
+  return useMutation<ClassBooking | null, Error, BookClassVariables>({
+    mutationFn: ({ classId, memberId }) => classService.bookClass(classId, memberId),
     onSuccess: (data, variables) => {
       if (data) {
         toast.success('Class booked successfully');

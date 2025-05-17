@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle } from 'lucide-react';
-import { useBranch } from '@/hooks/use-branches';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useBranch } from '@/hooks/settings/use-branches';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 // Mock data for staff members
 const mockStaffMembers = [

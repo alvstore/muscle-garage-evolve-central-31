@@ -5,8 +5,8 @@ import FitnessPlanManager from '@/components/fitness/FitnessPlanManager';
 import ProgressTracker from '@/components/fitness/ProgressTracker';
 import { WorkoutPlanForm } from '@/components/fitness/WorkoutPlanForm';
 import DietPlanForm from '@/components/fitness/DietPlanForm';
-import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useAuth } from '@/hooks/auth/use-auth';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import { Member } from '@/types';
 import { WorkoutPlan } from '@/types/workout';
 

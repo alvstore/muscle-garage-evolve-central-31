@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
 import { followUpService } from '@/services/followUpService';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import LeadsList from '@/components/crm/LeadsList';
 import { Lead, FollowUpHistory } from '@/types/crm';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";

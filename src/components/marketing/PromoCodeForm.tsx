@@ -23,9 +23,9 @@ import { CalendarIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { PromoCode } from '@/types/marketing';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 interface PromoCodeFormProps {
   promoCode: PromoCode | null;

@@ -6,7 +6,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, List, BookOpen, Tag, Loader2 } from "lucide-react";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 import ClassSchedulePage from "./ClassSchedulePage";
 import ClassTypesPage from "./ClassTypesPage";
 import ClassListPage from "./ClassListPage";

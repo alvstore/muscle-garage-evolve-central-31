@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Clock, DollarSign, Calendar } from "lucide-react";
-import { DashboardSummary } from '@/hooks/use-dashboard';
+import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
 import { formatCurrency } from '@/utils/stringUtils';
 
 interface StaffStatsOverviewProps {

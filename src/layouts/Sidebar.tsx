@@ -4,11 +4,11 @@ import { useTheme } from '@/providers/ThemeProvider';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Building2, ChevronDown, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { adminNavSections } from '@/data/adminNavigation';
 import { NavItem as AdminNavItem, Permission } from '@/types/navigation';
 import { cn } from '@/lib/utils';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Navigation item type for our sidebar

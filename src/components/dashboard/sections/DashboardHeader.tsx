@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { useNavigate } from 'react-router-dom';
 import { Notification } from '@/types/notification';
 import NotificationItem from '@/components/notifications/NotificationItem';

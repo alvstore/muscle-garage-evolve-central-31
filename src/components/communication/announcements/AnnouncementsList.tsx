@@ -4,7 +4,7 @@ import { MessageSquare, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Announcement } from '@/types/notification';
-import { useAnnouncements } from '@/hooks/use-announcements';
+import { useAnnouncements } from '@/hooks/communication/use-announcements';
 
 export function AnnouncementsList() {
   const { announcements, isLoading } = useAnnouncements();

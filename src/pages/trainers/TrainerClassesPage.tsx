@@ -7,7 +7,7 @@ import TrainerBookingList from '@/components/trainers/TrainerBookingList';
 import TrainerClassForm from '@/components/trainers/TrainerClassForm';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { classScheduleService } from '@/services/classScheduleService';
 
 const TrainerClassesPage = () => {

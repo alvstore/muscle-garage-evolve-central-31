@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationSettings from "./sms/NotificationSettings";
-import { useSmsSettings } from "@/hooks/use-sms-settings";
+import { useSmsSettings } from "@/hooks/communication/use-sms-settings";
 import { Loader2 } from "lucide-react";
 import { SmsProviderSettings } from "./sms/SmsProviderSettings";
 

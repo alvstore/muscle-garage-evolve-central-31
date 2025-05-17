@@ -7,7 +7,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/brea
 import { ChevronRight, MessageCircle, MessageSquare, Settings } from "lucide-react";
 import SmsSettings from '@/components/settings/SmsSettings';
 import WhatsAppSettings from '@/components/settings/WhatsAppSettings';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const MessagingSettingsPage = () => {
   const [activeTab, setActiveTab] = useState("sms");

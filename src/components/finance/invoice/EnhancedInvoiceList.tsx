@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useInvoices } from '@/hooks/use-invoices';
+import { useInvoices } from '@/hooks/finance/use-invoices';
 import { InvoiceListHeader } from '@/components/finance/invoice/InvoiceListHeader';
 import { InvoiceListTable } from '@/components/finance/invoice/InvoiceListTable';
 import InvoiceFormDialog from '@/components/finance/invoice/InvoiceFormDialog';

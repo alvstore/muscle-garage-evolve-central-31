@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, Shield, CreditCard, MessageCircle, Bell } from "lucide-react";
-import { useIntegrationStatuses } from "@/hooks/use-realtime-settings";
+import { useIntegrationStatuses } from "@/hooks/settings/use-realtime-settings";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 type IntegrationStatus = 'configured' | 'partially-configured' | 'not-configured';

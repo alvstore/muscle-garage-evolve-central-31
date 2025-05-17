@@ -1,6 +1,6 @@
 
 import { UserRole } from '@/types';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/hooks/auth/use-permissions';
 
 // Define permissions for each role
 export const rolePermissions: Record<string, Permission[]> = {

@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { useBranch } from '@/hooks/use-branches';
+import { useToast } from "@/hooks/ui/use-toast";
+import { useBranch } from '@/hooks/settings/use-branches';
 import { DeviceMapping, BranchDeviceSettings, DeviceMappingFormValues } from '@/types/device-mapping';
 import { DeviceMappingForm } from './branch-specific/DeviceMappingForm';
 import { DeviceList } from './branch-specific/DeviceList';

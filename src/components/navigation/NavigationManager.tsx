@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { NavSection } from '@/types/navigation';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import { adminRoutes } from '@/router/routes/adminRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';

@@ -28,7 +28,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { ClassType } from "@/types/classes";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 
 interface ClassTypeFormProps {
   open: boolean;

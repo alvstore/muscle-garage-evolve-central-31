@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LogOut, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
-import { useNavigation } from "@/hooks/use-navigation";
-import { useBranch } from '@/hooks/use-branches';
+import { useNavigation } from "@/hooks/ui/use-navigation";
+import { useBranch } from '@/hooks/settings/use-branches';
 import BranchSelector from '@/components/branch/BranchSelector';
 
 interface DashboardSidebarProps {

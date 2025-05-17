@@ -17,11 +17,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileBarChart, Users, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/services/api/supabaseClient';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Member } from '@/types';
-import { useMemberProgress } from '@/hooks/use-member-progress';
-import { useMemberMeasurements } from '@/hooks/use-member-measurements';
+import { useMemberProgress } from '@/hooks/members/use-member-progress';
+import { useMemberMeasurements } from '@/hooks/members/use-member-measurements';
 
 const MemberProgressSection = () => {
   const navigate = useNavigate();

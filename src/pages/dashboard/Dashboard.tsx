@@ -6,7 +6,7 @@ import StaffDashboard from "./StaffDashboard";
 import TrainerDashboard from "./TrainerDashboard";
 import MemberDashboard from "./MemberDashboard";
 import { UserRole } from "@/types";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {

@@ -8,7 +8,7 @@ import { FollowUpType, FollowUpScheduled, Lead } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { followUpService } from '@/services/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
 import { toast } from '@/utils/toast-manager';
 

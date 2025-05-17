@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { DialogHeader, DialogFooter, Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Plus, DoorOpen, Check, X, HardDrive } from "lucide-react";
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/integrations/use-hikvision-settings';
 import { hikvisionService, HikvisionDevice, HikvisionDoor } from '@/services/hikvisionService';
 import { toast } from 'sonner';
 import { supabase } from '@/services/api/supabaseClient';

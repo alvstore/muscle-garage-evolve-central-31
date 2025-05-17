@@ -8,7 +8,7 @@ import PromoCodeList from '@/components/marketing/PromoCodeList';
 import PromoCodeForm from '@/components/marketing/PromoCodeForm';
 import { promoCodeService } from '@/services/promoCodeService';
 import { PromoCode } from '@/types/marketing';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const PromoCodesPage = () => {

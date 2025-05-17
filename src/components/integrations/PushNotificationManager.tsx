@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Bell, BellOff, CheckCircle, AlertCircle, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { pushNotificationService } from '@/services/integrations/pushNotificationService';
 
 const PushNotificationManager = () => {

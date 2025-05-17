@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { usePermissionsManagement } from "@/hooks/use-permissions-management";
+import { usePermissionsManagement } from "@/hooks/auth/use-permissions-management";
 import { PermissionHeader } from "./permissions/PermissionHeader";
 import { PermissionFilters } from "./permissions/PermissionFilters";
 import { PermissionTable } from "./permissions/PermissionTable";

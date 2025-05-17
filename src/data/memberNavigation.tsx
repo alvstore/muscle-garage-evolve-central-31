@@ -14,7 +14,7 @@ import {
   FileText
 } from "lucide-react";
 import { NavSection } from '@/types/navigation';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/hooks/auth/use-permissions';
 
 export const memberNavSections: NavSection[] = [
   {

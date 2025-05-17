@@ -31,8 +31,8 @@ import { MoreVertical, Calendar, UserCheck, X, CheckCircle, Search, AlertCircle 
 import { toast } from "sonner";
 import { ClassBooking, BookingStatus } from "@/types/class";
 import { supabase } from "@/integrations/supabase/client";
-import { useBranch } from "@/hooks/use-branches";
-import { useAuth } from "@/hooks/use-auth";
+import { useBranch } from "@/hooks/settings/use-branches";
+import { useAuth } from "@/hooks/auth/use-auth";
 
 interface ClassBookingListProps {
   classId: string;

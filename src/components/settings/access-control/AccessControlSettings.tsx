@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 
 export default function AccessControlSettings() {
   const { currentBranch } = useBranch();

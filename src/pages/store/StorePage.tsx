@@ -8,7 +8,7 @@ import OrderList from '@/components/store/OrderList';
 import POSSystem from '@/components/store/POSSystem';
 import ProductCheckout from '@/components/store/ProductCheckout';
 import { CartItem, Product } from '@/types/store';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Edit, Trash, User, Dumbbell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Badge } from '@/components/ui/badge';
 
 interface Exercise {

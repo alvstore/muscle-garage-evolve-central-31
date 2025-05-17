@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { hikvisionService, HikvisionEvent } from '@/services/integrations/hikvisionService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 interface HikvisionWebhookHandlerProps {
   onEventReceived?: (event: HikvisionEvent) => void;

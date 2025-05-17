@@ -4,7 +4,7 @@ import Sidebar from './Sidebar'
 import { useTheme } from '@/providers/ThemeProvider'
 import ThemeCustomizer from '@/components/theme/ThemeCustomizer'
 import DashboardNavbar from '@/components/layout/DashboardNavbar'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/hooks/auth/use-auth'
 
 const DashboardLayout = () => {
   const { isDark } = useTheme()

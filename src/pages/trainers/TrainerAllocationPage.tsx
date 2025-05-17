@@ -2,7 +2,7 @@
 import React from 'react';
 import { Container } from '@/components/ui/container';
 import TrainerMemberAllocation from '@/components/trainers/TrainerMemberAllocation';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const TrainerAllocationPage = () => {
   const { userRole } = usePermissions();

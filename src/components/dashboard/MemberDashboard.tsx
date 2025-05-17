@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Dumbbell, CreditCard, Bell, Trophy, BarChart, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { GymClass } from '@/types/class';
 import { Badge } from '@/components/ui/badge';
 import MemberProgressChart from './MemberProgressChart';

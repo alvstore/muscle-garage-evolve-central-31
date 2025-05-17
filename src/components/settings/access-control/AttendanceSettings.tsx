@@ -5,8 +5,8 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAttendanceSettings } from "@/hooks/use-realtime-settings";
-import { useBranch } from "@/hooks/use-branches";
+import { useAttendanceSettings } from "@/hooks/settings/use-realtime-settings";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { Loader2 } from "lucide-react";
 
 const AttendanceSettings = () => {

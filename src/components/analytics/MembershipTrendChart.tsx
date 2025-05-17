@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DateRange } from '@/hooks/use-stats';
+import { DateRange } from '@/hooks/analytics/use-stats';
 
 interface MembershipTrendChartProps {
   dateRange: DateRange;

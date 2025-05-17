@@ -3,7 +3,7 @@ import React from 'react';
 import { ShieldX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 
 const Unauthorized = () => {
   const navigate = useNavigate();

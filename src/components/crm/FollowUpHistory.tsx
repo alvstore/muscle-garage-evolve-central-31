@@ -41,7 +41,7 @@ import {
 import { FollowUpHistory, FollowUpType } from '@/types/crm';
 import { followUpService } from '@/services/followUpService';
 import { useQuery } from '@tanstack/react-query';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 // Map of lead IDs to names for display purpose
 const leadNames = {

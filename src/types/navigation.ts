@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/hooks/auth/use-permissions';
 
 export interface NavItem {
   href: string;
@@ -18,4 +18,4 @@ export interface NavSection {
 }
 
 // Re-export Permission type from use-permissions
-export type { Permission } from '@/hooks/use-permissions';
+export type { Permission } from '@/hooks/auth/use-permissions';

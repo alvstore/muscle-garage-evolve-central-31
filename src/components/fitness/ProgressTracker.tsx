@@ -13,8 +13,8 @@ import { toast } from "sonner";
 import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { supabase } from '@/services/api/supabaseClient';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemberMeasurements } from '@/hooks/use-member-measurements';
-import { useMemberProgress } from '@/hooks/use-member-progress';
+import { useMemberMeasurements } from '@/hooks/members/use-member-measurements';
+import { useMemberProgress } from '@/hooks/members/use-member-progress';
 
 interface ProgressTrackerProps {
   member: Member;

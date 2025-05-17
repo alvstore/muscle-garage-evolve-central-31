@@ -1,7 +1,7 @@
 
 import { AppRoute } from '@/types/route';
 import { NavItem, NavSection } from '@/types/navigation';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/hooks/auth/use-permissions';
 
 /**
  * Converts routes with metadata into navigation items

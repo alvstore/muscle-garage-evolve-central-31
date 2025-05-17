@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/formatters';
 import { ArrowDown, ArrowUp, DollarSign, Calendar, RefreshCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFinanceDashboard } from '@/hooks/use-finance-dashboard';
+import { useFinanceDashboard } from '@/hooks/finance/use-finance-dashboard';
 
 const FinanceDashboard = () => {
   const { financeSummary, isLoading, refreshData } = useFinanceDashboard();

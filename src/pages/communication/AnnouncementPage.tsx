@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnnouncementsList } from "@/components/communication/announcements/AnnouncementsList";
 import AnnouncementForm from "@/components/communication/announcements/AnnouncementForm";
 import { Announcement } from "@/types/notification";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 
 export default function AnnouncementPage() {
   const [activeTab, setActiveTab] = useState("list");

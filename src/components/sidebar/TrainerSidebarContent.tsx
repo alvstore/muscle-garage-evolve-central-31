@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import Logo from "@/components/Logo";
 import { trainerNavSections } from "@/data/trainerNavigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationSections from "@/components/navigation/NavigationSections";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 
 interface TrainerSidebarContentProps {
   closeSidebar?: () => void;

@@ -24,10 +24,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useRealtimeBranches } from "@/hooks/use-realtime-settings";
+import { useRealtimeBranches } from "@/hooks/settings/use-realtime-settings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Branch } from "@/types/branch";
+import { Branch } from "@/types/settings/branch";
 
 // Define the branch form schema
 const branchFormSchema = z.object({

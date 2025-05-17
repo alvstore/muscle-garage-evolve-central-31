@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { Label } from "@/components/ui/label";
 
 export default function IntegrationSettings() {

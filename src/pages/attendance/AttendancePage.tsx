@@ -6,8 +6,8 @@ import AttendanceHistory from "@/components/attendance/AttendanceHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addMonths, subMonths } from "date-fns";
 

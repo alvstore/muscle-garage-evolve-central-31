@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import CreateStaffForm from "./CreateStaffForm";
-import { useStaff } from "@/hooks/use-staff";
+import { useStaff } from "@/hooks/staff/use-staff";
 
 interface CreateStaffDialogProps {
   open: boolean;

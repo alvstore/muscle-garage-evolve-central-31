@@ -3,8 +3,8 @@ import React from 'react';
 import { Container } from '@/components/ui/container';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WorkoutPlansManager from '@/components/fitness/WorkoutPlansManager';
-import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useAuth } from '@/hooks/auth/use-auth';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const WorkoutPlansPage = () => {
   const { user } = useAuth();

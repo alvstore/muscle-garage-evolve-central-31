@@ -29,9 +29,9 @@ import {
   SelectContent, 
   SelectItem 
 } from '@/components/ui/select';
-import { useTransactions } from '@/hooks/use-transactions';
+import { useTransactions } from '@/hooks/finance/use-transactions';
 import { FinancialTransaction } from '@/types/finance';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

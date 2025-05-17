@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Settings, 
@@ -20,7 +20,7 @@ import {
   Smartphone
 } from "lucide-react";
 import { toast } from "sonner";
-import { usePermissions, Permission } from "@/hooks/use-permissions";
+import { usePermissions, Permission } from "@/hooks/auth/use-permissions";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import GeneralSettings from "@/components/settings/GeneralSettings";
 import AccessControlSettings from "@/components/settings/AccessControlSettings";

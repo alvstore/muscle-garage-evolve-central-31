@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
 import { CheckCheck, Loader2, RefreshCw } from 'lucide-react';
-import { useCompany } from '@/hooks/use-company';
+import { useCompany } from '@/hooks/company/use-company';
 
 const AutomaticAttendanceSync: React.FC = () => {
   const [isHikvisionEnabled, setIsHikvisionEnabled] = useState(false);

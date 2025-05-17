@@ -3,12 +3,12 @@ import React, { useState } from "react";
 import NotificationList from "./NotificationList";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2, Loader2, Filter } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { toast } from "@/hooks/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNotifications } from '@/hooks/use-notifications';
+import { useNotifications } from '@/hooks/notifications/use-notifications';
 
 interface NotificationsPanelProps {
   onClose?: () => void; // Making this prop optional with "?"

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { useAnnouncements } from '@/hooks/use-announcements';
+import { useAnnouncements } from '@/hooks/communication/use-announcements';
 import { AnnouncementsList } from '@/components/communication/announcements/AnnouncementsList';
 import TrainerAnnouncementForm from '@/components/communication/announcements/TrainerAnnouncementForm';
 import { toast } from 'sonner';

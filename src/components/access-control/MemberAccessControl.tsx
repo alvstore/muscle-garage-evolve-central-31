@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMemberAccess } from '@/hooks/use-member-access';
+import { useMemberAccess } from '@/hooks/members/use-member-access';
 
 interface MemberAccessControlProps {
   member: any;

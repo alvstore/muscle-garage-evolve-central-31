@@ -5,7 +5,7 @@ import { PlusIcon } from "lucide-react";
 import { Invoice } from "@/types/finance";
 import InvoiceForm from "./InvoiceForm";
 import { toast } from "sonner";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { InvoiceListTable } from "./invoice/InvoiceListTable";
 import { supabase } from '@/services/api/supabaseClient';
 

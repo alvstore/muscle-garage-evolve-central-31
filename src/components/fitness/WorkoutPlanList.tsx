@@ -10,7 +10,7 @@ import {
   Search, Plus, Filter, Dumbbell, Calendar, User, ArrowUpDown 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import {

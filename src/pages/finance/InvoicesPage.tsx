@@ -28,7 +28,7 @@ import {
   SelectContent, 
   SelectItem 
 } from '@/components/ui/select';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

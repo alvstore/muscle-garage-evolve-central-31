@@ -12,7 +12,7 @@ import Logo from "@/components/Logo";
 import { User as UserType } from "@/types";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 interface DashboardNavbarProps {
   user: UserType;
   onToggleSidebar: () => void;

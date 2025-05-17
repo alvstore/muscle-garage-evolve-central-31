@@ -6,7 +6,7 @@ import { Heading } from '@/components/ui/heading';
 import NotificationSettings from '@/components/settings/sms/NotificationSettings';
 import { SmsProviderSettings } from '@/components/settings/sms/SmsProviderSettings';
 import { SmsSettingsHeader } from '@/components/settings/sms/SmsSettingsHeader';
-import { useIntegrations } from '@/hooks/use-integrations';
+import { useIntegrations } from '@/hooks/integrations/use-integrations';
 import { IntegrationConfig } from '@/services/integrationService';
 import { toast } from 'sonner';
 

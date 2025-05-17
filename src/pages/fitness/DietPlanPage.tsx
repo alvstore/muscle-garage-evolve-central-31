@@ -4,7 +4,7 @@ import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Apple, Banana, Beef, Coffee, Egg, Fish, Utensils, Salad } from 'lucide-react';
 
 const DietPlanPage = () => {

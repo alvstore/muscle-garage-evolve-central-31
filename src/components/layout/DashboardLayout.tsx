@@ -1,8 +1,8 @@
 
 import { useState, useEffect, ReactNode } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useAuth } from "@/hooks/auth/use-auth";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "./MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";

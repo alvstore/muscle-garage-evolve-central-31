@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, Edit, Trash2, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useBranch } from "@/hooks/use-branches";
-import { Branch } from "@/types/branch";
+import { useBranch } from "@/hooks/settings/use-branches";
+import { Branch } from "@/types/settings/branch";
 import { toast } from "sonner";
 import CreateBranchDialog from "@/components/branch/CreateBranchDialog";
 import EditBranchDialog from "@/components/branch/EditBranchDialog";
@@ -27,6 +27,9 @@ const BranchManagementPage = () => {
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const activeBranches = branches.filter(branch => branch.is_active);
+  const inactiveBranches = branches.filter(branch => !branch.is_active);
 
   const handleRefresh = async () => {
     await fetchBranches();
@@ -77,8 +80,8 @@ const BranchManagementPage = () => {
                     <Building2 className="h-5 w-5 mr-2 text-indigo-600" />
                     {branch.name}
                   </CardTitle>
-                  <Badge variant={branch.isActive ? "secondary" : "destructive"}>
-                    {branch.isActive ? "Active" : "Inactive"}
+                  <Badge variant={branch.is_active ? "secondary" : "destructive"}>
+                    {branch.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <CardDescription>{branch.address}</CardDescription>
@@ -92,7 +95,7 @@ const BranchManagementPage = () => {
                     </div>
                   )}
                   <div>
-                    <span className="font-medium">Manager:</span> {branch.manager || "Not assigned"}
+                    <span className="font-medium">Manager:</span> {branch.manager_id || "Not assigned"}
                   </div>
                   <div>
                     <span className="font-medium">Phone:</span> {branch.phone || "N/A"}
@@ -101,7 +104,7 @@ const BranchManagementPage = () => {
                     <span className="font-medium">Email:</span> {branch.email || "N/A"}
                   </div>
                   <div>
-                    <span className="font-medium">Hours:</span> {branch.openingHours || "--"} to {branch.closingHours || "--"}
+                    <span className="font-medium">Hours:</span> {branch.opening_hours || "--"} to {branch.closing_hours || "--"}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useIntegrations } from '@/hooks/use-integrations';
+import { useIntegrations } from '@/hooks/integrations/use-integrations';
 import { toast } from 'sonner';
 import { EmailSettingsHeader } from '@/components/settings/email/EmailSettingsHeader';
 import { EmailProviderSettings } from '@/components/settings/email/EmailProviderSettings';

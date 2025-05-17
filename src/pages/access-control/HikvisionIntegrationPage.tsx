@@ -15,7 +15,7 @@ import {
   UsersIcon, 
   Activity 
 } from 'lucide-react';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import HikvisionSettings from '@/components/access-control/HikvisionSettings';
 import DeviceManagement from '@/components/access-control/DeviceManagement';
 import MemberAccessControl from '@/components/access-control/MemberAccessControl';

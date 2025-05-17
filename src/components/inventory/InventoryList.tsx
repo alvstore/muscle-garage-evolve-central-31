@@ -14,12 +14,12 @@ import {
 } from "@/components/ui/dialog";
 import { PlusIcon, EditIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
-import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { useSupabaseQuery } from "@/hooks/data/use-supabase-query";
 import { supabase } from "@/services/api/supabaseClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItem, InventoryCategory } from "@/types/inventory";
 import InventoryForm from "./InventoryForm";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 
 const InventoryList = () => {
   const [searchQuery, setSearchQuery] = useState("");

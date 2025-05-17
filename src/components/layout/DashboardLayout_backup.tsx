@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";

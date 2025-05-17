@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { Announcement } from "@/types/notification";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 
 interface AnnouncementsTableProps {
   announcements: Announcement[];

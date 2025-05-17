@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ExportDataSection from '@/components/admin/backup/ExportDataSection';
 import ImportDataSection from '@/components/admin/backup/ImportDataSection';
 import BackupLogs from '@/components/admin/backup/BackupLogs';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import { Archive, Download, Upload } from 'lucide-react';
 
 const SystemBackupPage = () => {

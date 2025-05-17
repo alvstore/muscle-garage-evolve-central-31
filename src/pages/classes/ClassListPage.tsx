@@ -30,8 +30,8 @@ import {
   RefreshCw, 
   Table2 
 } from "lucide-react";
-import { usePermissions } from "@/hooks/use-permissions";
-import { useBranch } from "@/hooks/use-branches";
+import { usePermissions } from "@/hooks/auth/use-permissions";
+import { useBranch } from "@/hooks/settings/use-branches";
 import ClassList from "@/components/classes/ClassList";
 import PageHeader from "@/components/layout/PageHeader";
 import { GymClass } from "@/types/class";

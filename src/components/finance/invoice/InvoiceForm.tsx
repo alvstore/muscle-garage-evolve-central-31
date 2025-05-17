@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Invoice, InvoiceStatus, PaymentMethod } from '@/types/finance';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { supabase } from '@/services/api/supabaseClient';
 
 export interface InvoiceFormProps {

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 
 interface StaffDashboardHeaderProps {
   isLoading: boolean;

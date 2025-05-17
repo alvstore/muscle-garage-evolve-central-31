@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { WorkoutPlan, DietPlan, Member } from '@/types';
-import workoutPlansService from '@/services/workoutPlansService';
-import dietPlansService from '@/services/dietPlansService';
-import membersService from '@/services/membersService';
+import { WorkoutPlan } from '@/types/workout';
+import { DietPlan } from '@/types/diet';
+import { Member } from '@/types/members/member';
+import workoutPlansService from '../../services/workoutPlansService';
+import dietPlansService from '../../services/dietPlansService';
+import { memberService } from '@/services/members/memberService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FitnessPlanManagerProps {
   memberId: string;
@@ -37,7 +40,7 @@ const FitnessPlanManager: React.FC<FitnessPlanManagerProps> = ({ memberId }) => 
     if (memberId) {
       const fetchMember = async () => {
         try {
-          const memberData = await membersService.getMember(memberId);
+          const memberData = await memberService.getMemberById(memberId);
           if (memberData) {
             setMember(memberData);
             // Use trainer_id or trainerId (backward compatibility)
@@ -89,7 +92,13 @@ const FitnessPlanManager: React.FC<FitnessPlanManagerProps> = ({ memberId }) => 
       }
 
       if (updates.trainer_id) {
-        await membersService.updateMember(memberId, updates);
+        // Update the member's profile using Supabase directly since the method doesn't exist in the service
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', memberId);
+          
+        if (error) throw error;
         toast.success('Fitness plans updated successfully');
       } else {
         toast.message('No changes to save');

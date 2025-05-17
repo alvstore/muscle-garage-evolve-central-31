@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, RefreshCw, DollarSign, KeyRound, Lock, Globe, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 
 const PaymentGatewaySettingsPage: React.FC = () => {
   const { can } = usePermissions();

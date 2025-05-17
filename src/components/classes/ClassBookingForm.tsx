@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { useBookClass } from "@/hooks/use-classes";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { useBookClass } from "@/hooks/classes/use-classes";
 import { toast } from "sonner";
 import { GymClass, ClassBooking } from "@/types/class";
-import { memberService } from "@/services/memberService";
+import { memberService } from "@/services/members/memberService";
 import { Loader2 } from "lucide-react";
-import { Member } from "@/types/member";
+import { Member } from "@/types/members/member";
 
 interface ClassBookingFormProps {
   gymClass: GymClass;
@@ -78,6 +78,8 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
             onBookingComplete(data);
             toast.success(`Successfully booked for ${gymClass.name}`);
             onClose();
+          } else {
+            toast.error('Failed to book class. Please try again.');
           }
         },
         onError: (error: any) => {

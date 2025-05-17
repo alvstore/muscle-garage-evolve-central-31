@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ChurnPredictionWidget from '@/components/dashboard/ChurnPredictionWidget';
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 interface ChurnMember {
   id: string;

@@ -5,7 +5,7 @@ import { DietPlanList } from '@/components/fitness';
 import { dietPlanService } from '@/services/dietPlanService';
 import { toast } from 'sonner';
 import { DietPlan } from '@/types/diet';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 
 const StaffDietPlansPage = () => {
   const [dietPlans, setDietPlans] = useState<DietPlan[]>([]);

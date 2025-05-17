@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { aiService, WorkoutPlanParams, DietPlanParams } from '@/services/ai/aiService';
 import AdminLayout from '@/layouts/AdminLayout';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFeedback } from '@/hooks/use-feedback';
+import { useFeedback } from '@/hooks/communication/use-feedback';
 import { FeedbackType, Feedback } from '@/types/notification';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

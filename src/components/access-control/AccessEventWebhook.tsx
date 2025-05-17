@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/services/api/supabaseClient';
 import { hikvisionService } from '@/services/hikvisionService';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/integrations/use-hikvision-settings';
 
 interface AccessEventWebhookProps {
   branchId?: string;

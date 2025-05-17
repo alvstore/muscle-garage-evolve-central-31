@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useBranch } from './use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { storeService, StoreProduct } from '@/services/storeService';
 import { toast } from 'sonner';
 

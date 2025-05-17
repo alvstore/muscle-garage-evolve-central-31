@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { Permission } from '@/hooks/use-permissions';
+import { Permission } from '@/hooks/auth/use-permissions';
 import { RouteObject } from 'react-router-dom';
 
 export interface AppRouteMeta {

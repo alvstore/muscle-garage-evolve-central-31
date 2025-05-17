@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ClassForm from "./ClassForm";
 import ClassBookingForm from "./ClassBookingForm";
 import { GymClass, ClassBooking } from "@/types/class";
-import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branches";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

@@ -2,7 +2,7 @@
 import React from 'react';
 import StatCard from '@/components/dashboard/StatCard';
 import { Users, CreditCard, Calendar, CheckSquare } from 'lucide-react';
-import { DashboardSummary } from '@/hooks/use-dashboard';
+import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
 
 interface OverviewStatsProps {
   data: DashboardSummary;

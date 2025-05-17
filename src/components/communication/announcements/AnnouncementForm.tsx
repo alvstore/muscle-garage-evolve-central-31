@@ -32,9 +32,9 @@ import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Announcement, NotificationChannel } from "@/types/notification";
 import { UserRole } from "@/types";
-import { useBranch } from "@/hooks/use-branches";
+import { useBranch } from "@/hooks/settings/use-branches";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),

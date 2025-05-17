@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { NavSection } from '@/types/navigation';
-import { usePermissions } from '@/hooks/use-permissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import { getEnhancedNavigation } from '@/services/navigationService';
 
 export function useNavigation() {

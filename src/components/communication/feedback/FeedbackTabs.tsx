@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FeedbackList from './FeedbackList';
 import { FeedbackType, Feedback } from '@/types/notification';
-import { useFeedback } from '@/hooks/use-feedback';
+import { useFeedback } from '@/hooks/communication/use-feedback';
 
 interface FeedbackTabsProps {
   showTabs?: boolean;

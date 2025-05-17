@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { leadService } from '@/services/leadService';
 import { leadScoringService } from '@/services/leadScoringService';
 import { leadConversionService } from '@/services/leadConversionService';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';

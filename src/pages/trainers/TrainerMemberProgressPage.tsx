@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProgressChart } from "@/components/fitness/ProgressChart";
 import { MemberProgressTable } from "@/components/fitness/MemberProgressTable";
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { NavSection, Permission as NavPermission } from "@/types/navigation";
 import { RoutePermissionGuard } from "@/components/auth/PermissionGuard";
-import { usePermissions } from "@/hooks/use-permissions";
+import { usePermissions } from "@/hooks/auth/use-permissions";
 
 interface NavigationSectionProps {
   section: NavSection;

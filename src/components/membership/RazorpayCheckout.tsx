@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { membershipService } from '@/services/membershipService';
 import { paymentService } from '@/services/paymentService';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 // Define the window interface with Razorpay
 declare global {

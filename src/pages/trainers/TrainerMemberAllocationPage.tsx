@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, ArrowLeft, UserPlus, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/ui/use-toast';
-import { useBranch } from '@/hooks/use-branches';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 interface Trainer {
   id: string;

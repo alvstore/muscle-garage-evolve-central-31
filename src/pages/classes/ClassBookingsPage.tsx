@@ -51,8 +51,8 @@ import {
   UserCheck,
   X
 } from "lucide-react";
-import { usePermissions } from "@/hooks/use-permissions";
-import { useBranch } from "@/hooks/use-branches";
+import { usePermissions } from "@/hooks/auth/use-permissions";
+import { useBranch } from "@/hooks/settings/use-branches";
 import PageHeader from "@/components/layout/PageHeader";
 import { ClassBooking } from "@/types/class";
 import { format, parseISO } from "date-fns";

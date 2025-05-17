@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardSummary } from '@/hooks/use-dashboard';
+import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
 
 export const fetchDashboardSummary = async (branchId?: string): Promise<DashboardSummary> => {
   try {
