@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { format, isValid } from "date-fns";
+import { format, isValid, getYear, getMonth, getDate, setYear, setMonth, setDate } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -84,18 +84,41 @@ const NewMemberPage = () => {
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [biometricStatus, setBiometricStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'personal' | 'address' | 'membership'>('personal');
   
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema),
     defaultValues: {
+      // Personal Information
       name: "",
       email: "",
       phone: "",
       gender: "male",
+      dateOfBirth: undefined,
+      occupation: "",
+      goal: "",
+      bloodGroup: "",
+      idType: "",
+      idNumber: "",
+      
+      // Address
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "India",
+      
+      // Membership
       createWithMembership: false,
+      membershipId: "",
       membershipStatus: "active",
-      paymentStatus: "pending",
       startDate: new Date(),
+      
+      // Payment
+      paymentStatus: "pending",
+      paymentMethod: "",
+      amountPaid: 0,
+      membershipNotes: "",
     },
   });
   
@@ -271,7 +294,7 @@ const NewMemberPage = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Tabs defaultValue="personal" className="w-full">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'personal' | 'address' | 'membership')} className="w-full">
               <TabsList className="grid grid-cols-3 w-full mb-6">
                 <TabsTrigger value="personal">Personal Information</TabsTrigger>
                 <TabsTrigger value="address">Address & Contact</TabsTrigger>
@@ -331,43 +354,118 @@ const NewMemberPage = () => {
                       <FormField
                         control={form.control}
                         name="dateOfBirth"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Date of Birth</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const currentDate = field.value ? new Date(field.value) : new Date();
+                          const currentYear = getYear(new Date());
+                          
+                          const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+                          const months = [
+                            { value: 0, label: 'January' },
+                            { value: 1, label: 'February' },
+                            { value: 2, label: 'March' },
+                            { value: 3, label: 'April' },
+                            { value: 4, label: 'May' },
+                            { value: 5, label: 'June' },
+                            { value: 6, label: 'July' },
+                            { value: 7, label: 'August' },
+                            { value: 8, label: 'September' },
+                            { value: 9, label: 'October' },
+                            { value: 10, label: 'November' },
+                            { value: 11, label: 'December' },
+                          ];
+                          
+                          // Get days in month
+                          const daysInMonth = (year: number, month: number) => {
+                            return new Date(year, month + 1, 0).getDate();
+                          };
+                          
+                          const days = Array.from(
+                            { length: daysInMonth(getYear(currentDate), getMonth(currentDate)) },
+                            (_, i) => i + 1
+                          );
+                          
+                          const handleDateChange = (type: 'year' | 'month' | 'day', value: number) => {
+                            let newDate = new Date(currentDate);
+                            
+                            switch (type) {
+                              case 'year':
+                                newDate = setYear(newDate, value);
+                                break;
+                              case 'month':
+                                newDate = setMonth(newDate, value);
+                                // Adjust day if it's no longer valid for the new month
+                                const maxDays = daysInMonth(getYear(newDate), value);
+                                if (getDate(newDate) > maxDays) {
+                                  newDate = setDate(newDate, maxDays);
+                                }
+                                break;
+                              case 'day':
+                                newDate = setDate(newDate, value);
+                                break;
+                            }
+                            
+                            field.onChange(newDate);
+                          };
+                          
+                          return (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Date of Birth</FormLabel>
+                              <div className="grid grid-cols-3 gap-2">
+                                {/* Day Dropdown */}
+                                <Select
+                                  value={getDate(currentDate).toString()}
+                                  onValueChange={(value) => handleDateChange('day', parseInt(value))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Day" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                                    {days.map((day) => (
+                                      <SelectItem key={day} value={day.toString()}>
+                                        {day}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                
+                                {/* Month Dropdown */}
+                                <Select
+                                  value={getMonth(currentDate).toString()}
+                                  onValueChange={(value) => handleDateChange('month', parseInt(value))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Month" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                                    {months.map((month) => (
+                                      <SelectItem key={month.value} value={month.value.toString()}>
+                                        {month.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                
+                                {/* Year Dropdown */}
+                                <Select
+                                  value={getYear(currentDate).toString()}
+                                  onValueChange={(value) => handleDateChange('year', parseInt(value))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Year" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[300px] overflow-y-auto">
+                                    {years.map((year) => (
+                                      <SelectItem key={year} value={year.toString()}>
+                                        {year}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <FormField
@@ -644,22 +742,26 @@ const NewMemberPage = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={(e) => {
-                      e.preventDefault();
-                      const tabButton = document.querySelector('[data-value="personal"]');
-                      if (tabButton instanceof HTMLElement) tabButton.click();
-                    }}>
+                    <Button 
+                      variant="outline" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveTab('personal');
+                      }}
+                    >
                       Previous
                     </Button>
-                    <Button type="button" onClick={async (e) => {
-                      e.preventDefault();
-                      // Force form validation before proceeding
-                      const result = await form.trigger(['phone', 'email', 'address', 'city', 'state', 'zipCode', 'country']);
-                      
-                      // Proceed to next tab - these fields are optional, so we don't need to check the result
-                      const tabButton = document.querySelector('[data-value="membership"]');
-                      if (tabButton instanceof HTMLElement) tabButton.click();
-                    }}>
+                    <Button 
+                      type="button" 
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        // Force form validation before proceeding
+                        const result = await form.trigger(['phone', 'email', 'address', 'city', 'state', 'zipCode', 'country']);
+                        
+                        // Proceed to next tab - these fields are optional, so we don't need to check the result
+                        setActiveTab('membership');
+                      }}
+                    >
                       Next
                     </Button>
                   </CardFooter>
@@ -928,10 +1030,10 @@ const NewMemberPage = () => {
                     )}
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={() => {
-                      const tabButton = document.querySelector('[data-value="address"]');
-                      if (tabButton instanceof HTMLElement) tabButton.click();
-                    }}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab('address')}
+                    >
                       Previous
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>

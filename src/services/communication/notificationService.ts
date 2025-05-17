@@ -66,8 +66,8 @@ export const notificationService = {
         branchQuery = branchQuery.eq('branch_id', userBranchId);
       }
       
-      // Add expiration filter
-      branchQuery = branchQuery.or('expires_at.gt.' + now + ',expires_at.is.null');
+      // Add expiration filter using .or() with proper syntax
+      branchQuery = branchQuery.or(`and(expires_at.gt.${now},expires_at.is.null)`);
       
       const { data: branchAnnouncements, error: branchError } = await branchQuery;
       
@@ -80,7 +80,7 @@ export const notificationService = {
         .is('branch_id', null)
         .order('created_at', { ascending: false })
         .limit(10)
-        .or('expires_at.gt.' + now + ',expires_at.is.null');
+        .or(`and(expires_at.gt.${now},expires_at.is.null)`);
       
       if (globalError) throw globalError;
       

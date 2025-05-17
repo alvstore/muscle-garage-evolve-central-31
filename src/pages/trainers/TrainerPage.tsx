@@ -197,7 +197,7 @@ const TrainerPage = () => {
 
   const handleSubmit = async () => {
     try {
-      const { full_name, email, phone, specialization, branch_id, status } = formData;
+      const { full_name, email, phone, specialization, branch_id } = formData;
       
       // Validation
       if (!full_name || !email) {
@@ -212,10 +212,10 @@ const TrainerPage = () => {
           .update({
             full_name,
             email,
-            phone,
-            department: specialization,
-            branch_id,
-            role: 'trainer'
+            phone: phone || null,
+            department: specialization || null,
+            branch_id: branch_id || null,
+            updated_at: new Date().toISOString()
           })
           .eq('id', formData.id);
 
@@ -230,23 +230,30 @@ const TrainerPage = () => {
             data: {
               full_name,
               role: 'trainer'
-            }
+            },
+            emailRedirectTo: window.location.origin // For email confirmation
           }
         });
 
         if (authError) throw authError;
 
-        // Then update the profile with additional details
         if (authData.user) {
+          // Insert the profile with all details in a single operation
           const { error: profileError } = await supabase
             .from('profiles')
-            .update({
-              phone,
-              department: specialization,
-              branch_id,
-              role: 'trainer'
-            })
-            .eq('id', authData.user.id);
+            .insert({
+              id: authData.user.id,
+              full_name,
+              email,
+              phone: phone || null,
+              department: specialization || null,
+              branch_id: branch_id || null,
+              role: 'trainer',
+              is_trainer: true,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
 
           if (profileError) throw profileError;
         }
@@ -257,9 +264,9 @@ const TrainerPage = () => {
       // Refresh the trainer list
       await fetchTrainers();
       setDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving trainer:', error);
-      toast.error('Failed to save trainer');
+      toast.error(error.message || 'Failed to save trainer');
     }
   };
 

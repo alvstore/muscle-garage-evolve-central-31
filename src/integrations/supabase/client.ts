@@ -4,45 +4,42 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://rnqgpucxlvubwqpkgstc.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJucWdwdWN4bHZ1YndxcGtnc3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDgwNjQsImV4cCI6MjA2MDgyNDA2NH0.V5nFuGrJnTdFx60uI8hv46VKUmWoA2aAOx_jJjJFcUA';
 
-// Custom fetch implementation that suppresses logs only for Supabase requests
+// Custom fetch implementation that allows all console logs for debugging
 const createCustomFetch = (baseUrl: string) => {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = input instanceof URL ? input.href : typeof input === 'string' ? input : input.url;
     
-    // Only modify behavior for Supabase requests
-    if (url && url.includes(new URL(baseUrl).hostname)) {
-      // Save original console methods
-      const originalConsole = {
-        log: console.log,
-        info: console.info,
-        warn: console.warn,
-        error: console.error,
-        debug: console.debug,
-      };
-
-      // Override console methods with no-ops
-      const noop = () => {};
-      console.log = noop;
-      console.info = noop;
-      console.warn = noop;
-      console.error = noop;
-      console.debug = noop;
-
-      try {
-        const response = await fetch(input, init);
-        return response;
-      } finally {
-        // Restore original console methods
-        console.log = originalConsole.log;
-        console.info = originalConsole.info;
-        console.warn = originalConsole.warn;
-        console.error = originalConsole.error;
-        console.debug = originalConsole.debug;
-      }
-    }
+    // Log all requests for debugging
+    console.log('[Supabase Request]', {
+      url,
+      method: init?.method || 'GET',
+      headers: init?.headers,
+      body: init?.body ? JSON.parse(init.body as string) : null
+    });
     
-    // For non-Supabase requests, use the original fetch
-    return fetch(input, init);
+    try {
+      const response = await fetch(input, init);
+      
+      // Clone the response so we can read it and still return it
+      const responseClone = response.clone();
+      const data = await responseClone.json().catch(() => ({}));
+      
+      console.log('[Supabase Response]', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        data
+      });
+      
+      return response;
+    } catch (error) {
+      console.error('[Supabase Error]', {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
   };
 };
 
