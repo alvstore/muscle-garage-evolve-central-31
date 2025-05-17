@@ -7,7 +7,7 @@ import { Toaster, toast } from "@/components/ui/sonner";
 import { ensureStorageBucketsExist } from './services/storageService';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './hooks/use-auth';
-import { BranchProvider } from './hooks/use-branch';
+import { BranchProvider } from './hooks/use-branches';
 import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 
 // Create a client

@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 
 export const useBranchData = () => {
   const { currentBranch } = useBranch();

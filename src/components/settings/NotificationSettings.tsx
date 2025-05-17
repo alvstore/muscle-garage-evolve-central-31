@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 
 export default function NotificationSettings() {
   const { currentBranch } = useBranch();

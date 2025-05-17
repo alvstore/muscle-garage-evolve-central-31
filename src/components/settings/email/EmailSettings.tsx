@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { supabase } from '@/services/supabaseClient';
 import { integrationsService } from '@/services/integrationsService';
 import { EmailSettings as EmailSettingsType } from '@/types/notification';

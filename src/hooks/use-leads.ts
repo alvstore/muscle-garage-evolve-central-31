@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 import { leadService } from '@/services/leadService';
 import { Lead } from '@/types/crm';
 import { toast } from 'sonner';

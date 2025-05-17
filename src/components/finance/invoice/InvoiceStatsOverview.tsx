@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { User, FileText, DollarSign, BanknoteIcon } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { formatCurrency } from '@/utils/stringUtils';
 
 const StatCard = ({ label, value, icon: Icon, loading = false }: { label: string; value: string | number; icon: any; loading?: boolean }) => (

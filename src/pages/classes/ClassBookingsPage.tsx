@@ -52,7 +52,7 @@ import {
   X
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import PageHeader from "@/components/layout/PageHeader";
 import { ClassBooking } from "@/types/class";
 import { format, parseISO } from "date-fns";

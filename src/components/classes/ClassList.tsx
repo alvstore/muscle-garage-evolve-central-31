@@ -14,7 +14,7 @@ import ClassForm from "./ClassForm";
 import ClassBookingForm from "./ClassBookingForm";
 import { GymClass, ClassBooking } from "@/types/class";
 import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

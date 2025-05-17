@@ -13,7 +13,7 @@ import { CalendarIcon, ArrowLeft, Loader2, Plus, Trash2, Info } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { useMembers } from '@/hooks/use-members';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GSTTreatment, TaxDetail, TaxType } from '@/types/finance';

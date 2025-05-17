@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export interface Member {
   id: string;

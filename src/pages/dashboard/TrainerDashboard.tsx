@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { supabase } from "@/services/supabaseClient";
 import { PlusIcon } from "lucide-react";
 

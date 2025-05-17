@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import MembershipAssignmentForm from '@/components/membership/MembershipAssignmentForm';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { membershipService } from '@/services/membershipService';
 import { toast } from '@/components/ui/sonner';
 import { formatCurrency } from '@/utils/stringUtils';

@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { adminNavSections } from '@/data/adminNavigation';
 import { NavItem as AdminNavItem, Permission } from '@/types/navigation';
 import { cn } from '@/lib/utils';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Navigation item type for our sidebar

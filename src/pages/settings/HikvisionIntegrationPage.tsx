@@ -17,7 +17,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import PermissionGuard from '@/components/auth/PermissionGuard';
 import HikvisionDeviceManager from '@/components/integrations/HikvisionDeviceManager';
 import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { useHikvision } from '@/hooks/use-hikvision-consolidated';
 
 const hikvisionCredentialsSchema = z.object({

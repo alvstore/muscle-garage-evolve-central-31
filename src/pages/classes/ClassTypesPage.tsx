@@ -26,7 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Plus, MoreVertical, Search, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { useClassTypes, useCreateClassType, useUpdateClassType, useDeleteClassType } from '@/hooks/use-class-types';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { ClassType } from '@/types/classes';
 import ClassTypeForm from '@/components/classes/ClassTypeForm';
 import { format, parseISO } from 'date-fns';

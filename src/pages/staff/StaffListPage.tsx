@@ -7,7 +7,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { StaffMemberColumn } from '@/components/staff/StaffMemberColumn';
 import CreateStaffForm from '@/components/staff/CreateStaffForm';
 import { useStaff } from '@/hooks/use-staff';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { Check, Loader2, Plus, Search, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';

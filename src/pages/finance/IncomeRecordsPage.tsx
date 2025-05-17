@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { useTransactions } from '@/hooks/use-transactions';
 import { FinancialTransaction } from '@/types/finance';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

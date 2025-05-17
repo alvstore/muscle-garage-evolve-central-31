@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 import { toast } from 'sonner';
 
 export interface Transaction {

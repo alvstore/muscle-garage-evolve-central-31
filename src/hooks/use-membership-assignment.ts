@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { MembershipAssignment } from "@/types/membership-assignment";
 
 export const useMembershipAssignment = () => {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from './use-auth';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export interface MemberProgress {
   id: string;

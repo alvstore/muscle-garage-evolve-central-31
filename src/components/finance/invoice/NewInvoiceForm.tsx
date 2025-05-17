@@ -17,7 +17,7 @@ import {
   InvoiceItem, 
   InvoiceStatus
 } from "@/types/finance";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { supabase } from "@/services/supabaseClient";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";

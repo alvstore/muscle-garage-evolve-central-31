@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAttendanceSettings } from "@/hooks/use-realtime-settings";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { Loader2 } from "lucide-react";
 
 const AttendanceSettings = () => {

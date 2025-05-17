@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { Invoice } from '@/types/finance';
 import { toast } from 'sonner';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export const useInvoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);

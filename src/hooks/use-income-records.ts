@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 import { toast } from 'sonner';
 import { FinancialTransaction } from '@/types';
 

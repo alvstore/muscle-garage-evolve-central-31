@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 
 interface ClassDetails {
   id: string;

@@ -15,7 +15,7 @@ import ClassPerformanceSection from '@/components/dashboard/sections/ClassPerfor
 import PeakHoursSection from '@/components/dashboard/sections/PeakHoursSection';
 import MembershipTrendsSection from '@/components/dashboard/sections/MembershipTrendsSection';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { useDashboard } from '@/hooks/use-dashboard';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

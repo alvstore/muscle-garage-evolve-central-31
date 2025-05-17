@@ -32,7 +32,7 @@ import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Announcement, NotificationChannel } from "@/types/notification";
 import { UserRole } from "@/types";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 

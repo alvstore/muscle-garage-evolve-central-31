@@ -31,7 +31,7 @@ import {
   Table2 
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import ClassList from "@/components/classes/ClassList";
 import PageHeader from "@/components/layout/PageHeader";
 import { GymClass } from "@/types/class";

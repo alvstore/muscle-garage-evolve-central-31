@@ -10,7 +10,7 @@ import Logo from "@/components/Logo";
 import NavigationSections from "@/components/navigation/NavigationSections";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useNavigation } from "@/hooks/use-navigation";
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import BranchSelector from '@/components/branch/BranchSelector';
 
 interface DashboardSidebarProps {

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { integrationsService } from '@/services/integrationsService';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';

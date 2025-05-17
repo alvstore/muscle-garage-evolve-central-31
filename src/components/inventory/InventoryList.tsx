@@ -19,7 +19,7 @@ import { supabase } from "@/services/supabaseClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItem, InventoryCategory } from "@/types/inventory";
 import InventoryForm from "./InventoryForm";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 
 const InventoryList = () => {
   const [searchQuery, setSearchQuery] = useState("");

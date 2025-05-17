@@ -36,7 +36,7 @@ import { format, isValid } from "date-fns";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useBranch } from "@/hooks/use-branch";
+import { useBranch } from "@/hooks/use-branches";
 import { useMemberships } from "@/hooks/use-membership-data";
 import { membershipService } from "@/services/membershipService";
 import { CalendarIcon, Loader2, AlertCircle } from "lucide-react";

@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { membershipService } from '@/services/membershipService';
 import { MembershipPlan } from '@/types';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { toast } from 'sonner';
 
 interface MembershipAssignmentFormProps {

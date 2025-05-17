@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { Referral } from '@/types/marketing';
 import { toast } from '@/utils/toast-manager';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export const useReferrals = () => {
   const [referrals, setReferrals] = useState<Referral[]>([]);

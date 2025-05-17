@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 
 // Services
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { useMembers } from '@/hooks/use-members';
 
 type ViewMode = 'list' | 'grid';

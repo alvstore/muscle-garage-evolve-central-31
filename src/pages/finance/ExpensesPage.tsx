@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchExpenses, fetchExpenseCategories, createExpense, updateExpense, deleteExpense, Expense, ExpenseCategory } from '@/services/expenseService';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

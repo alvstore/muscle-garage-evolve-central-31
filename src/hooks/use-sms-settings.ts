@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import settingsService from '@/services/settingsService';
-import { useBranch } from './use-branch';
+import { useBranch } from './use-branches';
 
 export interface SmsSettings {
   id?: string;

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { MembershipPlan } from '@/types';
 import { useDisclosure } from '@/hooks/use-disclosure';
 import EmptyState from '@/components/ui/empty-state';
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from '@/hooks/use-branches';
 
 const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
