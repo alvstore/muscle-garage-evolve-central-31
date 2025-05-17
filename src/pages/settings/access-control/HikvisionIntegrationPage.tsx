@@ -15,10 +15,9 @@ import { toast } from 'sonner';
 import { CheckCircle, XCircle, RefreshCw, Clock, UserCheck, Lock, Download, UploadCloud, Server, Shield } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
 import PermissionGuard from '@/components/auth/PermissionGuard';
-import HikvisionDeviceManager from '@/components/integrations/HikvisionDeviceManager';
-import HikvisionWebhookHandler from '@/components/integrations/HikvisionWebhookHandler';
-import { useBranch } from '@/hooks/use-branches';
-import { useHikvision } from '@/hooks/use-hikvision-consolidated';
+import HikvisionDeviceManager from '@/components/access-control/HikvisionDeviceManager';
+import HikvisionWebhookHandler from '@/components/access-control/HikvisionWebhookHandler';
+
 
 const hikvisionCredentialsSchema = z.object({
   api_url: z.string().url({ message: "Please enter a valid API URL" }),

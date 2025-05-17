@@ -72,7 +72,7 @@ const UnifiedSettingsPage = () => {
         
         <TabsContent value="integrations">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <SettingCard title="Attendance Devices" description="Configure biometric and access control devices" icon={<Settings className="h-4 w-4 text-primary" />} to="/settings/attendance-devices" />
+            <SettingCard title="Access Control" description="Manage access control devices and permissions" icon={<Settings className="h-4 w-4 text-primary" />} to="/settings/access-control" />
             <SettingCard title="API Integrations" description="Manage third-party API connections" icon={<Settings className="h-4 w-4 text-primary" />} to="/settings/api-integrations" />
           </div>
         </TabsContent>

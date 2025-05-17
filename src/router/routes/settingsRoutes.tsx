@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { AppRoute } from '@/types/route';
-import UnifiedSettingsPage from '@/pages/settings/UnifiedSettingsPage';
+import UnifiedSettingsPage from '@/pages/settings/core/UnifiedSettingsPage';
 import InvoiceSettingsPage from '@/pages/settings/InvoiceSettingsPage';
 import IntegrationsPage from '@/pages/settings/IntegrationsPage';
 import AccessControlPage from '@/pages/settings/access-control';
 import PaymentGatewaySettingsPage from '@/pages/settings/PaymentGatewaySettingsPage';
-import PushNotificationSettingsPage from '@/pages/settings/PushNotificationSettingsPage';
+import PushNotificationSettingsPage from '@/pages/settings/core/PushNotificationSettingsPage';
 import EmailSettingsPage from '@/pages/settings/EmailSettingsPage';
 import SmsIntegrationPage from '@/pages/settings/SmsIntegrationPage';
 import MessagingSettingsPage from '@/pages/settings/MessagingSettingsPage';
@@ -92,16 +92,6 @@ export const settingsRoutes: AppRoute[] = [
       breadcrumb: 'Access Control',
       permission: 'manage_integrations',
       hideInNav: true
-    }
-  },
-  {
-    path: '/settings/attendance-devices',
-    element: <AccessControlPage />,
-    meta: {
-      title: 'Access Control',
-      breadcrumb: 'Access Control',
-      permission: 'manage_integrations',
-      icon: <Lock className="h-5 w-5" />
     }
   },
   {
