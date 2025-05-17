@@ -66,6 +66,13 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
   } = useHikvision();
 
   // State for available sites
+  // Token data type
+  type TokenData = {
+    accessToken: string | null;
+    availableSites: Array<{ id: string; name: string; siteId: string }>;
+    siteId?: string; // Add siteId to the token type
+  };
+
   const [availableSites, setAvailableSites] = useState<Array<{id: string, name: string, siteId?: string}>>([]);
 
   // Add a new device using the hikvisionService directly
@@ -140,12 +147,18 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
     try {
       // Test connection to get token
       const isConnected = await testDeviceConnection();
+      const token: TokenData = {
+        accessToken: isConnected ? 'dummy-token' : null,
+        availableSites: availableSites.map(site => ({
+          id: site.id,
+          name: site.name,
+          siteId: site.siteId || site.id // Ensure siteId is always defined
+        }))
+      };
+      
       return { 
         success: isConnected, 
-        token: {
-          accessToken: isConnected ? 'dummy-token' : null,
-          availableSites: availableSites
-        } 
+        token
       };
     } catch (error) {
       console.error('Error getting token:', error);
@@ -561,6 +574,12 @@ export default function HikvisionDevices({ branchId }: HikvisionDevicesProps) {
           siteId: site.id || ''
         }));
         setAvailableSites(formattedSites);
+        
+        // Update token data with the new sites
+        const tokenData = await getTokenData();
+        if (tokenData.token) {
+          tokenData.token.availableSites = formattedSites;
+        }
       } catch (error) {
         console.error('Error loading sites:', error);
         // Fallback to empty array if API call fails
