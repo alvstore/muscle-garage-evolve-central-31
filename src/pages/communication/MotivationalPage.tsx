@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import MotivationalMessageForm from "@/components/communication/MotivationalMessageForm";
 import MotivationalMessagesList from "@/components/communication/MotivationalMessagesList";
-import { MotivationalMessage } from "@/types";
-import { useMotivationalMessages } from "@/hooks/communication/use-motivational-messages";
+import { MotivationalMessage } from "@/types/communication/notification";
+import { useMotivationalMessages } from "@/hooks/members/use-motivational-messages";
 
 export default function MotivationalPage() {
   const [showForm, setShowForm] = useState(false);
@@ -30,22 +30,21 @@ export default function MotivationalPage() {
     setEditMessage(null);
   };
 
-  const handleEdit = (message: MotivationalMessage) => {
-    setEditMessage(message);
-    setShowForm(true);
+  const handleAddMessage = async (message: Omit<MotivationalMessage, "id" | "created_at" | "updated_at">) => {
+    await addMessage(message);
+  };
+
+  const handleUpdateMessage = async (id: string, message: Partial<MotivationalMessage>) => {
+    await updateMessage(id, message);
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    await deleteMessage(id);
   };
 
   const cancelForm = () => {
     setShowForm(false);
     setEditMessage(null);
-  };
-
-  const handleToggleActive = async (id: string, isActive: boolean) => {
-    return await toggleActive(id, isActive);
-  };
-
-  const handleDelete = async (id: string) => {
-    return await deleteMessage(id);
   };
 
   return (
@@ -65,12 +64,11 @@ export default function MotivationalPage() {
             onCancel={cancelForm} 
           />
         ) : (
-          <MotivationalMessagesList 
-            messages={messages} 
-            isLoading={isLoading} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-            onToggleActive={handleToggleActive} 
+          <MotivationalMessagesList
+            messages={messages}
+            onAddMessage={handleAddMessage}
+            onUpdateMessage={handleUpdateMessage}
+            onDeleteMessage={handleDeleteMessage}
           />
         )}
       </div>

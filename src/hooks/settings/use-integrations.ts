@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import integrationService, { IntegrationConfig } from '@/services/integrationService';
+import integrationService, { IntegrationConfig } from '@/services/settings/integrationService';
 
 export const useIntegrations = (integrationName?: string) => {
   const [isLoading, setIsLoading] = useState(true);

@@ -5,16 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { useSmsSettings } from '@/hooks/communication/use-sms-settings';
+import { SmsTemplates } from '@/types/communication/sms';
 
 interface NotificationSettingsProps {
-  templates: {
-    membershipAlert: boolean;
-    renewalReminder: boolean;
-    otpVerification: boolean;
-    attendanceConfirmation: boolean;
-  };
-  onChange: (templates: any) => void;
+  templates: SmsTemplates;
+  onChange: (templates: SmsTemplates) => void;
 }
 
 export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
@@ -28,7 +23,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     setLocalTemplates(templates);
   }, [templates]);
 
-  const handleToggle = (key: keyof typeof templates, value: boolean) => {
+  const handleToggle = (key: keyof SmsTemplates, value: boolean) => {
     const updatedTemplates = {
       ...localTemplates,
       [key]: value

@@ -39,7 +39,7 @@ import { CalendarIcon, Download, Filter, MoreHorizontal, PlusCircle, Search, XCi
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Invoice, InvoiceStatus } from '@/types/finance';
-import { InvoiceService } from '@/services/invoiceService';
+import { InvoiceService } from '@/services/finance/invoiceService';
 
 const InvoicesPage = () => {
   // State

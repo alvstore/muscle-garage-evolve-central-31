@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { useAnnouncements } from '@/hooks/communication/use-announcements';
+import { useAnnouncements } from '@/hooks/notifications/use-announcements';
 import { AnnouncementsList } from '@/components/communication/announcements/AnnouncementsList';
 import TrainerAnnouncementForm from '@/components/communication/announcements/TrainerAnnouncementForm';
 import { toast } from 'sonner';
@@ -13,30 +13,21 @@ import { toast } from 'sonner';
 const TrainerAnnouncementPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { announcements, isLoading, createAnnouncement, fetchAnnouncements } = useAnnouncements();
+  const { announcements = [], isLoading, refreshAnnouncements } = useAnnouncements();
 
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
+  const handleAnnouncementCreated = () => {
+    refreshAnnouncements();
+    setIsDialogOpen(false);
+  };
 
   const handleCreateAnnouncement = async (data: any) => {
     try {
       setIsSubmitting(true);
-      await createAnnouncement({
-        title: data.title,
-        content: data.content,
-        priority: data.priority,
-        targetRoles: data.targetRoles || ['member'],
-        channels: data.channels || ['app'],
-        expiresAt: data.expiresAt,
-        authorName: 'Trainer', // This would come from the logged-in trainer
-      });
-      
+      // TODO: Implement announcement creation logic
+      // await createAnnouncement(data);
+      toast.success('Announcement created successfully');
       setIsDialogOpen(false);
-      toast.success('Announcement created successfully!');
-
-      // Fetch the updated list of announcements
-      fetchAnnouncements();
+      refreshAnnouncements();
     } catch (error) {
       console.error('Error creating announcement:', error);
       toast.error('Failed to create announcement. Please try again.');

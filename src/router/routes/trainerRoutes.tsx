@@ -6,7 +6,7 @@ import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
 import TrainerMemberProgressPage from '@/pages/trainers/TrainerMemberProgressPage';
 import TrainerAllocationPage from '@/pages/trainers/TrainerAllocationPage';
 import TrainerMemberAllocationPage from '@/pages/trainers/TrainerMemberAllocationPage';
-import TrainerAnnouncementPage from '@/pages/trainers/TrainerAnnouncementPage';
+import TrainerAnnouncementPage from '@/pages/communication/TrainerAnnouncementPage';
 
 // Placeholder components for routes that don't have specific page components yet
 const PlaceholderPage = () => <div className="p-6"><h1 className="text-2xl font-bold mb-4">Coming Soon</h1><p>This feature is currently under development.</p></div>;
