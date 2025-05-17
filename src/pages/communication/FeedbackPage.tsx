@@ -9,7 +9,7 @@ import FeedbackForm from "@/components/communication/feedback/FeedbackForm";
 import { useFeedback } from "@/hooks/communication/use-feedback";
 import { useAuth } from "@/hooks/auth/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Feedback, FeedbackType } from '@/types/notification';
+import { Feedback, FeedbackType } from '@/types/communication/feedback';
 
 const FeedbackPage = () => {
   const [activeTab, setActiveTab] = useState("all");

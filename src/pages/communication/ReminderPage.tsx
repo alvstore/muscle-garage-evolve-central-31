@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { useReminderRules } from '@/hooks/communication/use-reminder-rules';
+import { useReminderRules } from '@/hooks/notifications/use-reminder-rules';
 import ReminderRulesList from '@/components/communication/ReminderRulesList';
 import ReminderRuleForm from '@/components/communication/ReminderRuleForm';
-import { ReminderRule } from '@/types/notification';
+import { ReminderRule } from '@/types/communication/reminder';
 import { Plus } from 'lucide-react';
 
 export default function ReminderPage() {
