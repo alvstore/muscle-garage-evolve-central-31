@@ -175,11 +175,13 @@ const TaskManagement = () => {
       const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
       await taskService.updateTask(taskId, { status: newStatus });
       
-      setTasks(tasks.map(task => 
-        task.id === taskId 
-          ? { ...task, status: newStatus, completed: newStatus === 'completed' } 
-          : task
-      ));
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          const updatedTask = { ...task, status: newStatus, completed: newStatus === 'completed' };
+          return formatTaskForDisplay(updatedTask);
+        }
+        return task;
+      }));
       
       toast.success(`Task marked as ${newStatus}`);
     } catch (err) {
@@ -190,7 +192,7 @@ const TaskManagement = () => {
 
   // Delete a task
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
     
     try {
       await taskService.deleteTask(taskId);
@@ -200,6 +202,16 @@ const TaskManagement = () => {
       console.error('Error deleting task:', err);
       toast.error('Failed to delete task');
     }
+  };
+  
+  // Handle date selection (single implementation)
+  const handleDateSelectSingle = (date: Date | undefined) => {
+    if (!date) return;
+    setDate(date);
+    setFormData(prev => ({
+      ...prev,
+      dueDate: format(date, 'yyyy-MM-dd')
+    }));
   };
   
   // Mock staff/trainers for assignment
