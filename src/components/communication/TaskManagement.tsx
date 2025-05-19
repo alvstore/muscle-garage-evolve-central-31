@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
@@ -86,8 +87,6 @@ interface TaskFormData {
 
 // Staff members will be loaded from the database
 const STAFF_AVATAR_PLACEHOLDER = '/placeholder.svg'; // Make sure this path is correct in your project
-
-
 
 const TaskManagement = () => {
   const { user } = useAuth();
@@ -336,8 +335,8 @@ const TaskManagement = () => {
     }));
   };
   
-  // Handle date selection
-  const handleDateSelect = (date: Date | null) => {
+  // Handle date selection for the form
+  const handleFormDateSelect = (date: Date | null) => {
     if (!date) return;
     setDate(date);
     const formattedDate = format(date, 'yyyy-MM-dd');
@@ -488,7 +487,7 @@ const TaskManagement = () => {
                       <PopoverContent className="w-auto p-0">
                         <DatePicker
                           selected={date}
-                          onChange={handleDateSelect}
+                          onChange={handleFormDateSelect}
                           minDate={new Date()}
                           className="form-input w-full"
                           placeholderText="Select due date"
