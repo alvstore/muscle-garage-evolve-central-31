@@ -348,8 +348,6 @@ const TaskManagement = () => {
     }));
   };
 
-
-
   // Get status badge color
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
