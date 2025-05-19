@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { MembershipPlan } from '@/types';
+import { MembershipPlan } from '@/types/members/membership';
 import { toast } from 'sonner';
 
 export const membershipService = {
@@ -91,7 +91,8 @@ export const membershipService = {
           duration_days: plan.duration_days || plan.durationDays,
           features: plan.features || [],
           is_active: plan.is_active !== undefined ? plan.is_active : (plan.isActive !== undefined ? plan.isActive : true),
-          status: plan.status || 'active'
+          status: plan.status || 'active',
+          branch_id: plan.branch_id || null
         }])
         .select()
         .single();

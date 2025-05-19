@@ -72,17 +72,30 @@ export default function BranchSelector({ branches = [], onSelect, disabled = fal
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-48 justify-between text-sm"
+          className="w-64 justify-between text-sm h-auto py-2"
           disabled={disabled}
         >
-          {value
-            ? branches.find((branch) => branch.id === value)?.name
-            : "Select branch..."}
+          <div className="text-left truncate">
+            {value ? (
+              <>
+                <div className="font-medium truncate">
+                  {branches.find((branch) => branch.id === value)?.name}
+                </div>
+                {branches.find((branch) => branch.id === value)?.branch_code && (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {branches.find((branch) => branch.id === value)?.branch_code}
+                  </div>
+                )}
+              </>
+            ) : (
+              "Select branch..."
+            )}
+          </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-0">
-        <Command>
+      <PopoverContent className="w-64 p-0">
+        <Command className="max-h-[300px] overflow-y-auto">
           <CommandInput placeholder="Search branch..." />
           <CommandEmpty>No branch found.</CommandEmpty>
           <CommandGroup>
@@ -91,14 +104,24 @@ export default function BranchSelector({ branches = [], onSelect, disabled = fal
                 key={branch.id}
                 value={branch.id}
                 onSelect={() => handleSelect(branch)}
+                className="flex items-center gap-2"
               >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === branch.id ? "opacity-100" : "opacity-0"
+                <div className="flex-shrink-0">
+                  <Check
+                    className={cn(
+                      "h-4 w-4",
+                      value === branch.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{branch.name}</div>
+                  {branch.branch_code && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {branch.branch_code}
+                    </div>
                   )}
-                />
-                {branch.name}
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

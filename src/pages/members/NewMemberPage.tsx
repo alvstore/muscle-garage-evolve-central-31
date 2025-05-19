@@ -731,7 +731,7 @@ const NewMemberPage = () => {
                               <FormItem>
                                 <FormLabel>Country</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Enter country" {...field} defaultValue="India" />
+                                  <Input placeholder="Enter country" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -809,7 +809,14 @@ const NewMemberPage = () => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Membership Plan*</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select 
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    const selected = memberships.find(m => m.id === value);
+                                    setSelectedMembership(selected || null);
+                                  }} 
+                                  value={field.value || ''}
+                                >
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select a membership plan" />
@@ -817,7 +824,7 @@ const NewMemberPage = () => {
                                   </FormControl>
                                   <SelectContent>
                                     {isLoadingMemberships ? (
-                                      <SelectItem value="" disabled>
+                                      <SelectItem value="loading" disabled>
                                         Loading...
                                       </SelectItem>
                                     ) : memberships && memberships.length > 0 ? (
@@ -827,7 +834,7 @@ const NewMemberPage = () => {
                                         </SelectItem>
                                       ))
                                     ) : (
-                                      <SelectItem value="" disabled>
+                                      <SelectItem value="no-plans" disabled>
                                         No membership plans available
                                       </SelectItem>
                                     )}

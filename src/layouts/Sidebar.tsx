@@ -155,16 +155,33 @@ const Sidebar = (): JSX.Element => {
       
       {/* Branch selector */}
       <div className={cn("px-4 py-3 border-b", settings.semiDark ? isDark ? "border-[#3b4253]" : "border-[#3b4253]" : "border-border")}>
-        {!collapsed ? <DropdownMenu open={branchMenuOpen} onOpenChange={setBranchMenuOpen}>
+        {!collapsed ? (
+          <DropdownMenu open={branchMenuOpen} onOpenChange={setBranchMenuOpen}>
             <DropdownMenuTrigger asChild>
-              <div className={cn("flex items-center justify-between rounded-md px-3 py-2 cursor-pointer", settings.semiDark ? isDark ? "bg-[#343d55]" : "bg-[#343d55]" : "bg-muted")}>
-                <div className="flex items-center">
-                  <Building2 size={18} className={cn("mr-2", settings.semiDark ? "text-gray-300" : "text-gray-500")} />
-                  <div className="flex flex-col">
+              <div className={cn(
+                "flex items-center justify-between rounded-md px-3 py-2 cursor-pointer hover:bg-opacity-80 transition-colors",
+                settings.semiDark ? "bg-[#343d55]" : "bg-muted"
+              )}>
+                <div className="flex items-center min-w-0">
+                  <Building2 size={18} className={cn("flex-shrink-0 mr-2", settings.semiDark ? "text-gray-300" : "text-gray-500")} />
+                  <div className="min-w-0">
                     {currentBranch?.name ? (
-                      <span className={cn("text-sm font-semibold truncate max-w-[200px]", settings.semiDark ? "text-gray-200" : "text-gray-700")}>
-                        {currentBranch.name}
-                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className={cn(
+                          "text-sm font-semibold truncate",
+                          settings.semiDark ? "text-gray-200" : "text-gray-700"
+                        )}>
+                          {currentBranch.name}
+                        </span>
+                        {currentBranch.branch_code && (
+                          <span className={cn(
+                            "text-xs truncate",
+                            settings.semiDark ? "text-gray-400" : "text-muted-foreground"
+                          )}>
+                            {currentBranch.branch_code}
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <Link 
                         to="/settings/branches" 
@@ -176,28 +193,72 @@ const Sidebar = (): JSX.Element => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <span className="text-xs bg-primary-500 text-white px-2 py-0.5 rounded font-medium">Current</span>
-                  <ChevronDown size={16} className={cn("ml-1", settings.semiDark ? "text-gray-300" : "text-gray-500")} />
+                <div className="flex items-center ml-2">
+                  <span className="text-xs bg-primary text-white px-2 py-0.5 rounded font-medium whitespace-nowrap">
+                    Current
+                  </span>
+                  <ChevronDown 
+                    size={16} 
+                    className={cn(
+                      "ml-1 flex-shrink-0", 
+                      settings.semiDark ? "text-gray-300" : "text-gray-500"
+                    )} 
+                  />
                 </div>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 mt-1">
-              {branches.map(branch => <DropdownMenuItem key={branch.id} className={cn("flex items-center py-2", currentBranch?.id === branch.id ? "bg-primary/10" : "")} onClick={() => {
-            switchBranch(branch.id);
-            setBranchMenuOpen(false);
-          }}>
-                  <Building2 size={16} className="mr-2 text-primary" />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{branch.name}</span>
-                    <span className="text-xs text-muted-foreground">{branch.city || 'No location'}</span>
+            <DropdownMenuContent 
+              align="start" 
+              className="w-64 max-h-[300px] overflow-y-auto"
+              alignOffset={-10}
+              sideOffset={5}
+            >
+              {branches.map(branch => (
+                <DropdownMenuItem 
+                  key={branch.id} 
+                  className={cn(
+                    "py-2 px-3 hover:bg-muted/50",
+                    currentBranch?.id === branch.id ? "bg-primary/5" : ""
+                  )} 
+                  onClick={() => {
+                    switchBranch(branch.id);
+                    setBranchMenuOpen(false);
+                  }}
+                >
+                  <Building2 size={16} className="mr-2 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {branch.name}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground truncate">
+                        {branch.branch_code && `#${branch.branch_code} • `}{branch.city || 'No location'}
+                      </span>
+                    </div>
                   </div>
-                  {currentBranch?.id === branch.id && <span className="ml-auto text-xs bg-primary text-white px-2 py-0.5 rounded">Current</span>}
-                </DropdownMenuItem>)}
+                  {currentBranch?.id === branch.id && (
+                    <span className="ml-auto text-xs bg-primary text-white px-2 py-0.5 rounded whitespace-nowrap">
+                      Current
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
-          </DropdownMenu> : <div className="flex justify-center cursor-pointer" onClick={() => setBranchMenuOpen(true)}>
-            <Building2 size={20} className={cn(settings.semiDark ? "text-gray-300" : "text-gray-500")} />
-          </div>}
+          </DropdownMenu>
+        ) : (
+          <div 
+            className="flex justify-center cursor-pointer hover:bg-muted/50 p-1.5 rounded" 
+            onClick={() => setBranchMenuOpen(true)}
+          >
+            <Building2 
+              size={20} 
+              className={cn(
+                settings.semiDark ? "text-gray-300" : "text-gray-500",
+                "hover:text-primary transition-colors"
+              )} 
+            />
+          </div>
+        )}
       </div>
 
       {/* Navigation */}

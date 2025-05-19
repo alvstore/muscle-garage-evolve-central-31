@@ -49,26 +49,42 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (error) throw error;
 
-      // Transform the data to match the Branch type if needed
-      const branchesData: Branch[] = data.map(branch => ({
-        id: branch.id,
-        name: branch.name,
-        address: branch.address || '',
-        city: branch.city || '',
-        state: branch.state || '',
-        country: branch.country || 'India',
-        email: branch.email || '',
-        phone: branch.phone || '',
-        is_active: branch.is_active ?? true,
-        manager_id: branch.manager_id || '',
-        branch_code: branch.branch_code || '',
-        opening_hours: branch.opening_hours || '',
-        closing_hours: branch.closing_hours || '',
-        tax_rate: branch.tax_rate || 0,
-        max_capacity: branch.max_capacity || 0,
-        created_at: branch.created_at || new Date().toISOString(),
-        updated_at: branch.updated_at || new Date().toISOString()
-      }));
+      // Transform the data to match the Branch type with proper defaults
+      const branchesData: Branch[] = data.map(branch => {
+        console.log('Raw branch data from DB:', branch);
+        
+        const branchData = {
+          // Required fields
+          id: branch.id,
+          name: branch.name,
+          address: branch.address || '',
+          
+          // Optional fields with empty string defaults
+          city: branch.city || '',
+          state: branch.state || '',
+          country: branch.country || 'India',
+          email: branch.email || '',
+          phone: branch.phone || '',
+          manager_id: branch.manager_id || '',
+          branch_code: branch.branch_code || '',
+          
+          // Fields with specific defaults
+          is_active: branch.is_active ?? true,
+          opening_hours: branch.opening_hours || '09:00:00',
+          closing_hours: branch.closing_hours || '22:00:00',
+          max_capacity: branch.max_capacity || 50,
+          region: branch.region || '',
+          timezone: branch.timezone || 'Asia/Kolkata',
+          tax_rate: branch.tax_rate || 0,
+          
+          // Timestamps
+          created_at: branch.created_at || new Date().toISOString(),
+          updated_at: branch.updated_at || new Date().toISOString()
+        };
+        
+        console.log('Mapped branch data:', branchData);
+        return branchData;
+      });
 
       setBranches(branchesData);
 
@@ -107,22 +123,38 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return null;
       }
 
-      // Prepare the data to be inserted
+      // Ensure tax_rate is a valid number between 0 and 1
+      const taxRate = branchData.tax_rate != null 
+        ? Math.max(0, Math.min(1, Number(branchData.tax_rate) || 0))
+        : 0;
+
+      console.log('Creating branch with tax rate:', taxRate);
+      
+      // Prepare the data to be inserted with all database fields and proper defaults
       const insertData: any = {
+        // Required fields
         name: branchData.name.trim(),
         address: branchData.address.trim(),
+        
+        // Optional fields with database defaults
         city: branchData.city?.trim() || null,
         state: branchData.state?.trim() || null,
         country: branchData.country?.trim() || 'India',
         email: branchData.email?.trim() || null,
         phone: branchData.phone?.trim() || null,
-        is_active: branchData.is_active !== undefined ? branchData.is_active : true,
         manager_id: branchData.manager_id?.trim() || null,
         branch_code: branchData.branch_code?.trim() || null,
-        opening_hours: branchData.opening_hours?.trim() || null,
-        closing_hours: branchData.closing_hours?.trim() || null,
-        tax_rate: branchData.tax_rate || null,
-        max_capacity: branchData.max_capacity || null,
+        
+        // Fields with specific defaults
+        is_active: branchData.is_active !== undefined ? branchData.is_active : true,
+        opening_hours: branchData.opening_hours?.trim() || '09:00:00',
+        closing_hours: branchData.closing_hours?.trim() || '22:00:00',
+        max_capacity: branchData.max_capacity || 50,
+        region: branchData.region?.trim() || null,
+        timezone: branchData.timezone?.trim() || 'Asia/Kolkata',
+        tax_rate: taxRate,
+        
+        // Timestamps
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -200,25 +232,53 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Update a branch
   const updateBranch = async (id: string, branchData: Partial<Branch>): Promise<Branch | null> => {
     try {
+      // Ensure tax_rate is a valid number between 0 and 1
+      const taxRate = branchData.tax_rate != null 
+        ? Math.max(0, Math.min(1, Number(branchData.tax_rate) || 0))
+        : 0;
+
+      console.log('Updating branch with tax rate:', taxRate);
+      
+      // Prepare update data with all fields
+      const updateData: any = {
+        // Required fields
+        name: branchData.name,
+        address: branchData.address,
+        
+        // Optional fields
+        city: branchData.city || null,
+        state: branchData.state || null,
+        country: branchData.country || 'India',
+        email: branchData.email || null,
+        phone: branchData.phone || null,
+        manager_id: branchData.manager_id || null,
+        branch_code: branchData.branch_code || null,
+        
+        // Fields with specific defaults
+        is_active: branchData.is_active !== undefined ? branchData.is_active : true,
+        opening_hours: branchData.opening_hours || '09:00:00',
+        closing_hours: branchData.closing_hours || '22:00:00',
+        max_capacity: branchData.max_capacity || 50,
+        region: branchData.region || null,
+        timezone: branchData.timezone || 'Asia/Kolkata',
+        tax_rate: taxRate,
+        
+        // Always update the updated_at timestamp
+        updated_at: new Date().toISOString()
+      };
+      
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
+      
+      console.log('Updating branch with data:', updateData);
+      
       const { data, error } = await supabase
         .from('branches')
-        .update({
-          name: branchData.name,
-          address: branchData.address,
-          city: branchData.city,
-          state: branchData.state,
-          country: branchData.country,
-          email: branchData.email,
-          phone: branchData.phone,
-          is_active: branchData.is_active,
-          manager_id: branchData.manager_id,
-          branch_code: branchData.branch_code,
-          opening_hours: branchData.opening_hours,
-          closing_hours: branchData.closing_hours,
-          tax_rate: branchData.tax_rate,
-          max_capacity: branchData.max_capacity,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -237,13 +297,17 @@ export const BranchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         is_active: data.is_active ?? true,
         manager_id: data.manager_id || '',
         branch_code: data.branch_code || '',
-        opening_hours: data.opening_hours || '',
-        closing_hours: data.closing_hours || '',
+        opening_hours: data.opening_hours || '09:00:00',
+        closing_hours: data.closing_hours || '22:00:00',
         tax_rate: data.tax_rate || 0,
-        max_capacity: data.max_capacity || 0,
+        max_capacity: data.max_capacity || 50,
+        region: data.region || '',
+        timezone: data.timezone || 'Asia/Kolkata',
         created_at: data.created_at || new Date().toISOString(),
         updated_at: data.updated_at || new Date().toISOString()
       };
+      
+      console.log('Updated branch data:', updatedBranch);
 
       setBranches(prev =>
         prev.map(branch =>

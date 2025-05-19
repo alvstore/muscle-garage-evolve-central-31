@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Branch } from "@/types";
+import { Branch } from "@/types/settings/branch";
 import { useBranch } from "@/hooks/settings/use-branches";
 import { Loader2 } from "lucide-react";
 
@@ -61,16 +61,16 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
       manager_id: branch?.manager_id || "",
       is_active: branch?.is_active ?? true,
       branch_code: branch?.branch_code || "",
-      city: branch?.city || "",
+      city: branch?.city || "Ahmedabad",
       state: branch?.state || "",
       country: branch?.country || "India",
       // Extended fields
-      max_capacity: branch?.max_capacity?.toString() || "",
-      opening_hours: branch?.opening_hours || "",
-      closing_hours: branch?.closing_hours || "",
+      max_capacity: branch?.max_capacity?.toString() || "50",
+      opening_hours: branch?.opening_hours || "09:00",
+      closing_hours: branch?.closing_hours || "22:00",
       region: branch?.region || "",
-      tax_rate: branch?.tax_rate?.toString() || "",
-      timezone: branch?.timezone || "",
+      tax_rate: branch?.tax_rate ? (Number(branch.tax_rate) * 100).toString() : "18",
+      timezone: branch?.timezone || "Asia/Kolkata",
     },
   });
   
@@ -109,6 +109,13 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         return;
       }
 
+      // Debug tax rate value
+      console.log('Raw tax_rate from form:', values.tax_rate);
+      const taxRateValue = parseFloat(values.tax_rate || '0') || 0;
+      console.log('Parsed tax rate (before conversion):', taxRateValue);
+      const convertedTaxRate = Math.min(1, Math.max(0, taxRateValue / 100));
+      console.log('Converted tax rate (after conversion):', convertedTaxRate);
+      
       // Prepare branch data with all required fields
       const branchData: Partial<Branch> = {
         name: values.name.trim(),
@@ -124,12 +131,12 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
         created_at: branch?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         // Extended fields
-        ...(values.max_capacity && { max_capacity: parseInt(values.max_capacity) || 0 }),
-        ...(values.opening_hours && { opening_hours: values.opening_hours.trim() }),
-        ...(values.closing_hours && { closing_hours: values.closing_hours.trim() }),
-        ...(values.region && { region: values.region.trim() }),
-        ...(values.tax_rate && { tax_rate: parseFloat(values.tax_rate) || 0 }),
-        ...(values.timezone && { timezone: values.timezone.trim() })
+        max_capacity: values.max_capacity ? parseInt(values.max_capacity) : 50,
+        opening_hours: values.opening_hours?.trim() || '09:00',
+        closing_hours: values.closing_hours?.trim() || '22:00',
+        region: values.region?.trim() || null,
+        tax_rate: convertedTaxRate,
+        timezone: values.timezone?.trim() || 'Asia/Kolkata'
       };
       
       console.log('Prepared branch data for submission:', branchData);
@@ -166,7 +173,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
           opening_hours: '',
           closing_hours: '',
           region: '',
-          tax_rate: '',
+          tax_rate: '18', // Default to 18% as a common tax rate
           timezone: ''
         });
         
@@ -274,6 +281,50 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
             )}
           />
           
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Ahmedabad" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Gujarat" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. India" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -282,7 +333,7 @@ const BranchForm = ({ branch, onComplete }: BranchFormProps) => {
                 <FormItem>
                   <FormLabel>Region</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Northeast" {...field} />
+                    <Input placeholder="e.g. West India" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

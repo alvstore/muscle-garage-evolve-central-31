@@ -8,7 +8,7 @@ import MembershipPlanCard from './MembershipPlanCard';
 import MembershipPlanForm from './MembershipPlanForm';
 import { membershipService } from '@/services';
 import { toast } from 'sonner';
-import { MembershipPlan } from '@/types';
+import { MembershipPlan } from "@/types/members/membership";
 import { useDisclosure } from '@/hooks/utils/use-disclosure';
 import EmptyState from '@/components/ui/empty-state';
 import { useBranch } from '@/hooks/settings/use-branches';
@@ -87,8 +87,12 @@ const MembershipPlans = () => {
         await membershipService.updateMembershipPlan(selectedPlan.id, planData);
         toast.success('Membership plan updated successfully');
       } else {
-        // Use the correct method signature that matches the service
-        await membershipService.createMembershipPlan(planData);
+        // Include branch_id when creating a new membership plan
+        const planWithBranch = {
+          ...planData,
+          branch_id: currentBranch?.id
+        };
+        await membershipService.createMembershipPlan(planWithBranch);
         toast.success('Membership plan created successfully');
       }
       
