@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { PaymentMethod, PaymentStatus, PAYMENT_METHODS } from "@/types/payment";
+import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,10 @@ const memberFormSchema = z.object({
   paymentMethod: z.string().optional(),
   amountPaid: z.number().optional(),
   membershipNotes: z.string().optional(),
+  
+  // Enhanced payment details
+  transactionId: z.string().optional(),
+  referenceNumber: z.string().optional(),
 });
 
 type MemberFormValues = z.infer<typeof memberFormSchema>;
@@ -116,9 +122,13 @@ const NewMemberPage = () => {
       
       // Payment
       paymentStatus: "pending",
-      paymentMethod: "",
+      paymentMethod: "cash",
       amountPaid: 0,
       membershipNotes: "",
+      
+      // Enhanced payment details
+      transactionId: "",
+      referenceNumber: "",
     },
   });
   
@@ -208,33 +218,57 @@ const NewMemberPage = () => {
             const endDate = new Date(values.startDate);
             endDate.setDate(endDate.getDate() + (selectedMembership.duration_days || 30));
             
-            const success = await membershipService.assignMembership({
-              memberId: newMember.id,
-              membershipId: values.membershipId,
-              startDate: values.startDate,
-              endDate: endDate,
-              amount: selectedMembership.price || 0,
-              amountPaid: values.amountPaid || 0,
-              paymentStatus: (values.paymentStatus as 'paid' | 'partial' | 'pending') || 'pending',
-              paymentMethod: values.paymentMethod || 'cash',
-              branchId: currentBranch.id,
-              notes: values.membershipNotes
+            const result = await membershipService.assignMembership({
+              member_id: newMember.id,
+              membership_plan_id: values.membershipId,
+              branch_id: currentBranch.id,
+              start_date: values.startDate,
+              end_date: endDate,
+              total_amount: selectedMembership.price || 0,
+              payment: {
+                method: values.paymentMethod as PaymentMethod || 'cash',
+                status: (values.paymentStatus as PaymentStatus) || 'pending',
+                amount: selectedMembership.price || 0,
+                amount_paid: values.amountPaid || 0,
+                transaction_id: values.transactionId || undefined,
+                reference_number: values.referenceNumber || undefined,
+                payment_date: new Date().toISOString(),
+                notes: values.membershipNotes || undefined
+              },
+              recorded_by: currentBranch.id // Using branch ID as recorded_by since we don't have user ID
             });
             
-            if (success) {
-              // Get the latest invoice for this member
-              const invoices = await membershipService.getMemberInvoiceHistory(newMember.id);
-              if (invoices && invoices.length > 0) {
-                invoiceId = invoices[0].id;
-              }
+            if (result.success) {
+              // Store the invoice ID from the result
+              invoiceId = result.invoice_id || null;
+              
+              // Show success message with payment details
+              toast({
+                title: "Membership assigned",
+                description: `Membership assigned successfully with ${values.paymentMethod} payment.`,
+                variant: "default",
+              });
             } else {
-              console.error("Error assigning membership");
-              setRegistrationError("Failed to assign membership");
+              console.error("Error assigning membership:", result.error);
+              setRegistrationError(result.error || "Failed to assign membership");
+              
+              toast({
+                title: "Payment processing error",
+                description: result.error || "There was an error processing the payment.",
+                variant: "destructive",
+              });
             }
           }
         } catch (error) {
           console.error("Error assigning membership:", error);
-          setRegistrationError(error instanceof Error ? error.message : "Failed to assign membership");
+          const errorMessage = error instanceof Error ? error.message : "Failed to assign membership";
+          setRegistrationError(errorMessage);
+          
+          toast({
+            title: "Payment processing error",
+            description: `There was an error processing the payment: ${errorMessage}`,
+            variant: "destructive",
+          });
         }
       }
       
@@ -965,32 +999,74 @@ const NewMemberPage = () => {
                           
                           {(form.watch("paymentStatus") === "paid" || form.watch("paymentStatus") === "partial") && (
                             <>
-                              <FormField
-                                control={form.control}
-                                name="paymentMethod"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Payment Method*</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select payment method" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="cash">Cash</SelectItem>
-                                        <SelectItem value="card">Card</SelectItem>
-                                        <SelectItem value="upi">UPI</SelectItem>
-                                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                        <SelectItem value="cheque">Cheque</SelectItem>
-                                        <SelectItem value="online">Online</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                              <div className="space-y-4">
+                                <FormField
+                                  control={form.control}
+                                  name="paymentMethod"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Payment Method*</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select payment method" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {PAYMENT_METHODS.map((method) => (
+                                            <SelectItem key={method.value} value={method.value}>
+                                              {method.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <FormField
+                                    control={form.control}
+                                    name="transactionId"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Transaction ID</FormLabel>
+                                        <FormControl>
+                                          <Input 
+                                            placeholder="Enter transaction ID" 
+                                            {...field} 
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          For card, UPI, or online payments
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name="referenceNumber"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Reference Number</FormLabel>
+                                        <FormControl>
+                                          <Input 
+                                            placeholder="Enter reference number" 
+                                            {...field} 
+                                          />
+                                        </FormControl>
+                                        <FormDescription>
+                                          For cheques or bank transfers
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
                             </>
                           )}
                           

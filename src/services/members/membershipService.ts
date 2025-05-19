@@ -200,64 +200,61 @@ export const membershipService = {
     return endDate;
   },
 
-  assignMembership: async (membershipData: any): Promise<boolean> => {
+  /**
+   * Assign a membership to a member with payment details
+   * @param params Membership and payment details
+   * @returns Result with success status and IDs of created records
+   */
+  assignMembership: async (membershipData: any): Promise<{success: boolean; membership_id?: string; invoice_id?: string; transaction_id?: string; reference_number?: string; error?: string}> => {
+    const client = supabase;
+    
     try {
-      // First check if member already has an active membership
-      const { data: existingMemberships, error: fetchError } = await supabase
-        .from('member_memberships')
-        .select('*')
-        .eq('member_id', membershipData.member_id)
-        .eq('status', 'active');
-      
-      if (fetchError) {
-        console.error('Error checking existing memberships:', fetchError);
-        throw fetchError;
+      // Validate required fields
+      if (!membershipData.member_id || !membershipData.membership_plan_id || 
+          !membershipData.branch_id || !membershipData.end_date) {
+        return {
+          success: false,
+          error: 'Missing required fields: member_id, membership_plan_id, branch_id, and end_date are required'
+        };
       }
+
+      // Prepare payment details
+      const payment = membershipData.payment || {};
       
-      // If member has active memberships, update them to inactive
-      if (existingMemberships && existingMemberships.length > 0) {
-        const { error: updateError } = await supabase
-          .from('member_memberships')
-          .update({ status: 'inactive', end_date: new Date().toISOString() })
-          .eq('member_id', membershipData.member_id)
-          .eq('status', 'active');
-        
-        if (updateError) {
-          console.error('Error updating existing memberships:', updateError);
-          throw updateError;
-        }
-      }
-      
-      // Now insert the new membership
-      const { data, error } = await supabase
-        .from('member_memberships')
-        .insert([{
-          ...membershipData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
+      // Start transaction
+      const { data, error } = await client.rpc('assign_membership_with_payment', {
+        p_member_id: membershipData.member_id,
+        p_membership_plan_id: membershipData.membership_plan_id,
+        p_branch_id: membershipData.branch_id,
+        p_start_date: membershipData.start_date ? new Date(membershipData.start_date).toISOString() : new Date().toISOString(),
+        p_end_date: new Date(membershipData.end_date).toISOString(),
+        p_total_amount: membershipData.total_amount || payment.amount || 0,
+        p_payment_method: payment.method || 'cash',
+        p_payment_status: payment.status || 'paid',
+        p_transaction_id: payment.transaction_id || null,
+        p_reference_number: payment.reference_number || null,
+        p_notes: payment.notes || membershipData.notes || null,
+        p_recorded_by: membershipData.recorded_by
+      });
       
       if (error) {
-        console.error('Error assigning membership:', error);
-        throw error;
+        console.error('Error in membership assignment:', error);
+        return { success: false, error: error.message };
       }
       
-      // Update member status to active
-      const { error: memberUpdateError } = await supabase
-        .from('members')
-        .update({ status: 'active', membership_status: 'active' })
-        .eq('id', membershipData.member_id);
-      
-      if (memberUpdateError) {
-        console.error('Error updating member status:', memberUpdateError);
-        // Continue despite error - membership was assigned
-      }
-      
-      return true;
+      return { 
+        success: true, 
+        membership_id: data.membership_id,
+        invoice_id: data.invoice_id,
+        transaction_id: data.transaction_id,
+        reference_number: data.reference_number
+      };
     } catch (err) {
       console.error('Error in membership assignment process:', err);
-      return false;
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Unknown error occurred' 
+      };
     }
   },
 
