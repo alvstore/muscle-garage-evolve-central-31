@@ -1,13 +1,21 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { X } from 'lucide-react';
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  isActive?: boolean;
+}
 
 type EmailTemplatePreviewProps = {
   isOpen: boolean;
   onClose: () => void;
-  template: any;
+  template: EmailTemplate | null;
 };
 
 const EmailTemplatePreview: React.FC<EmailTemplatePreviewProps> = ({ 
@@ -15,24 +23,22 @@ const EmailTemplatePreview: React.FC<EmailTemplatePreviewProps> = ({
   onClose, 
   template 
 }) => {
-  // Sample data for preview
   const sampleData = {
-    member_name: "John Smith",
-    gym_name: "Downtown Fitness Center",
-    login_url: "https://example.com/login",
-    plan_name: "Premium Membership",
-    expiry_date: "December 31, 2023",
-    invoice_link: "https://example.com/invoice/123",
-    branch_name: "Downtown Branch",
-    trainer_name: "Alex Johnson"
+    'member.name': 'John Doe',
+    'member.email': 'john.doe@example.com',
+    'gym.name': 'Muscle Garage',
+    'gym.phone': '+1 (555) 123-4567',
+    'gym.email': 'info@musclegarage.com'
   };
 
   // Replace tags with actual values for preview
-  const processTemplate = (text: string) => {
-    let processed = text;
+  const processTemplate = (content?: string) => {
+    if (!content) return '';
+    
+    let processed = content;
     
     Object.entries(sampleData).forEach(([key, value]) => {
-      const regex = new RegExp(`{${key}}`, 'g');
+      const regex = new RegExp(`\\{\\$${key}\\}`);
       processed = processed.replace(regex, value);
     });
     
@@ -45,11 +51,33 @@ const EmailTemplatePreview: React.FC<EmailTemplatePreviewProps> = ({
     onClose();
   };
 
+  if (!template) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Preview Not Available</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <p>Template data is not available.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Preview: {template.name}</DialogTitle>
+          <DialogTitle>Preview: {template?.name || 'Untitled Template'}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -69,10 +97,10 @@ const EmailTemplatePreview: React.FC<EmailTemplatePreviewProps> = ({
         </div>
         
         <DialogFooter className="mt-6">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button type="button" onClick={handleSendTest}>
+          <Button onClick={handleSendTest}>
             Send Test Email
           </Button>
         </DialogFooter>

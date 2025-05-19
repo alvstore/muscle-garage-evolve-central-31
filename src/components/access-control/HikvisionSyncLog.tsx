@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Clock, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import hikvisionIntegrationService from '@/services/integrations/hikvision/hikvisionIntegrationService';
+import { hikvisionService } from '@/services/integrations/hikvisionService';
 
 export interface SyncLogEntry {
   id: string;
@@ -47,7 +47,7 @@ export const HikvisionSyncLog: React.FC<HikvisionSyncLogProps> = ({
   const fetchLogs = async () => {
     try {
       setRefreshing(true);
-      const data = await hikvisionIntegrationService.getSyncLogs(branchId, limit);
+      const data = await hikvisionService.getSyncLogs(branchId, limit);
       setLogs(data);
       setError(null);
     } catch (err) {
@@ -123,15 +123,25 @@ export const HikvisionSyncLog: React.FC<HikvisionSyncLogProps> = ({
     
     switch (type) {
       case 'member':
-        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700">Member</Badge>;
+        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700">
+          Member
+        </Badge>;
       case 'device':
-        return <Badge variant="outline" className="bg-cyan-50 text-cyan-700">Device</Badge>;
+        return <Badge variant="outline" className="bg-cyan-50 text-cyan-700">
+          Device
+        </Badge>;
       case 'door':
-        return <Badge variant="outline" className="bg-teal-50 text-teal-700">Door</Badge>;
+        return <Badge variant="outline" className="bg-teal-50 text-teal-700">
+          Door
+        </Badge>;
       case 'attendance':
-        return <Badge variant="outline" className="bg-violet-50 text-violet-700">Attendance</Badge>;
+        return <Badge variant="outline" className="bg-violet-50 text-violet-700">
+          Attendance
+        </Badge>;
       default:
-        return <Badge variant="outline">Entity</Badge>;
+        return <Badge variant="outline">
+          Entity
+        </Badge>;
     }
   };
 

@@ -35,6 +35,53 @@ class HikvisionService {
   /**
    * Test connection to Hikvision API
    */
+  /**
+   * Get synchronization logs for Hikvision integration
+   * @param branchId The branch ID to get logs for
+   * @param limit Maximum number of logs to return
+   * @returns Array of sync log entries
+   */
+  async getSyncLogs(branchId: string, limit: number = 50): Promise<Array<{
+    id: string;
+    event_type: 'sync' | 'error' | 'info' | 'warning';
+    message: string;
+    details?: string;
+    created_at: string;
+    status: 'success' | 'error' | 'pending' | 'warning';
+    entity_type?: 'member' | 'device' | 'door' | 'attendance';
+    entity_id?: string;
+    entity_name?: string;
+    branch_id: string;
+  }>> {
+    try {
+      const { data, error } = await supabase
+        .from('hikvision_sync_logs')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching Hikvision sync logs:', error);
+      // Return a default error log entry if the table doesn't exist yet
+      return [{
+        id: 'error-1',
+        event_type: 'error',
+        message: 'Failed to load sync logs',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        created_at: new Date().toISOString(),
+        status: 'error',
+        branch_id: branchId
+      }];
+    }
+  }
+
+  /**
+   * Test connection to Hikvision API
+   */
   async testConnection(branchId: string): Promise<{ 
     success: boolean; 
     message: string;

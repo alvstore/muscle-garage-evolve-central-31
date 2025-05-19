@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+impor { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
