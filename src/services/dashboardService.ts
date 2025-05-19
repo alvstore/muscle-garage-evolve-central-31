@@ -4,6 +4,10 @@ import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
 
 export const fetchDashboardSummary = async (branchId?: string): Promise<DashboardSummary> => {
   try {
+    // Validate branch ID
+    if (!branchId) {
+      console.warn('No branch ID provided for dashboard summary');
+    }
     // Initialize default values
     let summary: DashboardSummary = {
       totalMembers: 0,
@@ -47,22 +51,27 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
         // If we have data from the view, use it to populate our summary
         summary = {
           ...summary,
-          totalMembers: analyticsData.total_members || 0,
+          totalMembers: analyticsData.active_members || 0, // Use active_members for total as well
           activeMembers: analyticsData.active_members || 0,
-          totalIncome: analyticsData.total_income || 0,
+          totalIncome: analyticsData.total_revenue || 0, // Use total_revenue instead of total_income
           revenue: {
-            daily: analyticsData.daily_revenue || 0,
-            weekly: analyticsData.weekly_revenue || 0,
-            monthly: analyticsData.monthly_revenue || 0
+            daily: analyticsData.daily_revenue || analyticsData.total_revenue / 30 || 0,
+            weekly: analyticsData.weekly_revenue || analyticsData.total_revenue / 4 || 0,
+            monthly: analyticsData.total_revenue || 0
           },
           pendingPayments: {
             count: analyticsData.pending_payments_count || 0,
             total: analyticsData.pending_payments_total || 0
           },
           upcomingRenewals: analyticsData.upcoming_renewals || 0,
-          todayCheckIns: analyticsData.today_check_ins || 0,
-          newMembers: analyticsData.new_members || 0,
-          expiringMemberships: analyticsData.expiring_memberships || 0
+          todayCheckIns: analyticsData.weekly_check_ins / 7 || 0, // Estimate from weekly
+          newMembers: analyticsData.new_members_weekly || 0,
+          expiringMemberships: analyticsData.upcoming_renewals || 0,
+          membersByStatus: {
+            active: analyticsData.active_members || 0,
+            inactive: analyticsData.cancelled_members_monthly || 0,
+            expired: 0 // Not available in the view
+          }
         };
         
         // Return early since we have all the data we need
@@ -81,10 +90,9 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
       try {
         // 1. Get active members count
         const { data: activeMembers, error: activeMembersError } = await supabase
-          .from('profiles')
+          .from('members')
           .select('id')
           .eq('branch_id', branchId)
-          .eq('role', 'member')
           .eq('status', 'active');
           
         if (!activeMembersError) {
@@ -96,10 +104,9 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const { data: newMembers, error: newMembersError } = await supabase
-          .from('profiles')
+          .from('members')
           .select('id')
           .eq('branch_id', branchId)
-          .eq('role', 'member')
           .gte('created_at', thirtyDaysAgo.toISOString());
           
         if (!newMembersError) {
@@ -107,12 +114,12 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
         }
         
         // 3. Get today's check-ins
-        const today = new Date().toISOString().split('T')[0];
+        const todayDate = new Date().toISOString().split('T')[0];
         const { data: checkIns, error: checkInsError } = await supabase
-          .from('check_ins')
+          .from('member_attendance')
           .select('id')
           .eq('branch_id', branchId)
-          .gte('check_in_time', today);
+          .gte('check_in', todayDate);
           
         if (!checkInsError) {
           summary.todayCheckIns = checkIns?.length || 0;
@@ -126,22 +133,23 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
           .select('id')
           .eq('branch_id', branchId)
           .eq('status', 'active')
-          .lte('end_date', thirtyDaysFromNow.toISOString())
-          .gte('end_date', new Date().toISOString());
+          .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0])
+          .gte('end_date', todayDate);
           
         if (!renewalsError) {
           summary.upcomingRenewals = renewals?.length || 0;
         }
         
-        // 5. Get total revenue
-        const { data: invoices, error: invoicesError } = await supabase
-          .from('invoices')
+        // 5. Get total revenue from financial transactions
+        const { data: transactions, error: transactionsError } = await supabase
+          .from('transactions')
           .select('amount')
           .eq('branch_id', branchId)
+          .eq('type', 'income')
           .eq('status', 'paid');
           
-        if (!invoicesError && invoices) {
-          const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+        if (!transactionsError && transactions) {
+          const totalRevenue = transactions.reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
           summary.totalIncome = totalRevenue;
           summary.revenue = {
             monthly: totalRevenue,
@@ -150,19 +158,39 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
           };
         }
         
+        // If no transactions found, try invoices as fallback
+        if (summary.totalIncome === 0) {
+          const { data: invoices, error: invoicesError } = await supabase
+            .from('invoices')
+            .select('amount')
+            .eq('branch_id', branchId)
+            .eq('status', 'paid');
+            
+          if (!invoicesError && invoices && invoices.length > 0) {
+            const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+            summary.totalIncome = totalRevenue;
+            summary.revenue = {
+              monthly: totalRevenue,
+              weekly: totalRevenue / 4,  // Approximation
+              daily: totalRevenue / 30   // Approximation
+            };
+          }
+        }
+        
         // 6. Generate attendance trend data for the last 7 days
         const attendanceTrend = [];
         for (let i = 0; i < 7; i++) {
           const date = new Date();
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
+          const nextDateStr = new Date(date.getTime() + 86400000).toISOString().split('T')[0];
           
           const { data: dayCheckIns, error: dayCheckInsError } = await supabase
-            .from('check_ins')
+            .from('member_attendance')
             .select('id')
             .eq('branch_id', branchId)
-            .gte('check_in_time', dateStr)
-            .lt('check_in_time', dateStr + 'T23:59:59');
+            .gte('check_in', dateStr)
+            .lt('check_in', nextDateStr);
             
           attendanceTrend.push({
             date: dateStr,
@@ -174,24 +202,21 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
         
         // 7. Get member status breakdown
         const { data: activeCount, error: activeError } = await supabase
-          .from('profiles')
+          .from('members')
           .select('id')
           .eq('branch_id', branchId)
-          .eq('role', 'member')
           .eq('status', 'active');
           
         const { data: inactiveCount, error: inactiveError } = await supabase
-          .from('profiles')
+          .from('members')
           .select('id')
           .eq('branch_id', branchId)
-          .eq('role', 'member')
           .eq('status', 'inactive');
           
         const { data: expiredCount, error: expiredError } = await supabase
-          .from('profiles')
+          .from('members')
           .select('id')
           .eq('branch_id', branchId)
-          .eq('role', 'member')
           .eq('membership_status', 'expired');
           
         summary.membersByStatus = {

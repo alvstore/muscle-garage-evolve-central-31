@@ -15,11 +15,27 @@ export interface MembershipPlanFormProps {
   isSubmitting?: boolean;
 }
 
+// Default values for a new membership plan
+const defaultPlan: MembershipPlan = {
+  id: '',
+  name: '',
+  description: '',
+  price: 0,
+  duration_days: 30,
+  features: [],
+  benefits: [],
+  is_active: true,
+  status: 'active',
+  branch_id: '',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
 const MembershipPlanForm = ({ plan, onSave, onCancel, isSubmitting = false }: MembershipPlanFormProps) => {
-  const [formData, setFormData] = useState<MembershipPlan>(plan);
+  const [formData, setFormData] = useState<MembershipPlan>(plan || defaultPlan);
   
   useEffect(() => {
-    setFormData(plan);
+    setFormData(plan || defaultPlan);
   }, [plan]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
