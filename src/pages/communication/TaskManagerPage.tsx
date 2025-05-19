@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Container } from '@/components/ui/container';
-import TaskManagement from '@/components/dashboard/TaskManagement';
+import TaskManagement from '@/components/communication/TaskManagement';
 
 export default function TaskManagerPage() {
   return (

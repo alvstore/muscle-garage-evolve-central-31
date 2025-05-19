@@ -1,34 +1,79 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { format, parseISO } from 'date-fns';
+import { toast } from 'sonner';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-import React, { useState } from 'react';
+// UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronRight, Plus, Trash2, CheckSquare, ListTodo, AlertCircle } from "lucide-react";
-import { useAuth } from "@/hooks/auth/use-auth";
-import { usePermissions } from "@/hooks/auth/use-permissions";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
+// Import Tabs and Avatar components
+import { 
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent 
+} from '@/components/ui/tabs';
+import { 
+  Avatar,
+  AvatarImage,
+  AvatarFallback 
+} from '@/components/ui/avatar';
+
+// Icons
+import { 
+  Calendar as CalendarIcon, 
+  Check, 
+  Plus, 
+  Trash2, 
+  CheckSquare, 
+  ListTodo, 
+  AlertCircle 
+} from "lucide-react";
+
+// Hooks and Services
+import { useAuth } from '@/hooks/auth/use-auth';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 import { taskService, Task as TaskType } from '@/services/taskService';
-import { useEffect } from 'react';
+import { staffService, StaffMember } from '@/services/communication/taskService';
 
-// Extend the TaskType from the service with UI-specific properties
+// Types and Interfaces
+interface User {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 interface Task extends Omit<TaskType, 'assigned_to_name' | 'assigned_to_avatar'> {
   completed: boolean;
   assigneeName: string;
   assigneeAvatar: string;
   assigned_to_name?: string;
   assigned_to_avatar?: string;
+  due_date?: string;
+  dueDate?: string; // For backward compatibility
 }
 
 interface TaskFormData {
@@ -39,20 +84,26 @@ interface TaskFormData {
   assignedTo: string;
 }
 
-interface User {
-  id: string;
-  name: string;
-  avatar?: string;
-}
+// Staff members will be loaded from the database
+const STAFF_AVATAR_PLACEHOLDER = '/placeholder.svg'; // Make sure this path is correct in your project
+
+
 
 const TaskManagement = () => {
   const { user } = useAuth();
   const { can } = usePermissions();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // State management
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [date, setDate] = useState<Date | null>(null);
+  const [isMounted, setIsMounted] = useState(true);
+  
+  // Form state
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -60,23 +111,57 @@ const TaskManagement = () => {
     priority: 'medium',
     assignedTo: '',
   });
-  const [date, setDate] = useState<Date>();
   
+  // Check if user can manage tasks
+  const canManageTasks = (can as (permission: string) => boolean)('view_tasks');
+  const canAssignTasks = (can as (permission: string) => boolean)('assign_tasks');
+  
+  // Filter tasks based on user role and permissions
+  const filteredTasks = useMemo(() => {
+    if (isLoading) return [];
+    
+    return canManageTasks 
+      ? tasks 
+      : tasks.filter(task => 
+          task.assigned_to === user?.id || 
+          task.created_by === user?.id
+        );
+  }, [tasks, canManageTasks, user?.id, isLoading]);
+  
+  // Get tasks due soon
+  const dueSoonTasks = useMemo(() => {
+    return tasks.filter(task => 
+      !task.completed && 
+      task.dueDate && 
+      new Date(task.dueDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    );
+  }, [tasks]);
+  
+  // Get filtered tasks based on tab
+  const getFilteredTasks = (filter: 'all' | 'active' | 'completed') => {
+    switch (filter) {
+      case 'active':
+        return tasks.filter(task => !task.completed);
+      case 'completed':
+        return tasks.filter(task => task.completed);
+      default:
+        return tasks;
+    }
+  };
+
   // Format task for display
   const formatTaskForDisplay = (task: TaskType): Task => {
-    const assignedToName = (task as any).assigned_to_name || 'Unassigned';
-    const assignedToAvatar = (task as any).assigned_to_avatar || '/placeholder-user.jpg';
+    const assignee = staffMembers.find(s => s.id === task.assigned_to);
     
     return {
       ...task,
       completed: task.status === 'completed',
-      assigneeName: assignedToName,
-      assigneeAvatar: assignedToAvatar,
-      assigned_to_name: assignedToName,
-      assigned_to_avatar: assignedToAvatar,
+      assigneeName: assignee?.name || 'Unassigned',
+      assigneeAvatar: assignee?.avatar_url || STAFF_AVATAR_PLACEHOLDER,
+      dueDate: task.due_date || ''
     };
   };
-  
+
   // Format form data for API
   const formatTaskForApi = (formData: TaskFormData): Omit<TaskType, 'id' | 'created_at' | 'updated_at'> => ({
     title: formData.title,
@@ -89,26 +174,44 @@ const TaskManagement = () => {
     branch_id: null, // You might want to set this based on the current branch
   });
 
-  // Fetch tasks from the server
+  // Fetch tasks and staff members on component mount
   useEffect(() => {
-    const fetchTasks = async () => {
+    const loadInitialData = async () => {
       try {
         setIsLoading(true);
-        const tasks = await taskService.getTasks();
-        const formattedTasks = tasks.map(task => formatTaskForDisplay(task));
-        setTasks(formattedTasks);
-        setError(null);
+        
+        if (canManageTasks || canAssignTasks) {
+          // Load tasks
+          const tasks = await taskService.getTasks();
+          if (isMounted) {
+            setTasks(tasks.map(formatTaskForDisplay));
+          }
+          
+          // Load staff members
+          const staff = await staffService.getStaffMembers();
+          if (isMounted) {
+            setStaffMembers(staff);
+          }
+        }
       } catch (err) {
-        console.error('Error fetching tasks:', err);
-        setError('Failed to load tasks. Please try again later.');
-        toast.error('Failed to load tasks');
+        console.error('Error loading data:', err);
+        if (isMounted) {
+          setError('Failed to load data');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsLoadingStaff(false);
+        }
       }
     };
-
-    fetchTasks();
-  }, []);
+    
+    loadInitialData();
+    
+    return () => {
+      setIsMounted(false);
+    };
+  }, [canManageTasks, canAssignTasks, isMounted]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,10 +224,10 @@ const TaskManagement = () => {
       
       // Format the new task for display and add it to the list
       const formattedTask = formatTaskForDisplay(newTask);
-      setTasks([formattedTask, ...tasks]);
+      setTasks(prevTasks => [formattedTask, ...prevTasks]);
       
       // Reset form and close dialog
-      setDialogOpen(false);
+      setIsDialogOpen(false);
       setFormData({
         title: '',
         description: '',
@@ -132,6 +235,7 @@ const TaskManagement = () => {
         priority: 'medium',
         assignedTo: '',
       });
+      setDate(null);
       
       toast.success('Task created successfully');
     } catch (err) {
@@ -151,6 +255,79 @@ const TaskManagement = () => {
     }));
   };
   
+  // Handle select input changes
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle task status toggle
+  const handleToggleStatus = async (taskId: string, currentStatus: string) => {
+    try {
+      setIsLoading(true);
+      const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+      
+      // Update the task status using the updateTask method
+      await taskService.updateTask(taskId, { status: newStatus });
+      
+      // Update the local state
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId 
+            ? { 
+                ...task, 
+                status: newStatus, 
+                completed: newStatus === 'completed',
+                updated_at: new Date().toISOString()
+              } 
+            : task
+        )
+      );
+      
+      toast.success(`Task marked as ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle task deletion
+  const handleDeleteTask = async (taskId: string) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    
+    try {
+      setIsLoading(true);
+      await taskService.deleteTask(taskId);
+      
+      // Remove the task from the local state
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      toast.success('Task deleted successfully');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get priority badge color
+  const getPriorityBadgeColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+  
   // Handle priority change
   const handlePriorityChange = (value: string) => {
     setFormData(prev => ({
@@ -160,28 +337,60 @@ const TaskManagement = () => {
   };
   
   // Handle date selection
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = (date: Date | null) => {
     if (!date) return;
     setDate(date);
+    const formattedDate = format(date, 'yyyy-MM-dd');
     setFormData(prev => ({
       ...prev,
-      dueDate: format(date, 'yyyy-MM-dd')
+      dueDate: formattedDate,
+      due_date: formattedDate // For API compatibility
     }));
   };
 
-  // Update task status
-  const toggleTaskStatus = async (taskId: string, currentStatus: string) => {
+
+
+  // Get status badge color
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'overdue':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'No due date';
     try {
-      const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+      return format(parseISO(dateString), 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
+  // Update task status
+  const toggleTaskCompletion = async (taskId: string) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      const newStatus = task.status === 'completed' ? 'todo' : 'completed';
       await taskService.updateTask(taskId, { status: newStatus });
       
-      setTasks(tasks.map(task => {
-        if (task.id === taskId) {
-          const updatedTask = { ...task, status: newStatus, completed: newStatus === 'completed' };
-          return formatTaskForDisplay(updatedTask);
-        }
-        return task;
-      }));
+      setTasks(tasks.map(t => 
+        t.id === taskId 
+          ? formatTaskForDisplay({ ...t, status: newStatus })
+          : t
+      ));
       
       toast.success(`Task marked as ${newStatus}`);
     } catch (err) {
@@ -191,7 +400,7 @@ const TaskManagement = () => {
   };
 
   // Delete a task
-  const handleDeleteTask = async (taskId: string) => {
+  const deleteTask = async (taskId: string) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     
     try {
@@ -203,113 +412,8 @@ const TaskManagement = () => {
       toast.error('Failed to delete task');
     }
   };
-  
-  // Handle date selection (single implementation)
-  const handleDateSelectSingle = (date: Date | undefined) => {
-    if (!date) return;
-    setDate(date);
-    setFormData(prev => ({
-      ...prev,
-      dueDate: format(date, 'yyyy-MM-dd')
-    }));
-  };
-  
-  // Mock staff/trainers for assignment
-  const staffAndTrainers: User[] = [
-    { id: 'trainer1', name: 'Alex Trainer' },
-    { id: 'trainer2', name: 'Sarah Fitness', avatar: '/placeholder.svg' },
-    { id: 'staff1', name: 'John Staff' },
-    { id: 'staff2', name: 'Emily Admin' }
-  ];
-  
-  const canManageTasks = can('assign_plan') || userRole === 'admin' || userRole === 'staff';
-  
-  const handleFormChange = (field: keyof TaskFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      setDate(selectedDate);
-      setFormData(prev => ({
-        ...prev,
-        dueDate: format(selectedDate, 'yyyy-MM-dd')
-      }));
-    }
-  };
-  
-  const handleCreateTask = () => {
-    // Validate form
-    if (!formData.title.trim()) {
-      toast.error("Task title is required");
-      return;
-    }
-    
-    if (!formData.dueDate) {
-      toast.error("Due date is required");
-      return;
-    }
-    
-    // Create new task
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: formData.title,
-      description: formData.description,
-      dueDate: formData.dueDate,
-      priority: formData.priority,
-      assignedTo: formData.assignedTo,
-      assigneeName: formData.assignedTo ? 
-        staffAndTrainers.find(s => s.id === formData.assignedTo)?.name : undefined,
-      assigneeAvatar: formData.assignedTo ? 
-        staffAndTrainers.find(s => s.id === formData.assignedTo)?.avatar : undefined,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setTasks(prev => [...prev, newTask]);
-    
-    // Reset form and close dialog
-    setFormData({
-      title: '',
-      description: '',
-      dueDate: format(new Date(), 'yyyy-MM-dd'),
-      priority: 'medium',
-      assignedTo: '',
-    });
-    setDialogOpen(false);
-    
-    toast.success("Task created successfully");
-  };
-  
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks(prev => 
-      prev.map(task => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            completed: !task.completed,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return task;
-      })
-    );
-    
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      toast.success(`Task ${!task.completed ? 'completed' : 'marked as incomplete'}`);
-    }
-  };
-  
-  const deleteTask = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
-    toast.success("Task deleted");
-  };
-  
+
+  // Get priority badge
   const getPriorityBadge = (priority: 'low' | 'medium' | 'high') => {
     switch (priority) {
       case 'high':
@@ -318,9 +422,11 @@ const TaskManagement = () => {
         return <Badge className="bg-amber-500">Medium</Badge>;
       case 'low':
         return <Badge className="bg-blue-500">Low</Badge>;
+      default:
+        return null;
     }
   };
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -328,29 +434,13 @@ const TaskManagement = () => {
       .join('')
       .toUpperCase();
   };
-  
-  const dueSoonTasks = tasks.filter(task => 
-    !task.completed && 
-    new Date(task.dueDate) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-  );
-  
-  const getFilteredTasks = (filter: 'all' | 'active' | 'completed') => {
-    switch (filter) {
-      case 'active':
-        return tasks.filter(task => !task.completed);
-      case 'completed':
-        return tasks.filter(task => task.completed);
-      default:
-        return tasks;
-    }
-  };
-  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Task Management</CardTitle>
         {canManageTasks && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-1" />
@@ -369,7 +459,7 @@ const TaskManagement = () => {
                     id="title"
                     placeholder="Enter task title"
                     value={formData.title}
-                    onChange={(e) => handleFormChange('title', e.target.value)}
+                    onChange={handleInputChange}
                   />
                 </div>
                 
@@ -379,7 +469,7 @@ const TaskManagement = () => {
                     id="description"
                     placeholder="Enter task description"
                     value={formData.description}
-                    onChange={(e) => handleFormChange('description', e.target.value)}
+                    onChange={handleInputChange}
                     rows={3}
                   />
                 </div>
@@ -398,11 +488,14 @@ const TaskManagement = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
+                        <DatePicker
                           selected={date}
-                          onSelect={handleDateSelect}
-                          initialFocus
+                          onChange={handleDateSelect}
+                          minDate={new Date()}
+                          className="form-input w-full"
+                          placeholderText="Select due date"
+                          dateFormat="yyyy-MM-dd"
+                          showTimeSelect={false}
                         />
                       </PopoverContent>
                     </Popover>
@@ -412,7 +505,7 @@ const TaskManagement = () => {
                     <Label>Priority</Label>
                     <Select 
                       value={formData.priority}
-                      onValueChange={(value) => handleFormChange('priority', value as any)}
+                      onValueChange={(value) => handleSelectChange('priority', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
@@ -430,15 +523,16 @@ const TaskManagement = () => {
                   <Label>Assign To</Label>
                   <Select 
                     value={formData.assignedTo}
-                    onValueChange={(value) => handleFormChange('assignedTo', value)}
+                    onValueChange={(value) => handleSelectChange('assignedTo', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select staff or trainer" />
                     </SelectTrigger>
                     <SelectContent>
-                      {staffAndTrainers.map(person => (
-                        <SelectItem key={person.id} value={person.id}>
-                          {person.name}
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {staffMembers.map(staff => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -447,11 +541,18 @@ const TaskManagement = () => {
               </div>
               
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={isLoading}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleCreateTask}>
-                  Create Task
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={isLoading || !formData.title.trim()}
+                >
+                  {isLoading ? 'Creating...' : 'Create Task'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -528,9 +629,9 @@ const TaskManagement = () => {
                         </Label>
                         
                         {task.description && (
-                          <p className={`text-sm text-muted-foreground mt-1 ${task.completed ? 'line-through opacity-70' : ''}`}>
+                          <div className="text-sm text-gray-500">
                             {task.description}
-                          </p>
+                          </div>
                         )}
                         
                         <div className="flex items-center mt-2 space-x-3">

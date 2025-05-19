@@ -106,32 +106,55 @@ export function useHikvisionSettings(branchId?: string): UseHikvisionSettingsRet
       setIsLoading(true);
       setError(null);
       
+      // First check if settings exist
       const { data, error } = await supabase
         .from('hikvision_api_settings')
         .select('*')
-        .eq('branch_id', branchId)
-        .single();
+        .eq('branch_id', branchId);
       
       if (error) throw error;
       
+      // If no settings exist, return default settings
+      if (!data || data.length === 0) {
+        const defaultSettings: HikvisionSettings = {
+          apiUrl: '',
+          appKey: '',
+          appSecret: '',
+          isActive: false,
+          siteId: '',
+          siteName: '',
+          branchId: branchId,
+          syncInterval: 60,
+          lastSync: null
+        };
+        
+        setSettings(defaultSettings);
+        setIsConnected(false);
+        setLastSync(null);
+        return defaultSettings;
+      }
+      
+      // If settings exist, use the first record
+      const settingsData = data[0];
+      
       const settings: HikvisionSettings = {
-        apiUrl: data?.api_url || '',
-        appKey: data?.app_key || '',
-        appSecret: data?.app_secret || '',
-        isActive: data?.is_active || false,
-        siteId: data?.site_id || '',
-        siteName: data?.site_name || '',
-        branchId: data?.branch_id || branchId,
-        syncInterval: data?.sync_interval || 60,
-        lastSync: data?.last_sync || null
+        apiUrl: settingsData?.api_url || '',
+        appKey: settingsData?.app_key || '',
+        appSecret: settingsData?.app_secret || '',
+        isActive: settingsData?.is_active || false,
+        siteId: settingsData?.site_id || '',
+        siteName: settingsData?.site_name || '',
+        branchId: settingsData?.branch_id || branchId,
+        syncInterval: settingsData?.sync_interval || 60,
+        lastSync: settingsData?.last_sync || null
       };
       
       setSettings(settings);
-      setIsConnected(data?.is_active || false);
-      setLastSync(data?.last_sync || null);
+      setIsConnected(settingsData?.is_active || false);
+      setLastSync(settingsData?.last_sync || null);
       
       // If settings exist and active, fetch devices and sites
-      if (data?.is_active) {
+      if (settingsData?.is_active) {
         await Promise.all([
           fetchDevices(),
           fetchAvailableSites()
@@ -148,7 +171,7 @@ export function useHikvisionSettings(branchId?: string): UseHikvisionSettingsRet
     } finally {
       setIsLoading(false);
     }
-  }, [branchId]);
+  }, [branchId, fetchDevices, fetchAvailableSites]);
 
   const fetchDevices = useCallback(async (): Promise<HikvisionDevice[]> => {
     if (!branchId) {

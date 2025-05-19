@@ -68,6 +68,18 @@ CREATE TYPE "public"."class_status" AS ENUM (
 ALTER TYPE "public"."class_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."user_role" AS ENUM (
+    'admin',
+    'staff',
+    'trainer',
+    'member',
+    'guest'
+);
+
+
+ALTER TYPE "public"."user_role" OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."can_book_class"("user_uuid" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -381,6 +393,42 @@ $$;
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."has_permission"("user_id" "uuid", "permission_name" "text") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.user_roles ur
+        JOIN public.role_permissions rp ON ur.role = rp.role
+        JOIN public.permissions p ON rp.permission_id = p.id
+        WHERE ur.user_id = $1
+        AND p.name = $2
+    );
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."has_permission"("user_id" "uuid", "permission_name" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."has_role"("user_id" "uuid", "role" "public"."user_role") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = $1
+      AND role = $2
+  );
+$_$;
+
+
+ALTER FUNCTION "public"."has_role"("user_id" "uuid", "role" "public"."user_role") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."is_admin"() RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -403,6 +451,53 @@ $$;
 ALTER FUNCTION "public"."is_admin"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."log_action"("action" "text", "entity_type" "text", "entity_id" "text", "details" "jsonb" DEFAULT NULL::"jsonb", "ip_address" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+    log_id UUID;
+BEGIN
+    INSERT INTO public.audit_logs (
+        user_id,
+        action,
+        entity_type,
+        entity_id,
+        details,
+        ip_address
+    ) VALUES (
+        auth.uid(),
+        action,
+        entity_type,
+        entity_id,
+        details,
+        ip_address
+    )
+    RETURNING id INTO log_id;
+    
+    RETURN log_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."log_action"("action" "text", "entity_type" "text", "entity_id" "text", "details" "jsonb", "ip_address" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."mark_announcement_as_read"("announcement_uuid" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    INSERT INTO public.announcement_reads (announcement_id, user_id)
+    VALUES (announcement_uuid, auth.uid())
+    ON CONFLICT (announcement_id, user_id) 
+    DO UPDATE SET read_at = now(), updated_at = now();
+END;
+$$;
+
+
+ALTER FUNCTION "public"."mark_announcement_as_read"("announcement_uuid" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."trainer_is_assigned_to_member"("trainer_uuid" "uuid", "member_uuid" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -419,6 +514,45 @@ $$;
 
 
 ALTER FUNCTION "public"."trainer_is_assigned_to_member"("trainer_uuid" "uuid", "member_uuid" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_ai_diet_plans_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_ai_diet_plans_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_ai_services_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_ai_services_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_ai_workout_plans_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_ai_workout_plans_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_payment_settings_timestamp"() RETURNS "trigger"
@@ -439,8 +573,8 @@ CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigge
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+  NEW.updated_at = now();
+  RETURN NEW;
 END;
 $$;
 
@@ -589,6 +723,117 @@ $$;
 ALTER FUNCTION "public"."user_has_branch_access"("branch_id" "uuid") OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."access_denial_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "person_id" "text",
+    "door_id" "text",
+    "device_id" "text",
+    "event_time" timestamp with time zone,
+    "event_id" "text",
+    "branch_id" "uuid",
+    "raw_data" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."access_denial_logs" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."access_doors" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "door_name" "text" NOT NULL,
+    "door_number" "text",
+    "hikvision_door_id" "text" NOT NULL,
+    "zone_id" "uuid",
+    "branch_id" "uuid" NOT NULL,
+    "device_id" "text" NOT NULL,
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."access_doors" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."access_doors" IS 'Defines doors and their Hikvision device mappings';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."access_zones" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "branch_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."access_zones" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."access_zones" IS 'Defines access control zones for physical areas';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."ai_diet_plans" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "diet_type" "text",
+    "cuisine_type" "text" DEFAULT 'indian'::"text",
+    "calories_per_day" integer,
+    "goals" "text"[],
+    "restrictions" "text"[],
+    "plan_content" "text" NOT NULL,
+    "is_public" boolean DEFAULT false,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "ai_diet_plans_diet_type_check" CHECK (("diet_type" = ANY (ARRAY['vegetarian'::"text", 'non-vegetarian'::"text", 'vegan'::"text"])))
+);
+
+
+ALTER TABLE "public"."ai_diet_plans" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."ai_services" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "service_name" "text" NOT NULL,
+    "api_key" "text" NOT NULL,
+    "is_active" boolean DEFAULT false,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "ai_services_service_name_check" CHECK (("service_name" = ANY (ARRAY['openai'::"text", 'gemini'::"text"])))
+);
+
+
+ALTER TABLE "public"."ai_services" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."ai_workout_plans" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "description" "text",
+    "fitness_level" "text",
+    "goals" "text"[],
+    "restrictions" "text"[],
+    "days_per_week" integer,
+    "session_duration" integer,
+    "plan_content" "text" NOT NULL,
+    "is_public" boolean DEFAULT false,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "ai_workout_plans_fitness_level_check" CHECK (("fitness_level" = ANY (ARRAY['beginner'::"text", 'intermediate'::"text", 'advanced'::"text"])))
+);
+
+
+ALTER TABLE "public"."ai_workout_plans" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."income_records" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "date" timestamp without time zone NOT NULL,
@@ -655,7 +900,6 @@ CREATE TABLE IF NOT EXISTS "public"."members" (
     "occupation" "text",
     "date_of_birth" "date",
     "goal" "text",
-    "membership_id" "text",
     "membership_status" "text" DEFAULT 'active'::"text",
     "membership_start_date" timestamp with time zone DEFAULT "now"(),
     "membership_end_date" timestamp with time zone,
@@ -663,7 +907,9 @@ CREATE TABLE IF NOT EXISTS "public"."members" (
     "branch_id" "uuid",
     "status" "text" DEFAULT 'active'::"text",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "membership_id" "uuid",
+    "access_control_id" "text"
 );
 
 
@@ -723,6 +969,35 @@ CREATE OR REPLACE VIEW "public"."analytics_dashboard_stats" WITH ("security_invo
 ALTER TABLE "public"."analytics_dashboard_stats" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."announcement_reads" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "announcement_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "read_at" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."announcement_reads" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."announcement_reads" IS 'Tracks which users have read which announcements';
+
+
+
+COMMENT ON COLUMN "public"."announcement_reads"."announcement_id" IS 'Reference to the announcement that was read';
+
+
+
+COMMENT ON COLUMN "public"."announcement_reads"."user_id" IS 'Reference to the user who read the announcement';
+
+
+
+COMMENT ON COLUMN "public"."announcement_reads"."read_at" IS 'Timestamp when the user read the announcement';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."announcements" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "title" "text" NOT NULL,
@@ -759,6 +1034,21 @@ ALTER TABLE ONLY "public"."attendance_settings" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."attendance_settings" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid",
+    "action" "text" NOT NULL,
+    "entity_type" "text" NOT NULL,
+    "entity_id" "text",
+    "details" "jsonb",
+    "ip_address" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."audit_logs" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."automation_rules" (
@@ -837,13 +1127,51 @@ CREATE TABLE IF NOT EXISTS "public"."branches" (
     "manager_id" "uuid",
     "is_active" boolean DEFAULT true,
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "branch_code" character varying(10),
+    "opening_hours" time without time zone DEFAULT '09:00:00'::time without time zone,
+    "closing_hours" time without time zone DEFAULT '22:00:00'::time without time zone,
+    "max_capacity" integer DEFAULT 50,
+    "region" "text",
+    "timezone" "text" DEFAULT 'Asia/Kolkata'::"text",
+    "tax_rate" numeric(5,2) DEFAULT 0.00,
+    CONSTRAINT "check_business_hours" CHECK (("closing_hours" > "opening_hours")),
+    CONSTRAINT "check_max_capacity" CHECK (("max_capacity" > 0)),
+    CONSTRAINT "check_tax_rate" CHECK ((("tax_rate" >= (0)::numeric) AND ("tax_rate" <= (1)::numeric)))
 );
 
 ALTER TABLE ONLY "public"."branches" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."branches" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."branches"."branch_code" IS 'Unique code identifier for the branch (e.g., MG001, MG002)';
+
+
+
+COMMENT ON COLUMN "public"."branches"."opening_hours" IS 'The opening time of the branch in 24-hour format (HH:MM:SS)';
+
+
+
+COMMENT ON COLUMN "public"."branches"."closing_hours" IS 'The closing time of the branch in 24-hour format (HH:MM:SS)';
+
+
+
+COMMENT ON COLUMN "public"."branches"."max_capacity" IS 'Maximum number of people allowed in the branch at the same time';
+
+
+
+COMMENT ON COLUMN "public"."branches"."region" IS 'Geographic region where the branch is located';
+
+
+
+COMMENT ON COLUMN "public"."branches"."timezone" IS 'Timezone of the branch in IANA format (e.g., Asia/Kolkata)';
+
+
+
+COMMENT ON COLUMN "public"."branches"."tax_rate" IS 'Default tax rate for the branch (as a decimal, e.g., 0.18 for 18%)';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."class_bookings" (
@@ -935,7 +1263,9 @@ CREATE TABLE IF NOT EXISTS "public"."class_types" (
     "is_active" boolean DEFAULT true,
     "branch_id" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "difficulty" "text" DEFAULT 'All Levels'::"text",
+    "level" "text" DEFAULT 'All Levels'::"text"
 );
 
 
@@ -1069,6 +1399,29 @@ ALTER TABLE ONLY "public"."email_templates" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."email_templates" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."essl_api_settings" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "branch_id" "uuid" NOT NULL,
+    "api_url" "text" NOT NULL,
+    "api_key" "text" NOT NULL,
+    "company_id" "text",
+    "device_sn" "text",
+    "status" "text" DEFAULT 'active'::"text",
+    "last_sync" timestamp with time zone,
+    "sync_status" "text",
+    "additional_info" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."essl_api_settings" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."essl_api_settings" IS 'Stores ESSL API configuration for each branch';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."essl_device_settings" (
@@ -1235,20 +1588,164 @@ CREATE TABLE IF NOT EXISTS "public"."global_settings" (
 ALTER TABLE "public"."global_settings" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."hikvision_api_settings" (
+CREATE TABLE IF NOT EXISTS "public"."hikvision_access_privileges" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "branch_id" "uuid" NOT NULL,
-    "api_url" "text" NOT NULL,
-    "app_key" "text" NOT NULL,
-    "app_secret" "text" NOT NULL,
-    "devices" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
-    "is_active" boolean DEFAULT false NOT NULL,
+    "person_id" "uuid" NOT NULL,
+    "door_id" "uuid" NOT NULL,
+    "privilege" integer DEFAULT 1 NOT NULL,
+    "schedule" integer DEFAULT 0,
+    "valid_start_time" timestamp with time zone,
+    "valid_end_time" timestamp with time zone,
+    "status" "text" DEFAULT 'active'::"text",
+    "last_sync" timestamp with time zone,
+    "sync_status" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
+ALTER TABLE "public"."hikvision_access_privileges" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_access_privileges" IS 'Manages access privileges for persons on doors';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."hikvision_api_settings" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "branch_id" "uuid" NOT NULL,
+    "api_url" "text" DEFAULT 'https://open.hikvision.com'::"text" NOT NULL,
+    "app_key" "text" NOT NULL,
+    "app_secret" "text" NOT NULL,
+    "devices" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "is_active" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "site_id" "text",
+    "site_name" "text",
+    "sync_interval" integer DEFAULT 60,
+    "last_sync" timestamp with time zone
+);
+
+
 ALTER TABLE "public"."hikvision_api_settings" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_api_settings" IS 'Stores Hikvision API configuration for each branch';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."hikvision_devices" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "branch_id" "uuid" NOT NULL,
+    "device_id" "text" NOT NULL,
+    "name" "text" NOT NULL,
+    "ip_address" "text" NOT NULL,
+    "port" integer DEFAULT 80,
+    "username" "text" NOT NULL,
+    "password" "text" NOT NULL,
+    "device_type" "text",
+    "model" "text",
+    "firmware_version" "text",
+    "serial_number" "text",
+    "mac_address" "text",
+    "status" "text" DEFAULT 'inactive'::"text",
+    "last_online" timestamp with time zone,
+    "last_sync" timestamp with time zone,
+    "additional_info" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."hikvision_devices" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_devices" IS 'Stores Hikvision device information';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."hikvision_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "event_id" "text" NOT NULL,
+    "event_type" "text" NOT NULL,
+    "event_time" timestamp with time zone NOT NULL,
+    "person_id" "text",
+    "device_id" "text",
+    "door_id" "text",
+    "door_name" "text",
+    "card_no" "text",
+    "face_id" "text",
+    "picture_url" "text",
+    "raw_data" "jsonb" DEFAULT '{}'::"jsonb",
+    "processed" boolean DEFAULT false,
+    "processed_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."hikvision_events" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_events" IS 'Stores access events from Hikvision devices';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."hikvision_persons" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "branch_id" "uuid" NOT NULL,
+    "member_id" "uuid",
+    "person_id" "text" NOT NULL,
+    "name" "text" NOT NULL,
+    "gender" "text",
+    "card_no" "text",
+    "phone" "text",
+    "email" "text",
+    "person_type" integer DEFAULT 1,
+    "status" "text" DEFAULT 'active'::"text",
+    "face_data" "text"[],
+    "finger_print_data" "text"[],
+    "additional_info" "jsonb" DEFAULT '{}'::"jsonb",
+    "last_sync" timestamp with time zone,
+    "sync_status" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."hikvision_persons" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_persons" IS 'Stores person information synced with Hikvision';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."hikvision_tokens" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "branch_id" "uuid" NOT NULL,
+    "access_token" "text" NOT NULL,
+    "expire_time" timestamp with time zone NOT NULL,
+    "area_domain" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "refresh_token" "text",
+    "token_type" "text",
+    "expires_in" bigint,
+    "scope" "text",
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "available_sites" "jsonb" DEFAULT '[]'::"jsonb"
+);
+
+
+ALTER TABLE "public"."hikvision_tokens" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."hikvision_tokens" IS 'Stores Hikvision API access tokens for each branch';
+
+
+
+COMMENT ON COLUMN "public"."hikvision_tokens"."available_sites" IS 'Stores the list of available sites as a JSON array';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."income_categories" (
@@ -1439,6 +1936,27 @@ CREATE TABLE IF NOT EXISTS "public"."measurements" (
 
 
 ALTER TABLE "public"."measurements" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."member_access_overrides" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "member_id" "uuid",
+    "zone_id" "uuid",
+    "access_type" "text" DEFAULT 'allowed'::"text",
+    "reason" "text",
+    "valid_from" timestamp with time zone DEFAULT "now"(),
+    "valid_until" timestamp with time zone,
+    "schedule_start_time" time without time zone,
+    "schedule_end_time" time without time zone,
+    "schedule_days" "text"[],
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "member_access_overrides_access_type_check" CHECK (("access_type" = ANY (ARRAY['allowed'::"text", 'denied'::"text", 'scheduled'::"text"])))
+);
+
+
+ALTER TABLE "public"."member_access_overrides" OWNER TO "postgres";
 
 
 CREATE OR REPLACE VIEW "public"."member_attendance_heatmap" WITH ("security_invoker"='on') AS
@@ -1707,6 +2225,18 @@ CREATE TABLE IF NOT EXISTS "public"."payments" (
 ALTER TABLE "public"."payments" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."permissions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."permissions" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id" "uuid" NOT NULL,
     "full_name" "text",
@@ -1804,6 +2334,18 @@ ALTER TABLE ONLY "public"."reminder_rules" REPLICA IDENTITY FULL;
 
 
 ALTER TABLE "public"."reminder_rules" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."role_permissions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "role" "public"."user_role" NOT NULL,
+    "permission_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."role_permissions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."settings" (
@@ -2013,6 +2555,18 @@ CREATE TABLE IF NOT EXISTS "public"."transactions" (
 ALTER TABLE "public"."transactions" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_roles" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "role" "public"."user_role" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_roles" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."webhook_logs" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "gateway" "text" NOT NULL,
@@ -2105,6 +2659,56 @@ CREATE TABLE IF NOT EXISTS "public"."workout_plans" (
 ALTER TABLE "public"."workout_plans" OWNER TO "postgres";
 
 
+ALTER TABLE ONLY "public"."access_denial_logs"
+    ADD CONSTRAINT "access_denial_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."access_doors"
+    ADD CONSTRAINT "access_doors_hikvision_door_id_branch_id_key" UNIQUE ("hikvision_door_id", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."access_doors"
+    ADD CONSTRAINT "access_doors_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."access_zones"
+    ADD CONSTRAINT "access_zones_name_branch_id_key" UNIQUE ("name", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."access_zones"
+    ADD CONSTRAINT "access_zones_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_diet_plans"
+    ADD CONSTRAINT "ai_diet_plans_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_services"
+    ADD CONSTRAINT "ai_services_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_services"
+    ADD CONSTRAINT "ai_services_service_name_created_by_key" UNIQUE ("service_name", "created_by");
+
+
+
+ALTER TABLE ONLY "public"."ai_workout_plans"
+    ADD CONSTRAINT "ai_workout_plans_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."announcement_reads"
+    ADD CONSTRAINT "announcement_reads_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."announcements"
     ADD CONSTRAINT "announcements_pkey" PRIMARY KEY ("id");
 
@@ -2112,6 +2716,11 @@ ALTER TABLE ONLY "public"."announcements"
 
 ALTER TABLE ONLY "public"."attendance_settings"
     ADD CONSTRAINT "attendance_settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -2127,6 +2736,11 @@ ALTER TABLE ONLY "public"."backup_logs"
 
 ALTER TABLE ONLY "public"."body_measurements"
     ADD CONSTRAINT "body_measurements_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."branches"
+    ADD CONSTRAINT "branches_branch_code_key" UNIQUE ("branch_code");
 
 
 
@@ -2180,6 +2794,16 @@ ALTER TABLE ONLY "public"."email_templates"
 
 
 
+ALTER TABLE ONLY "public"."essl_api_settings"
+    ADD CONSTRAINT "essl_api_settings_branch_id_key" UNIQUE ("branch_id");
+
+
+
+ALTER TABLE ONLY "public"."essl_api_settings"
+    ADD CONSTRAINT "essl_api_settings_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."essl_device_settings"
     ADD CONSTRAINT "essl_device_settings_pkey" PRIMARY KEY ("id");
 
@@ -2230,8 +2854,68 @@ ALTER TABLE ONLY "public"."global_settings"
 
 
 
+ALTER TABLE ONLY "public"."hikvision_access_privileges"
+    ADD CONSTRAINT "hikvision_access_privileges_person_door_key" UNIQUE ("person_id", "door_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_access_privileges"
+    ADD CONSTRAINT "hikvision_access_privileges_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_api_settings"
+    ADD CONSTRAINT "hikvision_api_settings_branch_id_key" UNIQUE ("branch_id");
+
+
+
 ALTER TABLE ONLY "public"."hikvision_api_settings"
     ADD CONSTRAINT "hikvision_api_settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_devices"
+    ADD CONSTRAINT "hikvision_devices_device_id_branch_id_key" UNIQUE ("device_id", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_devices"
+    ADD CONSTRAINT "hikvision_devices_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_events"
+    ADD CONSTRAINT "hikvision_events_event_id_key" UNIQUE ("event_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_events"
+    ADD CONSTRAINT "hikvision_events_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_persons"
+    ADD CONSTRAINT "hikvision_persons_member_id_key" UNIQUE ("member_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_persons"
+    ADD CONSTRAINT "hikvision_persons_person_id_key" UNIQUE ("person_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_persons"
+    ADD CONSTRAINT "hikvision_persons_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_tokens"
+    ADD CONSTRAINT "hikvision_tokens_branch_id_key" UNIQUE ("branch_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_tokens"
+    ADD CONSTRAINT "hikvision_tokens_pkey" PRIMARY KEY ("id");
 
 
 
@@ -2292,6 +2976,16 @@ ALTER TABLE ONLY "public"."meal_plans"
 
 ALTER TABLE ONLY "public"."measurements"
     ADD CONSTRAINT "measurements_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."member_access_overrides"
+    ADD CONSTRAINT "member_access_overrides_member_id_zone_id_key" UNIQUE ("member_id", "zone_id");
+
+
+
+ALTER TABLE ONLY "public"."member_access_overrides"
+    ADD CONSTRAINT "member_access_overrides_pkey" PRIMARY KEY ("id");
 
 
 
@@ -2360,6 +3054,16 @@ ALTER TABLE ONLY "public"."payments"
 
 
 
+ALTER TABLE ONLY "public"."permissions"
+    ADD CONSTRAINT "permissions_name_key" UNIQUE ("name");
+
+
+
+ALTER TABLE ONLY "public"."permissions"
+    ADD CONSTRAINT "permissions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
 
@@ -2382,6 +3086,16 @@ ALTER TABLE ONLY "public"."referrals"
 
 ALTER TABLE ONLY "public"."reminder_rules"
     ADD CONSTRAINT "reminder_rules_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."role_permissions"
+    ADD CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."role_permissions"
+    ADD CONSTRAINT "role_permissions_role_permission_id_key" UNIQUE ("role", "permission_id");
 
 
 
@@ -2445,6 +3159,46 @@ ALTER TABLE ONLY "public"."transactions"
 
 
 
+ALTER TABLE ONLY "public"."announcement_reads"
+    ADD CONSTRAINT "unique_announcement_user" UNIQUE ("announcement_id", "user_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_persons"
+    ADD CONSTRAINT "unique_card_no" UNIQUE ("card_no", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_devices"
+    ADD CONSTRAINT "unique_device_id" UNIQUE ("device_id", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_events"
+    ADD CONSTRAINT "unique_event_id" UNIQUE ("event_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_access_privileges"
+    ADD CONSTRAINT "unique_person_door" UNIQUE ("person_id", "door_id");
+
+
+
+ALTER TABLE ONLY "public"."hikvision_persons"
+    ADD CONSTRAINT "unique_person_id" UNIQUE ("person_id", "branch_id");
+
+
+
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_role_key" UNIQUE ("user_id", "role");
+
+
+
 ALTER TABLE ONLY "public"."webhook_logs"
     ADD CONSTRAINT "webhook_logs_pkey" PRIMARY KEY ("id");
 
@@ -2475,7 +3229,147 @@ ALTER TABLE ONLY "public"."workout_plans"
 
 
 
+CREATE INDEX "ai_diet_plans_diet_type_idx" ON "public"."ai_diet_plans" USING "btree" ("diet_type");
+
+
+
+CREATE INDEX "ai_diet_plans_is_public_idx" ON "public"."ai_diet_plans" USING "btree" ("is_public");
+
+
+
+CREATE INDEX "ai_workout_plans_fitness_level_idx" ON "public"."ai_workout_plans" USING "btree" ("fitness_level");
+
+
+
+CREATE INDEX "ai_workout_plans_is_public_idx" ON "public"."ai_workout_plans" USING "btree" ("is_public");
+
+
+
+CREATE INDEX "idx_access_doors_branch_id" ON "public"."access_doors" USING "btree" ("branch_id");
+
+
+
+CREATE INDEX "idx_access_doors_zone_id" ON "public"."access_doors" USING "btree" ("zone_id");
+
+
+
+CREATE INDEX "idx_announcement_reads_announcement_id" ON "public"."announcement_reads" USING "btree" ("announcement_id");
+
+
+
+CREATE INDEX "idx_announcement_reads_user_id" ON "public"."announcement_reads" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_branches_branch_code" ON "public"."branches" USING "btree" ("branch_code");
+
+
+
+CREATE INDEX "idx_branches_closing_hours" ON "public"."branches" USING "btree" ("closing_hours");
+
+
+
+CREATE INDEX "idx_branches_opening_hours" ON "public"."branches" USING "btree" ("opening_hours");
+
+
+
+CREATE INDEX "idx_branches_region" ON "public"."branches" USING "btree" ("region");
+
+
+
+CREATE INDEX "idx_branches_timezone" ON "public"."branches" USING "btree" ("timezone");
+
+
+
+CREATE INDEX "idx_essl_api_settings_branch_id" ON "public"."essl_api_settings" USING "btree" ("branch_id");
+
+
+
 CREATE INDEX "idx_follow_up_lead_id" ON "public"."follow_up_history" USING "btree" ("lead_id");
+
+
+
+CREATE INDEX "idx_hikvision_api_settings_branch_active" ON "public"."hikvision_api_settings" USING "btree" ("branch_id", "is_active");
+
+
+
+CREATE INDEX "idx_hikvision_api_settings_branch_id" ON "public"."hikvision_api_settings" USING "btree" ("branch_id");
+
+
+
+CREATE INDEX "idx_hikvision_api_settings_is_active" ON "public"."hikvision_api_settings" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "idx_hikvision_api_settings_updated_at" ON "public"."hikvision_api_settings" USING "btree" ("updated_at");
+
+
+
+CREATE INDEX "idx_hikvision_devices_branch_id" ON "public"."hikvision_devices" USING "btree" ("branch_id");
+
+
+
+CREATE INDEX "idx_hikvision_events_device_id" ON "public"."hikvision_events" USING "btree" ("device_id");
+
+
+
+CREATE INDEX "idx_hikvision_events_event_time" ON "public"."hikvision_events" USING "btree" ("event_time");
+
+
+
+CREATE INDEX "idx_hikvision_events_person_id" ON "public"."hikvision_events" USING "btree" ("person_id");
+
+
+
+CREATE INDEX "idx_hikvision_events_processed" ON "public"."hikvision_events" USING "btree" ("processed");
+
+
+
+CREATE INDEX "idx_hikvision_persons_branch_id" ON "public"."hikvision_persons" USING "btree" ("branch_id");
+
+
+
+CREATE INDEX "idx_hikvision_persons_card_no" ON "public"."hikvision_persons" USING "btree" ("card_no");
+
+
+
+CREATE INDEX "idx_hikvision_persons_member_id" ON "public"."hikvision_persons" USING "btree" ("member_id");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_access_token" ON "public"."hikvision_tokens" USING "btree" ("access_token");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_available_sites" ON "public"."hikvision_tokens" USING "gin" ("available_sites");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_branch_access" ON "public"."hikvision_tokens" USING "btree" ("branch_id", "access_token");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_branch_expire" ON "public"."hikvision_tokens" USING "btree" ("branch_id", "expire_time");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_branch_id" ON "public"."hikvision_tokens" USING "btree" ("branch_id");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_branch_refresh" ON "public"."hikvision_tokens" USING "btree" ("branch_id", "refresh_token");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_expire_time" ON "public"."hikvision_tokens" USING "btree" ("expire_time");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_refresh_token" ON "public"."hikvision_tokens" USING "btree" ("refresh_token");
+
+
+
+CREATE INDEX "idx_hikvision_tokens_updated_at" ON "public"."hikvision_tokens" USING "btree" ("updated_at");
 
 
 
@@ -2488,6 +3382,26 @@ CREATE INDEX "idx_leads_funnel_stage" ON "public"."leads" USING "btree" ("funnel
 
 
 CREATE INDEX "idx_leads_status" ON "public"."leads" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_member_attendance_member_id" ON "public"."member_attendance" USING "btree" ("member_id");
+
+
+
+CREATE INDEX "idx_members_membership_id" ON "public"."members" USING "btree" ("membership_id");
+
+
+
+CREATE OR REPLACE TRIGGER "ai_diet_plans_updated_at" BEFORE UPDATE ON "public"."ai_diet_plans" FOR EACH ROW EXECUTE FUNCTION "public"."update_ai_diet_plans_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "ai_services_updated_at" BEFORE UPDATE ON "public"."ai_services" FOR EACH ROW EXECUTE FUNCTION "public"."update_ai_services_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "ai_workout_plans_updated_at" BEFORE UPDATE ON "public"."ai_workout_plans" FOR EACH ROW EXECUTE FUNCTION "public"."update_ai_workout_plans_updated_at"();
 
 
 
@@ -2523,6 +3437,14 @@ CREATE OR REPLACE TRIGGER "set_timestamp_store_products" BEFORE UPDATE ON "publi
 
 
 
+CREATE OR REPLACE TRIGGER "update_access_doors_updated_at" BEFORE UPDATE ON "public"."access_doors" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_access_zones_updated_at" BEFORE UPDATE ON "public"."access_zones" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
 CREATE OR REPLACE TRIGGER "update_communication_tasks_updated_at" BEFORE UPDATE ON "public"."communication_tasks" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
@@ -2531,7 +3453,39 @@ CREATE OR REPLACE TRIGGER "update_email_settings_timestamp" BEFORE UPDATE ON "pu
 
 
 
+CREATE OR REPLACE TRIGGER "update_essl_api_settings_updated_at" BEFORE UPDATE ON "public"."essl_api_settings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_access_privileges_updated_at" BEFORE UPDATE ON "public"."hikvision_access_privileges" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_api_settings_updated_at" BEFORE UPDATE ON "public"."hikvision_api_settings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_devices_updated_at" BEFORE UPDATE ON "public"."hikvision_devices" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_events_updated_at" BEFORE UPDATE ON "public"."hikvision_events" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_persons_updated_at" BEFORE UPDATE ON "public"."hikvision_persons" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_hikvision_tokens_updated_at" BEFORE UPDATE ON "public"."hikvision_tokens" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
 CREATE OR REPLACE TRIGGER "update_invoices_updated_at" BEFORE UPDATE ON "public"."invoices" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_member_access_overrides_updated_at" BEFORE UPDATE ON "public"."member_access_overrides" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -2559,6 +3513,31 @@ CREATE OR REPLACE TRIGGER "update_website_content_updated_at" BEFORE UPDATE ON "
 
 
 
+ALTER TABLE ONLY "public"."access_doors"
+    ADD CONSTRAINT "access_doors_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."access_zones"
+    ADD CONSTRAINT "access_zones_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."ai_diet_plans"
+    ADD CONSTRAINT "ai_diet_plans_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_services"
+    ADD CONSTRAINT "ai_services_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."ai_workout_plans"
+    ADD CONSTRAINT "ai_workout_plans_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+
+
+
 ALTER TABLE ONLY "public"."announcements"
     ADD CONSTRAINT "announcements_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "auth"."users"("id");
 
@@ -2571,6 +3550,11 @@ ALTER TABLE ONLY "public"."announcements"
 
 ALTER TABLE ONLY "public"."attendance_settings"
     ADD CONSTRAINT "attendance_settings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
+
+
+
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -2664,6 +3648,11 @@ ALTER TABLE ONLY "public"."email_templates"
 
 
 
+ALTER TABLE ONLY "public"."essl_api_settings"
+    ADD CONSTRAINT "essl_api_settings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id") ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."essl_device_settings"
     ADD CONSTRAINT "essl_device_settings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
 
@@ -2699,6 +3688,26 @@ ALTER TABLE ONLY "public"."fitness_progress"
 
 
 
+ALTER TABLE ONLY "public"."announcement_reads"
+    ADD CONSTRAINT "fk_announcement" FOREIGN KEY ("announcement_id") REFERENCES "public"."announcements"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."member_attendance"
+    ADD CONSTRAINT "fk_member_attendance_member" FOREIGN KEY ("member_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."members"
+    ADD CONSTRAINT "fk_members_membership" FOREIGN KEY ("membership_id") REFERENCES "public"."memberships"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."announcement_reads"
+    ADD CONSTRAINT "fk_user" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."follow_up_history"
     ADD CONSTRAINT "follow_up_history_lead_id_fkey" FOREIGN KEY ("lead_id") REFERENCES "public"."leads"("id") ON DELETE CASCADE;
 
@@ -2714,8 +3723,8 @@ ALTER TABLE ONLY "public"."follow_up_templates"
 
 
 
-ALTER TABLE ONLY "public"."hikvision_api_settings"
-    ADD CONSTRAINT "hikvision_api_settings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
+ALTER TABLE ONLY "public"."hikvision_devices"
+    ADD CONSTRAINT "hikvision_devices_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 
@@ -2934,6 +3943,11 @@ ALTER TABLE ONLY "public"."referrals"
 
 
 
+ALTER TABLE ONLY "public"."role_permissions"
+    ADD CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "public"."permissions"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."settings"
     ADD CONSTRAINT "settings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
 
@@ -3004,6 +4018,11 @@ ALTER TABLE ONLY "public"."transactions"
 
 
 
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."webhook_logs"
     ADD CONSTRAINT "webhook_logs_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
 
@@ -3037,6 +4056,14 @@ ALTER TABLE ONLY "public"."workout_plans"
 CREATE POLICY "Access to workout days via plan" ON "public"."workout_days" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."workout_plans"
   WHERE (("workout_plans"."id" = "workout_days"."workout_plan_id") AND ("workout_plans"."trainer_id" = "auth"."uid"())))));
+
+
+
+CREATE POLICY "Admin can manage permissions" ON "public"."permissions" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."user_role"));
+
+
+
+CREATE POLICY "Admin can manage role permissions" ON "public"."role_permissions" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."user_role"));
 
 
 
@@ -3112,27 +4139,11 @@ CREATE POLICY "Admins and staff can view all feedback" ON "public"."feedback" FO
 
 
 
-CREATE POLICY "Admins can SELECT any profile" ON "public"."profiles" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"text")))));
-
-
-
-CREATE POLICY "Admins can UPDATE any profile" ON "public"."profiles" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"text")))));
-
-
-
 CREATE POLICY "Admins can access all backup logs" ON "public"."backup_logs" TO "authenticated" USING (((( SELECT "profiles"."role"
    FROM "public"."profiles"
   WHERE ("profiles"."id" = "auth"."uid"())) = 'admin'::"text") OR (( SELECT "profiles"."role"
    FROM "public"."profiles"
   WHERE ("profiles"."id" = "auth"."uid"())) = 'staff'::"text")));
-
-
-
-CREATE POLICY "Admins can access all profiles" ON "public"."profiles" FOR SELECT USING ((("auth"."jwt"() ->> 'role'::"text") = 'admin'::"text"));
 
 
 
@@ -3186,6 +4197,10 @@ CREATE POLICY "Admins can manage all invoices" ON "public"."invoices" USING (("p
 
 
 
+CREATE POLICY "Admins can manage all roles" ON "public"."user_roles" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."user_role"));
+
+
+
 CREATE POLICY "Admins can manage email settings" ON "public"."email_settings" USING (("public"."get_user_role"() = 'admin'::"text"));
 
 
@@ -3194,11 +4209,7 @@ CREATE POLICY "Admins can manage settings" ON "public"."settings" USING (("publi
 
 
 
-CREATE POLICY "Admins can update all profiles" ON "public"."profiles" FOR UPDATE USING ("public"."is_admin"());
-
-
-
-CREATE POLICY "Admins can view all profiles" ON "public"."profiles" FOR SELECT USING ("public"."is_admin"());
+CREATE POLICY "Admins can view all audit logs" ON "public"."audit_logs" FOR SELECT USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."user_role"));
 
 
 
@@ -3247,12 +4258,6 @@ CREATE POLICY "Admins have full access" ON "public"."member_memberships" USING (
 CREATE POLICY "Admins have full access" ON "public"."payments" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
    FROM "public"."profiles"
   WHERE ("profiles"."role" = 'admin'::"text"))));
-
-
-
-CREATE POLICY "Admins have full access" ON "public"."profiles" USING ((EXISTS ( SELECT 1
-   FROM "public"."profiles" "p"
-  WHERE (("p"."id" = "auth"."uid"()) AND ("p"."role" = 'admin'::"text")))));
 
 
 
@@ -3354,10 +4359,6 @@ CREATE POLICY "Allow all to view website content" ON "public"."website_content" 
 
 
 
-CREATE POLICY "Allow logged-in users to read their profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
-
-
-
 CREATE POLICY "Allow staff to manage branch referrals" ON "public"."referrals" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."profiles"
   WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['staff'::"text", 'admin'::"text"]))))));
@@ -3404,9 +4405,49 @@ CREATE POLICY "Delete workout days via plan" ON "public"."workout_days" FOR DELE
 
 
 
+CREATE POLICY "Enable all operations for service role" ON "public"."access_doors" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."access_zones" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."essl_api_settings" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_access_privileges" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_api_settings" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_devices" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_events" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_persons" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable all operations for service role" ON "public"."hikvision_tokens" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
 CREATE POLICY "Enable delete for admin only" ON "public"."class_types" FOR DELETE USING ((("auth"."role"() = 'authenticated'::"text") AND (( SELECT "profiles"."role"
    FROM "public"."profiles"
   WHERE ("profiles"."id" = "auth"."uid"())) = 'admin'::"text")));
+
+
+
+CREATE POLICY "Enable delete for service role" ON "public"."essl_api_settings" FOR DELETE TO "service_role" USING (true);
 
 
 
@@ -3420,9 +4461,33 @@ CREATE POLICY "Enable insert fitness_progress for authorized users" ON "public".
 
 
 
+CREATE POLICY "Enable insert for service role" ON "public"."essl_api_settings" FOR INSERT TO "service_role" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for service role" ON "public"."hikvision_api_settings" FOR INSERT TO "service_role" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for service role" ON "public"."hikvision_tokens" FOR INSERT TO "service_role" WITH CHECK (true);
+
+
+
 CREATE POLICY "Enable insert for staff and admin" ON "public"."class_types" FOR INSERT WITH CHECK ((("auth"."role"() = 'authenticated'::"text") AND (( SELECT "profiles"."role"
    FROM "public"."profiles"
   WHERE ("profiles"."id" = "auth"."uid"())) = ANY (ARRAY['admin'::"text", 'staff'::"text"]))));
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."essl_api_settings" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."hikvision_api_settings" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable read access for authenticated users" ON "public"."hikvision_tokens" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -3448,6 +4513,42 @@ CREATE POLICY "Enable read for all authenticated users" ON "public"."class_types
 
 
 
+CREATE POLICY "Enable select for authenticated users" ON "public"."access_doors" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."access_zones" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."essl_api_settings" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_access_privileges" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_api_settings" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_devices" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_events" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_persons" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable select for authenticated users" ON "public"."hikvision_tokens" FOR SELECT TO "authenticated" USING (true);
+
+
+
 CREATE POLICY "Enable update fitness_progress for authorized users" ON "public"."fitness_progress" FOR UPDATE USING ((("auth"."role"() = 'authenticated'::"text") AND ((( SELECT "profiles"."role"
    FROM "public"."profiles"
   WHERE ("profiles"."id" = "auth"."uid"())) = ANY (ARRAY['admin'::"text", 'staff'::"text"])) OR ((( SELECT "profiles"."role"
@@ -3455,6 +4556,18 @@ CREATE POLICY "Enable update fitness_progress for authorized users" ON "public".
   WHERE ("profiles"."id" = "auth"."uid"())) = 'trainer'::"text") AND ("member_id" IN ( SELECT "trainer_assignments"."member_id"
    FROM "public"."trainer_assignments"
   WHERE ("trainer_assignments"."trainer_id" = "auth"."uid"())))))));
+
+
+
+CREATE POLICY "Enable update for service role" ON "public"."essl_api_settings" FOR UPDATE TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable update for service role" ON "public"."hikvision_api_settings" FOR UPDATE TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable update for service role" ON "public"."hikvision_tokens" FOR UPDATE TO "service_role" USING (true) WITH CHECK (true);
 
 
 
@@ -3533,6 +4646,22 @@ CREATE POLICY "Members can view their own orders" ON "public"."orders" FOR SELEC
 CREATE POLICY "Members can view their own referrals" ON "public"."referrals" FOR SELECT TO "authenticated" USING ((("referrer_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
    FROM "public"."profiles"
   WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['staff'::"text", 'trainer'::"text", 'admin'::"text"])))))));
+
+
+
+CREATE POLICY "Only admins can manage AI services" ON "public"."ai_services" TO "authenticated" USING ((("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))) AND ("auth"."uid"() = "created_by"))) WITH CHECK ((("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))) AND ("auth"."uid"() = "created_by")));
+
+
+
+CREATE POLICY "Permissions visible to authenticated users" ON "public"."permissions" FOR SELECT TO "authenticated";
+
+
+
+CREATE POLICY "Role permissions visible to authenticated users" ON "public"."role_permissions" FOR SELECT TO "authenticated";
 
 
 
@@ -3637,6 +4766,12 @@ CREATE POLICY "Staff can view SMS templates in their branch" ON "public"."sms_te
 
 
 CREATE POLICY "Staff can view WhatsApp templates in their branch" ON "public"."whatsapp_templates" FOR SELECT USING ((("public"."get_user_role"() = 'staff'::"text") AND (("branch_id" IS NULL) OR "public"."user_has_branch_access"("branch_id"))));
+
+
+
+CREATE POLICY "Staff can view all attendance" ON "public"."member_attendance" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND (("profiles"."role" = 'admin'::"text") OR ("profiles"."role" = 'staff'::"text"))))));
 
 
 
@@ -3766,15 +4901,11 @@ CREATE POLICY "Update workout days via plan" ON "public"."workout_days" FOR UPDA
 
 
 
-CREATE POLICY "Users can SELECT their own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
-
-
-
-CREATE POLICY "Users can UPDATE their own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
-
-
-
 CREATE POLICY "Users can create tasks" ON "public"."communication_tasks" FOR INSERT WITH CHECK (("auth"."uid"() IS NOT NULL));
+
+
+
+CREATE POLICY "Users can create their own read receipts" ON "public"."announcement_reads" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -3784,7 +4915,7 @@ CREATE POLICY "Users can update assigned tasks" ON "public"."communication_tasks
 
 
 
-CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
+CREATE POLICY "Users can view own roles" ON "public"."user_roles" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -3798,11 +4929,64 @@ CREATE POLICY "Users can view their branch tasks" ON "public"."communication_tas
 
 
 
-CREATE POLICY "Users can view their own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+CREATE POLICY "Users can view their own attendance" ON "public"."member_attendance" FOR SELECT USING (("auth"."uid"() = "member_id"));
 
+
+
+CREATE POLICY "Users can view their own read receipts" ON "public"."announcement_reads" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."access_doors" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."access_zones" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "admin_all_diet_plans" ON "public"."ai_diet_plans" TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text")))) WITH CHECK (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))));
+
+
+
+CREATE POLICY "admin_all_hikvision_settings" ON "public"."hikvision_api_settings" TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))));
+
+
+
+CREATE POLICY "admin_all_hikvision_tokens" ON "public"."hikvision_tokens" TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))));
+
+
+
+CREATE POLICY "admin_all_workout_plans" ON "public"."ai_workout_plans" TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text")))) WITH CHECK (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'admin'::"text"))));
+
+
+
+ALTER TABLE "public"."ai_diet_plans" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."ai_services" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."ai_workout_plans" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."announcement_reads" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."announcements" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."audit_logs" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."automation_rules" ENABLE ROW LEVEL SECURITY;
@@ -3841,9 +5025,6 @@ ALTER TABLE "public"."email_settings" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."email_templates" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."essl_device_settings" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."exercises" ENABLE ROW LEVEL SECURITY;
 
 
@@ -3859,7 +5040,22 @@ ALTER TABLE "public"."fitness_progress" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."global_settings" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."hikvision_access_privileges" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."hikvision_api_settings" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."hikvision_devices" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."hikvision_events" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."hikvision_persons" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."hikvision_tokens" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."income_categories" ENABLE ROW LEVEL SECURITY;
@@ -3881,6 +5077,9 @@ ALTER TABLE "public"."meal_plans" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."measurements" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."member_access_overrides" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."member_attendance" ENABLE ROW LEVEL SECURITY;
@@ -3916,13 +5115,27 @@ ALTER TABLE "public"."payment_settings" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."payments" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."permissions" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."promo_codes" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "public_read_diet_plans" ON "public"."ai_diet_plans" FOR SELECT TO "authenticated" USING (("is_public" = true));
+
+
+
+CREATE POLICY "public_read_workout_plans" ON "public"."ai_workout_plans" FOR SELECT TO "authenticated" USING (("is_public" = true));
+
 
 
 ALTER TABLE "public"."referrals" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."reminder_rules" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."role_permissions" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."settings" ENABLE ROW LEVEL SECURITY;
@@ -3935,6 +5148,18 @@ ALTER TABLE "public"."sms_templates" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."staff_attendance" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "staff_view_hikvision_settings" ON "public"."hikvision_api_settings" FOR SELECT TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'staff'::"text"))));
+
+
+
+CREATE POLICY "staff_view_hikvision_tokens" ON "public"."hikvision_tokens" FOR SELECT TO "authenticated" USING (("auth"."uid"() IN ( SELECT "profiles"."id"
+   FROM "public"."profiles"
+  WHERE ("profiles"."role" = 'staff'::"text"))));
+
 
 
 ALTER TABLE "public"."store_products" ENABLE ROW LEVEL SECURITY;
@@ -3950,6 +5175,9 @@ ALTER TABLE "public"."trainers" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."transactions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."webhook_logs" ENABLE ROW LEVEL SECURITY;
@@ -4284,15 +5512,57 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."has_permission"("user_id" "uuid", "permission_name" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_permission"("user_id" "uuid", "permission_name" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_permission"("user_id" "uuid", "permission_name" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."has_role"("user_id" "uuid", "role" "public"."user_role") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_role"("user_id" "uuid", "role" "public"."user_role") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_role"("user_id" "uuid", "role" "public"."user_role") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "anon";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."log_action"("action" "text", "entity_type" "text", "entity_id" "text", "details" "jsonb", "ip_address" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."log_action"("action" "text", "entity_type" "text", "entity_id" "text", "details" "jsonb", "ip_address" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."log_action"("action" "text", "entity_type" "text", "entity_id" "text", "details" "jsonb", "ip_address" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."mark_announcement_as_read"("announcement_uuid" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."mark_announcement_as_read"("announcement_uuid" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."mark_announcement_as_read"("announcement_uuid" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."trainer_is_assigned_to_member"("trainer_uuid" "uuid", "member_uuid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."trainer_is_assigned_to_member"("trainer_uuid" "uuid", "member_uuid" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."trainer_is_assigned_to_member"("trainer_uuid" "uuid", "member_uuid" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_ai_diet_plans_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_ai_diet_plans_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_ai_diet_plans_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_ai_services_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_ai_services_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_ai_services_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_ai_workout_plans_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_ai_workout_plans_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_ai_workout_plans_updated_at"() TO "service_role";
 
 
 
@@ -4353,6 +5623,42 @@ GRANT ALL ON FUNCTION "public"."user_has_branch_access"("branch_id" "uuid") TO "
 
 
 
+GRANT ALL ON TABLE "public"."access_denial_logs" TO "anon";
+GRANT ALL ON TABLE "public"."access_denial_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."access_denial_logs" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."access_doors" TO "anon";
+GRANT ALL ON TABLE "public"."access_doors" TO "authenticated";
+GRANT ALL ON TABLE "public"."access_doors" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."access_zones" TO "anon";
+GRANT ALL ON TABLE "public"."access_zones" TO "authenticated";
+GRANT ALL ON TABLE "public"."access_zones" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."ai_diet_plans" TO "anon";
+GRANT ALL ON TABLE "public"."ai_diet_plans" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_diet_plans" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."ai_services" TO "anon";
+GRANT ALL ON TABLE "public"."ai_services" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_services" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."ai_workout_plans" TO "anon";
+GRANT ALL ON TABLE "public"."ai_workout_plans" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_workout_plans" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."income_records" TO "anon";
 GRANT ALL ON TABLE "public"."income_records" TO "authenticated";
 GRANT ALL ON TABLE "public"."income_records" TO "service_role";
@@ -4383,6 +5689,12 @@ GRANT ALL ON TABLE "public"."analytics_dashboard_stats" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."announcement_reads" TO "anon";
+GRANT ALL ON TABLE "public"."announcement_reads" TO "authenticated";
+GRANT ALL ON TABLE "public"."announcement_reads" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."announcements" TO "anon";
 GRANT ALL ON TABLE "public"."announcements" TO "authenticated";
 GRANT ALL ON TABLE "public"."announcements" TO "service_role";
@@ -4392,6 +5704,12 @@ GRANT ALL ON TABLE "public"."announcements" TO "service_role";
 GRANT ALL ON TABLE "public"."attendance_settings" TO "anon";
 GRANT ALL ON TABLE "public"."attendance_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."attendance_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."audit_logs" TO "anon";
+GRANT ALL ON TABLE "public"."audit_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
 
 
 
@@ -4479,6 +5797,12 @@ GRANT ALL ON TABLE "public"."email_templates" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."essl_api_settings" TO "anon";
+GRANT ALL ON TABLE "public"."essl_api_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."essl_api_settings" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."essl_device_settings" TO "anon";
 GRANT ALL ON TABLE "public"."essl_device_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."essl_device_settings" TO "service_role";
@@ -4533,9 +5857,39 @@ GRANT ALL ON TABLE "public"."global_settings" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."hikvision_access_privileges" TO "anon";
+GRANT ALL ON TABLE "public"."hikvision_access_privileges" TO "authenticated";
+GRANT ALL ON TABLE "public"."hikvision_access_privileges" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."hikvision_api_settings" TO "anon";
 GRANT ALL ON TABLE "public"."hikvision_api_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."hikvision_api_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."hikvision_devices" TO "anon";
+GRANT ALL ON TABLE "public"."hikvision_devices" TO "authenticated";
+GRANT ALL ON TABLE "public"."hikvision_devices" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."hikvision_events" TO "anon";
+GRANT ALL ON TABLE "public"."hikvision_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."hikvision_events" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."hikvision_persons" TO "anon";
+GRANT ALL ON TABLE "public"."hikvision_persons" TO "authenticated";
+GRANT ALL ON TABLE "public"."hikvision_persons" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."hikvision_tokens" TO "anon";
+GRANT ALL ON TABLE "public"."hikvision_tokens" TO "authenticated";
+GRANT ALL ON TABLE "public"."hikvision_tokens" TO "service_role";
 
 
 
@@ -4590,6 +5944,12 @@ GRANT ALL ON TABLE "public"."meal_plans" TO "service_role";
 GRANT ALL ON TABLE "public"."measurements" TO "anon";
 GRANT ALL ON TABLE "public"."measurements" TO "authenticated";
 GRANT ALL ON TABLE "public"."measurements" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."member_access_overrides" TO "anon";
+GRANT ALL ON TABLE "public"."member_access_overrides" TO "authenticated";
+GRANT ALL ON TABLE "public"."member_access_overrides" TO "service_role";
 
 
 
@@ -4659,6 +6019,12 @@ GRANT ALL ON TABLE "public"."payments" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."permissions" TO "anon";
+GRANT ALL ON TABLE "public"."permissions" TO "authenticated";
+GRANT ALL ON TABLE "public"."permissions" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
@@ -4680,6 +6046,12 @@ GRANT ALL ON TABLE "public"."referrals" TO "service_role";
 GRANT ALL ON TABLE "public"."reminder_rules" TO "anon";
 GRANT ALL ON TABLE "public"."reminder_rules" TO "authenticated";
 GRANT ALL ON TABLE "public"."reminder_rules" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."role_permissions" TO "anon";
+GRANT ALL ON TABLE "public"."role_permissions" TO "authenticated";
+GRANT ALL ON TABLE "public"."role_permissions" TO "service_role";
 
 
 
@@ -4740,6 +6112,12 @@ GRANT ALL ON TABLE "public"."trainers" TO "service_role";
 GRANT ALL ON TABLE "public"."transactions" TO "anon";
 GRANT ALL ON TABLE "public"."transactions" TO "authenticated";
 GRANT ALL ON TABLE "public"."transactions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_roles" TO "anon";
+GRANT ALL ON TABLE "public"."user_roles" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_roles" TO "service_role";
 
 
 
