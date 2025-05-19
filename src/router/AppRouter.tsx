@@ -1,20 +1,18 @@
-
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { appRoutes } from './appRoutes';
 import { PermissionsProvider } from '@/hooks/permissions/use-permissions-manager';
 import { AuthProvider } from '@/hooks/auth/use-auth';
 import { BranchProvider } from '@/hooks/settings/use-branches';
+import { createAppRouter, CustomRouterProvider } from './createRouter';
 
-// Create the router with all defined routes
-const router = createBrowserRouter(appRoutes);
+// Create the router instance with all future flags enabled
+const router = createAppRouter();
 
 export default function AppRouter() {
   return (
     <AuthProvider>
       <BranchProvider>
         <PermissionsProvider>
-          <RouterProvider router={router} />
+          <CustomRouterProvider router={router} />
         </PermissionsProvider>
       </BranchProvider>
     </AuthProvider>
