@@ -61,13 +61,6 @@ export type Database = {
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
           },
-          {
-            foreignKeyName: "access_doors_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "access_zones"
-            referencedColumns: ["id"]
-          },
         ]
       }
       access_zones: {
@@ -109,6 +102,212 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      ai_diet_plans: {
+        Row: {
+          calories_per_day: number | null
+          created_at: string | null
+          created_by: string | null
+          cuisine_type: string | null
+          description: string | null
+          diet_type: string | null
+          goals: string[] | null
+          id: string
+          is_public: boolean | null
+          plan_content: string
+          restrictions: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          calories_per_day?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          diet_type?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content: string
+          restrictions?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          calories_per_day?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          diet_type?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content?: string
+          restrictions?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_diet_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_diet_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      ai_services: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          service_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_services_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      ai_workout_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          days_per_week: number | null
+          description: string | null
+          fitness_level: string | null
+          goals: string[] | null
+          id: string
+          is_public: boolean | null
+          plan_content: string
+          restrictions: string[] | null
+          session_duration: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          days_per_week?: number | null
+          description?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content: string
+          restrictions?: string[] | null
+          session_duration?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          days_per_week?: number | null
+          description?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          id?: string
+          is_public?: boolean | null
+          plan_content?: string
+          restrictions?: string[] | null
+          session_duration?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_workout_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_workout_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
+      }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          created_at: string | null
+          id: string
+          read_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string | null
+          id?: string
+          read_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string | null
+          id?: string
+          read_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_announcement"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -584,8 +783,10 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           description: string | null
+          difficulty: string | null
           id: string
           is_active: boolean | null
+          level: string | null
           name: string
           updated_at: string | null
         }
@@ -593,8 +794,10 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name: string
           updated_at?: string | null
         }
@@ -602,8 +805,10 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name?: string
           updated_at?: string | null
         }
@@ -967,6 +1172,66 @@ export type Database = {
             foreignKeyName: "email_templates_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
+      essl_api_settings: {
+        Row: {
+          additional_info: Json | null
+          api_key: string
+          api_url: string
+          branch_id: string
+          company_id: string | null
+          created_at: string
+          device_sn: string | null
+          id: string
+          last_sync: string | null
+          status: string | null
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          api_key: string
+          api_url: string
+          branch_id: string
+          company_id?: string | null
+          created_at?: string
+          device_sn?: string | null
+          id?: string
+          last_sync?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: Json | null
+          api_key?: string
+          api_url?: string
+          branch_id?: string
+          company_id?: string | null
+          created_at?: string
+          device_sn?: string | null
+          id?: string
+          last_sync?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "essl_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "essl_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
             referencedRelation: "member_attendance_heatmap"
             referencedColumns: ["branch_id"]
           },
@@ -1480,6 +1745,51 @@ export type Database = {
         }
         Relationships: []
       }
+      hikvision_access_privileges: {
+        Row: {
+          created_at: string
+          door_id: string
+          id: string
+          last_sync: string | null
+          person_id: string
+          privilege: number
+          schedule: number | null
+          status: string | null
+          sync_status: string | null
+          updated_at: string
+          valid_end_time: string | null
+          valid_start_time: string | null
+        }
+        Insert: {
+          created_at?: string
+          door_id: string
+          id?: string
+          last_sync?: string | null
+          person_id: string
+          privilege?: number
+          schedule?: number | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          valid_end_time?: string | null
+          valid_start_time?: string | null
+        }
+        Update: {
+          created_at?: string
+          door_id?: string
+          id?: string
+          last_sync?: string | null
+          person_id?: string
+          privilege?: number
+          schedule?: number | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          valid_end_time?: string | null
+          valid_start_time?: string | null
+        }
+        Relationships: []
+      }
       hikvision_api_settings: {
         Row: {
           api_url: string
@@ -1490,10 +1800,14 @@ export type Database = {
           devices: Json
           id: string
           is_active: boolean
+          last_sync: string | null
+          site_id: string | null
+          site_name: string | null
+          sync_interval: number | null
           updated_at: string
         }
         Insert: {
-          api_url: string
+          api_url?: string
           app_key: string
           app_secret: string
           branch_id: string
@@ -1501,6 +1815,10 @@ export type Database = {
           devices?: Json
           id?: string
           is_active?: boolean
+          last_sync?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          sync_interval?: number | null
           updated_at?: string
         }
         Update: {
@@ -1512,18 +1830,88 @@ export type Database = {
           devices?: Json
           id?: string
           is_active?: boolean
+          last_sync?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          sync_interval?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      hikvision_devices: {
+        Row: {
+          additional_info: Json | null
+          branch_id: string
+          created_at: string
+          device_id: string
+          device_type: string | null
+          firmware_version: string | null
+          id: string
+          ip_address: string
+          last_online: string | null
+          last_sync: string | null
+          mac_address: string | null
+          model: string | null
+          name: string
+          password: string
+          port: number | null
+          serial_number: string | null
+          status: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          branch_id: string
+          created_at?: string
+          device_id: string
+          device_type?: string | null
+          firmware_version?: string | null
+          id?: string
+          ip_address: string
+          last_online?: string | null
+          last_sync?: string | null
+          mac_address?: string | null
+          model?: string | null
+          name: string
+          password: string
+          port?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          additional_info?: Json | null
+          branch_id?: string
+          created_at?: string
+          device_id?: string
+          device_type?: string | null
+          firmware_version?: string | null
+          id?: string
+          ip_address?: string
+          last_online?: string | null
+          last_sync?: string | null
+          mac_address?: string | null
+          model?: string | null
+          name?: string
+          password?: string
+          port?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          username?: string
         }
         Relationships: [
           {
-            foreignKeyName: "hikvision_api_settings_branch_id_fkey"
+            foreignKeyName: "hikvision_devices_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "hikvision_api_settings_branch_id_fkey"
+            foreignKeyName: "hikvision_devices_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "member_attendance_heatmap"
@@ -1531,47 +1919,170 @@ export type Database = {
           },
         ]
       }
+      hikvision_events: {
+        Row: {
+          card_no: string | null
+          created_at: string
+          device_id: string | null
+          door_id: string | null
+          door_name: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          face_id: string | null
+          id: string
+          person_id: string | null
+          picture_url: string | null
+          processed: boolean | null
+          processed_at: string | null
+          raw_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          card_no?: string | null
+          created_at?: string
+          device_id?: string | null
+          door_id?: string | null
+          door_name?: string | null
+          event_id: string
+          event_time: string
+          event_type: string
+          face_id?: string | null
+          id?: string
+          person_id?: string | null
+          picture_url?: string | null
+          processed?: boolean | null
+          processed_at?: string | null
+          raw_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          card_no?: string | null
+          created_at?: string
+          device_id?: string | null
+          door_id?: string | null
+          door_name?: string | null
+          event_id?: string
+          event_time?: string
+          event_type?: string
+          face_id?: string | null
+          id?: string
+          person_id?: string | null
+          picture_url?: string | null
+          processed?: boolean | null
+          processed_at?: string | null
+          raw_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hikvision_persons: {
+        Row: {
+          additional_info: Json | null
+          branch_id: string
+          card_no: string | null
+          created_at: string
+          email: string | null
+          face_data: string[] | null
+          finger_print_data: string[] | null
+          gender: string | null
+          id: string
+          last_sync: string | null
+          member_id: string | null
+          name: string
+          person_id: string
+          person_type: number | null
+          phone: string | null
+          status: string | null
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          branch_id: string
+          card_no?: string | null
+          created_at?: string
+          email?: string | null
+          face_data?: string[] | null
+          finger_print_data?: string[] | null
+          gender?: string | null
+          id?: string
+          last_sync?: string | null
+          member_id?: string | null
+          name: string
+          person_id: string
+          person_type?: number | null
+          phone?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: Json | null
+          branch_id?: string
+          card_no?: string | null
+          created_at?: string
+          email?: string | null
+          face_data?: string[] | null
+          finger_print_data?: string[] | null
+          gender?: string | null
+          id?: string
+          last_sync?: string | null
+          member_id?: string | null
+          name?: string
+          person_id?: string
+          person_type?: number | null
+          phone?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hikvision_tokens: {
         Row: {
           access_token: string
           area_domain: string | null
+          available_sites: Json | null
           branch_id: string
-          created_at: string | null
-          expire_time: number
+          created_at: string
+          expire_time: string
+          expires_in: number | null
           id: string
+          refresh_token: string | null
+          scope: string | null
+          token_type: string | null
+          updated_at: string | null
         }
         Insert: {
           access_token: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id: string
-          created_at?: string | null
-          expire_time: number
+          created_at?: string
+          expire_time: string
+          expires_in?: number | null
           id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string | null
         }
         Update: {
           access_token?: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id?: string
-          created_at?: string | null
-          expire_time?: number
+          created_at?: string
+          expire_time?: string
+          expires_in?: number | null
           id?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_type?: string | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "hikvision_tokens_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: true
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hikvision_tokens_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: true
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-        ]
+        Relationships: []
       }
       income_categories: {
         Row: {
@@ -2129,6 +2640,54 @@ export type Database = {
           },
         ]
       }
+      member_access_overrides: {
+        Row: {
+          access_type: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          member_id: string | null
+          reason: string | null
+          schedule_days: string[] | null
+          schedule_end_time: string | null
+          schedule_start_time: string | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          schedule_days?: string[] | null
+          schedule_end_time?: string | null
+          schedule_start_time?: string | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          zone_id?: string | null
+        }
+        Relationships: []
+      }
       member_attendance: {
         Row: {
           access_method: string | null
@@ -2167,6 +2726,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_member_attendance_member"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_member_attendance_member"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
           {
             foreignKeyName: "member_attendance_branch_id_fkey"
             columns: ["branch_id"]
@@ -2363,6 +2936,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_members_membership"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "members_branch_id_fkey"
             columns: ["branch_id"]
@@ -4170,6 +4750,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_announcement_as_read: {
+        Args: { announcement_uuid: string }
+        Returns: undefined
       }
       trainer_is_assigned_to_member: {
         Args: { trainer_uuid: string; member_uuid: string }

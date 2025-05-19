@@ -1,3 +1,4 @@
+
 // @deno-types="https://deno.land/x/supabase_js@v2.2.1/mod.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -163,7 +164,7 @@ serve(async (req) => {
         if (!appKey || !secretKey) {
           throw new Error('appKey and secretKey are required for getToken action');
         }
-        const tokenResult = await getToken(apiUrl || '', appKey, secretKey, corsHeaders, supabase);
+        const tokenResult = await getToken(apiUrl || '', appKey, secretKey, branchId || '');
         return new Response(JSON.stringify(tokenResult), {
           status: 200,
           headers: {
@@ -177,7 +178,7 @@ serve(async (req) => {
         if (!deviceId) {
           throw new Error('deviceId is required for testDevice action');
         }
-        const testResult = await testDevice(settings, deviceId, supabase);
+        const testResult = await testDevice(settings);
         return new Response(JSON.stringify(testResult), {
           status: 200,
           headers: {
@@ -213,7 +214,13 @@ serve(async (req) => {
         }
         // Convert doorList to array of numbers
         const doorNumbers = doorList.map(door => typeof door === 'string' ? parseInt(door, 10) : door);
-        const accessResult = await assignAccessPrivileges(deviceId, personData.id, doorNumbers);
+        const accessResult = await assignAccessPrivileges(
+          deviceId, 
+          personData.id, 
+          doorNumbers,
+          validStartTime,
+          validEndTime
+        );
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -255,7 +262,7 @@ serve(async (req) => {
       }
         
       case 'searchSites': {
-        const { siteName = '', siteId = '' } = req.query as { siteName?: string; siteId?: string };
+        const { siteName = '', siteId = '' } = requestData;
         const searchResult = await searchSites(settings, siteName, siteId, supabase);
         return new Response(JSON.stringify(searchResult), {
           status: 200,
@@ -305,9 +312,8 @@ async function getToken(
   apiUrl: string,
   appKey: string,
   secretKey: string,
-  corsHeaders: Record<string, string>,
-  supabase: any
-): Promise<Response> {
+  branchId: string
+): Promise<{ success: boolean, data?: any, error?: string }> {
   try {
     console.log(`Requesting token from: ${apiUrl}/api/hpcgw/v1/token/get`);
     const response = await fetch(`${apiUrl}/api/hpcgw/v1/token/get`, {
@@ -325,10 +331,21 @@ async function getToken(
     }
 
     const responseData = await response.json();
+    
+    if (responseData.code !== '0') {
+      return {
+        success: false,
+        error: responseData.msg || 'Failed to get token'
+      };
+    }
+    
     const { accessToken, refreshToken, tokenType, expireTime, areaDomain } = responseData.data as HikvisionTokenData;
     
     // Convert expireTime to ISO string
     const expireTimestamp = new Date(expireTime).toISOString();
+
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Store or update the token in the database
     const { error: upsertError } = await supabase
@@ -340,9 +357,10 @@ async function getToken(
         expires_in: Math.floor((new Date(expireTime).getTime() - Date.now()) / 1000),
         expire_time: expireTimestamp,
         area_domain: areaDomain,
+        branch_id: branchId,
         updated_at: new Date().toISOString()
       }, {
-        onConflict: 'access_token'
+        onConflict: 'branch_id'
       });
 
     if (upsertError) {
@@ -350,58 +368,42 @@ async function getToken(
       throw new Error('Failed to store token in database');
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: {
-          accessToken,
-          tokenType,
-          expireTime: expireTimestamp,
-          areaDomain
-        } 
-      }),
-      { 
-        status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
+    return {
+      success: true,
+      data: {
+        accessToken,
+        tokenType,
+        expireTime: expireTimestamp,
+        areaDomain
       }
-    );
+    };
   } catch (error) {
     console.error('Token request error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to get token';
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: errorMessage
-      }),
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
+    return {
+      success: false,
+      error: errorMessage
+    };
   }
 }
 
 // Function to test device connectivity
 async function testDevice(
-  settings: { api_url: string; branch_id: string; device_id?: string },
-  deviceId: string,
-  supabase: any
+  settings: { api_url: string; branch_id: string; device_id?: string }
 ): Promise<any> {
   try {
     if (!settings?.api_url) {
       throw new Error('Hikvision API URL not configured');
     }
 
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
     // Get the latest token
     const { data: tokenData, error: tokenError } = await supabase
       .from('hikvision_tokens')
       .select('*')
+      .eq('branch_id', settings.branch_id)
       .order('updated_at', { ascending: false })
       .limit(1)
       .single();
@@ -413,9 +415,9 @@ async function testDevice(
       };
     }
 
-    // Test device connectivity
+    // Test device connectivity by checking its status
     const response = await fetch(
-      `${settings.api_url}/api/hpcgw/v1/device/status?deviceId=${deviceId}`,
+      `${settings.api_url}/api/hpcgw/v1/device/status?deviceId=${settings.device_id}`,
       {
         method: 'GET',
         headers: {
@@ -427,349 +429,50 @@ async function testDevice(
 
     const responseData = await response.json();
 
-    if (!response.ok) {
-      throw new Error(responseData.msg || 'Failed to test device');
-    }
-
-    // Update device status in the database
-    const { error: updateError } = await supabase
-      .from('access_doors')
-      .update({ 
-        is_online: true,
-        last_online: new Date().toISOString()
-      })
-      .eq('id', deviceId);
-
-    if (updateError) {
-      console.error('Error updating device status:', updateError);
-      throw new Error('Failed to update device status');
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
+      return {
+        success: false,
+        error: error.message,
+        errorCode: responseData.code
+      };
     }
 
     return {
       success: true,
-      data: {
-        ...responseData,
-        doorName: 'device.door_name',
-        isOnline: true
-      }
+      message: 'Device is online and working',
+      data: responseData.data
     };
   } catch (error) {
-    console.error('Device test error:', error);
-    
-    // Update device status as offline in case of error
-    if (deviceId) {
-      await supabase
-        .from('access_doors')
-        .update({ 
-          is_online: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', deviceId);
-    }
-    
+    console.error('Error testing device:', error);
     return {
       success: false,
-      error: error.message || 'Device test failed',
-      deviceId
+      error: error instanceof Error ? error.message : 'Unknown error testing device'
     };
   }
 }
 
-// Function to register a person in Hikvision
+// Function to register a person
 async function registerPerson(
-  settings: { api_url: string; branch_id: string },
+  settings: { api_url: string; branch_id: string; device_id?: string },
   personData: PersonData,
   branchId: string,
   supabase: any
 ): Promise<any> {
-  if (!personData) {
-    throw new Error('personData is required');
-  }
-  
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  };
   try {
     if (!settings?.api_url) {
       throw new Error('Hikvision API URL not configured');
     }
 
+    if (!personData.name) {
+      throw new Error('Person name is required');
+    }
+
     // Get the latest token
     const { data: tokenData, error: tokenError } = await supabase
       .from('hikvision_tokens')
       .select('*')
-      .single();
-
-    if (tokenError || !tokenData?.access_token) {
-      throw new Error('No valid access token found. Please authenticate first.');
-    }
-
-    // Prepare the request body for person registration
-    let member = { ...personData };
-    if (personData.id) {
-      const { data: memberData, error: memberError } = await supabase
-        .from('members')
-        .select('*')
-        .eq('id', personData.id)
-        .single();
-
-      if (memberError || !memberData) {
-        throw new Error(`Member not found: ${memberError?.message || personData.id}`);
-      }
-      member = { ...memberData, ...personData };
-    }
-
-    const requestBody = {
-      personInfo: {
-        personId: member.id || `person_${Date.now()}`,
-        personName: member.name,
-        gender: member.gender === 'male' ? 1 : member.gender === 'female' ? 2 : 0,
-        orgIndexCode: 'root',
-        phoneNo: member.phone || '',
-        email: member.email || ''
-      }
-    };
-
-    // Call Hikvision API to register person
-    const response = await fetch(
-      `${settings.api_url}/api/hpcgw/v1/persons`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${tokenData.access_token}`
-        },
-        body: JSON.stringify(requestBody)
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorCode = errorData.code || errorData.errorCode;
-      if (errorCode) {
-        const hikError = getHikvisionError(errorCode);
-        const error = new Error(hikError.message);
-        (error as any).status = hikError.status || 400;
-        throw error;
-      }
-      throw new Error(errorData.msg || 'Failed to register person');
-    }
-
-    const responseData = await response.json();
-    const hikvisionPersonId = responseData.data?.personId;
-
-    if (!hikvisionPersonId) {
-      throw new Error('Failed to get person ID from Hikvision API');
-    }
-
-    // Save the Hikvision person ID to our database if we have a member ID
-    if (member.id) {
-      const { error: updateError } = await supabase
-        .from('members')
-        .update({ 
-          hikvision_person_id: hikvisionPersonId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', member.id);
-
-      if (updateError) {
-        console.error('Error updating member with Hikvision ID:', updateError);
-        throw new Error('Failed to update member with Hikvision ID');
-      }
-    }
-
-    // Save the person ID to the database
-    const { error: dbError } = await supabase
-      .from('hikvision_persons')
-      .upsert(
-        {
-          person_id: hikvisionPersonId,
-          person_code: hikvisionPersonId,
-          name: member.name,
-          email: member.email || null,
-          phone: member.phone || null,
-          branch_id: branchId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'person_id' }
-      );
-
-    if (dbError) {
-      console.error('Database error:', dbError);
-      throw new Error('Failed to save person to database');
-    }
-
-    return {
-      success: true,
-      data: {
-        personId: hikvisionPersonId,
-        name: member.name,
-        email: member.email || '',
-        phone: member.phone || ''
-      }
-    };
-  } catch (error) {
-    console.error('Error registering person:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to register person';
-    return {
-      success: false,
-      error: errorMessage
-    };
-  }
-}
-
-// Helper function to assign access privileges
-interface AccessPrivilegeResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  data?: any;
-}
-
-async function assignAccessPrivileges(
-  deviceId: string, 
-  personId: string, 
-  doorList: number[]
-): Promise<AccessPrivilegeResult> {
-  const supabase = createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-  
-  const settings = {
-    api_url: process.env.HIKVISION_API_URL || 'https://api.hikvision.com'
-  };
-  try {
-    // Get the latest token
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('hikvision_tokens')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (tokenError || !tokenData?.access_token) {
-      throw new Error('No valid access token found');
-    }
-
-    const response = await fetch(
-      `${settings.api_url}/api/hpcgw/v1/accessControl/doors/privilege`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenData.access_token}`
-        },
-        body: JSON.stringify({
-          doorIndexCodes: doorList,
-          personIds: [personId]
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorCode = errorData.code || errorData.errorCode;
-      if (errorCode) {
-        const hikError = getHikvisionError(errorCode);
-        const error = new Error(hikError.message);
-        (error as any).status = hikError.status || 400;
-        throw error;
-      }
-      throw new Error(errorData.msg || 'Failed to assign access privileges');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error assigning access privileges:', error);
-    throw error;
-  }
-}
-
-// Helper function to create a site
-interface SiteCreationResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  data?: any;
-}
-
-async function createSite(
-  siteName: string, 
-  branchId: string
-): Promise<SiteCreationResult> {
-  const supabase = createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
-  
-  const settings = {
-    api_url: process.env.HIKVISION_API_URL || 'https://api.hikvision.com'
-  };
-  try {
-    // Get the latest token
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('hikvision_tokens')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (tokenError || !tokenData?.access_token) {
-      throw new Error('No valid access token found');
-    }
-
-    const response = await fetch(
-      `${settings.api_url}/api/hpcgw/v1/sites`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenData.access_token}`
-        },
-        body: JSON.stringify({
-          siteName,
-          branchId,
-          description: `Site for ${siteName}`
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorCode = errorData.code || errorData.errorCode;
-      if (errorCode) {
-        const hikError = getHikvisionError(errorCode);
-        const error = new Error(hikError.message);
-        (error as any).status = hikError.status || 400;
-        throw error;
-      }
-      throw new Error(errorData.msg || 'Failed to create site');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating site:', error);
-    throw error;
-  }
-}
-
-// Function to search sites
-async function searchSites(
-  settings: { api_url: string; },
-  siteName: string,
-  siteId: string,
-  supabase: any
-): Promise<any> {
-  try {
-    // Get the latest token
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('hikvision_tokens')
-      .select('*')
+      .eq('branch_id', branchId)
       .order('updated_at', { ascending: false })
       .limit(1)
       .single();
@@ -781,41 +484,389 @@ async function searchSites(
       };
     }
 
-    // Search sites in Hikvision
-    const response = await fetch(`${settings.api_url}/api/hpcgw/v1/site/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tokenData.access_token}`
-      },
-      body: JSON.stringify({
-        name: siteName || ''
-      })
-    });
-    
+    // Format the request payload according to Hikvision API
+    const payload = {
+      name: personData.name,
+      gender: personData.gender || 'unknown',
+      personType: 1, // 1 = normal person
+      phone: personData.phone || '',
+      email: personData.email || '',
+      pictures: personData.faceData ? [personData.faceData] : []
+    };
+
+    // Register the person via Hikvision API
+    const response = await fetch(
+      `${settings.api_url}/api/hpcgw/v1/person/add`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
     const responseData = await response.json();
-    
-    if (responseData.code === '0' || responseData.errorCode === '0') {
+
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
       return {
-        success: true, 
-        message: 'Sites retrieved successfully',
-        sites: responseData.data?.sites || []
-      };
-    } else {
-      return {
-        success: false, 
-        message: `API error: ${responseData.msg || 'Unknown error'}`,
-        code: responseData.code || responseData.errorCode,
-        data: responseData 
+        success: false,
+        message: error.message,
+        errorCode: responseData.code
       };
     }
-  } catch (error) {
-    console.error('Error searching sites:', error);
+
+    // Get the person ID from the response
+    const personId = responseData.data.personId;
+
+    // Store the mapping in our database
+    const { error: dbError } = await supabase
+      .from('hikvision_persons')
+      .upsert({
+        person_id: personId,
+        member_id: personData.id,
+        name: personData.name,
+        gender: personData.gender,
+        phone: personData.phone,
+        email: personData.email,
+        status: 'active',
+        branch_id: branchId,
+        sync_status: 'success',
+        last_sync: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'member_id'
+      });
+
+    if (dbError) {
+      console.error('Error storing person mapping:', dbError);
+    }
+
+    // Return success
     return {
-      success: false, 
-      error: `Error searching sites: ${error.message}` 
+      success: true,
+      message: 'Person registered successfully',
+      personId
+    };
+  } catch (error) {
+    console.error('Error registering person:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error registering person'
     };
   }
 }
 
-// Rest of the code remains the same
+// Function to assign access privileges
+async function assignAccessPrivileges(
+  deviceId: string,
+  personId: string,
+  doorList: number[],
+  validStartTime?: string,
+  validEndTime?: string
+): Promise<any> {
+  try {
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get the device details
+    const { data: deviceData, error: deviceError } = await supabase
+      .from('hikvision_devices')
+      .select('branch_id')
+      .eq('device_id', deviceId)
+      .single();
+
+    if (deviceError || !deviceData) {
+      throw new Error('Device not found');
+    }
+
+    // Get the branch ID
+    const branchId = deviceData.branch_id;
+
+    // Get the latest token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('hikvision_tokens')
+      .select('*')
+      .eq('branch_id', branchId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (tokenError || !tokenData?.access_token) {
+      return {
+        success: false,
+        error: 'No valid access token found. Please authenticate first.'
+      };
+    }
+
+    // Get the API URL
+    const { data: settings, error: settingsError } = await supabase
+      .from('hikvision_api_settings')
+      .select('api_url')
+      .eq('branch_id', branchId)
+      .single();
+
+    if (settingsError || !settings?.api_url) {
+      throw new Error('Hikvision API settings not found');
+    }
+
+    const apiUrl = settings.api_url;
+
+    // Format the request payload according to Hikvision API
+    const payload: any = {
+      personId: personId,
+      deviceSerialNo: deviceId,
+      doorList: doorList
+    };
+
+    // Add optional validity period if provided
+    if (validStartTime) {
+      payload.validStartTime = validStartTime;
+    }
+    
+    if (validEndTime) {
+      payload.validEndTime = validEndTime;
+    }
+
+    // Make the API call
+    const response = await fetch(
+      `${apiUrl}/api/hpcgw/v1/acs/privilege/config`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
+      return {
+        success: false,
+        message: error.message,
+        errorCode: responseData.code
+      };
+    }
+
+    // Store the access privilege in our database
+    for (const doorId of doorList) {
+      const { error: dbError } = await supabase
+        .from('hikvision_access_privileges')
+        .upsert({
+          person_id: personId,
+          door_id: doorId.toString(),
+          privilege: 1,
+          schedule: 0,
+          valid_start_time: validStartTime,
+          valid_end_time: validEndTime,
+          status: 'active',
+          sync_status: 'success',
+          last_sync: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'person_id,door_id'
+        });
+
+      if (dbError) {
+        console.error('Error storing access privilege:', dbError);
+      }
+    }
+
+    // Return success
+    return {
+      success: true,
+      message: 'Access privileges assigned successfully'
+    };
+  } catch (error) {
+    console.error('Error assigning access privileges:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error assigning access privileges'
+    };
+  }
+}
+
+// Function to create a site
+async function createSite(
+  siteName: string,
+  branchId: string
+): Promise<any> {
+  try {
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get the latest token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('hikvision_tokens')
+      .select('*')
+      .eq('branch_id', branchId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (tokenError || !tokenData?.access_token) {
+      return {
+        success: false,
+        error: 'No valid access token found. Please authenticate first.'
+      };
+    }
+
+    // Get the API URL
+    const { data: settings, error: settingsError } = await supabase
+      .from('hikvision_api_settings')
+      .select('api_url')
+      .eq('branch_id', branchId)
+      .single();
+
+    if (settingsError || !settings?.api_url) {
+      throw new Error('Hikvision API settings not found');
+    }
+
+    const apiUrl = settings.api_url;
+
+    // Format the request payload according to Hikvision API
+    const payload = {
+      siteName,
+      remark: `Site for branch ${branchId}`
+    };
+
+    // Make the API call
+    const response = await fetch(
+      `${apiUrl}/api/hpcgw/v1/site/add`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
+      return {
+        success: false,
+        message: error.message,
+        errorCode: responseData.code
+      };
+    }
+
+    // Get the site ID from the response
+    const siteId = responseData.data?.siteId;
+
+    // Update the settings with the site ID
+    const { error: updateError } = await supabase
+      .from('hikvision_api_settings')
+      .update({
+        site_id: siteId,
+        site_name: siteName,
+        updated_at: new Date().toISOString()
+      })
+      .eq('branch_id', branchId);
+
+    if (updateError) {
+      console.error('Error updating site ID:', updateError);
+    }
+
+    // Return success
+    return {
+      success: true,
+      siteId,
+      siteName
+    };
+  } catch (error) {
+    console.error('Error creating site:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error creating site'
+    };
+  }
+}
+
+// Function to search sites
+async function searchSites(
+  settings: { api_url: string; branch_id: string },
+  siteName: string,
+  siteId: string,
+  supabase: any
+): Promise<any> {
+  try {
+    if (!settings?.api_url) {
+      throw new Error('Hikvision API URL not configured');
+    }
+
+    // Get the latest token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('hikvision_tokens')
+      .select('*')
+      .eq('branch_id', settings.branch_id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (tokenError || !tokenData?.access_token) {
+      return {
+        success: false,
+        error: 'No valid access token found. Please authenticate first.'
+      };
+    }
+
+    // Format the request payload according to Hikvision API
+    const payload: any = {};
+    
+    if (siteName) {
+      payload.siteName = siteName;
+    }
+    
+    if (siteId) {
+      payload.siteId = siteId;
+    }
+
+    // Make the API call
+    const response = await fetch(
+      `${settings.api_url}/api/hpcgw/v1/site/search`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
+      return {
+        success: false,
+        message: error.message,
+        errorCode: responseData.code
+      };
+    }
+
+    // Return the sites
+    return {
+      success: true,
+      sites: responseData.data?.list || []
+    };
+  } catch (error) {
+    console.error('Error searching sites:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error searching sites'
+    };
+  }
+}

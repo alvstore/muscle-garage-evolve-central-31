@@ -1,27 +1,22 @@
 
+// @deno-types="https://deno.land/x/supabase_js@v2.2.1/mod.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Define types
-interface HikvisionEvent {
-  event_id: string;
-  event_type: 'entry' | 'exit' | 'denied';
-  event_time: string;
-  person_id?: string;
-  person_name?: string;
-  door_id?: string;
-  door_name?: string;
-  device_id?: string;
-  device_name?: string;
-  card_no?: string;
-  face_id?: string;
+// Define environment variables
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+// Define interfaces for request types
+interface ProcessEventRequest {
+  eventId: string;
+  branchId: string;
 }
 
-// CORS headers for cross-origin requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
 serve(async (req) => {
@@ -34,401 +29,333 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request data
-    const requestData = await req.json();
+    // Parse the request body
+    const requestData: ProcessEventRequest = await req.json();
+    const { eventId, branchId } = requestData;
     
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (!eventId) {
+      throw new Error('eventId is required');
+    }
+    
+    // Initialize Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Process based on request type
-    if (requestData.action === 'process-events') {
-      return await processEvents(requestData.branchId, supabase, corsHeaders);
-    } else if (requestData.action === 'simulate-event') {
-      return await simulateEvent(requestData, supabase, corsHeaders);
-    } else {
+    // Get the event details
+    const { data: event, error: eventError } = await supabase
+      .from('hikvision_events')
+      .select('*')
+      .eq('event_id', eventId)
+      .single();
+    
+    if (eventError || !event) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid action' }),
-        { 
-          status: 400, 
-          headers: { 
+        JSON.stringify({
+          success: false,
+          error: 'Event not found'
+        }),
+        {
+          status: 404,
+          headers: {
             'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
+            ...corsHeaders
+          }
         }
       );
     }
-  } catch (error) {
-    console.error('Error processing request:', error);
+    
+    // Check if the event is already processed
+    if (event.processed) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Event already processed'
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
+      );
+    }
+    
+    // Process the event based on its type
+    let result;
+    switch (event.event_type) {
+      case 'entry':
+        result = await processEntryEvent(event, branchId, supabase);
+        break;
+      case 'exit':
+        result = await processExitEvent(event, branchId, supabase);
+        break;
+      case 'denied':
+        result = await processDeniedEvent(event, branchId, supabase);
+        break;
+      default:
+        result = {
+          success: false,
+          message: `Unsupported event type: ${event.event_type}`
+        };
+    }
+    
+    // Update the event record as processed
+    if (result.success) {
+      const { error: updateError } = await supabase
+        .from('hikvision_events')
+        .update({
+          processed: true,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', event.id);
+      
+      if (updateError) {
+        console.error('Error marking event as processed:', updateError);
+      }
+    }
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Unknown error' }),
-      { 
-        status: 500, 
-        headers: { 
+      JSON.stringify(result),
+      {
+        status: result.success ? 200 : 400,
+        headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
+          ...corsHeaders
+        }
+      }
+    );
+    
+  } catch (error) {
+    console.error('Error processing event:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: errorMessage
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       }
     );
   }
 });
 
-// Process Hikvision events
-async function processEvents(branchId: string, supabase: any, corsHeaders: any) {
-  if (!branchId) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Branch ID is required' }),
-      { 
-        status: 400, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
-  }
-
+async function processEntryEvent(event: any, branchId: string, supabase: any) {
   try {
-    // Get unprocessed events
-    const { data: events, error: eventsError } = await supabase
-      .from('hikvision_event')
-      .select('*')
-      .eq('processed', false)
-      .order('event_time', { ascending: true })
-      .limit(50);
-    
-    if (eventsError) {
-      throw new Error(`Error fetching events: ${eventsError.message}`);
+    // Get the person associated with this event
+    const personId = event.person_id;
+    if (!personId) {
+      return {
+        success: false,
+        message: 'No person ID associated with this event'
+      };
     }
     
-    if (!events || events.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: 'No events to process', processed: 0 }),
-        { 
-          status: 200, 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
-      );
-    }
+    // Get member ID from hikvision_persons table
+    const { data: person, error: personError } = await supabase
+      .from('hikvision_persons')
+      .select('member_id')
+      .eq('person_id', personId)
+      .single();
     
-    // Process events and create attendance records
-    let processedCount = 0;
-    const logs = [];
+    const memberId = person?.member_id;
     
-    for (const event of events) {
-      try {
-        // Get member by access credential
-        let member = null;
-        
-        if (event.person_id) {
-          const { data: memberByCredential } = await supabase
-            .from('member_access_credentials')
-            .select('member_id')
-            .eq('credential_type', 'hikvision')
-            .eq('credential_value', event.person_id)
-            .eq('is_active', true)
-            .maybeSingle();
-          
-          if (memberByCredential) {
-            const { data: memberData } = await supabase
-              .from('members')
-              .select('*')
-              .eq('id', memberByCredential.member_id)
-              .maybeSingle();
-              
-            member = memberData;
-          }
-        }
-        
-        // If no member found by credential, try by card number
-        if (!member && event.card_no) {
-          const { data: memberByCard } = await supabase
-            .from('members')
-            .select('*')
-            .eq('id', event.card_no)
-            .maybeSingle();
-            
-          member = memberByCard;
-        }
-        
-        if (!member) {
-          logs.push(`No member found for event ${event.event_id}`);
-          continue;
-        }
-        
-        // Process event based on type
-        if (event.event_type === 'entry') {
-          // Create attendance record
-          await supabase
-            .from('attendance')
-            .insert({
-              member_id: member.id,
-              check_in_time: event.event_time,
-              source: 'access_control',
-              device_id: event.device_id,
-              event_id: event.event_id
-            });
-            
-          logs.push(`Created check-in for ${member.name}`);
-        } else if (event.event_type === 'exit') {
-          // Find most recent unclosed check-in
-          const { data: recentEntry } = await supabase
-            .from('attendance')
-            .select('id')
-            .eq('member_id', member.id)
-            .is('check_out_time', null)
-            .order('check_in_time', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-            
-          if (recentEntry) {
-            // Update with check-out time
-            await supabase
-              .from('attendance')
-              .update({ check_out_time: event.event_time })
-              .eq('id', recentEntry.id);
-              
-            logs.push(`Updated check-out for ${member.name}`);
-          } else {
-            // Create a new record with check-out only
-            await supabase
-              .from('attendance')
-              .insert({
-                member_id: member.id,
-                check_out_time: event.event_time,
-                source: 'access_control',
-                device_id: event.device_id,
-                event_id: event.event_id
-              });
-              
-            logs.push(`Created check-out for ${member.name} (no check-in found)`);
-          }
-        }
-        
-        // Mark event as processed
-        await supabase
-          .from('hikvision_event')
-          .update({ processed: true })
-          .eq('id', event.id);
-          
-        processedCount++;
-      } catch (eventError) {
-        console.error(`Error processing event ${event.event_id}:`, eventError);
-        logs.push(`Error processing event ${event.event_id}: ${eventError.message}`);
+    // If we couldn't find a mapping, try to use person_id directly as member_id
+    if (!memberId) {
+      // Check if this personId is a valid member ID
+      const { data: directMember, error: directMemberError } = await supabase
+        .from('members')
+        .select('id')
+        .eq('id', personId)
+        .single();
+      
+      if (directMemberError || !directMember) {
+        return {
+          success: false,
+          message: 'Could not determine member ID from person ID'
+        };
       }
     }
     
-    // Log summary to hikvision_sync_logs
-    await supabase
-      .from('hikvision_sync_logs')
+    const finalMemberId = memberId || personId;
+    
+    // Create an attendance record for this member
+    const { data: attendance, error: attendanceError } = await supabase
+      .from('member_attendance')
       .insert({
+        member_id: finalMemberId,
         branch_id: branchId,
-        event_type: 'process',
-        status: processedCount > 0 ? 'success' : 'warning',
-        message: `Processed ${processedCount} of ${events.length} events`,
-        details: logs.join('\n')
-      });
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Processed ${processedCount} of ${events.length} events`,
-        processed: processedCount,
-        logs
-      }),
-      { 
-        status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
-  } catch (error) {
-    console.error('Error processing events:', error);
-    
-    // Log error
-    try {
-      await supabase
-        .from('hikvision_sync_logs')
-        .insert({
-          branch_id: branchId,
-          event_type: 'error',
-          status: 'error',
-          message: `Error processing events: ${error.message}`,
-          details: error.stack
-        });
-    } catch (logError) {
-      console.error('Failed to log error:', logError);
-    }
-    
-    return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Unknown error' }),
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
-  }
-}
-
-// Simulate a Hikvision event (for testing)
-async function simulateEvent(requestData: any, supabase: any, corsHeaders: any) {
-  const { memberId, eventType = 'entry', branchId } = requestData;
-  
-  if (!memberId || !branchId) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Member ID and Branch ID are required' }),
-      { 
-        status: 400, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
-  }
-
-  try {
-    // Get member data
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('id, name, access_control_id')
-      .eq('id', memberId)
-      .maybeSingle();
-    
-    if (memberError || !member) {
-      return new Response(
-        JSON.stringify({ success: false, error: `Member not found: ${memberError?.message || 'Not found'}` }),
-        { 
-          status: 404, 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
-      );
-    }
-    
-    // Create simulated event
-    const event: HikvisionEvent = {
-      event_id: `sim-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      event_type: eventType as 'entry' | 'exit' | 'denied',
-      event_time: new Date().toISOString(),
-      person_id: member.access_control_id || member.id,
-      person_name: member.name,
-      door_id: 'door-1',
-      door_name: 'Main Entrance',
-      device_id: 'device-simulator',
-      device_name: 'Simulator Device'
-    };
-    
-    // Insert event
-    const { data: insertedEvent, error: insertError } = await supabase
-      .from('hikvision_event')
-      .insert(event)
+        check_in: event.event_time,
+        device_id: event.device_id,
+        access_method: 'access_control',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .select()
       .single();
     
-    if (insertError) {
-      throw new Error(`Error creating event: ${insertError.message}`);
+    if (attendanceError) {
+      return {
+        success: false,
+        message: `Failed to create attendance record: ${attendanceError.message}`
+      };
     }
     
-    // Process the event immediately
-    if (eventType === 'entry') {
-      await supabase
-        .from('attendance')
+    return {
+      success: true,
+      message: 'Entry processed successfully',
+      attendanceId: attendance.id
+    };
+    
+  } catch (error) {
+    console.error('Error processing entry event:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error processing entry event'
+    };
+  }
+}
+
+async function processExitEvent(event: any, branchId: string, supabase: any) {
+  try {
+    // Get the person associated with this event
+    const personId = event.person_id;
+    if (!personId) {
+      return {
+        success: false,
+        message: 'No person ID associated with this event'
+      };
+    }
+    
+    // Get member ID from hikvision_persons table
+    const { data: person, error: personError } = await supabase
+      .from('hikvision_persons')
+      .select('member_id')
+      .eq('person_id', personId)
+      .single();
+    
+    const memberId = person?.member_id;
+    
+    // If we couldn't find a mapping, try to use person_id directly as member_id
+    const finalMemberId = memberId || personId;
+    
+    // Find the latest attendance record for this member that doesn't have a check_out
+    const { data: attendanceRecords, error: attendanceError } = await supabase
+      .from('member_attendance')
+      .select('*')
+      .eq('member_id', finalMemberId)
+      .is('check_out', null)
+      .order('check_in', { ascending: false })
+      .limit(1);
+    
+    if (attendanceError) {
+      return {
+        success: false,
+        message: `Failed to find attendance record: ${attendanceError.message}`
+      };
+    }
+    
+    if (!attendanceRecords || attendanceRecords.length === 0) {
+      // No open attendance record found, create a new one with just check_out
+      const { data: newAttendance, error: newAttendanceError } = await supabase
+        .from('member_attendance')
         .insert({
-          member_id: member.id,
-          check_in_time: event.event_time,
-          source: 'access_control_simulation',
+          member_id: finalMemberId,
+          branch_id: branchId,
+          check_out: event.event_time,
           device_id: event.device_id,
-          event_id: event.event_id
-        });
-    } else if (eventType === 'exit') {
-      // Find most recent unclosed check-in
-      const { data: recentEntry } = await supabase
-        .from('attendance')
-        .select('id')
-        .eq('member_id', member.id)
-        .is('check_out_time', null)
-        .order('check_in_time', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-        
-      if (recentEntry) {
-        // Update with check-out time
-        await supabase
-          .from('attendance')
-          .update({ check_out_time: event.event_time })
-          .eq('id', recentEntry.id);
-      } else {
-        // Create a new record with check-out only
-        await supabase
-          .from('attendance')
-          .insert({
-            member_id: member.id,
-            check_out_time: event.event_time,
-            source: 'access_control_simulation',
-            device_id: event.device_id,
-            event_id: event.event_id
-          });
+          access_method: 'access_control',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (newAttendanceError) {
+        return {
+          success: false,
+          message: `Failed to create exit attendance record: ${newAttendanceError.message}`
+        };
       }
+      
+      return {
+        success: true,
+        message: 'Exit processed successfully (new record)',
+        attendanceId: newAttendance.id
+      };
     }
     
-    // Mark as processed
-    await supabase
-      .from('hikvision_event')
-      .update({ processed: true })
-      .eq('id', insertedEvent.id);
+    // Update the existing attendance record with check_out
+    const { data: updatedAttendance, error: updateError } = await supabase
+      .from('member_attendance')
+      .update({
+        check_out: event.event_time,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', attendanceRecords[0].id)
+      .select()
+      .single();
     
-    // Log success
-    await supabase
-      .from('hikvision_sync_logs')
+    if (updateError) {
+      return {
+        success: false,
+        message: `Failed to update attendance record: ${updateError.message}`
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Exit processed successfully',
+      attendanceId: updatedAttendance.id
+    };
+    
+  } catch (error) {
+    console.error('Error processing exit event:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error processing exit event'
+    };
+  }
+}
+
+async function processDeniedEvent(event: any, branchId: string, supabase: any) {
+  try {
+    // For denied events, we simply log them
+    const { error: logError } = await supabase
+      .from('access_denial_logs')
       .insert({
+        person_id: event.person_id,
+        door_id: event.door_id,
+        device_id: event.device_id,
+        event_time: event.event_time,
+        event_id: event.event_id,
         branch_id: branchId,
-        event_type: 'simulation',
-        status: 'success',
-        message: `Simulated ${eventType} event for ${member.name}`,
-        entity_type: 'member',
-        entity_id: member.id,
-        entity_name: member.name
+        raw_data: event.raw_data,
+        created_at: new Date().toISOString()
       });
     
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Simulated ${eventType} event for ${member.name}`,
-        event: insertedEvent
-      }),
-      { 
-        status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
-  } catch (error) {
-    console.error('Error simulating event:', error);
+    if (logError) {
+      return {
+        success: false,
+        message: `Failed to log denial event: ${logError.message}`
+      };
+    }
     
-    return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Unknown error' }),
-      { 
-        status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
-      }
-    );
+    return {
+      success: true,
+      message: 'Denied access event logged successfully'
+    };
+    
+  } catch (error) {
+    console.error('Error processing denied event:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error processing denied event'
+    };
   }
 }
