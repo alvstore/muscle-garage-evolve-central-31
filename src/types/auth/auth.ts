@@ -20,12 +20,44 @@ export interface User {
 }
 
 export type Permission = 
-  | 'manage_members'
-  | 'manage_trainers'
-  | 'manage_classes'
-  | 'manage_memberships'
-  | 'manage_payments'
-  | 'manage_reports'
-  | 'manage_settings'
-  | 'view_dashboard'
-  | 'view_reports';
+  // Member permissions
+  | 'view:members' 
+  | 'create:members' 
+  | 'edit:members' 
+  | 'delete:members'
+  
+  // Trainer permissions
+  | 'view:trainers' 
+  | 'create:trainers' 
+  | 'edit:trainers' 
+  | 'delete:trainers'
+  
+  // Staff permissions
+  | 'view:staff' 
+  | 'create:staff' 
+  | 'edit:staff' 
+  | 'delete:staff'
+  
+  // Class permissions
+  | 'view:classes' 
+  | 'create:classes' 
+  | 'edit:classes' 
+  | 'delete:classes'
+  
+  // Membership permissions
+  | 'view:memberships' 
+  | 'create:memberships' 
+  | 'edit:memberships' 
+  | 'delete:memberships'
+  
+  // System permissions
+  | 'view:reports'
+  | 'view:dashboard'
+  | 'view:settings'
+  | 'edit:settings'
+  | 'view:finances'
+  | 'create:finances'
+  | 'view:branches'
+  | 'create:branches'
+  | 'edit:branches'
+  | 'export_data';

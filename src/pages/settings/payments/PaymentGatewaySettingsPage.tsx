@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { razorpayService } from '@/services/integrations/razorpayService';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, RefreshCw, DollarSign, KeyRound, Lock, Globe, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { usePermissions } from "@/hooks/auth/use-permissions";
+import { useSettings } from '@/hooks/useSettings';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const PaymentGatewaySettingsPage: React.FC = () => {
   const { can } = usePermissions();
@@ -71,13 +73,32 @@ const PaymentGatewaySettingsPage: React.FC = () => {
     }, 1000);
   };
 
-  const handleTestConnection = (gateway: string) => {
-    toast.info(`Testing ${gateway} connection...`);
-    
-    // Simulate connection test
-    setTimeout(() => {
-      toast.success(`${gateway} connection test successful!`);
-    }, 1500);
+  const handleTestConnection = async (gateway: string) => {
+    try {
+      toast.info(`Testing ${gateway} connection...`);
+      
+      if (gateway === 'Razorpay') {
+        const isConnected = await razorpayService.testConnection(
+          razorpaySettings.keyId,
+          razorpaySettings.keySecret
+        );
+        
+        if (isConnected) {
+          toast.success('Razorpay connection test successful!');
+        } else {
+          toast.error('Failed to connect to Razorpay. Please check your API credentials.');
+        }
+      } else {
+        // For other gateways, show a temporary success message
+        // TODO: Implement actual connection tests for other gateways
+        setTimeout(() => {
+          toast.success(`${gateway} connection test successful!`);
+        }, 1000);
+      }
+    } catch (error) {
+      console.error(`Error testing ${gateway} connection:`, error);
+      toast.error(`Failed to test ${gateway} connection. Please try again.`);
+    }
   };
 
   return (

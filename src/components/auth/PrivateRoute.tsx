@@ -9,6 +9,7 @@ interface PrivateRouteProps {
   allowedRoles?: UserRole[];
   requiresAuth?: boolean;
   requiredPermission?: string;
+  permission?: string; // Alias for requiredPermission for backward compatibility
   children?: ReactNode;
 }
 
@@ -16,8 +17,11 @@ const PrivateRoute = ({
   allowedRoles, 
   requiresAuth = true, 
   requiredPermission,
+  permission,
   children
 }: PrivateRouteProps) => {
+  // Use permission as an alias for requiredPermission if not explicitly provided
+  const effectivePermission = requiredPermission || permission;
   const { isAuthenticated, user, role, isLoading: isAuthLoading } = useAuth();
   const { hasPermission, isLoading: isPermissionsLoading } = usePermissions();
   const location = useLocation();
@@ -42,10 +46,15 @@ const PrivateRoute = ({
   // Determine effective role, prioritizing the one from the profile
   const effectiveRole = role || (user?.role as UserRole);
 
-  // If allowedRoles is specified, check if user has an allowed role
-  if (allowedRoles && allowedRoles.length > 0 && effectiveRole) {
+  // If a permission is required, check if user has the required permission
+  if (effectivePermission) {
+    if (!hasPermission(effectivePermission)) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+  } 
+  // Fallback to role-based check if no permission is required but roles are specified
+  else if (allowedRoles && allowedRoles.length > 0 && effectiveRole) {
     if (!allowedRoles.includes(effectiveRole as UserRole)) {
-      // Redirect to unauthorized page if user doesn't have an allowed role
       return <Navigate to="/unauthorized" replace />;
     }
   }

@@ -1,8 +1,19 @@
 
 import api from '../api';
-import { Invoice, InvoiceStatus } from '@/types/finance';
 import { toast } from 'sonner';
-import { RazorpayEventType, WebhookStatus } from '@/types/webhooks';
+
+type RazorpayEventType = 'payment.captured' | 'payment.failed' | 'order.paid' | 
+  'subscription.activated' | 'subscription.charged' | 'subscription.cancelled' |
+  'refund.processed' | 'invoice.paid' | 'invoice.expired' | 'invoice.fulfilled';
+
+type WebhookStatus = 'pending' | 'processing' | 'delivered' | 'failed' | 'retry';
+
+interface Invoice {
+  id: string;
+  amount: number;
+  status: string;
+  // Add other invoice properties as needed
+}
 
 export interface RazorpayOptions {
   key: string;
@@ -32,6 +43,23 @@ export interface PaymentResponse {
  * Service for interacting with Razorpay payment gateway
  */
 export const razorpayService = {
+  /**
+   * Test connection to Razorpay API
+   * @param keyId Razorpay API key ID
+   * @param keySecret Razorpay API key secret
+   */
+  async testConnection(keyId: string, keySecret: string): Promise<boolean> {
+    try {
+      const response = await api.post('/integrations/razorpay/test-connection', {
+        key_id: keyId,
+        key_secret: keySecret
+      });
+      return response.data.success === true;
+    } catch (error) {
+      console.error('Error testing Razorpay connection:', error);
+      return false;
+    }
+  },
   
   /**
    * Create a new payment order
@@ -253,7 +281,7 @@ export const razorpayService = {
   /**
    * Get invoices updated by webhooks
    */
-  async getInvoicesUpdatedByWebhooks(status?: InvoiceStatus): Promise<Invoice[]> {
+  async getInvoicesUpdatedByWebhooks(status?: string): Promise<Invoice[]> {
     try {
       let url = '/integrations/razorpay/webhook-updated-invoices';
       if (status) {

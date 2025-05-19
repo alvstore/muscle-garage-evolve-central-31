@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { AppRoute } from '@/types/route';
 import UnifiedSettingsPage from '@/pages/settings/core/UnifiedSettingsPage';
 import InvoiceSettingsPage from '@/pages/settings/payments/InvoiceSettingsPage';
@@ -33,13 +34,18 @@ import {
 } from 'lucide-react';
 
 export const settingsRoutes: AppRoute[] = [
+  // Redirect old payment integration URL to new payment gateways URL
+  {
+    path: '/settings/integrations/payment',
+    element: <Navigate to="/settings/payments/gateways" replace />
+  },
   {
     path: '/settings',
     element: <UnifiedSettingsPage />,
     meta: {
       title: 'System Settings',
       breadcrumb: 'Settings',
-      permission: 'access_settings',
+      permission: 'view:settings',
       icon: <Settings className="h-5 w-5" />
     }
   },
@@ -49,7 +55,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Invoice Settings',
       breadcrumb: 'Invoice Settings',
-      permission: 'manage_settings',
+      permission: 'edit:settings',
       icon: <FileText className="h-5 w-5" />
     }
   },
@@ -59,7 +65,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Global Settings',
       breadcrumb: 'Global Settings',
-      permission: 'manage_settings',
+      permission: 'edit:settings',
       hideInNav: true,
       icon: <Globe className="h-5 w-5" />
     }
@@ -69,8 +75,8 @@ export const settingsRoutes: AppRoute[] = [
     element: <BranchManagementPage />,
     meta: {
       title: 'Branch Management',
-      breadcrumb: 'Branch Management',
-      permission: 'manage_branches',
+      breadcrumb: 'Branches',
+      permission: 'edit:branches',
       icon: <Store className="h-5 w-5" />
     }
   },
@@ -78,9 +84,9 @@ export const settingsRoutes: AppRoute[] = [
     path: '/settings/integrations',
     element: <IntegrationsPage />,
     meta: {
-      title: 'Integration Settings',
+      title: 'Integrations',
       breadcrumb: 'Integrations',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       icon: <Webhook className="h-5 w-5" />
     }
   },
@@ -90,7 +96,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Access Control Management',
       breadcrumb: 'Access Control',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       hideInNav: true
     }
   },
@@ -100,17 +106,17 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'AI Services Configuration',
       breadcrumb: 'AI Services',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       hideInNav: true
     }
   },
   {
-    path: '/settings/integrations/payment',
+    path: '/settings/payments/gateways',
     element: <PaymentGatewaySettingsPage />,
     meta: {
       title: 'Payment Gateway Settings',
-      breadcrumb: 'Payment Gateway',
-      permission: 'manage_integrations',
+      breadcrumb: 'Payment Gateways',
+      permission: 'edit:settings',
       icon: <CreditCard className="h-5 w-5" />
     }
   },
@@ -120,7 +126,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Push Notification Settings',
       breadcrumb: 'Push Notifications',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       icon: <BellRing className="h-5 w-5" />
     }
   },
@@ -130,7 +136,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Email Integration',
       breadcrumb: 'Email Integration',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       icon: <Mail className="h-5 w-5" />
     }
   },
@@ -140,7 +146,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'SMS Settings',
       breadcrumb: 'SMS Settings',
-      permission: 'manage_integrations',
+      permission: 'edit:settings',
       icon: <MessageSquare className="h-5 w-5" />
     }
   },
@@ -150,18 +156,18 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'WhatsApp Settings',
       breadcrumb: 'WhatsApp Settings',
-      permission: 'manage_integrations',
-      icon: <MessageSquare className="h-5 w-5" />
+      permission: 'edit:settings',
+      hideInNav: true
     }
   },
   {
     path: '/settings/templates',
     element: <MessageTemplatesPage />,
     meta: {
-      title: 'Templates',
-      breadcrumb: 'Templates',
-      permission: 'manage_templates',
-      icon: <FileText className="h-5 w-5" />
+      title: 'Message Templates',
+      breadcrumb: 'Message Templates',
+      permission: 'edit:settings',
+      icon: <MessageSquare className="h-5 w-5" />
     }
   },
   {
@@ -170,7 +176,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Email Templates',
       breadcrumb: 'Email Templates',
-      permission: 'manage_templates',
+      permission: 'edit:settings',
       hideInNav: true
     }
   },
@@ -180,7 +186,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'SMS Templates',
       breadcrumb: 'SMS Templates',
-      permission: 'manage_templates',
+      permission: 'edit:settings',
       hideInNav: true
     }
   },
@@ -190,7 +196,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'WhatsApp Templates',
       breadcrumb: 'WhatsApp Templates',
-      permission: 'manage_templates',
+      permission: 'edit:settings',
       hideInNav: true
     }
   },
@@ -200,7 +206,7 @@ export const settingsRoutes: AppRoute[] = [
     meta: {
       title: 'Notification Settings',
       breadcrumb: 'Notification Settings',
-      permission: 'manage_settings',
+      permission: 'edit:settings',
       icon: <BellRing className="h-5 w-5" />
     }
   },
@@ -208,10 +214,10 @@ export const settingsRoutes: AppRoute[] = [
     path: '/settings/roles',
     element: <RolePermissionsPage />,
     meta: {
-      title: 'Role & Permissions',
-      breadcrumb: 'Role & Permissions',
-      permission: 'manage_roles',
-      icon: <UserCog className="h-5 w-5" />
+      title: 'Access Control',
+      breadcrumb: 'Access Control',
+      permission: 'edit:staff',
+      icon: <Lock className="h-5 w-5" />
     }
   },
 ];
