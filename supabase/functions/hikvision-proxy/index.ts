@@ -952,3 +952,183 @@ async function searchSites(
     };
   }
 }
+
+// New function to subscribe to events
+async function subscribeToEvents(
+  settings: { api_url: string; branch_id: string },
+  branchId: string,
+  supabase: any
+): Promise<any> {
+  try {
+    // Get token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('hikvision_tokens')
+      .select('*')
+      .eq('branch_id', branchId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (tokenError || !tokenData?.access_token) {
+      return {
+        success: false,
+        error: 'No valid access token found. Please authenticate first.'
+      };
+    }
+    
+    // Subscribe to events
+    const response = await fetch(
+      `${settings.api_url}/api/hpcgw/v1/mq/subscribe`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          topics: ['acs.event.door']
+        })
+      }
+    );
+    
+    const responseData = await response.json();
+    
+    if (responseData.code !== '0') {
+      const error = getHikvisionError(responseData.code);
+      return {
+        success: false,
+        message: error.message,
+        errorCode: responseData.code
+      };
+    }
+    
+    // Store subscription info
+    const { error: dbError } = await supabase
+      .from('hikvision_subscriptions')
+      .upsert({
+        branch_id: branchId,
+        subscription_id: responseData.data.subscriptionId,
+        topics: ['acs.event.door'],
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'branch_id'
+      });
+      
+    if (dbError) {
+      console.error('Error storing subscription:', dbError);
+    }
+    
+    return {
+      success: true,
+      subscriptionId: responseData.data.subscriptionId
+    };
+  } catch (error) {
+    console.error('Error subscribing to events:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error subscribing to events'
+    };
+  }
+}
+
+// New function to get events
+async function getEvents(
+  settings: { api_url: string; branch_id: string },
+  branchId: string,
+  personId?: string,
+  limit: number = 10,
+  supabase: any
+): Promise<any> {
+  try {
+    // Query from our database instead of directly from Hikvision
+    // This is more efficient as we'll store events via webhooks
+    let query = supabase
+      .from('hikvision_events')
+      .select('*')
+      .eq('branch_id', branchId)
+      .order('event_time', { ascending: false })
+      .limit(limit);
+      
+    if (personId) {
+      query = query.eq('person_id', personId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      success: true,
+      events: data.map((event: any) => ({
+        id: event.id,
+        eventTime: event.event_time,
+        eventType: event.event_type,
+        doorId: event.door_id,
+        doorName: event.door_name,
+        personId: event.person_id,
+        personName: event.person_name,
+        status: event.status
+      }))
+    };
+  } catch (error) {
+    console.error('Error getting events:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error getting events'
+    };
+  }
+}
+
+// New function to handle webhooks
+async function handleEventWebhook(
+  req: Request,
+  supabase: any
+): Promise<any> {
+  try {
+    const webhookData = await req.json();
+    
+    // Validate webhook data
+    if (!webhookData.eventType || !webhookData.eventTime) {
+      return {
+        success: false,
+        error: 'Invalid webhook data'
+      };
+    }
+    
+    // Store the event
+    const { error } = await supabase
+      .from('hikvision_events')
+      .insert({
+        event_type: webhookData.eventType,
+        event_time: webhookData.eventTime,
+        door_id: webhookData.doorId,
+        door_name: webhookData.doorName,
+        person_id: webhookData.personId,
+        person_name: webhookData.personName,
+        device_id: webhookData.deviceId,
+        device_name: webhookData.deviceName,
+        branch_id: webhookData.branchId || 'unknown',
+        status: webhookData.status || 'success',
+        raw_data: webhookData
+      });
+      
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      success: true,
+      message: 'Event processed successfully'
+    };
+  } catch (error) {
+    console.error('Error handling webhook:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error handling webhook'
+    };
+  }
+}

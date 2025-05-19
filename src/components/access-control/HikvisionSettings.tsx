@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, RefreshCw, CheckCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/services/api/supabaseClient';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface HikvisionSettingsProps {
   onUpdated?: () => void;
@@ -41,6 +42,9 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     branch_id: '',
     devices: []
   });
+  const [isTesting, setIsTesting] = useState(false);
+  const [availableSites, setAvailableSites] = useState<{id: string, name: string}[]>([]);
+  const [isLoadingSites, setIsLoadingSites] = useState(false);
 
   // Load existing configuration
   useEffect(() => {
@@ -141,6 +145,77 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     }
   };
   
+  // Test connection and fetch sites
+  const testConnection = async () => {
+    if (!config.app_key || !config.app_secret || !config.api_url) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    try {
+      setIsTesting(true);
+      
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          action: 'getToken',
+          apiUrl: config.api_url,
+          appKey: config.app_key,
+          secretKey: config.app_secret,
+          branchId: currentBranch?.id
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (!data?.success) {
+        toast.error(`Connection failed: ${data?.error || 'Unknown error'}`);
+        return;
+      }
+      
+      toast.success('Connection successful!');
+      
+      // Fetch available sites
+      fetchSites();
+      
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+  
+  const fetchSites = async () => {
+    if (!currentBranch?.id) return;
+    
+    try {
+      setIsLoadingSites(true);
+      
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          action: 'searchSites',
+          apiUrl: config.api_url,
+          branchId: currentBranch.id
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.sites) {
+        setAvailableSites(data.sites.map((site: any) => ({
+          id: site.siteId,
+          name: site.siteName
+        })));
+      }
+      
+    } catch (error) {
+      console.error('Error fetching sites:', error);
+      toast.error('Failed to fetch sites');
+    } finally {
+      setIsLoadingSites(false);
+    }
+  };
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -202,6 +277,48 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     placeholder="Enter your Hikvision App Secret"
                   />
                 </div>
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={testConnection}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {availableSites.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="site_id">Select Site</Label>
+                    <Select 
+                      value={config.site_id} 
+                      onValueChange={(value) => setConfig(prev => ({ ...prev, site_id: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a site" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSites.map((site) => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </>
           )}

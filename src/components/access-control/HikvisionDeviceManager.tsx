@@ -43,88 +43,72 @@ import {
 import { Loader2, Cpu, RefreshCw, CheckCircle, XCircle, PlusCircle, Trash2, Edit, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { HikvisionDevice } from '@/types/hikvision';
+import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useBranch } from '@/hooks/settings/use-branches';
 
 interface HikvisionDeviceManagerProps {
   siteId?: string;
 }
 
 const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId }) => {
-  const [devices, setDevices] = useState<HikvisionDevice[]>([
-    // Sample devices for UI display
-    {
-      deviceId: 'dev001',
-      deviceName: 'Main Entrance Controller',
-      deviceType: 'access-control',
-      deviceAddress: '192.168.1.100',
-      devicePort: 8000,
-      deviceStatus: 'online',
-      serialNumber: 'AC2023001',
-    },
-    {
-      deviceId: 'dev002',
-      deviceName: 'Swimming Pool Access',
-      deviceType: 'access-control',
-      deviceAddress: '192.168.1.101',
-      devicePort: 8000,
-      deviceStatus: 'offline',
-      serialNumber: 'AC2023002',
-    },
-  ]);
+  const { currentBranch } = useBranch();
+  const { 
+    devices, 
+    fetchDevices, 
+    syncDevices, 
+    isLoadingDevices, 
+    testConnection,
+    isConnected
+  } = useHikvisionSettings(currentBranch?.id);
   
-  const [loading, setLoading] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<HikvisionDevice | null>(null);
   const [newDevice, setNewDevice] = useState<Partial<HikvisionDevice>>({
-    deviceName: '',
-    deviceAddress: '',
-    devicePort: 8000,
-    deviceUsername: '',
-    devicePassword: '',
+    name: '',
+    ipAddress: '',
+    port: 8000,
+    username: '',
+    password: '',
     deviceType: 'access-control'
   });
   
+  useEffect(() => {
+    if (currentBranch?.id) {
+      fetchDevices();
+    }
+  }, [currentBranch?.id, fetchDevices]);
+  
   const refreshDevices = async () => {
-    setLoading(true);
     try {
-      // In a real implementation, this would fetch devices from an API
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      toast.success('Devices refreshed successfully');
+      await syncDevices();
     } catch (error) {
       console.error('Failed to refresh devices:', error);
       toast.error('Failed to refresh devices. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
   
   const testDeviceConnection = async (device: HikvisionDevice) => {
     try {
       setSelectedDevice({...device, deviceStatus: 'unknown'});
-      // Simulate API call to test connection
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // 80% chance of success for demo purposes
-      const success = Math.random() > 0.2;
+      const result = await testConnection({
+        apiUrl: device.ipAddress,
+        appKey: device.username,
+        appSecret: device.password
+      });
       
-      if (success) {
+      if (result.success) {
         setSelectedDevice({...device, deviceStatus: 'online'});
-        toast.success(`Connection to ${device.deviceName} successful`);
+        toast.success(`Connection to ${device.name} successful`);
         
         // Update devices list
-        setDevices(devices.map(d => 
-          d.deviceId === device.deviceId ? {...d, deviceStatus: 'online'} : d
-        ));
+        fetchDevices();
       } else {
         setSelectedDevice({...device, deviceStatus: 'offline'});
-        toast.error(`Failed to connect to ${device.deviceName}`);
-        
-        // Update devices list
-        setDevices(devices.map(d => 
-          d.deviceId === device.deviceId ? {...d, deviceStatus: 'offline'} : d
-        ));
+        toast.error(`Failed to connect to ${device.name}: ${result.message}`);
       }
     } catch (error) {
       console.error('Connection test error:', error);
-      toast.error(`Error testing connection to ${device.deviceName}`);
+      toast.error(`Error testing connection to ${device.name}`);
       setSelectedDevice({...device, deviceStatus: 'offline'});
     }
   };

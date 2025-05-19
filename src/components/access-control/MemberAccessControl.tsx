@@ -54,7 +54,9 @@ const MemberAccessControl: React.FC<MemberAccessControlProps> = ({ branchId }) =
     from: new Date(),
     to: addDays(new Date(), 365),
   });
-
+  const [memberEvents, setMemberEvents] = useState<HikvisionEvent[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  
   // Access the Hikvision settings and devices
   const { 
     devices, 
@@ -112,6 +114,24 @@ const MemberAccessControl: React.FC<MemberAccessControlProps> = ({ branchId }) =
     }
   };
 
+  const fetchMemberEvents = async (memberId: string) => {
+    if (!memberId) return;
+    
+    try {
+      setIsLoadingEvents(true);
+      
+      if (getPersonEvents) {
+        const events = await getPersonEvents(memberId, 10); // Get last 10 events
+        setMemberEvents(events);
+      }
+    } catch (error) {
+      console.error('Error fetching member events:', error);
+      toast.error('Failed to fetch access events');
+    } finally {
+      setIsLoadingEvents(false);
+    }
+  };
+  
   const handleShowPermissions = async (member: Member) => {
     setSelectedMember(member);
     
@@ -131,6 +151,9 @@ const MemberAccessControl: React.FC<MemberAccessControlProps> = ({ branchId }) =
           })));
         }
       }
+      
+      // Also fetch recent events
+      await fetchMemberEvents(member.id);
       
       setShowPermissionDialog(true);
     } catch (error) {
@@ -301,90 +324,136 @@ const MemberAccessControl: React.FC<MemberAccessControlProps> = ({ branchId }) =
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {/* Current Permissions */}
-            <div>
-              <h3 className="text-lg font-medium mb-2">Current Access</h3>
-              {memberPermissions.length === 0 ? (
-                <p className="text-muted-foreground">No access permissions set</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Door</TableHead>
-                      <TableHead>Valid Period</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {memberPermissions.map((perm) => (
-                      <TableRow key={perm.id}>
-                        <TableCell>{perm.doorName}</TableCell>
-                        <TableCell>
-                          {perm.validFrom ? (
-                            <>
-                              {perm.validFrom.toLocaleDateString()} - {perm.validTo?.toLocaleDateString() || 'Forever'}
-                            </>
-                          ) : (
-                            'No time limit'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={perm.status === 'active' ? 'default' : 'secondary'}>
-                            {perm.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
+          <Tabs defaultValue="permissions">
+            <TabsList>
+              <TabsTrigger value="permissions">Permissions</TabsTrigger>
+              <TabsTrigger value="events">Recent Events</TabsTrigger>
+            </TabsList>
             
-            {/* Assign New Access */}
-            <div>
-              <h3 className="text-lg font-medium mb-2">Assign Access</h3>
-              {isConnected ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Valid Period</Label>
-                      <DatePickerWithRange
-                        value={dateRange}
-                        onChange={setDateRange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Access Door</Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {devices.flatMap(device => 
-                          device.doors?.map(door => (
-                            <div key={door.id} className="flex items-center justify-between border rounded p-2">
-                              <div className="flex items-center space-x-2">
-                                <Door className="h-4 w-4" />
-                                <span>{door.doorName || 'Door ' + door.doorNumber}</span>
+            <TabsContent value="permissions">
+              {/* Current Permissions */}
+              <div>
+                <h3 className="text-lg font-medium mb-2">Current Access</h3>
+                {memberPermissions.length === 0 ? (
+                  <p className="text-muted-foreground">No access permissions set</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Door</TableHead>
+                        <TableHead>Valid Period</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {memberPermissions.map((perm) => (
+                        <TableRow key={perm.id}>
+                          <TableCell>{perm.doorName}</TableCell>
+                          <TableCell>
+                            {perm.validFrom ? (
+                              <>
+                                {perm.validFrom.toLocaleDateString()} - {perm.validTo?.toLocaleDateString() || 'Forever'}
+                              </>
+                            ) : (
+                              'No time limit'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={perm.status === 'active' ? 'default' : 'secondary'}>
+                              {perm.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+              
+              {/* Assign New Access */}
+              <div>
+                <h3 className="text-lg font-medium mb-2">Assign Access</h3>
+                {isConnected ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Valid Period</Label>
+                        <DatePickerWithRange
+                          value={dateRange}
+                          onChange={setDateRange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Access Door</Label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {devices.flatMap(device => 
+                            device.doors?.map(door => (
+                              <div key={door.id} className="flex items-center justify-between border rounded p-2">
+                                <div className="flex items-center space-x-2">
+                                  <Door className="h-4 w-4" />
+                                  <span>{door.doorName || 'Door ' + door.doorNumber}</span>
+                                </div>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => assignDoorAccess(door.id)}
+                                >
+                                  Grant Access
+                                </Button>
                               </div>
-                              <Button 
-                                size="sm"
-                                onClick={() => assignDoorAccess(door.id)}
-                              >
-                                Grant Access
-                              </Button>
-                            </div>
-                          ))
-                        )}
+                            ))
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  Hikvision integration is not connected. Please configure it in settings.
-                </p>
-              )}
-            </div>
-          </div>
-
+                ) : (
+                  <p className="text-muted-foreground">
+                    Hikvision integration is not connected. Please configure it in settings.
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="events">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium mb-2">Recent Access Events</h3>
+                
+                {isLoadingEvents ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : memberEvents.length === 0 ? (
+                  <p className="text-muted-foreground">No recent events found</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Door</TableHead>
+                        <TableHead>Event Type</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {memberEvents.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell>{new Date(event.eventTime).toLocaleString()}</TableCell>
+                          <TableCell>{event.doorName || event.doorId}</TableCell>
+                          <TableCell>{event.eventType}</TableCell>
+                          <TableCell>
+                            <Badge variant={event.status === 'success' ? 'default' : 'destructive'}>
+                              {event.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowPermissionDialog(false)}>
               Close

@@ -19,18 +19,16 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-  assignedTo?: string;
-  assigneeName?: string;
-  assigneeAvatar?: string;
+import { taskService, Task as TaskType } from '@/services/taskService';
+import { useEffect } from 'react';
+
+// Extend the TaskType from the service with UI-specific properties
+interface Task extends Omit<TaskType, 'assigned_to_name' | 'assigned_to_avatar'> {
   completed: boolean;
-  createdAt: string;
-  updatedAt: string;
+  assigneeName: string;
+  assigneeAvatar: string;
+  assigned_to_name?: string;
+  assigned_to_avatar?: string;
 }
 
 interface TaskFormData {
@@ -49,45 +47,10 @@ interface User {
 
 const TaskManagement = () => {
   const { user } = useAuth();
-  const { userRole, can } = usePermissions();
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Review member progress reports',
-      description: 'Go through monthly progress reports for all personal training clients',
-      dueDate: '2025-04-15',
-      priority: 'high',
-      assignedTo: 'trainer1',
-      assigneeName: 'Alex Trainer',
-      completed: false,
-      createdAt: '2025-04-05T10:30:00',
-      updatedAt: '2025-04-05T10:30:00'
-    },
-    {
-      id: '2',
-      title: 'Prepare nutrition plans for new members',
-      description: 'Create customized diet plans for the 3 new members who joined this week',
-      dueDate: '2025-04-20',
-      priority: 'medium',
-      assignedTo: 'trainer2',
-      assigneeName: 'Sarah Fitness',
-      assigneeAvatar: '/placeholder.svg',
-      completed: false,
-      createdAt: '2025-04-07T14:15:00',
-      updatedAt: '2025-04-07T14:15:00'
-    },
-    {
-      id: '3',
-      title: 'Update equipment maintenance schedule',
-      dueDate: '2025-04-12',
-      priority: 'medium',
-      assignedTo: 'staff1',
-      assigneeName: 'John Staff',
-      completed: true,
-      createdAt: '2025-04-02T09:00:00',
-      updatedAt: '2025-04-10T11:20:00'
-    }
-  ]);
+  const { can } = usePermissions();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<TaskFormData>({
@@ -98,6 +61,146 @@ const TaskManagement = () => {
     assignedTo: '',
   });
   const [date, setDate] = useState<Date>();
+  
+  // Format task for display
+  const formatTaskForDisplay = (task: TaskType): Task => {
+    const assignedToName = (task as any).assigned_to_name || 'Unassigned';
+    const assignedToAvatar = (task as any).assigned_to_avatar || '/placeholder-user.jpg';
+    
+    return {
+      ...task,
+      completed: task.status === 'completed',
+      assigneeName: assignedToName,
+      assigneeAvatar: assignedToAvatar,
+      assigned_to_name: assignedToName,
+      assigned_to_avatar: assignedToAvatar,
+    };
+  };
+  
+  // Format form data for API
+  const formatTaskForApi = (formData: TaskFormData): Omit<TaskType, 'id' | 'created_at' | 'updated_at'> => ({
+    title: formData.title,
+    description: formData.description || null,
+    due_date: formData.dueDate,
+    priority: formData.priority,
+    status: 'todo',
+    assigned_to: formData.assignedTo || null,
+    created_by: user?.id || null,
+    branch_id: null, // You might want to set this based on the current branch
+  });
+
+  // Fetch tasks from the server
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setIsLoading(true);
+        const tasks = await taskService.getTasks();
+        const formattedTasks = tasks.map(task => formatTaskForDisplay(task));
+        setTasks(formattedTasks);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+        setError('Failed to load tasks. Please try again later.');
+        toast.error('Failed to load tasks');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setIsLoading(true);
+      const taskData = formatTaskForApi(formData);
+      const newTask = await taskService.createTask(taskData);
+      
+      // Format the new task for display and add it to the list
+      const formattedTask = formatTaskForDisplay(newTask);
+      setTasks([formattedTask, ...tasks]);
+      
+      // Reset form and close dialog
+      setDialogOpen(false);
+      setFormData({
+        title: '',
+        description: '',
+        dueDate: format(new Date(), 'yyyy-MM-dd'),
+        priority: 'medium',
+        assignedTo: '',
+      });
+      
+      toast.success('Task created successfully');
+    } catch (err) {
+      console.error('Error creating task:', err);
+      toast.error('Failed to create task');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Handle priority change
+  const handlePriorityChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      priority: value as 'low' | 'medium' | 'high'
+    }));
+  };
+  
+  // Handle date selection
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setDate(date);
+    setFormData(prev => ({
+      ...prev,
+      dueDate: format(date, 'yyyy-MM-dd')
+    }));
+  };
+
+  // Update task status
+  const toggleTaskStatus = async (taskId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
+      await taskService.updateTask(taskId, { status: newStatus });
+      
+      setTasks(tasks.map(task => 
+        task.id === taskId 
+          ? { ...task, status: newStatus, completed: newStatus === 'completed' } 
+          : task
+      ));
+      
+      toast.success(`Task marked as ${newStatus}`);
+    } catch (err) {
+      console.error('Error updating task status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
+
+  // Delete a task
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+    
+    try {
+      await taskService.deleteTask(taskId);
+      setTasks(tasks.filter(task => task.id !== taskId));
+      toast.success('Task deleted successfully');
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      toast.error('Failed to delete task');
+    }
+  };
   
   // Mock staff/trainers for assignment
   const staffAndTrainers: User[] = [
