@@ -161,8 +161,19 @@ const Sidebar = (): JSX.Element => {
                 <div className="flex items-center">
                   <Building2 size={18} className={cn("mr-2", settings.semiDark ? "text-gray-300" : "text-gray-500")} />
                   <div className="flex flex-col">
-                    <span className={cn("text-xs font-medium", settings.semiDark ? "text-gray-400" : "text-gray-500")}>{currentBranch?.name?.split(' ')[0] || ''}</span>
-                    <span className={cn("text-sm font-semibold", settings.semiDark ? "text-gray-200" : "text-gray-700")}>{currentBranch?.name?.split(' ').slice(1).join(' ') || 'Create a Branch'}</span>
+                    {currentBranch?.name ? (
+                      <span className={cn("text-sm font-semibold truncate max-w-[200px]", settings.semiDark ? "text-gray-200" : "text-gray-700")}>
+                        {currentBranch.name}
+                      </span>
+                    ) : (
+                      <Link 
+                        to="/settings/branches" 
+                        className="text-sm font-semibold text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Create Your First Branch
+                      </Link>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center">
