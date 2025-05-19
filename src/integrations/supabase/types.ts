@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      access_denial_logs: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          device_id: string | null
+          door_id: string | null
+          event_id: string | null
+          event_time: string | null
+          id: string
+          person_id: string | null
+          raw_data: Json | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_id?: string | null
+          event_id?: string | null
+          event_time?: string | null
+          id?: string
+          person_id?: string | null
+          raw_data?: Json | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_id?: string | null
+          event_id?: string | null
+          event_time?: string | null
+          id?: string
+          person_id?: string | null
+          raw_data?: Json | null
+        }
+        Relationships: []
+      }
       access_doors: {
         Row: {
           branch_id: string
@@ -421,6 +457,39 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       automation_rules: {
         Row: {
@@ -2873,6 +2942,7 @@ export type Database = {
       }
       members: {
         Row: {
+          access_control_id: string | null
           blood_group: string | null
           branch_id: string | null
           created_at: string | null
@@ -2894,6 +2964,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          access_control_id?: string | null
           blood_group?: string | null
           branch_id?: string | null
           created_at?: string | null
@@ -2915,6 +2986,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          access_control_id?: string | null
           blood_group?: string | null
           branch_id?: string | null
           created_at?: string | null
@@ -3410,6 +3482,30 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           accessible_branch_ids: string[] | null
@@ -3720,6 +3816,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
@@ -4239,6 +4367,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           branch_id: string | null
@@ -4747,9 +4899,30 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      has_permission: {
+        Args: { user_id: string; permission_name: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          user_id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_action: {
+        Args: {
+          action: string
+          entity_type: string
+          entity_id: string
+          details?: Json
+          ip_address?: string
+        }
+        Returns: string
       }
       mark_announcement_as_read: {
         Args: { announcement_uuid: string }
@@ -4778,6 +4951,7 @@ export type Database = {
     }
     Enums: {
       class_status: "active" | "cancelled" | "completed"
+      user_role: "admin" | "staff" | "trainer" | "member" | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4894,6 +5068,7 @@ export const Constants = {
   public: {
     Enums: {
       class_status: ["active", "cancelled", "completed"],
+      user_role: ["admin", "staff", "trainer", "member", "guest"],
     },
   },
 } as const
