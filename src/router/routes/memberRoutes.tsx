@@ -8,6 +8,7 @@ import MembersListPage from '@/pages/members/MembersListPage';
 import NewMemberPage from '@/pages/members/NewMemberPage';
 import MemberProfilePage from '@/pages/members/MemberProfilePage';
 import MemberProgressPage from '@/pages/members/MemberProgressPage';
+import EditMemberPage from '@/pages/members/EditMemberPage';
 
 export const memberRoutes: RouteObject[] = [
   {
