@@ -81,7 +81,7 @@ const AnalyticsDashboardPage = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">+24</div>
                   <p className="text-xs text-muted-foreground">+12% from last month</p>
-                  <MembershipChart />
+                  <MembershipChart dateRange={date} />
                 </CardContent>
               </Card>
               <Card>
@@ -91,7 +91,7 @@ const AnalyticsDashboardPage = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">68%</div>
                   <p className="text-xs text-muted-foreground">+5% from last month</p>
-                  <AttendanceChart />
+                  <AttendanceChart dateRange={date} />
                 </CardContent>
               </Card>
             </div>
