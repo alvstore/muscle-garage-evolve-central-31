@@ -42,10 +42,15 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
     gender: member?.gender || 'male',
     date_of_birth: member?.date_of_birth || member?.dateOfBirth || '',
     goal: member?.goal || '',
-    avatar: member?.avatar || '',
+    avatar: member?.avatar || member?.profile_picture || '',
+    occupation: member?.occupation || '',
+    blood_group: member?.blood_group || '',
+    id_type: member?.id_type || '',
+    id_number: member?.id_number || '',
     emergency_contact_name: member?.emergency_contact_name || '',
     emergency_contact_phone: member?.emergency_contact_phone || '',
     emergency_contact_relation: member?.emergency_contact_relation || '',
+    status: member?.status || 'active'
   };
 
   useEffect(() => {
