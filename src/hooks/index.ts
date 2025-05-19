@@ -38,7 +38,9 @@ export { useDisclosure } from './utils/use-disclosure';
 export { useLocalStorage } from './utils/use-local-storage';
 
 // Hikvision
-export { useHikvision } from './access/use-hikvision-consolidated';
+// Hikvision hooks
+export { useHikvisionSettings } from './use-hikvision-settings';
+// Note: useHikvision from use-hikvision-consolidated has been deprecated in favor of useHikvisionSettings
 
 // Export from subdirectories
 export * from "./auth";

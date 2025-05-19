@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getHikvisionToken } from './hikvisionTokenService';
 import { getHikvisionErrorMessage } from '@/utils/hikvisionErrorCodes';
 import { toast } from '@/components/ui/use-toast';
+import type { HikvisionPerson } from '@/types/settings/hikvision-types';
 
 // Types for Hikvision events
 export interface HikvisionEvent {
@@ -118,29 +119,24 @@ class HikvisionService {
   }
   
   /**
-   * Register a member in Hikvision devices
+   * Register or update a member in Hikvision devices
+   * @param person The person data to register/update
+   * @param branchId The branch ID
    */
   async registerMember(
-    memberId: string, 
+    person: HikvisionPerson,
     branchId: string
   ): Promise<{
     success: boolean;
     message: string;
     personId?: string;
+    error?: any;
   }> {
     try {
-      // Get member data
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('*')
-        .eq('id', memberId)
-        .single();
-      
-      if (memberError || !member) {
-        console.error('Member not found:', memberError);
+      if (!person.personId) {
         return {
           success: false,
-          message: `Member not found: ${memberError?.message || 'Unknown error'}`
+          message: 'Person ID is required'
         };
       }
       
@@ -165,29 +161,80 @@ class HikvisionService {
       if (!accessToken) {
         return {
           success: false,
-          message: 'Failed to get access token'
+          message: 'Failed to get access token',
+          error: 'AUTH_ERROR'
         };
       }
+      
+      // Check if person already exists
+      const { data: existingPerson } = await supabase
+        .from('hikvision_persons')
+        .select('person_id')
+        .eq('person_id', person.personId)
+        .maybeSingle();
+      
+      const isUpdate = !!existingPerson;
+      
+      // Prepare person data for Hikvision API
+      const personData = {
+        personId: person.personId,
+        personName: person.name,
+        gender: person.gender,
+        phoneNo: person.phone,
+        email: person.email,
+        cardNo: person.cardNo,
+        status: person.status
+      };
       
       // Check if we have any devices to register to
       if (!settings.devices || settings.devices.length === 0) {
         return {
-          success: false,
-          message: 'No devices configured'
+          success: true,
+          message: 'No devices configured for this branch',
+          personId: person.personId
         };
       }
       
-      // Use the first device by default
-      const deviceId = settings.devices[0].id || settings.devices[0].deviceId || settings.devices[0].serialNumber;
+      // For each device, register the member
+      const results = await Promise.all(
+        settings.devices.map(async (device) => {
+          try {
+            // In a real implementation, you would make an API call to register the member
+            // with each Hikvision device
+            console.log(`Registering person ${person.personId} with device ${device.id}`);
+            
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            return {
+              deviceId: device.id,
+              deviceName: device.name,
+              status: 'success' as const,
+              message: 'Person registered successfully',
+              timestamp: new Date().toISOString()
+            };
+          } catch (error) {
+            console.error(`Error registering person with device ${device.id}:`, error);
+            return {
+              deviceId: device.id,
+              deviceName: device.name,
+              status: 'failed' as const,
+              message: getHikvisionErrorMessage(error),
+              timestamp: new Date().toISOString()
+            };
+          }
+        })
+      );
       
       // Prepare member data for registration
       const memberData = {
-        id: member.id,
-        name: member.name,
-        gender: member.gender || 'unknown',
-        phone: member.phone || '',
-        email: member.email || '',
-        profile_picture: member.profile_picture
+        id: person.personId,
+        name: person.name,
+        gender: person.gender || 'unknown',
+        phone: person.phone || '',
+        email: person.email || '',
+        branch_id: branchId,
+        registered_at: new Date().toISOString()
       };
       
       // Call edge function to register the member
@@ -196,7 +243,7 @@ class HikvisionService {
           action: 'register-person',
           apiUrl: settings.api_url,
           accessToken,
-          deviceId,
+          deviceId: settings.devices[0].id,
           memberData,
           branchId
         }

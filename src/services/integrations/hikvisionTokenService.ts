@@ -24,34 +24,34 @@ export const getHikvisionToken = async (branchId: string): Promise<string> => {
 
     // Get Hikvision settings from the database
     const { data: settings, error } = await supabase
-      .from('branch_integrations')
-      .select('config')
+      .from('hikvision_api_settings')
+      .select('*')
       .eq('branch_id', branchId)
-      .eq('provider', 'hikvision')
+      .eq('is_active', true)
       .single();
 
     if (error || !settings) {
+      console.error('Hikvision settings not found:', error);
       throw new Error('Hikvision integration not configured for this branch');
     }
 
-    const { baseUrl, username, password } = settings.config as {
-      baseUrl: string;
-      username: string;
-      password: string;
-    };
+    const { api_url: baseUrl, app_key: username, app_secret: password } = settings;
 
     // Make a request to the Hikvision API to get an access token
-    const response = await fetch(`${baseUrl}/api/oauth/token`, {
+    const tokenUrl = baseUrl.endsWith('/') 
+      ? `${baseUrl}api/oauth/token` 
+      : `${baseUrl}/api/oauth/token`;
+      
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
       },
       body: new URLSearchParams({
-        grant_type: 'password',
-        username,
-        password,
-        client_id: 'hikvision',
-        client_secret: 'hikvision_secret',
+        grant_type: 'client_credentials',
+        client_id: username,
+        client_secret: password
       }),
     });
 

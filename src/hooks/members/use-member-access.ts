@@ -1,14 +1,14 @@
 
 import { useState } from 'react';
 import { hikvisionService } from '@/services/integrations/hikvisionService';
-import { useHikvision } from '@/hooks/access/use-hikvision-consolidated';
+import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { HikvisionApiSettings, HikvisionPerson, HikvisionAccessPrivilege } from '@/hooks/access/use-hikvision-consolidated';
+import type { HikvisionPerson, HikvisionAccessPrivilege } from '@/types/settings/hikvision-types';
 
 export const useMemberAccess = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { settings } = useHikvision();
+  const { settings } = useHikvisionSettings();
 
   const getMemberCredential = async (memberId: string) => {
     try {
@@ -64,19 +64,19 @@ export const useMemberAccess = () => {
         // Create new person in Hikvision
         // Create person object without the picture as it's not part of HikvisionPerson
         const person: HikvisionPerson = {
-          employeeNo: member.id,
+          personId: member.id,
+          memberId: member.id,
           name: `${member.first_name} ${member.last_name}`.trim(),
-          userType: 'normal',
-          gender: member.gender?.toLowerCase() || 'unknown',
-          phoneNo: member.phone || '',
-          email: member.email || '',
-          // Add any other required fields with default values if needed
           cardNo: '',
-          remark: ''
+          phone: member.phone,
+          email: member.email,
+          gender: member.gender?.toLowerCase(),
+          status: 'active',
+          branchId: settings.branchId || ''
         };
 
         // Register the member in Hikvision
-        const result: any = await hikvisionService.registerMember(person.employeeNo, settings.branchId || '');
+        const result: any = await hikvisionService.registerMember(person, settings.branchId || '');
         if (!result.success) {
           throw new Error(result.message);
         }
@@ -87,19 +87,19 @@ export const useMemberAccess = () => {
       } else {
         // Update existing person
         const person: HikvisionPerson = {
-          employeeNo: member.id,
+          personId: member.id,
+          memberId: member.id,
           name: `${member.first_name} ${member.last_name}`.trim(),
-          userType: 'normal',
-          gender: member.gender?.toLowerCase() || 'unknown',
-          phoneNo: member.phone || '',
-          email: member.email || '',
-          // Add any other required fields with default values if needed
           cardNo: '',
-          remark: ''
+          phone: member.phone,
+          email: member.email,
+          gender: member.gender?.toLowerCase(),
+          status: 'active',
+          branchId: settings.branchId || ''
         };
 
         // Update the member in Hikvision
-        const result = await hikvisionService.registerMember(person.employeeNo, settings.branchId || '');
+        const result = await hikvisionService.registerMember(person, settings.branchId || '');
         if (!result.success) {
           throw new Error(result.message);
         }

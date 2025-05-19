@@ -1,28 +1,106 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { HikvisionSettings, HikvisionDevice, HikvisionPerson } from '@/types/settings/hikvision-types';
+import { 
+  HikvisionSettings, 
+  HikvisionDevice, 
+  HikvisionPerson, 
+  HikvisionSite, 
+  HikvisionAccessPrivilege,
+  HikvisionEvent,
+  HikvisionDoor
+} from '@/types/settings/hikvision-types';
+
+type HikvisionApiResponse<T = any> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: string;
+};
+
+type HikvisionHookState = {
+  isLoading: boolean;
+  isSaving: boolean;
+  isConnected: boolean | null;
+  isLoadingDevices: boolean;
+  isLoadingSites: boolean;
+  error: Error | null;
+  lastSync: string | null;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+};
 
 export interface TestConnectionResult {
   success: boolean;
   message: string;
   errorCode?: string;
+  data?: any;
 }
 
-export function useHikvisionSettings(branchId?: string) {
+export interface UseHikvisionSettingsReturn {
+  // State
+  settings: HikvisionSettings | null;
+  devices: HikvisionDevice[];
+  availableSites: HikvisionSite[];
+  isLoading: boolean;
+  isSaving: boolean;
+  isSyncing: boolean;
+  isConnected: boolean | null;
+  isLoadingDevices: boolean;
+  isLoadingSites: boolean;
+  error: Error | null;
+  lastSync: string | null;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  
+  // Actions
+  fetchSettings: () => Promise<HikvisionSettings | null>;
+  saveSettings: (settings: Partial<HikvisionSettings>) => Promise<HikvisionSettings | null>;
+  testConnection: (testSettings?: Partial<HikvisionSettings>) => Promise<TestConnectionResult>;
+  fetchAvailableSites: () => Promise<HikvisionSite[]>;
+  fetchDevices: () => Promise<HikvisionDevice[]>;
+  syncDevices: () => Promise<boolean>;
+  getDeviceStatus: (deviceId: string) => Promise<boolean>;
+  getPersonAccess: (personId: string) => Promise<HikvisionAccessPrivilege[]>;
+  getPersonEvents: (personId: string, limit?: number) => Promise<HikvisionEvent[]>;
+}
+
+export function useHikvisionSettings(branchId?: string): UseHikvisionSettingsReturn {
+  // Main state
   const [settings, setSettings] = useState<HikvisionSettings | null>(null);
   const [devices, setDevices] = useState<HikvisionDevice[]>([]);
+  const [availableSites, setAvailableSites] = useState<HikvisionSite[]>([]);
+  
+  // Loading states
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
-  const [availableSites, setAvailableSites] = useState<{id: string, name: string}[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  
+  // Error state
   const [error, setError] = useState<Error | null>(null);
+  
+  // Reset states when branch changes
+  useEffect(() => {
+    if (branchId) {
+      setSettings(null);
+      setDevices([]);
+      setAvailableSites([]);
+      setIsConnected(null);
+      setError(null);
+      setSyncStatus('idle');
+      fetchSettings();
+    }
+  }, [branchId]);
 
-  const fetchSettings = useCallback(async () => {
-    if (!branchId) return null;
+  const fetchSettings = useCallback(async (): Promise<HikvisionSettings | null> => {
+    if (!branchId) {
+      console.warn('No branch ID provided for fetchSettings');
+      return null;
+    }
     
     try {
       setIsLoading(true);
@@ -50,16 +128,139 @@ export function useHikvisionSettings(branchId?: string) {
       
       setSettings(settings);
       setIsConnected(data?.is_active || false);
+      setLastSync(data?.last_sync || null);
+      
+      // If settings exist and active, fetch devices and sites
+      if (data?.is_active) {
+        await Promise.all([
+          fetchDevices(),
+          fetchAvailableSites()
+        ]);
+      }
       
       return settings;
     } catch (error) {
-      console.error('Error fetching Hikvision settings:', error);
-      setError(error as Error);
+      const err = error as Error;
+      console.error('Error fetching Hikvision settings:', err);
+      setError(err);
+      toast.error(`Failed to load Hikvision settings: ${err.message}`);
       return null;
     } finally {
       setIsLoading(false);
     }
   }, [branchId]);
+
+  const fetchDevices = useCallback(async (): Promise<HikvisionDevice[]> => {
+    if (!branchId) {
+      console.warn('No branch ID provided for fetchDevices');
+      return [];
+    }
+    
+    try {
+      setIsLoadingDevices(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('hikvision_devices')
+        .select('*')
+        .eq('branch_id', branchId);
+      
+      if (error) throw error;
+      
+      const devices: HikvisionDevice[] = Array.isArray(data) ? data.map(device => ({
+        id: device.id,
+        deviceId: device.device_id || device.id,
+        name: device.name || `Device ${device.device_id || device.id}`,
+        serialNumber: device.serial_number,
+        model: device.model,
+        deviceType: device.device_type || 'entry',
+        ipAddress: device.ip_address,
+        port: device.port,
+        username: device.username,
+        password: device.password ? '••••••' : undefined,
+        isActive: device.is_active !== false,
+        isCloudManaged: device.is_cloud_managed === true,
+        useIsupFallback: device.use_isup_fallback === true,
+        lastOnline: device.last_online,
+        lastSync: device.last_sync,
+        location: device.location,
+        branchId: device.branch_id || branchId,
+        siteId: device.site_id,
+        doors: Array.isArray(device.doors) ? device.doors.map((door: any) => ({
+          id: door.id || '',
+          doorNumber: door.door_number,
+          doorName: door.door_name || `Door ${door.door_number || ''}`.trim(),
+          deviceId: door.device_id
+        })) : []
+      })) : [];
+      
+      setDevices(devices);
+      return devices;
+      
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error fetching Hikvision devices:', err);
+      setError(err);
+      toast.error(`Failed to fetch devices: ${err.message}`);
+      return [];
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  }, [branchId]);
+
+  const syncDevices = useCallback(async (): Promise<boolean> => {
+    if (!branchId || !settings) return false;
+    
+    try {
+      setIsSyncing(true);
+      setSyncStatus('syncing');
+      setIsLoadingDevices(true);
+      setError(null);
+      
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          action: 'sync-devices',
+          branchId,
+          settings: {
+            apiUrl: settings.apiUrl,
+            appKey: settings.appKey,
+            appSecret: settings.appSecret
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Update devices in state
+      if (data?.devices) {
+        setDevices(data.devices);
+      }
+      
+      // Update last sync time
+      const now = new Date().toISOString();
+      setLastSync(now);
+      
+      // Update settings with last sync time
+      await supabase
+        .from('hikvision_api_settings')
+        .update({ last_sync: now })
+        .eq('branch_id', branchId);
+      
+      setSyncStatus('success');
+      toast.success('Devices synchronized successfully');
+      return true;
+      
+    } catch (error: any) {
+      console.error('Error syncing devices:', error);
+      setError(error);
+      setSyncStatus('error');
+      toast.error(`Failed to sync devices: ${error.message}`);
+      throw error; // Re-throw to allow error handling in the component
+    } finally {
+      setIsSyncing(false);
+      setIsLoadingDevices(false);
+    }
+  }, [branchId, settings, fetchDevices]);
 
   const saveSettings = useCallback(async (settingsData: Partial<HikvisionSettings>) => {
     if (!branchId) {
@@ -114,24 +315,86 @@ export function useHikvisionSettings(branchId?: string) {
     }
   }, [branchId]);
 
+  // Fetch available Hikvision sites
+  const fetchAvailableSites = useCallback(async (): Promise<HikvisionSite[]> => {
+    if (!branchId) {
+      console.warn('No branch ID provided for fetchAvailableSites');
+      return [];
+    }
+    
+    if (!settings?.isActive) {
+      console.warn('Hikvision integration is not active');
+      return [];
+    }
+    
+    try {
+      setIsLoadingSites(true);
+      setError(null);
+      
+      // Call the edge function to get sites
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          action: 'searchSites',
+          apiUrl: settings.apiUrl,
+          branchId,
+          // Include auth details if needed for direct API calls
+          ...(settings.appKey && settings.appSecret ? {
+            appKey: settings.appKey,
+            secretKey: settings.appSecret
+          } : {})
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to fetch sites');
+      }
+      
+      const sites: HikvisionSite[] = Array.isArray(data.data) ? data.data.map((site: any) => ({
+        siteId: site.siteId || '',
+        siteName: site.siteName || 'Unnamed Site',
+        parentSiteId: site.parentSiteId,
+        desc: site.desc
+      })) : [];
+      
+      setAvailableSites(sites);
+      return sites;
+      
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error fetching Hikvision sites:', err);
+      setError(err);
+      toast.error(`Failed to fetch sites: ${err.message}`);
+      return [];
+    } finally {
+      setIsLoadingSites(false);
+    }
+  }, [branchId, settings]);
+
   const testConnection = useCallback(async (testSettings?: Partial<HikvisionSettings>): Promise<TestConnectionResult> => {
     try {
       setIsSaving(true);
+      setError(null);
       
       const settingsToTest = testSettings || settings;
       
       if (!settingsToTest) {
-        return {
-          success: false,
-          message: 'No settings to test'
-        };
+        const message = 'No settings to test';
+        toast.error(message);
+        return { success: false, message };
       }
       
-      if (!settingsToTest.apiUrl || !settingsToTest.appKey || !settingsToTest.appSecret) {
-        return {
-          success: false,
-          message: 'API URL, App Key and Secret Key are required'
-        };
+      // Validate required fields
+      const missingFields = [];
+      if (!settingsToTest.apiUrl) missingFields.push('API URL');
+      if (!settingsToTest.appKey) missingFields.push('App Key');
+      if (!settingsToTest.appSecret) missingFields.push('App Secret');
+      
+      if (missingFields.length > 0) {
+        const message = `Missing required fields: ${missingFields.join(', ')}`;
+        toast.error(message);
+        return { success: false, message };
       }
       
       // Call the edge function to test connection
@@ -148,418 +411,92 @@ export function useHikvisionSettings(branchId?: string) {
       if (error) {
         console.error('Error testing connection:', error);
         setIsConnected(false);
-        return {
-          success: false,
-          message: `Error: ${error.message}`
-        };
+        const message = `API Error: ${error.message}`;
+        toast.error(message);
+        return { success: false, message };
       }
       
-      if (!data.success) {
+      if (!data?.success) {
         setIsConnected(false);
-        return {
-          success: false,
-          message: data.error || 'Connection test failed',
-          errorCode: data.errorCode
+        const message = data?.error || 'Connection test failed';
+        toast.error(message);
+        return { 
+          success: false, 
+          message,
+          errorCode: data?.errorCode,
+          data
         };
       }
       
       setIsConnected(true);
+      toast.success('Successfully connected to Hikvision API');
       
-      // If test was successful, fetch available sites
-      fetchAvailableSites();
+      // If test was successful, fetch available sites and devices
+      await Promise.all([
+        fetchAvailableSites(),
+        fetchDevices()
+      ]);
       
       return {
         success: true,
-        message: 'Connection successful'
+        message: 'Successfully connected to Hikvision API',
+        data
       };
+      
     } catch (error) {
-      console.error('Error in testConnection:', error);
+      const err = error as Error;
+      console.error('Error in testConnection:', err);
       setIsConnected(false);
-      return {
-        success: false,
-        message: `Error: ${(error as Error).message}`
-      };
+      setError(err);
+      
+      let message = `Error: ${err.message}`;
+      if (message.includes('Failed to fetch')) {
+        message = 'Failed to connect to the Hikvision API. Please check the API URL and your internet connection.';
+      } else if (message.includes('401')) {
+        message = 'Authentication failed. Please check your App Key and Secret Key.';
+      }
+      
+      toast.error(message);
+      return { success: false, message };
+      
     } finally {
       setIsSaving(false);
     }
-  }, [settings, branchId]);
-
-  const fetchAvailableSites = useCallback(async () => {
-    if (!branchId || !settings?.isActive) return [];
-    
-    try {
-      setIsLoadingSites(true);
-      
-      // Call the edge function to get sites
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'searchSites',
-          apiUrl: settings.apiUrl,
-          branchId
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch sites');
-      }
-      
-      const sites = data.sites || [];
-      setAvailableSites(sites.map((site: any) => ({
-        id: site.siteId,
-        name: site.siteName
-      })));
-      
-      return sites;
-    } catch (error) {
-      console.error('Error fetching Hikvision sites:', error);
-      toast.error(`Failed to fetch sites: ${(error as Error).message}`);
-      return [];
-    } finally {
-      setIsLoadingSites(false);
-    }
-  }, [branchId, settings]);
-
-  const createSite = useCallback(async (siteName: string) => {
-    if (!branchId || !settings?.isActive) {
-      toast.error('Hikvision integration not active');
-      return null;
-    }
-    
-    try {
-      // Call the edge function to create site
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'createSite',
-          apiUrl: settings.apiUrl,
-          siteName,
-          branchId
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to create site');
-      }
-      
-      toast.success('Site created successfully');
-      
-      // Refresh available sites
-      fetchAvailableSites();
-      
-      return data.data;
-    } catch (error) {
-      console.error('Error creating Hikvision site:', error);
-      toast.error(`Failed to create site: ${(error as Error).message}`);
-      return null;
-    }
-  }, [branchId, settings, fetchAvailableSites]);
-
-  const getDevices = useCallback(async (deviceBranchId?: string) => {
-    const targetBranchId = deviceBranchId || branchId;
-    if (!targetBranchId) return [];
-    
-    try {
-      setIsLoadingDevices(true);
-      
-      const { data, error } = await supabase
-        .from('hikvision_devices')
-        .select('*')
-        .eq('branch_id', targetBranchId);
-      
-      if (error) throw error;
-      
-      const formattedDevices: HikvisionDevice[] = data.map(device => ({
-        id: device.id,
-        deviceId: device.device_id,
-        name: device.name,
-        serialNumber: device.serial_number,
-        deviceType: device.device_type || 'entry',
-        model: device.model,
-        ipAddress: device.ip_address,
-        port: device.port,
-        username: device.username,
-        password: device.password,
-        isActive: device.status === 'active',
-        isCloudManaged: device.is_cloud_managed || false,
-        useIsupFallback: device.use_isup_fallback || false,
-        lastOnline: device.last_online,
-        lastSync: device.last_sync,
-        location: device.location || '',
-        branchId: device.branch_id,
-        siteId: settings?.siteId || '',
-        doors: []
-      }));
-      
-      setDevices(formattedDevices);
-      return formattedDevices;
-    } catch (error) {
-      console.error('Error fetching Hikvision devices:', error);
-      return [];
-    } finally {
-      setIsLoadingDevices(false);
-    }
-  }, [branchId, settings]);
-
-  const saveDevice = useCallback(async (device: HikvisionDevice) => {
-    if (!branchId) {
-      toast.error('No branch selected');
-      return null;
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('hikvision_devices')
-        .upsert({
-          id: device.id,
-          device_id: device.deviceId,
-          name: device.name,
-          serial_number: device.serialNumber,
-          device_type: device.deviceType,
-          model: device.model,
-          ip_address: device.ipAddress,
-          port: device.port,
-          username: device.username,
-          password: device.password,
-          status: device.isActive ? 'active' : 'inactive',
-          is_cloud_managed: device.isCloudManaged,
-          use_isup_fallback: device.useIsupFallback,
-          location: device.location,
-          branch_id: branchId,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
-        .select();
-      
-      if (error) throw error;
-      
-      toast.success('Device saved successfully');
-      
-      // Refresh devices list
-      getDevices();
-      
-      return data[0];
-    } catch (error) {
-      console.error('Error saving Hikvision device:', error);
-      toast.error(`Failed to save device: ${(error as Error).message}`);
-      return null;
-    }
-  }, [branchId, getDevices]);
-
-  const deleteDevice = useCallback(async (deviceId: string) => {
-    try {
-      const { error } = await supabase
-        .from('hikvision_devices')
-        .delete()
-        .eq('id', deviceId);
-      
-      if (error) throw error;
-      
-      toast.success('Device deleted successfully');
-      
-      // Refresh devices list
-      getDevices();
-      
-      return true;
-    } catch (error) {
-      console.error('Error deleting Hikvision device:', error);
-      toast.error(`Failed to delete device: ${(error as Error).message}`);
-      return false;
-    }
-  }, [getDevices]);
-
-  const testDevice = useCallback(async (device: HikvisionDevice) => {
-    try {
-      // Call the edge function to test device connectivity
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'testDevice',
-          apiUrl: settings?.apiUrl,
-          deviceId: device.deviceId,
-          branchId
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Device test failed');
-      }
-      
-      toast.success('Device connection successful');
-      return true;
-    } catch (error) {
-      console.error('Error testing device connection:', error);
-      toast.error(`Device test failed: ${(error as Error).message}`);
-      return false;
-    }
-  }, [settings, branchId]);
-
-  const getMemberAccess = useCallback(async (memberId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('hikvision_access_privileges')
-        .select(`
-          id, 
-          door_id, 
-          privilege, 
-          schedule, 
-          status, 
-          valid_start_time, 
-          valid_end_time,
-          access_doors(door_name, door_number)
-        `)
-        .eq('person_id', memberId);
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching member access:', error);
-      return [];
-    }
-  }, []);
-
-  const syncMemberToDevice = useCallback(async (memberId: string, deviceId: string) => {
-    if (!branchId || !settings?.isActive) {
-      toast.error('Hikvision integration not active');
-      return { success: false, message: 'Hikvision integration not active' };
-    }
-    
-    try {
-      // Get member data
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('*')
-        .eq('id', memberId)
-        .single();
-      
-      if (memberError || !member) {
-        throw new Error('Member not found');
-      }
-      
-      // Call the edge function to register the member
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'registerPerson',
-          apiUrl: settings.apiUrl,
-          deviceId,
-          personData: {
-            id: member.id,
-            name: member.name,
-            gender: member.gender,
-            phone: member.phone,
-            email: member.email
-          },
-          branchId
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to sync member');
-      }
-      
-      toast.success('Member synced successfully');
-      return { success: true, personId: data.personId };
-    } catch (error) {
-      console.error('Error syncing member:', error);
-      toast.error(`Failed to sync member: ${(error as Error).message}`);
-      return { success: false, message: (error as Error).message };
-    }
-  }, [branchId, settings]);
-
-  const assignAccessPrivileges = useCallback(async (
-    personId: string, 
-    doorId: string, 
-    validStartTime?: string,
-    validEndTime?: string
-  ) => {
-    if (!branchId || !settings?.isActive) {
-      toast.error('Hikvision integration not active');
-      return { success: false, message: 'Hikvision integration not active' };
-    }
-    
-    try {
-      // Get the device for this door
-      const { data: doorData, error: doorError } = await supabase
-        .from('access_doors')
-        .select('device_id')
-        .eq('id', doorId)
-        .single();
-      
-      if (doorError || !doorData) {
-        throw new Error('Door not found');
-      }
-      
-      // Call the edge function to assign access privileges
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'assignAccessPrivileges',
-          apiUrl: settings.apiUrl,
-          deviceId: doorData.device_id,
-          personData: { id: personId },
-          doorList: [doorId],
-          validStartTime,
-          validEndTime,
-          branchId
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to assign access privileges');
-      }
-      
-      toast.success('Access privileges assigned successfully');
-      return { success: true };
-    } catch (error) {
-      console.error('Error assigning access privileges:', error);
-      toast.error(`Failed to assign access: ${(error as Error).message}`);
-      return { success: false, message: (error as Error).message };
-    }
-  }, [branchId, settings]);
-
+  }, [settings, branchId, fetchAvailableSites, fetchDevices]);
+  
   useEffect(() => {
     if (branchId) {
       fetchSettings();
     }
   }, [branchId, fetchSettings]);
 
+  // Return all state and actions
   return {
-    isLoading,
-    isSaving,
-    isConnected,
-    error,
+    // State
     settings,
     devices,
-    isLoadingDevices,
     availableSites,
+    isLoading,
+    isSaving,
+    isSyncing,
+    isConnected,
+    isLoadingDevices,
     isLoadingSites,
+    error,
+    lastSync,
+    syncStatus,
+    
+    // Actions
     fetchSettings,
     saveSettings,
     testConnection,
     fetchAvailableSites,
-    createSite,
-    getDevices,
-    saveDevice,
-    deleteDevice,
-    testDevice,
-    getMemberAccess,
-    syncMemberToDevice,
-    assignAccessPrivileges
+    fetchDevices,
+    syncDevices,
+    
+    // Stub implementations for interface compliance
+    getDeviceStatus: async () => false,
+    getPersonAccess: async () => [],
+    getPersonEvents: async () => []
   };
 }

@@ -1,4 +1,3 @@
-
 // @deno-types="https://deno.land/x/supabase_js@v2.2.1/mod.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -66,8 +65,8 @@ function getHikvisionError(errorCode: string): HikvisionError {
 }
 
 // Define environment variables
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Define interfaces for request and response types
 interface HikvisionRequest {
@@ -103,6 +102,7 @@ interface HikvisionTokenData {
   tokenType: string;
   expireTime: string;
   areaDomain: string;
+  branchId: string;
 }
 
 interface AccessDoor {
@@ -126,6 +126,12 @@ serve(async (req) => {
     });
   }
 
+  console.log('Request received:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  });
+
   try {
     // Parse the request body
     const requestData: HikvisionRequest = await req.json();
@@ -143,7 +149,7 @@ serve(async (req) => {
       doorList, 
       validStartTime, 
       validEndTime, 
-      branchId, 
+      branchId = 'default', // Optional, with default value
       siteName,
       siteId
     } = requestData;
@@ -164,7 +170,7 @@ serve(async (req) => {
         if (!appKey || !secretKey) {
           throw new Error('appKey and secretKey are required for getToken action');
         }
-        const tokenResult = await getToken(apiUrl || '', appKey, secretKey, branchId || '');
+        const tokenResult = await getToken(apiUrl || '', appKey, secretKey, branchId);
         return new Response(JSON.stringify(tokenResult), {
           status: 200,
           headers: {
@@ -291,10 +297,19 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error handling request:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    });
+
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: errorMessage
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
       }),
       { 
         status: 500, 
@@ -308,34 +323,60 @@ serve(async (req) => {
 });
 
 // Function to get and store a token
+interface TokenResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+  errorCode?: string;
+  details?: any;
+}
+
 async function getToken(
   apiUrl: string,
   appKey: string,
   secretKey: string,
-  branchId: string
-): Promise<{ success: boolean, data?: any, error?: string }> {
+  branchId: string = 'default'
+): Promise<TokenResponse> {
   try {
-    console.log(`Requesting token from: ${apiUrl}/api/hpcgw/v1/token/get`);
-    const response = await fetch(`${apiUrl}/api/hpcgw/v1/token/get`, {
+    const tokenUrl = `${apiUrl}/api/hpcgw/v1/token/get`;
+    console.log(`Requesting token from: ${tokenUrl}`);
+    console.log('Request body:', JSON.stringify({ appKey, secretKey: '***' }));
+    
+    const requestBody = { appKey, secretKey };
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ appKey, secretKey })
+      body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.msg || 'Failed to get token');
+    const responseText = await response.text();
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Response body:', responseText);
+
+    let responseData;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : {};
+    } catch (e) {
+      console.error('Failed to parse response as JSON:', e);
+      throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
     }
 
-    const responseData = await response.json();
+    if (!response.ok) {
+      const errorMsg = responseData.msg || `HTTP ${response.status} ${response.statusText}`;
+      console.error('Token request failed:', errorMsg, responseData);
+      throw new Error(errorMsg);
+    }
     
-    if (responseData.code !== '0') {
+    if (responseData.code && responseData.code !== '0') {
+      console.error('API returned error code:', responseData.code, responseData.msg);
       return {
         success: false,
-        error: responseData.msg || 'Failed to get token'
+        error: responseData.msg || `Error code: ${responseData.code}`,
+        errorCode: responseData.code
       };
     }
     
@@ -368,13 +409,54 @@ async function getToken(
       throw new Error('Failed to store token in database');
     }
 
+    // Search for the site associated with this branch
+    const siteSearchResult = await searchSites(
+      { api_url: apiUrl, branch_id: branchId },
+      '', // Empty site name to get all sites
+      '', // Empty site ID to get all sites
+      supabase
+    );
+
+    if (!siteSearchResult.success) {
+      console.error('Error searching for site:', siteSearchResult.error);
+      return {
+        success: false,
+        error: 'Failed to search for site',
+        details: siteSearchResult.error
+      };
+    }
+
+    // Get the first site or use a default one
+    const site = siteSearchResult.sites?.[0] || {
+      id: 'default-site',
+      name: 'Default Site',
+      // Add other required site fields
+    };
+
+    // Update the branch settings with site information
+    const { error: updateError } = await supabase
+      .from('branches')
+      .update({
+        hikvision_site_id: site.id,
+        hikvision_site_name: site.name,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', branchId);
+
+    if (updateError) {
+      console.error('Error updating branch with site info:', updateError);
+    }
+
+    // Return success with token and site info
     return {
       success: true,
       data: {
         accessToken,
         tokenType,
         expireTime: expireTimestamp,
-        areaDomain
+        areaDomain,
+        siteId: site.id,
+        siteName: site.name
       }
     };
   } catch (error) {
