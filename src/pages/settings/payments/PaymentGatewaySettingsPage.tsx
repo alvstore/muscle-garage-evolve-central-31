@@ -12,11 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, RefreshCw, DollarSign, KeyRound, Lock, Globe, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { useSettings } from '@/hooks/useSettings';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions } from '@/hooks/auth/use-permissions';
 
 const PaymentGatewaySettingsPage: React.FC = () => {
   const { can } = usePermissions();
+  const hasEditSettingsPermission = can('edit:settings');
   const [activeTab, setActiveTab] = useState('razorpay');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -152,7 +152,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                     <Switch 
                       checked={razorpaySettings.isEnabled} 
                       onCheckedChange={(checked) => setRazorpaySettings({...razorpaySettings, isEnabled: checked})}
-                      disabled={!can('manage_settings')}
+                      disabled={!hasEditSettingsPermission}
                     />
                   </div>
                 </div>
@@ -168,7 +168,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         liveMode: checked as boolean
                       })
                     }
-                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                    disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                   />
                   <label
                     htmlFor="razorpay-live-mode"
@@ -188,7 +188,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={razorpaySettings.keyId}
                         onChange={(e) => setRazorpaySettings({...razorpaySettings, keyId: e.target.value})}
-                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">Find this in your Razorpay Dashboard &gt; Settings &gt; API Keys</p>
@@ -205,7 +205,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         value={razorpaySettings.keySecret}
                         onChange={(e) => setRazorpaySettings({...razorpaySettings, keySecret: e.target.value})}
                         placeholder="••••••••••••••••"
-                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">Keep this secret and secure</p>
@@ -223,7 +223,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                       value={razorpaySettings.webhookSecret}
                       onChange={(e) => setRazorpaySettings({...razorpaySettings, webhookSecret: e.target.value})}
                       placeholder="••••••••••••••••"
-                      disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                      disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -244,7 +244,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                             enableRefunds: checked as boolean
                           })
                         }
-                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                       />
                       <label
                         htmlFor="razorpay-refunds"
@@ -263,7 +263,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                             enablePartialPayments: checked as boolean
                           })
                         }
-                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                       />
                       <label
                         htmlFor="razorpay-partial"
@@ -282,7 +282,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                             prefillContactInfo: checked as boolean
                           })
                         }
-                        disabled={!can('manage_settings') || !razorpaySettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled}
                       />
                       <label
                         htmlFor="razorpay-prefill"
@@ -298,14 +298,14 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => handleTestConnection('Razorpay')}
-                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled || isLoading}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={!can('manage_settings') || !razorpaySettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !razorpaySettings.isEnabled || isLoading}
                   >
                     {isLoading ? (
                       <>
@@ -335,7 +335,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                     <Switch 
                       checked={payuSettings.isEnabled} 
                       onCheckedChange={(checked) => setPayuSettings({...payuSettings, isEnabled: checked})}
-                      disabled={!can('manage_settings')}
+                      disabled={!hasEditSettingsPermission}
                     />
                   </div>
                 </div>
@@ -351,7 +351,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         liveMode: checked as boolean
                       })
                     }
-                    disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                    disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                   />
                   <label
                     htmlFor="payu-live-mode"
@@ -371,7 +371,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={payuSettings.merchantKey}
                         onChange={(e) => setPayuSettings({...payuSettings, merchantKey: e.target.value})}
-                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -387,7 +387,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         value={payuSettings.merchantSalt}
                         onChange={(e) => setPayuSettings({...payuSettings, merchantSalt: e.target.value})}
                         placeholder="••••••••••••••••"
-                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -401,7 +401,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={payuSettings.merchantId}
                         onChange={(e) => setPayuSettings({...payuSettings, merchantId: e.target.value})}
-                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -420,7 +420,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                             enableRefunds: checked as boolean
                           })
                         }
-                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                       />
                       <label
                         htmlFor="payu-refunds"
@@ -439,7 +439,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                             autoCapture: checked as boolean
                           })
                         }
-                        disabled={!can('manage_settings') || !payuSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !payuSettings.isEnabled}
                       />
                       <label
                         htmlFor="payu-auto-capture"
@@ -455,14 +455,14 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => handleTestConnection('PayU')}
-                    disabled={!can('manage_settings') || !payuSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !payuSettings.isEnabled || isLoading}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={!can('manage_settings') || !payuSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !payuSettings.isEnabled || isLoading}
                   >
                     {isLoading ? (
                       <>
@@ -492,7 +492,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                     <Switch 
                       checked={ccavenueSettings.isEnabled} 
                       onCheckedChange={(checked) => setCcavenueSettings({...ccavenueSettings, isEnabled: checked})}
-                      disabled={!can('manage_settings')}
+                      disabled={!hasEditSettingsPermission}
                     />
                   </div>
                 </div>
@@ -508,7 +508,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         liveMode: checked as boolean
                       })
                     }
-                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                    disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled}
                   />
                   <label
                     htmlFor="ccavenue-live-mode"
@@ -528,7 +528,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={ccavenueSettings.merchantId}
                         onChange={(e) => setCcavenueSettings({...ccavenueSettings, merchantId: e.target.value})}
-                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -542,7 +542,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={ccavenueSettings.accessCode}
                         onChange={(e) => setCcavenueSettings({...ccavenueSettings, accessCode: e.target.value})}
-                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -558,7 +558,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         value={ccavenueSettings.workingKey}
                         onChange={(e) => setCcavenueSettings({...ccavenueSettings, workingKey: e.target.value})}
                         placeholder="••••••••••••••••"
-                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -572,7 +572,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={ccavenueSettings.redirectUrl}
                         onChange={(e) => setCcavenueSettings({...ccavenueSettings, redirectUrl: e.target.value})}
-                        disabled={!can('manage_settings') || !ccavenueSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -585,14 +585,14 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => handleTestConnection('CC Avenue')}
-                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled || isLoading}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={!can('manage_settings') || !ccavenueSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !ccavenueSettings.isEnabled || isLoading}
                   >
                     {isLoading ? (
                       <>
@@ -622,7 +622,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                     <Switch 
                       checked={phonepeSettings.isEnabled} 
                       onCheckedChange={(checked) => setPhonepeSettings({...phonepeSettings, isEnabled: checked})}
-                      disabled={!can('manage_settings')}
+                      disabled={!hasEditSettingsPermission}
                     />
                   </div>
                 </div>
@@ -638,7 +638,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         liveMode: checked as boolean
                       })
                     }
-                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                    disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                   />
                   <label
                     htmlFor="phonepe-live-mode"
@@ -658,7 +658,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         className="pl-9"
                         value={phonepeSettings.merchantId}
                         onChange={(e) => setPhonepeSettings({...phonepeSettings, merchantId: e.target.value})}
-                        disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -670,7 +670,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         id="phonepe-salt-index" 
                         value={phonepeSettings.saltIndex}
                         onChange={(e) => setPhonepeSettings({...phonepeSettings, saltIndex: e.target.value})}
-                        disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                        disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                       />
                     </div>
                   </div>
@@ -687,7 +687,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                       value={phonepeSettings.saltKey}
                       onChange={(e) => setPhonepeSettings({...phonepeSettings, saltKey: e.target.value})}
                       placeholder="••••••••••••••••"
-                      disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                      disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                     />
                   </div>
                 </div>
@@ -701,7 +701,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                       className="pl-9"
                       value={phonepeSettings.redirectUrl}
                       onChange={(e) => setPhonepeSettings({...phonepeSettings, redirectUrl: e.target.value})}
-                      disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                      disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -719,7 +719,7 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                         enableRefunds: checked as boolean
                       })
                     }
-                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled}
+                    disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled}
                   />
                   <label
                     htmlFor="phonepe-refunds"
@@ -733,14 +733,14 @@ const PaymentGatewaySettingsPage: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => handleTestConnection('PhonePe')}
-                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled || isLoading}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Test Connection
                   </Button>
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={!can('manage_settings') || !phonepeSettings.isEnabled || isLoading}
+                    disabled={!hasEditSettingsPermission || !phonepeSettings.isEnabled || isLoading}
                   >
                     {isLoading ? (
                       <>
