@@ -316,8 +316,8 @@ const ProfilePage = () => {
         
         {/* Profile Edit Card */}
         <Card className="md:col-span-2">
-          <CardHeader>
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <CardHeader>
               <TabsList>
                 <TabsTrigger value="personal">
                   <UserIcon className="h-4 w-4 mr-2" />
@@ -328,88 +328,88 @@ const ProfilePage = () => {
                   Security
                 </TabsTrigger>
               </TabsList>
-            </Tabs>
-          </CardHeader>
-          
-          <CardContent>
-            <TabsContent value="personal" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input 
-                    id="fullName" 
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="Enter your email"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    value={phone} 
-                    onChange={(e) => setPhone(e.target.value)} 
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <DatePicker 
-                    selected={dateOfBirth}
-                    onSelect={setDateOfBirth}
-                    disabled={(date) => date > new Date()}
-                  />
-                </div>
-              </div>
-            </TabsContent>
+            </CardHeader>
             
-            <TabsContent value="security" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input 
-                  id="newPassword" 
-                  type="password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  placeholder="Enter new password"
-                />
-              </div>
+            <CardContent>
+              <TabsContent value="personal" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input 
+                      id="fullName" 
+                      value={fullName} 
+                      onChange={(e) => setFullName(e.target.value)} 
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input 
+                      id="phone" 
+                      value={phone} 
+                      onChange={(e) => setPhone(e.target.value)} 
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth</Label>
+                    <DatePicker 
+                      selected={dateOfBirth}
+                      onSelect={setDateOfBirth}
+                      disabled={(date) => date > new Date()}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
               
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input 
-                  id="confirmPassword" 
-                  type="password" 
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  placeholder="Confirm new password"
-                />
-              </div>
-            </TabsContent>
-          </CardContent>
-          
-          <CardFooter className="flex justify-end">
-            <Button 
-              onClick={activeTab === 'personal' ? updateProfile : updatePassword} 
-              disabled={updating}
-            >
-              {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </CardFooter>
+              <TabsContent value="security" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    placeholder="Enter new password"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </TabsContent>
+            </CardContent>
+            
+            <CardFooter className="flex justify-end">
+              <Button 
+                onClick={activeTab === 'personal' ? updateProfile : updatePassword} 
+                disabled={updating}
+              >
+                {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </CardFooter>
+          </Tabs>
         </Card>
       </div>
     </div>

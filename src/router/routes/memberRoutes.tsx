@@ -85,5 +85,13 @@ export const memberRoutes: RouteObject[] = [
         <MemberProgressPage />
       </PrivateRoute>
     )
+  },
+  {
+    path: '/members/:id/edit',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <EditMemberPage />
+      </PrivateRoute>
+    )
   }
 ];

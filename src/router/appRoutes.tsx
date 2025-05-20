@@ -33,6 +33,7 @@ import { adminRoutes } from './routes/adminRoutes';
 import { branchRoutes } from './routes/branchRoutes';
 import { analyticsRoutes } from './routes/analyticsRoutes';
 import { classRoutes } from './routes/classRoutes';
+import { profileRoutes } from './routes/admin/profileRoutes';
 
 // Ensure all route groups are properly typed as RouteObject arrays
 const typedMemberRoutes = memberRoutes as RouteObject[];
@@ -50,6 +51,7 @@ const typedBranchRoutes = branchRoutes as RouteObject[];
 const typedAnalyticsRoutes = analyticsRoutes as RouteObject[];
 const typedClassRoutes = classRoutes as RouteObject[];
 const typedWebsiteRoutes = websiteRoutes as RouteObject[];
+const typedProfileRoutes = profileRoutes as RouteObject[];
 
 export const appRoutes: RouteObject[] = [
   // Public website routes
@@ -111,6 +113,7 @@ export const appRoutes: RouteObject[] = [
           ...typedBranchRoutes,
           ...typedAnalyticsRoutes,
           ...typedClassRoutes,
+          ...typedProfileRoutes,
         ]
       }
     ]
