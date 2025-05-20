@@ -28,3 +28,32 @@ export interface FollowUpTemplate {
   created_at?: string;
   created_by?: string;
 }
+
+export type FollowUpType = 'email' | 'call' | 'meeting' | 'message' | 'other';
+
+export interface FollowUpScheduled {
+  id: string;
+  lead_id: string;
+  type: FollowUpType;
+  scheduled_at: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'snoozed';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
+export interface FollowUpHistory {
+  id: string;
+  lead_id: string;
+  type: FollowUpType;
+  content: string;
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  sent_at: string;
+  sent_by?: string;
+  response?: string;
+  response_at?: string;
+  template_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
