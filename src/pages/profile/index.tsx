@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,11 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { uploadFile } from '@/services/utils/storageService';
 import { User } from '@supabase/supabase-js';
-import { Loader2, Camera, Key, UserIcon, UserCog } from 'lucide-react';
+import { Loader2, Camera, Key, UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker';
-import { useUploadImage } from '@/hooks/utils/use-upload-image';
 
 interface Profile {
   id: string;
@@ -27,11 +26,6 @@ interface Profile {
   updated_at?: string;
   is_staff?: boolean;
   is_trainer?: boolean;
-  gender?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
 }
 
 const ProfilePage = () => {
@@ -41,18 +35,12 @@ const ProfilePage = () => {
   const [updating, setUpdating] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
-  const { uploadImage } = useUploadImage();
   
   // Form states
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
-  const [gender, setGender] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [country, setCountry] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -85,11 +73,6 @@ const ProfilePage = () => {
       setFullName(data.full_name || '');
       setEmail(user.email || '');
       setPhone(data.phone || '');
-      setGender(data.gender || '');
-      setAddress(data.address || '');
-      setCity(data.city || '');
-      setState(data.state || '');
-      setCountry(data.country || '');
       setDateOfBirth(data.date_of_birth ? new Date(data.date_of_birth) : undefined);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -103,19 +86,17 @@ const ProfilePage = () => {
     if (!e.target.files || !e.target.files[0]) return;
     
     const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${fileName}`;
     
     try {
       setUploadingAvatar(true);
       
-      // Upload avatar to storage
-      const avatarUrl = await uploadImage({
-        file,
-        folder: 'avatars'
-      });
+      // Upload to storage
+      const avatarUrl = await uploadFile('avatars', filePath, file);
       
-      if (!avatarUrl) {
-        throw new Error('Failed to upload avatar');
-      }
+      if (!avatarUrl) throw new Error('Failed to upload avatar');
       
       // Update profile
       const { error } = await supabase
@@ -129,7 +110,7 @@ const ProfilePage = () => {
       setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
       
       toast.success('Your profile picture has been updated successfully');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading avatar:', error);
       toast.error('There was an error uploading your avatar');
     } finally {
@@ -147,11 +128,6 @@ const ProfilePage = () => {
         .update({
           full_name: fullName,
           phone,
-          gender,
-          address,
-          city,
-          state,
-          country,
           date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
           updated_at: new Date().toISOString(),
         })
@@ -183,11 +159,6 @@ const ProfilePage = () => {
   const updatePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast.error('New password and confirmation must match');
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
       return;
     }
     
@@ -284,8 +255,8 @@ const ProfilePage = () => {
             
             <div className="w-full space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Joined</span>
-                <span>{profile?.updated_at ? format(new Date(profile.updated_at), 'MMM yyyy') : 'N/A'}</span>
+                <span className="text-muted-foreground">Member since</span>
+                <span>{profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
           </CardContent>
@@ -296,12 +267,12 @@ const ProfilePage = () => {
           <CardHeader>
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
               <TabsList>
-                <TabsTrigger value="personal" className="flex items-center gap-1">
-                  <UserIcon className="h-4 w-4" />
+                <TabsTrigger value="personal">
+                  <UserIcon className="h-4 w-4 mr-2" />
                   Personal Info
                 </TabsTrigger>
-                <TabsTrigger value="security" className="flex items-center gap-1">
-                  <Key className="h-4 w-4" />
+                <TabsTrigger value="security">
+                  <Key className="h-4 w-4 mr-2" />
                   Security
                 </TabsTrigger>
               </TabsList>
@@ -343,21 +314,6 @@ const ProfilePage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <select
-                    id="gender"
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">Select gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
                   <Label htmlFor="dob">Date of Birth</Label>
                   <DatePicker 
                     selected={dateOfBirth}
@@ -365,63 +321,6 @@ const ProfilePage = () => {
                     disabled={(date) => date > new Date()}
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input 
-                  id="address" 
-                  value={address} 
-                  onChange={(e) => setAddress(e.target.value)} 
-                  placeholder="Enter your address"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input 
-                    id="city" 
-                    value={city} 
-                    onChange={(e) => setCity(e.target.value)} 
-                    placeholder="Enter your city"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="state">State/Province</Label>
-                  <Input 
-                    id="state" 
-                    value={state} 
-                    onChange={(e) => setState(e.target.value)} 
-                    placeholder="Enter your state"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input 
-                    id="country" 
-                    value={country} 
-                    onChange={(e) => setCountry(e.target.value)} 
-                    placeholder="Enter your country"
-                  />
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={updateProfile} 
-                  disabled={updating}
-                  className="w-full md:w-auto"
-                >
-                  {updating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : 'Save Changes'}
-                </Button>
               </div>
             </TabsContent>
             
@@ -447,23 +346,18 @@ const ProfilePage = () => {
                   placeholder="Confirm new password"
                 />
               </div>
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={updatePassword} 
-                  disabled={updating || !newPassword || newPassword !== confirmPassword}
-                  className="w-full md:w-auto"
-                >
-                  {updating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : 'Update Password'}
-                </Button>
-              </div>
             </TabsContent>
           </CardContent>
+          
+          <CardFooter className="flex justify-end">
+            <Button 
+              onClick={activeTab === 'personal' ? updateProfile : updatePassword} 
+              disabled={updating}
+            >
+              {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>

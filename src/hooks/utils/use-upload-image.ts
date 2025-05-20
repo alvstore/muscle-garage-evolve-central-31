@@ -1,6 +1,5 @@
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 
 interface UploadImageProps {
@@ -9,29 +8,22 @@ interface UploadImageProps {
 }
 
 export const useUploadImage = () => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const uploadImage = async ({ file, folder }: UploadImageProps): Promise<string | null> => {
-    setIsUploading(true);
-    setError(null);
-    
+  const uploadImage = async ({ file, folder }: UploadImageProps) => {
     try {
       if (!file) {
         throw new Error('No file selected');
       }
 
-      // Generate a unique filename to avoid collisions
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      // Generate a unique filename
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
       const filePath = `${folder}/${fileName}`;
 
-      // Upload to Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
+      // Upload to Supabase Storage with explicit content type
+      const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          contentType: file.type,
+          contentType: file.type, // Ensure content-type is set correctly
           upsert: false
         });
 
@@ -45,20 +37,17 @@ export const useUploadImage = () => {
         .from('images')
         .getPublicUrl(filePath);
 
+      if (!publicUrl) {
+        throw new Error('Failed to get image URL');
+      }
+
       return publicUrl;
-    } catch (err: any) {
-      console.error('Error uploading image:', err);
-      setError(err.message || 'Failed to upload image');
-      toast.error(err.message || 'Failed to upload image');
-      return null;
-    } finally {
-      setIsUploading(false);
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image');
+      throw error;
     }
   };
 
-  return {
-    uploadImage,
-    isUploading,
-    error
-  };
+  return { uploadImage };
 };
