@@ -37,7 +37,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from 'sonner';
 import { SendIcon, Users, MessageSquare, Bell, Check, Loader2 } from 'lucide-react';
-import { Member } from '@/types';
+import { Member } from '@/types/members/member';
 
 interface TrainerAnnouncementFormProps {
   onSubmit: (data: any) => Promise<void>;
