@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle, Edit, Trash2, RefreshCw, Check, X, AccessPoint } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, RefreshCw, Check, X } from 'lucide-react';
 import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
 import { HikvisionDevice } from '@/types/settings/hikvision-types';
 import HikvisionDevices from '@/components/settings/access-control/HikvisionDevices';
@@ -22,7 +22,7 @@ const DeviceManagement: React.FC<DeviceManagementProps> = ({ branchId }) => {
   const [activeTab, setActiveTab] = useState('devices');
   const { 
     devices, 
-    getDevices,
+    fetchDevices,
     isLoadingDevices,
     isConnected,
     settings
@@ -30,9 +30,9 @@ const DeviceManagement: React.FC<DeviceManagementProps> = ({ branchId }) => {
 
   useEffect(() => {
     if (branchId) {
-      getDevices(branchId);
+      fetchDevices();
     }
-  }, [branchId, getDevices]);
+  }, [branchId, fetchDevices]);
 
   return (
     <div className="space-y-6">
