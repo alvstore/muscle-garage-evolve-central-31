@@ -38,7 +38,7 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { FollowUp, FollowUpType } from '@/types/crm';
+import { FollowUpHistory, FollowUpType } from '@/types/crm';
 import { followUpService } from '@/services/followUpService';
 import { useQuery } from '@tanstack/react-query';
 import { useBranch } from '@/hooks/settings/use-branches';
