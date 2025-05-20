@@ -1,3 +1,4 @@
+
 // src/pages/members/EditMemberPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -403,4 +404,4 @@ const EditMemberPage = () => {
   );
 };
 
-export default
+export default EditMemberPage;
