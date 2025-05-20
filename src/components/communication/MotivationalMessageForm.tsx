@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { MotivationalCategory, MotivationalMessage } from '@/types/notification';
+import { MotivationalCategory, MotivationalMessage } from '@/types/communication/notification';
 import { Loader2 } from 'lucide-react';
 
 interface MotivationalMessageFormProps {

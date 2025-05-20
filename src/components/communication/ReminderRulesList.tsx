@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Clock, Edit, MailIcon, MessagesSquare, PhoneCall, Trash2, Users } from 'lucide-react';
-import { ReminderRule } from '@/types/notification';
+import { ReminderRule } from '@/types/communication/notification';
 
 interface ReminderRulesListProps {
   rules: ReminderRule[];

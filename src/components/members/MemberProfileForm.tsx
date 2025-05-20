@@ -12,7 +12,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { Member } from '@/types/members/member';
 import { toast } from "sonner";
 import { useUploadImage } from '@/hooks/utils/use-upload-image';
-import AvatarUpload from '@/components/common/AvatarUpload';
+import AvatarUpload from '@/components/AVATAR/AvatarUpload';
 
 interface MemberProfileFormProps {
   member: Member | null;

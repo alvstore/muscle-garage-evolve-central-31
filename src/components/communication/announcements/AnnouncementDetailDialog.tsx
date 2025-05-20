@@ -8,7 +8,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
-import { Announcement } from '@/types/notification';
+import { Announcement } from '@/types/communication/notification';
 import { Badge } from "@/components/ui/badge";
 import { Megaphone } from "lucide-react";
 

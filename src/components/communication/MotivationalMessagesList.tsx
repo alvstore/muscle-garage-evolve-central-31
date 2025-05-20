@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { MotivationalMessage } from '@/types';
+import { MotivationalMessage, MotivationalCategory } from '@/types/communication/notification';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash, Edit, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,15 +23,16 @@ export default function MotivationalMessagesList({
   onUpdateMessage,
   onDeleteMessage
 }: MotivationalMessagesListProps) {
-  const [newMessage, setNewMessage] = useState<Partial<MotivationalMessage>>({
+  const [newMessage, setNewMessage] = useState<Partial<MotivationalMessage> & { category: MotivationalCategory }>({
     title: '',
     content: '',
-    category: 'fitness',
+    category: 'general',
     tags: []
   });
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<MotivationalMessage>>({});
+  const [editFormData, setEditFormData] = useState<Partial<MotivationalMessage> & { category: MotivationalCategory }>({ category: 'general' });
   const [tagInput, setTagInput] = useState('');
+  const [filter, setFilter] = useState<MotivationalCategory | 'all'>('all');
 
   const handleAddTag = () => {
     if (tagInput.trim()) {
@@ -75,7 +76,7 @@ export default function MotivationalMessagesList({
   const handleSaveMessage = async () => {
     try {
       await onAddMessage(newMessage);
-      setNewMessage({ title: '', content: '', category: 'fitness', tags: [] });
+      setNewMessage({ title: '', content: '', category: 'general', tags: [] });
       toast.success('Message added successfully!');
     } catch (error) {
       toast.error('Failed to add message');
@@ -84,20 +85,31 @@ export default function MotivationalMessagesList({
 
   const handleStartEdit = (message: MotivationalMessage) => {
     setEditingMessage(message.id);
-    setEditFormData({ ...message });
+    setEditFormData({
+      ...message,
+      category: (message.category || 'general') as MotivationalCategory
+    });
   };
 
   const handleCancelEdit = () => {
     setEditingMessage(null);
-    setEditFormData({});
+    setEditFormData({
+      category: 'general' as MotivationalCategory
+    });
   };
 
   const handleSaveEdit = async () => {
     if (editingMessage && editFormData) {
       try {
-        await onUpdateMessage(editingMessage, editFormData);
+        const messageToSave = {
+          ...editFormData,
+          category: (editFormData.category || 'general') as MotivationalCategory
+        };
+        await onUpdateMessage(editingMessage, messageToSave as MotivationalMessage);
         setEditingMessage(null);
-        setEditFormData({});
+        setEditFormData({
+          category: 'general' as MotivationalCategory
+        });
         toast.success('Message updated successfully!');
       } catch (error) {
         toast.error('Failed to update message');
@@ -112,6 +124,14 @@ export default function MotivationalMessagesList({
     } catch (error) {
       toast.error('Failed to delete message');
     }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setNewMessage({ ...newMessage, category: value as MotivationalCategory });
+  };
+
+  const handleEditCategoryChange = (value: string) => {
+    setEditFormData({ ...editFormData, category: value as MotivationalCategory });
   };
 
   return (
@@ -137,7 +157,7 @@ export default function MotivationalMessagesList({
               <label htmlFor="category">Category</label>
               <Select
                 value={newMessage.category}
-                onValueChange={(value) => setNewMessage({ ...newMessage, category: value })}
+                onValueChange={handleCategoryChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -209,7 +229,7 @@ export default function MotivationalMessagesList({
                     <label htmlFor={`edit-category-${message.id}`}>Category</label>
                     <Select
                       value={editFormData.category}
-                      onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+                      onValueChange={handleEditCategoryChange}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />

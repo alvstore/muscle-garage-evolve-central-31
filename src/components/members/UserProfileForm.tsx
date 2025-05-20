@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AvatarUpload from '@/components/common/AvatarUpload';
+import AvatarUpload from '@/components/AVATAR/AvatarUpload';
 
 interface UserProfileFormProps {
   user: User | null;

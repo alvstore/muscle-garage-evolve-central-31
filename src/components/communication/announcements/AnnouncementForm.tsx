@@ -30,7 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Announcement, NotificationChannel } from "@/types/notification";
+import { Announcement } from '@/types/communication/notification';
 import { UserRole } from '@/types/auth/user';
 import { useBranch } from "@/hooks/settings/use-branches";
 import { supabase } from "@/integrations/supabase/client";

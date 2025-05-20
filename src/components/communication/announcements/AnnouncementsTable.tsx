@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { Announcement } from '@/types/communication/notification';
-import { usePermissions } from "@/hooks/auth/use-permissions";
+import { UserRole } from '@/types/auth/user';
 import { useAuth } from '@/hooks/auth/use-auth';
 
 interface AnnouncementsTableProps {
@@ -36,9 +36,6 @@ const AnnouncementsTable = ({
   onDelete,
   onResend,
 }: AnnouncementsTableProps) => {
-  import { useAuth } from '@/hooks/auth/use-auth';
-
-  // Replace usePermissions with useAuth
   const { role } = useAuth();
   const canEdit = role !== 'member';
   const canResend = role === 'admin' || role === 'staff';
