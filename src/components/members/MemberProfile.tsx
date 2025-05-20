@@ -1,13 +1,14 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Mail, MapPin, Phone, User } from "lucide-react";
-import trainersService from '@/services/trainersService';
+import { CalendarIcon, Mail, MapPin, Phone, User, Briefcase, Droplets } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Trainer {
   id: string;
@@ -20,10 +21,21 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
   
   useEffect(() => {
     const fetchTrainerData = async () => {
-      if (member?.trainer_id || member?.trainerId) {
+      if (member?.trainer_id) {
         try {
-          const trainerData = await trainersService.getTrainerById(member.trainer_id || member.trainerId);
-          setTrainer(trainerData);
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .eq('id', member.trainer_id)
+            .single();
+            
+          if (!error && data) {
+            setTrainer({
+              id: data.id,
+              name: data.full_name || 'Unnamed Trainer',
+              avatar_url: data.avatar_url
+            });
+          }
         } catch (error) {
           console.error("Error fetching trainer data:", error);
         }
@@ -31,12 +43,32 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
     };
     
     fetchTrainerData();
-  }, [member?.trainer_id, member?.trainerId]);
+  }, [member?.trainer_id]);
 
-  // Safe access to trainer properties
-  const trainerAvatar = trainer?.avatar_url || '';
-  const trainerName = trainer?.name || 'No Trainer Assigned';
-  const displayTrainerName = trainer?.name || 'No Trainer Assigned';
+  // Format date safely
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not provided';
+    
+    try {
+      const date = parseISO(dateString);
+      if (isValid(date)) {
+        return format(date, 'dd MMM yyyy');
+      }
+      return 'Invalid date';
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  // Get avatar initials
+  const getInitials = (name?: string) => {
+    if (!name) return 'M';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div className="space-y-6">
@@ -49,12 +81,19 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="h-32 w-32">
-                <AvatarImage src={member?.avatar_url} alt={member?.name} />
-                <AvatarFallback className="text-2xl">{member?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage 
+                  src={member?.profile_picture || member?.avatar} 
+                  alt={member?.name} 
+                />
+                <AvatarFallback className="text-2xl">
+                  {getInitials(member?.name)}
+                </AvatarFallback>
               </Avatar>
               <div className="text-center">
                 <h2 className="text-xl font-bold">{member?.name}</h2>
-                <p className="text-sm text-muted-foreground">Member since {member?.created_at ? format(parseISO(member.created_at), 'MMM yyyy') : 'N/A'}</p>
+                <p className="text-sm text-muted-foreground">
+                  Member since {member?.created_at ? formatDate(member.created_at) : 'N/A'}
+                </p>
               </div>
               <Badge variant={member?.membership_status === 'active' ? 'default' : 'destructive'}>
                 {member?.membership_status || 'Unknown Status'}
@@ -91,7 +130,23 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                   <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <p>{member?.date_of_birth ? format(parseISO(member.date_of_birth), 'dd MMM yyyy') : 'Not provided'}</p>
+                    <p>{member?.date_of_birth ? formatDate(member.date_of_birth) : 'Not provided'}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Occupation</p>
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <p>{member?.occupation || 'Not provided'}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Blood Group</p>
+                  <div className="flex items-center gap-2">
+                    <Droplets className="h-4 w-4 text-muted-foreground" />
+                    <p>{member?.blood_group || 'Not provided'}</p>
                   </div>
                 </div>
               </div>
@@ -103,11 +158,11 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Membership Plan</p>
-                    <p>{member?.membership_name || 'No plan'}</p>
+                    <p>{member?.membership_name || member?.memberships?.name || 'No plan'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Expiry Date</p>
-                    <p>{member?.membership_end_date ? format(parseISO(member.membership_end_date), 'dd MMM yyyy') : 'N/A'}</p>
+                    <p>{member?.membership_end_date ? formatDate(member.membership_end_date) : 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -118,11 +173,13 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                 <h3 className="font-medium">Assigned Trainer</h3>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={trainerAvatar} alt={trainerName} />
-                    <AvatarFallback>{trainerName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={trainer?.avatar_url || ''} alt={trainer?.name} />
+                    <AvatarFallback>
+                      {getInitials(trainer?.name)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p>{displayTrainerName}</p>
+                    <p>{trainer?.name || 'No trainer assigned'}</p>
                     {trainer && <p className="text-sm text-muted-foreground">Personal Trainer</p>}
                   </div>
                 </div>

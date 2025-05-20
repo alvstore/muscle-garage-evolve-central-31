@@ -2943,14 +2943,19 @@ export type Database = {
       members: {
         Row: {
           access_control_id: string | null
+          address: string | null
           blood_group: string | null
           branch_id: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           gender: string | null
           goal: string | null
           id: string
+          id_number: string | null
+          id_type: string | null
           membership_end_date: string | null
           membership_id: string | null
           membership_start_date: string | null
@@ -2958,21 +2963,28 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
+          state: string | null
           status: string | null
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
+          zip_code: string | null
         }
         Insert: {
           access_control_id?: string | null
+          address?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -2980,21 +2992,28 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zip_code?: string | null
         }
         Update: {
           access_control_id?: string | null
+          address?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -3002,10 +3021,12 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -4846,6 +4867,36 @@ export type Database = {
       }
     }
     Functions: {
+      assign_membership_with_payment: {
+        Args:
+          | {
+              p_member_id: string
+              p_membership_plan_id: string
+              p_branch_id: string
+              p_start_date: string
+              p_end_date: string
+              p_total_amount: number
+              p_payment_method: string
+              p_payment_status: string
+              p_notes: string
+              p_recorded_by: string
+            }
+          | {
+              p_member_id: string
+              p_membership_plan_id: string
+              p_branch_id: string
+              p_start_date: string
+              p_end_date: string
+              p_total_amount: number
+              p_payment_method: string
+              p_payment_status: string
+              p_transaction_id?: string
+              p_reference_number?: string
+              p_notes?: string
+              p_recorded_by?: string
+            }
+        Returns: Json
+      }
       can_book_class: {
         Args: { user_uuid: string }
         Returns: boolean
