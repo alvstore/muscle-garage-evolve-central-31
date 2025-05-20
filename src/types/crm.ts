@@ -29,6 +29,37 @@ export interface FollowUpTemplate {
   created_by?: string;
 }
 
+export interface FollowUp {
+  id: string;
+  lead_id: string;
+  type: string;
+  content: string;
+  subject?: string;
+  status: string;
+  scheduled_at?: string;
+  sent_at?: string;
+  sent_by?: string;
+  response?: string;
+  response_at?: string;
+  template_id?: string;
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description?: string;
+  trigger_type: string;
+  trigger_condition: Record<string, any>;
+  actions: Array<{
+    type: string;
+    config: Record<string, any>;
+  }>;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
 export type FollowUpType = 'email' | 'call' | 'meeting' | 'message' | 'other';
 
 export interface FollowUpScheduled {

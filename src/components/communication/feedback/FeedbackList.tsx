@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFeedback } from '@/hooks/communication/use-feedback';
-import { FeedbackType, Feedback } from '@/types/notification';
+import { FeedbackType, Feedback } from '@/types/communication/notification';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

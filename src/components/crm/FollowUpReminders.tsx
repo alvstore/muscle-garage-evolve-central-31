@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { FollowUpType, FollowUpScheduled } from '@/types/crm';
+import { FollowUpType, FollowUp } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { followUpService } from '@/services/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useFeedback } from '@/hooks/communication/use-feedback';
 import { useAuth } from '@/hooks/auth/use-auth';
 import { toast } from 'sonner';
-import { FeedbackType } from '@/types/notification';
+import { FeedbackType } from '@/types/communication/notification';
 
 export interface FeedbackFormProps {
   onSubmitSuccess?: () => void;
