@@ -30,9 +30,6 @@ export interface Member {
   blood_group?: string;
   id_type?: string;
   id_number?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  emergency_contact_relation?: string;
   // For backward compatibility
   trainerId?: string;
   membershipStartDate?: string;
