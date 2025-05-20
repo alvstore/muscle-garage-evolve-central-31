@@ -2,6 +2,15 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
+import ProfilePage from '@/pages/profile/index';
 
-// This will be replaced with actual profile routes
-export const profileRoutes: RouteObject[] = [];
+export const profileRoutes: RouteObject[] = [
+  {
+    path: '/profile',
+    element: (
+      <PrivateRoute>
+        <ProfilePage />
+      </PrivateRoute>
+    )
+  }
+];

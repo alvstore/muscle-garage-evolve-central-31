@@ -42,7 +42,7 @@ export const useUploadImage = (): UseUploadImageReturn => {
       const filePath = `${folder}/${fileName}`;
 
       // Upload to Supabase Storage with explicit content type
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('images')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -52,7 +52,19 @@ export const useUploadImage = (): UseUploadImageReturn => {
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
+        
+        // Check for common errors
+        if (uploadError.message.includes('does not exist')) {
+          // Create the bucket and try again
+          await supabase.storage.createBucket('images', { public: true });
+          return uploadImage({ file, folder }); // Recursively try again
+        }
+        
         throw new Error(`Failed to upload image: ${uploadError.message}`);
+      }
+
+      if (!data?.path) {
+        throw new Error('Failed to get upload path');
       }
 
       // Get the public URL

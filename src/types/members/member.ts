@@ -25,7 +25,8 @@ export interface Member {
   trainer_id?: string;
   user_id?: string;
   goal?: string;
-  avatar?: string;
+  avatar?: string; // Backward compatibility field
+  avatar_url?: string; // For profiles table compatibility
   occupation?: string;
   blood_group?: string;
   id_type?: string;

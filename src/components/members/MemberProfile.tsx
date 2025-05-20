@@ -41,7 +41,7 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
   // Safe access to member properties
   const memberName = member?.name || 'Unknown Member';
   const memberInitials = memberName.substring(0, 2).toUpperCase();
-  const memberAvatar = member?.avatar_url || member?.profile_picture || member?.avatar || '';
+  const memberAvatar = member?.avatar || member?.profile_picture || member?.avatar_url || '';
   const membershipStatus = member?.membership_status || 'unknown';
   const memberCreatedAt = member?.created_at ? format(parseISO(member.created_at), 'MMM yyyy') : 'N/A';
   
@@ -111,8 +111,8 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                   <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <p>{member?.date_of_birth ? format(parseISO(member.date_of_birth), 'dd MMM yyyy') : 
-                       (member?.dateOfBirth ? format(parseISO(member.dateOfBirth), 'dd MMM yyyy') : 'Not provided')}</p>
+                    <p>{member?.date_of_birth ? format(new Date(member.date_of_birth), 'dd MMM yyyy') : 
+                       (member?.dateOfBirth ? format(new Date(member.dateOfBirth), 'dd MMM yyyy') : 'Not provided')}</p>
                   </div>
                 </div>
               </div>
@@ -128,8 +128,8 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Expiry Date</p>
-                    <p>{member?.membership_end_date ? format(parseISO(member.membership_end_date), 'dd MMM yyyy') : 
-                       (member?.membershipEndDate ? format(parseISO(member.membershipEndDate), 'dd MMM yyyy') : 'N/A')}</p>
+                    <p>{member?.membership_end_date ? format(new Date(member.membership_end_date), 'dd MMM yyyy') : 
+                       (member?.membershipEndDate ? format(new Date(member.membershipEndDate), 'dd MMM yyyy') : 'N/A')}</p>
                   </div>
                 </div>
               </div>

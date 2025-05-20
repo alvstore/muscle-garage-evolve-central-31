@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import { useUploadImage } from '@/hooks/utils/use-upload-image';
 
 // Form schema matches NewMemberPage
 const memberFormSchema = z.object({
@@ -51,6 +52,7 @@ const EditMemberPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [member, setMember] = useState<MemberFormValues | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { uploadImage, isUploading } = useUploadImage();
 
   const {
     register,
@@ -64,7 +66,11 @@ const EditMemberPage = () => {
 
   useEffect(() => {
     const fetchMember = async () => {
-      if (!id) return;
+      if (!id) {
+        toast.error('Member ID is missing');
+        navigate('/members');
+        return;
+      }
       
       try {
         setIsLoading(true);
@@ -87,6 +93,9 @@ const EditMemberPage = () => {
           };
           
           reset(formattedData);
+        } else {
+          toast.error('Member not found');
+          navigate('/members');
         }
       } catch (error) {
         console.error('Error fetching member:', error);
@@ -100,21 +109,33 @@ const EditMemberPage = () => {
     fetchMember();
   }, [id, reset, navigate]);
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const url = reader.result as string;
-        setAvatarUrl(url);
-        setValue('profile_picture', url);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      // Upload the image first
+      const uploadedUrl = await uploadImage({ 
+        file, 
+        folder: 'avatars' 
+      });
+      
+      if (uploadedUrl) {
+        setAvatarUrl(uploadedUrl);
+        setValue('profile_picture', uploadedUrl);
+        toast.success('Profile picture uploaded successfully');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload profile picture');
     }
   };
 
   const onSubmit = async (data: MemberFormValues) => {
-    if (!id) return;
+    if (!id) {
+      toast.error('Member ID is missing');
+      return;
+    }
     
     try {
       setIsSaving(true);
@@ -124,6 +145,7 @@ const EditMemberPage = () => {
         updated_at: new Date().toISOString(),
         updated_by: user?.id,
         branch_id: currentBranch?.id,
+        profile_picture: avatarUrl || data.profile_picture,
       };
 
       const { error } = await supabase
@@ -135,9 +157,9 @@ const EditMemberPage = () => {
       
       toast.success('Member updated successfully');
       navigate(`/members/${id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating member:', error);
-      toast.error('Failed to update member');
+      toast.error(`Failed to update member: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
@@ -159,8 +181,15 @@ const EditMemberPage = () => {
     );
   }
 
-  if (!member) {
-    return <div>Member not found</div>;
+  if (!member && !isLoading) {
+    return (
+      <div className="container mx-auto py-6 px-4 text-center">
+        <h2 className="text-xl font-semibold mb-4">Member not found</h2>
+        <Button onClick={() => navigate('/members')}>
+          Go Back to Members
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -192,9 +221,9 @@ const EditMemberPage = () => {
               <CardContent>
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-32 w-32">
-                    <AvatarImage src={avatarUrl || ''} alt={member.name} />
+                    <AvatarImage src={avatarUrl || ''} alt={member?.name} />
                     <AvatarFallback className="text-2xl">
-                      {getInitials(member.name)}
+                      {getInitials(member?.name || '')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -204,13 +233,22 @@ const EditMemberPage = () => {
                       accept="image/*"
                       onChange={handleAvatarUpload}
                       className="hidden"
+                      disabled={isUploading}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={isUploading}
                     >
-                      Change Photo
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Change Photo'
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -233,6 +271,7 @@ const EditMemberPage = () => {
                       {...register('name')}
                       error={errors.name?.message}
                     />
+                    {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="email">Email</Label>
@@ -242,6 +281,7 @@ const EditMemberPage = () => {
                       {...register('email')}
                       error={errors.email?.message}
                     />
+                    {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="phone">Phone</Label>
@@ -250,6 +290,7 @@ const EditMemberPage = () => {
                       {...register('phone')}
                       error={errors.phone?.message}
                     />
+                    {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>}
                   </div>
                   <div>
                     <Label htmlFor="gender">Gender</Label>
@@ -378,11 +419,11 @@ const EditMemberPage = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate(-1)}
-                  disabled={isSaving}
+                  disabled={isSaving || isUploading}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving || isUploading}>
                   {isSaving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
